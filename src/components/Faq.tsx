@@ -80,11 +80,11 @@ const FAQSection: React.FC = () => {
                   <span className="text-d-white text-lg font-normal pr-4 font-raleway">
                     {item.question}
                   </span>
-                  <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                  <div className="flex-shrink-0 size-8 flex items-center justify-center">
                     {openIndex === index ? (
-                      <Minus className="text-d-white" size={20} />
+                      <Minus className="text-d-white size-5" />
                     ) : (
-                      <Plus className="text-d-white" size={20} />
+                      <Plus className="text-d-white size-5" />
                     )}
                   </div>
                 </button>

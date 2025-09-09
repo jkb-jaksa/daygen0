@@ -12,13 +12,13 @@ type CardItem = {
 
 export function Grid() {
   const sidebarItems = [
-    { icon: <Edit size={18} />, label: "text" },
-    { icon: <Image size={18} />, label: "image" },
-    { icon: <Video size={18} />, label: "video" },
-    { icon: <Users size={18} />, label: "avatars" },
-    { icon: <Volume2 size={18} />, label: "voice" },
-    { icon: <Music size={18} />, label: "music" },
-    { icon: <Box size={18} />, label: "3d" },
+    { icon: <Edit className="size-5" />, label: "text" },
+    { icon: <Image className="size-5" />, label: "image" },
+    { icon: <Video className="size-5" />, label: "video" },
+    { icon: <Users className="size-5" />, label: "avatars" },
+    { icon: <Volume2 className="size-5" />, label: "voice" },
+    { icon: <Music className="size-5" />, label: "music" },
+    { icon: <Box className="size-5" />, label: "3d" },
   ];
 
   const cards: CardItem[] = [
@@ -70,7 +70,7 @@ export function Grid() {
             key={index}
             className="flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
           >
-            <div className="p-2 rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427]">
+            <div className="size-8 grid place-items-center rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427] transition-colors duration-200">
               {item.icon}
             </div>
             <span className="text-base font-raleway font-normal">{item.label}</span>

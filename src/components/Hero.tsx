@@ -32,8 +32,7 @@ const HeroPage: React.FC = () => {
             {/* Searchbar – same width as pills row */}
             <div className="relative">
               <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white"
-                size={18}
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white size-5"
               />
               <input
                 type="text"

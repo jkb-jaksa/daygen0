@@ -62,12 +62,12 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       <div className="relative z-10 h-full flex flex-col justify-between p-6">
         <div>
           <h3
-            className={`text-d-text text-xl font-light font-cabin mb-2 ${titleClassName}`}
+            className={`text-d-text text-xl font-light font-cabin mb-0.5 ${titleClassName}`}
           >
             {title}
           </h3>
           <p
-            className={`text-d-text/90 text-base font-normal font-raleway ${subtitleClassName}`}
+            className={`text-d-white text-base font-normal font-raleway ${subtitleClassName}`}
           >
             {subtitle}
           </p>

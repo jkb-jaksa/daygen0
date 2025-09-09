@@ -159,15 +159,15 @@ function ToolCard({ name, desc, Icon, accent }: Tool) {
       <div className="relative z-10 flex items-center gap-3">
         <div
           className={cx(
-            "size-10 grid place-items-center rounded-lg border",
+            "size-8 grid place-items-center rounded-lg border",
             s.badge
           )}
         >
           <Icon className="size-5" />
         </div>
-        <div className="text-base font-medium text-d-text">{name}</div>
+        <div className="text-d-text text-xl font-light font-cabin">{name}</div>
       </div>
-      <p className="relative z-10 mt-3 text-sm leading-relaxed text-d-white">{desc}</p>
+      <p className="relative z-10 mt-0.5 text-d-white text-base font-normal font-raleway">{desc}</p>
       <button
         type="button"
         className="relative z-10 mt-4 btn btn-white text-black"
@@ -184,7 +184,7 @@ export default function ToolsSection() {
       {/* Hero Section */}
       <section className="relative w-full overflow-hidden bg-gray-600 border-b border-white/5">
         <div className="mx-auto max-w-[85rem] px-6 py-16  justify-items-center">
-          <h1 className="text-5xl font-semibold tracking-tight text-d-text sm:text-6xl -mt-1 font-cabin">
+          <h1 className="text-5xl font-light tracking-tight text-d-text sm:text-6xl -mt-1 font-cabin">
             tools
           </h1>
         </div>
@@ -196,7 +196,7 @@ export default function ToolsSection() {
       <section className="mx-auto max-w-[85rem] px-6 py-8">
         <div className="mt-8 grid grid-cols-[150px,1fr] gap-6 mb-20">
           {/* Heading aligned with cards */}
-          <h3 className="col-start-2 text-2xl font-semibold text-d-text">
+          <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">
             notable tools
           </h3>
 
@@ -207,10 +207,10 @@ export default function ToolsSection() {
                 key={label}
                 className="flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
               >
-                <div className="p-2 rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427] transition-colors duration-200">
-                  <Icon size={18} />
+                <div className="size-8 grid place-items-center rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427] transition-colors duration-200">
+                  <Icon className="size-5" />
                 </div>
-                <span className="text-lg">{label}</span>
+                <span className="text-base font-raleway font-normal">{label}</span>
               </div>
             ))}
           </aside>
