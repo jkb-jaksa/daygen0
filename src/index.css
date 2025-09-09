@@ -8,10 +8,10 @@
   /* Daygen dark palette */
   --d-text: #FAFAFA;
   --d-white: #D2D8D8;
-  /* Slightly lighter for improved contrast hierarchy */
-  --d-light: #868B8B;
-  /* Mid tone: slightly lighter for better contrast on hover */
-  --d-mid: #323737;
+  /* Slightly lighter for improved contrast hierarchy (nudged up) */
+  --d-light: #8E9393;
+  /* Mid tone: made a bit lighter for hover/border contrast */
+  --d-mid: #3A4040;
   --d-dark: #181A1A;
   --d-black: #0E1212;
 

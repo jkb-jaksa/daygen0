@@ -298,12 +298,37 @@ const CATEGORIES = [
 
 function ToolCard({ name, desc, Icon, accent, href }: Tool) {
   const s = accentStyles[accent];
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--x", `${x.toFixed(2)}%`);
+    el.style.setProperty("--y", `${y.toFixed(2)}%`);
+    const tx = (x - 50) / 10;
+    const ty = (y - 50) / 10;
+    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  };
+  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "200ms");
+    el.style.setProperty("--l", "1");
+  };
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "400ms");
+    el.style.setProperty("--l", "0");
+  };
   return (
     <div
       className={cx(
         "group tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-5 parallax",
         "transition-all duration-200 cursor-pointer h-full flex flex-col"
       )}
+      onMouseMove={onMove}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
     >
       {/* No overlay; tag-gradient provides subtle glow only */}
       <div className="relative z-10 flex items-center gap-3">
