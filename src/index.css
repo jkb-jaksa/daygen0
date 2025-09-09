@@ -8,7 +8,8 @@
   /* Daygen dark palette */
   --d-text: #FAFAFA;
   --d-white: #D2D8D8;
-  --d-light-1: #6A6E6E;
+  /* Slightly lighter for improved contrast hierarchy */
+  --d-light: #868B8B;
   /* Mid tone: slightly lighter for better contrast on hover */
   --d-mid: #323737;
   --d-dark: #181A1A;
@@ -21,7 +22,7 @@
   /* Back-compat mapping (can be removed once classes switched) */
   --color-text: var(--d-text);
   --color-border-white: var(--d-white);
-  --color-border-light: var(--d-light-1);
+  --color-border-light: var(--d-light);
   --color-border-mid: var(--d-mid);
   --color-border-dark: var(--d-dark);
   --color-border-black: var(--d-black);
@@ -260,6 +261,8 @@ html, body {
   backdrop-filter: blur(72px) brightness(.5) contrast(1.1) saturate(.7) hue-rotate(0deg);
 }
 
+/* Liquid glass effect removed per design revert */
+
 /* Subtle white gradient text for 'day' */
 .text-white-gradient {
   color: #fff; /* fallback */
@@ -303,6 +306,17 @@ html, body {
     padding-bottom: 0.08em; /* avoid descender clipping */
   }
 }
+
+/* Softer, lighter warm for active states */
+.text-d-orange-soft { color: #ffc977; }
+@supports (color: color-mix(in oklch, red, white)) {
+  .text-d-orange-soft {
+    color: color-mix(in oklch, var(--d-orange-1) 65%, white 35%);
+  }
+}
+
+/* Alias utility for design token d-light */
+.text-d-light { color: var(--d-light); }
 
 /* Interactive glow gradient for cards */
 .tag-gradient {

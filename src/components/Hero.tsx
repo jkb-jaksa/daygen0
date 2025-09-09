@@ -8,7 +8,7 @@ const HeroPage: React.FC = () => {
       {/* Background overlay to show gradient behind navbar */}
       <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
       {/* HERO */}
-      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-20">
+      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-[calc(var(--nav-h)+0.25rem)] pb-16">
         {/* Top row with title and right wordmark aligned to container edges */}
         <div className="grid grid-cols-[1fr_auto] items-start">
           <div>

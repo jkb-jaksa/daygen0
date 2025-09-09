@@ -2,6 +2,7 @@ import { Edit, Image, Video, Users, Music, Volume2, Box } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import AIToolCard from "./Card";
+import { useState } from "react";
 
 type CardItem = {
   slug: string; // this will be the route id
@@ -11,6 +12,7 @@ type CardItem = {
 };
 
 export function Grid() {
+  const [active, setActive] = useState<string | null>(null);
   const sidebarItems = [
     { icon: <Edit className="size-4" />, label: "text" },
     { icon: <Image className="size-4" />, label: "image" },
@@ -21,7 +23,8 @@ export function Grid() {
     { icon: <Box className="size-4" />, label: "3d" },
   ];
 
-  const createCards: CardItem[] = [
+  // IMAGE → create
+  const imageCreateCards: CardItem[] = [
     {
       slug: "photorealistic-images",
       title: "photorealistic images",
@@ -91,7 +94,8 @@ export function Grid() {
     },
   ];
 
-  const editCards: CardItem[] = [
+  // IMAGE → edit
+  const imageEditCards: CardItem[] = [
     {
       slug: "edit-image-details",
       title: "edit image details",
@@ -136,7 +140,8 @@ export function Grid() {
     },
   ];
 
-  const personalizeCards: CardItem[] = [
+  // IMAGE → personalize
+  const imagePersonalizeCards: CardItem[] = [
     {
       slug: "style-tuning",
       title: "style tuning",
@@ -145,6 +150,111 @@ export function Grid() {
     },
   ];
 
+  // VIDEO → create
+  const videoCreateCards: CardItem[] = [
+    { slug: "photorealistic-videos", title: "photorealistic videos", subtitle: "create high-fidelity, realistic videos", image: "/path-to-video-1.jpg" },
+    { slug: "artistic-videos", title: "artistic videos", subtitle: "create videos in various artistic styles", image: "/path-to-video-2.jpg" },
+    { slug: "image-to-video", title: "image-to-video", subtitle: "animate a single image into motion", image: "/path-to-video-3.jpg" },
+    { slug: "specific-frame-start-end", title: "start/end with a specific frame", subtitle: "lock first or last frame for control", image: "/path-to-video-4.jpg" },
+    { slug: "educational-videos", title: "educational videos", subtitle: "generate explainers and learning content", image: "/path-to-video-5.jpg" },
+    { slug: "full-length-films", title: "full-length films", subtitle: "plan and generate long-form narratives", image: "/path-to-video-6.jpg" },
+    { slug: "music-videos", title: "music videos", subtitle: "produce visuals driven by music", image: "/path-to-video-7.jpg" },
+    { slug: "shorts", title: "shorts", subtitle: "quick-form vertical or horizontal videos", image: "/path-to-video-8.jpg" },
+  ];
+
+  // VIDEO → edit
+  const videoEditCards: CardItem[] = [
+    { slug: "edit-video-details", title: "edit video details", subtitle: "adjust lighting, color and timing", image: "/path-to-video-9.jpg" },
+    { slug: "video-add-edit-text", title: "add/edit text", subtitle: "overlay or refine text in video", image: "/path-to-video-10.jpg" },
+    { slug: "video-style-reference", title: "style reference", subtitle: "apply looks from reference videos/images", image: "/path-to-video-11.jpg" },
+    { slug: "video-person-swap", title: "person swap", subtitle: "replace subjects while keeping motion", image: "/path-to-video-12.jpg" },
+    { slug: "facial-animation", title: "facial animation", subtitle: "drive expressions and lip movement", image: "/path-to-video-13.jpg" },
+    { slug: "extend-video", title: "extend video", subtitle: "continue scenes forward or backward", image: "/path-to-video-14.jpg" },
+    { slug: "motion-control", title: "motion control", subtitle: "manipulate trajectories, speed and easing", image: "/path-to-video-15.jpg" },
+    { slug: "motion-presets-effects", title: "motion presets & effects", subtitle: "apply stylized motion templates and FX", image: "/path-to-video-16.jpg" },
+    { slug: "camera-control", title: "camera control", subtitle: "set camera path, FOV and moves", image: "/path-to-video-17.jpg" },
+    { slug: "aspect-ratio-video", title: "aspect ratio", subtitle: "reframe between formats cleanly", image: "/path-to-video-18.jpg" },
+    { slug: "dubbing-lipsync", title: "dubbing/lip-sync", subtitle: "match voiceover to character lips", image: "/path-to-video-19.jpg" },
+    { slug: "captions", title: "captions", subtitle: "auto-generate and style subtitles", image: "/path-to-video-20.jpg" },
+    { slug: "video-upscaling", title: "upscaling", subtitle: "enhance resolution and detail", image: "/path-to-video-21.jpg" },
+  ];
+
+  // VIDEO → personalize
+  const videoPersonalizeCards: CardItem[] = [
+    { slug: "video-style-tuning", title: "style tuning", subtitle: "personalize outputs to your brand/style", image: "/path-to-video-22.jpg" },
+  ];
+
+  // AVATARS → create (as requested)
+  const avatarsCreateCards: CardItem[] = [
+    { slug: "avatars-dubbing-lipsync", title: "dubbing/lip-sync", subtitle: "match voices to avatar lip movement", image: "/path-to-avatars-1.jpg" },
+    { slug: "avatars-captions", title: "captions", subtitle: "auto-generate and style subtitles for avatars", image: "/path-to-avatars-2.jpg" },
+    { slug: "avatars-upscaling", title: "upscaling", subtitle: "enhance avatar video/image resolution", image: "/path-to-avatars-3.jpg" },
+  ];
+
+  // AVATARS → edit/personalize (not specified; keep empty for now)
+  const avatarsEditCards: CardItem[] = [];
+  const avatarsPersonalizeCards: CardItem[] = [];
+
+  // VOICE → create/edit/other(personalize)
+  const voiceCreateCards: CardItem[] = [
+    { slug: "new-voices", title: "new voices", subtitle: "create new synthetic voices", image: "/path-to-voice-1.jpg" },
+    { slug: "voice-tracks", title: "voice tracks", subtitle: "generate narration and multi-take tracks", image: "/path-to-voice-2.jpg" },
+    { slug: "dubbing-lip-sync", title: "dubbing/lip sync", subtitle: "match speech to lip movement", image: "/path-to-voice-3.jpg" },
+    { slug: "sound-effects", title: "sound effects", subtitle: "produce effects and atmospheres", image: "/path-to-voice-4.jpg" },
+  ];
+
+  const voiceEditCards: CardItem[] = [
+    { slug: "edit-voice", title: "voice", subtitle: "edit tone, pacing and emphasis", image: "/path-to-voice-5.jpg" },
+  ];
+
+  const voicePersonalizeCards: CardItem[] = [
+    { slug: "clone-voice", title: "clone voice", subtitle: "replicate a target speaker safely", image: "/path-to-voice-6.jpg" },
+    { slug: "emotional-voice", title: "emotional voice", subtitle: "control emotion and intensity", image: "/path-to-voice-7.jpg" },
+    { slug: "conversational-voice", title: "conversational voice", subtitle: "produce natural, dialog-style delivery", image: "/path-to-voice-8.jpg" },
+    { slug: "translations-voice", title: "translations", subtitle: "translate speech across languages", image: "/path-to-voice-9.jpg" },
+  ];
+
+  // MUSIC → create/edit
+  const musicCreateCards: CardItem[] = [
+    { slug: "song-with-custom-lyrics", title: "song with custom lyrics", subtitle: "generate music to your words", image: "/path-to-music-1.jpg" },
+    { slug: "music-reference", title: "music reference", subtitle: "guide composition by a reference track", image: "/path-to-music-2.jpg" },
+    { slug: "use-your-own-voice", title: "use your own voice", subtitle: "sing or narrate on generated music", image: "/path-to-music-3.jpg" },
+  ];
+
+  const musicEditCards: CardItem[] = [
+    { slug: "edit-song", title: "edit song", subtitle: "adjust structure, tempo and mix", image: "/path-to-music-4.jpg" },
+  ];
+
+  const musicPersonalizeCards: CardItem[] = [];
+
+  // TEXT → create (placeholder)
+  const textCreateCards: CardItem[] = [
+    { slug: "text", title: "Text", subtitle: "To be done", image: "/path-to-text-1.jpg" },
+  ];
+  const textEditCards: CardItem[] = [];
+  const textPersonalizeCards: CardItem[] = [];
+
+  // 3D → create (placeholder)
+  const threeDCreateCards: CardItem[] = [
+    { slug: "3d", title: "3D", subtitle: "To be done", image: "/path-to-3d-1.jpg" },
+  ];
+  const threeDEditCards: CardItem[] = [];
+  const threeDPersonalizeCards: CardItem[] = [];
+
+  const sets = active === "video"
+    ? { create: videoCreateCards, edit: videoEditCards, personalize: videoPersonalizeCards }
+    : active === "avatars"
+    ? { create: avatarsCreateCards, edit: avatarsEditCards, personalize: avatarsPersonalizeCards }
+    : active === "voice"
+    ? { create: voiceCreateCards, edit: voiceEditCards, personalize: voicePersonalizeCards }
+    : active === "music"
+    ? { create: musicCreateCards, edit: musicEditCards, personalize: musicPersonalizeCards }
+    : active === "text"
+    ? { create: textCreateCards, edit: textEditCards, personalize: textPersonalizeCards }
+    : active === "3d"
+    ? { create: threeDCreateCards, edit: threeDEditCards, personalize: threeDPersonalizeCards }
+    : { create: imageCreateCards, edit: imageEditCards, personalize: imagePersonalizeCards };
+
   return (
     <div className="mt-4 space-y-4">
       {/* create */}
@@ -152,21 +262,35 @@ export function Grid() {
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">create</h3>
 
         <aside className="row-start-2 hidden md:flex flex-col gap-4">
-          {sidebarItems.map((item, index) => (
-            <div
-              key={index}
-              className="parallax flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
-            >
-              <div className="size-8 grid place-items-center rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427] transition-colors duration-200">
-                {item.icon}
-              </div>
-              <span className="text-base font-raleway font-normal">{item.label}</span>
-            </div>
-          ))}
+          {sidebarItems.map((item, index) => {
+            const isActive = active === item.label;
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setActive(item.label)}
+                className={`parallax flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                  isActive ? "text-d-light hover:text-d-orange" : "text-d-white hover:text-d-orange"
+                }`}
+                aria-pressed={isActive}
+              >
+                <div
+                  className={`size-8 grid place-items-center rounded-lg border transition-colors duration-200 ${
+                    isActive
+                      ? "bg-[#222427] border-d-dark"
+                      : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
+                  }`}
+                >
+                  {item.icon}
+                </div>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
         </aside>
 
         <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {createCards.map((card) => (
+          {sets.create.map((card) => (
             <Link
               key={card.slug}
               to={`/ai-tools/${card.slug}`}
@@ -190,7 +314,7 @@ export function Grid() {
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">edit</h3>
 
         <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {editCards.map((card) => (
+          {sets.edit.map((card) => (
             <Link
               key={card.slug}
               to={`/ai-tools/${card.slug}`}
@@ -214,7 +338,7 @@ export function Grid() {
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">personalize</h3>
 
         <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {personalizeCards.map((card) => (
+          {sets.personalize.map((card) => (
             <Link
               key={card.slug}
               to={`/ai-tools/${card.slug}`}

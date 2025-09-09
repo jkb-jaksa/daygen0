@@ -64,7 +64,10 @@ export default function Navbar() {
   return (
     <div className="fixed top-0 left-0 right-0 z-50" onMouseLeave={closeMenu}>
       {/* Top navbar */}
-      <nav ref={navRef} className="relative bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]">
+      <nav
+        ref={navRef}
+        className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
+      >
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2.5 flex items-center justify-between text-base">
           <div className="flex items-center gap-6 md:gap-8">
             <img
@@ -106,7 +109,7 @@ export default function Navbar() {
         style={{ top: navH }}
       >
         <div
-          className="willchange-backdrop isolate border-0 bg-black/25 backdrop-strong transition-opacity duration-200"
+          className="glass-liquid willchange-backdrop isolate border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200"
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
