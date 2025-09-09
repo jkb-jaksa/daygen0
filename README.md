@@ -20,7 +20,8 @@ This repo includes an Edge Function to protect the whole site on Vercel via HTTP
 
 - Files:
   - `api/auth.ts:1` – Edge function that enforces Basic Auth and proxies the request.
-  - `vercel.json:1` – Routes all traffic through the Edge function, while keeping `backend/create-intent.ts:1` mapped to `/api/create-intent`.
+  - `api/create-intent.ts:1` – Stripe Node function for `/api/create-intent`.
+  - `vercel.json:1` – Routes all traffic through the Edge function; bypassed requests hit the original path.
 
 - Configure credentials using environment variables (set in Vercel Project Settings → Environment Variables):
   - `BASIC_AUTH` in the form `username:password` (recommended), or
