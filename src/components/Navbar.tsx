@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]">
-      <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base">
+      <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2.5 flex items-center justify-between text-base">
         <div className="flex items-center gap-6 md:gap-8">
           <img
             src="/daygen-color-nobg.png"
