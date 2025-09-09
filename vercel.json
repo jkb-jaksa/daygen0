@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "functions": {
     "api/auth.ts": { "runtime": "edge" },
     "backend/**/*.ts": { "runtime": "@vercel/node@latest" }
