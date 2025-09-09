@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/auth.ts": { "runtime": "edge" }
-  },
   "routes": [
     { "src": "^/api/auth$", "dest": "api/auth.ts" },
     { "src": "/(.*)", "has": [{ "type": "header", "key": "x-auth-checked", "value": "1" }], "dest": "/$1" },
