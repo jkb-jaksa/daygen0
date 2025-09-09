@@ -205,10 +205,10 @@ export default function ToolsSection() {
             {CATEGORIES.map(({ label, Icon }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
+                className="parallax flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
               >
                 <div className="size-8 grid place-items-center rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427] transition-colors duration-200">
-                  <Icon className="size-5" />
+                  <Icon className="size-4" />
                 </div>
                 <span className="text-base font-raleway font-normal">{label}</span>
               </div>

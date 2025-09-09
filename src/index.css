@@ -36,33 +36,38 @@ html, body {
 .herogradient {
   background-color: #000;
   background-image:
-    radial-gradient(60% 36% at -5% 4%,
-      rgba(255,216,77,0.18) 0%,
-      rgba(255,216,77,0.12) 32%,
-      rgba(255,216,77,0.05) 54%,
+    radial-gradient(60% 36% at -5% -15%,
+      rgba(255,216,77,0.46) 0%,
+      rgba(255,216,77,0.25) 32%,
+      rgba(255,216,77,0.10) 54%,
       rgba(255,216,77,0.00) 66%
     ),
-    radial-gradient(55% 33% at 0% 6%,
-      rgba(245,166,35,0.18) 0%,
-      rgba(245,166,35,0.12) 32%,
-      rgba(245,166,35,0.05) 54%,
+
+    radial-gradient(55% 33% at 0% -11%,
+      rgba(245,166,35,0.52) 0%,
+      rgba(245,166,35,0.27) 32%,
+      rgba(245,166,35,0.10) 54%,
       rgba(245,166,35,0.00) 66%
     ),
-    radial-gradient(45% 29% at 10% 8%,
-      rgba(228,58,99,0.22) 0%,
-      rgba(228,58,99,0.10) 36%,
+
+    radial-gradient(45% 29% at 10% -4%,
+      rgba(228,58,99,0.33) 0%,
+      rgba(228,58,99,0.15) 36%,
       rgba(228,58,99,0.00) 58%
     ),
-    radial-gradient(39% 25% at 18% 10%,
-      rgba(42,93,255,0.36) 0%,
-      rgba(42,93,255,0.20) 32%,
+
+    radial-gradient(39% 25% at 18% -1%,
+      rgba(42,93,255,0.29) 0%,
+      rgba(42,93,255,0.13) 32%,
       rgba(42,93,255,0.00) 54%
     ),
-    radial-gradient(35% 21% at 26% 12%,
-      rgba(32,212,217,0.30) 0%,
-      rgba(32,212,217,0.18) 28%,
+    
+    radial-gradient(35% 21% at 26% 3%,
+      rgba(32,212,217,0.27) 0%,
+      rgba(32,212,217,0.11) 28%,
       rgba(32,212,217,0.00) 50%
     );
+
   background-repeat: no-repeat;
   background-blend-mode: screen;
 }
@@ -237,6 +242,22 @@ html, body {
     background-size: 100% 100%;
     padding-bottom: 0.08em; /* avoid descender clipping */
   }
+}
+
+/* Performance hint for transform/opacity transitions */
+.willchange-transform-opacity {
+  will-change: transform, opacity;
+}
+
+/* Hint rendering engine to precompute backdrop + opacity */
+.willchange-backdrop {
+  will-change: opacity, backdrop-filter;
+}
+
+/* Explicit backdrop-filter fallback for Safari and edge cases */
+.backdrop-strong {
+  -webkit-backdrop-filter: blur(72px) brightness(.5) contrast(1.1) saturate(.7) hue-rotate(0deg);
+  backdrop-filter: blur(72px) brightness(.5) contrast(1.1) saturate(.7) hue-rotate(0deg);
 }
 
 /* Subtle white gradient text for 'day' */

@@ -136,6 +136,142 @@ const PAGES: Record<string, PageConfig> = {
     cta: { text: "upload a reference" },
   },
 
+  // CREATE → additional detail subpages
+  "product-visualisations": {
+    type: "detail",
+    title: "product visualisations",
+    subtitle: "create product and packaging visuals",
+    sections: [
+      { heading: "Overview", body: "Generate clean product shots, pack renders and lifestyle placements for commerce and ads." },
+      { heading: "Tips", body: "Provide material, finish, lighting and backdrop specs. Include brand palette and space for text if needed." },
+    ],
+    cta: { text: "start creating" },
+  },
+  "virtual-try-on": {
+    type: "detail",
+    title: "virtual try-on",
+    subtitle: "simulate products on models or users",
+    sections: [
+      { heading: "Overview", body: "Preview apparel, eyewear or accessories on diverse bodies and poses while preserving fabric behavior." },
+      { heading: "Notes", body: "Specify garment fit, pose guidance and camera distance for consistent results." },
+    ],
+    cta: { text: "try it" },
+  },
+  "brand-identity": {
+    type: "detail",
+    title: "brand identity",
+    subtitle: "create cohesive brand visuals and assets",
+    sections: [
+      { heading: "Overview", body: "Develop logo explorations, color systems, type pairings and brand imagery with consistent tone." },
+      { heading: "Workflow", body: "Lock key attributes → iterate across touchpoints → package guidelines and assets." },
+    ],
+    cta: { text: "explore styles" },
+  },
+  infographics: {
+    type: "detail",
+    title: "infographics",
+    subtitle: "create clear, data-driven visuals",
+    sections: [
+      { heading: "Overview", body: "Translate complex data into legible charts, diagrams and explanatory visuals." },
+      { heading: "Tips", body: "Describe chart type, key comparisons and the story; keep labels concise." },
+    ],
+    cta: { text: "design a graphic" },
+  },
+  "social-media": {
+    type: "detail",
+    title: "social media",
+    subtitle: "create posts, covers and ad creatives",
+    sections: [
+      { heading: "Overview", body: "Produce platform-ready assets with on-brand visuals, safe margins and legible text." },
+      { heading: "Best for", body: "Campaign iterations, A/B variants, channel-specific crops and quick turnarounds." },
+    ],
+    cta: { text: "make a post" },
+  },
+
+  // EDIT → detail subpages
+  "edit-image-details": {
+    type: "detail",
+    title: "edit image details",
+    subtitle: "adjust lighting, color and background",
+    sections: [
+      { heading: "Overview", body: "Refine exposure, color balance, composition and scene elements without starting over." },
+      { heading: "Tips", body: "Be explicit: e.g. ‘warmer tone, softer shadows, remove clutter on table’." },
+    ],
+    cta: { text: "start editing" },
+  },
+  "add-edit-text": {
+    type: "detail",
+    title: "add/edit text",
+    subtitle: "add or refine text inside images",
+    sections: [
+      { heading: "Overview", body: "Insert high-quality typographic text into generated or real images with layout control." },
+      { heading: "Notes", body: "Specify font vibe, hierarchy, alignment and safe areas." },
+    ],
+    cta: { text: "add text" },
+  },
+  "style-reference": {
+    type: "detail",
+    title: "style reference",
+    subtitle: "apply visual styles from references",
+    sections: [
+      { heading: "Overview", body: "Transfer mood, palette and texture from reference images while keeping subject fidelity." },
+      { heading: "Best for", body: "Look development, consistency across campaigns and mood matching." },
+    ],
+    cta: { text: "apply style" },
+  },
+  "person-swap": {
+    type: "detail",
+    title: "person swap",
+    subtitle: "replace people while keeping composition",
+    sections: [
+      { heading: "Overview", body: "Swap subjects while preserving lighting, pose and context; ideal for variations and approvals." },
+      { heading: "Tips", body: "Provide pose and angle guidance; mention hair/skin tones and attire." },
+    ],
+    cta: { text: "swap person" },
+  },
+  "batch-edits": {
+    type: "detail",
+    title: "batch edits",
+    subtitle: "edit multiple images consistently",
+    sections: [
+      { heading: "Overview", body: "Apply repeatable adjustments across sets while keeping brand consistency." },
+      { heading: "Notes", body: "Define a preset: crop, grade, cleanup; then review a few samples before running all." },
+    ],
+    cta: { text: "set up batch" },
+  },
+  retouching: {
+    type: "detail",
+    title: "retouching",
+    subtitle: "cleanup, remove objects and fix flaws",
+    sections: [
+      { heading: "Overview", body: "Polish images by removing distractions, repairing defects and smoothing surfaces naturally." },
+      { heading: "Tips", body: "Call out exact removals and keep skin texture where needed." },
+    ],
+    cta: { text: "retouch" },
+  },
+  upscaling: {
+    type: "detail",
+    title: "upscaling",
+    subtitle: "enhance resolution while preserving detail",
+    sections: [
+      { heading: "Overview", body: "Increase resolution for print or large formats with minimal artifacts and strong detail." },
+      { heading: "Best for", body: "Hero images, key visuals, crops and archival enhancements." },
+    ],
+    cta: { text: "upscale" },
+  },
+
+  // PERSONALIZE → detail subpages
+  "style-tuning": {
+    type: "detail",
+    title: "style tuning",
+    subtitle: "personalize outputs to your brand/style",
+    sections: [
+      { heading: "Overview", body: "Tune models or prompts for consistent brand looks, character continuity and signature aesthetics." },
+      { heading: "Workflow", body: "Collect references → define constraints → iterate on a small set → publish a style guide." },
+    ],
+    cta: { text: "tune a style" },
+  },
+
   // TOOLS page (grid)
   tools: {
     type: "tools",

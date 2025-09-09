@@ -26,7 +26,7 @@ const HeroPage: React.FC = () => {
         </div>
 
         {/* Pills + Search span BOTH columns (sidebar + content) so their left edge aligns with the sidebar */}
-        <div className="mt-8 grid grid-cols-[150px,1fr] gap-6">
+        <div className="mt-4 grid grid-cols-[150px,1fr] gap-6">
           {/* pills/search wrapper */}
           <div className="col-span-2">
             {/* Searchbar – same width as pills row */}
