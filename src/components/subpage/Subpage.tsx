@@ -223,22 +223,22 @@ function PageChrome({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-d-text">
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent blur-3xl opacity-40" />
         <div className="relative max-w-6xl mx-auto px-6 pt-16 pb-10">
-          <div className="flex items-center gap-3 text-sm text-white/60 mb-4">
-            <Link to="/ai-tools" className="hover:text-white/90">
+          <div className="flex items-center gap-3 text-sm text-d-text/60 mb-4">
+            <Link to="/ai-tools" className="hover:text-d-text/90">
               ← back
             </Link>
             <span>•</span>
             <span>subpage</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-cabin tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-cabin tracking-tight text-d-text">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-white/70 mt-3 font-raleway">{subtitle}</p>
+          <p className="text-d-text/70 mt-3 font-raleway">{subtitle}</p>
           )}
         </div>
       </header>
@@ -255,9 +255,9 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-6 hover:border-white/20 transition-colors">
+    <div className="rounded-2xl bg-white/5 border border-d-black p-6 hover:border-d-mid transition-colors duration-200">
       <h3 className="text-xl font-cabin mb-2">{title}</h3>
-      <div className="text-white/80 font-raleway">{children}</div>
+      <div className="text-d-text/80 font-raleway">{children}</div>
     </div>
   );
 }
@@ -283,7 +283,7 @@ export default function Subpage() {
 
         {conf.cta && (
           <div className="mt-10">
-            <button className="px-6 py-3 rounded-full bg-white text-black font-medium hover:bg-white/90 transition-colors">
+            <button className="btn btn-white text-black">
               {conf.cta.text}
             </button>
           </div>
@@ -299,15 +299,15 @@ export default function Subpage() {
           {conf.items.map((t) => (
             <div
               key={t.title}
-              className="rounded-2xl bg-white/5 border border-white/10 p-5 hover:border-white/20 transition-colors"
+              className="rounded-2xl bg-white/5 border border-d-black p-5 hover:border-d-mid transition-colors duration-200"
             >
               <div className="flex items-center gap-3">
                 {/* optional icon slot */}
                 <div className="h-8 w-8 rounded-lg bg-white/10" />
                 <h3 className="text-lg font-cabin">{t.title}</h3>
               </div>
-              <p className="text-white/75 mt-2 font-raleway">{t.blurb}</p>
-              <button className="mt-4 px-4 py-2 rounded-full bg-white text-black text-sm hover:bg-white/90">
+              <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>
+              <button className="mt-4 btn btn-white text-black">
                 learn more
               </button>
             </div>
@@ -320,16 +320,16 @@ export default function Subpage() {
   if (conf.type === "services") {
     return (
       <PageChrome title={conf.title} subtitle={conf.subtitle}>
-        <div className="rounded-[28px] p-10 bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-          <p className="text-white/80 mb-6">Get our support.</p>
-          <ul className="list-disc pl-6 space-y-2 text-white/85">
+        <div className="rounded-[28px] p-10 bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-d-black shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+          <p className="text-d-text/80 mb-6">Get our support.</p>
+          <ul className="list-disc pl-6 space-y-2 text-d-text/85">
             {conf.bullets.map((b, i) => (
               <li key={i}>{b}</li>
             ))}
           </ul>
-          <button className="mt-8 px-6 py-3 rounded-full bg-white text-black font-medium hover:bg-white/90">
-            {conf.ctaLabel}
-          </button>
+              <button className="mt-8 btn btn-white text-black">
+                {conf.ctaLabel}
+              </button>
         </div>
       </PageChrome>
     );
@@ -354,15 +354,15 @@ export default function Subpage() {
 function FaqRow({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+    <div className="rounded-2xl overflow-hidden border border-d-black bg-white/5">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-6 py-4 text-left"
       >
-        <span className="text-white font-cabin">{q}</span>
-        <span className="text-white/70">{open ? "–" : "+"}</span>
+        <span className="text-d-text font-cabin">{q}</span>
+        <span className="text-d-text/70">{open ? "–" : "+"}</span>
       </button>
-      {open && <div className="px-6 pb-5 text-white/80 font-raleway">{a}</div>}
+      {open && <div className="px-6 pb-5 text-d-text/80 font-raleway">{a}</div>}
     </div>
   );
 }

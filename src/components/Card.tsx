@@ -20,24 +20,54 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   titleClassName = "",
   subtitleClassName = "",
 }) => {
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--x", `${x.toFixed(2)}%`);
+    el.style.setProperty("--y", `${y.toFixed(2)}%`);
+    const tx = (x - 50) / 10;
+    const ty = (y - 50) / 10;
+    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  };
+
+  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "200ms");
+    el.style.setProperty("--l", "1");
+  };
+
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "400ms");
+    el.style.setProperty("--l", "0");
+  };
+
   return (
-    <div className="whiteborderonhover relative w-96 h-56 rounded-2xl overflow-hidden group cursor-pointer">
+    <div
+      className="tag-gradient parallax relative w-full h-56 rounded-[32px] overflow-hidden group cursor-pointer border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200"
+      onMouseMove={onMove}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
       <img
         src={image}
         alt={title}
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
+      {/* Overlay removed as per design; keep tag-gradient only */}
 
-      <div className="relative h-full flex flex-col justify-between p-6">
+      <div className="relative z-10 h-full flex flex-col justify-between p-6">
         <div>
           <h3
-            className={`text-white text-2xl font-cabin mb-2 ${titleClassName}`}
+            className={`text-d-text text-xl font-light font-cabin mb-2 ${titleClassName}`}
           >
             {title}
           </h3>
           <p
-            className={`text-white/90 text-base font-normal font-raleway ${subtitleClassName}`}
+            className={`text-d-text/90 text-base font-normal font-raleway ${subtitleClassName}`}
           >
             {subtitle}
           </p>
@@ -45,7 +75,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
         <button
           onClick={onClick}
-          className="self-start bg-white text-black px-6 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
+          className="self-start btn btn-white text-black"
         >
           {buttonText}
         </button>

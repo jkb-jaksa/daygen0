@@ -6,7 +6,7 @@ const ContactSection: React.FC = () => {
       {/* Header strip */}
       <section className="relative w-full overflow-hidden bg-gray-600 border-b border-white/5">
         <div className="mx-auto max-w-[85rem] px-6 py-16">
-          <h1 className="text-5xl sm:text-6xl font-light tracking-tight text-white -mt-1 text-center font-cabin">
+          <h1 className="text-5xl sm:text-6xl font-light tracking-tight text-d-text -mt-1 text-center font-cabin">
             creative AI for your project
           </h1>
         </div>
@@ -16,7 +16,7 @@ const ContactSection: React.FC = () => {
       {/* Main */}
       <section className="py-24 px-6">
         <div className="mx-auto max-w-[85rem]">
-          <p className="text-center text-zinc-300 text-lg mb-12 font-raleway">
+          <p className="text-center text-d-white text-lg mb-12 font-raleway">
             Get our support.
           </p>
 
@@ -97,7 +97,7 @@ const ContactSection: React.FC = () => {
                   </li>
                 </ul>
 
-                <button className="px-8 py-3 bg-gray-900 text-white rounded-full font-medium text-base font-raleway hover:bg-gray-800 transition-colors duration-200 shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
+                <button className="px-8 py-3 bg-gray-900 text-d-text rounded-full font-medium text-base font-raleway hover:bg-gray-800 transition-colors duration-200 shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
                   Book a Call
                 </button>
               </div>

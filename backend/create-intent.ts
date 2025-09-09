@@ -1,4 +1,3 @@
-//@ts-nocheck
 // api/create-intent.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import Stripe from "stripe";
@@ -37,20 +36,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .json({ error: "Stripe secret key not configured" });
     }
 
-    // Body can be object or string—normalize it
-    let body: any = req.body ?? {};
-    if (typeof body === "string") {
+    // Body can be object or string—normalize it without using any
+    let rawBody: unknown = req.body ?? {};
+    if (typeof rawBody === "string") {
       try {
-        body = JSON.parse(body);
+        rawBody = JSON.parse(rawBody);
       } catch {
-        body = {};
+        rawBody = {};
       }
     }
 
-    const { packageId = "warrior", customer_email } = body as {
-      packageId?: string;
-      customer_email?: string;
-    };
+    type Body = { packageId?: string; customer_email?: string };
+    const data: Body =
+      rawBody && typeof rawBody === "object" ? (rawBody as Body) : {};
+
+    const packageId = data.packageId ?? "warrior";
+    const customer_email = data.customer_email;
 
     const amount = PRICES[packageId];
     if (!amount) return res.status(400).json({ error: "Invalid packageId" });
@@ -63,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intent = await stripe.paymentIntents.create({
       amount,
-      currency: "pln",
+      currency: DEFAULT_CURRENCY,
       automatic_payment_methods: { enabled: true, allow_redirects: "always" },
       receipt_email: customer_email || undefined,
       description: `Personal Trainer - ${packageId}`,
@@ -76,10 +77,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       amount: intent.amount,
       currency: intent.currency,
     });
-  } catch (err: any) {
-    console.error("create-intent error:", err?.message || err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("create-intent error:", message);
     return res
       .status(500)
-      .json({ error: err?.message || "Unknown server error" });
+      .json({ error: message || "Unknown server error" });
   }
 }

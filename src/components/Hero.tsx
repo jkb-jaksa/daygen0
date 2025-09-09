@@ -4,21 +4,24 @@ import { Grid } from "./Grid";
 
 const HeroPage: React.FC = () => {
   return (
-    <div className="jaksablack relative min-h-screen text-white bg-[#0b0b0c] overflow-hidden pt-[73px]">
+    <div className="relative min-h-screen text-d-text overflow-hidden">
+      {/* Background overlay to show gradient behind navbar */}
+      <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
       {/* HERO */}
-      <header className="relative mx-auto max-w-[85rem] px-6  pt-10">
+      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-20">
         {/* Top row with title and right wordmark aligned to container edges */}
         <div className="grid grid-cols-[1fr_auto] items-start">
           <div>
-            <h1 className="text-6xl font-light leading-tight font-cabin">
+            <h1 className="text-6xl font-light tracking-tight leading-[1.1] font-cabin">
               go beyond.
             </h1>
-            <h2 className=" text-5xl font-extralight text-zinc-300 font-raleway">
+            <h2 className=" text-5xl font-light text-d-white font-raleway">
               master creative AI tools in one place.
             </h2>
           </div>
-          <div className="text-6xl font-light tracking-tight font-cabin  self-start">
-            jaksa
+          <div className="text-5xl font-light tracking-tight font-raleway leading-[1.05] self-start">
+            <span className="text-white-gradient">day</span>
+            <span className="text-d-orange">gen</span>
           </div>
         </div>
 
@@ -29,13 +32,13 @@ const HeroPage: React.FC = () => {
             {/* Searchbar – same width as pills row */}
             <div className="relative">
               <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500"
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white"
                 size={18}
               />
               <input
                 type="text"
                 placeholder="what do you want to do?"
-                className="w-full h-14 rounded-full bg-[#2f3235] text-zinc-300 placeholder-zinc-500 px-12 border border-white/15 focus:outline-none focus:ring-2 focus:ring-zinc-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                className="w-full h-14 rounded-full bg-[#2f3235] text-d-white placeholder-d-white/60 px-12 border border-d-white/15 focus:outline-none focus:ring-2 focus:ring-zinc-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
               />
             </div>
           </div>

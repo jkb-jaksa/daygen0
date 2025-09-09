@@ -51,7 +51,7 @@ const FAQSection: React.FC = () => {
       {/* Gray header strip with heading */}
       <section className="relative w-full overflow-hidden bg-gray-600 border-b border-white/5">
         <div className="mx-auto max-w-[85rem] px-6 py-16 justify-items-center">
-          <h1 className="text-5xl font-light tracking-tight text-white sm:text-6xl -mt-1 text-center font-cabin">
+          <h1 className="text-5xl font-light tracking-tight text-d-text sm:text-6xl -mt-1 text-center font-cabin">
             FAQ
           </h1>
         </div>
@@ -67,7 +67,7 @@ const FAQSection: React.FC = () => {
             {faqData.map((item, index) => (
               <div
                 key={index}
-                className={`rounded-3xl overflow-hidden transition-all duration-300 ${
+                className={`rounded-3xl overflow-hidden transition-all duration-200 ${
                   openIndex === index
                     ? "bg-zinc-800/50 border border-zinc-700/50"
                     : "bg-zinc-900/50 border border-zinc-800/50"
@@ -75,28 +75,28 @@ const FAQSection: React.FC = () => {
               >
                 <button
                   onClick={() => toggleQuestion(index)}
-                  className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-zinc-800/30 transition-colors"
+                  className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-zinc-800/30 transition-colors duration-200"
                 >
-                  <span className="text-zinc-100 text-lg font-normal pr-4 font-raleway">
+                  <span className="text-d-white text-lg font-normal pr-4 font-raleway">
                     {item.question}
                   </span>
                   <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                     {openIndex === index ? (
-                      <Minus className="text-zinc-300" size={20} />
+                      <Minus className="text-d-white" size={20} />
                     ) : (
-                      <Plus className="text-zinc-300" size={20} />
+                      <Plus className="text-d-white" size={20} />
                     )}
                   </div>
                 </button>
 
                 {/* Answer */}
                 <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  className={`overflow-hidden transition-all duration-200 ease-in-out ${
                     openIndex === index ? "max-h-48" : "max-h-0"
                   }`}
                 >
                   <div className="px-8 pb-6">
-                    <p className="text-zinc-400 text-base leading-relaxed font-raleway">
+                    <p className="text-d-white text-base leading-relaxed font-raleway">
                       {item.answer}
                     </p>
                   </div>

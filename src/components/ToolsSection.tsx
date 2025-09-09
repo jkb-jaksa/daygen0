@@ -151,12 +151,12 @@ function ToolCard({ name, desc, Icon, accent }: Tool) {
   return (
     <div
       className={cx(
-        "group rounded-xl border border-white/10 bg-[#0a0a0a] p-5",
-        "hover:bg-[#111111] transition-all duration-200 cursor-pointer",
-        "hover:-translate-y-0.5"
+        "group tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-5 parallax",
+        "transition-all duration-200 cursor-pointer"
       )}
     >
-      <div className="flex items-center gap-3">
+      {/* No overlay; tag-gradient provides subtle glow only */}
+      <div className="relative z-10 flex items-center gap-3">
         <div
           className={cx(
             "size-10 grid place-items-center rounded-lg border",
@@ -165,16 +165,12 @@ function ToolCard({ name, desc, Icon, accent }: Tool) {
         >
           <Icon className="size-5" />
         </div>
-        <div className="text-base font-medium text-white">{name}</div>
+        <div className="text-base font-medium text-d-text">{name}</div>
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-zinc-400">{desc}</p>
+      <p className="relative z-10 mt-3 text-sm leading-relaxed text-d-white">{desc}</p>
       <button
         type="button"
-        className={cx(
-          "mt-4 inline-flex items-center rounded-lg border border-white/10 bg-white/5",
-          "px-3 py-1.5 text-xs font-medium text-white/80",
-          "hover:bg-white/10 hover:text-white transition-colors duration-200"
-        )}
+        className="relative z-10 mt-4 btn btn-white text-black"
       >
         learn more
       </button>
@@ -184,11 +180,11 @@ function ToolCard({ name, desc, Icon, accent }: Tool) {
 
 export default function ToolsSection() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-d-text">
       {/* Hero Section */}
       <section className="relative w-full overflow-hidden bg-gray-600 border-b border-white/5">
         <div className="mx-auto max-w-[85rem] px-6 py-16  justify-items-center">
-          <h1 className="text-5xl font-semibold tracking-tight text-white sm:text-6xl -mt-1 font-cabin">
+          <h1 className="text-5xl font-semibold tracking-tight text-d-text sm:text-6xl -mt-1 font-cabin">
             tools
           </h1>
         </div>
@@ -200,7 +196,7 @@ export default function ToolsSection() {
       <section className="mx-auto max-w-[85rem] px-6 py-8">
         <div className="mt-8 grid grid-cols-[150px,1fr] gap-6 mb-20">
           {/* Heading aligned with cards */}
-          <h3 className="col-start-2 text-2xl font-semibold text-white">
+          <h3 className="col-start-2 text-2xl font-semibold text-d-text">
             notable tools
           </h3>
 
@@ -209,9 +205,9 @@ export default function ToolsSection() {
             {CATEGORIES.map(({ label, Icon }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 text-zinc-400 hover:text-white transition cursor-pointer group"
+                className="flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
               >
-                <div className="p-2 rounded-lg bg-[#1b1c1e] border border-white/10 group-hover:bg-[#222427] transition-colors">
+                <div className="p-2 rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427] transition-colors duration-200">
                   <Icon size={18} />
                 </div>
                 <span className="text-lg">{label}</span>

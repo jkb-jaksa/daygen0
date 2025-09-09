@@ -62,18 +62,18 @@ export function Grid() {
 
   return (
     <section className="mt-8 grid grid-cols-[150px,1fr] gap-6 mb-20">
-      <h3 className="col-start-2 text-2xl font-semibold">create</h3>
+      <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">create</h3>
 
       <aside className="row-start-2 hidden md:flex flex-col gap-4">
         {sidebarItems.map((item, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 text-zinc-400 hover:text-white transition cursor-pointer group"
+            className="flex items-center gap-3 text-d-white hover:text-d-orange transition duration-200 cursor-pointer group"
           >
-            <div className="p-2 rounded-lg bg-[#1b1c1e] border border-white/10 group-hover:bg-[#222427]">
+            <div className="p-2 rounded-lg bg-[#1b1c1e] border border-d-black group-hover:bg-[#222427]">
               {item.icon}
             </div>
-            <span className="text-lg font-raleway">{item.label}</span>
+            <span className="text-base font-raleway font-normal">{item.label}</span>
           </div>
         ))}
       </aside>
@@ -86,7 +86,7 @@ export function Grid() {
             className="block"
             aria-label={`Open ${card.title}`}
           >
-            <motion.div whileHover={{ y: -2 }}>
+            <motion.div>
               <AIToolCard
                 image={card.image}
                 title={card.title}

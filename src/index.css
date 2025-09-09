@@ -2,6 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
+
+:root {
+  --nav-h: 64px; /* Navbar height used for hero offset */
+  /* Daygen dark palette */
+  --d-text: #FAFAFA;
+  --d-white: #D2D8D8;
+  --d-light-1: #6A6E6E;
+  /* Mid tone: slightly lighter for better contrast on hover */
+  --d-mid: #323737;
+  --d-dark: #181A1A;
+  --d-black: #0E1212;
+
+  /* Brand warm gradient stops */
+  --d-orange-1: #faaa16;
+  --d-orange-2: #e43a63;
+
+  /* Back-compat mapping (can be removed once classes switched) */
+  --color-text: var(--d-text);
+  --color-border-white: var(--d-white);
+  --color-border-light: var(--d-light-1);
+  --color-border-mid: var(--d-mid);
+  --color-border-dark: var(--d-dark);
+  --color-border-black: var(--d-black);
+}
+
+/* Ensure page background behind transparent header is black */
+html, body {
+  background-color: #000;
+}
+
+
+.herogradient {
+  background-color: #000;
+  background-image:
+    radial-gradient(60% 36% at -5% 4%,
+      rgba(255,216,77,0.18) 0%,
+      rgba(255,216,77,0.12) 32%,
+      rgba(255,216,77,0.05) 54%,
+      rgba(255,216,77,0.00) 66%
+    ),
+    radial-gradient(55% 33% at 0% 6%,
+      rgba(245,166,35,0.18) 0%,
+      rgba(245,166,35,0.12) 32%,
+      rgba(245,166,35,0.05) 54%,
+      rgba(245,166,35,0.00) 66%
+    ),
+    radial-gradient(45% 29% at 10% 8%,
+      rgba(228,58,99,0.22) 0%,
+      rgba(228,58,99,0.10) 36%,
+      rgba(228,58,99,0.00) 58%
+    ),
+    radial-gradient(39% 25% at 18% 10%,
+      rgba(42,93,255,0.36) 0%,
+      rgba(42,93,255,0.20) 32%,
+      rgba(42,93,255,0.00) 54%
+    ),
+    radial-gradient(35% 21% at 26% 12%,
+      rgba(32,212,217,0.30) 0%,
+      rgba(32,212,217,0.18) 28%,
+      rgba(32,212,217,0.00) 50%
+    );
+  background-repeat: no-repeat;
+  background-blend-mode: screen;
+}
+
 .pink-menu2 {
   position: relative;
   overflow: hidden;
@@ -28,13 +93,313 @@
   );
   opacity: 0;
   filter: blur(0);
-  transition: opacity 0.1s ease, filter 0.1s ease;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .pink-menu2:hover::before {
   opacity: 1;
   filter: blur(16px);
 }
+
+/* Orange gradient pill button with blurred overlay */
+.btn-orange {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  padding: 4px 32px;
+  border-radius: 32px;
+  overflow: hidden;
+  will-change: transform;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  --warm1: var(--d-orange-1, #faaa16);
+  --warm2: var(--d-orange-2, #e43a63);
+}
+
+.btn-orange::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  filter: blur(2px);
+  border-radius: 32px;
+  transition: all 0.2s ease;
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
+    linear-gradient(
+      150deg,
+      var(--warm1) 0%,
+      var(--warm1) 26%,
+      var(--warm2) 88%,
+      var(--warm2) 100%
+    );
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .btn-orange::before {
+    background:
+      linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
+      linear-gradient(
+        in oklch 150deg,
+        var(--d-orange-1) 0%,
+        var(--d-orange-1) 26%,
+        color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
+        color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
+        color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
+        var(--d-orange-2) 88%,
+        var(--d-orange-2) 100%
+      );
+  }
+}
+
+.btn-orange:hover {
+  overflow: hidden;
+}
+
+.btn-orange:hover::before {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
+    linear-gradient(
+      150deg,
+      var(--warm1) 0%,
+      var(--warm1) 26%,
+      var(--warm2) 88%,
+      var(--warm2) 100%
+    );
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .btn-orange:hover::before {
+    background:
+      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
+      linear-gradient(
+        in oklch 150deg,
+        var(--warm1) 0%,
+        var(--warm1) 26%,
+        color-mix(in oklch, var(--warm1) 70%, var(--warm2) 30%) 34%,
+        color-mix(in oklch, var(--warm1) 50%, var(--warm2) 50%) 50%,
+        color-mix(in oklch, var(--warm1) 30%, var(--warm2) 70%) 66%,
+        var(--warm2) 88%,
+        var(--warm2) 100%
+      );
+  }
+}
+
+/* Gradient text using global warm palette */
+/* Fallback: solid warm color so non-supporting browsers don't show a block */
+.text-warm-gradient {
+  color: var(--d-orange-1);
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .text-warm-gradient {
+    background:
+      linear-gradient(
+        in oklch 150deg,
+        var(--warm1) 0%,
+        var(--warm1) 26%,
+        color-mix(in oklch, var(--warm1) 70%, var(--warm2) 30%) 34%,
+        color-mix(in oklch, var(--warm1) 50%, var(--warm2) 50%) 50%,
+        color-mix(in oklch, var(--warm1) 30%, var(--warm2) 70%) 66%,
+        var(--warm2) 88%,
+        var(--warm2) 100%
+      );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding-bottom: 0.08em; /* avoid descender clipping */
+  }
+}
+
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .text-warm-gradient {
+    background:
+      linear-gradient(
+        150deg,
+        var(--d-orange-1) 0%,
+        var(--d-orange-1) 26%,
+        var(--d-orange-2) 88%,
+        var(--d-orange-2) 100%
+      );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding-bottom: 0.08em; /* avoid descender clipping */
+  }
+}
+
+/* Subtle white gradient text for 'day' */
+.text-white-gradient {
+  color: #fff; /* fallback */
+}
+
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .text-white-gradient {
+    background: linear-gradient(
+      150deg,
+      rgba(255,255,255,0.95) 0%,
+      rgba(255,255,255,0.88) 40%,
+      rgba(255,255,255,0.78) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding-bottom: 0.08em; /* avoid descender clipping */
+  }
+}
+
+/* Brand warm gradient as a utility (text) */
+.text-d-orange { color: var(--d-orange-1); }
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .text-d-orange {
+    background: linear-gradient(150deg,
+      var(--d-orange-1) 0%,
+      var(--d-orange-1) 26%,
+      var(--d-orange-2) 88%,
+      var(--d-orange-2) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding-bottom: 0.08em; /* avoid descender clipping */
+  }
+}
+
+/* Interactive glow gradient for cards */
+.tag-gradient {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  /* defaults */
+  --x: 50%;
+  --y: 50%;
+  --tx: 0px;
+  --ty: 0px;
+
+  /* lighter idle for better post-hover feel */
+  --idle-op: 1;
+  --hover-op: 1.5;
+  --l: 0.5; /* glow strength toggled by JS */
+  --fade-ms: 200ms; /* default fade duration */
+  --li: 1; /* intensity multiplier */
+}
+
+.tag-gradient:hover { --li: 1.18; }
+
+.tag-gradient::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -2;
+  background: linear-gradient(150deg,
+    hsla(38,  35%, 68%, 0.03)  0%,
+    hsla(342, 32%, 70%, 0.04) 20%,
+    hsla(226, 30%, 70%, 0.05) 40%,
+    hsla(182, 28%, 68%, 0.06) 60%,
+    hsla(226, 30%, 70%, 0.07) 80%,
+    hsla(182, 28%, 68%, 0.08) 100%
+  );
+  filter: blur(24px) brightness(1.06);
+  opacity: var(--idle-op);
+  transition: opacity 0.2s ease;
+  will-change: opacity;
+}
+
+.tag-gradient:hover::before {
+  opacity: var(--hover-op);
+  filter: blur(24px) brightness(1.12);
+}
+
+.tag-gradient::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 3;
+  pointer-events: none;
+  opacity: calc(0.0001 + var(--l));
+  background: radial-gradient(200px 200px at var(--x) var(--y),
+      rgb(255 255 255 / calc(0.16 * var(--l) * var(--li))),
+      rgb(255 255 255 / calc(0.06 * var(--l) * var(--li))) 45%,
+      rgb(255 255 255 / 0) 60%);
+  mix-blend-mode: screen;
+  filter: blur(96px);
+  transform: translate3d(var(--tx), var(--ty), 0);
+  transition: opacity var(--fade-ms) cubic-bezier(.22,.61,.36,1),
+              transform 200ms ease;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag-gradient::after { transition: opacity 200ms ease; }
+}
+
+
+/* Soft white pill button with blurred overlay */
+.btn-white {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  padding: 4px 32px; /* match btn-orange */
+  border-radius: 32px;
+  overflow: hidden;
+  will-change: transform;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-white::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(240, 250, 255, 1);
+  filter: blur(2px);
+  border-radius: 32px;
+  transition: all 0.2s ease;
+}
+
+.btn-white:hover {
+  overflow: hidden;
+}
+
+.btn-white:hover::before {
+  background: rgba(245, 255, 255, 1);
+  filter: blur(2px);
+  border-radius: 32px;
+}
+
+.parallax-btn {
+  perspective: 1000px;
+}
+
+.parallax-btn:hover {
+  transform: translateZ(200px) scale(1.01);
+  transition: transform 0.2s;
+}
+
+
 
 .pink {
   position: relative;
@@ -62,7 +427,7 @@
   );
   opacity: 0;
   filter: blur(0);
-  transition: opacity 0.1s ease, filter 0.1s ease;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .pink:hover::before {
@@ -78,10 +443,10 @@
 
 .brightness:hover .nested-container {
   filter: brightness(1.5); /* Adjust value to increase brightness */
-  transition: 0.1s;
+  transition: 0.2s;
 }
 
-.jaksagradient {
+.daygengradient {
   background: linear-gradient(
     150deg,
     hsla(210, 55%, 91%, 0.08) 0%,
@@ -93,37 +458,7 @@
   );
 }
 
-.tag-gradient {
-  position: relative;
-  overflow: hidden;
-}
-.tag-gradient:hover {
-  overflow: hidden;
-}
-.tag-gradient::before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  z-index: -1;
-  background: linear-gradient(
-    150deg,
-    hsla(210, 35%, 91%, 0.06) 0%,
-    hsla(195, 70%, 88%, 0.08) 20%,
-    hsla(230, 65%, 90%, 0.1) 40%,
-    hsla(265, 60%, 89%, 0.12) 60%,
-    hsla(180, 55%, 92%, 0.14) 80%,
-    hsla(210, 30%, 87%, 0.16) 100%
-  );
-  filter: blur(24px);
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-}
-.tag-gradient:hover::before {
-  opacity: 1;
-}
+/* old tag-gradient block removed; unified above with interactive glow version */
 
 .white-gradient {
   background: linear-gradient(
@@ -138,7 +473,7 @@
   filter: blur(24px);
 }
 
-.jaksablack {
+.daygenblack {
   background-color: #000;
   background-image: radial-gradient(
       circle at 0% 0%,
@@ -164,7 +499,7 @@
   overflow-x: hidden;
 }
 
-.jaksablack1 {
+.daygenblack1 {
   background-color: #000;
   background-image: radial-gradient(
       circle at 0% 0%,
@@ -191,7 +526,7 @@
 }
 
 .nested-container {
-  transition: border-color 0.1s ease-out, border-width 0.1s ease-out !important;
+  transition: border-color 0.2s ease-out, border-width 0.2s ease-out !important;
 }
 
 .parallax {
@@ -200,13 +535,13 @@
 
 .parallax:hover {
   transform: translateZ(100px) scale(1.01);
-  transition: transform 0.1s;
+  transition: transform 0.2s;
 }
 
 .parallax:hover .nested-container {
   border-color: white !important;
   border-width: 2px;
-  transition: border-color 0.1s, border-width 0.1s !important;
+  transition: border-color 0.2s, border-width 0.2s !important;
 }
 
 .parallax-button {
@@ -251,7 +586,7 @@
 
 .parallaxfaq:hover {
   transform: translateZ(200px) scale(1.005);
-  transition: transform 0.1s ease;
+  transition: transform 0.2s ease;
 }
 
 .parallaxheader {
@@ -260,7 +595,7 @@
 
 .parallaxheader:hover {
   transform: translateZ(200px) scale(1.01);
-  transition: transform 0.1s ease;
+  transition: transform 0.2s ease;
 }
 
 .hover-faq {
@@ -289,7 +624,7 @@
   );
   filter: blur(24px);
   border-radius: 32px;
-  transition: all 0.1s ease;
+  transition: all 0.2s ease;
 }
 
 .hover-faq:hover {
@@ -312,7 +647,7 @@
   border: 1px solid rgba(23, 26, 26, 1);
   border-radius: 32px;
   overflow: hidden;
-  transition: border-color 0.1s ease;
+  transition: border-color 0.2s ease;
 }
 
 .whiteborderonhover:hover {
