@@ -1,4 +1,3 @@
-import React from "react";
 import { Instagram, X as XIcon, Youtube, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 
 type DetailSection = { heading: string; body: string };

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 
 interface FAQItem {
