@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLayoutEffect, useRef, useState } from "react";
 
 export default function Navbar() {
@@ -87,6 +87,13 @@ export default function Navbar() {
                   {item}
                 </a>
               ))}
+              <Link
+                to="/api"
+                className="parallax-small text-d-white hover:text-d-orange transition-colors duration-200 px-2 py-1 rounded"
+                onMouseEnter={() => setActiveMenu(null)}
+              >
+                API
+              </Link>
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
