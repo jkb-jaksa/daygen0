@@ -12,7 +12,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="mt-8">
+    <footer>
       {/* Gradient panel */}
       <section className="relative color-gradient">
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-8 pb-40">
