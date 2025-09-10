@@ -324,7 +324,7 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
   return (
     <div
       className={cx(
-        "group tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-5 parallax",
+        "group tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-5 parallax-small",
         "transition-all duration-200 cursor-pointer h-full flex flex-col"
       )}
       onMouseMove={onMove}
@@ -350,7 +350,7 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
           learn more
         </Link>
       ) : (
-        <button type="button" className="relative z-10 self-start mt-4 btn btn-white text-black">
+        <button type="button" className="relative z-10 self-start mt-4 btn btn-white parallax-small text-black">
           learn more
         </button>
       )}
@@ -391,7 +391,7 @@ export default function ToolsSection() {
                   type="button"
                   onClick={() => setActiveCategory(label)}
                   className={cx(
-                    "parallax flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0",
+                    "parallax-small flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0",
                     isActive ? "text-d-light hover:text-d-orange" : "text-d-white hover:text-d-orange"
                   )}
                   aria-pressed={isActive}

@@ -32,7 +32,7 @@ export default function Footer() {
                   href="https://x.com"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group parallax size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
+                  className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
                   aria-label="X"
                 >
                   <XIcon className="size-4 text-b-text transition-colors duration-200 group-hover:text-d-orange" />
@@ -41,7 +41,7 @@ export default function Footer() {
                   href="https://instagram.com"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group parallax size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
+                  className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
                   aria-label="Instagram"
                 >
                   <Instagram className="size-4 text-b-text transition-colors duration-200 group-hover:text-d-orange" />
@@ -50,7 +50,7 @@ export default function Footer() {
                   href="https://youtube.com"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group parallax size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
+                  className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
                   aria-label="YouTube"
                 >
                   <Youtube className="size-4 text-b-text transition-colors duration-200 group-hover:text-d-orange" />
@@ -58,9 +58,9 @@ export default function Footer() {
               </div>
 
               <nav className="flex flex-col gap-3 text-base font-raleway">
-                <a href="#" className="text-b-white hover:text-d-orange transition-colors">privacy policy</a>
-                <Link to="/" className="text-b-white hover:text-d-orange transition-colors">FAQ</Link>
-                <a href="#" className="text-b-white hover:text-d-orange transition-colors">hire us</a>
+                <a href="#" className="parallax-small text-b-white hover:text-d-orange transition-colors">privacy policy</a>
+                <Link to="/" className="parallax-small text-b-white hover:text-d-orange transition-colors">FAQ</Link>
+                <a href="#" className="parallax-small text-b-white hover:text-d-orange transition-colors">hire us</a>
               </nav>
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function Footer() {
         <button
           onClick={scrollToTop}
           aria-label="Back to top"
-          className="absolute right-6 top-1/2 -translate-y-1/2 size-9 grid place-items-center rounded-xl bg-white/5 border border-d-black text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors"
+          className="parallax-large absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-d-text hover:text-d-orange hover:border-b-dark transition-colors duration-200"
         >
           <ChevronUp className="size-4" />
         </button>

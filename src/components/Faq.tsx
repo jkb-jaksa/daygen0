@@ -47,6 +47,32 @@ const FAQSection: React.FC = () => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
+  // Match product card hover glow/parallax behavior
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--x", `${x.toFixed(2)}%`);
+    el.style.setProperty("--y", `${y.toFixed(2)}%`);
+    const tx = (x - 50) / 10;
+    const ty = (y - 50) / 10;
+    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  };
+
+  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "200ms");
+    el.style.setProperty("--l", "1");
+  };
+
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "400ms");
+    el.style.setProperty("--l", "0");
+  };
+
   return (
     <div className="relative bg-[#0b0b0c]">
       {/* Gray header strip with heading */}
@@ -61,31 +87,30 @@ const FAQSection: React.FC = () => {
       </section>
 
       {/* FAQ content section */}
-      <section className="py-24 px-6">
+      <section className="py-12 px-6">
         <div className="mx-auto max-w-[85rem]">
           {/* FAQ Items */}
           <div className="mx-auto max-w-4xl space-y-4">
             {faqData.map((item, index) => (
               <div
                 key={index}
-                className={`rounded-3xl overflow-hidden transition-all duration-200 ${
-                  openIndex === index
-                    ? "bg-zinc-800/50 border border-zinc-700/50"
-                    : "bg-zinc-900/50 border border-zinc-800/50"
-                }`}
+                className={`parallax-small tag-gradient relative rounded-[32px] overflow-hidden cursor-pointer border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200`}
+                onMouseMove={onMove}
+                onMouseEnter={onEnter}
+                onMouseLeave={onLeave}
               >
                 <button
                   onClick={() => toggleQuestion(index)}
-                  className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-zinc-800/30 transition-colors duration-200"
+                  className="w-full px-8 py-3 flex items-center justify-between text-left appearance-none bg-transparent border-0 focus:outline-none focus:ring-0"
                 >
-                  <span className="text-d-white text-lg font-normal pr-4 font-raleway">
+                  <span className="text-d-text text-base font-normal pr-4 font-raleway">
                     {item.question}
                   </span>
                   <div className="flex-shrink-0 size-8 flex items-center justify-center">
                     {openIndex === index ? (
-                      <Minus className="text-d-white size-5" />
+                      <Minus className="text-d-white size-4" />
                     ) : (
-                      <Plus className="text-d-white size-5" />
+                      <Plus className="text-d-white size-4" />
                     )}
                   </div>
                 </button>
@@ -96,7 +121,7 @@ const FAQSection: React.FC = () => {
                     openIndex === index ? "max-h-48" : "max-h-0"
                   }`}
                 >
-                  <div className="px-8 pb-6">
+                  <div className="px-8 pb-4">
                     <p className="text-d-white text-base leading-relaxed font-raleway">
                       {item.answer}
                     </p>

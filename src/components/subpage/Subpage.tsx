@@ -830,7 +830,7 @@ export default function Subpage() {
 
         {conf.cta && (
           <div className="mt-10">
-            <button className="btn btn-white text-black">
+            <button className="btn btn-white parallax-small text-black">
               {conf.cta.text}
             </button>
           </div>
@@ -854,7 +854,7 @@ export default function Subpage() {
                 <h3 className="text-lg font-cabin">{t.title}</h3>
               </div>
               <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>
-              <button className="mt-4 btn btn-white text-black">
+              <button className="mt-4 btn btn-white parallax-small text-black">
                 learn more
               </button>
             </div>
@@ -874,7 +874,7 @@ export default function Subpage() {
               <li key={i}>{b}</li>
             ))}
           </ul>
-              <button className="mt-8 btn btn-white text-black">
+              <button className="mt-8 btn btn-white parallax-small text-black">
                 {conf.ctaLabel}
               </button>
         </div>
@@ -904,12 +904,20 @@ function FaqRow({ q, a }: { q: string; a: string }) {
     <div className="rounded-2xl overflow-hidden border border-d-black bg-white/5">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-6 py-4 text-left"
+        className={
+          "w-full flex items-center justify-between text-left px-6 py-4 transition-colors duration-200"
+        }
       >
-        <span className="text-d-text font-cabin">{q}</span>
-        <span className="text-d-text/70">{open ? "–" : "+"}</span>
+        <span className="text-d-text text-base font-raleway">{q}</span>
+        <span className="text-d-text/70 text-base">{open ? "–" : "+"}</span>
       </button>
-      {open && <div className="px-6 pb-5 text-d-text/80 font-raleway">{a}</div>}
+      <div
+        className={`overflow-hidden transition-all duration-200 ease-in-out ${
+          open ? "max-h-48" : "max-h-0"
+        }`}
+      >
+        <div className="px-6 pb-5 text-d-white text-base leading-relaxed font-raleway">{a}</div>
+      </div>
     </div>
   );
 }

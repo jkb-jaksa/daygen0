@@ -7,7 +7,8 @@
   --nav-h: 64px; /* Navbar height used for hero offset */
   /* Daygen dark palette */
   --d-text: #FAFAFA;
-  --d-white: #D2D8D8;
+  /* Slightly darken d-white globally (very subtle) */
+  --d-white: #CED4D4;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
   --d-light: #8E9393;
   /* Mid tone: made a bit lighter for hover/border contrast */
@@ -35,6 +36,7 @@ html, body {
 
 
 .herogradient {
+  background-blend-mode: screen;
   background-color: #000;
   background-image:
     radial-gradient(60% 36% at -5% -15%,
@@ -70,69 +72,27 @@ html, body {
     );
 
   background-repeat: no-repeat;
-  background-blend-mode: screen;
-}
-
-.pink-menu2 {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-.pink-menu2::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
-  border-radius: 4px;
-  background: linear-gradient(
-    150deg,
-    hsla(0, 0%, 90%, 0.4) 0%,
-    hsla(193, 100%, 100%, 0.4) 20%,
-    hsla(242, 100%, 90%, 0.4) 40%,
-    hsla(300, 100%, 90%, 0.4) 60%,
-    hsla(46, 100%, 100%, 0.4) 90%,
-    hsla(0, 0%, 90%, 0.4) 100%
-  );
-  opacity: 0;
-  filter: blur(0);
-  transition: opacity 0.2s ease, filter 0.2s ease;
-}
-
-.pink-menu2:hover::before {
-  opacity: 1;
-  filter: blur(16px);
 }
 
 /* Orange gradient pill button with blurred overlay */
 .btn-orange {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
   background: none;
-  padding: 4px 32px;
   border-radius: 32px;
-  overflow: hidden;
-  will-change: transform;
-  transition: all 0.2s ease;
   box-sizing: border-box;
+  display: inline-flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px 32px;
+  position: relative;
+  transition: all 0.2s ease;
+  will-change: transform;
+  z-index: 1;
   --warm1: var(--d-orange-1, #faaa16);
   --warm2: var(--d-orange-2, #e43a63);
 }
 
 .btn-orange::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  filter: blur(2px);
-  border-radius: 32px;
-  transition: all 0.2s ease;
   background:
     linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
     linear-gradient(
@@ -142,6 +102,13 @@ html, body {
       var(--warm2) 88%,
       var(--warm2) 100%
     );
+  border-radius: 32px;
+  content: "";
+  filter: blur(2px);
+  inset: 0;
+  position: absolute;
+  transition: all 0.2s ease;
+  z-index: -1;
 }
 
 @supports (background: linear-gradient(in oklch, red, blue)) {
@@ -247,12 +214,12 @@ html, body {
       );
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    display: inline-block;
     background-repeat: no-repeat;
     background-size: 100% 100%;
+    color: transparent;
+    display: inline-block;
     padding-bottom: 0.08em; /* avoid descender clipping */
+    -webkit-text-fill-color: transparent;
   }
 }
 
@@ -268,13 +235,23 @@ html, body {
       );
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    display: inline-block;
     background-repeat: no-repeat;
     background-size: 100% 100%;
+    color: transparent;
+    display: inline-block;
     padding-bottom: 0.08em; /* avoid descender clipping */
+  -webkit-text-fill-color: transparent;
   }
+}
+
+/* Simple reusable fade-in utility for 200ms transitions */
+.fade-in-200 {
+  animation: fade-in-200 200ms ease;
+}
+
+@keyframes fade-in-200 {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Performance hint for transform/opacity transitions */
@@ -293,8 +270,6 @@ html, body {
   backdrop-filter: blur(72px) brightness(.5) contrast(1.1) saturate(.7) hue-rotate(0deg);
 }
 
-/* Liquid glass effect removed per design revert */
-
 /* Subtle white gradient text for 'day' */
 .text-white-gradient {
   color: #fff; /* fallback */
@@ -310,12 +285,12 @@ html, body {
     );
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    display: inline-block;
     background-repeat: no-repeat;
     background-size: 100% 100%;
+    color: transparent;
+    display: inline-block;
     padding-bottom: 0.08em; /* avoid descender clipping */
+    -webkit-text-fill-color: transparent;
   }
 }
 
@@ -330,12 +305,20 @@ html, body {
       var(--d-orange-2) 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    display: inline-block;
     background-repeat: no-repeat;
     background-size: 100% 100%;
+    color: transparent;
+    display: inline-block;
     padding-bottom: 0.08em; /* avoid descender clipping */
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* Softer, lighter warm for active states */
+.text-d-orange-soft { color: #ffc977; }
+@supports (color: color-mix(in oklch, red, white)) {
+  .text-d-orange-soft {
+    color: color-mix(in oklch, var(--d-orange-1) 65%, white 35%);
   }
 }
 
@@ -345,6 +328,7 @@ html, body {
   --cg-shine: 0.12; /* faint vertical sheen */
   --cg-a1: 0.36; /* gold/cyan edges */
   --cg-a2: 0.30; /* magenta/blue mids */
+  background-blend-mode: overlay, screen;
 
   background-color: var(--d-black);
   background-image:
@@ -358,15 +342,6 @@ html, body {
       hsla(226, 95%, 72%, var(--cg-a2)) 66.666%,
       hsla(182, 85%, 70%, var(--cg-a1)) 100%
     );
-  background-blend-mode: overlay, screen;
-}
-
-/* Softer, lighter warm for active states */
-.text-d-orange-soft { color: #ffc977; }
-@supports (color: color-mix(in oklch, red, white)) {
-  .text-d-orange-soft {
-    color: color-mix(in oklch, var(--d-orange-1) 65%, white 35%);
-  }
 }
 
 /* Alias utility for design token d-light */
@@ -374,9 +349,9 @@ html, body {
 
 /* Interactive glow gradient for cards */
 .tag-gradient {
-  position: relative;
-  overflow: hidden;
   isolation: isolate;
+  overflow: hidden;
+  position: relative;
 
   /* defaults */
   --x: 50%;
@@ -395,10 +370,6 @@ html, body {
 .tag-gradient:hover { --li: 1.18; }
 
 .tag-gradient::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  z-index: -2;
   background: linear-gradient(150deg,
     hsla(38,  35%, 68%, 0.03)  0%,
     hsla(342, 32%, 70%, 0.04) 20%,
@@ -407,34 +378,38 @@ html, body {
     hsla(226, 30%, 70%, 0.07) 80%,
     hsla(182, 28%, 68%, 0.08) 100%
   );
+  content: "";
   filter: blur(24px) brightness(1.06);
+  inset: -2px;
   opacity: var(--idle-op);
+  position: absolute;
   transition: opacity 0.2s ease;
   will-change: opacity;
+  z-index: -2;
 }
 
 .tag-gradient:hover::before {
-  opacity: var(--hover-op);
   filter: blur(24px) brightness(1.12);
+  opacity: var(--hover-op);
 }
 
 .tag-gradient::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  z-index: 3;
-  pointer-events: none;
-  opacity: calc(0.0001 + var(--l));
   background: radial-gradient(200px 200px at var(--x) var(--y),
       rgb(255 255 255 / calc(0.16 * var(--l) * var(--li))),
       rgb(255 255 255 / calc(0.06 * var(--l) * var(--li))) 45%,
       rgb(255 255 255 / 0) 60%);
-  mix-blend-mode: screen;
+  content: "";
   filter: blur(96px);
+  inset: -2px;
+  mix-blend-mode: screen;
+  opacity: calc(0.0001 + var(--l));
+  pointer-events: none;
+  position: absolute;
   transform: translate3d(var(--tx), var(--ty), 0);
   transition: opacity var(--fade-ms) cubic-bezier(.22,.61,.36,1),
               transform 200ms ease;
   will-change: opacity, transform;
+  z-index: 3;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -444,29 +419,29 @@ html, body {
 
 /* Soft white pill button with blurred overlay */
 .btn-white {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
   background: none;
-  padding: 4px 32px; /* match btn-orange */
   border-radius: 32px;
-  overflow: hidden;
-  will-change: transform;
-  transition: all 0.2s ease;
   box-sizing: border-box;
+  display: inline-flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px 32px; /* match btn-orange */
+  position: relative;
+  transition: all 0.2s ease;
+  will-change: transform;
+  z-index: 1;
 }
 
 .btn-white::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
   background: rgba(240, 250, 255, 1);
-  filter: blur(2px);
   border-radius: 32px;
+  content: "";
+  filter: blur(2px);
+  inset: 0;
+  position: absolute;
   transition: all 0.2s ease;
+  z-index: -1;
 }
 
 .btn-white:hover {
@@ -475,79 +450,10 @@ html, body {
 
 .btn-white:hover::before {
   background: rgba(245, 255, 255, 1);
-  filter: blur(2px);
   border-radius: 32px;
+  filter: blur(2px);
 }
 
-.parallax-btn {
-  perspective: 1000px;
-}
-
-.parallax-btn:hover {
-  transform: translateZ(200px) scale(1.01);
-  transition: transform 0.2s;
-}
-
-
-
-.pink {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-.pink::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
-  border-radius: 4px;
-  background: linear-gradient(
-    150deg,
-    hsla(0, 0%, 90%, 0.4) 0%,
-    hsla(193, 100%, 100%, 0.4) 20%,
-    hsla(242, 100%, 90%, 0.4) 40%,
-    hsla(300, 100%, 90%, 0.4) 60%,
-    hsla(46, 100%, 100%, 0.4) 90%,
-    hsla(0, 0%, 90%, 0.4) 100%
-  );
-  opacity: 0;
-  filter: blur(0);
-  transition: opacity 0.2s ease, filter 0.2s ease;
-}
-
-.pink:hover::before {
-  opacity: 1;
-  filter: blur(16px);
-}
-
-.pink:hover .elementor-heading-title {
-  font-weight: 600;
-  letter-spacing: -0.2px;
-  transition: font-weight 0s, letter-spacing 0s;
-}
-
-.brightness:hover .nested-container {
-  filter: brightness(1.5); /* Adjust value to increase brightness */
-  transition: 0.2s;
-}
-
-.daygengradient {
-  background: linear-gradient(
-    150deg,
-    hsla(210, 55%, 91%, 0.08) 0%,
-    hsla(195, 90%, 88%, 0.12) 20%,
-    hsla(230, 85%, 90%, 0.14) 40%,
-    hsla(265, 80%, 89%, 0.12) 60%,
-    hsla(180, 75%, 92%, 0.1) 80%,
-    hsla(210, 50%, 87%, 0.08) 100%
-  );
-}
-
-/* old tag-gradient block removed; unified above with interactive glow version */
 
 .white-gradient {
   background: linear-gradient(
@@ -562,217 +468,24 @@ html, body {
   filter: blur(24px);
 }
 
-.daygenblack {
-  background-color: #000;
-  background-image: radial-gradient(
-      circle at 0% 0%,
-      hsla(210, 35%, 92%, 0.13),
-      transparent 20vmax
-    ),
-    radial-gradient(
-      circle at 100% 0%,
-      hsla(195, 70%, 89%, 0.13),
-      transparent 20vmax
-    ),
-    radial-gradient(
-      circle at 0% 100%,
-      hsla(230, 65%, 91%, 0.13),
-      transparent 20vmax
-    ),
-    radial-gradient(
-      circle at 100% 100%,
-      hsla(265, 60%, 90%, 0.13),
-      transparent 20vmax
-    );
-  background-repeat: no-repeat;
-  overflow-x: hidden;
-}
 
-.daygenblack1 {
-  background-color: #000;
-  background-image: radial-gradient(
-      circle at 0% 0%,
-      hsla(210, 35%, 92%, 0.13),
-      transparent 0vmax
-    ),
-    radial-gradient(
-      circle at 100% 0%,
-      hsla(195, 70%, 89%, 0.13),
-      transparent 33vmax
-    ),
-    radial-gradient(
-      circle at 0% 100%,
-      hsla(230, 65%, 91%, 0.13),
-      transparent 33vmax
-    ),
-    radial-gradient(
-      circle at 100% 100%,
-      hsla(265, 60%, 90%, 0.13),
-      transparent 33vmax
-    );
-  background-repeat: no-repeat;
-  overflow-x: hidden;
-}
-
-.nested-container {
-  transition: border-color 0.2s ease-out, border-width 0.2s ease-out !important;
-}
-
-.parallax {
+.parallax-large {
   perspective: 1000px;
-}
-
-.parallax:hover {
-  transform: translateZ(100px) scale(1.01);
   transition: transform 0.2s;
 }
 
-.parallax:hover .nested-container {
-  border-color: white !important;
-  border-width: 2px;
-  transition: border-color 0.2s, border-width 0.2s !important;
+/* Keep Tailwind translate/rotate/skew while scaling on hover */
+.parallax-large:hover {
+  --tw-scale-x: 1.01;
+  --tw-scale-y: 1.01;
 }
 
-.parallax-button {
+/* Slightly subtler parallax for small/FAQ cards */
+.parallax-small {
   perspective: 1000px;
 }
 
-.parallax-button:hover {
-  transform: translateZ(200px) scale(1.01);
+.parallax-small:hover {
+  transform: translateZ(100px) scale(1.005);
   transition: transform 0.2s;
-}
-
-.parallax-button2 {
-  perspective: 1000px;
-}
-
-.parallax-button2:hover {
-  transform: translateZ(200px) scale(1.01);
-  transition: transform 0.2s;
-}
-
-.parallaxcard {
-  perspective: 1000px;
-}
-
-.parallaxcard:hover {
-  transform: translateZ(200px) scale(1.01);
-  transition: transform 0.2s ease;
-}
-
-.parallaxcard2 {
-  perspective: 1000px;
-}
-
-.parallaxcard2:hover {
-  transform: translateZ(200px) scale(1.01);
-  transition: transform 0.2s ease;
-}
-
-.parallaxfaq {
-  perspective: 1000px;
-}
-
-.parallaxfaq:hover {
-  transform: translateZ(200px) scale(1.005);
-  transition: transform 0.2s ease;
-}
-
-.parallaxheader {
-  perspective: 1000px;
-}
-
-.parallaxheader:hover {
-  transform: translateZ(200px) scale(1.01);
-  transition: transform 0.2s ease;
-}
-
-.hover-faq {
-  position: relative;
-  padding: 2px;
-  border-radius: 32px;
-  overflow: hidden;
-}
-
-.hover-faq::before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  z-index: -1;
-  background: linear-gradient(
-    150deg,
-    hsla(0, 5%, 65%, 0.02) 0%,
-    hsla(193, 95%, 95%, 0.03) 20%,
-    hsla(242, 95%, 85%, 0.04) 40%,
-    hsla(300, 95%, 85%, 0.05) 60%,
-    hsla(46, 95%, 95%, 0.06) 80%,
-    hsla(0, 5%, 65%, 0.07) 100%
-  );
-  filter: blur(24px);
-  border-radius: 32px;
-  transition: all 0.2s ease;
-}
-
-.hover-faq:hover {
-  overflow: visible;
-}
-
-.hover-faq:hover::before {
-  background: linear-gradient(
-    150deg,
-    hsla(0, 5%, 75%, 0.05) 0%,
-    hsla(193, 95%, 95%, 0.07) 20%,
-    hsla(242, 95%, 85%, 0.09) 40%,
-    hsla(300, 95%, 85%, 0.11) 60%,
-    hsla(46, 95%, 95%, 0.13) 80%,
-    hsla(0, 5%, 65%, 0.15) 100%
-  );
-}
-
-.whiteborderonhover {
-  border: 1px solid rgba(23, 26, 26, 1);
-  border-radius: 32px;
-  overflow: hidden;
-  transition: border-color 0.2s ease;
-}
-
-.whiteborderonhover:hover {
-  border-color: rgba(255, 255, 255, 1);
-}
-
-.pink-menu {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.pink-menu::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
-  border-radius: 8px;
-  background: linear-gradient(
-    150deg,
-    hsla(0, 0%, 90%, 0.4) 0%,
-    hsla(193, 100%, 100%, 0.4) 20%,
-    hsla(242, 100%, 90%, 0.4) 40%,
-    hsla(300, 100%, 90%, 0.4) 60%,
-    hsla(46, 100%, 100%, 0.4) 90%,
-    hsla(0, 0%, 90%, 0.4) 100%
-  );
-  opacity: 0;
-  filter: blur(0);
-  transition: opacity 0.1s ease, filter 0.1s ease;
-}
-
-.pink-menu:hover::before {
-  opacity: 1;
-  filter: blur(16px);
 }

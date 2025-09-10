@@ -74,14 +74,14 @@ export default function Navbar() {
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-large h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-raleway">
               {items.map((item) => (
                 <a
                   key={item}
                   href="#"
-                  className="parallax text-d-white hover:text-d-orange transition-colors duration-200 px-2 py-1 rounded"
+                  className="parallax-small text-d-white hover:text-d-orange transition-colors duration-200 px-2 py-1 rounded"
                   onMouseEnter={() => setActiveMenu(item)}
                 >
                   {item}
@@ -90,13 +90,13 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            <button className="btn btn-white parallax-btn text-black">
+            <button className="btn btn-white parallax-small text-black">
               Log In
             </button>
-            <button className="btn btn-orange parallax-btn text-black">
+            <button className="btn btn-orange parallax-small text-black">
               Sign Up
             </button>
-            <button aria-label="Search" className="size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white">
+            <button aria-label="Search" className="parallax-large size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white">
               <Search className="size-5" />
             </button>
           </div>
@@ -114,7 +114,7 @@ export default function Navbar() {
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
             {activeMenu && (
-              <div className="text-d-text">
+              <div key={activeMenu} className="fade-in-200 text-d-text">
                 <div className="text-xl font-light font-cabin mb-2">
                   {activeMenu}
                 </div>
