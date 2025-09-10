@@ -5,6 +5,7 @@ import ToolsSection from "./components/ToolsSection";
 import ContactSection from "./components/ContactSection";
 import FAQSection from "./components/Faq";
 import Subpage from "./components/subpage/Subpage";
+import Footer from "./components/Footer";
 
 function Home() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/ai-tools/:id" element={<Subpage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <Footer />
       </div>
     </BrowserRouter>
   );

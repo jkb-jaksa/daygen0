@@ -14,6 +14,16 @@ module.exports = {
           black: 'var(--d-black)',
           orange: 'var(--d-orange-1)'
         },
+        // Alias palette for testing (maps to d- tokens)
+        b: {
+          text: 'var(--d-text)',
+          white: 'var(--d-white)',
+          light: 'var(--d-light)',
+          mid: 'var(--d-mid)',
+          dark: 'var(--d-dark)',
+          black: 'var(--d-black)',
+          orange: 'var(--d-orange-1)'
+        },
         // Back-compat aliases (optional)
         text: { DEFAULT: 'var(--d-text)' },
         border: {

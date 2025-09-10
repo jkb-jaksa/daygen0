@@ -161,6 +161,38 @@ html, body {
   }
 }
 
+/* Warm gradient panel background (matches btn-orange gradient) */
+.panel-warm-bg {
+  --warm1: var(--d-orange-1, #faaa16);
+  --warm2: var(--d-orange-2, #e43a63);
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
+    linear-gradient(
+      150deg,
+      var(--warm1) 0%,
+      var(--warm1) 26%,
+      var(--warm2) 88%,
+      var(--warm2) 100%
+    );
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .panel-warm-bg {
+    background:
+      linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
+      linear-gradient(
+        in oklch 150deg,
+        var(--d-orange-1) 0%,
+        var(--d-orange-1) 26%,
+        color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
+        color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
+        color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
+        var(--d-orange-2) 88%,
+        var(--d-orange-2) 100%
+      );
+  }
+}
+
 .btn-orange:hover {
   overflow: hidden;
 }
@@ -305,6 +337,28 @@ html, body {
     background-size: 100% 100%;
     padding-bottom: 0.08em; /* avoid descender clipping */
   }
+}
+
+/* Thin separator gradient line utility */
+.color-gradient {
+  /* Boosted for clearer read on dark bg */
+  --cg-shine: 0.12; /* faint vertical sheen */
+  --cg-a1: 0.36; /* gold/cyan edges */
+  --cg-a2: 0.30; /* magenta/blue mids */
+
+  background-color: var(--d-black);
+  background-image:
+    linear-gradient(180deg,
+      rgba(255,255,255,var(--cg-shine)) 0%,
+      rgba(255,255,255,0) 35%
+    ),
+    linear-gradient(150deg,
+      hsla(48, 95%, 70%, var(--cg-a1)) 0%,
+      hsla(342, 92%, 72%, var(--cg-a2)) 33.333%,
+      hsla(226, 95%, 72%, var(--cg-a2)) 66.666%,
+      hsla(182, 85%, 70%, var(--cg-a1)) 100%
+    );
+  background-blend-mode: overlay, screen;
 }
 
 /* Softer, lighter warm for active states */

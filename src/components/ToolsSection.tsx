@@ -362,11 +362,11 @@ export default function ToolsSection() {
   return (
     <div className="min-h-screen bg-black text-d-text">
       {/* Hero Section */}
-      <section className="relative w-full overflow-hidden bg-gray-600 border-b border-white/5">
+      <section className="relative w-full overflow-hidden color-gradient border-b border-d-black">
         <div className="mx-auto max-w-[85rem] px-6 py-16  justify-items-center">
-          <h1 className="text-5xl font-light tracking-tight text-d-text sm:text-6xl -mt-1 font-cabin">
+          <h2 className="text-5xl font-normal text-d-text font-raleway">
             tools
-          </h1>
+          </h2>
         </div>
         {/* Subtle gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent" />

@@ -15,11 +15,11 @@ const HeroPage: React.FC = () => {
             <h1 className="text-6xl font-light tracking-tight leading-[1.1] font-cabin">
               go beyond.
             </h1>
-            <h2 className=" text-5xl font-light text-d-white font-raleway">
+            <h2 className=" text-5xl font-normal text-d-text font-raleway">
               master creative AI tools in one place.
             </h2>
           </div>
-          <div className="text-5xl font-light tracking-tight font-raleway leading-[1.05] self-start">
+          <div className="text-5xl font-normal tracking-tight font-raleway leading-[1.05] self-start">
             <span className="text-white-gradient">day</span>
             <span className="text-d-orange">gen</span>
           </div>
@@ -37,7 +37,7 @@ const HeroPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="what do you want to do?"
-                className="w-full h-14 rounded-full bg-[#2f3235] text-d-white placeholder-d-white/60 px-12 border border-d-white/15 focus:outline-none focus:ring-2 focus:ring-zinc-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                className="w-full h-12 rounded-full bg-b-mid text-d-white placeholder-d-white/60 px-12 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
               />
             </div>
           </div>

@@ -49,11 +49,11 @@ const FAQSection: React.FC = () => {
   return (
     <div className="relative bg-[#0b0b0c]">
       {/* Gray header strip with heading */}
-      <section className="relative w-full overflow-hidden bg-gray-600 border-b border-white/5">
+      <section className="relative w-full overflow-hidden color-gradient border-b border-d-black">
         <div className="mx-auto max-w-[85rem] px-6 py-16 justify-items-center">
-          <h1 className="text-5xl font-light tracking-tight text-d-text sm:text-6xl -mt-1 text-center font-cabin">
+          <h2 className="text-5xl font-normal text-d-text text-center font-raleway">
             FAQ
-          </h1>
+          </h2>
         </div>
         {/* Subtle gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent" />
