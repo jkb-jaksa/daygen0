@@ -608,3 +608,28 @@ html, body {
 .promptbar.drag-active {
   border-color: var(--d-orange-1);
 }
+
+/* Action buttons overlayed on generated image */
+.image-action-btn {
+  align-items: center;
+  background-color: rgba(14, 18, 18, 0.55);
+  border: 1px solid var(--d-mid);
+  border-radius: 9999px;
+  color: var(--d-text);
+  display: inline-grid;
+  height: 32px; /* match footer size-8 */
+  justify-content: center;
+  padding: 0.375rem; /* 6px padding ensures icon doesn't touch edges */
+  place-items: center;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s;
+  width: 32px; /* match footer size-8 */
+  -webkit-backdrop-filter: blur(96px) brightness(.6) contrast(1.1) saturate(.8);
+  backdrop-filter: blur(96px) brightness(.6) contrast(1.1) saturate(.8);
+  perspective: 1000px;
+}
+.image-action-btn:hover {
+  background-color: rgba(14, 18, 18, 0.55); /* keep same bg */
+  border-color: var(--d-mid); /* keep same border */
+  color: var(--d-orange-1);
+  transform: scale(1.01);
+}

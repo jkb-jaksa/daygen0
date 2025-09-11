@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2 } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 
 // Accent styles for tool icons (matching ToolsSection)
@@ -32,9 +32,11 @@ const Platform: React.FC = () => {
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
       {children}
-      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-md bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-50">
-        {text}
-      </div>
+      {text && (
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-md bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-50">
+          {text}
+        </div>
+      )}
     </div>
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +53,7 @@ const Platform: React.FC = () => {
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
+  const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   
   // Use the Gemini image generation hook
   const {
@@ -102,6 +105,13 @@ const Platform: React.FC = () => {
     // create previews
     const readers = combined.map(f => URL.createObjectURL(f));
     setReferencePreviews(readers);
+  };
+
+  const handleClearGenerated = () => {
+    clearGeneratedImage();
+    // Keep references hidden after closing generated image
+    setReferenceFiles([]);
+    setReferencePreviews([]);
   };
 
   const clearReference = (idx: number) => {
@@ -255,19 +265,38 @@ const Platform: React.FC = () => {
 
           {/* Prompt input with + for references and drag & drop (flex layout) */}
           <div 
-            className={`promptbar w-full max-w-xl mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 py-3`}
+            className={`promptbar relative w-full max-w-xl mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 pt-3 pb-10`}
             onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
           >
-            <div className="flex items-end gap-2">
+            <div>
               <textarea
                 placeholder="Describe what you want to create..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={2}
-                className="flex-1 min-h-[68px] bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 font-raleway text-base px-0 pt-0 pb-2 leading-tight resize-none"
+                className="w-full min-h-[68px] max-h-40 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 font-raleway text-base pl-2 pr-44 pt-0 pb-2 leading-tight resize-none overflow-auto text-left"
               />
+            </div>
+            <div className="absolute right-2 bottom-2">
+              <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
+                <button 
+                  onClick={handleGenerateImage}
+                  disabled={isLoading || !prompt.trim() || !isBanana}
+                  className="btn btn-orange text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4" />
+                  )}
+                  {isLoading ? "Generating..." : "Generate"}
+                </button>
+              </Tooltip>
+            </div>
+            {/* Left icons overlayed so they don't shift textarea left edge */}
+            <div className="absolute left-2 bottom-2 flex items-center gap-0.5 pointer-events-auto">
               <button
                 type="button"
                 onClick={isBanana ? handleRefsClick : undefined}
@@ -278,17 +307,13 @@ const Platform: React.FC = () => {
               >
                 <Plus className="w-4 h-4" />
               </button>
-              <button 
-                onClick={handleGenerateImage}
-                disabled={isLoading || !prompt.trim() || !isBanana}
-                className="btn btn-orange text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
+              <button
+                type="button"
+                title="Settings"
+                aria-label="Settings"
+                className="bg-d-black/40 hover:bg-d-black text-d-white border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0"
               >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Wand2 className="w-4 h-4" />
-                )}
-                {isLoading ? "Generating..." : "Generate"}
+                <Settings className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -333,13 +358,53 @@ const Platform: React.FC = () => {
                 <img 
                   src={generatedImage.url} 
                   alt="Generated image" 
-                  className="w-full h-64 object-cover"
+                  className="w-full h-64 object-cover cursor-zoom-in"
+                  onClick={() => setIsFullSizeOpen(true)}
                   onLoad={() => console.log('Image loaded successfully')}
                   onError={(e) => console.error('Image failed to load:', e)}
                 />
                 <button
-                  onClick={clearGeneratedImage}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
+                  onClick={handleClearGenerated}
+                  className="absolute top-2 right-2 image-action-btn"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                  <a
+                    href={generatedImage.url}
+                    download
+                    className="image-action-btn"
+                    title="Download image"
+                    aria-label="Download image"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setIsFullSizeOpen(true)}
+                    className="image-action-btn"
+                    title="Display full size"
+                    aria-label="Display full size"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Full-size image modal */}
+          {isFullSizeOpen && generatedImage && (
+            <div
+              className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+              onClick={() => setIsFullSizeOpen(false)}
+            >
+              <div className="relative max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                <img src={generatedImage.url} alt="Full size generated" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+                <button
+                  onClick={() => setIsFullSizeOpen(false)}
+                  className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
+                  aria-label="Close full size view"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -369,8 +434,8 @@ const Platform: React.FC = () => {
             </div>
           )}
 
-          {/* Reference Images Preview */}
-          {referencePreviews.length > 0 && (
+          {/* Reference Images Preview - hide when generated image exists */}
+          {referencePreviews.length > 0 && !generatedImage && (
             <div className="w-full max-w-md mx-auto mb-8">
               <div
                 className={`relative rounded-[32px] bg-d-black p-3 transition-colors duration-200 border ${isRefsDragging && isBanana ? 'border-brand' : 'border-d-mid'}`}
