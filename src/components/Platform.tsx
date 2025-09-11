@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, Upload, X, Sparkles, Film, Package, Leaf, Loader2, Plus } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 
 // Accent styles for tool icons (matching ToolsSection)
@@ -77,9 +77,7 @@ const Platform: React.FC = () => {
     }
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  
 
   const handleRefsClick = () => {
     refsInputRef.current?.click();
@@ -255,33 +253,47 @@ const Platform: React.FC = () => {
             </div>
           )}
 
-          {/* Prompt input with + for references and drag & drop */}
+          {/* Prompt input with + for references and drag & drop (flex layout) */}
           <div 
-            className={`relative w-full max-w-xl mb-6 rounded-[999px] transition-colors duration-200 border ${isDragging && isBanana ? 'border-brand' : 'border-transparent'}`}
+            className={`promptbar w-full max-w-xl mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 py-3`}
             onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
           >
-            <input
-              type="text"
-              placeholder="Describe what you want to create..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="w-full py-3 pl-6 pr-14 rounded-full bg-d-mid text-d-white placeholder-d-white/60 border border-d-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway text-base transition-colors duration-200"
-            />
-            {/* Plus icon trigger */}
-            <button
-              type="button"
-              onClick={isBanana ? handleRefsClick : undefined}
-              title="Add reference image"
-              disabled={!isBanana}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-9 rounded-full border ${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'}`}
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            <div className="flex items-end gap-2">
+              <textarea
+                placeholder="Describe what you want to create..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={2}
+                className="flex-1 min-h-[68px] bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 font-raleway text-base px-0 pt-0 pb-2 leading-tight resize-none"
+              />
+              <button
+                type="button"
+                onClick={isBanana ? handleRefsClick : undefined}
+                title="Add reference image"
+                aria-label="Add reference image"
+                disabled={!isBanana}
+                className={`${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0`}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handleGenerateImage}
+                disabled={isLoading || !prompt.trim() || !isBanana}
+                className="btn btn-orange text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                {isLoading ? "Generating..." : "Generate"}
+              </button>
+            </div>
           </div>
           
-          <div className="flex gap-4 mb-8">
+          <div className="flex gap-4">
             <input
               ref={fileInputRef}
               type="file"
@@ -297,25 +309,6 @@ const Platform: React.FC = () => {
               onChange={handleRefsSelected}
               className="hidden"
             />
-            <button 
-              onClick={handleUploadClick}
-              className="btn btn-white parallax-small text-black flex items-center gap-1"
-            >
-              <Upload className="w-4 h-4" />
-              Upload
-            </button>
-            <button 
-              onClick={handleGenerateImage}
-              disabled={isLoading || !prompt.trim() || !isBanana}
-              className="btn btn-orange parallax-small text-black flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Wand2 className="w-4 h-4" />
-              )}
-              {isLoading ? "Generating..." : "Generate"}
-            </button>
           </div>
           
           {/* Error Display */}

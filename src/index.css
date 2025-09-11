@@ -30,8 +30,8 @@
 }
 .range-brand { -webkit-appearance: none; appearance: none; background: transparent; }
 .range-brand:focus { outline: none; }
-.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); }
-.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); }
+.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); transform: translateY(-50%); }
+.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); transform: translateY(-50%); }
 .range-brand::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background:
   radial-gradient(circle at 0 50%, var(--d-orange-1) 2px, transparent 3px) repeat-x,
   linear-gradient(90deg, var(--d-orange-1), rgba(250,170,22,0.5));
@@ -595,4 +595,16 @@ html, body {
 .parallax-small:hover {
   transform: translateZ(100px) scale(1.005);
   transition: transform 0.2s;
+}
+
+/* Prompt bar hover/interaction styles */
+.promptbar {
+  transition: border-color 0.2s ease;
+}
+.promptbar:hover,
+.promptbar:focus-within {
+  border-color: var(--d-light);
+}
+.promptbar.drag-active {
+  border-color: var(--d-orange-1);
 }
