@@ -17,6 +17,7 @@ export interface ImageGenerationOptions {
   prompt: string;
   model?: string;
   imageData?: string; // Base64 encoded image for image-to-image
+  references?: string[]; // Base64 data URLs for reference images
 }
 
 export const useGeminiImageGeneration = () => {
@@ -34,83 +35,68 @@ export const useGeminiImageGeneration = () => {
     }));
 
     try {
-      // For now, we'll use a mock implementation for testing
-      // In production, this would call your deployed API endpoint
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create a beautiful professional image
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-      
-      if (ctx) {
-        // Create gradient background
-        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
-        gradient.addColorStop(0, '#667eea');
-        gradient.addColorStop(0.5, '#764ba2');
-        gradient.addColorStop(1, '#f093fb');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 512, 512);
-        
-        // Add decorative elements
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.beginPath();
-        ctx.arc(100, 100, 30, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(412, 100, 30, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.fillRect(50, 350, 100, 100);
-        ctx.fillRect(362, 350, 100, 100);
-        
-        // Add main text
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 32px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = 10;
-        ctx.fillText('AI Generated', 256, 200);
-        
-        // Add prompt text
-        ctx.font = '18px Arial, sans-serif';
-        ctx.shadowBlur = 5;
-        const promptText = options.prompt.length > 30 ? options.prompt.substring(0, 30) + '...' : options.prompt;
-        ctx.fillText(promptText, 256, 250);
-        
-        // Add model info
-        ctx.font = '14px Arial, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowBlur = 3;
-        const modelText = options.model || 'gemini-2.5-flash-image-preview';
-        ctx.fillText(`Generated with ${modelText}`, 256, 300);
-      }
-      
-      const mockImageUrl = canvas.toDataURL('image/png');
-      console.log('Beautiful professional image created, dimensions:', canvas.width, 'x', canvas.height);
-      
-      console.log('Generated mock image URL:', mockImageUrl.substring(0, 100) + '...');
-      console.log('Image URL length:', mockImageUrl.length);
-      console.log('Image URL starts with data:', mockImageUrl.startsWith('data:image/png'));
+      const { prompt, model, imageData, references } = options;
 
-      const generatedImage = {
-        url: mockImageUrl,
-        prompt: options.prompt,
-        model: options.model || 'gemini-2.5-flash-image-preview',
-        timestamp: new Date().toISOString()
-      };
-      
-      console.log('Generated image object:', generatedImage);
+      // Build a list of candidate API endpoints to try
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const configuredBase = (import.meta as any)?.env?.VITE_API_BASE_URL || '';
+      const tried: Array<{ url: string; status?: number; message?: string }> = [];
+      const isLocalhost = /localhost|127\.0\.0\.1/.test(origin);
+      const candidates = Array.from(
+        new Set([
+          `${origin}/api/generate-image`,
+          // If running Vite on :5173 and serverless via `vercel dev` on :3000, try those
+          isLocalhost ? `http://localhost:3000/api/generate-image` : '',
+          isLocalhost ? `http://127.0.0.1:3000/api/generate-image` : '',
+          configuredBase ? `${configuredBase.replace(/\/$/, '')}/api/generate-image` : '',
+        ].filter(Boolean))
+      );
+
+      let payload: { success?: boolean; image?: GeneratedImage } | null = null;
+      let lastError: Error | null = null;
+
+      for (const url of candidates) {
+        try {
+          // eslint-disable-next-line no-console
+          console.log('[image] POST', url);
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, model, imageData, references }),
+          });
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => null);
+            tried.push({ url, status: res.status, message: errBody?.error });
+            if (res.status === 429) {
+              throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
+            }
+            // Try next candidate when 404 or 403; otherwise throw
+            if (res.status === 404 || res.status === 403) continue;
+            throw new Error(errBody?.error || `Request failed with ${res.status}`);
+          }
+          payload = await res.json();
+          break; // success
+        } catch (e) {
+          lastError = e instanceof Error ? e : new Error(String(e));
+          tried.push({ url, message: lastError.message });
+        }
+      }
+
+      if (!payload) {
+        const details = tried.map(t => `${t.url}${t.status ? ` [${t.status}]` : ''}${t.message ? ` - ${t.message}` : ''}`).join(' | ');
+        throw new Error(`Unable to reach image API. Tried: ${details}`);
+      }
+
+      if (!payload?.image?.url) {
+        throw new Error('Malformed response from image API');
+      }
+
+      const generatedImage: GeneratedImage = payload.image;
 
       setState(prev => ({
         ...prev,
         isLoading: false,
-        generatedImage: generatedImage,
+        generatedImage,
         error: null,
       }));
 

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, Upload, X, Sparkles, Film, Package, Leaf, Loader2 } from "lucide-react";
+import { Wand2, Upload, X, Sparkles, Film, Package, Leaf, Loader2, Plus } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 
 // Accent styles for tool icons (matching ToolsSection)
@@ -30,8 +30,12 @@ const AI_MODELS = [
 
 const Platform: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const refsInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
+  const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
   
@@ -64,6 +68,10 @@ const Platform: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const handleRefsClick = () => {
+    refsInputRef.current?.click();
+  };
+
   const handleDeleteImage = () => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -74,6 +82,25 @@ const Platform: React.FC = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []).filter(f => f.type.startsWith('image/'));
+    const combined = [...referenceFiles, ...files].slice(0, 3); // limit 3 for Nano Banana
+    setReferenceFiles(combined);
+    // create previews
+    const readers = combined.map(f => URL.createObjectURL(f));
+    setReferencePreviews(readers);
+  };
+
+  const clearReference = (idx: number) => {
+    const nextFiles = referenceFiles.filter((_, i) => i !== idx);
+    const nextPreviews = referencePreviews.filter((_, i) => i !== idx);
+    // revoke removed url
+    const removed = referencePreviews[idx];
+    if (removed) URL.revokeObjectURL(removed);
+    setReferenceFiles(nextFiles);
+    setReferencePreviews(nextPreviews);
   };
 
   const handleGenerateImage = async () => {
@@ -97,6 +124,15 @@ const Platform: React.FC = () => {
         prompt: prompt.trim(),
         model: selectedModel,
         imageData,
+        references: await (async () => {
+          if (referenceFiles.length === 0) return undefined;
+          const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.readAsDataURL(f);
+          })));
+          return arr;
+        })(),
       });
     } catch (error) {
       console.error('Error generating image:', error);
@@ -193,15 +229,29 @@ const Platform: React.FC = () => {
             </button>
           </div>
           
-          {/* Prompt input */}
-          <div className="w-full max-w-xl mb-6">
+          {/* Prompt input with + for references and drag & drop */}
+          <div 
+            className={`relative w-full max-w-xl mb-6 ${isDragging ? 'ring-2 ring-d-orange/50 rounded-[999px]' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+          >
             <input
               type="text"
               placeholder="Describe what you want to create..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="w-full py-3 px-6 rounded-full bg-d-mid text-d-white placeholder-d-white/60 border border-d-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway text-base transition-colors duration-200"
+              className="w-full py-3 pl-6 pr-14 rounded-full bg-d-mid text-d-white placeholder-d-white/60 border border-d-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway text-base transition-colors duration-200"
             />
+            {/* Plus icon trigger */}
+            <button
+              type="button"
+              onClick={handleRefsClick}
+              title="Add reference image"
+              className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-9 rounded-full bg-d-black/40 hover:bg-d-black text-d-white border border-d-mid"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
           </div>
           
           <div className="flex gap-4 mb-8">
@@ -210,6 +260,14 @@ const Platform: React.FC = () => {
               type="file"
               accept="image/*"
               onChange={handleFileUpload}
+              className="hidden"
+            />
+            <input
+              ref={refsInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleRefsSelected}
               className="hidden"
             />
             <button 
@@ -286,6 +344,28 @@ const Platform: React.FC = () => {
                 </button>
                 <div className="px-4 py-3 bg-d-black/80 text-d-white text-sm text-center">
                   {selectedFile?.name}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reference Images Preview */}
+          {referencePreviews.length > 0 && (
+            <div className="w-full max-w-md mx-auto mb-8">
+              <div className="rounded-[32px] bg-d-black border border-d-mid p-3">
+                <div className="text-sm text-d-white mb-2">References ({referencePreviews.length}/3)</div>
+                <div className="grid grid-cols-3 gap-3">
+                  {referencePreviews.map((url, idx) => (
+                    <div key={idx} className="relative rounded-xl overflow-hidden">
+                      <img src={url} alt={`Reference ${idx+1}`} className="w-full h-24 object-cover" />
+                      <button
+                        onClick={() => clearReference(idx)}
+                        className="absolute top-1 right-1 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
