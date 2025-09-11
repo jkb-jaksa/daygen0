@@ -1,5 +1,31 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, Upload, X } from "lucide-react";
+import { Wand2, Upload, X, Sparkles, Atom, Film, Package, Leaf, AppWindow } from "lucide-react";
+
+// Accent styles for tool icons (matching ToolsSection)
+type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
+
+const accentStyles: Record<Accent, { badge: string; ring: string }> = {
+  emerald: { badge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30", ring: "ring-emerald-500/10" },
+  yellow: { badge: "bg-yellow-500/20 text-yellow-300 border-yellow-400/30", ring: "ring-yellow-500/10" },
+  blue: { badge: "bg-sky-500/20 text-sky-300 border-sky-400/30", ring: "ring-sky-500/10" },
+  violet: { badge: "bg-violet-500/20 text-violet-300 border-violet-400/30", ring: "ring-violet-500/10" },
+  pink: { badge: "bg-pink-500/20 text-pink-300 border-pink-400/30", ring: "ring-pink-500/10" },
+  cyan: { badge: "bg-cyan-500/20 text-cyan-300 border-cyan-400/30", ring: "ring-cyan-500/10" },
+  orange: { badge: "bg-orange-500/20 text-orange-300 border-orange-400/30", ring: "ring-orange-500/10" },
+  lime: { badge: "bg-lime-500/20 text-lime-300 border-lime-400/30", ring: "ring-lime-500/10" },
+  indigo: { badge: "bg-indigo-500/20 text-indigo-300 border-indigo-400/30", ring: "ring-indigo-500/10" },
+};
+
+// AI Model data with icons and accent colors
+const AI_MODELS = [
+  { name: "Gemini 2.5 Flash Image (Nano Banana)", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent },
+  { name: "FLUX.1 Kontext Pro / Max", desc: "Great for image editing with text prompts.", Icon: Wand2, accent: "blue" as Accent },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent },
+  { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent },
+  { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent },
+  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent },
+  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent },
+];
 
 const Platform: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,12 +106,12 @@ const Platform: React.FC = () => {
         {/* Top row with daygen in left corner */}
         <div className="flex items-start justify-start">
           <div>
-            <div className="text-6xl font-light tracking-tight font-cabin leading-[1.1] self-start">
+            <div className="text-5xl font-normal tracking-tight font-raleway leading-[1.05] self-start">
               <span className="text-white-gradient">day</span>
               <span className="text-d-orange">gen</span>
             </div>
             <div className="text-lg font-normal text-d-white font-raleway mt-1">
-              <span className="font-bold">Next-gen</span> ideas. <span className="font-bold">Every</span> day.
+              Next-gen ideas. Every day.
             </div>
           </div>
         </div>
@@ -93,7 +119,7 @@ const Platform: React.FC = () => {
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center">
           <h2 className="text-2xl font-light text-d-text font-cabin mb-4">
-            Create <span className="text-d-orange font-bold">now</span>.
+            Create <span className="text-d-orange">now</span>.
           </h2>
           
           {/* Content type menu */}
@@ -170,70 +196,27 @@ const Platform: React.FC = () => {
           <div className="text-lg font-light text-d-white font-cabin mb-8 text-center">
             Select model
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">Gemini 2.5 Flash Image (Nano Banana)</div>
-                <div className="text-sm text-d-white font-raleway">Best image editing.</div>
-              </button>
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">FLUX.1 Kontext Pro / Max</div>
-                <div className="text-sm text-d-white font-raleway">Great for image editing with text prompts.</div>
-              </button>
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">Runway Gen-4</div>
-                <div className="text-sm text-d-white font-raleway">Great image model. Great control & editing features</div>
-              </button>
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">Ideogram</div>
-                <div className="text-sm text-d-white font-raleway">Great for product visualizations and person swaps.</div>
-              </button>
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">Seedream 4.0</div>
-                <div className="text-sm text-d-white font-raleway">Great image model.</div>
-              </button>
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">Qwen Image</div>
-                <div className="text-sm text-d-white font-raleway">Great image editing.</div>
-              </button>
-              <button 
-                className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
-              >
-                <div className="text-lg font-light text-d-text font-cabin mb-1">ChatGPT Image</div>
-                <div className="text-sm text-d-white font-raleway">Popular image model.</div>
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+              {AI_MODELS.map((model) => {
+                const s = accentStyles[model.accent];
+                return (
+                  <button 
+                    key={model.name}
+                    className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
+                    onMouseMove={onMove}
+                    onMouseEnter={onEnter}
+                    onMouseLeave={onLeave}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`size-8 grid place-items-center rounded-lg border ${s.badge}`}>
+                        <model.Icon className="size-5" />
+                      </div>
+                      <div className="text-lg font-light text-d-text font-cabin">{model.name}</div>
+                    </div>
+                    <div className="text-sm text-d-white font-raleway">{model.desc}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
       </header>
