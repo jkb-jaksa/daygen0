@@ -39,9 +39,6 @@ export const useGeminiImageGeneration = () => {
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Create a mock image (1x1 transparent PNG)
-      const mockImageData = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
       
       // Create a beautiful professional image
       const canvas = document.createElement('canvas');
