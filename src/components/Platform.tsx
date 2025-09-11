@@ -1,7 +1,51 @@
-import type React from "react";
-import { Wand2 } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { Wand2, Upload, X } from "lucide-react";
 
 const Platform: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      
+      console.log('Selected file:', file.name);
+    } else {
+      alert('Please select a valid image file.');
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDeleteImage = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Cleanup object URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     const rect = el.getBoundingClientRect();
@@ -78,21 +122,54 @@ const Platform: React.FC = () => {
           </div>
           
           <div className="flex gap-4 mb-8">
-            <button className="btn btn-white parallax-small text-black">
-              Add file
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button 
+              onClick={handleUploadClick}
+              className="btn btn-white parallax-small text-black flex items-center gap-1"
+            >
+              <Upload className="w-4 h-4" />
+              Upload
             </button>
-            <button className="btn btn-orange parallax-small text-black flex items-center gap-2">
+            <button className="btn btn-orange parallax-small text-black flex items-center gap-1">
               <Wand2 className="w-4 h-4" />
               Generate
             </button>
           </div>
           
+          {/* Image Preview */}
+          {previewUrl && (
+            <div className="w-full max-w-md mx-auto mb-8">
+              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
+                <img 
+                  src={previewUrl} 
+                  alt="Uploaded file preview" 
+                  className="w-full h-32 object-cover"
+                />
+                <button
+                  onClick={handleDeleteImage}
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="px-4 py-3 bg-d-black/80 text-d-white text-sm text-center">
+                  {selectedFile?.name}
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* AI Model selection */}
-          <div className="w-full px-8">
-            <div className="text-lg font-light text-d-white font-cabin mb-8 text-center">
+          <div className="w-full">
+            <div className="text-lg font-light text-d-white font-cabin mb-8 text-center px-8">
               Select model
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full px-8">
               <button 
                 className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
                 onMouseMove={onMove}

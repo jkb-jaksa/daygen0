@@ -89,7 +89,7 @@ html, body {
   justify-content: center;
   line-height: 1;
   overflow: hidden;
-  padding: 0 16px; /* no vertical padding since we have fixed height */
+  padding: 0 12px; /* no vertical padding since we have fixed height */
   width: 140px; /* fixed width for all buttons - accommodates 'learn more' text */
   position: relative;
   text-decoration: none;
