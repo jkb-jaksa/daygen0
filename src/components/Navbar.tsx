@@ -57,7 +57,7 @@ export default function Navbar() {
     }
   };
 
-  const items = ["create", "use cases", "tools", "prompts", "services", "about us"] as const;
+  const items = ["create", "knowledge base", "prompts", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
