@@ -35,7 +35,7 @@ export default function Footer() {
                   className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
                   aria-label="X"
                 >
-                  <XIcon className="size-4 text-b-text transition-colors duration-200 group-hover:text-d-orange" />
+                  <XIcon className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
                 </a>
                 <a
                   href="https://instagram.com"
@@ -44,7 +44,7 @@ export default function Footer() {
                   className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
                   aria-label="Instagram"
                 >
-                  <Instagram className="size-4 text-b-text transition-colors duration-200 group-hover:text-d-orange" />
+                  <Instagram className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
                 </a>
                 <a
                   href="https://youtube.com"
@@ -53,14 +53,14 @@ export default function Footer() {
                   className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
                   aria-label="YouTube"
                 >
-                  <Youtube className="size-4 text-b-text transition-colors duration-200 group-hover:text-d-orange" />
+                  <Youtube className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
                 </a>
               </div>
 
               <nav className="flex flex-col gap-3 text-base font-raleway">
-                <a href="#" className="parallax-small text-b-white hover:text-d-orange transition-colors">privacy policy</a>
-                <Link to="/" className="parallax-small text-b-white hover:text-d-orange transition-colors">FAQ</Link>
-                <a href="#" className="parallax-small text-b-white hover:text-d-orange transition-colors">hire us</a>
+                <a href="#" className="parallax-small text-b-white hover:text-brand transition-colors">privacy policy</a>
+                <Link to="/" className="parallax-small text-b-white hover:text-brand transition-colors">FAQ</Link>
+                <a href="#" className="parallax-small text-b-white hover:text-brand transition-colors">hire us</a>
               </nav>
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function Footer() {
         <button
           onClick={scrollToTop}
           aria-label="Back to top"
-          className="parallax-large absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-d-text hover:text-d-orange hover:border-b-dark transition-colors duration-200"
+          className="parallax-large absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-d-text hover:text-brand hover:border-b-dark transition-colors duration-200"
         >
           <ChevronUp className="size-4" />
         </button>

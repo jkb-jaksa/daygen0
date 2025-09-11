@@ -14,6 +14,8 @@ module.exports = {
           black: 'var(--d-black)',
           orange: 'var(--d-orange-1)'
         },
+        // Brand color
+        brand: '#faaa16',
         // Alias palette for testing (maps to d- tokens)
         b: {
           text: 'var(--d-text)',

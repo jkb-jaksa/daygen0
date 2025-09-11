@@ -392,7 +392,7 @@ export default function ToolsSection() {
                   onClick={() => setActiveCategory(label)}
                   className={cx(
                     "parallax-small flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0",
-                    isActive ? "text-d-light hover:text-d-orange" : "text-d-white hover:text-d-orange"
+                    isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                   )}
                   aria-pressed={isActive}
                 >

@@ -66,9 +66,11 @@ const ContactSection: React.FC = () => {
                   </li>
                 </ul>
 
-                <button className="parallax-small px-8 py-3 bg-gray-900 text-d-text rounded-full font-medium text-base font-raleway hover:bg-gray-800 transition-colors duration-200 shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
-                  Book a Call
-                </button>
+                <div className="flex justify-center">
+                  <button className="btn btn-black parallax-small text-d-text">
+                    Book a Call
+                  </button>
+                </div>
               </div>
             </div>
           </div>

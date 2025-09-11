@@ -81,7 +81,7 @@ export default function Navbar() {
                 <a
                   key={item}
                   href="#"
-                  className="parallax-small text-d-white hover:text-d-orange transition-colors duration-200 px-2 py-1 rounded"
+                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
                   onMouseEnter={() => setActiveMenu(item)}
                 >
                   {item}

@@ -74,23 +74,36 @@ html, body {
   background-repeat: no-repeat;
 }
 
-/* Orange gradient pill button with blurred overlay */
-.btn-orange {
+/* Base button class - common properties for all buttons */
+.btn {
   align-items: center;
   background: none;
+  border: none;
   border-radius: 32px;
   box-sizing: border-box;
+  cursor: pointer;
   display: inline-flex;
+  font-family: inherit;
   font-weight: 500;
+  height: 32px; /* fixed height for consistent button size */
   justify-content: center;
+  line-height: 1;
   overflow: hidden;
-  padding: 4px 32px;
+  padding: 0 16px; /* no vertical padding since we have fixed height */
+  width: 140px; /* fixed width for all buttons - accommodates 'learn more' text */
   position: relative;
+  text-decoration: none;
   transition: all 0.2s ease;
   will-change: transform;
   z-index: 1;
+}
+
+/* Orange gradient pill button with blurred overlay */
+.btn-orange {
   --warm1: var(--d-orange-1, #faaa16);
   --warm2: var(--d-orange-2, #e43a63);
+  /* Ensure consistent sizing */
+  flex-shrink: 0;
 }
 
 .btn-orange::before {
@@ -295,15 +308,43 @@ html, body {
   }
 }
 
-/* Brand warm gradient as a utility (text) */
-.text-d-orange { color: var(--d-orange-1); }
+/* Brand warm gradient as a utility (text) - matches btn-orange gradient */
+.text-d-orange { 
+  color: var(--d-orange-1);
+  --warm1: var(--d-orange-1, #faaa16);
+  --warm2: var(--d-orange-2, #e43a63);
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .text-d-orange {
+    background: linear-gradient(
+      in oklch 150deg,
+      var(--d-orange-1) 0%,
+      var(--d-orange-1) 26%,
+      color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
+      color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
+      color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
+      var(--d-orange-2) 88%,
+      var(--d-orange-2) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    color: transparent;
+    display: inline-block;
+    padding-bottom: 0.08em; /* avoid descender clipping */
+    -webkit-text-fill-color: transparent;
+  }
+}
+
 @supports (-webkit-background-clip: text) or (background-clip: text) {
   .text-d-orange {
     background: linear-gradient(150deg,
-      var(--d-orange-1) 0%,
-      var(--d-orange-1) 26%,
-      var(--d-orange-2) 88%,
-      var(--d-orange-2) 100%);
+      var(--warm1) 0%,
+      var(--warm1) 26%,
+      var(--warm2) 88%,
+      var(--warm2) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     background-repeat: no-repeat;
@@ -322,6 +363,9 @@ html, body {
     color: color-mix(in oklch, var(--d-orange-1) 65%, white 35%);
   }
 }
+
+/* Brand color - primary orange from gradient */
+.text-brand { color: #faaa16; }
 
 /* Thin separator gradient line utility */
 .color-gradient {
@@ -420,19 +464,9 @@ html, body {
 
 /* Soft white pill button with blurred overlay */
 .btn-white {
-  align-items: center;
-  background: none;
-  border-radius: 32px;
-  box-sizing: border-box;
-  display: inline-flex;
-  font-weight: 500;
-  justify-content: center;
-  overflow: hidden;
-  padding: 4px 32px; /* match btn-orange */
-  position: relative;
-  transition: all 0.2s ease;
-  will-change: transform;
-  z-index: 1;
+  /* inherits all base properties from .btn */
+  /* Ensure consistent sizing */
+  flex-shrink: 0;
 }
 
 .btn-white::before {
@@ -454,6 +488,57 @@ html, body {
   background: rgba(245, 255, 255, 1);
   border-radius: 32px;
   filter: blur(2px);
+}
+
+/* Black button with d-text color - inspired by btn-white */
+.btn-black {
+  /* inherits all base properties from .btn */
+  /* Ensure consistent sizing */
+  flex-shrink: 0;
+}
+
+.btn-black::before {
+  background: rgba(20, 20, 20, 1);
+  border-radius: 32px;
+  content: "";
+  filter: blur(2px);
+  inset: 0;
+  position: absolute;
+  transition: all 0.2s ease;
+  z-index: -1;
+}
+
+.btn-black:hover {
+  overflow: hidden;
+}
+
+.btn-black:hover::before {
+  background: rgba(30, 30, 30, 1);
+  border-radius: 32px;
+  filter: blur(2px);
+}
+
+/* Force Book a Call button to match other buttons exactly */
+.relative.z-10.px-12.py-16.text-center.text-b-black .btn.btn-black {
+  height: 32px !important;
+  width: 140px !important;
+  min-height: 32px !important;
+  min-width: 140px !important;
+  max-height: 32px !important;
+  max-width: 140px !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure all buttons maintain consistent size */
+.btn {
+  height: 32px !important;
+  width: 140px !important;
+  min-height: 32px !important;
+  min-width: 140px !important;
+  max-height: 32px !important;
+  max-width: 140px !important;
 }
 
 
