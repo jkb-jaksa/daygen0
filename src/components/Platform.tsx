@@ -1,4 +1,5 @@
 import type React from "react";
+import { Wand2 } from "lucide-react";
 
 const Platform: React.FC = () => {
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -39,7 +40,7 @@ const Platform: React.FC = () => {
               <span className="text-white-gradient">day</span>
               <span className="text-d-orange">gen</span>
             </div>
-            <div className="text-lg font-normal text-d-text font-raleway mt-1">
+            <div className="text-lg font-normal text-d-white font-raleway mt-1">
               <span className="font-bold">Next-gen</span> ideas. <span className="font-bold">Every</span> day.
             </div>
           </div>
@@ -48,16 +49,22 @@ const Platform: React.FC = () => {
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
           <h2 className="text-2xl font-light text-d-text font-cabin mb-4">
-            Try our platform <span className="text-d-orange font-bold">now</span>.
+            Create <span className="text-d-orange font-bold">now</span>.
           </h2>
           
-          {/* Image/Video menu */}
-          <div className="flex gap-8 mb-3">
+          {/* Content type menu */}
+          <div className="flex gap-6 mb-3">
             <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
-              Image
+              image
             </button>
             <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
-              Video
+              video
+            </button>
+            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
+              avatars
+            </button>
+            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
+              audio
             </button>
           </div>
           
@@ -74,8 +81,9 @@ const Platform: React.FC = () => {
             <button className="btn btn-white parallax-small text-black">
               Add file
             </button>
-            <button className="btn btn-orange parallax-small text-black">
-              Upload
+            <button className="btn btn-orange parallax-small text-black flex items-center gap-2">
+              <Wand2 className="w-4 h-4" />
+              Generate
             </button>
           </div>
           
