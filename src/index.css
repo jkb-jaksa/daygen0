@@ -457,7 +457,6 @@ html, body {
 /* Disable hover background/glow for Create section model cards */
 .no-hover-bg.tag-gradient:hover { --li: 1; }
 .no-hover-bg.tag-gradient:hover::before { filter: blur(24px) brightness(1.06); opacity: var(--idle-op); }
-.no-hover-bg:hover { background-color: inherit !important; }
 
 .tag-gradient::after {
   background: radial-gradient(200px 200px at var(--x) var(--y),
