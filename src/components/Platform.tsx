@@ -91,7 +91,7 @@ const Platform: React.FC = () => {
         </div>
 
         {/* Centered content */}
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+        <div className="flex flex-col items-center justify-center min-h-[30vh] text-center">
           <h2 className="text-2xl font-light text-d-text font-cabin mb-4">
             Create <span className="text-d-orange font-bold">now</span>.
           </h2>
@@ -163,13 +163,14 @@ const Platform: React.FC = () => {
               </div>
             </div>
           )}
-          
-          {/* AI Model selection */}
-          <div className="w-full">
-            <div className="text-lg font-light text-d-white font-cabin mb-8 text-center px-8">
-              Select model
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full px-8">
+        </div>
+        
+        {/* AI Model selection */}
+        <div className="w-full">
+          <div className="text-lg font-light text-d-white font-cabin mb-8 text-center">
+            Select model
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
               <button 
                 className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
                 onMouseMove={onMove}
@@ -235,7 +236,6 @@ const Platform: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
       </header>
     </div>
   );
