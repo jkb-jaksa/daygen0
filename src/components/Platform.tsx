@@ -265,7 +265,7 @@ const Platform: React.FC = () => {
 
           {/* Prompt input with + for references and drag & drop (flex layout) */}
           <div 
-            className={`promptbar relative w-full max-w-xl mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 pt-3 pb-10`}
+            className={`promptbar relative w-full max-w-4xl mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 pt-3 pb-10 mx-auto`}
             onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
