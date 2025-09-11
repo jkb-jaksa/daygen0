@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, Upload, X, Sparkles, Atom, Film, Package, Leaf, AppWindow } from "lucide-react";
+import { Wand2, Upload, X, Sparkles, Film, Package, Leaf } from "lucide-react";
 
 // Accent styles for tool icons (matching ToolsSection)
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -72,7 +72,7 @@ const Platform: React.FC = () => {
     };
   }, [previewUrl]);
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
     const el = e.currentTarget;
     const rect = el.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -85,13 +85,13 @@ const Platform: React.FC = () => {
     el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
   };
 
-  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onEnter = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
     const el = e.currentTarget;
     el.style.setProperty("--fade-ms", "200ms");
     el.style.setProperty("--l", "1");
   };
 
-  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onLeave = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
     const el = e.currentTarget;
     el.style.setProperty("--fade-ms", "400ms");
     el.style.setProperty("--l", "0");
