@@ -74,123 +74,139 @@ html, body {
   background-repeat: no-repeat;
 }
 
-/* Orange gradient pill button with blurred overlay */
+/* Orange gradient pill button with blurred overlay (simplified) */
 .btn-orange {
-  align-items: center;
-  background: none;
-  border-radius: 32px;
-  box-sizing: border-box;
-  display: inline-flex;
-  justify-content: center;
-  overflow: hidden;
-  padding: 4px 32px;
   position: relative;
-  transition: all 0.2s ease;
-  will-change: transform;
   z-index: 1;
-  --warm1: var(--d-orange-1, #faaa16);
-  --warm2: var(--d-orange-2, #e43a63);
+  background: none;
+  padding: 4px 32px; /* match other buttons (e.g., .btn-white) */
+  border-radius: 32px;
+  overflow: hidden;
+  will-change: transform;
+  transition: all 0.2s ease;
+  /* keep layout consistent */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .btn-orange::before {
-  background:
-    linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    linear-gradient(
-      150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%
-    );
-  border-radius: 32px;
-  content: "";
-  filter: blur(2px);
-  inset: 0;
+  content: '';
   position: absolute;
-  transition: all 0.2s ease;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: -1;
-}
-
-@supports (background: linear-gradient(in oklch, red, blue)) {
-  .btn-orange::before {
-    background:
-      linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-      linear-gradient(
-        in oklch 150deg,
-        var(--d-orange-1) 0%,
-        var(--d-orange-1) 26%,
-        color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
-        color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
-        color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
-        var(--d-orange-2) 88%,
-        var(--d-orange-2) 100%
-      );
-  }
+  /* Smooth light→dark from top-left to bottom-right with curved overlays */
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 48%),
+    radial-gradient(110% 130% at 100% 100%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0) 52%),
+    radial-gradient(90% 90% at 45% 30%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(
+      to bottom right,
+      #FFCA5C 0%,   /* light amber (slightly deeper) */
+      #FFBE3B 20%,  /* warm amber */
+      #FFA22A 43%,  /* bright orange */
+      #FF7A1E 68%,  /* deep orange */
+      #F14A40 96%,  /* bridge into red */
+      #F03A2E 98%   /* slightly more red finish */
+    );
+  background-blend-mode: screen, multiply, screen, normal;
+  filter: blur(2px);
+  border-radius: 32px;
+  transition: all 0.2s ease;
 }
 
 /* Warm gradient panel background (matches btn-orange gradient) */
 .panel-warm-bg {
-  --warm1: var(--d-orange-1, #faaa16);
-  --warm2: var(--d-orange-2, #e43a63);
+  /* Match btn-orange base gradient with subtle curvature */
   background:
     linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    linear-gradient(
-      150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%
-    );
+    radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 48%),
+    radial-gradient(110% 130% at 100% 100%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0) 52%),
+    radial-gradient(90% 90% at 45% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(to bottom right, #FFCA5C 0%, #FFBE3B 20%, #FFA22A 43%, #FF7A1E 68%, #F14A40 96%, #F03A2E 98%);
+  background-blend-mode: normal, screen, multiply, screen, normal;
 }
 
 @supports (background: linear-gradient(in oklch, red, blue)) {
   .panel-warm-bg {
     background:
       linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-      linear-gradient(
-        in oklch 150deg,
-        var(--d-orange-1) 0%,
-        var(--d-orange-1) 26%,
-        color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
-        color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
-        color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
-        var(--d-orange-2) 88%,
-        var(--d-orange-2) 100%
-      );
+      radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 48%),
+      radial-gradient(110% 130% at 100% 100%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0) 52%),
+      radial-gradient(90% 90% at 45% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%),
+      linear-gradient(in oklch to bottom right, #FFCA5C 0%, #FFBE3B 20%, #FFA22A 43%, #FF7A1E 68%, #F14A40 96%, #F03A2E 98%);
+    background-blend-mode: normal, screen, multiply, screen, normal;
   }
 }
 
-.btn-orange:hover {
-  overflow: hidden;
-}
+.btn-orange:hover { overflow: hidden; }
 
 .btn-orange:hover::before {
+  /* lighten without hue shift; keep orientation */
   background:
-    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-    linear-gradient(
-      150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%
-    );
+    radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 48%),
+    radial-gradient(110% 130% at 100% 100%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 52%),
+    radial-gradient(90% 90% at 45% 30%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(to bottom right, #FFE08A 0%, #FFCA5C 26%, #FFB23F 50%, #FF9430 72%, #F45C46 96%, #F14A40 98%);
+  background-blend-mode: screen, multiply, screen, normal;
+  filter: blur(2px);
+  border-radius: 32px;
 }
 
+/* Perceptually smoother gradient on capable browsers */
 @supports (background: linear-gradient(in oklch, red, blue)) {
+  .btn-orange::before {
+    background:
+      radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 48%),
+      radial-gradient(110% 130% at 100% 100%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0) 52%),
+      radial-gradient(90% 90% at 45% 30%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%),
+      linear-gradient(in oklch to bottom right, #FFCA5C 0%, #FFBE3B 20%, #FFA22A 43%, #FF7A1E 68%, #F14A40 96%, #F03A2E 98%);
+    background-blend-mode: screen, multiply, screen, normal;
+  }
   .btn-orange:hover::before {
     background:
-      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-      linear-gradient(
-        in oklch 150deg,
-        var(--warm1) 0%,
-        var(--warm1) 26%,
-        color-mix(in oklch, var(--warm1) 70%, var(--warm2) 30%) 34%,
-        color-mix(in oklch, var(--warm1) 50%, var(--warm2) 50%) 50%,
-        color-mix(in oklch, var(--warm1) 30%, var(--warm2) 70%) 66%,
-        var(--warm2) 88%,
-        var(--warm2) 100%
-      );
+      radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 48%),
+      radial-gradient(110% 130% at 100% 100%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 52%),
+      radial-gradient(90% 90% at 45% 30%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 60%),
+      linear-gradient(in oklch to bottom right, #FFE08A 0%, #FFCA5C 26%, #FFB23F 50%, #FF9430 72%, #F45C46 96%, #F14A40 98%);
+    background-blend-mode: screen, multiply, screen, normal;
   }
+}
+
+/* Subtle texture noise overlay for orange button */
+.btn-orange::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Multi-layer micro-speckle; very low alpha */
+  background-image:
+    radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.035) 0, rgba(255,255,255,0.035) 1px, transparent 1px),
+    radial-gradient(1px 1px at 65% 70%, rgba(0,0,0,0.035) 0, rgba(0,0,0,0.035) 1px, transparent 1px),
+    radial-gradient(1px 1px at 45% 55%, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 180px 180px, 220px 220px, 140px 140px;
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+
+/* Subtle texture noise overlay for warm panel */
+.panel-warm-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 20% 25%, rgba(255,255,255,0.035) 0, rgba(255,255,255,0.035) 1px, transparent 1px),
+    radial-gradient(1px 1px at 70% 65%, rgba(0,0,0,0.035) 0, rgba(0,0,0,0.035) 1px, transparent 1px),
+    radial-gradient(1px 1px at 50% 50%, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 220px 220px, 260px 260px, 180px 180px;
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
 }
 
 /* Gradient text using global warm palette */
