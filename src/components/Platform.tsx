@@ -458,7 +458,7 @@ const Platform: React.FC = () => {
                   <button 
                     key={model.name}
                     onClick={() => handleModelSelect(model.name)}
-                    className={`tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left ${
+                    className={`no-hover-bg tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left ${
                       (() => {
                         const modelMap: Record<string, string> = {
                           "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
