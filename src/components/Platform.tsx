@@ -117,7 +117,7 @@ const Platform: React.FC = () => {
             <input
               type="text"
               placeholder="Describe what you want to create..."
-              className="w-full py-4 px-6 rounded-full bg-d-mid text-d-white placeholder-d-white/60 border border-d-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway text-base transition-colors duration-200"
+              className="w-full py-3 px-6 rounded-full bg-d-mid text-d-white placeholder-d-white/60 border border-d-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway text-base transition-colors duration-200"
             />
           </div>
           
