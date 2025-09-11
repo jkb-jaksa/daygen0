@@ -28,7 +28,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/ai-tools" element={<ToolsSection />} />
           <Route path="/ai-tools/:id" element={<Subpage />} />
-          <Route path="/platform" element={<Platform />} />
+          <Route path="/create" element={<Platform />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />
