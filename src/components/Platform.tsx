@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, Upload, X, Sparkles, Film, Package, Leaf } from "lucide-react";
+import { Wand2, Upload, X, Sparkles, Film, Package, Leaf, Loader2 } from "lucide-react";
+import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 
 // Accent styles for tool icons (matching ToolsSection)
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -31,6 +32,18 @@ const Platform: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<string>("");
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
+  
+  // Use the Gemini image generation hook
+  const {
+    isLoading,
+    error,
+    generatedImage,
+    generateImage,
+    clearError,
+    clearGeneratedImage,
+  } = useGeminiImageGeneration();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -61,6 +74,48 @@ const Platform: React.FC = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!prompt.trim()) {
+      alert('Please enter a prompt for image generation.');
+      return;
+    }
+
+    try {
+      // Convert uploaded image to base64 if available
+      let imageData: string | undefined;
+      if (selectedFile) {
+        imageData = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(selectedFile);
+        });
+      }
+
+      await generateImage({
+        prompt: prompt.trim(),
+        model: selectedModel,
+        imageData,
+      });
+    } catch (error) {
+      console.error('Error generating image:', error);
+    }
+  };
+
+  const handleModelSelect = (modelName: string) => {
+    // Map model names to actual model IDs
+    const modelMap: Record<string, string> = {
+      "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+      "FLUX.1 Kontext Pro / Max": "flux-pro",
+      "Runway Gen-4": "runway-gen4",
+      "Ideogram": "ideogram",
+      "Seedream 4.0": "seedream-4",
+      "Qwen Image": "qwen-image",
+      "ChatGPT Image": "chatgpt-image",
+    };
+    
+    setSelectedModel(modelMap[modelName] || "gemini-2.5-flash-image-preview");
   };
 
   // Cleanup object URL when component unmounts or file changes
@@ -143,6 +198,8 @@ const Platform: React.FC = () => {
             <input
               type="text"
               placeholder="Describe what you want to create..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
               className="w-full py-3 px-6 rounded-full bg-d-mid text-d-white placeholder-d-white/60 border border-d-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway text-base transition-colors duration-200"
             />
           </div>
@@ -162,13 +219,57 @@ const Platform: React.FC = () => {
               <Upload className="w-4 h-4" />
               Upload
             </button>
-            <button className="btn btn-orange parallax-small text-black flex items-center gap-1">
-              <Wand2 className="w-4 h-4" />
-              Generate
+            <button 
+              onClick={handleGenerateImage}
+              disabled={isLoading || !prompt.trim()}
+              className="btn btn-orange parallax-small text-black flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Wand2 className="w-4 h-4" />
+              )}
+              {isLoading ? "Generating..." : "Generate"}
             </button>
           </div>
           
-          {/* Image Preview */}
+          {/* Error Display */}
+          {error && (
+            <div className="w-full max-w-xl mx-auto mb-6">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
+                <p className="font-raleway text-sm">{error}</p>
+                <button
+                  onClick={clearError}
+                  className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Generated Image Display */}
+          {generatedImage && (
+            <div className="w-full max-w-md mx-auto mb-8">
+              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
+                <img 
+                  src={generatedImage.url} 
+                  alt="Generated image" 
+                  className="w-full h-64 object-cover"
+                  onLoad={() => console.log('Image loaded successfully')}
+                  onError={(e) => console.error('Image failed to load:', e)}
+                />
+                <button
+                  onClick={clearGeneratedImage}
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Uploaded Image Preview */}
           {previewUrl && (
             <div className="w-full max-w-md mx-auto mb-8">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
@@ -202,7 +303,23 @@ const Platform: React.FC = () => {
                 return (
                   <button 
                     key={model.name}
-                    className="group tag-gradient relative p-4 rounded-[32px] bg-d-black border border-d-black hover:bg-d-dark hover:border-d-mid transition-all duration-200 text-left parallax-small"
+                    onClick={() => handleModelSelect(model.name)}
+                    className={`group tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left parallax-small ${
+                      selectedModel === (() => {
+                        const modelMap: Record<string, string> = {
+                          "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+                          "FLUX.1 Kontext Pro / Max": "flux-pro",
+                          "Runway Gen-4": "runway-gen4",
+                          "Ideogram": "ideogram",
+                          "Seedream 4.0": "seedream-4",
+                          "Qwen Image": "qwen-image",
+                          "ChatGPT Image": "chatgpt-image",
+                        };
+                        return modelMap[model.name] || "gemini-2.5-flash-image-preview";
+                      })()
+                        ? "bg-d-dark border-d-mid ring-2 ring-d-orange/50"
+                        : "bg-d-black border-d-black hover:bg-d-dark hover:border-d-mid"
+                    }`}
                     onMouseMove={onMove}
                     onMouseEnter={onEnter}
                     onMouseLeave={onLeave}
