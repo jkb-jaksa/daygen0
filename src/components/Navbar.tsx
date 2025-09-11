@@ -57,7 +57,7 @@ export default function Navbar() {
     }
   };
 
-  const items = ["use cases", "tools", "prompts", "services", "about us"] as const;
+  const items = ["create", "use cases", "tools", "prompts", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
@@ -80,7 +80,7 @@ export default function Navbar() {
               {items.map((item) => (
                 <a
                   key={item}
-                  href="#"
+                  href={item === "create" ? "/platform" : "#"}
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
                   onMouseEnter={() => setActiveMenu(item)}
                 >
