@@ -29,6 +29,14 @@ const AI_MODELS = [
 ];
 
 const Platform: React.FC = () => {
+  const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
+    <div className="relative inline-flex items-center group">
+      {children}
+      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-md bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-50">
+        {text}
+      </div>
+    </div>
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refsInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -36,8 +44,13 @@ const Platform: React.FC = () => {
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isRefsDragging, setIsRefsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
+  const isBanana = selectedModel === "gemini-2.5-flash-image-preview";
+  const [temperature, setTemperature] = useState<number>(1);
+  const [outputLength, setOutputLength] = useState<number>(8192);
+  const [topP, setTopP] = useState<number>(1);
   
   // Use the Gemini image generation hook
   const {
@@ -103,6 +116,13 @@ const Platform: React.FC = () => {
     setReferencePreviews(nextPreviews);
   };
 
+  const clearAllReferences = () => {
+    // Revoke all preview URLs
+    referencePreviews.forEach((url) => URL.revokeObjectURL(url));
+    setReferenceFiles([]);
+    setReferencePreviews([]);
+  };
+
   const handleGenerateImage = async () => {
     if (!prompt.trim()) {
       alert('Please enter a prompt for image generation.');
@@ -133,6 +153,9 @@ const Platform: React.FC = () => {
           })));
           return arr;
         })(),
+        temperature: isBanana ? temperature : undefined,
+        outputLength: isBanana ? outputLength : undefined,
+        topP: isBanana ? topP : undefined,
       });
     } catch (error) {
       console.error('Error generating image:', error);
@@ -163,30 +186,7 @@ const Platform: React.FC = () => {
     };
   }, [previewUrl]);
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
-    const el = e.currentTarget;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    el.style.setProperty("--x", `${x.toFixed(2)}%`);
-    el.style.setProperty("--y", `${y.toFixed(2)}%`);
-    const tx = (x - 50) / 10;
-    const ty = (y - 50) / 10;
-    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
-    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
-  };
-
-  const onEnter = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "200ms");
-    el.style.setProperty("--l", "1");
-  };
-
-  const onLeave = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "400ms");
-    el.style.setProperty("--l", "0");
-  };
+  // Removed hover parallax effects for tool cards; selection now drives the style
   return (
     <div className="relative min-h-screen text-d-text overflow-hidden">
       {/* Background overlay to show gradient behind navbar */}
@@ -229,12 +229,38 @@ const Platform: React.FC = () => {
             </button>
           </div>
           
+          {/* Nano Banana settings (mobile) */}
+          {isBanana && (
+            <div className="md:hidden w-full max-w-xl mb-6 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-d-black border border-d-mid rounded-2xl p-3">
+                  <div className="text-sm text-d-white/80 mb-1" title="Creativity allowed in the responses.">Temperature</div>
+                  <div className="flex items-center gap-3">
+                    <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-full range-brand" />
+                    <input type="number" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-16 bg-d-mid border border-d-mid rounded-md text-right px-2 py-1 text-d-white" />
+                  </div>
+                </div>
+                <div className="bg-d-black border border-d-mid rounded-2xl p-3">
+                  <div className="text-sm text-d-white/80 mb-1" title="Maximum number of tokens in respose">Output length</div>
+                  <input type="number" min={1} step={1} value={outputLength} onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} className="w-full bg-d-mid border border-d-mid rounded-md px-2 py-1 text-d-white" />
+                </div>
+                <div className="bg-d-black border border-d-mid rounded-2xl p-3">
+                  <div className="text-sm text-d-white/80 mb-1" title="Nucleus sampling: consider only the most probable tokens whose cumulative probability reaches top-p.">Top P</div>
+                  <div className="flex items-center gap-3">
+                    <input type="range" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-full range-brand" />
+                    <input type="number" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-16 bg-d-mid border border-d-mid rounded-md text-right px-2 py-1 text-d-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Prompt input with + for references and drag & drop */}
           <div 
-            className={`relative w-full max-w-xl mb-6 ${isDragging ? 'ring-2 ring-d-orange/50 rounded-[999px]' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            className={`relative w-full max-w-xl mb-6 rounded-[999px] transition-colors duration-200 border ${isDragging && isBanana ? 'border-brand' : 'border-transparent'}`}
+            onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => { e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+            onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
           >
             <input
               type="text"
@@ -246,9 +272,10 @@ const Platform: React.FC = () => {
             {/* Plus icon trigger */}
             <button
               type="button"
-              onClick={handleRefsClick}
+              onClick={isBanana ? handleRefsClick : undefined}
               title="Add reference image"
-              className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-9 rounded-full bg-d-black/40 hover:bg-d-black text-d-white border border-d-mid"
+              disabled={!isBanana}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-9 rounded-full border ${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'}`}
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -279,7 +306,7 @@ const Platform: React.FC = () => {
             </button>
             <button 
               onClick={handleGenerateImage}
-              disabled={isLoading || !prompt.trim()}
+              disabled={isLoading || !prompt.trim() || !isBanana}
               className="btn btn-orange parallax-small text-black flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -352,8 +379,31 @@ const Platform: React.FC = () => {
           {/* Reference Images Preview */}
           {referencePreviews.length > 0 && (
             <div className="w-full max-w-md mx-auto mb-8">
-              <div className="rounded-[32px] bg-d-black border border-d-mid p-3">
-                <div className="text-sm text-d-white mb-2">References ({referencePreviews.length}/3)</div>
+              <div
+                className={`relative rounded-[32px] bg-d-black p-3 transition-colors duration-200 border ${isRefsDragging && isBanana ? 'border-brand' : 'border-d-mid'}`}
+                onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsRefsDragging(true); }}
+                onDragLeave={() => setIsRefsDragging(false)}
+                onDrop={(e) => {
+                  if (!isBanana) return;
+                  e.preventDefault();
+                  setIsRefsDragging(false);
+                  const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                  if (files.length) {
+                    const combined = [...referenceFiles, ...files].slice(0, 3);
+                    setReferenceFiles(combined);
+                    const readers = combined.map(f => URL.createObjectURL(f));
+                    setReferencePreviews(readers);
+                  }
+                }}
+              >
+                <div className="text-sm text-d-white mb-2 pr-8">References ({referencePreviews.length}/3)</div>
+                <button
+                  onClick={clearAllReferences}
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
+                  aria-label="Close references section"
+                >
+                  <X className="w-4 h-4" />
+                </button>
                 <div className="grid grid-cols-3 gap-3">
                   {referencePreviews.map((url, idx) => (
                     <div key={idx} className="relative rounded-xl overflow-hidden">
@@ -371,7 +421,31 @@ const Platform: React.FC = () => {
             </div>
           )}
         </div>
-        
+        {isBanana && (
+          <aside className="hidden md:block absolute right-6 top-[calc(var(--nav-h)+4.5rem)] w-[220px] z-20">
+            <div className="space-y-3">
+              <div className="bg-d-black border border-d-mid rounded-lg p-2.5">
+                <div className="flex items-center justify-between text-xs text-d-white/80 mb-1.5">
+                  <Tooltip text="Creativity allowed in the responses."><span>Temperature</span></Tooltip>
+                  <span className="text-d-white">{temperature.toFixed(1)}</span>
+                </div>
+                <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-full range-brand" />
+              </div>
+              <div className="bg-d-black border border-d-mid rounded-lg p-2.5">
+                <div className="text-xs text-d-white/80 mb-1.5">Output length</div>
+                <input type="number" min={1} step={1} value={outputLength} onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} className="w-full bg-d-mid border border-d-mid rounded-md px-2 py-1 text-d-white text-xs" />
+              </div>
+              <div className="bg-d-black border border-d-mid rounded-lg p-2.5">
+                <div className="flex items-center justify-between text-xs text-d-white/80 mb-1.5">
+                  <Tooltip text="Nucleus sampling: consider only the most probable tokens whose cumulative probability reaches top-p."><span>Top P</span></Tooltip>
+                  <span className="text-d-white">{topP.toFixed(2)}</span>
+                </div>
+                <input type="range" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-full range-brand" />
+              </div>
+            </div>
+          </aside>
+        )}
+
         {/* AI Model selection */}
         <div className="w-full">
           <div className="text-lg font-light text-d-white font-cabin mb-8 text-center">
@@ -384,8 +458,8 @@ const Platform: React.FC = () => {
                   <button 
                     key={model.name}
                     onClick={() => handleModelSelect(model.name)}
-                    className={`group tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left parallax-small ${
-                      selectedModel === (() => {
+                    className={`tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left ${
+                      (() => {
                         const modelMap: Record<string, string> = {
                           "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
                           "FLUX.1 Kontext Pro / Max": "flux-pro",
@@ -395,14 +469,12 @@ const Platform: React.FC = () => {
                           "Qwen Image": "qwen-image",
                           "ChatGPT Image": "chatgpt-image",
                         };
-                        return modelMap[model.name] || "gemini-2.5-flash-image-preview";
+                        const id = modelMap[model.name] || "gemini-2.5-flash-image-preview";
+                        return selectedModel === id
+                          ? "bg-d-dark border-d-mid"
+                          : "bg-d-black border-d-black";
                       })()
-                        ? "bg-d-dark border-d-mid ring-2 ring-d-orange/50"
-                        : "bg-d-black border-d-black hover:bg-d-dark hover:border-d-mid"
                     }`}
-                    onMouseMove={onMove}
-                    onMouseEnter={onEnter}
-                    onMouseLeave={onLeave}
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <div className={`size-8 grid place-items-center rounded-lg border ${s.badge}`}>

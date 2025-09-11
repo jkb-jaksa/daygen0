@@ -18,6 +18,9 @@ export interface ImageGenerationOptions {
   model?: string;
   imageData?: string; // Base64 encoded image for image-to-image
   references?: string[]; // Base64 data URLs for reference images
+  temperature?: number;
+  outputLength?: number; // maps to maxOutputTokens
+  topP?: number;
 }
 
 export const useGeminiImageGeneration = () => {
@@ -35,7 +38,7 @@ export const useGeminiImageGeneration = () => {
     }));
 
     try {
-      const { prompt, model, imageData, references } = options;
+      const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
       // Build a list of candidate API endpoints to try
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -62,7 +65,7 @@ export const useGeminiImageGeneration = () => {
           const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, model, imageData, references }),
+            body: JSON.stringify({ prompt, model, imageData, references, temperature, outputLength, topP }),
           });
           if (!res.ok) {
             const errBody = await res.json().catch(() => null);

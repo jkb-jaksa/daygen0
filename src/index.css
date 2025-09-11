@@ -28,6 +28,22 @@
   --color-border-dark: var(--d-dark);
   --color-border-black: var(--d-black);
 }
+.range-brand { -webkit-appearance: none; appearance: none; background: transparent; }
+.range-brand:focus { outline: none; }
+.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); }
+.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); }
+.range-brand::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background:
+  radial-gradient(circle at 0 50%, var(--d-orange-1) 2px, transparent 3px) repeat-x,
+  linear-gradient(90deg, var(--d-orange-1), rgba(250,170,22,0.5));
+  background-size: 12px 4px, 100% 4px;
+  background-position: 0 0, 0 0;
+}
+.range-brand::-moz-range-track { height: 4px; border-radius: 999px; background:
+  radial-gradient(circle at 0 50%, var(--d-orange-1) 2px, transparent 3px) repeat-x,
+  linear-gradient(90deg, var(--d-orange-1), rgba(250,170,22,0.5));
+  background-size: 12px 4px, 100% 4px;
+  background-position: 0 0, 0 0;
+}
 
 /* Ensure page background behind transparent header is black */
 html, body {

@@ -37,7 +37,7 @@ export default async function handler(req: Request): Promise<Response> {
       data = {};
     }
 
-    const { prompt, model = 'gemini-2.5-flash-image-preview', imageData, references } = data || {};
+    const { prompt, model = 'gemini-2.5-flash-image-preview', imageData, references, temperature, outputLength, topP } = data || {};
     if (!prompt) return json({ error: 'Prompt is required' }, 400, origin);
 
     console.log('Generating image with Gemini:', {
@@ -46,8 +46,15 @@ export default async function handler(req: Request): Promise<Response> {
       hasImage: !!imageData,
     });
 
-    // Initialize model (no generationConfig needed for image response)
-    const generativeModel = genAI.getGenerativeModel({ model });
+    // Initialize model; allow basic generation tuning
+    const generativeModel = genAI.getGenerativeModel({
+      model,
+      generationConfig: {
+        temperature: typeof temperature === 'number' ? temperature : undefined,
+        maxOutputTokens: typeof outputLength === 'number' ? outputLength : undefined,
+        topP: typeof topP === 'number' ? topP : undefined,
+      } as any,
+    });
 
     // Build parts
     const parts: any[] = [{ text: prompt }];
