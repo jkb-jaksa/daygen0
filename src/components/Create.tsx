@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 
@@ -50,6 +50,7 @@ const Create: React.FC = () => {
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const maxGalleryTiles = 12; // responsive grid footprint (3x4 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -64,7 +65,7 @@ const Create: React.FC = () => {
     clearGeneratedImage,
   } = useGeminiImageGeneration();
 
-  // Load gallery from localStorage on mount
+  // Load gallery and favorites from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem("daygen_gallery");
@@ -78,6 +79,19 @@ const Create: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error("Failed to load gallery", e);
     }
+
+    try {
+      const rawFavorites = localStorage.getItem("daygen_favorites");
+      if (rawFavorites) {
+        const parsed = JSON.parse(rawFavorites) as string[];
+        if (Array.isArray(parsed)) {
+          setFavorites(new Set(parsed));
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to load favorites", e);
+    }
   }, []);
 
   const persistGallery = (next: GeneratedImage[]) => {
@@ -88,6 +102,26 @@ const Create: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error("Failed to persist gallery", e);
     }
+  };
+
+  const persistFavorites = (next: Set<string>) => {
+    setFavorites(next);
+    try {
+      localStorage.setItem("daygen_favorites", JSON.stringify(Array.from(next)));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to persist favorites", e);
+    }
+  };
+
+  const toggleFavorite = (imageUrl: string) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(imageUrl)) {
+      newFavorites.delete(imageUrl);
+    } else {
+      newFavorites.add(imageUrl);
+    }
+    persistFavorites(newFavorites);
   };
 
   const focusPromptBar = () => {
@@ -397,19 +431,19 @@ const Create: React.FC = () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
                       >
                         <div
-                          className={`size-8 grid place-items-center rounded-lg border transition-colors duration-200 ${
+                          className={`size-7 grid place-items-center rounded-lg border transition-colors duration-200 ${
                             isActive
                               ? "bg-[#222427] border-d-dark"
                               : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
                           }`}
                         >
-                          <cat.Icon className="size-4" />
+                          <cat.Icon className="size-3.5" />
                         </div>
                         <span>{cat.label}</span>
                       </button>
@@ -563,9 +597,22 @@ const Create: React.FC = () => {
                           </div>
                           
                           <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                            <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-4 h-4" /></button>
-                            <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-4 h-4" /></button>
-                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-4 h-4" /></a>
+                            <button 
+                              type="button" 
+                              onClick={() => toggleFavorite(img.url)} 
+                              className="image-action-btn" 
+                              title={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"} 
+                              aria-label={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"}
+                            >
+                              <Heart 
+                                className={`w-3.5 h-3.5 transition-colors duration-200 ${
+                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white hover:text-brand'
+                                }`} 
+                              />
+                            </button>
+                            <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
+                            <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-3.5 h-3.5" /></button>
+                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                           </div>
                         </div>
                       );
