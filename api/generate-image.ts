@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };
 
 // Gemini client will be initialized per-request using env at runtime
 
