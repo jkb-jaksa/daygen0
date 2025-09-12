@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const config = { runtime: 'nodejs' };
 
@@ -60,8 +60,8 @@ export default async function handler(req: Request): Promise<Response> {
       hasImage: !!imageData,
     });
 
-    // Initialize Nano Banana client and model; allow basic generation tuning
-    const ai = new GoogleGenAI({ apiKey });
+    // Initialize Gemini client
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     // Whitelist known image-capable models and set a safe default (Nano Banana preferred)
     const allowedModels = [
@@ -74,9 +74,12 @@ export default async function handler(req: Request): Promise<Response> {
       ? String(requestedModel)
       : serverDefaultModel;
 
-    // Note: @google/genai doesn't require generation config for image gen; keep inputs minimal
+    // Note: @google/generative-ai doesn't require generation config for image gen; keep inputs minimal
 
-    // Build contents per @google/genai Nano Banana docs
+    // Get the model
+    const modelInstance = genAI.getGenerativeModel({ model });
+
+    // Build contents for image generation
     const contents: any[] = [{ text: prompt }];
     if (imageData) {
       contents.push({
@@ -86,7 +89,7 @@ export default async function handler(req: Request): Promise<Response> {
         },
       });
     }
-    // Add up to 3 reference images for Nano Banana
+    // Add up to 3 reference images
     const maxRefs = 3;
     const refArray: string[] = Array.isArray(references) ? references.slice(0, maxRefs) : [];
     for (const ref of refArray) {
@@ -97,9 +100,9 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-    // Generate image via Nano Banana
-    const result = await ai.models.generateContent({ model, contents });
-    const response: any = result;
+    // Generate image
+    const result = await modelInstance.generateContent(contents);
+    const response = await result.response;
 
     let generatedImageData: string | null = null;
     const candidateParts = response?.candidates?.[0]?.content?.parts || [];
@@ -114,6 +117,7 @@ export default async function handler(req: Request): Promise<Response> {
       // Surface any text explanation from the model for debugging
       const textPart = candidateParts.find((p: any) => p?.text)?.text;
       const msg = textPart ? String(textPart).slice(0, 300) : 'Failed to generate image. Please try again.';
+      console.error('No image data found in response:', { candidateParts, textPart });
       return json({ error: msg }, 500, origin);
     }
 
