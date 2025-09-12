@@ -114,6 +114,7 @@ export default async function handler(req: Request): Promise<Response> {
       prompt,
       model,
       timestamp: new Date().toISOString(),
+      references: refArray.length > 0 ? refArray : undefined,
     };
 
     return json({ success: true, image: generatedImage }, 200, origin);

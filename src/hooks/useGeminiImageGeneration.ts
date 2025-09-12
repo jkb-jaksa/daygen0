@@ -5,6 +5,7 @@ export interface GeneratedImage {
   prompt: string;
   model: string;
   timestamp: string;
+  references?: string[]; // Base64 data URLs for reference images used
 }
 
 export interface ImageGenerationState {

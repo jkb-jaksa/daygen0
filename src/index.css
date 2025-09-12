@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom gradient animation for loading states */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
 
 :root {
   --nav-h: 64px; /* Navbar height used for hero offset */
@@ -627,7 +641,7 @@ html, body {
   background-color: rgba(14, 18, 18, 0.55);
   border: 1px solid var(--d-mid);
   border-radius: 9999px;
-  color: var(--d-text);
+  color: var(--d-white);
   display: inline-grid;
   height: 32px; /* match footer size-8 */
   justify-content: center;

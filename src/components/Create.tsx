@@ -1,22 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 
-// Accent styles for tool icons (matching ToolsSection)
+// Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
-
-const accentStyles: Record<Accent, { badge: string; ring: string }> = {
-  emerald: { badge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30", ring: "ring-emerald-500/10" },
-  yellow: { badge: "bg-yellow-500/20 text-yellow-300 border-yellow-400/30", ring: "ring-yellow-500/10" },
-  blue: { badge: "bg-sky-500/20 text-sky-300 border-sky-400/30", ring: "ring-sky-500/10" },
-  violet: { badge: "bg-violet-500/20 text-violet-300 border-violet-400/30", ring: "ring-violet-500/10" },
-  pink: { badge: "bg-pink-500/20 text-pink-300 border-pink-400/30", ring: "ring-pink-500/10" },
-  cyan: { badge: "bg-cyan-500/20 text-cyan-300 border-cyan-400/30", ring: "ring-cyan-500/10" },
-  orange: { badge: "bg-orange-500/20 text-orange-300 border-orange-400/30", ring: "ring-orange-500/10" },
-  lime: { badge: "bg-lime-500/20 text-lime-300 border-lime-400/30", ring: "ring-lime-500/10" },
-  indigo: { badge: "bg-indigo-500/20 text-indigo-300 border-indigo-400/30", ring: "ring-indigo-500/10" },
-};
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
@@ -57,8 +45,12 @@ const Create: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [gallery, setGallery] = useState<GeneratedImage[]>([]);
   const [selectedFullImage, setSelectedFullImage] = useState<GeneratedImage | null>(null);
+  const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
-  const maxGalleryTiles = 18; // larger grid footprint
+  const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
+  const maxGalleryTiles = 12; // responsive grid footprint (3x4 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   
@@ -100,6 +92,50 @@ const Create: React.FC = () => {
 
   const focusPromptBar = () => {
     promptTextareaRef.current?.focus();
+  };
+
+  const copyPromptToClipboard = async (prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopyNotification('Prompt copied!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy prompt:', err);
+    }
+  };
+
+  const enhancePrompt = async () => {
+    if (!prompt.trim() || isEnhancing) return;
+    
+    console.log('Enhancing prompt:', prompt);
+    setIsEnhancing(true);
+    
+    try {
+      const response = await fetch('/api/enhance-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Failed to enhance prompt: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Enhanced prompt received:', data.enhancedPrompt);
+      setPrompt(data.enhancedPrompt);
+    } catch (err) {
+      console.error('Failed to enhance prompt:', err);
+      alert('Failed to enhance prompt. Please check the console for details.');
+    } finally {
+      setIsEnhancing(false);
+    }
   };
 
   // Helper function to convert image URL to File object
@@ -283,6 +319,25 @@ const Create: React.FC = () => {
     setIsSettingsOpen(!isSettingsOpen);
   };
 
+  const toggleModelSelector = () => {
+    setIsModelSelectorOpen(!isModelSelectorOpen);
+  };
+
+  // Get current model info
+  const getCurrentModel = () => {
+    const modelMap: Record<string, string> = {
+      "gemini-2.5-flash-image-preview": "Gemini 2.5 Flash Image (Nano Banana)",
+      "flux-pro": "FLUX.1 Kontext Pro / Max",
+      "runway-gen4": "Runway Gen-4",
+      "ideogram": "Ideogram",
+      "seedream-4": "Seedream 4.0",
+      "qwen-image": "Qwen Image",
+      "chatgpt-image": "ChatGPT Image",
+    };
+    const modelName = modelMap[selectedModel] || "Gemini 2.5 Flash Image (Nano Banana)";
+    return AI_MODELS.find(model => model.name === modelName) || AI_MODELS[0];
+  };
+
   // Cleanup object URL when component unmounts or file changes
   useEffect(() => {
     return () => {
@@ -292,9 +347,28 @@ const Create: React.FC = () => {
     };
   }, [previewUrl]);
 
+  // Close model selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isModelSelectorOpen && !(event.target as Element).closest('.model-selector')) {
+        setIsModelSelectorOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isModelSelectorOpen]);
+
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
     <div className="relative min-h-screen text-d-text overflow-hidden">
+      {/* Copy notification */}
+      {copyNotification && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] px-4 py-2 text-d-white text-sm font-raleway z-[100] transition-all duration-300">
+          {copyNotification}
+        </div>
+      )}
+      
       {/* Background overlay to show gradient behind navbar */}
       <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
       
@@ -309,7 +383,7 @@ const Create: React.FC = () => {
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
             <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.5rem + 0.5rem)', bottom: 'calc(4rem + 1rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
               <div className="h-full overflow-auto glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] pl-3 pr-5 py-7 flex items-center">
-                <aside className="flex flex-col gap-6 w-full">
+                <aside className="flex flex-col gap-4 w-full">
                   {[
                     { key: "text", label: "text", Icon: Edit },
                     { key: "image", label: "image", Icon: ImageIcon },
@@ -345,11 +419,42 @@ const Create: React.FC = () => {
               </div>
             </div>
             {/* Gallery - compressed to avoid overlap with left menu */}
-            <div className="w-full max-w-[calc(100%-140px)] ml-auto">
+            <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto">
               <div className="w-full mb-4" ref={galleryRef}>
-                <div className="grid grid-cols-4 gap-3 w-full">
-                  {[...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length)).fill(null)].map((item, idx) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full">
+                  {[...(isLoading ? [{ type: 'loading', prompt }] : []), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - (isLoading ? 1 : 0))).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
+                    const isLoadingItem = item && typeof item === 'object' && 'type' in item && item.type === 'loading';
+                    
+                    if (isLoadingItem) {
+                      return (
+                        <div key={`loading-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                          {/* Animated background */}
+                          <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-orange-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                          
+                          {/* Loading overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                            <div className="text-center">
+                              {/* Spinning loader */}
+                              <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
+                              
+                              {/* Loading text */}
+                              <div className="text-d-white text-xs font-raleway animate-pulse">
+                                Generating...
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Prompt preview */}
+                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
+                            <p className="text-d-white text-xs font-raleway line-clamp-2 opacity-75">
+                              {prompt}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
                     if (!isPlaceholder) {
                       const img = item as GeneratedImage;
                       return (
@@ -359,23 +464,105 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out pointer-events-none flex items-end"
+                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
                               style={{
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.15) 80%, rgba(0,0,0,0.05) 95%, transparent 100%)',
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
                                 WebkitBackdropFilter: 'blur(12px)',
                                 height: 'fit-content'
                               }}
                             >
                               <div className="w-full p-4">
-                                <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-4">
-                                  {img.prompt}
-                                </p>
+                                <div className="mb-2">
+                                  <div className="relative">
+                                    <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-3">
+                                      {img.prompt}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyPromptToClipboard(img.prompt);
+                                        }}
+                                        className="text-d-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
+                                        style={{ color: '#C4CCCC' }}
+                                        onMouseEnter={(e) => { 
+                                          e.currentTarget.style.color = '#faaa16'; 
+                                          const tooltip = document.querySelector(`[data-tooltip-for="${img.url}-${idx}"]`) as HTMLElement;
+                                          if (tooltip) {
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            const galleryRect = e.currentTarget.closest('.group')?.getBoundingClientRect();
+                                            if (galleryRect) {
+                                              const relativeTop = rect.top - galleryRect.top;
+                                              const relativeLeft = rect.left - galleryRect.left + rect.width / 2;
+                                              tooltip.style.top = `${relativeTop - 8}px`;
+                                              tooltip.style.left = `${relativeLeft}px`;
+                                              tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                                            }
+                                            tooltip.classList.remove('opacity-0');
+                                            tooltip.classList.add('opacity-100');
+                                          }
+                                        }}
+                                        onMouseLeave={(e) => { 
+                                          e.currentTarget.style.color = '#C4CCCC'; 
+                                          const tooltip = document.querySelector(`[data-tooltip-for="${img.url}-${idx}"]`) as HTMLElement;
+                                          if (tooltip) {
+                                            tooltip.classList.remove('opacity-100');
+                                            tooltip.classList.add('opacity-0');
+                                          }
+                                        }}
+                                      >
+                                        <Copy className="w-3.5 h-3.5" />
+                                      </button>
+                                    </p>
+                                  </div>
+                                </div>
+                                {img.references && img.references.length > 0 && (
+                                  <div className="flex items-center gap-1.5">
+                                    <img 
+                                      src={img.references[0]} 
+                                      alt="Reference" 
+                                      className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedReferenceImage(img.references![0]);
+                                        setIsFullSizeOpen(true);
+                                      }}
+                                    />
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Open the reference image in a new tab
+                                        const link = document.createElement('a');
+                                        link.href = img.references![0];
+                                        link.target = '_blank';
+                                        link.click();
+                                      }}
+                                      className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer"
+                                      style={{ color: '#C4CCCC' }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
+                                    >
+                                      View reference
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
                           
-                          <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Tooltip positioned outside the hover overlay container */}
+                          <div 
+                            data-tooltip-for={`${img.url}-${idx}`}
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-md bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 transition-opacity duration-200 shadow-lg z-[70] pointer-events-none"
+                            style={{ 
+                              left: '50%', 
+                              transform: 'translateX(-50%) translateY(-100%)',
+                              top: '-8px'
+                            }}
+                          >
+                            Copy prompt
+                          </div>
+                          
+                          <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                             <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-4 h-4" /></button>
                             <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-4 h-4" /></button>
                             <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-4 h-4" /></a>
@@ -401,8 +588,8 @@ const Create: React.FC = () => {
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           <div 
-            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-dark'} px-6 pt-4 pb-4`}
-            style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 5px)', bottom: '0.75rem' }}
+            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+            style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
             onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
@@ -415,7 +602,7 @@ const Create: React.FC = () => {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={2}
-                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-3 pr-48 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
+                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
             <div className="absolute right-4 bottom-4">
@@ -468,6 +655,89 @@ const Create: React.FC = () => {
                 >
                   <Settings className="w-4 h-4" />
                 </button>
+                <button
+                  type="button"
+                  onClick={enhancePrompt}
+                  disabled={!prompt.trim() || isEnhancing}
+                  title="Enhance prompt"
+                  aria-label="Enhance prompt"
+                  className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isEnhancing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4" />
+                  )}
+                </button>
+                
+                {/* Model Selector */}
+                <div className="relative model-selector">
+                  <button
+                    type="button"
+                    onClick={toggleModelSelector}
+                    className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-200 gap-2 group"
+                  >
+                    {(() => {
+                      const currentModel = getCurrentModel();
+                      const Icon = currentModel.Icon;
+                      return <Icon className="w-4 h-4 group-hover:text-brand transition-colors duration-200" />;
+                    })()}
+                    <span className="text-xs font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                  </button>
+                  
+                  {/* Model Dropdown */}
+                  {isModelSelectorOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 w-96 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 z-50 max-h-64 overflow-y-auto">
+                      {AI_MODELS.map((model) => {
+                        const modelMap: Record<string, string> = {
+                          "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+                          "FLUX.1 Kontext Pro / Max": "flux-pro",
+                          "Runway Gen-4": "runway-gen4",
+                          "Ideogram": "ideogram",
+                          "Seedream 4.0": "seedream-4",
+                          "Qwen Image": "qwen-image",
+                          "ChatGPT Image": "chatgpt-image",
+                        };
+                        const modelId = modelMap[model.name] || "gemini-2.5-flash-image-preview";
+                        const isSelected = selectedModel === modelId;
+                        
+                        return (
+                          <button
+                            key={model.name}
+                            onClick={() => {
+                              handleModelSelect(model.name);
+                              setIsModelSelectorOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-lg border transition-all duration-100 text-left flex items-center gap-3 group ${
+                              isSelected 
+                                ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
+                                : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                            }`}
+                          >
+                            <model.Icon className={`w-4 h-4 flex-shrink-0 transition-colors duration-100 ${
+                              isSelected ? 'text-d-orange-1' : 'text-d-white/60 group-hover:text-brand'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                                isSelected ? 'text-d-light' : 'text-d-text/80 group-hover:text-brand'
+                              }`}>
+                                {model.name}
+                              </div>
+                              <div className={`text-xs truncate transition-colors duration-100 ${
+                                isSelected ? 'text-d-light' : 'text-d-white/50 group-hover:text-brand'
+                              }`}>
+                                {model.desc}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="w-2 h-2 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Reference images display - to the right of buttons */}
@@ -480,11 +750,11 @@ const Create: React.FC = () => {
                         <img 
                           src={url} 
                           alt={`Reference ${idx+1}`} 
-                          className="w-9 h-9 rounded-lg object-cover border border-d-mid hover:border-brand transition-colors duration-200" 
+                          className="w-9 h-9 rounded-lg object-cover border border-d-mid" 
                         />
                         <button
                           onClick={() => clearReference(idx)}
-                          className="absolute -top-1 -right-1 bg-d-black/80 hover:bg-d-orange-1 text-d-text rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          className="absolute -top-1 -right-1 bg-d-black/80 hover:bg-d-orange-1 text-d-text hover:text-d-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200"
                           title="Remove reference"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -599,15 +869,19 @@ const Create: React.FC = () => {
           )}
 
           {/* Full-size image modal */}
-          {isFullSizeOpen && (selectedFullImage || generatedImage) && (
+          {isFullSizeOpen && (selectedFullImage || generatedImage || selectedReferenceImage) && (
             <div
               className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
-              onClick={() => setIsFullSizeOpen(false)}
+              onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
             >
               <div className="relative max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                <img src={(selectedFullImage?.url || generatedImage?.url) as string} alt="Full size" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+                <img 
+                  src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string} 
+                  alt="Full size" 
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+                />
                 <button
-                  onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
+                  onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
                   className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
                   aria-label="Close full size view"
                 >
@@ -643,48 +917,6 @@ const Create: React.FC = () => {
 
         
 
-        {/* AI Model selection */}
-        <div className="w-full">
-          <div className="text-lg font-light text-d-white font-cabin mb-8 text-center">
-            Select model
-          </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-              {AI_MODELS.map((model) => {
-                const s = accentStyles[model.accent];
-                return (
-                  <button 
-                    key={model.name}
-                    onClick={() => handleModelSelect(model.name)}
-                    className={`no-hover-bg tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left ${
-                      (() => {
-                        const modelMap: Record<string, string> = {
-                          "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
-                          "FLUX.1 Kontext Pro / Max": "flux-pro",
-                          "Runway Gen-4": "runway-gen4",
-                          "Ideogram": "ideogram",
-                          "Seedream 4.0": "seedream-4",
-                          "Qwen Image": "qwen-image",
-                          "ChatGPT Image": "chatgpt-image",
-                        };
-                        const id = modelMap[model.name] || "gemini-2.5-flash-image-preview";
-                        return selectedModel === id
-                          ? "bg-d-dark border-d-mid"
-                          : "bg-d-black border-d-black";
-                      })()
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`size-8 grid place-items-center rounded-lg border ${s.badge}`}>
-                        <model.Icon className="size-5" />
-                      </div>
-                      <div className="text-lg font-light text-d-text font-cabin">{model.name}</div>
-                    </div>
-                    <div className="text-sm text-d-white font-raleway">{model.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
       </header>
     </div>
   );
