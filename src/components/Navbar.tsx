@@ -68,7 +68,7 @@ export default function Navbar() {
         ref={navRef}
         className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
       >
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2.5 flex items-center justify-between text-base">
+        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2.5 flex items-center justify-between text-sm">
           <div className="flex items-center gap-6 md:gap-8">
             <img
               src="/daygen-color-nobg.png"
@@ -76,7 +76,7 @@ export default function Navbar() {
               onClick={handleLogoClick}
               className="parallax-mid h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-raleway">
+            <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-raleway">
               {items.map((item) => (
                 <a
                   key={item}
@@ -112,13 +112,13 @@ export default function Navbar() {
           className="glass-liquid willchange-backdrop isolate border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200"
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
-          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
+          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-sm text-d-text">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
-                <div className="text-xl font-light font-cabin mb-2">
+                <div className="text-sm font-light font-cabin mb-2">
                   {activeMenu}
                 </div>
-                <div className="text-base font-raleway text-d-white/85">Coming soon.</div>
+                <div className="text-sm font-raleway text-d-white/85">Coming soon.</div>
               </div>
             )}
           </div>

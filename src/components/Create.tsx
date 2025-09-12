@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 
@@ -51,7 +51,7 @@ const Create: React.FC = () => {
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const maxGalleryTiles = 12; // responsive grid footprint (3x4 on large screens)
+  const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   
@@ -72,8 +72,11 @@ const Create: React.FC = () => {
       if (raw) {
         const parsed = JSON.parse(raw) as GeneratedImage[];
         if (Array.isArray(parsed)) {
+          console.log('Loading gallery from localStorage with', parsed.length, 'images');
           setGallery(parsed);
         }
+      } else {
+        console.log('No gallery data found in localStorage');
       }
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -94,15 +97,6 @@ const Create: React.FC = () => {
     }
   }, []);
 
-  const persistGallery = (next: GeneratedImage[]) => {
-    setGallery(next);
-    try {
-      localStorage.setItem("daygen_gallery", JSON.stringify(next));
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to persist gallery", e);
-    }
-  };
 
   const persistFavorites = (next: Set<string>) => {
     setFavorites(next);
@@ -315,19 +309,35 @@ const Create: React.FC = () => {
 
       // Update gallery with newest first, unique by url, capped to 24
       if (img?.url) {
-        const dedup = (list: GeneratedImage[]) => {
-          const seen = new Set<string>();
-          const out: GeneratedImage[] = [];
-          for (const it of list) {
-            if (it?.url && !seen.has(it.url)) {
-              seen.add(it.url);
-              out.push(it);
+        console.log('Adding new image to gallery. Current gallery size:', gallery.length);
+        
+        // Use functional update to ensure we get the latest gallery state
+        setGallery(currentGallery => {
+          const dedup = (list: GeneratedImage[]) => {
+            const seen = new Set<string>();
+            const out: GeneratedImage[] = [];
+            for (const it of list) {
+              if (it?.url && !seen.has(it.url)) {
+                seen.add(it.url);
+                out.push(it);
+              }
             }
+            console.log('Deduplication: input length', list.length, 'output length', out.length);
+            return out;
+          };
+          const next = dedup([img, ...currentGallery]).slice(0, 24);
+          console.log('Final gallery size after dedup and slice:', next.length);
+          
+          // Persist to localStorage
+          try {
+            localStorage.setItem("daygen_gallery", JSON.stringify(next));
+            console.log('Gallery persisted to localStorage');
+          } catch (e) {
+            console.error("Failed to persist gallery", e);
           }
-          return out;
-        };
-        const next = dedup([img, ...gallery]).slice(0, 24);
-        persistGallery(next);
+          
+          return next;
+        });
       }
     } catch (error) {
       console.error('Error generating image:', error);
@@ -415,9 +425,15 @@ const Create: React.FC = () => {
           {/* Categories + Gallery row */}
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
-            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.5rem + 0.5rem)', bottom: 'calc(4rem + 1rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
-              <div className="h-full overflow-auto glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] pl-3 pr-5 py-7 flex items-center">
-                <aside className="flex flex-col gap-4 w-full">
+            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.5rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
+              <div className="h-full overflow-auto glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] pl-3 pr-5 py-4 flex items-start">
+                <aside className="flex flex-col gap-2 w-full mt-2">
+                  {/* Generate section */}
+                  <div className="text-xs text-d-white/60 font-raleway font-medium uppercase tracking-wider mb-1">
+                    generate
+                  </div>
+                  
+                  {/* Main categories */}
                   {[
                     { key: "text", label: "text", Icon: Edit },
                     { key: "image", label: "image", Icon: ImageIcon },
@@ -449,13 +465,52 @@ const Create: React.FC = () => {
                       </button>
                     );
                   })}
+                  
+                  {/* Divider */}
+                  <div className="border-t border-d-dark my-2"></div>
+                  
+                  {/* Library section */}
+                  <div className="text-xs text-d-white/60 font-raleway font-medium uppercase tracking-wider mb-1">
+                    library
+                  </div>
+                  
+                  {/* Additional sections */}
+                  {[
+                    { key: "history", label: "history", Icon: History },
+                    { key: "favourites", label: "favourites", Icon: Star },
+                    { key: "uploads", label: "uploads", Icon: Upload },
+                  ].map((cat) => {
+                    const isActive = activeCategory === cat.key;
+                    return (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setActiveCategory(cat.key)}
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                          isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+                        }`}
+                        aria-pressed={isActive}
+                      >
+                        <div
+                          className={`size-7 grid place-items-center rounded-lg border transition-colors duration-200 ${
+                            isActive
+                              ? "bg-[#222427] border-d-dark"
+                              : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
+                          }`}
+                        >
+                          <cat.Icon className="size-3.5" />
+                        </div>
+                        <span>{cat.label}</span>
+                      </button>
+                    );
+                  })}
                 </aside>
               </div>
             </div>
             {/* Gallery - compressed to avoid overlap with left menu */}
-            <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto">
+            <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
               <div className="w-full mb-4" ref={galleryRef}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                   {[...(isLoading ? [{ type: 'loading', prompt }] : []), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - (isLoading ? 1 : 0))).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isLoadingItem = item && typeof item === 'object' && 'type' in item && item.type === 'loading';
@@ -649,7 +704,7 @@ const Create: React.FC = () => {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={2}
-                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
+                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
             <div className="absolute right-4 bottom-4">
