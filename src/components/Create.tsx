@@ -171,7 +171,7 @@ const Create: React.FC = () => {
     if (gallery.length > 0) {
       const backupInterval = setInterval(() => {
         persistGallery(gallery);
-      }, 30000); // Backup every 30 seconds
+      }, 120000); // Backup every 2 minutes to reduce localStorage writes
 
       return () => clearInterval(backupInterval);
     }
@@ -477,12 +477,6 @@ const Create: React.FC = () => {
     persistUploadedImages([...uploadedImages, ...newUploads]);
   };
 
-  const handleClearGenerated = () => {
-    clearGeneratedImage();
-    // Keep references hidden after closing generated image
-    setReferenceFiles([]);
-    setReferencePreviews([]);
-  };
 
   const clearReference = (idx: number) => {
     const nextFiles = referenceFiles.filter((_, i) => i !== idx);
@@ -560,8 +554,8 @@ const Create: React.FC = () => {
           
           // Create new gallery with new image first, then existing valid images
           const newGallery = dedup([img, ...validCurrentGallery]);
-          // Keep more images (50 instead of 24) and only slice if we have too many
-          const next = newGallery.length > 50 ? newGallery.slice(0, 50) : newGallery;
+          // Keep reasonable number of images to avoid localStorage quota issues
+          const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           console.log('Final gallery size after dedup and slice:', next.length);
           
           // Persist to localStorage with error handling
@@ -569,14 +563,26 @@ const Create: React.FC = () => {
             localStorage.setItem("daygen_gallery", JSON.stringify(next));
             console.log('Gallery persisted to localStorage with', next.length, 'images');
           } catch (e) {
-            console.error("Failed to persist gallery", e);
-            // Try to clear localStorage and retry
-            try {
-              localStorage.removeItem("daygen_gallery");
-              localStorage.setItem("daygen_gallery", JSON.stringify(next));
-              console.log('Gallery persisted to localStorage after cleanup');
-            } catch (retryError) {
-              console.error("Failed to persist gallery even after cleanup", retryError);
+            console.error("Failed to persist gallery - localStorage quota exceeded", e);
+            // If quota exceeded, try with fewer images
+            if (next.length > 10) {
+              const reducedGallery = next.slice(0, 10);
+              try {
+                localStorage.setItem("daygen_gallery", JSON.stringify(reducedGallery));
+                console.log('Gallery persisted with reduced size:', reducedGallery.length, 'images');
+                return reducedGallery;
+              } catch (retryError) {
+                console.error("Failed to persist even with reduced gallery", retryError);
+                // If still failing, clear and try with just the new image
+                try {
+                  localStorage.removeItem("daygen_gallery");
+                  localStorage.setItem("daygen_gallery", JSON.stringify([img]));
+                  console.log('Gallery cleared and persisted with new image only');
+                  return [img];
+                } catch (finalError) {
+                  console.error("Failed to persist even with single image", finalError);
+                }
+              }
             }
           }
           
@@ -2095,88 +2101,6 @@ const Create: React.FC = () => {
             </div>
           )}
 
-          {/* Generated Image Display */}
-          {generatedImage && (
-            <div className="w-full max-w-lg mx-auto mb-8">
-              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
-                <img 
-                  src={generatedImage.url} 
-                  alt="Generated image" 
-                  className="w-full h-64 object-cover cursor-zoom-in"
-                  onClick={() => { if (generatedImage) { setSelectedFullImage(generatedImage); setIsFullSizeOpen(true); } }}
-                  onLoad={() => console.log('Image loaded successfully')}
-                  onError={(e) => console.error('Image failed to load:', e)}
-                />
-                <button
-                  onClick={handleClearGenerated}
-                  className="absolute top-2 right-2 image-action-btn"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => confirmDeleteImage(generatedImage.url)}
-                    className="image-action-btn"
-                    title="Delete image"
-                    aria-label="Delete image"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <a
-                    href={generatedImage.url}
-                    download
-                    className="image-action-btn"
-                    title="Download image"
-                    aria-label="Download image"
-                  >
-                    <Download className="w-4 h-4" />
-                  </a>
-                </div>
-                
-                {/* References Display */}
-                {generatedImage.references && generatedImage.references.length > 0 && (
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
-                    <div className="flex gap-1">
-                      {generatedImage.references.map((ref, refIdx) => (
-                        <div key={refIdx} className="relative">
-                          <img 
-                            src={ref} 
-                            alt={`Reference ${refIdx + 1}`} 
-                            className="w-8 h-8 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedReferenceImage(ref);
-                              setIsFullSizeOpen(true);
-                            }}
-                          />
-                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                            {refIdx + 1}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Open the first reference image in a new tab
-                        const link = document.createElement('a');
-                        link.href = generatedImage.references![0];
-                        link.target = '_blank';
-                        link.click();
-                      }}
-                      className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer bg-d-black/60 px-2 py-1 rounded"
-                      style={{ color: '#C4CCCC' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
-                    >
-                      View reference{generatedImage.references.length > 1 ? 's' : ''} ({generatedImage.references.length})
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Full-size image modal */}
           {isFullSizeOpen && (selectedFullImage || generatedImage || selectedReferenceImage) && (
