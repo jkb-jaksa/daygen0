@@ -66,7 +66,6 @@ const Create: React.FC = () => {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
   const [newFolderName, setNewFolderName] = useState<string>("");
-  const [previousCategory, setPreviousCategory] = useState<string>("image");
   const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -278,13 +277,8 @@ const Create: React.FC = () => {
 
 
 
-  const navigateBack = () => {
-    setActiveCategory(previousCategory);
-    setSelectedFolder(null);
-  };
 
   const handleMyFoldersClick = () => {
-    setPreviousCategory(activeCategory);
     setActiveCategory("my-folders");
   };
 
