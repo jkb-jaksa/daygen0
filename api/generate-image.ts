@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'nodejs' };
 
 // Gemini client will be initialized per-request using env at runtime
 
@@ -20,6 +20,8 @@ function json(body: unknown, status: number, origin: string): Response {
 
 export default async function handler(req: Request): Promise<Response> {
   const origin = req.headers.get('origin') || '*';
+  
+  console.log('API handler called:', { method: req.method, origin });
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: corsHeaders(origin) });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, origin);
@@ -31,6 +33,14 @@ export default async function handler(req: Request): Promise<Response> {
       process.env.GOOGLE_API_KEY ||
       process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
       '';
+
+    console.log('API key check:', { 
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasViteKey: !!process.env.VITE_GEMINI_API_KEY,
+      hasGoogleKey: !!process.env.GOOGLE_API_KEY,
+      hasGoogleGenKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+      hasAnyKey: !!apiKey
+    });
 
     if (!apiKey) {
       return json({ error: 'Gemini API key not configured' }, 500, origin);
@@ -121,8 +131,18 @@ export default async function handler(req: Request): Promise<Response> {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('generate-image error:', message);
+    console.error('Full error object:', err);
+    
     // Map common quota error to 429 so frontend can present guidance
     const isQuota = /quota|Too Many Requests/i.test(message);
-    return json({ error: message || 'Unknown server error' }, isQuota ? 429 : 500, origin);
+    const isApiKey = /api.*key|authentication|unauthorized/i.test(message);
+    
+    // Provide more specific error messages
+    let errorMessage = message || 'Unknown server error';
+    if (isApiKey) {
+      errorMessage = 'API key configuration error. Please check environment variables.';
+    }
+    
+    return json({ error: errorMessage }, isQuota ? 429 : 500, origin);
   }
 }
