@@ -5,7 +5,7 @@ import ToolsSection from "./components/ToolsSection";
 import ContactSection from "./components/ContactSection";
 import FAQSection from "./components/Faq";
 import Subpage from "./components/subpage/Subpage";
-import Platform from "./components/Platform";
+import Create from "./components/Create";
 import Footer from "./components/Footer";
 
 function Home() {
@@ -28,7 +28,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/ai-tools" element={<ToolsSection />} />
           <Route path="/ai-tools/:id" element={<Subpage />} />
-          <Route path="/create" element={<Platform />} />
+          <Route path="/create" element={<Create />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2 } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
+import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 
 // Accent styles for tool icons (matching ToolsSection)
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -55,6 +56,11 @@ const Create: React.FC = () => {
   const [topP, setTopP] = useState<number>(1);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [gallery, setGallery] = useState<GeneratedImage[]>([]);
+  const [selectedFullImage, setSelectedFullImage] = useState<GeneratedImage | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("image");
+  const maxGalleryTiles = 18; // larger grid footprint
+  const galleryRef = useRef<HTMLDivElement | null>(null);
   
   // Use the Gemini image generation hook
   const {
@@ -65,6 +71,33 @@ const Create: React.FC = () => {
     clearError,
     clearGeneratedImage,
   } = useGeminiImageGeneration();
+
+  // Load gallery from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("daygen_gallery");
+      if (raw) {
+        const parsed = JSON.parse(raw) as GeneratedImage[];
+        if (Array.isArray(parsed)) {
+          setGallery(parsed);
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to load gallery", e);
+    }
+  }, []);
+
+  const persistGallery = (next: GeneratedImage[]) => {
+    setGallery(next);
+    try {
+      localStorage.setItem("daygen_gallery", JSON.stringify(next));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to persist gallery", e);
+    }
+  };
+
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -149,7 +182,7 @@ const Create: React.FC = () => {
         });
       }
 
-      await generateImage({
+      const img = await generateImage({
         prompt: prompt.trim(),
         model: selectedModel,
         imageData,
@@ -166,6 +199,23 @@ const Create: React.FC = () => {
         outputLength: isBanana ? outputLength : undefined,
         topP: isBanana ? topP : undefined,
       });
+
+      // Update gallery with newest first, unique by url, capped to 24
+      if (img?.url) {
+        const dedup = (list: GeneratedImage[]) => {
+          const seen = new Set<string>();
+          const out: GeneratedImage[] = [];
+          for (const it of list) {
+            if (it?.url && !seen.has(it.url)) {
+              seen.add(it.url);
+              out.push(it);
+            }
+          }
+          return out;
+        };
+        const next = dedup([img, ...gallery]).slice(0, 24);
+        persistGallery(next);
+      }
     } catch (error) {
       console.error('Error generating image:', error);
     }
@@ -206,45 +256,89 @@ const Create: React.FC = () => {
       <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
       
       {/* PLATFORM HERO */}
-      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-[calc(var(--nav-h)+0.25rem)] pb-16">
-        {/* Top row with daygen in left corner */}
-        <div className="flex items-start justify-start">
-          <div>
-            <div className="text-5xl font-normal tracking-tight font-raleway leading-[1.05] self-start">
-              <span className="text-white-gradient">day</span>
-              <span className="text-d-orange">gen</span>
-            </div>
-            <div className="text-lg font-normal text-d-white font-raleway mt-1">
-              Next-gen ideas. Every day.
-            </div>
-          </div>
-        </div>
-
+      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-48">
         {/* Centered content */}
-        <div className="flex flex-col items-center justify-center min-h-[30vh] text-center">
-          <h2 className="text-2xl font-light text-d-text font-cabin mb-4">
-            Create <span className="text-d-orange">now</span>.
-          </h2>
+        <div className="flex flex-col items-center justify-center text-center">
+          {/* Removed "Create now" heading per request */}
           
-          {/* Content type menu */}
-          <div className="flex gap-6 mb-3 justify-center">
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
-              image
-            </button>
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
-              video
-            </button>
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
-              avatars
-            </button>
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
-              audio
-            </button>
+          {/* Categories + Gallery row */}
+          <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
+            {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
+            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.5rem + 0.5rem)', bottom: 'calc(4rem + 1rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
+              <div className="h-full overflow-auto glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] pl-3 pr-5 py-7 flex items-center">
+                <aside className="flex flex-col gap-6 w-full">
+                  {[
+                    { key: "text", label: "text", Icon: Edit },
+                    { key: "image", label: "image", Icon: ImageIcon },
+                    { key: "video", label: "video", Icon: VideoIcon },
+                    { key: "avatars", label: "avatars", Icon: Users },
+                    { key: "audio", label: "audio", Icon: Volume2 },
+                  ].map((cat) => {
+                    const isActive = activeCategory === cat.key;
+                    return (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setActiveCategory(cat.key)}
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                          isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+                        }`}
+                        aria-pressed={isActive}
+                      >
+                        <div
+                          className={`size-8 grid place-items-center rounded-lg border transition-colors duration-200 ${
+                            isActive
+                              ? "bg-[#222427] border-d-dark"
+                              : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
+                          }`}
+                        >
+                          <cat.Icon className="size-4" />
+                        </div>
+                        <span>{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </aside>
+              </div>
+            </div>
+            {/* Gallery - compressed to avoid overlap with left menu */}
+            <div className="w-full max-w-[calc(100%-140px)] ml-auto">
+              <div className="w-full mb-4" ref={galleryRef}>
+                <div className="grid grid-cols-4 gap-3 w-full">
+                  {[...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length)).fill(null)].map((item, idx) => {
+                    const isPlaceholder = item === null;
+                    if (!isPlaceholder) {
+                      const img = item as GeneratedImage;
+                      return (
+                        <div key={`${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200">
+                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
+                          <div className="absolute bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-4 h-4" /></a>
+                            <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Placeholder tile
+                    return (
+                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square">
+                        <div className="text-d-light font-raleway text-sm text-center px-2">Create something amazing.</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
+
           
-          {/* Prompt input with + for references and drag & drop (flex layout) */}
+
+          
+          
+          {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           <div 
-            className={`promptbar relative w-[700px] max-w-full mx-auto mb-6 rounded-[20px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 pt-3 pb-12`}
+            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-dark'} px-6 pt-4 pb-4`}
+            style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 5px)', bottom: '0.75rem' }}
             onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
@@ -255,10 +349,10 @@ const Create: React.FC = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={2}
-                className="w-full min-h-[68px] max-h-40 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 font-raleway text-base pl-2 pr-44 pt-0 pb-2 leading-tight resize-none overflow-auto text-left"
+                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-3 pr-48 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
-            <div className="absolute right-2 bottom-2">
+            <div className="absolute right-4 bottom-4">
               <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
                 <button 
                   onClick={handleGenerateImage}
@@ -275,14 +369,14 @@ const Create: React.FC = () => {
               </Tooltip>
             </div>
             {/* Left icons overlayed so they don't shift textarea left edge */}
-            <div className="absolute left-2 bottom-2 flex items-center gap-0.5 pointer-events-auto">
+            <div className="absolute left-4 bottom-4 flex items-center gap-1 pointer-events-auto">
               <button
                 type="button"
                 onClick={isBanana ? handleRefsClick : undefined}
                 title="Add reference image"
                 aria-label="Add reference image"
                 disabled={!isBanana}
-                className={`${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0`}
+                className={`${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -291,7 +385,7 @@ const Create: React.FC = () => {
                 onClick={toggleSettings}
                 title="Settings"
                 aria-label="Settings"
-                className="bg-d-black/40 hover:bg-d-black text-d-white border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0"
+                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
               >
                 <Settings className="w-4 h-4" />
               </button>
@@ -365,7 +459,7 @@ const Create: React.FC = () => {
                   src={generatedImage.url} 
                   alt="Generated image" 
                   className="w-full h-64 object-cover cursor-zoom-in"
-                  onClick={() => setIsFullSizeOpen(true)}
+                  onClick={() => { if (generatedImage) { setSelectedFullImage(generatedImage); setIsFullSizeOpen(true); } }}
                   onLoad={() => console.log('Image loaded successfully')}
                   onError={(e) => console.error('Image failed to load:', e)}
                 />
@@ -400,15 +494,15 @@ const Create: React.FC = () => {
           )}
 
           {/* Full-size image modal */}
-          {isFullSizeOpen && generatedImage && (
+          {isFullSizeOpen && (selectedFullImage || generatedImage) && (
             <div
               className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
               onClick={() => setIsFullSizeOpen(false)}
             >
               <div className="relative max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                <img src={generatedImage.url} alt="Full size generated" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+                <img src={(selectedFullImage?.url || generatedImage?.url) as string} alt="Full size" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
                 <button
-                  onClick={() => setIsFullSizeOpen(false)}
+                  onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
                   className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
                   aria-label="Close full size view"
                 >
@@ -485,6 +579,8 @@ const Create: React.FC = () => {
             </div>
           )}
         </div>
+
+        
 
         {/* AI Model selection */}
         <div className="w-full">
