@@ -1579,9 +1579,9 @@ const Create: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Edit className="w-16 h-16 text-d-white/30 mb-4" />
-                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Text Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                      <Edit className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <h3 className="text-xl font-cabin text-d-text mb-2">Text Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white max-w-md">
                         We're working on bringing you powerful text generation capabilities. Stay tuned!
                       </p>
                     </div>
@@ -1602,9 +1602,9 @@ const Create: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <VideoIcon className="w-16 h-16 text-d-white/30 mb-4" />
-                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Video Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                      <VideoIcon className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <h3 className="text-xl font-cabin text-d-text mb-2">Video Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white max-w-md">
                         We're working on bringing you amazing video generation features. Stay tuned!
                       </p>
                     </div>
@@ -1625,9 +1625,9 @@ const Create: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Users className="w-16 h-16 text-d-white/30 mb-4" />
-                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Avatar Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                      <Users className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <h3 className="text-xl font-cabin text-d-text mb-2">Avatar Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white max-w-md">
                         We're working on bringing you custom avatar generation. Stay tuned!
                       </p>
                     </div>
@@ -1648,9 +1648,9 @@ const Create: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Volume2 className="w-16 h-16 text-d-white/30 mb-4" />
-                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Audio Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                      <Volume2 className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <h3 className="text-xl font-cabin text-d-text mb-2">Audio Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white max-w-md">
                         We're working on bringing you audio generation capabilities. Stay tuned!
                       </p>
                     </div>
