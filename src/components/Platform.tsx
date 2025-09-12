@@ -54,6 +54,7 @@ const Platform: React.FC = () => {
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   
   // Use the Gemini image generation hook
   const {
@@ -185,6 +186,10 @@ const Platform: React.FC = () => {
     setSelectedModel(modelMap[modelName] || "gemini-2.5-flash-image-preview");
   };
 
+  const toggleSettings = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
   // Cleanup object URL when component unmounts or file changes
   useEffect(() => {
     return () => {
@@ -222,7 +227,7 @@ const Platform: React.FC = () => {
           </h2>
           
           {/* Content type menu */}
-          <div className="flex gap-6 mb-3">
+          <div className="flex gap-6 mb-3 justify-center">
             <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
               image
             </button>
@@ -237,35 +242,9 @@ const Platform: React.FC = () => {
             </button>
           </div>
           
-          {/* Nano Banana settings (mobile) */}
-          {isBanana && (
-            <div className="md:hidden w-full max-w-xl mb-6 text-left">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-d-black border border-d-mid rounded-2xl p-3">
-                  <div className="text-sm text-d-white/80 mb-1" title="Creativity allowed in the responses.">Temperature</div>
-                  <div className="flex items-center gap-3">
-                    <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-full range-brand" />
-                    <input type="number" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-16 bg-d-mid border border-d-mid rounded-md text-right px-2 py-1 text-d-white" />
-                  </div>
-                </div>
-                <div className="bg-d-black border border-d-mid rounded-2xl p-3">
-                  <div className="text-sm text-d-white/80 mb-1" title="Maximum number of tokens in respose">Output length</div>
-                  <input type="number" min={1} step={1} value={outputLength} onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} className="w-full bg-d-mid border border-d-mid rounded-md px-2 py-1 text-d-white" />
-                </div>
-                <div className="bg-d-black border border-d-mid rounded-2xl p-3">
-                  <div className="text-sm text-d-white/80 mb-1" title="Nucleus sampling: consider only the most probable tokens whose cumulative probability reaches top-p.">Top P</div>
-                  <div className="flex items-center gap-3">
-                    <input type="range" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-full range-brand" />
-                    <input type="number" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-16 bg-d-mid border border-d-mid rounded-md text-right px-2 py-1 text-d-white" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Prompt input with + for references and drag & drop (flex layout) */}
           <div 
-            className={`promptbar relative w-full max-w-4xl mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 pt-3 pb-10 mx-auto`}
+            className={`promptbar relative w-[700px] max-w-full mx-auto mb-6 rounded-[16px] transition-colors duration-200 bg-d-mid border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-mid'} px-3 pt-3 pb-10`}
             onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
@@ -309,6 +288,7 @@ const Platform: React.FC = () => {
               </button>
               <button
                 type="button"
+                onClick={toggleSettings}
                 title="Settings"
                 aria-label="Settings"
                 className="bg-d-black/40 hover:bg-d-black text-d-white border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0"
@@ -317,6 +297,32 @@ const Platform: React.FC = () => {
               </button>
             </div>
           </div>
+          
+          {/* Nano Banana settings - appears below Prompt Bar */}
+          {isBanana && isSettingsOpen && (
+            <div className="w-[700px] max-w-full mx-auto mb-6 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-d-black border border-d-mid rounded-xl p-2.5">
+                  <div className="text-xs text-d-white/80 mb-1.5" title="Creativity allowed in the responses.">Temperature</div>
+                  <div className="flex items-center gap-2">
+                    <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-full range-brand" />
+                    <input type="number" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-12 bg-d-mid border border-d-mid rounded text-right px-1.5 py-0.5 text-d-white text-xs" />
+                  </div>
+                </div>
+                <div className="bg-d-black border border-d-mid rounded-xl p-2.5">
+                  <div className="text-xs text-d-white/80 mb-1.5" title="Maximum number of tokens in respose">Output length</div>
+                  <input type="number" min={1} step={1} value={outputLength} onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} className="w-full bg-d-mid border border-d-mid rounded px-2 py-1 text-d-white text-xs" />
+                </div>
+                <div className="bg-d-black border border-d-mid rounded-xl p-2.5">
+                  <div className="text-xs text-d-white/80 mb-1.5" title="Nucleus sampling: consider only the most probable tokens whose cumulative probability reaches top-p.">Top P</div>
+                  <div className="flex items-center gap-2">
+                    <input type="range" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-full range-brand" />
+                    <input type="number" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-12 bg-d-mid border border-d-mid rounded text-right px-1.5 py-0.5 text-d-white text-xs" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="flex gap-4">
             <input
@@ -353,7 +359,7 @@ const Platform: React.FC = () => {
 
           {/* Generated Image Display */}
           {generatedImage && (
-            <div className="w-full max-w-md mx-auto mb-8">
+            <div className="w-full max-w-lg mx-auto mb-8">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
                 <img 
                   src={generatedImage.url} 
@@ -414,7 +420,7 @@ const Platform: React.FC = () => {
 
           {/* Uploaded Image Preview */}
           {previewUrl && (
-            <div className="w-full max-w-md mx-auto mb-8">
+            <div className="w-full max-w-lg mx-auto mb-8">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
                 <img 
                   src={previewUrl} 
@@ -436,7 +442,7 @@ const Platform: React.FC = () => {
 
           {/* Reference Images Preview - hide when generated image exists */}
           {referencePreviews.length > 0 && !generatedImage && (
-            <div className="w-full max-w-md mx-auto mb-8">
+            <div className="w-full max-w-lg mx-auto mb-8">
               <div
                 className={`relative rounded-[32px] bg-d-black p-3 transition-colors duration-200 border ${isRefsDragging && isBanana ? 'border-brand' : 'border-d-mid'}`}
                 onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsRefsDragging(true); }}
@@ -479,30 +485,6 @@ const Platform: React.FC = () => {
             </div>
           )}
         </div>
-        {isBanana && (
-          <aside className="hidden md:block absolute right-6 top-[calc(var(--nav-h)+4.5rem)] w-[220px] z-20">
-            <div className="space-y-3">
-              <div className="bg-d-black border border-d-mid rounded-lg p-2.5">
-                <div className="flex items-center justify-between text-xs text-d-white/80 mb-1.5">
-                  <Tooltip text="Creativity allowed in the responses."><span>Temperature</span></Tooltip>
-                  <span className="text-d-white">{temperature.toFixed(1)}</span>
-                </div>
-                <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-full range-brand" />
-              </div>
-              <div className="bg-d-black border border-d-mid rounded-lg p-2.5">
-                <div className="text-xs text-d-white/80 mb-1.5">Output length</div>
-                <input type="number" min={1} step={1} value={outputLength} onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} className="w-full bg-d-mid border border-d-mid rounded-md px-2 py-1 text-d-white text-xs" />
-              </div>
-              <div className="bg-d-black border border-d-mid rounded-lg p-2.5">
-                <div className="flex items-center justify-between text-xs text-d-white/80 mb-1.5">
-                  <Tooltip text="Nucleus sampling: consider only the most probable tokens whose cumulative probability reaches top-p."><span>Top P</span></Tooltip>
-                  <span className="text-d-white">{topP.toFixed(2)}</span>
-                </div>
-                <input type="range" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-full range-brand" />
-              </div>
-            </div>
-          </aside>
-        )}
 
         {/* AI Model selection */}
         <div className="w-full">

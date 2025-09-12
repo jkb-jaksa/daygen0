@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export const config = { runtime: 'edge' };
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "");
 
 function corsHeaders(origin: string): HeadersInit {
   return {
@@ -26,7 +26,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, origin);
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.VITE_GEMINI_API_KEY && !process.env.GEMINI_API_KEY) {
       return json({ error: 'Gemini API key not configured' }, 500, origin);
     }
 
