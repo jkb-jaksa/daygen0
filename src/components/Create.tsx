@@ -270,7 +270,7 @@ const Create: React.FC = () => {
     }
   };
 
-  const addImageToFolder = (folderId: string, imageUrl: string) => {
+  const _addImageToFolder = (folderId: string, imageUrl: string) => {
     const updatedFolders = folders.map(folder => {
       if (folder.id === folderId && !folder.imageIds.includes(imageUrl)) {
         return { ...folder, imageIds: [...folder.imageIds, imageUrl] };
@@ -280,7 +280,7 @@ const Create: React.FC = () => {
     persistFolders(updatedFolders);
   };
 
-  const removeImageFromFolder = (folderId: string, imageUrl: string) => {
+  const _removeImageFromFolder = (folderId: string, imageUrl: string) => {
     const updatedFolders = folders.map(folder => {
       if (folder.id === folderId) {
         return { ...folder, imageIds: folder.imageIds.filter(id => id !== imageUrl) };
