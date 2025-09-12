@@ -270,27 +270,6 @@ const Create: React.FC = () => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _addImageToFolder = (folderId: string, imageUrl: string) => {
-    const updatedFolders = folders.map(folder => {
-      if (folder.id === folderId && !folder.imageIds.includes(imageUrl)) {
-        return { ...folder, imageIds: [...folder.imageIds, imageUrl] };
-      }
-      return folder;
-    });
-    persistFolders(updatedFolders);
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _removeImageFromFolder = (folderId: string, imageUrl: string) => {
-    const updatedFolders = folders.map(folder => {
-      if (folder.id === folderId) {
-        return { ...folder, imageIds: folder.imageIds.filter(id => id !== imageUrl) };
-      }
-      return folder;
-    });
-    persistFolders(updatedFolders);
-  };
 
   const navigateBack = () => {
     setActiveCategory(previousCategory);
