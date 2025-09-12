@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 export const config = { runtime: 'nodejs' };
 
@@ -61,23 +61,19 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     // Initialize Gemini client
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
 
     // Whitelist known image-capable models and set a safe default
     const allowedModels = [
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
+      'gemini-2.5-flash-image-preview',
+      'gemini-2.5-flash-image',
     ];
-    const serverDefaultModel = 'gemini-2.0-flash-exp';
+    const serverDefaultModel = 'gemini-2.5-flash-image-preview';
     const model = allowedModels.includes(String(requestedModel || ''))
       ? String(requestedModel)
       : serverDefaultModel;
 
-    // Note: @google/generative-ai doesn't require generation config for image gen; keep inputs minimal
-
-    // Get the model
-    const modelInstance = genAI.getGenerativeModel({ model });
+    // Note: @google/genai doesn't require generation config for image gen; keep inputs minimal
 
     // Build contents for image generation
     const contents: any[] = [{ text: prompt }];
@@ -104,8 +100,8 @@ export default async function handler(req: Request): Promise<Response> {
     console.log('Attempting to generate image with model:', model);
     console.log('Contents:', contents);
     
-    const result = await modelInstance.generateContent(contents);
-    const response = await result.response;
+    const result = await ai.models.generateContent({ model, contents });
+    const response: any = result;
     
     console.log('Response received:', response);
 
