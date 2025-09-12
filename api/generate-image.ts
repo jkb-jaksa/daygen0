@@ -29,14 +29,12 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const apiKey =
       process.env.GEMINI_API_KEY ||
-      process.env.VITE_GEMINI_API_KEY ||
       process.env.GOOGLE_API_KEY ||
       process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
       '';
 
     console.log('API key check:', { 
       hasGeminiKey: !!process.env.GEMINI_API_KEY,
-      hasViteKey: !!process.env.VITE_GEMINI_API_KEY,
       hasGoogleKey: !!process.env.GOOGLE_API_KEY,
       hasGoogleGenKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       hasAnyKey: !!apiKey
