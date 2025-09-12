@@ -1,9 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 export const config = { runtime: 'edge' };
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "");
+// Gemini client will be initialized per-request using env at runtime
 
 function corsHeaders(origin: string): HeadersInit {
   return {
@@ -26,7 +25,14 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, origin);
 
   try {
-    if (!process.env.VITE_GEMINI_API_KEY && !process.env.GEMINI_API_KEY) {
+    const apiKey =
+      process.env.GEMINI_API_KEY ||
+      process.env.VITE_GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      '';
+
+    if (!apiKey) {
       return json({ error: 'Gemini API key not configured' }, 500, origin);
     }
 
@@ -37,53 +43,58 @@ export default async function handler(req: Request): Promise<Response> {
       data = {};
     }
 
-    const { prompt, model = 'gemini-2.5-flash-image-preview', imageData, references, temperature, outputLength, topP } = data || {};
+    const { prompt, model: requestedModel, imageData, references, temperature, outputLength, topP } = data || {};
     if (!prompt) return json({ error: 'Prompt is required' }, 400, origin);
 
     console.log('Generating image with Gemini:', {
       prompt: String(prompt).substring(0, 100) + '...',
-      model,
+      model: requestedModel,
       hasImage: !!imageData,
     });
 
-    // Initialize model; allow basic generation tuning
-    const generativeModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        temperature: typeof temperature === 'number' ? temperature : undefined,
-        maxOutputTokens: typeof outputLength === 'number' ? outputLength : undefined,
-        topP: typeof topP === 'number' ? topP : undefined,
-      } as any,
-    });
+    // Initialize Nano Banana client and model; allow basic generation tuning
+    const ai = new GoogleGenAI({ apiKey });
 
-    // Build parts
-    const parts: any[] = [{ text: prompt }];
+    // Whitelist known image-capable models and set a safe default (Nano Banana preferred)
+    const allowedModels = [
+      'gemini-2.5-flash-image-preview',
+      'gemini-2.5-flash-image',
+      // Imagen models are supported via separate REST; keep here for future compatibility
+    ];
+    const serverDefaultModel = 'gemini-2.5-flash-image-preview';
+    const model = allowedModels.includes(String(requestedModel || ''))
+      ? String(requestedModel)
+      : serverDefaultModel;
+
+    // Note: @google/genai doesn't require generation config for image gen; keep inputs minimal
+
+    // Build contents per @google/genai Nano Banana docs
+    const contents: any[] = [{ text: prompt }];
     if (imageData) {
-      parts.push({
+      contents.push({
         inlineData: {
           mimeType: 'image/jpeg',
           data: String(imageData).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, ''),
         },
       });
     }
-
-    // Add reference images (Nano Banana supports up to 3 images)
-    const maxRefs = model.includes('flash-image-preview') ? 3 : 10;
+    // Add up to 3 reference images for Nano Banana
+    const maxRefs = 3;
     const refArray: string[] = Array.isArray(references) ? references.slice(0, maxRefs) : [];
     for (const ref of refArray) {
       const mime = /^data:(image\/[a-zA-Z0-9.+-]+);base64,/.exec(String(ref))?.[1] || 'image/jpeg';
       const dataOnly = String(ref).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
       if (dataOnly) {
-        parts.push({ inlineData: { mimeType: mime, data: dataOnly } });
+        contents.push({ inlineData: { mimeType: mime, data: dataOnly } });
       }
     }
 
-    // Generate image
-    const result = await generativeModel.generateContent(parts);
-    const response = await result.response;
+    // Generate image via Nano Banana
+    const result = await ai.models.generateContent({ model, contents });
+    const response: any = result;
 
     let generatedImageData: string | null = null;
-    const candidateParts = (response as any)?.candidates?.[0]?.content?.parts || [];
+    const candidateParts = response?.candidates?.[0]?.content?.parts || [];
     for (const part of candidateParts) {
       if (part?.inlineData?.data) {
         generatedImageData = part.inlineData.data as string;
@@ -91,7 +102,12 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-    if (!generatedImageData) return json({ error: 'Failed to generate image. Please try again.' }, 500, origin);
+    if (!generatedImageData) {
+      // Surface any text explanation from the model for debugging
+      const textPart = candidateParts.find((p: any) => p?.text)?.text;
+      const msg = textPart ? String(textPart).slice(0, 300) : 'Failed to generate image. Please try again.';
+      return json({ error: msg }, 500, origin);
+    }
 
     const generatedImage = {
       url: `data:image/png;base64,${generatedImageData}`,
