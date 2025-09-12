@@ -12,7 +12,8 @@ module.exports = {
           mid: 'var(--d-mid)',
           dark: 'var(--d-dark)',
           black: 'var(--d-black)',
-          orange: 'var(--d-orange-1)'
+          orange: 'var(--d-orange-1)',
+          'orange-1': 'var(--d-orange-1)'
         },
         // Brand color
         brand: '#faaa16',
@@ -24,7 +25,8 @@ module.exports = {
           mid: 'var(--d-mid)',
           dark: 'var(--d-dark)',
           black: 'var(--d-black)',
-          orange: 'var(--d-orange-1)'
+          orange: 'var(--d-orange-1)',
+          'orange-1': 'var(--d-orange-1)'
         },
         // Back-compat aliases (optional)
         text: { DEFAULT: 'var(--d-text)' },

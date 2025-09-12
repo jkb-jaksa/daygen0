@@ -87,10 +87,21 @@ const Create: React.FC = () => {
       const raw = localStorage.getItem("daygen_gallery");
       if (raw) {
         const parsed = JSON.parse(raw) as GeneratedImage[];
-        if (Array.isArray(parsed)) {
-          console.log('Loading gallery from localStorage with', parsed.length, 'images');
-          console.log('Gallery images with references:', parsed.filter(img => img.references && img.references.length > 0));
-          setGallery(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Validate that each item has required properties
+          const validImages = parsed.filter(img => img && img.url && img.prompt && img.timestamp);
+          console.log('Loading gallery from localStorage with', validImages.length, 'valid images out of', parsed.length, 'total');
+          console.log('Gallery images with references:', validImages.filter(img => img.references && img.references.length > 0));
+          
+          if (validImages.length !== parsed.length) {
+            console.warn('Some images were invalid and removed from gallery');
+            // Update localStorage with only valid images
+            localStorage.setItem("daygen_gallery", JSON.stringify(validImages));
+          }
+          
+          setGallery(validImages);
+        } else {
+          console.log('No valid gallery data found in localStorage');
         }
       } else {
         console.log('No gallery data found in localStorage');
@@ -98,6 +109,8 @@ const Create: React.FC = () => {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Failed to load gallery", e);
+      // Clear corrupted data
+      localStorage.removeItem("daygen_gallery");
     }
 
     try {
@@ -153,6 +166,25 @@ const Create: React.FC = () => {
     }
   }, []);
 
+  // Backup gallery state periodically to prevent data loss
+  useEffect(() => {
+    if (gallery.length > 0) {
+      const backupInterval = setInterval(() => {
+        persistGallery(gallery);
+      }, 30000); // Backup every 30 seconds
+
+      return () => clearInterval(backupInterval);
+    }
+  }, [gallery]);
+
+  // Backup gallery state when component unmounts
+  useEffect(() => {
+    return () => {
+      if (gallery.length > 0) {
+        persistGallery(gallery);
+      }
+    };
+  }, [gallery]);
 
   const persistFavorites = (next: Set<string>) => {
     setFavorites(next);
@@ -179,6 +211,16 @@ const Create: React.FC = () => {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Failed to persist uploaded images", e);
+    }
+  };
+
+  // Backup function to persist gallery state
+  const persistGallery = (galleryData: GeneratedImage[]) => {
+    try {
+      localStorage.setItem("daygen_gallery", JSON.stringify(galleryData));
+      console.log('Gallery backup persisted with', galleryData.length, 'images');
+    } catch (e) {
+      console.error("Failed to backup gallery", e);
     }
   };
 
@@ -212,12 +254,21 @@ const Create: React.FC = () => {
     if (deleteConfirmation.imageUrl) {
       // Remove from gallery
       setGallery(currentGallery => {
-        const updated = currentGallery.filter(img => img.url !== deleteConfirmation.imageUrl);
-        // Persist to localStorage
+        const updated = currentGallery.filter(img => img && img.url !== deleteConfirmation.imageUrl);
+        // Persist to localStorage with error handling
         try {
           localStorage.setItem("daygen_gallery", JSON.stringify(updated));
+          console.log('Gallery updated after deletion with', updated.length, 'images');
         } catch (e) {
           console.error("Failed to persist gallery after deletion", e);
+          // Try to clear and retry
+          try {
+            localStorage.removeItem("daygen_gallery");
+            localStorage.setItem("daygen_gallery", JSON.stringify(updated));
+            console.log('Gallery persisted after deletion with cleanup');
+          } catch (retryError) {
+            console.error("Failed to persist gallery after deletion even after cleanup", retryError);
+          }
         }
         return updated;
       });
@@ -485,17 +536,20 @@ const Create: React.FC = () => {
         topP: isBanana ? topP : undefined,
       });
 
-      // Update gallery with newest first, unique by url, capped to 24
+      // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
         console.log('Adding new image to gallery. Current gallery size:', gallery.length);
         
         // Use functional update to ensure we get the latest gallery state
         setGallery(currentGallery => {
+          // Validate current gallery items first
+          const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
+          
           const dedup = (list: GeneratedImage[]) => {
             const seen = new Set<string>();
             const out: GeneratedImage[] = [];
             for (const it of list) {
-              if (it?.url && !seen.has(it.url)) {
+              if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
                 seen.add(it.url);
                 out.push(it);
               }
@@ -503,15 +557,27 @@ const Create: React.FC = () => {
             console.log('Deduplication: input length', list.length, 'output length', out.length);
             return out;
           };
-          const next = dedup([img, ...currentGallery]).slice(0, 24);
+          
+          // Create new gallery with new image first, then existing valid images
+          const newGallery = dedup([img, ...validCurrentGallery]);
+          // Keep more images (50 instead of 24) and only slice if we have too many
+          const next = newGallery.length > 50 ? newGallery.slice(0, 50) : newGallery;
           console.log('Final gallery size after dedup and slice:', next.length);
           
-          // Persist to localStorage
+          // Persist to localStorage with error handling
           try {
             localStorage.setItem("daygen_gallery", JSON.stringify(next));
-            console.log('Gallery persisted to localStorage');
+            console.log('Gallery persisted to localStorage with', next.length, 'images');
           } catch (e) {
             console.error("Failed to persist gallery", e);
+            // Try to clear localStorage and retry
+            try {
+              localStorage.removeItem("daygen_gallery");
+              localStorage.setItem("daygen_gallery", JSON.stringify(next));
+              console.log('Gallery persisted to localStorage after cleanup');
+            } catch (retryError) {
+              console.error("Failed to persist gallery even after cleanup", retryError);
+            }
           }
           
           return next;
