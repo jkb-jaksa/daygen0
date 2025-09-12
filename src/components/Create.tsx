@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Maximize2, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 
@@ -55,12 +55,13 @@ const Create: React.FC = () => {
   const [selectedFullImage, setSelectedFullImage] = useState<GeneratedImage | null>(null);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
+  
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, uploadId: string | null}>({show: false, imageUrl: null, uploadId: null});
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, uploadId: null, folderId: null});
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
@@ -69,6 +70,7 @@ const Create: React.FC = () => {
   const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
   
   // Use the Gemini image generation hook
   const {
@@ -80,7 +82,7 @@ const Create: React.FC = () => {
     clearGeneratedImage,
   } = useGeminiImageGeneration();
 
-  // Load gallery and favorites from localStorage on mount
+  // Load gallery and liked images from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem("daygen_gallery");
@@ -88,6 +90,7 @@ const Create: React.FC = () => {
         const parsed = JSON.parse(raw) as GeneratedImage[];
         if (Array.isArray(parsed)) {
           console.log('Loading gallery from localStorage with', parsed.length, 'images');
+          console.log('Gallery images with references:', parsed.filter(img => img.references && img.references.length > 0));
           setGallery(parsed);
         }
       } else {
@@ -108,7 +111,7 @@ const Create: React.FC = () => {
       }
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("Failed to load favorites", e);
+      console.error("Failed to load liked images", e);
     }
 
     // Load uploaded images from localStorage on mount
@@ -158,7 +161,7 @@ const Create: React.FC = () => {
       localStorage.setItem("daygen_favorites", JSON.stringify(Array.from(next)));
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("Failed to persist favorites", e);
+      console.error("Failed to persist liked images", e);
     }
   };
 
@@ -195,11 +198,15 @@ const Create: React.FC = () => {
   };
 
   const confirmDeleteImage = (imageUrl: string) => {
-    setDeleteConfirmation({show: true, imageUrl, uploadId: null});
+    setDeleteConfirmation({show: true, imageUrl, uploadId: null, folderId: null});
   };
 
   const confirmDeleteUpload = (uploadId: string) => {
-    setDeleteConfirmation({show: true, imageUrl: null, uploadId});
+    setDeleteConfirmation({show: true, imageUrl: null, uploadId, folderId: null});
+  };
+
+  const confirmDeleteFolder = (folderId: string) => {
+    setDeleteConfirmation({show: true, imageUrl: null, uploadId: null, folderId});
   };
 
   const handleDeleteConfirmed = () => {
@@ -216,7 +223,7 @@ const Create: React.FC = () => {
         return updated;
       });
       
-      // Remove from favorites if it was favorited
+      // Remove from liked if it was liked
       if (favorites.has(deleteConfirmation.imageUrl)) {
         const newFavorites = new Set(favorites);
         newFavorites.delete(deleteConfirmation.imageUrl);
@@ -226,13 +233,22 @@ const Create: React.FC = () => {
       // Remove uploaded image
       const updatedUploads = uploadedImages.filter(upload => upload.id !== deleteConfirmation.uploadId);
       persistUploadedImages(updatedUploads);
+    } else if (deleteConfirmation.folderId) {
+      // Remove folder
+      const updatedFolders = folders.filter(folder => folder.id !== deleteConfirmation.folderId);
+      persistFolders(updatedFolders);
+      
+      // If the deleted folder was selected, clear selection
+      if (selectedFolder === deleteConfirmation.folderId) {
+        setSelectedFolder(null);
+      }
     }
     
-    setDeleteConfirmation({show: false, imageUrl: null, uploadId: null});
+    setDeleteConfirmation({show: false, imageUrl: null, uploadId: null, folderId: null});
   };
 
   const handleDeleteCancelled = () => {
-    setDeleteConfirmation({show: false, imageUrl: null, uploadId: null});
+    setDeleteConfirmation({show: false, imageUrl: null, uploadId: null, folderId: null});
   };
 
   const persistFolders = (folders: Folder[]) => {
@@ -260,15 +276,6 @@ const Create: React.FC = () => {
     setNewFolderDialog(false);
   };
 
-  const deleteFolder = (folderId: string) => {
-    const updatedFolders = folders.filter(folder => folder.id !== folderId);
-    persistFolders(updatedFolders);
-    
-    // If the deleted folder was selected, clear selection
-    if (selectedFolder === folderId) {
-      setSelectedFolder(null);
-    }
-  };
 
 
   const navigateBack = () => {
@@ -613,21 +620,35 @@ const Create: React.FC = () => {
             <div className="text-center">
               <div className="mb-4">
                 <Trash2 className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
-                <h3 className="text-lg font-raleway text-d-white mb-2">Delete Image</h3>
-                <p className="text-sm text-d-white/70 font-raleway">
-                  Are you sure you want to delete this image? This action cannot be undone.
+                <h3 className="text-lg font-cabin text-d-text mb-2">
+                  {deleteConfirmation.folderId ? 'Delete Folder' : 'Delete Image'}
+                </h3>
+                <p className="text-sm text-d-white font-raleway">
+                  {deleteConfirmation.folderId 
+                    ? 'Are you sure you want to delete this folder? This action cannot be undone.'
+                    : 'Are you sure you want to delete this image? This action cannot be undone.'
+                  }
                 </p>
               </div>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={handleDeleteCancelled}
-                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-raleway text-sm"
+                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirmed}
-                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors duration-200 font-raleway text-sm"
+                  className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
+                  style={{
+                    backgroundColor: '#faaa16'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffb833';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#faaa16';
+                  }}
                 >
                   Delete
                 </button>
@@ -644,8 +665,8 @@ const Create: React.FC = () => {
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
-                <h3 className="text-lg font-raleway text-d-white mb-2">Create New Folder</h3>
-                <p className="text-sm text-d-white/70 font-raleway mb-4">
+                <h3 className="text-lg font-cabin text-d-text mb-2">Create New Folder</h3>
+                <p className="text-sm text-d-white font-raleway mb-4">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -653,7 +674,7 @@ const Create: React.FC = () => {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className="w-full px-3 py-2 bg-d-black/40 border border-d-mid rounded-lg text-d-white placeholder-d-white/50 font-raleway text-sm focus:outline-none focus:border-d-orange-1"
+                  className="w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -671,14 +692,23 @@ const Create: React.FC = () => {
                     setNewFolderDialog(false);
                     setNewFolderName("");
                   }}
-                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-raleway text-sm"
+                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createNewFolder}
                   disabled={!newFolderName.trim()}
-                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 font-raleway text-sm"
+                  className="px-4 py-2 text-d-black disabled:cursor-not-allowed disabled:opacity-50 rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
+                  style={{
+                    backgroundColor: '#faaa16'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffb833';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#faaa16';
+                  }}
                 >
                   Create
                 </button>
@@ -749,9 +779,9 @@ const Create: React.FC = () => {
                     library
                   </div>
                   
-                  {/* Library sections in order: favourites, history, uploads, new folder, my folders */}
+                  {/* Library sections in order: liked, history, uploads, new folder, my folders */}
                   {[
-                    { key: "favourites", label: "favourites", Icon: Star },
+                    { key: "favourites", label: "liked", Icon: Star },
                     { key: "history", label: "history", Icon: History },
                     { key: "uploads", label: "uploads", Icon: Upload },
                   ].map((cat) => {
@@ -818,12 +848,24 @@ const Create: React.FC = () => {
             {/* Gallery - compressed to avoid overlap with left menu */}
             <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
               <div className="w-full mb-4" ref={galleryRef}>
-                {/* Favorites View */}
+                {/* Liked View */}
                 {activeCategory === "favourites" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                     {gallery.filter(img => favorites.has(img.url)).map((img, idx) => (
                       <div key={`fav-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
-                        <img src={img.url} alt={img.prompt || `Favorited ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
+                        <img src={img.url} alt={img.prompt || `Liked ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                         
                         {/* Hover prompt overlay */}
                         {img.prompt && (
@@ -881,20 +923,29 @@ const Create: React.FC = () => {
                               </div>
                               {img.references && img.references.length > 0 && (
                                 <div className="flex items-center gap-1.5">
-                                  <img 
-                                    src={img.references[0]} 
-                                    alt="Reference" 
-                                    className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedReferenceImage(img.references![0]);
-                                      setIsFullSizeOpen(true);
-                                    }}
-                                  />
+                                  <div className="flex gap-1">
+                                    {img.references.map((ref, refIdx) => (
+                                      <div key={refIdx} className="relative">
+                                        <img 
+                                          src={ref} 
+                                          alt={`Reference ${refIdx + 1}`} 
+                                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedReferenceImage(ref);
+                                            setIsFullSizeOpen(true);
+                                          }}
+                                        />
+                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                          {refIdx + 1}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      // Open the reference image in a new tab
+                                      // Open the first reference image in a new tab
                                       const link = document.createElement('a');
                                       link.href = img.references![0];
                                       link.target = '_blank';
@@ -905,7 +956,7 @@ const Create: React.FC = () => {
                                     onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
                                   >
-                                    View reference
+                                    View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                   </button>
                                 </div>
                               )}
@@ -940,36 +991,48 @@ const Create: React.FC = () => {
                             type="button" 
                             onClick={() => toggleFavorite(img.url)} 
                             className="image-action-btn" 
-                            title="Remove from favorites" 
-                            aria-label="Remove from favorites"
+                            title="Remove from liked" 
+                            aria-label="Remove from liked"
                           >
                             <Heart 
                               className="w-3.5 h-3.5 transition-colors duration-200 fill-red-500 text-red-500" 
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                          <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-3.5 h-3.5" /></button>
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                       </div>
                     ))}
                     
-                    {/* Empty state for favorites */}
+                    {/* Empty state for liked */}
                     {gallery.filter(img => favorites.has(img.url)).length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Star className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No favorites yet</h3>
+                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No liked images yet</h3>
                         <p className="text-sm font-raleway text-d-white/40 max-w-md">
-                          Click the heart icon on any generated image to add it to your favorites.
+                          Click the heart icon on any generated image to add it to your liked images.
                         </p>
                       </div>
                     )}
+                    </div>
                   </div>
                 )}
                 
                 {/* History View */}
                 {activeCategory === "history" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                     {gallery.map((img, idx) => (
                       <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
                         <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
@@ -1030,20 +1093,29 @@ const Create: React.FC = () => {
                               </div>
                               {img.references && img.references.length > 0 && (
                                 <div className="flex items-center gap-1.5">
-                                  <img 
-                                    src={img.references[0]} 
-                                    alt="Reference" 
-                                    className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedReferenceImage(img.references![0]);
-                                      setIsFullSizeOpen(true);
-                                    }}
-                                  />
+                                  <div className="flex gap-1">
+                                    {img.references.map((ref, refIdx) => (
+                                      <div key={refIdx} className="relative">
+                                        <img 
+                                          src={ref} 
+                                          alt={`Reference ${refIdx + 1}`} 
+                                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedReferenceImage(ref);
+                                            setIsFullSizeOpen(true);
+                                          }}
+                                        />
+                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                          {refIdx + 1}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      // Open the reference image in a new tab
+                                      // Open the first reference image in a new tab
                                       const link = document.createElement('a');
                                       link.href = img.references![0];
                                       link.target = '_blank';
@@ -1054,7 +1126,7 @@ const Create: React.FC = () => {
                                     onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
                                   >
-                                    View reference
+                                    View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                   </button>
                                 </div>
                               )}
@@ -1089,8 +1161,8 @@ const Create: React.FC = () => {
                             type="button" 
                             onClick={() => toggleFavorite(img.url)} 
                             className="image-action-btn" 
-                            title={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"} 
-                            aria-label={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"}
+                            title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                            aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                           >
                             <Heart 
                               className={`w-3.5 h-3.5 transition-colors duration-200 ${
@@ -1099,7 +1171,6 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                          <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-3.5 h-3.5" /></button>
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                       </div>
@@ -1115,12 +1186,25 @@ const Create: React.FC = () => {
                         </p>
                       </div>
                     )}
+                    </div>
                   </div>
                 )}
                 
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                     {uploadedImages.map((upload, idx) => (
                       <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
                         <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -1162,15 +1246,6 @@ const Create: React.FC = () => {
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <button 
-                            type="button" 
-                            onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} 
-                            className="image-action-btn" 
-                            title="View full size" 
-                            aria-label="View full size"
-                          >
-                            <Maximize2 className="w-3.5 h-3.5" />
-                          </button>
                           <a 
                             href={upload.previewUrl} 
                             download={upload.file.name} 
@@ -1194,6 +1269,7 @@ const Create: React.FC = () => {
                         </p>
                       </div>
                     )}
+                    </div>
                   </div>
                 )}
                 
@@ -1203,11 +1279,11 @@ const Create: React.FC = () => {
                     {/* Back navigation */}
                     <div className="mb-6">
                       <button
-                        onClick={navigateBack}
-                        className="flex items-center gap-2 text-d-white hover:text-brand transition-colors duration-200 font-raleway text-sm group"
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
                       >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-                        <span>Back to {previousCategory === "image" ? "main gallery" : previousCategory}</span>
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
                       </button>
                     </div>
                     
@@ -1216,11 +1292,11 @@ const Create: React.FC = () => {
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
                         <div className="w-full aspect-square flex flex-col items-center justify-center p-6">
                           <Folder className="w-16 h-16 text-d-white/60 mb-3" />
-                          <h3 className="text-lg font-raleway text-d-white mb-1 text-center">{folder.name}</h3>
-                          <p className="text-sm text-d-white/40 font-raleway text-center">
+                          <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
+                          <p className="text-sm text-d-white font-raleway text-center">
                             {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                           </p>
-                          <p className="text-xs text-d-white/30 font-raleway text-center mt-2">
+                          <p className="text-xs text-d-white font-raleway text-center mt-2">
                             Created {folder.createdAt.toLocaleDateString()}
                           </p>
                         </div>
@@ -1230,7 +1306,7 @@ const Create: React.FC = () => {
                             type="button" 
                             onClick={(e) => {
                               e.stopPropagation();
-                              deleteFolder(folder.id);
+                              confirmDeleteFolder(folder.id);
                             }}
                             className="image-action-btn" 
                             title="Delete folder" 
@@ -1325,20 +1401,29 @@ const Create: React.FC = () => {
                                 </div>
                                 {img.references && img.references.length > 0 && (
                                   <div className="flex items-center gap-1.5">
-                                    <img 
-                                      src={img.references[0]} 
-                                      alt="Reference" 
-                                      className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedReferenceImage(img.references![0]);
-                                        setIsFullSizeOpen(true);
-                                      }}
-                                    />
+                                    <div className="flex gap-1">
+                                      {img.references.map((ref, refIdx) => (
+                                        <div key={refIdx} className="relative">
+                                          <img 
+                                            src={ref} 
+                                            alt={`Reference ${refIdx + 1}`} 
+                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedReferenceImage(ref);
+                                              setIsFullSizeOpen(true);
+                                            }}
+                                          />
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                            {refIdx + 1}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Open the reference image in a new tab
+                                        // Open the first reference image in a new tab
                                         const link = document.createElement('a');
                                         link.href = img.references![0];
                                         link.target = '_blank';
@@ -1349,7 +1434,7 @@ const Create: React.FC = () => {
                                       onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
                                       onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
                                     >
-                                      View reference
+                                      View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
                                   </div>
                                 )}
@@ -1394,7 +1479,6 @@ const Create: React.FC = () => {
                               />
                             </button>
                             <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                            <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-3.5 h-3.5" /></button>
                             <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                           </div>
                         </div>
@@ -1420,8 +1504,101 @@ const Create: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Default Gallery View */}
-                {activeCategory !== "favourites" && activeCategory !== "history" && activeCategory !== "uploads" && activeCategory !== "my-folders" && !selectedFolder && (
+                {/* Coming Soon Sections */}
+                {activeCategory === "text" && (
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <Edit className="w-16 h-16 text-d-white/30 mb-4" />
+                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Text Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        We're working on bringing you powerful text generation capabilities. Stay tuned!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeCategory === "video" && (
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <VideoIcon className="w-16 h-16 text-d-white/30 mb-4" />
+                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Video Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        We're working on bringing you amazing video generation features. Stay tuned!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeCategory === "avatars" && (
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <Users className="w-16 h-16 text-d-white/30 mb-4" />
+                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Avatar Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        We're working on bringing you custom avatar generation. Stay tuned!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeCategory === "audio" && (
+                  <div className="w-full">
+                    {/* Back to Gallery Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <Volume2 className="w-16 h-16 text-d-white/30 mb-4" />
+                      <h3 className="text-xl font-raleway text-d-white/60 mb-2">Audio Generation Coming Soon</h3>
+                      <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        We're working on bringing you audio generation capabilities. Stay tuned!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Default Gallery View - Only for Image Category */}
+                {activeCategory === "image" && !selectedFolder && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                     {[...(isLoading ? [{ type: 'loading', prompt }] : []), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - (isLoading ? 1 : 0))).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
@@ -1518,20 +1695,29 @@ const Create: React.FC = () => {
                                 </div>
                                 {img.references && img.references.length > 0 && (
                                   <div className="flex items-center gap-1.5">
-                                    <img 
-                                      src={img.references[0]} 
-                                      alt="Reference" 
-                                      className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedReferenceImage(img.references![0]);
-                                        setIsFullSizeOpen(true);
-                                      }}
-                                    />
+                                    <div className="flex gap-1">
+                                      {img.references.map((ref, refIdx) => (
+                                        <div key={refIdx} className="relative">
+                                          <img 
+                                            src={ref} 
+                                            alt={`Reference ${refIdx + 1}`} 
+                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedReferenceImage(ref);
+                                              setIsFullSizeOpen(true);
+                                            }}
+                                          />
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                            {refIdx + 1}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Open the reference image in a new tab
+                                        // Open the first reference image in a new tab
                                         const link = document.createElement('a');
                                         link.href = img.references![0];
                                         link.target = '_blank';
@@ -1542,7 +1728,7 @@ const Create: React.FC = () => {
                                       onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
                                       onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
                                     >
-                                      View reference
+                                      View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
                                   </div>
                                 )}
@@ -1577,8 +1763,8 @@ const Create: React.FC = () => {
                             type="button" 
                             onClick={() => toggleFavorite(img.url)} 
                             className="image-action-btn" 
-                            title={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"} 
-                            aria-label={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"}
+                            title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                            aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                           >
                             <Heart 
                               className={`w-3.5 h-3.5 transition-colors duration-200 ${
@@ -1587,7 +1773,6 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                          <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-3.5 h-3.5" /></button>
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                         </div>
@@ -1629,7 +1814,7 @@ const Create: React.FC = () => {
                 className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
-            <div className="absolute right-4 bottom-4">
+            <div className="absolute right-4 bottom-4 flex items-center gap-2">
               <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
                 <button 
                   onClick={handleGenerateImage}
@@ -1887,16 +2072,48 @@ const Create: React.FC = () => {
                   >
                     <Download className="w-4 h-4" />
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => setIsFullSizeOpen(true)}
-                    className="image-action-btn"
-                    title="Display full size"
-                    aria-label="Display full size"
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </button>
                 </div>
+                
+                {/* References Display */}
+                {generatedImage.references && generatedImage.references.length > 0 && (
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+                    <div className="flex gap-1">
+                      {generatedImage.references.map((ref, refIdx) => (
+                        <div key={refIdx} className="relative">
+                          <img 
+                            src={ref} 
+                            alt={`Reference ${refIdx + 1}`} 
+                            className="w-8 h-8 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedReferenceImage(ref);
+                              setIsFullSizeOpen(true);
+                            }}
+                          />
+                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                            {refIdx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Open the first reference image in a new tab
+                        const link = document.createElement('a');
+                        link.href = generatedImage.references![0];
+                        link.target = '_blank';
+                        link.click();
+                      }}
+                      className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer bg-d-black/60 px-2 py-1 rounded"
+                      style={{ color: '#C4CCCC' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
+                    >
+                      View reference{generatedImage.references.length > 1 ? 's' : ''} ({generatedImage.references.length})
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

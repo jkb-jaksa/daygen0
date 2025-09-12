@@ -55,29 +55,47 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
   if (isUnlocked) return <>{children}</>;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-neutral-900/90">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-        <h1 className="mb-4 text-xl font-semibold text-neutral-900">Enter Password</h1>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="password"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Password"
-            autoFocus
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-neutral-900 outline-none ring-0 focus:border-neutral-400 focus:ring-0"
-          />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            className="parallax-small w-full rounded-lg bg-neutral-900 px-3 py-2 font-medium text-white hover:bg-neutral-800 active:bg-neutral-700"
-          >
-            Unlock
-          </button>
-          <p className="mt-2 text-xs text-neutral-500">
-            Dev-only: set VITE_SITE_PASSWORD locally. Disabled in production.
-          </p>
-        </form>
+    <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4">
+      <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+        <div className="text-center">
+          <div className="mb-4">
+            <h1 className="text-lg font-cabin text-d-text mb-2">Enter Password</h1>
+            <p className="text-sm text-d-white font-raleway">
+              Enter the password to access this site.
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="password"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Password"
+              autoFocus
+              className="w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
+            />
+            {error && <p className="text-sm text-red-400 font-raleway">{error}</p>}
+            <div className="flex gap-3 justify-center">
+              <button
+                type="submit"
+                className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
+                style={{
+                  backgroundColor: '#faaa16'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffb833';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#faaa16';
+                }}
+              >
+                Unlock
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-d-white/60 font-raleway">
+              Dev-only: set VITE_SITE_PASSWORD locally. Disabled in production.
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   );
