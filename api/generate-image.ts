@@ -63,13 +63,13 @@ export default async function handler(req: Request): Promise<Response> {
     // Initialize Gemini client
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Whitelist known image-capable models and set a safe default (Nano Banana preferred)
+    // Whitelist known image-capable models and set a safe default
     const allowedModels = [
-      'gemini-2.5-flash-image-preview',
-      'gemini-2.5-flash-image',
-      // Imagen models are supported via separate REST; keep here for future compatibility
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
     ];
-    const serverDefaultModel = 'gemini-2.5-flash-image-preview';
+    const serverDefaultModel = 'gemini-2.0-flash-exp';
     const model = allowedModels.includes(String(requestedModel || ''))
       ? String(requestedModel)
       : serverDefaultModel;
@@ -101,8 +101,13 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     // Generate image
+    console.log('Attempting to generate image with model:', model);
+    console.log('Contents:', contents);
+    
     const result = await modelInstance.generateContent(contents);
     const response = await result.response;
+    
+    console.log('Response received:', response);
 
     let generatedImageData: string | null = null;
     const candidateParts = response?.candidates?.[0]?.content?.parts || [];
