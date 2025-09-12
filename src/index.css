@@ -8,7 +8,7 @@
   /* Daygen dark palette */
   --d-text: #FAFAFA;
   /* Slightly darken d-white globally (very subtle) */
-  --d-white: #B8C0C0;
+  --d-white: #C4CCCC;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
   --d-light: #8E9393;
   /* Mid tone: made a bit lighter for hover/border contrast */
@@ -576,15 +576,26 @@ html, body {
 }
 
 
-.parallax-large {
+.parallax-mid {
   perspective: 1000px;
   transition: transform 0.2s;
 }
 
 /* Keep Tailwind translate/rotate/skew while scaling on hover */
-.parallax-large:hover {
+.parallax-mid:hover {
   --tw-scale-x: 1.01;
   --tw-scale-y: 1.01;
+}
+
+.parallax-large {
+  perspective: 1000px;
+  transition: transform 0.2s;
+}
+
+/* More pronounced effect for large elements */
+.parallax-large:hover {
+  transform: translateZ(150px) scale(1.015);
+  transition: transform 0.2s;
 }
 
 /* Slightly subtler parallax for small/FAQ cards */
@@ -607,6 +618,7 @@ html, body {
 }
 .promptbar.drag-active {
   border-color: var(--d-orange-1);
+  border-width: 1px;
 }
 
 /* Action buttons overlayed on generated image */
@@ -633,3 +645,13 @@ html, body {
   color: var(--d-orange-1);
   transform: scale(1.01);
 }
+
+/* Line clamp utility for text truncation */
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+

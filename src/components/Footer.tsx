@@ -77,7 +77,7 @@ export default function Footer() {
         <button
           onClick={scrollToTop}
           aria-label="Back to top"
-          className="parallax-large absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-d-text hover:text-brand hover:border-b-dark transition-colors duration-200"
+          className="parallax-mid absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-d-text hover:text-brand hover:border-b-dark transition-colors duration-200"
         >
           <ChevronUp className="size-4" />
         </button>

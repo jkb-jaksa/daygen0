@@ -74,7 +74,7 @@ export default function Navbar() {
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-large h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-mid h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-raleway">
               {items.map((item) => (
@@ -96,7 +96,7 @@ export default function Navbar() {
             <button className="btn btn-orange parallax-small text-black">
               Sign Up
             </button>
-            <button aria-label="Search" className="parallax-large size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white">
+            <button aria-label="Search" className="parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white">
               <Search className="size-5" />
             </button>
           </div>

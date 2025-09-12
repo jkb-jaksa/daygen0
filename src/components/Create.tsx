@@ -47,7 +47,6 @@ const Create: React.FC = () => {
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [isRefsDragging, setIsRefsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
   const isBanana = selectedModel === "gemini-2.5-flash-image-preview";
@@ -61,6 +60,7 @@ const Create: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>("image");
   const maxGalleryTiles = 18; // larger grid footprint
   const galleryRef = useRef<HTMLDivElement | null>(null);
+  const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   
   // Use the Gemini image generation hook
   const {
@@ -95,6 +95,49 @@ const Create: React.FC = () => {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Failed to persist gallery", e);
+    }
+  };
+
+  const focusPromptBar = () => {
+    promptTextareaRef.current?.focus();
+  };
+
+  // Helper function to convert image URL to File object
+  const urlToFile = async (url: string, filename: string): Promise<File> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type });
+  };
+
+  // Handle edit button click - set image as reference and focus prompt bar
+  const handleEditImage = async (img: GeneratedImage) => {
+    try {
+      // Convert the image URL to a File object
+      const file = await urlToFile(img.url, `reference-${Date.now()}.png`);
+      
+      // Clear existing references and generated image to show references
+      clearAllReferences();
+      clearGeneratedImage();
+      
+      // Set this image as the reference
+      setReferenceFiles([file]);
+      
+      // Create preview URL for the reference
+      const previewUrl = URL.createObjectURL(file);
+      setReferencePreviews([previewUrl]);
+      
+      // Focus the prompt bar
+      focusPromptBar();
+    } catch (error) {
+      console.error('Error setting image as reference:', error);
+      alert('Failed to set image as reference. Please try again.');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleGenerateImage();
     }
   };
 
@@ -310,18 +353,39 @@ const Create: React.FC = () => {
                     if (!isPlaceholder) {
                       const img = item as GeneratedImage;
                       return (
-                        <div key={`${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200">
+                        <div key={`${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
                           <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
-                          <div className="absolute bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-4 h-4" /></a>
+                          
+                          {/* Hover prompt overlay */}
+                          {img.prompt && (
+                            <div 
+                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out pointer-events-none flex items-end"
+                              style={{
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.15) 80%, rgba(0,0,0,0.05) 95%, transparent 100%)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)',
+                                height: 'fit-content'
+                              }}
+                            >
+                              <div className="w-full p-4">
+                                <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-4">
+                                  {img.prompt}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-4 h-4" /></button>
                             <button type="button" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} className="image-action-btn" title="Display full size" aria-label="Display full size"><Maximize2 className="w-4 h-4" /></button>
+                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-4 h-4" /></a>
                           </div>
                         </div>
                       );
                     }
                     // Placeholder tile
                     return (
-                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square">
+                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square cursor-pointer hover:bg-[#222427] hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="text-d-light font-raleway text-sm text-center px-2">Create something amazing.</div>
                       </div>
                     );
@@ -345,9 +409,11 @@ const Create: React.FC = () => {
           >
             <div>
               <textarea
+                ref={promptTextareaRef}
                 placeholder="Describe what you want to create..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={handleKeyDown}
                 rows={2}
                 className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-3 pr-48 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
@@ -368,27 +434,66 @@ const Create: React.FC = () => {
                 </button>
               </Tooltip>
             </div>
-            {/* Left icons overlayed so they don't shift textarea left edge */}
-            <div className="absolute left-4 bottom-4 flex items-center gap-1 pointer-events-auto">
-              <button
-                type="button"
-                onClick={isBanana ? handleRefsClick : undefined}
-                title="Add reference image"
-                aria-label="Add reference image"
-                disabled={!isBanana}
-                className={`${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={toggleSettings}
-                title="Settings"
-                aria-label="Settings"
-                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
+            {/* Left icons and references overlayed so they don't shift textarea left edge */}
+            <div className="absolute left-4 bottom-4 flex items-center gap-3 pointer-events-auto">
+              {/* Action buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={isBanana ? handleRefsClick : undefined}
+                  title="Add reference image"
+                  aria-label="Add reference image"
+                  disabled={!isBanana}
+                  className={`${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+                {referencePreviews.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllReferences}
+                    title="Clear all references"
+                    aria-label="Clear all references"
+                    className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-red-400 border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={toggleSettings}
+                  title="Settings"
+                  aria-label="Settings"
+                  className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {/* Reference images display - to the right of buttons */}
+              {referencePreviews.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-d-white/80 font-raleway">Reference ({referencePreviews.length}/3):</div>
+                  <div className="flex items-center gap-1.5">
+                    {referencePreviews.map((url, idx) => (
+                      <div key={idx} className="relative group">
+                        <img 
+                          src={url} 
+                          alt={`Reference ${idx+1}`} 
+                          className="w-9 h-9 rounded-lg object-cover border border-d-mid hover:border-brand transition-colors duration-200" 
+                        />
+                        <button
+                          onClick={() => clearReference(idx)}
+                          className="absolute -top-1 -right-1 bg-d-black/80 hover:bg-d-orange-1 text-d-text rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          title="Remove reference"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
@@ -534,50 +639,6 @@ const Create: React.FC = () => {
             </div>
           )}
 
-          {/* Reference Images Preview - hide when generated image exists */}
-          {referencePreviews.length > 0 && !generatedImage && (
-            <div className="w-full max-w-lg mx-auto mb-8">
-              <div
-                className={`relative rounded-[32px] bg-d-black p-3 transition-colors duration-200 border ${isRefsDragging && isBanana ? 'border-brand' : 'border-d-mid'}`}
-                onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsRefsDragging(true); }}
-                onDragLeave={() => setIsRefsDragging(false)}
-                onDrop={(e) => {
-                  if (!isBanana) return;
-                  e.preventDefault();
-                  setIsRefsDragging(false);
-                  const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
-                  if (files.length) {
-                    const combined = [...referenceFiles, ...files].slice(0, 3);
-                    setReferenceFiles(combined);
-                    const readers = combined.map(f => URL.createObjectURL(f));
-                    setReferencePreviews(readers);
-                  }
-                }}
-              >
-                <div className="text-sm text-d-white mb-2 pr-8">References ({referencePreviews.length}/3)</div>
-                <button
-                  onClick={clearAllReferences}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
-                  aria-label="Close references section"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="grid grid-cols-3 gap-3">
-                  {referencePreviews.map((url, idx) => (
-                    <div key={idx} className="relative rounded-xl overflow-hidden">
-                      <img src={url} alt={`Reference ${idx+1}`} className="w-full h-24 object-cover" />
-                      <button
-                        onClick={() => clearReference(idx)}
-                        className="absolute top-1 right-1 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         
