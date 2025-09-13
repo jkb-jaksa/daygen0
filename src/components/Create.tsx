@@ -311,6 +311,128 @@ const Create: React.FC = () => {
     }
   };
 
+  const addImageToFolder = (imageUrl: string, folderId: string) => {
+    const updatedFolders = folders.map(folder => {
+      if (folder.id === folderId) {
+        // Add image if not already in folder
+        if (!folder.imageIds.includes(imageUrl)) {
+          return {
+            ...folder,
+            imageIds: [...folder.imageIds, imageUrl]
+          };
+        }
+      }
+      return folder;
+    });
+    
+    persistFolders(updatedFolders);
+    
+    // Show success feedback
+    const folder = updatedFolders.find(f => f.id === folderId);
+    if (folder) {
+      // You could add a toast notification here if you have one
+      console.log(`Image added to folder: ${folder.name}`);
+    }
+  };
+
+  const removeImageFromFolder = (imageUrl: string, folderId: string) => {
+    const updatedFolders = folders.map(folder => {
+      if (folder.id === folderId) {
+        return {
+          ...folder,
+          imageIds: folder.imageIds.filter(id => id !== imageUrl)
+        };
+      }
+      return folder;
+    });
+    
+    persistFolders(updatedFolders);
+    
+    // Show success feedback
+    const folder = updatedFolders.find(f => f.id === folderId);
+    if (folder) {
+      console.log(`Image removed from folder: ${folder.name}`);
+    }
+  };
+
+  const FolderSelector = ({ imageUrl, onClose }: { imageUrl: string, onClose: () => void }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (isOpen && !(event.target as Element).closest('.folder-selector')) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+    
+    return (
+      <div className="relative folder-selector">
+        <button
+          onClick={() => {
+            console.log('Folder button clicked, isOpen:', isOpen);
+            setIsOpen(!isOpen);
+          }}
+          className="image-action-btn"
+          title="Add to folder"
+        >
+          <FolderPlus className="w-3.5 h-3.5" />
+        </button>
+        
+        {isOpen && (
+          <div className="absolute bottom-full mb-2 left-0 w-64 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 z-50 max-h-48 overflow-y-auto">
+            <div className="text-xs text-d-white/80 mb-2 font-raleway">Select folder:</div>
+            {folders.length === 0 ? (
+              <div className="text-xs text-d-white/50 p-2">No folders available</div>
+            ) : (
+              folders.map((folder) => {
+                const isInFolder = folder.imageIds.includes(imageUrl);
+                return (
+                  <button
+                    key={folder.id}
+                    onClick={() => {
+                      console.log('Folder selected:', folder.name, 'imageUrl:', imageUrl, 'isInFolder:', isInFolder);
+                      if (!isInFolder) {
+                        addImageToFolder(imageUrl, folder.id);
+                      }
+                      setIsOpen(false);
+                      onClose();
+                    }}
+                    disabled={isInFolder}
+                    className={`w-full p-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 ${
+                      isInFolder
+                        ? "bg-d-dark/40 border-d-dark opacity-60 cursor-not-allowed"
+                        : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                    }`}
+                  >
+                    <Folder className="w-4 h-4 flex-shrink-0 text-d-white/60" />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-cabin truncate ${
+                        isInFolder ? 'text-d-text/40' : 'text-d-text/80'
+                      }`}>
+                        {folder.name}
+                      </div>
+                      <div className={`text-xs ${
+                        isInFolder ? 'text-d-white/30' : 'text-d-white/50'
+                      }`}>
+                        {folder.imageIds.length} images
+                        {isInFolder && " (already added)"}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const createNewFolder = () => {
     if (!newFolderName.trim()) return;
     
@@ -501,6 +623,12 @@ const Create: React.FC = () => {
       return;
     }
 
+    // Only allow Gemini model for now
+    if (!isBanana) {
+      alert('This model is coming soon! Currently only Gemini 2.5 Flash Image (Nano Banana) is available.');
+      return;
+    }
+
     try {
       // Convert uploaded image to base64 if available
       let imageData: string | undefined;
@@ -652,6 +780,18 @@ const Create: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isModelSelectorOpen]);
+
+  // Close settings dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isSettingsOpen && !(event.target as Element).closest('.settings-dropdown')) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSettingsOpen]);
 
   // Handle keyboard events for delete confirmation
   useEffect(() => {
@@ -1065,6 +1205,7 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
+                          <FolderSelector imageUrl={img.url} onClose={() => {}} />
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                       </div>
@@ -1237,6 +1378,7 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
+                          <FolderSelector imageUrl={img.url} onClose={() => {}} />
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                       </div>
@@ -1545,6 +1687,15 @@ const Create: React.FC = () => {
                               />
                             </button>
                             <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
+                            <button 
+                              type="button" 
+                              onClick={() => removeImageFromFolder(img.url, selectedFolder!)} 
+                              className="image-action-btn" 
+                              title="Remove from folder" 
+                              aria-label="Remove from folder"
+                            >
+                              <Folder className="w-3.5 h-3.5" />
+                            </button>
                             <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                           </div>
                         </div>
@@ -1839,6 +1990,7 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
+                          <FolderSelector imageUrl={img.url} onClose={() => {}} />
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                         </div>
@@ -1881,10 +2033,10 @@ const Create: React.FC = () => {
               />
             </div>
             <div className="absolute right-4 bottom-4 flex items-center gap-2">
-              <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
+              <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : !isBanana ? "This model is coming soon!" : ""}>
                 <button 
                   onClick={handleGenerateImage}
-                  disabled={isLoading || !prompt.trim() || !isBanana}
+                  disabled={isLoading || !prompt.trim()}
                   className="btn btn-orange text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
                 >
                   {isLoading ? (
@@ -1921,15 +2073,105 @@ const Create: React.FC = () => {
                     <X className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={toggleSettings}
-                  title="Settings"
-                  aria-label="Settings"
-                  className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
+                <div className="relative settings-dropdown">
+                  <button
+                    type="button"
+                    onClick={isBanana ? toggleSettings : () => alert('Settings are only available for Gemini models.')}
+                    title={isBanana ? "Settings" : "Settings only available for Gemini models"}
+                    aria-label="Settings"
+                    className={`grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200 ${
+                      isBanana 
+                        ? "bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid" 
+                        : "bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed"
+                    }`}
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Settings Dropdown */}
+                  {isSettingsOpen && isBanana && (
+                    <div className="absolute bottom-full mb-2 left-0 w-80 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-4 z-50">
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-light mb-3">Gemini Settings</div>
+                        
+                        {/* Temperature */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-d-white/80 font-raleway">Temperature</label>
+                            <span className="text-xs text-d-orange-1 font-mono">{temperature}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="range" 
+                              min={0} 
+                              max={2} 
+                              step={0.1} 
+                              value={temperature} 
+                              onChange={(e) => setTemperature(parseFloat(e.target.value))} 
+                              className="flex-1 range-brand" 
+                            />
+                            <input 
+                              type="number" 
+                              min={0} 
+                              max={2} 
+                              step={0.1} 
+                              value={temperature} 
+                              onChange={(e) => setTemperature(parseFloat(e.target.value))} 
+                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs" 
+                            />
+                          </div>
+                          <div className="text-xs text-d-white/50">Creativity level (0 = focused, 2 = creative)</div>
+                        </div>
+                        
+                        {/* Output Length */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-d-white/80 font-raleway">Output Length</label>
+                            <span className="text-xs text-d-orange-1 font-mono">{outputLength}</span>
+                          </div>
+                          <input 
+                            type="number" 
+                            min={1} 
+                            step={1} 
+                            value={outputLength} 
+                            onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} 
+                            className="w-full bg-d-mid border border-d-mid rounded px-3 py-2 text-d-white text-sm" 
+                          />
+                          <div className="text-xs text-d-white/50">Maximum tokens in response</div>
+                        </div>
+                        
+                        {/* Top P */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-d-white/80 font-raleway">Top P</label>
+                            <span className="text-xs text-d-orange-1 font-mono">{topP}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="range" 
+                              min={0} 
+                              max={1} 
+                              step={0.05} 
+                              value={topP} 
+                              onChange={(e) => setTopP(parseFloat(e.target.value))} 
+                              className="flex-1 range-brand" 
+                            />
+                            <input 
+                              type="number" 
+                              min={0} 
+                              max={1} 
+                              step={0.05} 
+                              value={topP} 
+                              onChange={(e) => setTopP(parseFloat(e.target.value))} 
+                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs" 
+                            />
+                          </div>
+                          <div className="text-xs text-d-white/50">Token selection diversity (0 = focused, 1 = diverse)</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={enhancePrompt}
@@ -1976,32 +2218,40 @@ const Create: React.FC = () => {
                         const modelId = modelMap[model.name] || "gemini-2.5-flash-image-preview";
                         const isSelected = selectedModel === modelId;
                         
+                        const isComingSoon = modelId !== "gemini-2.5-flash-image-preview";
+                        
                         return (
                           <button
                             key={model.name}
                             onClick={() => {
+                              if (isComingSoon) {
+                                alert('This model is coming soon! Currently only Gemini 2.5 Flash Image (Nano Banana) is available.');
+                                return;
+                              }
                               handleModelSelect(model.name);
                               setIsModelSelectorOpen(false);
                             }}
                             className={`w-full p-3 rounded-lg border transition-all duration-100 text-left flex items-center gap-3 group ${
                               isSelected 
                                 ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
+                                : isComingSoon
+                                ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
                                 : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
                             }`}
                           >
                             <model.Icon className={`w-4 h-4 flex-shrink-0 transition-colors duration-100 ${
-                              isSelected ? 'text-d-orange-1' : 'text-d-white/60 group-hover:text-brand'
+                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-white/30' : 'text-d-white/60 group-hover:text-brand'
                             }`} />
                             <div className="flex-1 min-w-0">
                               <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
-                                isSelected ? 'text-d-light' : 'text-d-text/80 group-hover:text-brand'
+                                isSelected ? 'text-d-light' : isComingSoon ? 'text-d-text/40' : 'text-d-text/80 group-hover:text-brand'
                               }`}>
                                 {model.name}
                               </div>
                               <div className={`text-xs truncate transition-colors duration-100 ${
-                                isSelected ? 'text-d-light' : 'text-d-white/50 group-hover:text-brand'
+                                isSelected ? 'text-d-light' : isComingSoon ? 'text-d-white/30' : 'text-d-white/50 group-hover:text-brand'
                               }`}>
-                                {model.desc}
+                                {isComingSoon ? 'Coming soon.' : model.desc}
                               </div>
                             </div>
                             {isSelected && (
@@ -2042,31 +2292,6 @@ const Create: React.FC = () => {
             </div>
           </div>
           
-          {/* Nano Banana settings - appears below Prompt Bar */}
-          {isBanana && isSettingsOpen && (
-            <div className="w-[700px] max-w-full mx-auto mb-6 text-left">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-d-black border border-d-mid rounded-xl p-2.5">
-                  <div className="text-xs text-d-white/80 mb-1.5" title="Creativity allowed in the responses.">Temperature</div>
-                  <div className="flex items-center gap-2">
-                    <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-full range-brand" />
-                    <input type="number" min={0} max={2} step={0.1} value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className="w-12 bg-d-mid border border-d-mid rounded text-right px-1.5 py-0.5 text-d-white text-xs" />
-                  </div>
-                </div>
-                <div className="bg-d-black border border-d-mid rounded-xl p-2.5">
-                  <div className="text-xs text-d-white/80 mb-1.5" title="Maximum number of tokens in respose">Output length</div>
-                  <input type="number" min={1} step={1} value={outputLength} onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} className="w-full bg-d-mid border border-d-mid rounded px-2 py-1 text-d-white text-xs" />
-                </div>
-                <div className="bg-d-black border border-d-mid rounded-xl p-2.5">
-                  <div className="text-xs text-d-white/80 mb-1.5" title="Nucleus sampling: consider only the most probable tokens whose cumulative probability reaches top-p.">Top P</div>
-                  <div className="flex items-center gap-2">
-                    <input type="range" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-full range-brand" />
-                    <input type="number" min={0} max={1} step={0.05} value={topP} onChange={(e) => setTopP(parseFloat(e.target.value))} className="w-12 bg-d-mid border border-d-mid rounded text-right px-1.5 py-0.5 text-d-white text-xs" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           
           <div className="flex gap-4">
             <input
