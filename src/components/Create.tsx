@@ -768,7 +768,7 @@ const Create: React.FC = () => {
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
         <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
             <div className="text-center">
               <div className="mb-4">
                 <Trash2 className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
@@ -813,7 +813,7 @@ const Create: React.FC = () => {
       {/* New folder dialog */}
       {newFolderDialog && (
         <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
@@ -883,7 +883,7 @@ const Create: React.FC = () => {
       {/* Add to folder dialog */}
       {addToFolderDialog && (
         <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
