@@ -45,12 +45,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
             {mode === "signup" && (
               <div>
                 <label className="block text-sm text-d-text mb-2 font-cabin">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-3 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors font-raleway" placeholder="Enter your name" />
+                <input value={name} onChange={e=>setName(e.target.value)} className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your name" />
               </div>
             )}
             <div>
               <label className="block text-sm text-d-text mb-2 font-cabin">Email</label>
-              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-3 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors font-raleway" placeholder="Enter your email" />
+              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
             </div>
             <button type="submit" className="btn btn-orange text-black w-full mt-4 font-cabin">Continue</button>
           </form>
