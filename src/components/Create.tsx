@@ -103,7 +103,7 @@ const Create: React.FC = () => {
           if (validImages.length !== parsed.length) {
             console.warn('Some images were invalid and removed from gallery');
             // Update localStorage with only valid images
-            localStorage.setItem(key("gallery"), JSON.stringify(validImages));
+            localStorage.setItem(key("gallery"), JSON.stringify(toStorable(validImages)));
           }
           
           setGallery(validImages);
@@ -221,10 +221,44 @@ const Create: React.FC = () => {
     }
   };
 
+  // Helper: compress data URL to reduce storage size
+  const compressDataUrl = async (
+    srcDataUrl: string,
+    maxW = 1024,
+    quality = 0.78
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch (error) {
+          reject(error);
+        }
+      };
+      img.onerror = reject;
+      img.src = srcDataUrl;
+    });
+  };
+
+  // Helper: keep only lean fields for storage
+  const toStorable = (items: GeneratedImage[]) =>
+    items.map(({ url, prompt, model, timestamp, ownerId }) => ({
+      url, prompt, model, timestamp, ownerId
+    }));
+
   // Backup function to persist gallery state
   const persistGallery = (galleryData: GeneratedImage[]) => {
     try {
-      localStorage.setItem(key("gallery"), JSON.stringify(galleryData));
+      localStorage.setItem(key("gallery"), JSON.stringify(toStorable(galleryData)));
       console.log('Gallery backup persisted with', galleryData.length, 'images');
     } catch (e) {
       console.error("Failed to backup gallery", e);
@@ -264,14 +298,14 @@ const Create: React.FC = () => {
         const updated = currentGallery.filter(img => img && img.url !== deleteConfirmation.imageUrl);
         // Persist to localStorage with error handling
         try {
-          localStorage.setItem(key("gallery"), JSON.stringify(updated));
+          localStorage.setItem(key("gallery"), JSON.stringify(toStorable(updated)));
           console.log('Gallery updated after deletion with', updated.length, 'images');
         } catch (e) {
           console.error("Failed to persist gallery after deletion", e);
           // Try to clear and retry
           try {
             localStorage.removeItem(key("gallery"));
-            localStorage.setItem(key("gallery"), JSON.stringify(updated));
+            localStorage.setItem(key("gallery"), JSON.stringify(toStorable(updated)));
             console.log('Gallery persisted after deletion with cleanup');
           } catch (retryError) {
             console.error("Failed to persist gallery after deletion even after cleanup", retryError);
@@ -604,8 +638,16 @@ const Create: React.FC = () => {
 
       // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
-        // Add ownerId to the image
-        const imgWithOwner: GeneratedImage = { ...img, ownerId: user?.id };
+        // Compress the image to reduce storage size
+        const compressedUrl = await compressDataUrl(img.url);
+        
+        // Add ownerId to the image and strip heavy references field
+        const imgWithOwner: GeneratedImage = { 
+          ...img, 
+          url: compressedUrl,
+          ownerId: user?.id,
+          references: undefined // strip heavy field
+        };
         console.log('Adding new image to gallery. Current gallery size:', gallery.length);
         
         // Use functional update to ensure we get the latest gallery state
@@ -632,32 +674,36 @@ const Create: React.FC = () => {
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           console.log('Final gallery size after dedup and slice:', next.length);
           
-          // Persist to localStorage with error handling
+          // Persist to localStorage with robust error handling
           try {
-            localStorage.setItem(key("gallery"), JSON.stringify(next));
+            localStorage.setItem(key("gallery"), JSON.stringify(toStorable(next)));
             console.log('Gallery persisted to localStorage with', next.length, 'images');
           } catch (e) {
             console.error("Failed to persist gallery - localStorage quota exceeded", e);
-            // If quota exceeded, try with fewer images
-            if (next.length > 10) {
-              const reducedGallery = next.slice(0, 10);
+            // Robust fallback: keep shrinking until write succeeds
+            let cut = next.slice(); // copy
+            let ok = false;
+            while (cut.length > 0 && !ok) {
+              cut.pop();
               try {
-                localStorage.setItem(key("gallery"), JSON.stringify(reducedGallery));
-                console.log('Gallery persisted with reduced size:', reducedGallery.length, 'images');
-                return reducedGallery;
-              } catch (retryError) {
-                console.error("Failed to persist even with reduced gallery", retryError);
-                // If still failing, clear and try with just the new image
-                try {
-                  localStorage.removeItem(key("gallery"));
-                  localStorage.setItem(key("gallery"), JSON.stringify([imgWithOwner]));
-                  console.log('Gallery cleared and persisted with new image only');
-                  return [imgWithOwner];
-                } catch (finalError) {
-                  console.error("Failed to persist even with single image", finalError);
-                }
+                localStorage.setItem(key("gallery"), JSON.stringify(toStorable(cut)));
+                ok = true;
+                console.log('Gallery persisted with reduced size:', cut.length, 'images');
+              } catch (_) { 
+                // keep trimming
               }
             }
+            if (!ok) {
+              // last resort: only the newest, already compressed one
+              try {
+                localStorage.setItem(key("gallery"), JSON.stringify(toStorable([imgWithOwner])));
+                console.log('Gallery cleared and persisted with new image only');
+                return [imgWithOwner];
+              } catch (finalError) {
+                console.error("Failed to persist even with single image", finalError);
+              }
+            }
+            return cut;
           }
           
           return next;
