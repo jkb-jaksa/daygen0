@@ -137,7 +137,7 @@ export default function Navbar() {
                   <span className="hidden sm:inline">{user.name || user.email}</span>
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-d-dark bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-sm text-d-text shadow-xl z-[60] transition-colors duration-200" role="menu">
+                  <div className="absolute right-0 mt-2 w-44 rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-sm text-d-text shadow-xl z-[60] transition-colors duration-200" role="menu">
                     <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 transition-colors" role="menuitem">My account</button>
                     <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 transition-colors" role="menuitem">Sign out</button>
                   </div>
