@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import { Users, Target, Lightbulb, Heart, ArrowRight, Sparkles, Zap } from "lucide-react";
+import { Users, Target, Lightbulb, Heart, Sparkles, Zap } from "lucide-react";
 
 const AboutUs: React.FC = () => {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
@@ -196,7 +196,7 @@ const AboutUs: React.FC = () => {
                   className="parallax-small tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-6 transition-all duration-200 cursor-pointer"
                   onMouseMove={onMove}
                   onMouseEnter={onEnter}
-                  onLeave={onLeave}
+                  onMouseLeave={onLeave}
                 >
                   <div className="flex flex-col items-center text-center">
                     <div className="size-12 grid place-items-center rounded-lg bg-d-orange-1/20 border border-d-orange-1/30 mb-4">
@@ -230,7 +230,7 @@ const AboutUs: React.FC = () => {
                     className="parallax-small tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-6 transition-all duration-200 cursor-pointer"
                     onMouseMove={onMove}
                     onMouseEnter={onEnter}
-                    onLeave={onLeave}
+                    onMouseLeave={onLeave}
                   >
                     <div className="text-center">
                       <div className={`size-16 grid place-items-center rounded-lg border mx-auto mb-4 ${s.badge}`}>

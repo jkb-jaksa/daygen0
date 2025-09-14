@@ -154,7 +154,7 @@ const Prompts: React.FC = () => {
                     className="parallax-small tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-6 transition-all duration-200 cursor-pointer"
                     onMouseMove={onMove}
                     onMouseEnter={onEnter}
-                    onLeave={onLeave}
+                    onMouseLeave={onLeave}
                   >
                     <div className="text-center">
                       <div className={`size-12 grid place-items-center rounded-lg border mx-auto mb-4 ${s.badge}`}>
