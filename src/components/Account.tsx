@@ -63,7 +63,7 @@ export default function Account() {
   const handleSaveProfile = () => {
     updateProfile({ name });
     
-    // Check if there's a 'next' parameter to redirect to
+    // Only redirect if there's a 'next' parameter (user was redirected here from auth flow)
     const nextPath = searchParams.get('next');
     if (nextPath) {
       try {
@@ -74,6 +74,7 @@ export default function Account() {
         navigate('/create'); // fallback
       }
     }
+    // If no 'next' parameter, just save and stay on account page
   };
 
   const nextPath = searchParams.get('next');
@@ -177,7 +178,7 @@ export default function Account() {
           <input className="w-full bg-black/30 border border-d-black rounded-lg p-2 text-d-white" value={name} onChange={e=>setName(e.target.value)} />
           <div className="flex gap-2 mt-3">
             <button className="btn btn-white text-black" onClick={handleSaveProfile}>
-              {hasPendingRedirect ? 'Save & Continue' : 'Save'}
+              Save
             </button>
             <button className="btn btn-orange text-black" onClick={signOut}>Log out</button>
           </div>
