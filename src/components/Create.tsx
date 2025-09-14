@@ -66,6 +66,11 @@ const Create: React.FC = () => {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
   const [newFolderName, setNewFolderName] = useState<string>("");
+  const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
+  const [selectedImageForFolder, setSelectedImageForFolder] = useState<string>("");
+  const [folderSuccessMessage, setFolderSuccessMessage] = useState<string>("");
+  const [folderSelectionSuccess, setFolderSelectionSuccess] = useState<boolean>(false);
+  const [selectedFolderForImage, setSelectedFolderForImage] = useState<string>("");
   const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -355,82 +360,46 @@ const Create: React.FC = () => {
     }
   };
 
-  const FolderSelector = ({ imageUrl, onClose }: { imageUrl: string, onClose: () => void }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    // Close dropdown when clicking outside
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (isOpen && !(event.target as Element).closest('.folder-selector')) {
-          setIsOpen(false);
-        }
-      };
+  const handleAddToFolder = (imageUrl: string) => {
+    setSelectedImageForFolder(imageUrl);
+    setSelectedFolderForImage("");
+    setAddToFolderDialog(true);
+  };
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen]);
+  const handleFolderSelection = (folderId: string) => {
+    // Toggle selection - if already selected, deselect
+    if (selectedFolderForImage === folderId) {
+      setSelectedFolderForImage("");
+    } else {
+      setSelectedFolderForImage(folderId);
+    }
+  };
+
+  const confirmFolderSelection = () => {
+    if (!selectedFolderForImage) return;
     
-    return (
-      <div className="relative folder-selector">
-        <button
-          onClick={() => {
-            console.log('Folder button clicked, isOpen:', isOpen);
-            setIsOpen(!isOpen);
-          }}
-          className="image-action-btn"
-          title="Add to folder"
-        >
-          <FolderPlus className="w-3.5 h-3.5" />
-        </button>
-        
-        {isOpen && (
-          <div className="absolute bottom-full mb-2 left-0 w-64 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 z-50 max-h-48 overflow-y-auto">
-            <div className="text-xs text-d-white/80 mb-2 font-raleway">Select folder:</div>
-            {folders.length === 0 ? (
-              <div className="text-xs text-d-white/50 p-2">No folders available</div>
-            ) : (
-              folders.map((folder) => {
-                const isInFolder = folder.imageIds.includes(imageUrl);
-                return (
-                  <button
-                    key={folder.id}
-                    onClick={() => {
-                      console.log('Folder selected:', folder.name, 'imageUrl:', imageUrl, 'isInFolder:', isInFolder);
-                      if (!isInFolder) {
-                        addImageToFolder(imageUrl, folder.id);
-                      }
-                      setIsOpen(false);
-                      onClose();
-                    }}
-                    disabled={isInFolder}
-                    className={`w-full p-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 ${
-                      isInFolder
-                        ? "bg-d-dark/40 border-d-dark opacity-60 cursor-not-allowed"
-                        : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
-                    }`}
-                  >
-                    <Folder className="w-4 h-4 flex-shrink-0 text-d-white/60" />
-                    <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-cabin truncate ${
-                        isInFolder ? 'text-d-text/40' : 'text-d-text/80'
-                      }`}>
-                        {folder.name}
-                      </div>
-                      <div className={`text-xs ${
-                        isInFolder ? 'text-d-white/30' : 'text-d-white/50'
-                      }`}>
-                        {folder.imageIds.length} images
-                        {isInFolder && " (already added)"}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        )}
-      </div>
-    );
+    addImageToFolder(selectedImageForFolder, selectedFolderForImage);
+    
+    // Show success state briefly
+    setFolderSelectionSuccess(true);
+    
+    // Show success message
+    const folder = folders.find(f => f.id === selectedFolderForImage);
+    if (folder) {
+      setFolderSuccessMessage(`Image added to "${folder.name}" folder!`);
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setFolderSuccessMessage("");
+      }, 3000);
+    }
+    
+    // Close modal after brief success display
+    setTimeout(() => {
+      setAddToFolderDialog(false);
+      setSelectedImageForFolder("");
+      setSelectedFolderForImage("");
+      setFolderSelectionSuccess(false);
+    }, 1000);
   };
 
   const createNewFolder = () => {
@@ -923,6 +892,176 @@ const Create: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Add to folder dialog */}
+      {addToFolderDialog && (
+        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                {folderSelectionSuccess ? (
+                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : (
+                  <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
+                )}
+                <h3 className="text-lg font-cabin text-d-text mb-2">
+                  {folderSelectionSuccess ? "Success!" : "Add to Folder"}
+                </h3>
+                <p className="text-sm text-d-white font-raleway mb-4">
+                  {folderSelectionSuccess ? "Image added to folder!" : selectedFolderForImage ? 
+                    `Selected: ${folders.find(f => f.id === selectedFolderForImage)?.name || 'Unknown folder'}` : 
+                    "Choose a folder to add this image to."}
+                </p>
+              </div>
+              
+              <div className="mb-6 max-h-64 overflow-y-auto">
+                {folderSelectionSuccess ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-green-400 font-raleway">Image successfully added!</p>
+                  </div>
+                ) : folders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
+                    <p className="text-sm text-d-white/50">No folders available</p>
+                    <button
+                      onClick={() => {
+                        setAddToFolderDialog(false);
+                        setNewFolderDialog(true);
+                      }}
+                      className="mt-2 text-d-orange-1 hover:text-d-orange-2 text-sm"
+                    >
+                      Create a folder first
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {folders.map((folder) => {
+                      const isInFolder = folder.imageIds.includes(selectedImageForFolder);
+                      const isSelected = selectedFolderForImage === folder.id;
+                      return (
+                        <label
+                          key={folder.id}
+                          className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
+                            isInFolder
+                              ? "bg-d-dark/40 border-d-dark opacity-60 cursor-not-allowed"
+                              : isSelected
+                              ? "bg-d-orange-1/10 border-d-orange-1 shadow-lg shadow-d-orange-1/20"
+                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="folderSelection"
+                            value={folder.id}
+                            checked={isSelected}
+                            onChange={() => handleFolderSelection(folder.id)}
+                            disabled={isInFolder}
+                            className="sr-only"
+                          />
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                            isSelected ? "border-d-orange-1 bg-d-orange-1" : "border-d-mid hover:border-d-orange-1/50"
+                          }`}>
+                            {isSelected ? (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <div className="w-2 h-2 bg-transparent rounded-full"></div>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0">
+                            {isSelected ? (
+                              <div className="w-5 h-5 bg-d-orange-1/20 rounded-lg flex items-center justify-center">
+                                <Folder className="w-3 h-3 text-d-orange-1" />
+                              </div>
+                            ) : (
+                              <Folder className="w-5 h-5 text-d-white/60" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate ${
+                              isInFolder ? 'text-d-text/40' : isSelected ? 'text-d-orange-1' : 'text-d-text/80'
+                            }`}>
+                              {folder.name}
+                            </div>
+                            <div className={`text-xs ${
+                              isInFolder ? 'text-d-white/30' : isSelected ? 'text-d-orange-1/70' : 'text-d-white/50'
+                            }`}>
+                              {folder.imageIds.length} images
+                              {isInFolder && " (already added)"}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => {
+                    setAddToFolderDialog(false);
+                    setSelectedImageForFolder("");
+                    setSelectedFolderForImage("");
+                  }}
+                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
+                >
+                  Cancel
+                </button>
+                {folders.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setAddToFolderDialog(false);
+                      setNewFolderDialog(true);
+                    }}
+                    className="px-4 py-2 bg-d-dark border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
+                  >
+                    New Folder
+                  </button>
+                )}
+                {selectedFolderForImage && (
+                  <button
+                    onClick={confirmFolderSelection}
+                    className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base flex items-center gap-2"
+                    style={{
+                      backgroundColor: '#faaa16'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffb833';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#faaa16';
+                    }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Add to Folder
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success message toast */}
+      {folderSuccessMessage && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[120] bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top-2 duration-300">
+          <div className="w-2 h-2 bg-white rounded-full"></div>
+          <span className="font-raleway text-sm">{folderSuccessMessage}</span>
+        </div>
+      )}
       
       {/* Background overlay to show gradient behind navbar */}
       <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
@@ -1205,7 +1344,15 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                          <FolderSelector imageUrl={img.url} onClose={() => {}} />
+                          <button 
+                            type="button" 
+                            onClick={() => handleAddToFolder(img.url)} 
+                            className="image-action-btn" 
+                            title="Add to folder" 
+                            aria-label="Add to folder"
+                          >
+                            <FolderPlus className="w-3.5 h-3.5" />
+                          </button>
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                       </div>
@@ -1378,7 +1525,15 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                          <FolderSelector imageUrl={img.url} onClose={() => {}} />
+                          <button 
+                            type="button" 
+                            onClick={() => handleAddToFolder(img.url)} 
+                            className="image-action-btn" 
+                            title="Add to folder" 
+                            aria-label="Add to folder"
+                          >
+                            <FolderPlus className="w-3.5 h-3.5" />
+                          </button>
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                       </div>
@@ -1484,8 +1639,8 @@ const Create: React.FC = () => {
                 {/* My Folders View */}
                 {activeCategory === "my-folders" && (
                   <div className="w-full">
-                    {/* Back navigation */}
-                    <div className="mb-6">
+                    {/* Back navigation and New Folder button */}
+                    <div className="mb-6 flex items-center justify-between">
                       <button
                         onClick={() => setActiveCategory("image")}
                         className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
@@ -1493,10 +1648,34 @@ const Create: React.FC = () => {
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
                       </button>
+                      
+                      <button
+                        onClick={() => setNewFolderDialog(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-d-orange-1 text-d-black rounded-lg hover:bg-d-orange-2 transition-colors duration-200 font-raleway text-sm font-medium"
+                      >
+                        <FolderPlus className="w-4 h-4" />
+                        New Folder
+                      </button>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
-                    {folders.map((folder) => (
+                    {folders.length === 0 ? (
+                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                        <Folder className="w-16 h-16 text-d-white/30 mb-4" />
+                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No folders yet</h3>
+                        <p className="text-sm font-raleway text-d-white/40 max-w-md mb-4">
+                          Create your first folder to organize your images.
+                        </p>
+                        <button
+                          onClick={() => setNewFolderDialog(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-d-orange-1 text-d-black rounded-lg hover:bg-d-orange-2 transition-colors duration-200 font-raleway text-sm font-medium"
+                        >
+                          <FolderPlus className="w-4 h-4" />
+                          Create First Folder
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+                        {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
                         <div className="w-full aspect-square flex flex-col items-center justify-center p-6">
                           <Folder className="w-16 h-16 text-d-white/60 mb-3" />
@@ -1524,19 +1703,9 @@ const Create: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    ))}
-                    
-                    {/* Empty state for folders */}
-                    {folders.length === 0 && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Folder className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No folders yet</h3>
-                        <p className="text-sm font-raleway text-d-white/40 max-w-md">
-                          Create your first folder using the "new folder" button to organize your images.
-                        </p>
+                        ))}
                       </div>
                     )}
-                    </div>
                   </div>
                 )}
                 
@@ -1990,7 +2159,15 @@ const Create: React.FC = () => {
                             />
                           </button>
                           <button type="button" onClick={() => handleEditImage(img)} className="image-action-btn" title="Edit image" aria-label="Edit image"><Edit className="w-3.5 h-3.5" /></button>
-                          <FolderSelector imageUrl={img.url} onClose={() => {}} />
+                          <button 
+                            type="button" 
+                            onClick={() => handleAddToFolder(img.url)} 
+                            className="image-action-btn" 
+                            title="Add to folder" 
+                            aria-label="Add to folder"
+                          >
+                            <FolderPlus className="w-3.5 h-3.5" />
+                          </button>
                           <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                         </div>
                         </div>
