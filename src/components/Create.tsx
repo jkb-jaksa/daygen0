@@ -69,8 +69,6 @@ const Create: React.FC = () => {
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string>("");
   const [folderSuccessMessage, setFolderSuccessMessage] = useState<string>("");
-  const [folderSelectionSuccess, setFolderSelectionSuccess] = useState<boolean>(false);
-  const [selectedFolderForImage, setSelectedFolderForImage] = useState<string>("");
   const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -362,45 +360,31 @@ const Create: React.FC = () => {
 
   const handleAddToFolder = (imageUrl: string) => {
     setSelectedImageForFolder(imageUrl);
-    setSelectedFolderForImage("");
     setAddToFolderDialog(true);
   };
 
-  const handleFolderSelection = (folderId: string) => {
-    // Toggle selection - if already selected, deselect
-    if (selectedFolderForImage === folderId) {
-      setSelectedFolderForImage("");
+  const handleToggleImageInFolder = (imageUrl: string, folderId: string) => {
+    const folder = folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    const isInFolder = folder.imageIds.includes(imageUrl);
+    
+    if (isInFolder) {
+      // Remove from folder
+      removeImageFromFolder(imageUrl, folderId);
+      setFolderSuccessMessage(`Image removed from "${folder.name}" folder!`);
     } else {
-      setSelectedFolderForImage(folderId);
+      // Add to folder
+      addImageToFolder(imageUrl, folderId);
+      setFolderSuccessMessage(`Image added to "${folder.name}" folder!`);
     }
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      setFolderSuccessMessage("");
+    }, 3000);
   };
 
-  const confirmFolderSelection = () => {
-    if (!selectedFolderForImage) return;
-    
-    addImageToFolder(selectedImageForFolder, selectedFolderForImage);
-    
-    // Show success state briefly
-    setFolderSelectionSuccess(true);
-    
-    // Show success message
-    const folder = folders.find(f => f.id === selectedFolderForImage);
-    if (folder) {
-      setFolderSuccessMessage(`Image added to "${folder.name}" folder!`);
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setFolderSuccessMessage("");
-      }, 3000);
-    }
-    
-    // Close modal after brief success display
-    setTimeout(() => {
-      setAddToFolderDialog(false);
-      setSelectedImageForFolder("");
-      setSelectedFolderForImage("");
-      setFolderSelectionSuccess(false);
-    }, 1000);
-  };
 
   const createNewFolder = () => {
     if (!newFolderName.trim()) return;
@@ -899,36 +883,15 @@ const Create: React.FC = () => {
           <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                {folderSelectionSuccess ? (
-                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                ) : (
-                  <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
-                )}
-                <h3 className="text-lg font-cabin text-d-text mb-2">
-                  {folderSelectionSuccess ? "Success!" : "Add to Folder"}
-                </h3>
+                <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
+                <h3 className="text-lg font-cabin text-d-text mb-2">Manage Folders</h3>
                 <p className="text-sm text-d-white font-raleway mb-4">
-                  {folderSelectionSuccess ? "Image added to folder!" : selectedFolderForImage ? 
-                    `Selected: ${folders.find(f => f.id === selectedFolderForImage)?.name || 'Unknown folder'}` : 
-                    "Choose a folder to add this image to."}
+                  Check folders to add or remove this image from.
                 </p>
               </div>
               
               <div className="mb-6 max-h-64 overflow-y-auto">
-                {folderSelectionSuccess ? (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p className="text-sm text-green-400 font-raleway">Image successfully added!</p>
-                  </div>
-                ) : folders.length === 0 ? (
+                {folders.length === 0 ? (
                   <div className="text-center py-8">
                     <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
                     <p className="text-sm text-d-white/50">No folders available</p>
@@ -946,40 +909,34 @@ const Create: React.FC = () => {
                   <div className="space-y-2">
                     {folders.map((folder) => {
                       const isInFolder = folder.imageIds.includes(selectedImageForFolder);
-                      const isSelected = selectedFolderForImage === folder.id;
                       return (
                         <label
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
                             isInFolder
-                              ? "bg-d-dark/40 border-d-dark opacity-60 cursor-not-allowed"
-                              : isSelected
                               ? "bg-d-orange-1/10 border-d-orange-1 shadow-lg shadow-d-orange-1/20"
                               : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
                           }`}
                         >
                           <input
-                            type="radio"
-                            name="folderSelection"
-                            value={folder.id}
-                            checked={isSelected}
-                            onChange={() => handleFolderSelection(folder.id)}
-                            disabled={isInFolder}
+                            type="checkbox"
+                            checked={isInFolder}
+                            onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
                             className="sr-only"
                           />
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                            isSelected ? "border-d-orange-1 bg-d-orange-1" : "border-d-mid hover:border-d-orange-1/50"
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                            isInFolder ? "border-d-orange-1 bg-d-orange-1" : "border-d-mid hover:border-d-orange-1/50"
                           }`}>
-                            {isSelected ? (
+                            {isInFolder ? (
                               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
-                              <div className="w-2 h-2 bg-transparent rounded-full"></div>
+                              <div className="w-2 h-2 bg-transparent rounded"></div>
                             )}
                           </div>
                           <div className="flex-shrink-0">
-                            {isSelected ? (
+                            {isInFolder ? (
                               <div className="w-5 h-5 bg-d-orange-1/20 rounded-lg flex items-center justify-center">
                                 <Folder className="w-3 h-3 text-d-orange-1" />
                               </div>
@@ -989,15 +946,15 @@ const Create: React.FC = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-cabin truncate ${
-                              isInFolder ? 'text-d-text/40' : isSelected ? 'text-d-orange-1' : 'text-d-text/80'
+                              isInFolder ? 'text-d-orange-1' : 'text-d-text/80'
                             }`}>
                               {folder.name}
                             </div>
                             <div className={`text-xs ${
-                              isInFolder ? 'text-d-white/30' : isSelected ? 'text-d-orange-1/70' : 'text-d-white/50'
+                              isInFolder ? 'text-d-orange-1/70' : 'text-d-white/50'
                             }`}>
                               {folder.imageIds.length} images
-                              {isInFolder && " (already added)"}
+                              {isInFolder && " (added)"}
                             </div>
                           </div>
                         </label>
@@ -1012,11 +969,10 @@ const Create: React.FC = () => {
                   onClick={() => {
                     setAddToFolderDialog(false);
                     setSelectedImageForFolder("");
-                    setSelectedFolderForImage("");
                   }}
                   className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
                 >
-                  Cancel
+                  Done
                 </button>
                 {folders.length > 0 && (
                   <button
@@ -1027,26 +983,6 @@ const Create: React.FC = () => {
                     className="px-4 py-2 bg-d-dark border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
                   >
                     New Folder
-                  </button>
-                )}
-                {selectedFolderForImage && (
-                  <button
-                    onClick={confirmFolderSelection}
-                    className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base flex items-center gap-2"
-                    style={{
-                      backgroundColor: '#faaa16'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#ffb833';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#faaa16';
-                    }}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Add to Folder
                   </button>
                 )}
               </div>
