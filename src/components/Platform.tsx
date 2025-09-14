@@ -19,7 +19,7 @@ const accentStyles: Record<Accent, { badge: string; ring: string }> = {
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image (Nano Banana)", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent },
+  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent },
   { name: "FLUX.1 Kontext Pro / Max", desc: "Great for image editing with text prompts.", Icon: Wand2, accent: "blue" as Accent },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent },
   { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent },
@@ -174,7 +174,7 @@ const Create: React.FC = () => {
   const handleModelSelect = (modelName: string) => {
     // Map model names to actual model IDs
     const modelMap: Record<string, string> = {
-      "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+      "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
       "FLUX.1 Kontext Pro / Max": "flux-pro",
       "Runway Gen-4": "runway-gen4",
       "Ideogram": "ideogram",
@@ -501,7 +501,7 @@ const Create: React.FC = () => {
                     className={`no-hover-bg tag-gradient relative p-4 rounded-[32px] border transition-all duration-200 text-left ${
                       (() => {
                         const modelMap: Record<string, string> = {
-                          "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+                          "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
                           "FLUX.1 Kontext Pro / Max": "flux-pro",
                           "Runway Gen-4": "runway-gen4",
                           "Ideogram": "ideogram",

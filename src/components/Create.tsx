@@ -3,6 +3,8 @@ import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Downl
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useAuth } from "../auth/AuthContext";
+import ModelBadge from './ModelBadge';
+import { getModelInfo } from '../utils/modelUtils';
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -17,7 +19,7 @@ type Folder = {
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image (Nano Banana)", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent },
+  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent },
   { name: "FLUX.1 Kontext Pro / Max", desc: "Great for image editing with text prompts.", Icon: Wand2, accent: "blue" as Accent },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent },
   { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent },
@@ -603,7 +605,7 @@ const Create: React.FC = () => {
 
     // Only allow Gemini model for now
     if (!isBanana) {
-      alert('This model is coming soon! Currently only Gemini 2.5 Flash Image (Nano Banana) is available.');
+      alert('This model is coming soon! Currently only Gemini 2.5 Flash Image is available.');
       return;
     }
 
@@ -717,7 +719,7 @@ const Create: React.FC = () => {
   const handleModelSelect = (modelName: string) => {
     // Map model names to actual model IDs
     const modelMap: Record<string, string> = {
-      "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+      "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
       "FLUX.1 Kontext Pro / Max": "flux-pro",
       "Runway Gen-4": "runway-gen4",
       "Ideogram": "ideogram",
@@ -740,7 +742,7 @@ const Create: React.FC = () => {
   // Get current model info
   const getCurrentModel = () => {
     const modelMap: Record<string, string> = {
-      "gemini-2.5-flash-image-preview": "Gemini 2.5 Flash Image (Nano Banana)",
+      "gemini-2.5-flash-image-preview": "Gemini 2.5 Flash Image",
       "flux-pro": "FLUX.1 Kontext Pro / Max",
       "runway-gen4": "Runway Gen-4",
       "ideogram": "Ideogram",
@@ -748,7 +750,7 @@ const Create: React.FC = () => {
       "qwen-image": "Qwen Image",
       "chatgpt-image": "ChatGPT Image",
     };
-    const modelName = modelMap[selectedModel] || "Gemini 2.5 Flash Image (Nano Banana)";
+    const modelName = modelMap[selectedModel] || "Gemini 2.5 Flash Image";
     return AI_MODELS.find(model => model.name === modelName) || AI_MODELS[0];
   };
 
@@ -1303,6 +1305,10 @@ const Create: React.FC = () => {
                                   </button>
                                 </div>
                               )}
+                              {/* Model Badge */}
+                              <div className="flex justify-start mt-2">
+                                <ModelBadge model={img.model} size="md" />
+                              </div>
                             </div>
                           </div>
                         )}
@@ -1482,6 +1488,10 @@ const Create: React.FC = () => {
                                   </button>
                                 </div>
                               )}
+                              {/* Model Badge */}
+                              <div className="flex justify-start mt-2">
+                                <ModelBadge model={img.model} size="md" />
+                              </div>
                             </div>
                           </div>
                         )}
@@ -2194,6 +2204,10 @@ const Create: React.FC = () => {
                                     </button>
                                   </div>
                                 )}
+                                {/* Model Badge */}
+                                <div className="flex justify-start mt-2">
+                                  <ModelBadge model={img.model} size="md" />
+                                </div>
                               </div>
                             </div>
                           )}
@@ -2460,7 +2474,7 @@ const Create: React.FC = () => {
                     <div className="absolute bottom-full mb-2 left-0 w-96 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 z-50 max-h-64 overflow-y-auto">
                       {AI_MODELS.map((model) => {
                         const modelMap: Record<string, string> = {
-                          "Gemini 2.5 Flash Image (Nano Banana)": "gemini-2.5-flash-image-preview",
+                          "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
                           "FLUX.1 Kontext Pro / Max": "flux-pro",
                           "Runway Gen-4": "runway-gen4",
                           "Ideogram": "ideogram",
@@ -2478,7 +2492,7 @@ const Create: React.FC = () => {
                             key={model.name}
                             onClick={() => {
                               if (isComingSoon) {
-                                alert('This model is coming soon! Currently only Gemini 2.5 Flash Image (Nano Banana) is available.');
+                                alert('This model is coming soon! Currently only Gemini 2.5 Flash Image is available.');
                                 return;
                               }
                               handleModelSelect(model.name);
@@ -2586,12 +2600,37 @@ const Create: React.FC = () => {
               className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
             >
-              <div className="relative max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+              <div className="relative max-w-[95vw] max-h-[90vh] group" onClick={(e) => e.stopPropagation()}>
                 <img 
                   src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string} 
                   alt="Full size" 
                   className="max-w-full max-h-[90vh] object-contain rounded-lg" 
                 />
+                
+                {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
+                {(selectedFullImage || generatedImage) && (
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-3">
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
+                          </div>
+                          <div className="text-white/60 text-xs mt-1">
+                            Generated with {getModelInfo((selectedFullImage || generatedImage)?.model || 'unknown').name}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <ModelBadge 
+                          model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
+                          size="sm" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <button
                   onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
                   className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
