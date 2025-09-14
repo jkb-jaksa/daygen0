@@ -945,7 +945,7 @@ const Create: React.FC = () => {
               </div>
               
               {/* Add new folder button */}
-              <div className="mb-6 flex justify-start">
+              <div className="mb-6 flex justify-center">
                 <button
                   onClick={() => {
                     setAddToFolderDialog(false);
