@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, createUserContent } from "@google/genai";
 
 export const config = { runtime: 'edge' };
 
@@ -60,48 +60,55 @@ export default async function handler(req: Request): Promise<Response> {
       hasImage: !!imageData,
     });
 
-    // Initialize Gemini client
-    const ai = new GoogleGenAI({ apiKey });
+    // --- Build contents robustly ---
+    let contents: any;
+    const parts: any[] = [{ text: String(prompt) }];
 
-    // Whitelist known image-capable models and set a safe default
-    const allowedModels = [
-      'gemini-2.5-flash-image-preview',
-      'gemini-2.5-flash-image',
-    ];
-    const serverDefaultModel = 'gemini-2.5-flash-image-preview';
-    const model = allowedModels.includes(String(requestedModel || ''))
-      ? String(requestedModel)
-      : serverDefaultModel;
-
-    // Note: @google/genai doesn't require generation config for image gen; keep inputs minimal
-
-    // Build contents for image generation
-    const contents: any[] = [{ text: prompt }];
     if (imageData) {
-      contents.push({
+      parts.push({
         inlineData: {
-          mimeType: 'image/jpeg',
-          data: String(imageData).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, ''),
+          mimeType: "image/jpeg",
+          data: String(imageData).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, ""),
         },
       });
     }
-    // Add up to 3 reference images
+
     const maxRefs = 3;
     const refArray: string[] = Array.isArray(references) ? references.slice(0, maxRefs) : [];
     for (const ref of refArray) {
-      const mime = /^data:(image\/[a-zA-Z0-9.+-]+);base64,/.exec(String(ref))?.[1] || 'image/jpeg';
-      const dataOnly = String(ref).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
-      if (dataOnly) {
-        contents.push({ inlineData: { mimeType: mime, data: dataOnly } });
-      }
+      const mime = /^data:(image\/[a-zA-Z0-9.+-]+);base64,/.exec(String(ref))?.[1] || "image/jpeg";
+      const dataOnly = String(ref).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
+      if (dataOnly) parts.push({ inlineData: { mimeType: mime, data: dataOnly } });
     }
 
-    // Generate image
-    console.log('Attempting to generate image with model:', model);
-    console.log('Contents:', contents);
-    
-    const result = await ai.models.generateContent({ model, contents });
-    const response: any = result;
+    // If it's just text-to-image, pass a plain string (per docs). Otherwise, wrap parts as a single user content.
+    contents = parts.length === 1 ? String(prompt) : [createUserContent(parts)];
+
+    // --- Generate with short, bounded retries for transient 500s ---
+    const ai = new GoogleGenAI({ apiKey });
+
+    const allowedModels = [
+      "gemini-2.5-flash-image-preview",
+      // Keep this for forward-compat if/when Google promotes a non-preview:
+      "gemini-2.5-flash-image",
+    ];
+    const serverDefaultModel = "gemini-2.5-flash-image-preview";
+    const model =
+      allowedModels.includes(String(requestedModel || "")) ? String(requestedModel) : serverDefaultModel;
+
+    const tryOnce = async () => ai.models.generateContent({ model, contents });
+    let response: any;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        response = await tryOnce();
+        break;
+      } catch (e: any) {
+        const status = e?.status ?? 0;
+        if (attempt === 2 || status && status < 500) throw e; // don't retry non-5xx
+        // small backoff
+        await new Promise(r => setTimeout(r, 250));
+      }
+    }
     
     console.log('Response received:', response);
 
@@ -131,21 +138,21 @@ export default async function handler(req: Request): Promise<Response> {
     };
 
     return json({ success: true, image: generatedImage }, 200, origin);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('generate-image error:', message);
-    console.error('Full error object:', err);
-    
-    // Map common quota error to 429 so frontend can present guidance
+
+    // --- Improved catch that surfaces API details ---
+  } catch (err: any) {
+    const status = err?.status ?? 500;
+    // Try to preserve the underlying Google error shape if present
+    const apiError = err?.response?.error || err?.error || null;
+    const message = apiError?.message || err?.message || "Unknown server error";
+
+    // Quota mapping still useful
     const isQuota = /quota|Too Many Requests/i.test(message);
-    const isApiKey = /api.*key|authentication|unauthorized/i.test(message);
-    
-    // Provide more specific error messages
-    let errorMessage = message || 'Unknown server error';
-    if (isApiKey) {
-      errorMessage = 'API key configuration error. Please check environment variables.';
-    }
-    
-    return json({ error: errorMessage }, isQuota ? 429 : 500, origin);
+    const isApiKey = /api.*key|authentication|unauthor/i.test(message);
+    const userMessage = isApiKey
+      ? "API key configuration error. Please check environment variables."
+      : message;
+
+    return json(apiError ? { error: apiError } : { error: userMessage }, isQuota ? 429 : status, origin);
   }
 }

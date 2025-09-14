@@ -70,13 +70,15 @@ export const useGeminiImageGeneration = () => {
           });
           if (!res.ok) {
             const errBody = await res.json().catch(() => null);
-            tried.push({ url, status: res.status, message: errBody?.error });
+            // Handle both string errors and Google API error objects
+            const errorMessage = errBody?.error?.message || errBody?.error || `Request failed with ${res.status}`;
+            tried.push({ url, status: res.status, message: errorMessage });
             if (res.status === 429) {
               throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
             }
             // Try next candidate when 404 or 403; otherwise throw
             if (res.status === 404 || res.status === 403) continue;
-            throw new Error(errBody?.error || `Request failed with ${res.status}`);
+            throw new Error(errorMessage);
           }
           payload = await res.json();
           break; // success
