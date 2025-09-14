@@ -183,7 +183,7 @@ export default function Account() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingPic}
-                  className="btn btn-white text-black text-sm"
+                  className="btn btn-white text-black text-sm font-medium"
                 >
                   <Upload className="size-4 mr-1" />
                   {isUploadingPic ? "Uploading..." : "Upload"}
@@ -191,7 +191,7 @@ export default function Account() {
                 {user.profilePic && (
                   <button
                     onClick={handleRemoveProfilePic}
-                    className="btn btn-orange text-black text-sm"
+                    className="btn btn-orange text-black text-sm font-medium"
                   >
                     <X className="size-4 mr-1" />
                     Remove
@@ -201,13 +201,13 @@ export default function Account() {
             </div>
           </div>
 
-          <label className="block text-sm text-d-text mb-1">Display name</label>
-          <input className="w-full bg-black/30 border border-d-black rounded-lg p-2 text-d-white" value={name} onChange={e=>setName(e.target.value)} />
+          <label className="block text-sm text-d-text mb-1 font-medium">Display name</label>
+          <input className="w-full bg-d-dark/50 border border-d-black rounded-lg p-2 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
-            <button className="btn btn-white text-black" onClick={handleSaveProfile}>
+            <button className="btn btn-white text-black font-medium" onClick={handleSaveProfile}>
               Save
             </button>
-            <button className="btn btn-orange text-black" onClick={signOut}>Log out</button>
+            <button className="btn btn-orange text-black font-medium" onClick={signOut}>Log out</button>
           </div>
         </div>
 

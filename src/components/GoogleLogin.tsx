@@ -60,10 +60,11 @@ export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
       });
       if (btnRef.current) {
         window.google?.accounts.id.renderButton(btnRef.current, {
-          theme: "filled_black",
+          theme: "outline",
           size: "large",
           shape: "pill",
           text: "signin_with",
+          width: "100%",
         });
       }
       // Optional: One Tap dialog

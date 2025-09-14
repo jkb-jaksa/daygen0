@@ -32,29 +32,29 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
         </div>
 
         <div className="flex gap-2 mb-4">
-          <button onClick={() => setMode("login")} className={`px-3 py-1 rounded-lg border ${mode==="login"?"bg-d-dark border-d-mid":"bg-transparent border-d-black text-d-white"}`}>Login</button>
-          <button onClick={() => setMode("signup")} className={`px-3 py-1 rounded-lg border ${mode==="signup"?"bg-d-dark border-d-mid":"bg-transparent border-d-black text-d-white"}`}>Sign up</button>
+          <button onClick={() => setMode("login")} className={`px-3 py-1 rounded-lg border text-sm font-medium transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-black text-d-white hover:border-d-mid"}`}>Login</button>
+          <button onClick={() => setMode("signup")} className={`px-3 py-1 rounded-lg border text-sm font-medium transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-black text-d-white hover:border-d-mid"}`}>Sign up</button>
         </div>
 
         <div className="space-y-3">
           <GoogleLogin onSuccess={onClose} />
-          <div className="text-center text-xs text-d-text/60">or continue with email</div>
+          <div className="text-center text-xs text-d-light">or continue with email</div>
           
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (
               <div>
-                <label className="block text-sm text-d-text mb-1">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-black/30 border border-d-black rounded-lg p-2 text-d-white" />
+                <label className="block text-sm text-d-text mb-1 font-medium">Name</label>
+                <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-d-dark/50 border border-d-black rounded-lg p-2 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors" placeholder="Enter your name" />
               </div>
             )}
             <div>
-              <label className="block text-sm text-d-text mb-1">Email</label>
-              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-black/30 border border-d-black rounded-lg p-2 text-d-white" />
+              <label className="block text-sm text-d-text mb-1 font-medium">Email</label>
+              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-d-dark/50 border border-d-black rounded-lg p-2 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors" placeholder="Enter your email" />
             </div>
-            <button type="submit" className="btn btn-orange text-black w-full mt-2">Continue</button>
+            <button type="submit" className="btn btn-orange text-black w-full mt-2 font-medium">Continue</button>
           </form>
         </div>
-        <p className="text-xs text-d-text/70 mt-3">No password — this is a demo-only login to test flows.</p>
+        <p className="text-xs text-d-light mt-3">No password — this is a demo-only login to test flows.</p>
       </div>
     </div>
   );

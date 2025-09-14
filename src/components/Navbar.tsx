@@ -115,7 +115,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(v=>!v)}
-                  className="parallax-mid flex items-center gap-2 rounded-full border bg-[#222427] border-d-dark text-d-text px-3 py-1.5"
+                  className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 transition-colors"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="My account"
@@ -137,9 +137,9 @@ export default function Navbar() {
                   <span className="hidden sm:inline">{user.name || user.email}</span>
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-d-dark bg-[#121417] text-sm text-d-white shadow-xl z-[60]" role="menu">
-                    <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10" role="menuitem">My account</button>
-                    <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10" role="menuitem">Sign out</button>
+                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-d-mid bg-d-black/95 backdrop-blur-sm text-sm text-d-text shadow-xl z-[60]" role="menu">
+                    <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 transition-colors" role="menuitem">My account</button>
+                    <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 transition-colors" role="menuitem">Sign out</button>
                   </div>
                 )}
               </div>
