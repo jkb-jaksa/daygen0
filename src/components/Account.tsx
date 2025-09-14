@@ -97,8 +97,8 @@ export default function Account() {
 
   if (!user) return (
     <main className="min-h-screen bg-black text-d-text px-6 pt-24">
-      <h1 className="text-3xl font-cabin mb-2">My account</h1>
-      <p>Please log in to view your account.</p>
+      <h1 className="text-3xl font-cabin mb-2 text-d-text">My account</h1>
+      <p className="text-d-white font-raleway">Please log in to view your account.</p>
     </main>
   );
 
@@ -107,8 +107,8 @@ export default function Account() {
     return (
       <main className="min-h-screen bg-black text-d-text px-6 pt-24">
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-3xl font-cabin mb-4">Redirecting...</h1>
-          <p className="text-d-text/70">Taking you to your destination.</p>
+          <h1 className="text-3xl font-cabin mb-4 text-d-text">Redirecting...</h1>
+          <p className="text-d-white font-raleway">Taking you to your destination.</p>
         </div>
       </main>
     );
@@ -138,10 +138,10 @@ export default function Account() {
             </button>
           </div>
           <div>
-            <h1 className="text-3xl font-cabin">My account</h1>
-            <div className="text-d-text/70 text-sm">{user.email}</div>
+            <h1 className="text-3xl font-cabin text-d-text">My account</h1>
+            <div className="text-d-white text-sm font-raleway">{user.email}</div>
             {hasPendingRedirect && (
-              <div className="text-xs text-brand mt-1">
+              <div className="text-xs text-brand mt-1 font-raleway">
                 Complete your profile to continue to {nextPath === '/create' ? 'Create' : 'your destination'}
               </div>
             )}
@@ -157,11 +157,11 @@ export default function Account() {
       </header>
 
       <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
-        <div className="rounded-2xl bg-white/5 border border-d-black p-5">
-          <h3 className="text-xl font-cabin mb-3">Profile</h3>
+        <div className="rounded-2xl bg-d-dark border border-d-dark p-5">
+          <h3 className="text-xl font-cabin mb-3 text-d-text">Profile</h3>
           
           <div className="mb-4">
-            <label className="block text-sm text-d-text mb-2">Profile Picture</label>
+            <label className="block text-sm text-d-white mb-2 font-raleway">Profile Picture</label>
             <div className="flex items-center gap-3">
               <div className="relative">
                 {user.profilePic ? (
@@ -201,28 +201,28 @@ export default function Account() {
             </div>
           </div>
 
-          <label className="block text-sm text-d-text mb-1 font-cabin">Display name</label>
+          <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
           <input className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
-            <button className="btn btn-white text-black font-cabin" onClick={handleSaveProfile}>
+            <button className="btn btn-white text-black font-raleway" onClick={handleSaveProfile}>
               Save
             </button>
-            <button className="btn btn-orange text-black font-cabin" onClick={signOut}>Log out</button>
+            <button className="btn btn-orange text-black font-raleway" onClick={signOut}>Log out</button>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white/5 border border-d-black p-5">
-          <h3 className="text-xl font-cabin mb-3">At a glance</h3>
-          <ul className="text-sm font-raleway text-d-white/85 space-y-1">
+        <div className="rounded-2xl bg-d-dark border border-d-dark p-5">
+          <h3 className="text-xl font-cabin mb-3 text-d-text">At a glance</h3>
+          <ul className="text-sm font-raleway text-d-white space-y-1">
             <li>Generated images: <strong>{gallery.length}</strong></li>
           </ul>
         </div>
       </section>
 
       <section className="max-w-5xl mx-auto mt-10">
-        <h3 className="text-xl font-cabin mb-3">Recent images</h3>
+        <h3 className="text-xl font-cabin mb-3 text-d-text">Recent images</h3>
         {gallery.length === 0 ? (
-          <p className="text-d-text/70">Nothing yet. Try the Create page.</p>
+          <p className="text-d-white font-raleway">Nothing yet. Try the Create page.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {gallery.slice(0, 12).map((g, i) => (
