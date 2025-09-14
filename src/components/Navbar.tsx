@@ -122,7 +122,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(v=>!v)}
-                  className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 transition-colors"
+                  className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 hover:text-orange-400 transition-colors"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="My account"

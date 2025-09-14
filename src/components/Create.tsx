@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -28,6 +29,138 @@ const AI_MODELS = [
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent },
 ];
 
+// Portal component for model menu to avoid clipping by parent containers
+const ModelMenuPortal: React.FC<{ 
+  anchorRef: React.RefObject<HTMLElement | null>; 
+  open: boolean; 
+  onClose: () => void; 
+  children: React.ReactNode;
+}> = ({ anchorRef, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    // Position above the trigger button with some offset
+    setPos({ 
+      top: rect.top - 8, // 8px offset above
+      left: rect.left, 
+      width: Math.max(384, rect.width) // Minimum 384px width (w-96 equivalent)
+    });
+  }, [open, anchorRef]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (open && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{ 
+        position: "fixed", 
+        top: pos.top, 
+        left: pos.left, 
+        width: pos.width, 
+        zIndex: 1000,
+        transform: 'translateY(-100%)' // Position above the trigger
+      }}
+      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-64 overflow-y-auto"
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
+
+// Portal component for settings menu to avoid clipping by parent containers
+const SettingsPortal: React.FC<{ 
+  anchorRef: React.RefObject<HTMLElement | null>; 
+  open: boolean; 
+  onClose: () => void; 
+  children: React.ReactNode;
+}> = ({ anchorRef, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    // Position above the trigger button with some offset
+    setPos({ 
+      top: rect.top - 8, // 8px offset above
+      left: rect.left, 
+      width: Math.max(320, rect.width) // Minimum 320px width (w-80 equivalent)
+    });
+  }, [open, anchorRef]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (open && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{ 
+        position: "fixed", 
+        top: pos.top, 
+        left: pos.left, 
+        width: pos.width, 
+        zIndex: 1000,
+        transform: 'translateY(-100%)' // Position above the trigger
+      }}
+      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-4"
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
+
 const Create: React.FC = () => {
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
@@ -44,6 +177,8 @@ const Create: React.FC = () => {
   const key = (k: string) => `${storagePrefix}${k}`;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refsInputRef = useRef<HTMLInputElement>(null);
+  const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
+  const settingsRef = useRef<HTMLButtonElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
@@ -763,29 +898,9 @@ const Create: React.FC = () => {
     };
   }, [previewUrl]);
 
-  // Close model selector when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isModelSelectorOpen && !(event.target as Element).closest('.model-selector')) {
-        setIsModelSelectorOpen(false);
-      }
-    };
+  // Model selector click outside handling is now handled by ModelMenuPortal component
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isModelSelectorOpen]);
-
-  // Close settings dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isSettingsOpen && !(event.target as Element).closest('.settings-dropdown')) {
-        setIsSettingsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isSettingsOpen]);
+  // Settings dropdown click outside handling is now handled by SettingsPortal component
 
   // Handle keyboard events for delete confirmation
   useEffect(() => {
@@ -2342,6 +2457,7 @@ const Create: React.FC = () => {
                 )}
                 <div className="relative settings-dropdown">
                   <button
+                    ref={settingsRef}
                     type="button"
                     onClick={isBanana ? toggleSettings : () => alert('Settings are only available for Gemini models.')}
                     title={isBanana ? "Settings" : "Settings only available for Gemini models"}
@@ -2355,16 +2471,20 @@ const Create: React.FC = () => {
                     <Settings className="w-4 h-4" />
                   </button>
                   
-                  {/* Settings Dropdown */}
-                  {isSettingsOpen && isBanana && (
-                    <div className="absolute bottom-full mb-2 left-0 w-80 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-4 z-50">
+                  {/* Settings Dropdown Portal */}
+                  {isBanana && (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
                       <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-light mb-3">Gemini Settings</div>
+                        <div className="text-sm font-cabin text-d-text mb-3">Gemini Settings</div>
                         
                         {/* Temperature */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white/80 font-raleway">Temperature</label>
+                            <label className="text-xs text-d-white font-raleway">Temperature</label>
                             <span className="text-xs text-d-orange-1 font-mono">{temperature}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -2384,16 +2504,16 @@ const Create: React.FC = () => {
                               step={0.1} 
                               value={temperature} 
                               onChange={(e) => setTemperature(parseFloat(e.target.value))} 
-                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs" 
+                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs font-raleway" 
                             />
                           </div>
-                          <div className="text-xs text-d-white/50">Creativity level (0 = focused, 2 = creative)</div>
+                          <div className="text-xs text-d-white font-raleway">Creativity level (0 = focused, 2 = creative)</div>
                         </div>
                         
                         {/* Output Length */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white/80 font-raleway">Output Length</label>
+                            <label className="text-xs text-d-white font-raleway">Output Length</label>
                             <span className="text-xs text-d-orange-1 font-mono">{outputLength}</span>
                           </div>
                           <input 
@@ -2402,15 +2522,15 @@ const Create: React.FC = () => {
                             step={1} 
                             value={outputLength} 
                             onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} 
-                            className="w-full bg-d-mid border border-d-mid rounded px-3 py-2 text-d-white text-sm" 
+                            className="w-full bg-d-mid border border-d-mid rounded px-3 py-2 text-d-white text-sm font-raleway" 
                           />
-                          <div className="text-xs text-d-white/50">Maximum tokens in response</div>
+                          <div className="text-xs text-d-white font-raleway">Maximum tokens in response</div>
                         </div>
                         
                         {/* Top P */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white/80 font-raleway">Top P</label>
+                            <label className="text-xs text-d-white font-raleway">Top P</label>
                             <span className="text-xs text-d-orange-1 font-mono">{topP}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -2430,13 +2550,13 @@ const Create: React.FC = () => {
                               step={0.05} 
                               value={topP} 
                               onChange={(e) => setTopP(parseFloat(e.target.value))} 
-                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs" 
+                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs font-raleway" 
                             />
                           </div>
-                          <div className="text-xs text-d-white/50">Token selection diversity (0 = focused, 1 = diverse)</div>
+                          <div className="text-xs text-d-white font-raleway">Token selection diversity (0 = focused, 1 = diverse)</div>
                         </div>
                       </div>
-                    </div>
+                    </SettingsPortal>
                   )}
                 </div>
                 <button
@@ -2457,6 +2577,7 @@ const Create: React.FC = () => {
                 {/* Model Selector */}
                 <div className="relative model-selector">
                   <button
+                    ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
                     className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-200 gap-2 group"
@@ -2469,66 +2590,68 @@ const Create: React.FC = () => {
                     <span className="text-xs font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
                   </button>
                   
-                  {/* Model Dropdown */}
-                  {isModelSelectorOpen && (
-                    <div className="absolute bottom-full mb-2 left-0 w-96 willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 z-50 max-h-64 overflow-y-auto">
-                      {AI_MODELS.map((model) => {
-                        const modelMap: Record<string, string> = {
-                          "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
-                          "FLUX.1 Kontext Pro / Max": "flux-pro",
-                          "Runway Gen-4": "runway-gen4",
-                          "Ideogram": "ideogram",
-                          "Seedream 4.0": "seedream-4",
-                          "Qwen Image": "qwen-image",
-                          "ChatGPT Image": "chatgpt-image",
-                        };
-                        const modelId = modelMap[model.name] || "gemini-2.5-flash-image-preview";
-                        const isSelected = selectedModel === modelId;
-                        
-                        const isComingSoon = modelId !== "gemini-2.5-flash-image-preview";
-                        
-                        return (
-                          <button
-                            key={model.name}
-                            onClick={() => {
-                              if (isComingSoon) {
-                                alert('This model is coming soon! Currently only Gemini 2.5 Flash Image is available.');
-                                return;
-                              }
-                              handleModelSelect(model.name);
-                              setIsModelSelectorOpen(false);
-                            }}
-                            className={`w-full p-3 rounded-lg border transition-all duration-100 text-left flex items-center gap-3 group ${
-                              isSelected 
-                                ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
-                                : isComingSoon
-                                ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
-                                : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
-                            }`}
-                          >
-                            <model.Icon className={`w-4 h-4 flex-shrink-0 transition-colors duration-100 ${
-                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-white/30' : 'text-d-white/60 group-hover:text-brand'
-                            }`} />
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
-                                isSelected ? 'text-d-light' : isComingSoon ? 'text-d-text/40' : 'text-d-text/80 group-hover:text-brand'
-                              }`}>
-                                {model.name}
-                              </div>
-                              <div className={`text-xs truncate transition-colors duration-100 ${
-                                isSelected ? 'text-d-light' : isComingSoon ? 'text-d-white/30' : 'text-d-white/50 group-hover:text-brand'
-                              }`}>
-                                {isComingSoon ? 'Coming soon.' : model.desc}
-                              </div>
+                  {/* Model Dropdown Portal */}
+                  <ModelMenuPortal 
+                    anchorRef={modelSelectorRef}
+                    open={isModelSelectorOpen}
+                    onClose={() => setIsModelSelectorOpen(false)}
+                  >
+                    {AI_MODELS.map((model) => {
+                      const modelMap: Record<string, string> = {
+                        "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
+                        "FLUX.1 Kontext Pro / Max": "flux-pro",
+                        "Runway Gen-4": "runway-gen4",
+                        "Ideogram": "ideogram",
+                        "Seedream 4.0": "seedream-4",
+                        "Qwen Image": "qwen-image",
+                        "ChatGPT Image": "chatgpt-image",
+                      };
+                      const modelId = modelMap[model.name] || "gemini-2.5-flash-image-preview";
+                      const isSelected = selectedModel === modelId;
+                      
+                      const isComingSoon = modelId !== "gemini-2.5-flash-image-preview";
+                      
+                      return (
+                        <button
+                          key={model.name}
+                          onClick={() => {
+                            if (isComingSoon) {
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image is available.');
+                              return;
+                            }
+                            handleModelSelect(model.name);
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-3 group ${
+                            isSelected 
+                              ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
+                              : isComingSoon
+                              ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
+                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                          }`}
+                        >
+                          <model.Icon className={`w-4 h-4 flex-shrink-0 transition-colors duration-100 ${
+                            isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white/60 group-hover:text-brand'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text/80 group-hover:text-brand'
+                            }`}>
+                              {model.name}
                             </div>
-                            {isSelected && (
-                              <div className="w-2 h-2 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white/50 group-hover:text-brand'
+                            }`}>
+                              {isComingSoon ? 'Coming soon.' : model.desc}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="w-2 h-2 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </ModelMenuPortal>
                 </div>
               </div>
               
