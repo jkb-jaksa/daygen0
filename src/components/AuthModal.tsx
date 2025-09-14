@@ -28,34 +28,34 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
       <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
         <div className="text-center mb-6">
           <h3 className="text-d-text font-cabin text-xl mb-2">{mode === "login" ? "Log in" : "Sign up"}</h3>
-          <p className="text-d-light text-sm">Welcome to DayGen</p>
+          <p className="text-d-light text-sm font-raleway">Welcome to DayGen</p>
           <button onClick={onClose} className="absolute top-4 right-4 text-d-light hover:text-d-text transition-colors">✕</button>
         </div>
 
         <div className="flex gap-2 mb-6">
-          <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Login</button>
-          <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Sign up</button>
+          <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Login</button>
+          <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Sign up</button>
         </div>
 
         <div className="space-y-3">
           <GoogleLogin onSuccess={onClose} />
-          <div className="text-center text-xs text-d-light mb-4">or continue with email</div>
+          <div className="text-center text-xs text-d-light mb-4 font-raleway">or continue with email</div>
           
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (
               <div>
-                <label className="block text-sm text-d-text mb-2 font-medium">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-3 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors" placeholder="Enter your name" />
+                <label className="block text-sm text-d-text mb-2 font-cabin">Name</label>
+                <input value={name} onChange={e=>setName(e.target.value)} className="w-full glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-3 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors font-raleway" placeholder="Enter your name" />
               </div>
             )}
             <div>
-              <label className="block text-sm text-d-text mb-2 font-medium">Email</label>
-              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-3 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors" placeholder="Enter your email" />
+              <label className="block text-sm text-d-text mb-2 font-cabin">Email</label>
+              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-3 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors font-raleway" placeholder="Enter your email" />
             </div>
-            <button type="submit" className="btn btn-orange text-black w-full mt-4 font-medium">Continue</button>
+            <button type="submit" className="btn btn-orange text-black w-full mt-4 font-cabin">Continue</button>
           </form>
         </div>
-        <p className="text-xs text-d-light mt-4 text-center">No password — this is a demo-only login to test flows.</p>
+        <p className="text-xs text-d-light mt-4 text-center font-raleway">No password — this is a demo-only login to test flows.</p>
       </div>
     </div>
   );

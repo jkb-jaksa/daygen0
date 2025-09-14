@@ -201,13 +201,13 @@ export default function Account() {
             </div>
           </div>
 
-          <label className="block text-sm text-d-text mb-1 font-medium">Display name</label>
-          <input className="w-full bg-d-dark/50 border border-d-black rounded-lg p-2 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
+          <label className="block text-sm text-d-text mb-1 font-cabin">Display name</label>
+          <input className="w-full bg-d-dark/50 border border-d-black rounded-lg p-2 text-d-text placeholder-d-light focus:border-d-mid focus:outline-none transition-colors font-raleway" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
-            <button className="btn btn-white text-black font-medium" onClick={handleSaveProfile}>
+            <button className="btn btn-white text-black font-cabin" onClick={handleSaveProfile}>
               Save
             </button>
-            <button className="btn btn-orange text-black font-medium" onClick={signOut}>Log out</button>
+            <button className="btn btn-orange text-black font-cabin" onClick={signOut}>Log out</button>
           </div>
         </div>
 
