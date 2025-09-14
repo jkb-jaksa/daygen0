@@ -1,9 +1,7 @@
 import type React from "react";
-import { useState } from "react";
 import { Users, Target, Lightbulb, Heart, Sparkles, Zap } from "lucide-react";
 
 const AboutUs: React.FC = () => {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   const teamMembers = [
     {
