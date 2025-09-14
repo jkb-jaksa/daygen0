@@ -25,30 +25,35 @@ export default async function handler(req: Request): Promise<Response> {
   // Only enforce on production
   const isProd = (process.env.VERCEL_ENV || process.env.NODE_ENV) === 'production';
   if (!isProd) {
-    const headers = new Headers(req.headers);
-    headers.set('x-auth-checked', '1');
-    const fwd = new Request(req.url, {
-      method: req.method,
-      headers,
-      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : (req as any).body,
-      redirect: 'manual',
-    });
-    return fetch(fwd);
+    // In development, serve the static files directly
+    const url = new URL(req.url);
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      return new Response(await fetch(new URL('/index.html', req.url)).then(r => r.text()), {
+        headers: { 'Content-Type': 'text/html' }
+      });
+    }
+    // For other files, try to serve them directly
+    try {
+      const response = await fetch(req.url);
+      if (response.ok) {
+        return response;
+      }
+    } catch {}
+    return new Response('Not found', { status: 404 });
   }
 
   // Allow health checks or internal loop prevention via header
   const bypass = req.headers.get('x-auth-checked') === '1';
   if (bypass) {
-    // Should not generally hit here, but forward to the underlying resource just in case
-    const headers = new Headers(req.headers);
-    headers.set('x-auth-checked', '1');
-    const fwd = new Request(req.url, {
-      method: req.method,
-      headers,
-      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : (req as any).body,
-      redirect: 'manual',
-    });
-    return fetch(fwd);
+    // Serve the actual static files after authentication
+    const url = new URL(req.url);
+    try {
+      const response = await fetch(req.url);
+      if (response.ok) {
+        return response;
+      }
+    } catch {}
+    return new Response('Not found', { status: 404 });
   }
 
   // Expected credentials from environment
@@ -82,29 +87,28 @@ export default async function handler(req: Request): Promise<Response> {
   const ok = creds.username === expectedUser && creds.password === expectedPass;
   if (!ok) return unauthorizedResponse();
 
-  // Forward original request to underlying asset or route with a bypass header
-  const headers = new Headers(req.headers);
-  headers.set('x-auth-checked', '1');
-  
-  // For the root path, serve index.html
+  // Authentication successful - serve the requested resource
   const url = new URL(req.url);
-  if (url.pathname === '/') {
-    const indexResponse = await fetch(new URL('/index.html', req.url));
-    return new Response(indexResponse.body, {
-      status: indexResponse.status,
-      statusText: indexResponse.statusText,
-      headers: {
-        ...Object.fromEntries(indexResponse.headers.entries()),
-        'x-auth-checked': '1'
-      }
-    });
+  
+  // Try to serve the requested file directly
+  try {
+    const response = await fetch(req.url);
+    if (response.ok) {
+      return response;
+    }
+  } catch {}
+  
+  // If direct fetch fails, try serving index.html for SPA routes
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    try {
+      const indexResponse = await fetch(new URL('/index.html', req.url));
+      return new Response(indexResponse.body, {
+        status: indexResponse.status,
+        statusText: indexResponse.statusText,
+        headers: indexResponse.headers
+      });
+    } catch {}
   }
   
-  const forwardReq = new Request(req.url, {
-    method: req.method,
-    headers,
-    body: req.method === 'GET' || req.method === 'HEAD' ? undefined : (req as any).body,
-    redirect: 'manual',
-  });
-  return fetch(forwardReq);
+  return new Response('Not found', { status: 404 });
 }
