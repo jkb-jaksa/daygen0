@@ -24,10 +24,17 @@ function Home() {
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
+  
   if (!user) {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/account?next=${next}`} replace />;
   }
+  
+  // If user is authenticated but URL has query parameters, clean them up
+  if (location.search) {
+    return <Navigate to={location.pathname} replace />;
+  }
+  
   return children;
 }
 

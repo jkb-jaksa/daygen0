@@ -27,6 +27,8 @@ const AI_MODELS = [
 ];
 
 const Create: React.FC = () => {
+  console.log('Create component rendering');
+  
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
       {children}

@@ -14,6 +14,7 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+
   const galleryKey = useMemo(() => storagePrefix + "gallery", [storagePrefix]);
 
   useEffect(() => {
@@ -80,12 +81,38 @@ export default function Account() {
   const nextPath = searchParams.get('next');
   const hasPendingRedirect = !!nextPath;
 
+  // If user is authenticated and there's a next parameter, redirect them
+  useEffect(() => {
+    if (user && nextPath) {
+      try {
+        const decodedPath = decodeURIComponent(nextPath);
+        console.log('Account - redirecting authenticated user to:', decodedPath);
+        navigate(decodedPath, { replace: true });
+      } catch (e) {
+        console.error('Failed to decode next path:', e);
+        navigate('/create', { replace: true });
+      }
+    }
+  }, [user, nextPath, navigate]);
+
   if (!user) return (
     <main className="min-h-screen bg-black text-d-text px-6 pt-24">
       <h1 className="text-3xl font-cabin mb-2">My account</h1>
       <p>Please log in to view your account.</p>
     </main>
   );
+
+  // If user is authenticated and there's a next parameter, show loading while redirecting
+  if (user && nextPath) {
+    return (
+      <main className="min-h-screen bg-black text-d-text px-6 pt-24">
+        <div className="max-w-5xl mx-auto text-center">
+          <h1 className="text-3xl font-cabin mb-4">Redirecting...</h1>
+          <p className="text-d-text/70">Taking you to your destination.</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-black text-d-text px-6 pt-24">
