@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
@@ -103,6 +103,13 @@ export default function Navbar() {
                 <button className="btn btn-orange parallax-small text-black" onClick={()=>setShowAuth("signup")}>
                   Sign Up
                 </button>
+                <button 
+                  onClick={()=>setShowAuth("login")} 
+                  className="md:hidden parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white"
+                  aria-label="Account"
+                >
+                  <User className="size-5" />
+                </button>
               </>
             ) : (
               <div className="relative">
@@ -111,6 +118,7 @@ export default function Navbar() {
                   className="parallax-mid flex items-center gap-2 rounded-full border bg-[#222427] border-d-dark text-d-text px-3 py-1.5"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
+                  aria-label="My account"
                 >
                   {user.profilePic ? (
                     <img
@@ -129,9 +137,9 @@ export default function Navbar() {
                   <span className="hidden sm:inline">{user.name || user.email}</span>
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-d-dark bg-[#121417] text-sm text-d-white shadow-xl z-[60]">
-                    <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10">My account</button>
-                    <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10">Sign out</button>
+                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-d-dark bg-[#121417] text-sm text-d-white shadow-xl z-[60]" role="menu">
+                    <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10" role="menuitem">My account</button>
+                    <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10" role="menuitem">Sign out</button>
                   </div>
                 )}
               </div>

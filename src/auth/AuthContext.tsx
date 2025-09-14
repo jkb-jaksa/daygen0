@@ -97,9 +97,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistCurrent]);
 
   const signOut = useCallback(() => {
+    // grab current before clearing
+    const current = user;
+    try {
+      // Revoke Google consent if available
+      const g = (window as any)?.google?.accounts?.id;
+      if (g) {
+        g.disableAutoSelect();
+        if (current?.email) g.revoke(current.email, () => {});
+      }
+    } catch {}
     setUser(null);
     persistCurrent(null);
-  }, [persistCurrent]);
+  }, [persistCurrent, user]);
 
   const updateProfile = useCallback((patch: Partial<User>) => {
     if (!user) return;

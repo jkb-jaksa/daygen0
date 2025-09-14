@@ -27,8 +27,6 @@ const AI_MODELS = [
 ];
 
 const Create: React.FC = () => {
-  console.log('Create component rendering');
-  
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
       {children}
@@ -119,7 +117,7 @@ const Create: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error("Failed to load gallery", e);
       // Clear corrupted data
-      localStorage.removeItem("daygen_gallery");
+      localStorage.removeItem(key("gallery"));
     }
 
     try {
@@ -266,13 +264,13 @@ const Create: React.FC = () => {
         const updated = currentGallery.filter(img => img && img.url !== deleteConfirmation.imageUrl);
         // Persist to localStorage with error handling
         try {
-          localStorage.setItem("daygen_gallery", JSON.stringify(updated));
+          localStorage.setItem(key("gallery"), JSON.stringify(updated));
           console.log('Gallery updated after deletion with', updated.length, 'images');
         } catch (e) {
           console.error("Failed to persist gallery after deletion", e);
           // Try to clear and retry
           try {
-            localStorage.removeItem("daygen_gallery");
+            localStorage.removeItem(key("gallery"));
             localStorage.setItem(key("gallery"), JSON.stringify(updated));
             console.log('Gallery persisted after deletion with cleanup');
           } catch (retryError) {
@@ -651,7 +649,7 @@ const Create: React.FC = () => {
                 console.error("Failed to persist even with reduced gallery", retryError);
                 // If still failing, clear and try with just the new image
                 try {
-                  localStorage.removeItem("daygen_gallery");
+                  localStorage.removeItem(key("gallery"));
                   localStorage.setItem(key("gallery"), JSON.stringify([imgWithOwner]));
                   console.log('Gallery cleared and persisted with new image only');
                   return [imgWithOwner];
