@@ -85,7 +85,12 @@ export default function Navbar() {
               {items.map((item) => (
                 <a
                   key={item}
-                  href={item === "create" ? "/create" : "#"}
+                  href={
+                    item === "create" ? "/create" : 
+                    item === "knowledge base" ? "/knowledge-base" : 
+                    item === "services" ? "/services" : 
+                    "#"
+                  }
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
                   onMouseEnter={() => setActiveMenu(item)}
                 >
