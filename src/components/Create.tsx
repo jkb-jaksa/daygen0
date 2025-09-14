@@ -68,7 +68,6 @@ const Create: React.FC = () => {
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string>("");
-  const [folderSuccessMessage, setFolderSuccessMessage] = useState<string>("");
   const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -330,12 +329,6 @@ const Create: React.FC = () => {
     
     persistFolders(updatedFolders);
     
-    // Show success feedback
-    const folder = updatedFolders.find(f => f.id === folderId);
-    if (folder) {
-      // You could add a toast notification here if you have one
-      console.log(`Image added to folder: ${folder.name}`);
-    }
   };
 
   const removeImageFromFolder = (imageUrl: string, folderId: string) => {
@@ -350,12 +343,6 @@ const Create: React.FC = () => {
     });
     
     persistFolders(updatedFolders);
-    
-    // Show success feedback
-    const folder = updatedFolders.find(f => f.id === folderId);
-    if (folder) {
-      console.log(`Image removed from folder: ${folder.name}`);
-    }
   };
 
   const handleAddToFolder = (imageUrl: string) => {
@@ -372,17 +359,10 @@ const Create: React.FC = () => {
     if (isInFolder) {
       // Remove from folder
       removeImageFromFolder(imageUrl, folderId);
-      setFolderSuccessMessage(`Image removed from "${folder.name}" folder!`);
     } else {
       // Add to folder
       addImageToFolder(imageUrl, folderId);
-      setFolderSuccessMessage(`Image added to "${folder.name}" folder!`);
     }
-    
-    // Clear success message after 3 seconds
-    setTimeout(() => {
-      setFolderSuccessMessage("");
-    }, 3000);
   };
 
 
@@ -991,13 +971,6 @@ const Create: React.FC = () => {
         </div>
       )}
 
-      {/* Success message toast */}
-      {folderSuccessMessage && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[120] bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top-2 duration-300">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          <span className="font-raleway text-sm">{folderSuccessMessage}</span>
-        </div>
-      )}
       
       {/* Background overlay to show gradient behind navbar */}
       <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
