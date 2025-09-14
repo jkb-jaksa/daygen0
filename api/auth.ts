@@ -85,6 +85,21 @@ export default async function handler(req: Request): Promise<Response> {
   // Forward original request to underlying asset or route with a bypass header
   const headers = new Headers(req.headers);
   headers.set('x-auth-checked', '1');
+  
+  // For the root path, serve index.html
+  const url = new URL(req.url);
+  if (url.pathname === '/') {
+    const indexResponse = await fetch(new URL('/index.html', req.url));
+    return new Response(indexResponse.body, {
+      status: indexResponse.status,
+      statusText: indexResponse.statusText,
+      headers: {
+        ...Object.fromEntries(indexResponse.headers.entries()),
+        'x-auth-checked': '1'
+      }
+    });
+  }
+  
   const forwardReq = new Request(req.url, {
     method: req.method,
     headers,
