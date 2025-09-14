@@ -1586,18 +1586,54 @@ const Create: React.FC = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
-                        <div className="w-full aspect-square flex flex-col items-center justify-center p-6">
-                          <Folder className="w-16 h-16 text-d-white/60 mb-3" />
-                          <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
-                          <p className="text-sm text-d-white font-raleway text-center">
-                            {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
-                          </p>
-                          <p className="text-xs text-d-white font-raleway text-center mt-2">
-                            Created {folder.createdAt.toLocaleDateString()}
-                          </p>
+                        <div className="w-full aspect-square relative">
+                          {folder.imageIds.length > 0 ? (
+                            <div className="w-full h-full relative">
+                              {/* Show first image as main thumbnail */}
+                              <img 
+                                src={folder.imageIds[0]} 
+                                alt={`${folder.name} thumbnail`}
+                                className="w-full h-full object-cover"
+                              />
+                              {/* Overlay with folder info */}
+                              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <Folder className="w-12 h-12 text-d-white/80 mb-2" />
+                                <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
+                                <p className="text-sm text-d-white font-raleway text-center">
+                                  {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
+                                </p>
+                              </div>
+                              {/* Show additional thumbnails if more than 1 image */}
+                              {folder.imageIds.length > 1 && (
+                                <div className="absolute top-2 right-2 bg-black/80 rounded-lg p-1 flex gap-1">
+                                  {folder.imageIds.slice(1, 4).map((imageId, idx) => (
+                                    <img 
+                                      key={idx}
+                                      src={imageId} 
+                                      alt={`${folder.name} thumbnail ${idx + 2}`}
+                                      className="w-6 h-6 rounded object-cover"
+                                    />
+                                  ))}
+                                  {folder.imageIds.length > 4 && (
+                                    <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
+                                      <span className="text-xs text-d-orange-1 font-bold">+{folder.imageIds.length - 4}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-6">
+                              <Folder className="w-16 h-16 text-d-white/60 mb-3" />
+                              <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
+                              <p className="text-sm text-d-white font-raleway text-center">
+                                No images yet
+                              </p>
+                            </div>
+                          )}
                         </div>
                         
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                        <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           <button 
                             type="button" 
                             onClick={(e) => {
@@ -1620,7 +1656,48 @@ const Create: React.FC = () => {
                 
                 {/* Folder Contents View */}
                 {selectedFolder && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+                  <div className="w-full">
+                    {/* Folder header with back button and info */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <button
+                          onClick={() => setSelectedFolder(null)}
+                          className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        >
+                          <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                          Back to folders
+                        </button>
+                        
+                        <div className="flex items-center gap-2">
+                          <Folder className="w-5 h-5 text-d-orange-1" />
+                          <span className="text-d-white font-raleway text-sm">
+                            {(() => {
+                              const folder = folders.find(f => f.id === selectedFolder);
+                              return folder ? folder.name : 'Unknown folder';
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <h2 className="text-2xl font-cabin text-d-text mb-2">
+                          {(() => {
+                            const folder = folders.find(f => f.id === selectedFolder);
+                            return folder ? folder.name : 'Unknown folder';
+                          })()}
+                        </h2>
+                        <p className="text-d-white/60 font-raleway text-sm">
+                          {(() => {
+                            const folder = folders.find(f => f.id === selectedFolder);
+                            if (!folder) return '0 images';
+                            const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                            return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -1796,6 +1873,7 @@ const Create: React.FC = () => {
                       }
                       return null;
                     })()}
+                    </div>
                   </div>
                 )}
                 
