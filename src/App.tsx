@@ -18,10 +18,10 @@ function Home() {
       {/* Welcome Section */}
       <section className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-20 pb-16">
         <div className="text-center">
-          <h1 className="text-6xl font-light tracking-tight leading-[1.1] mb-4">
+          <h1 className="text-6xl font-light tracking-tight leading-[1.1] mb-4 font-cabin">
             welcome to
           </h1>
-          <div className="text-5xl font-normal tracking-tight leading-[1.05] mb-8">
+          <div className="text-5xl font-normal tracking-tight leading-[1.05] mb-8 font-cabin">
             <span className="text-white">day</span>
             <span className="text-orange-500">gen</span>
           </div>
@@ -31,7 +31,16 @@ function Home() {
           <div className="flex justify-center gap-4">
             <a 
               href="/knowledge-base" 
-              className="px-6 py-3 bg-orange-500 text-black rounded-lg hover:bg-orange-600 transition-colors"
+              className="px-6 py-3 text-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
+              style={{
+                backgroundColor: '#faaa16'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffb833';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#faaa16';
+              }}
             >
               Explore Knowledge Base
             </a>

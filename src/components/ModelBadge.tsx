@@ -86,7 +86,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
         text-d-white 
         ${sizeClasses[size]} 
         rounded-full 
-        font-medium 
+        font-medium font-cabin 
         border border-d-dark
         ${className}
       `}

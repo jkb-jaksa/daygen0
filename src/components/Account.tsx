@@ -126,7 +126,7 @@ export default function Account() {
                 className="size-10 rounded-full object-cover border-2 border-d-dark"
               />
             ) : (
-              <span className="inline-grid place-items-center size-10 rounded-full text-black text-lg font-bold" style={{ background: user.color || "#faaa16" }}>
+              <span className="inline-grid place-items-center size-10 rounded-full text-black text-lg font-bold font-cabin" style={{ background: user.color || "#faaa16" }}>
                 {(user.name || user.email)[0]?.toUpperCase()}
               </span>
             )}
@@ -172,7 +172,7 @@ export default function Account() {
                   />
                 ) : (
                   <div 
-                    className="size-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-2 border-d-dark"
+                    className="size-16 rounded-full flex items-center justify-center text-white text-xl font-bold font-cabin border-2 border-d-dark"
                     style={{ background: user.color || "#faaa16" }}
                   >
                     {(user.name || user.email)[0]?.toUpperCase()}
@@ -183,7 +183,7 @@ export default function Account() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingPic}
-                  className="btn btn-white text-black text-sm font-medium"
+                  className="btn btn-white text-black text-sm font-medium font-raleway"
                 >
                   <Upload className="size-4 mr-1" />
                   {isUploadingPic ? "Uploading..." : "Upload"}
@@ -191,7 +191,7 @@ export default function Account() {
                 {user.profilePic && (
                   <button
                     onClick={handleRemoveProfilePic}
-                    className="btn btn-orange text-black text-sm font-medium"
+                    className="btn btn-orange text-black text-sm font-medium font-cabin"
                   >
                     <X className="size-4 mr-1" />
                     Remove

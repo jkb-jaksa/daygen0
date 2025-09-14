@@ -1396,7 +1396,7 @@ const Create: React.FC = () => {
                                             setIsFullSizeOpen(true);
                                           }}
                                         />
-                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
                                           {refIdx + 1}
                                         </div>
                                       </div>
@@ -1579,7 +1579,7 @@ const Create: React.FC = () => {
                                             setIsFullSizeOpen(true);
                                           }}
                                         />
-                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
                                           {refIdx + 1}
                                         </div>
                                       </div>
@@ -1830,7 +1830,7 @@ const Create: React.FC = () => {
                                   ))}
                                   {folder.imageIds.length > 4 && (
                                     <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
-                                      <span className="text-xs text-d-orange-1 font-bold">+{folder.imageIds.length - 4}</span>
+                                      <span className="text-xs text-d-orange-1 font-bold font-cabin">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
                                 </div>
@@ -1991,7 +1991,7 @@ const Create: React.FC = () => {
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -2295,7 +2295,7 @@ const Create: React.FC = () => {
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -2736,7 +2736,7 @@ const Create: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 pr-3">
                         <div className="text-sm">
-                          <div className="font-medium">
+                          <div className="font-medium font-cabin">
                             {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
                           </div>
                           <div className="text-white/60 text-xs mt-1">

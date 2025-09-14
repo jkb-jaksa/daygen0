@@ -1,6 +1,7 @@
 import { Search, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
 
@@ -13,6 +14,10 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const accountBtnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const MENU_WIDTH = 176; // tailwind w-44 = 11rem = 176px
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -29,6 +34,49 @@ export default function Navbar() {
       window.removeEventListener("resize", measure);
     };
   }, []);
+
+  // Compute & clamp menu position relative to the trigger button
+  useLayoutEffect(() => {
+    const compute = () => {
+      if (!menuOpen || !accountBtnRef.current) return;
+      const rect = accountBtnRef.current.getBoundingClientRect();
+      const gutter = 8;
+      const top = Math.round(rect.bottom + 8);
+      let left = Math.round(rect.right - MENU_WIDTH);
+      // clamp to viewport with a small gutter
+      left = Math.max(gutter, Math.min(left, window.innerWidth - MENU_WIDTH - gutter));
+      setMenuPos({ top, left });
+    };
+    compute();
+    if (!menuOpen) return;
+    const onScrollOrResize = () => compute();
+    window.addEventListener("resize", onScrollOrResize);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    return () => {
+      window.removeEventListener("resize", onScrollOrResize);
+      window.removeEventListener("scroll", onScrollOrResize, true);
+    };
+  }, [menuOpen]);
+
+  // Close on outside click / Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t)) return;
+      if (accountBtnRef.current?.contains(t)) return;
+      setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   const scrollToTop = (duration = 200) => {
     const start = window.scrollY || document.documentElement.scrollTop;
@@ -121,7 +169,8 @@ export default function Navbar() {
             ) : (
               <div className="relative">
                 <button
-                  onClick={() => setMenuOpen(v=>!v)}
+                  ref={accountBtnRef}
+                  onClick={() => setMenuOpen(v => !v)}
                   className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 hover:text-orange-400 transition-colors"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
@@ -135,7 +184,7 @@ export default function Navbar() {
                     />
                   ) : (
                     <span
-                      className="inline-grid place-items-center size-6 rounded-full text-black text-xs font-bold"
+                      className="inline-grid place-items-center size-6 rounded-full text-black text-xs font-bold font-cabin"
                       style={{ background: user.color || "#faaa16" }}
                     >
                       {(user.name || user.email)[0]?.toUpperCase()}
@@ -177,13 +226,46 @@ export default function Navbar() {
       {/* Auth modal */}
       <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />
       
-      {/* User dropdown - rendered outside navbar container */}
-      {menuOpen && (
-        <div className="fixed right-6 top-16 w-44 rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-sm text-d-text shadow-xl z-[100] transition-colors duration-200" role="menu">
-          <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway" role="menuitem">My account</button>
-          <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway" role="menuitem">Sign out</button>
-        </div>
-      )}
+      {/* User dropdown - anchored to trigger via portal */}
+      {menuOpen &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{
+              position: "fixed",
+              top: menuPos.top,
+              left: menuPos.left,
+              width: MENU_WIDTH,
+              zIndex: 100
+            }}
+            className="rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-sm text-d-text shadow-xl transition-colors duration-200"
+          >
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                navigate("/account");
+              }}
+              className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
+              role="menuitem"
+            >
+              My account
+            </button>
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                signOut();
+                navigate("/");
+              }}
+              className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
+              role="menuitem"
+            >
+              Sign out
+            </button>
+          </div>,
+          document.body
+        )
+      }
     </div>
   );
 }

@@ -228,16 +228,16 @@ const Create: React.FC = () => {
           
           {/* Content type menu */}
           <div className="flex gap-6 mb-3 justify-center">
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
+            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded font-raleway">
               image
             </button>
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
+            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded font-raleway">
               video
             </button>
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
+            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded font-raleway">
               avatars
             </button>
-            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded">
+            <button className="text-lg font-normal text-d-white hover:text-brand transition-colors duration-200 px-3 py-2 rounded font-raleway">
               audio
             </button>
           </div>
