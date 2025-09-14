@@ -68,6 +68,7 @@ const Create: React.FC = () => {
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string>("");
+  const [returnToFolderDialog, setReturnToFolderDialog] = useState<boolean>(false);
   const maxGalleryTiles = 15; // responsive grid footprint (3x5 on large screens)
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -379,6 +380,12 @@ const Create: React.FC = () => {
     persistFolders([...folders, newFolder]);
     setNewFolderName("");
     setNewFolderDialog(false);
+    
+    // If we came from the folder dialog, return to it
+    if (returnToFolderDialog) {
+      setReturnToFolderDialog(false);
+      setAddToFolderDialog(true);
+    }
   };
 
 
@@ -821,6 +828,11 @@ const Create: React.FC = () => {
                     } else if (e.key === 'Escape') {
                       setNewFolderDialog(false);
                       setNewFolderName("");
+                      // If we came from the folder dialog, return to it
+                      if (returnToFolderDialog) {
+                        setReturnToFolderDialog(false);
+                        setAddToFolderDialog(true);
+                      }
                     }
                   }}
                 />
@@ -830,6 +842,11 @@ const Create: React.FC = () => {
                   onClick={() => {
                     setNewFolderDialog(false);
                     setNewFolderName("");
+                    // If we came from the folder dialog, return to it
+                    if (returnToFolderDialog) {
+                      setReturnToFolderDialog(false);
+                      setAddToFolderDialog(true);
+                    }
                   }}
                   className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
                 >
@@ -877,6 +894,7 @@ const Create: React.FC = () => {
                     <p className="text-sm text-d-white/50">No folders available</p>
                     <button
                       onClick={() => {
+                        setReturnToFolderDialog(true);
                         setAddToFolderDialog(false);
                         setNewFolderDialog(true);
                       }}
@@ -945,20 +963,21 @@ const Create: React.FC = () => {
               </div>
               
               {/* Add new folder button */}
-              <div className="mb-6 flex justify-center">
+              <div className="mb-6 flex justify-start">
                 <button
                   onClick={() => {
+                    setReturnToFolderDialog(true);
                     setAddToFolderDialog(false);
                     setNewFolderDialog(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-d-orange-1/20 hover:bg-d-orange-1/30 border border-d-orange-1/30 hover:border-d-orange-1/50 rounded-lg transition-all duration-200 group"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 hover:bg-d-orange-1/30 border border-d-orange-1/30 hover:border-d-orange-1/50 rounded-md transition-all duration-200 group"
                   title="Create new folder"
                   aria-label="Create new folder"
                 >
-                  <svg className="w-4 h-4 text-d-orange-1 group-hover:text-d-orange-2 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-d-orange-1 group-hover:text-d-orange-2 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="text-d-orange-1 group-hover:text-d-orange-2 font-raleway text-sm font-medium transition-colors duration-200">
+                  <span className="text-d-orange-1 group-hover:text-d-orange-2 font-raleway text-xs font-medium transition-colors duration-200">
                     New Folder
                   </span>
                 </button>
