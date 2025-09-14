@@ -89,6 +89,8 @@ export default function Navbar() {
                     item === "create" ? "/create" : 
                     item === "knowledge base" ? "/knowledge-base" : 
                     item === "services" ? "/services" : 
+                    item === "about us" ? "/about-us" : 
+                    item === "prompts" ? "/prompts" : 
                     "#"
                   }
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"

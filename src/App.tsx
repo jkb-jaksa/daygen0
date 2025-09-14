@@ -8,6 +8,8 @@ import Account from "./components/Account";
 import KnowledgeBase from "./components/KnowledgeBase";
 import ToolsSection from "./components/ToolsSection";
 import Services from "./components/Services";
+import AboutUs from "./components/AboutUs";
+import Prompts from "./components/Prompts";
 import { useAuth } from "./auth/AuthContext";
 
 function Home() {
@@ -77,6 +79,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/knowledge-base" element={<KnowledgeBase />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/prompts" element={<Prompts />} />
           <Route path="/ai-tools" element={<ToolsSection />} />
           <Route path="/ai-tools/:id" element={<Subpage />} />
           <Route path="/create" element={<RequireAuth><Create /></RequireAuth>} />
