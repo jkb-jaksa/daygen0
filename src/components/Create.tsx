@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
+import { useAuth } from "../auth/AuthContext";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -36,6 +37,9 @@ const Create: React.FC = () => {
       )}
     </div>
   );
+  
+  const { user, storagePrefix } = useAuth();
+  const key = (k: string) => `${storagePrefix}${k}`;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refsInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -87,7 +91,7 @@ const Create: React.FC = () => {
   // Load gallery and liked images from localStorage on mount
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("daygen_gallery");
+      const raw = localStorage.getItem(key("gallery"));
       if (raw) {
         const parsed = JSON.parse(raw) as GeneratedImage[];
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -99,7 +103,7 @@ const Create: React.FC = () => {
           if (validImages.length !== parsed.length) {
             console.warn('Some images were invalid and removed from gallery');
             // Update localStorage with only valid images
-            localStorage.setItem("daygen_gallery", JSON.stringify(validImages));
+            localStorage.setItem(key("gallery"), JSON.stringify(validImages));
           }
           
           setGallery(validImages);
@@ -117,7 +121,7 @@ const Create: React.FC = () => {
     }
 
     try {
-      const rawFavorites = localStorage.getItem("daygen_favorites");
+      const rawFavorites = localStorage.getItem(key("favorites"));
       if (rawFavorites) {
         const parsed = JSON.parse(rawFavorites) as string[];
         if (Array.isArray(parsed)) {
@@ -131,7 +135,7 @@ const Create: React.FC = () => {
 
     // Load uploaded images from localStorage on mount
     try {
-      const rawUploads = localStorage.getItem("daygen_uploads");
+      const rawUploads = localStorage.getItem(key("uploads"));
       if (rawUploads) {
         const parsed = JSON.parse(rawUploads);
         if (Array.isArray(parsed)) {
@@ -152,7 +156,7 @@ const Create: React.FC = () => {
 
     // Load folders from localStorage on mount
     try {
-      const rawFolders = localStorage.getItem("daygen_folders");
+      const rawFolders = localStorage.getItem(key("folders"));
       if (rawFolders) {
         const parsed = JSON.parse(rawFolders);
         if (Array.isArray(parsed)) {
@@ -167,7 +171,7 @@ const Create: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error("Failed to load folders", e);
     }
-  }, []);
+  }, [storagePrefix]);
 
   // Backup gallery state periodically to prevent data loss
   useEffect(() => {
@@ -192,7 +196,7 @@ const Create: React.FC = () => {
   const persistFavorites = (next: Set<string>) => {
     setFavorites(next);
     try {
-      localStorage.setItem("daygen_favorites", JSON.stringify(Array.from(next)));
+      localStorage.setItem(key("favorites"), JSON.stringify(Array.from(next)));
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Failed to persist liked images", e);
@@ -210,7 +214,7 @@ const Create: React.FC = () => {
         previewUrl: upload.previewUrl,
         uploadDate: upload.uploadDate.toISOString()
       }));
-      localStorage.setItem("daygen_uploads", JSON.stringify(serializableUploads));
+      localStorage.setItem(key("uploads"), JSON.stringify(serializableUploads));
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Failed to persist uploaded images", e);
@@ -220,7 +224,7 @@ const Create: React.FC = () => {
   // Backup function to persist gallery state
   const persistGallery = (galleryData: GeneratedImage[]) => {
     try {
-      localStorage.setItem("daygen_gallery", JSON.stringify(galleryData));
+      localStorage.setItem(key("gallery"), JSON.stringify(galleryData));
       console.log('Gallery backup persisted with', galleryData.length, 'images');
     } catch (e) {
       console.error("Failed to backup gallery", e);
@@ -267,7 +271,7 @@ const Create: React.FC = () => {
           // Try to clear and retry
           try {
             localStorage.removeItem("daygen_gallery");
-            localStorage.setItem("daygen_gallery", JSON.stringify(updated));
+            localStorage.setItem(key("gallery"), JSON.stringify(updated));
             console.log('Gallery persisted after deletion with cleanup');
           } catch (retryError) {
             console.error("Failed to persist gallery after deletion even after cleanup", retryError);
@@ -307,7 +311,7 @@ const Create: React.FC = () => {
   const persistFolders = (folders: Folder[]) => {
     setFolders(folders);
     try {
-      localStorage.setItem("daygen_folders", JSON.stringify(folders));
+      localStorage.setItem(key("folders"), JSON.stringify(folders));
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Failed to persist folders", e);
@@ -600,6 +604,8 @@ const Create: React.FC = () => {
 
       // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
+        // Add ownerId to the image
+        const imgWithOwner: GeneratedImage = { ...img, ownerId: user?.id };
         console.log('Adding new image to gallery. Current gallery size:', gallery.length);
         
         // Use functional update to ensure we get the latest gallery state
@@ -621,14 +627,14 @@ const Create: React.FC = () => {
           };
           
           // Create new gallery with new image first, then existing valid images
-          const newGallery = dedup([img, ...validCurrentGallery]);
+          const newGallery = dedup([imgWithOwner, ...validCurrentGallery]);
           // Keep reasonable number of images to avoid localStorage quota issues
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           console.log('Final gallery size after dedup and slice:', next.length);
           
           // Persist to localStorage with error handling
           try {
-            localStorage.setItem("daygen_gallery", JSON.stringify(next));
+            localStorage.setItem(key("gallery"), JSON.stringify(next));
             console.log('Gallery persisted to localStorage with', next.length, 'images');
           } catch (e) {
             console.error("Failed to persist gallery - localStorage quota exceeded", e);
@@ -636,7 +642,7 @@ const Create: React.FC = () => {
             if (next.length > 10) {
               const reducedGallery = next.slice(0, 10);
               try {
-                localStorage.setItem("daygen_gallery", JSON.stringify(reducedGallery));
+                localStorage.setItem(key("gallery"), JSON.stringify(reducedGallery));
                 console.log('Gallery persisted with reduced size:', reducedGallery.length, 'images');
                 return reducedGallery;
               } catch (retryError) {
@@ -644,9 +650,9 @@ const Create: React.FC = () => {
                 // If still failing, clear and try with just the new image
                 try {
                   localStorage.removeItem("daygen_gallery");
-                  localStorage.setItem("daygen_gallery", JSON.stringify([img]));
+                  localStorage.setItem(key("gallery"), JSON.stringify([imgWithOwner]));
                   console.log('Gallery cleared and persisted with new image only');
-                  return [img];
+                  return [imgWithOwner];
                 } catch (finalError) {
                   console.error("Failed to persist even with single image", finalError);
                 }

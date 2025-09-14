@@ -1,6 +1,8 @@
 import { Search } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useLayoutEffect, useRef, useState } from "react";
+import { useAuth } from "../auth/AuthContext";
+import AuthModal from "./AuthModal";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -8,6 +10,9 @@ export default function Navbar() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
+  const { user, signOut } = useAuth();
+  const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -90,12 +95,47 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            <button className="btn btn-white parallax-small text-black">
-              Log In
-            </button>
-            <button className="btn btn-orange parallax-small text-black">
-              Sign Up
-            </button>
+            {!user ? (
+              <>
+                <button className="btn btn-white parallax-small text-black" onClick={()=>setShowAuth("login")}>
+                  Log In
+                </button>
+                <button className="btn btn-orange parallax-small text-black" onClick={()=>setShowAuth("signup")}>
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen(v=>!v)}
+                  className="parallax-mid flex items-center gap-2 rounded-full border bg-[#222427] border-d-dark text-d-text px-3 py-1.5"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                >
+                  {user.profilePic ? (
+                    <img
+                      src={user.profilePic}
+                      alt="Profile"
+                      className="size-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="inline-grid place-items-center size-6 rounded-full text-black text-xs font-bold"
+                      style={{ background: user.color || "#faaa16" }}
+                    >
+                      {(user.name || user.email)[0]?.toUpperCase()}
+                    </span>
+                  )}
+                  <span className="hidden sm:inline">{user.name || user.email}</span>
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-d-dark bg-[#121417] text-sm text-d-white shadow-xl z-[60]">
+                    <button onClick={()=>{ setMenuOpen(false); navigate("/account"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10">My account</button>
+                    <button onClick={()=>{ setMenuOpen(false); signOut(); navigate("/"); }} className="block w-full text-left px-3 py-2 hover:bg-white/10">Sign out</button>
+                  </div>
+                )}
+              </div>
+            )}
             <button aria-label="Search" className="parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white">
               <Search className="size-5" />
             </button>
@@ -124,6 +164,9 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Auth modal */}
+      <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />
     </div>
   );
 }
