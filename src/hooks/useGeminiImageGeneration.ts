@@ -41,63 +41,51 @@ export const useGeminiImageGeneration = () => {
     try {
       const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
-      // Build a list of candidate API endpoints to try
+      // Use the new API endpoint structure
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const configuredBase = (import.meta as any)?.env?.VITE_API_BASE_URL || '';
-      const tried: Array<{ url: string; status?: number; message?: string }> = [];
-      const isLocalhost = /localhost|127\.0\.0\.1/.test(origin);
-      const candidates = Array.from(
-        new Set([
-          `${origin}/api/generate-image`,
-          // If running Vite on :5173 and serverless via `vercel dev` on :3000, try those
-          isLocalhost ? `http://localhost:3000/api/generate-image` : '',
-          isLocalhost ? `http://127.0.0.1:3000/api/generate-image` : '',
-          configuredBase ? `${configuredBase.replace(/\/$/, '')}/api/generate-image` : '',
-        ].filter(Boolean))
-      );
+      const apiUrl = `${origin}/api/generate-image`;
 
-      let payload: { success?: boolean; image?: GeneratedImage } | null = null;
-      let lastError: Error | null = null;
+      console.log('[image] POST', apiUrl);
+      
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt, 
+          imageBase64: imageData, 
+          mimeType: "image/png",
+          model, 
+          references, 
+          temperature, 
+          outputLength, 
+          topP 
+        }),
+      });
 
-      for (const url of candidates) {
-        try {
-          // eslint-disable-next-line no-console
-          console.log('[image] POST', url);
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, model, imageData, references, temperature, outputLength, topP }),
-          });
-          if (!res.ok) {
-            const errBody = await res.json().catch(() => null);
-            // Handle both string errors and Google API error objects
-            const errorMessage = errBody?.error?.message || errBody?.error || `Request failed with ${res.status}`;
-            tried.push({ url, status: res.status, message: errorMessage });
-            if (res.status === 429) {
-              throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
-            }
-            // Try next candidate when 404 or 403; otherwise throw
-            if (res.status === 404 || res.status === 403) continue;
-            throw new Error(errorMessage);
-          }
-          payload = await res.json();
-          break; // success
-        } catch (e) {
-          lastError = e instanceof Error ? e : new Error(String(e));
-          tried.push({ url, message: lastError.message });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
+        
+        if (res.status === 429) {
+          throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
         }
+        throw new Error(errorMessage);
       }
 
-      if (!payload) {
-        const details = tried.map(t => `${t.url}${t.status ? ` [${t.status}]` : ''}${t.message ? ` - ${t.message}` : ''}`).join(' | ');
-        throw new Error(`Unable to reach image API. Tried: ${details}`);
+      const payload = await res.json();
+
+      if (!payload?.imageBase64) {
+        throw new Error('No image data returned from API');
       }
 
-      if (!payload?.image?.url) {
-        throw new Error('Malformed response from image API');
-      }
-
-      const generatedImage: GeneratedImage = payload.image;
+      // Convert the new API response format to our expected format
+      const generatedImage: GeneratedImage = {
+        url: `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`,
+        prompt,
+        model: model || 'gemini-2.5-flash-image-preview',
+        timestamp: new Date().toISOString(),
+        references: references || undefined,
+      };
 
       setState(prev => ({
         ...prev,
