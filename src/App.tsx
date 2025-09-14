@@ -92,8 +92,8 @@ export default function App() {
           <Route path="/prompts" element={<Prompts />} />
           <Route path="/ai-tools" element={<ToolsSection />} />
           <Route path="/ai-tools/:id" element={<Subpage />} />
-          <Route path="/create" element={<Create />} />
-          <Route path="/account" element={<Account />} />
+          <Route path="/create" element={<RequireAuth><Create /></RequireAuth>} />
+          <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />
