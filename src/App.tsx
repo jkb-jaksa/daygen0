@@ -21,7 +21,7 @@ function Home() {
   );
 }
 
-function RequireAuth({ children }: { children: JSX.Element }) {
+function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
   if (!user) {
