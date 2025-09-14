@@ -863,22 +863,7 @@ const Create: React.FC = () => {
           <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <FolderPlus className="w-12 h-12 text-d-orange-1" />
-                  <button
-                    onClick={() => {
-                      setAddToFolderDialog(false);
-                      setNewFolderDialog(true);
-                    }}
-                    className="w-10 h-10 bg-d-orange-1/20 hover:bg-d-orange-1/30 border border-d-orange-1/30 hover:border-d-orange-1/50 rounded-lg flex items-center justify-center transition-all duration-200 group"
-                    title="Create new folder"
-                    aria-label="Create new folder"
-                  >
-                    <svg className="w-5 h-5 text-d-orange-1 group-hover:text-d-orange-2 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                </div>
+                <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
                 <h3 className="text-lg font-cabin text-d-text mb-2">Manage Folders</h3>
                 <p className="text-sm text-d-white font-raleway mb-4">
                   Check folders to add or remove this image from.
@@ -957,6 +942,26 @@ const Create: React.FC = () => {
                     })}
                   </div>
                 )}
+              </div>
+              
+              {/* Add new folder button */}
+              <div className="mb-6 flex justify-center">
+                <button
+                  onClick={() => {
+                    setAddToFolderDialog(false);
+                    setNewFolderDialog(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-d-orange-1/20 hover:bg-d-orange-1/30 border border-d-orange-1/30 hover:border-d-orange-1/50 rounded-lg transition-all duration-200 group"
+                  title="Create new folder"
+                  aria-label="Create new folder"
+                >
+                  <svg className="w-4 h-4 text-d-orange-1 group-hover:text-d-orange-2 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-d-orange-1 group-hover:text-d-orange-2 font-raleway text-sm font-medium transition-colors duration-200">
+                    New Folder
+                  </span>
+                </button>
               </div>
               
               <div className="flex gap-3 justify-center">
