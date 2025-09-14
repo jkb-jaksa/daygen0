@@ -25,7 +25,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4" aria-modal="true" role="dialog">
-      <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+      <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
         <div className="text-center mb-6">
           <h3 className="text-d-text font-cabin text-xl mb-2">{mode === "login" ? "Log in" : "Sign up"}</h3>
           <p className="text-d-light text-sm font-raleway">Welcome to DayGen</p>
