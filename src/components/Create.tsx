@@ -222,6 +222,21 @@ const Create: React.FC = () => {
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Handle category switching from external navigation (e.g., navbar)
+  useEffect(() => {
+    const handleCategoryNavigation = (event: CustomEvent) => {
+      const category = event.detail?.category;
+      if (category && ['text', 'image', 'video', 'avatars', 'audio'].includes(category)) {
+        setActiveCategory(category);
+      }
+    };
+
+    window.addEventListener('navigateToCategory', handleCategoryNavigation as EventListener);
+    return () => {
+      window.removeEventListener('navigateToCategory', handleCategoryNavigation as EventListener);
+    };
+  }, []);
+
   
   // Use the Gemini image generation hook
   const {
@@ -720,12 +735,14 @@ const Create: React.FC = () => {
     // Only handle paste for Banana model (same as drag & drop)
     if (!isBanana) return;
     
-    event.preventDefault();
-    
     const items = Array.from(event.clipboardData.items);
     const imageItems = items.filter(item => item.type.startsWith('image/'));
     
+    // If no images, allow default text paste behavior
     if (imageItems.length === 0) return;
+    
+    // Only prevent default when we're actually handling images
+    event.preventDefault();
     
     try {
       // Convert clipboard items to files
@@ -2159,7 +2176,7 @@ const Create: React.FC = () => {
                 
                 {/* Coming Soon Sections */}
                 {activeCategory === "text" && (
-                  <div className="w-full">
+                  <div className="w-full" data-category="text">
                     {/* Back to Gallery Button */}
                     <div className="mb-4">
                       <button
@@ -2182,7 +2199,7 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "video" && (
-                  <div className="w-full">
+                  <div className="w-full" data-category="video">
                     {/* Back to Gallery Button */}
                     <div className="mb-4">
                       <button
@@ -2205,7 +2222,7 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "avatars" && (
-                  <div className="w-full">
+                  <div className="w-full" data-category="avatars">
                     {/* Back to Gallery Button */}
                     <div className="mb-4">
                       <button
@@ -2228,7 +2245,7 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "audio" && (
-                  <div className="w-full">
+                  <div className="w-full" data-category="audio">
                     {/* Back to Gallery Button */}
                     <div className="mb-4">
                       <button
@@ -2252,7 +2269,7 @@ const Create: React.FC = () => {
 
                 {/* Default Gallery View - Only for Image Category */}
                 {activeCategory === "image" && !selectedFolder && (
-                  <div className="grid grid-cols-4 gap-3 w-full">
+                  <div className="grid grid-cols-4 gap-3 w-full" data-category="image">
                     {[...(isLoading ? [{ type: 'loading', prompt }] : []), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - (isLoading ? 1 : 0))).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isLoadingItem = item && typeof item === 'object' && 'type' in item && item.type === 'loading';

@@ -1,4 +1,4 @@
-import { Search, User } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -110,6 +110,19 @@ export default function Navbar() {
     }
   };
 
+  const handleCategoryClick = (category: string) => {
+    navigate("/create");
+    // Close the menu
+    setActiveMenu(null);
+    // Dispatch custom event to switch category in Create component
+    setTimeout(() => {
+      const event = new CustomEvent('navigateToCategory', { 
+        detail: { category } 
+      });
+      window.dispatchEvent(event);
+    }, 100);
+  };
+
   const items = ["create", "knowledge base", "prompts", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
@@ -121,7 +134,7 @@ export default function Navbar() {
         ref={navRef}
         className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
       >
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-1.5 flex items-center justify-between text-sm">
+        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-sm">
           <div className="flex items-center gap-6 md:gap-8">
             <img
               src="/daygen-color-nobg.png"
@@ -171,7 +184,7 @@ export default function Navbar() {
                 <button
                   ref={accountBtnRef}
                   onClick={() => setMenuOpen(v => !v)}
-                  className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 hover:text-brand transition-colors"
+                  className="parallax-mid flex items-center gap-1.5 rounded-full border bg-d-dark/50 border-d-mid text-d-white px-2.5 py-1 hover:bg-d-dark/70 hover:text-brand transition-colors"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="My account"
@@ -180,17 +193,17 @@ export default function Navbar() {
                     <img
                       src={user.profilePic}
                       alt="Profile"
-                      className="size-6 rounded-full object-cover"
+                      className="size-5 rounded-full object-cover"
                     />
                   ) : (
                     <span
-                      className="inline-grid place-items-center size-6 rounded-full text-black text-xs font-bold font-cabin"
+                      className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-cabin"
                       style={{ background: user.color || "#faaa16" }}
                     >
                       {(user.name || user.email)[0]?.toUpperCase()}
                     </span>
                   )}
-                  <span className="hidden sm:inline font-raleway">{user.name || user.email}</span>
+                  <span className="hidden sm:inline font-raleway text-sm py-0.5">{user.name || user.email}</span>
                 </button>
               </div>
             )}
@@ -213,10 +226,33 @@ export default function Navbar() {
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-sm text-d-text">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
-                <div className="text-sm font-light font-cabin mb-2">
+                <div className="text-sm font-light font-cabin mb-4">
                   {activeMenu}
                 </div>
-                <div className="text-sm font-raleway text-d-white/85">Coming soon.</div>
+                {activeMenu === "create" ? (
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { key: "text", label: "text", Icon: Edit },
+                      { key: "image", label: "image", Icon: ImageIcon },
+                      { key: "video", label: "video", Icon: VideoIcon },
+                      { key: "avatars", label: "avatars", Icon: Users },
+                      { key: "audio", label: "audio", Icon: Volume2 },
+                    ].map((category) => (
+                      <button
+                        key={category.key}
+                        onClick={() => handleCategoryClick(category.key)}
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                      >
+                        <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                          <category.Icon className="size-3.5" />
+                        </div>
+                        <span>{category.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm font-raleway text-d-white/85">Coming soon.</div>
+                )}
               </div>
             )}
           </div>
