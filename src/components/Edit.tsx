@@ -6,7 +6,7 @@ import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration"
 import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
-import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
+// import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import type { FluxModelType } from "../lib/bfl";
 // import { MODEL_CAPABILITIES } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
@@ -105,7 +105,7 @@ export default function Edit() {
   
   // State
   const [mode] = useState<Mode>("edit");
-  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram">("flux-e1");
+  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo">("flux-e1");
   const [task, setTask] = useState<TaskChip>("Inpaint");
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
   const [baseImage, setBaseImage] = useState<string | undefined>(undefined);
@@ -118,7 +118,7 @@ export default function Edit() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Gallery state for Edit section only
-  const [editGallery, setEditGallery] = useState<(FluxGeneratedImage | QwenGeneratedImage)[]>([]);
+  const [editGallery, setEditGallery] = useState<(FluxGeneratedImage | QwenGeneratedImage | any)[]>([]);
   
   // Refs
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
@@ -293,14 +293,14 @@ export default function Edit() {
           result = qwenResults[0]; // Take the first result
         } else if (model === "runway-gen4" || model === "runway-gen4-turbo") {
           // Use Runway Image generation for editing
-          const runwayResults = await generateRunwayImage({
+          const runwayResult = await generateRunwayImage({
             prompt: s.prompt,
             model: model === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
             uiModel: model,
             ratio: `${s.width}:${s.height}`,
             seed: s.seed,
           });
-          result = runwayResults[0]; // Take the first result
+          result = runwayResult; // Runway hook returns a single result
         } else {
           // Use Flux generation
           result = await generateFluxImage({
@@ -811,7 +811,7 @@ export default function Edit() {
                           {img.references && img.references.length > 0 && (
                             <div className="flex items-center gap-1.5">
                               <div className="flex gap-1">
-                                {img.references.map((ref, refIdx) => (
+                                {img.references.map((ref: string, refIdx: number) => (
                                   <div key={refIdx} className="w-4 h-4 rounded border border-d-mid bg-d-black overflow-hidden">
                                     <img src={ref} alt={`Reference ${refIdx + 1}`} className="w-full h-full object-cover" />
                                   </div>

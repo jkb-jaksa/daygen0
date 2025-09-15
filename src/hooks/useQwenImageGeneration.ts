@@ -70,7 +70,7 @@ export const useQwenImageGeneration = () => {
         throw new Error(errorMessage);
       }
 
-      const { dataUrl, contentType } = await res.json();
+      const { dataUrl } = await res.json();
 
       const generatedImage: QwenGeneratedImage = {
         url: dataUrl,
@@ -139,7 +139,7 @@ export const useQwenImageGeneration = () => {
         throw new Error(errorMessage);
       }
 
-      const { dataUrl, contentType } = await res.json();
+      const { dataUrl } = await res.json();
 
       const generatedImage: QwenGeneratedImage = {
         url: dataUrl,
