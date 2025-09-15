@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { FluxModel, BFLAPIError } from '../lib/bfl';
+import type { FluxModel } from '../lib/bfl';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -96,7 +96,7 @@ export const useFluxImageGeneration = () => {
         throw new Error(errorMessage);
       }
 
-      const { id, pollingUrl, status } = await res.json();
+      const { id, pollingUrl } = await res.json();
 
       setState(prev => ({
         ...prev,

@@ -54,13 +54,14 @@ export type FluxJobParams = {
 };
 
 export class BFLAPIError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public details?: unknown
-  ) {
+  public status: number;
+  public details?: unknown;
+
+  constructor(message: string, status: number, details?: unknown) {
     super(message);
     this.name = 'BFLAPIError';
+    this.status = status;
+    this.details = details;
   }
 }
 
