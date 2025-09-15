@@ -2599,9 +2599,7 @@ const Create: React.FC = () => {
                   ) : (
                     <Wand2 className="w-4 h-4" />
                   )}
-                  {isLoading ? (
-                    isFlux && progress ? progress : "Generating..."
-                  ) : "Generate"}
+                  {isLoading ? "Generating..." : "Generate"}
                 </button>
               </Tooltip>
             </div>
