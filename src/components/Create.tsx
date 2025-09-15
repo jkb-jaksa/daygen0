@@ -260,8 +260,6 @@ const Create: React.FC = () => {
     isLoading: fluxLoading,
     error: fluxError,
     generatedImage: fluxImage,
-    jobStatus, // Required for Flux generation logic
-    progress, // Required for Flux generation logic
     generateImage: generateFluxImage,
     clearError: clearFluxError,
     clearGeneratedImage: clearFluxImage,
