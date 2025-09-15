@@ -186,7 +186,7 @@ const Prompts: React.FC = () => {
                 Get exclusive early access and help shape the future of creative AI.
               </p>
               <div className="flex justify-center gap-4">
-                <button className="btn btn-orange parallax-small text-black flex items-center gap-2">
+                <button className="btn parallax-small text-black flex items-center gap-2" style={{ backgroundColor: '#faaa16' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}>
                   <Sparkles className="size-4" />
                   Get Notified
                 </button>

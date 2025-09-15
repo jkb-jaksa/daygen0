@@ -263,7 +263,10 @@ const Create: React.FC = () => {
                 <button 
                   onClick={handleGenerateImage}
                   disabled={isLoading || !prompt.trim() || !isBanana}
-                  className="btn btn-orange text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
+                  className="btn text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
+                  style={{ backgroundColor: '#faaa16' }}
+                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffb833')}
+                  onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#faaa16')}
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

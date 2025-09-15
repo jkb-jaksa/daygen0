@@ -1,0 +1,39 @@
+import { useCallback, useEffect, useState } from "react";
+import {
+  PromptEntry,
+  loadPromptHistory,
+  addPrompt as addPromptRaw,
+  clearPromptHistory as clearRaw,
+} from "../lib/promptHistory";
+
+export function usePromptHistory(userKey: string, limit = 20) {
+  const [history, setHistory] = useState<PromptEntry[]>(() => loadPromptHistory(userKey, limit));
+
+  // Reload when user changes
+  useEffect(() => {
+    setHistory(loadPromptHistory(userKey, limit));
+  }, [userKey, limit]);
+
+  // Cross-tab sync
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key?.startsWith("dg:promptHistory:")) {
+        setHistory(loadPromptHistory(userKey, limit));
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [userKey, limit]);
+
+  const addPrompt = useCallback((text: string) => {
+    addPromptRaw(userKey, text, { limit });
+    setHistory(loadPromptHistory(userKey, limit));
+  }, [userKey, limit]);
+
+  const clear = useCallback(() => {
+    clearRaw(userKey);
+    setHistory([]);
+  }, [userKey]);
+
+  return { history, addPrompt, clear };
+}

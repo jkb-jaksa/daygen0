@@ -155,7 +155,7 @@ export default function Navbar() {
                 <button className="btn btn-white parallax-small text-black" onClick={()=>setShowAuth("login")}>
                   Log In
                 </button>
-                <button className="btn btn-orange parallax-small text-black" onClick={()=>setShowAuth("signup")}>
+                <button className="btn parallax-small text-black" style={{ backgroundColor: '#faaa16' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'} onClick={()=>setShowAuth("signup")}>
                   Sign Up
                 </button>
                 <button 

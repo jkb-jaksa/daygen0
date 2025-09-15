@@ -99,7 +99,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
           </span>
         )}
         <span className="leading-none">
-          {size === 'sm' ? config.shortName : config.name}
+          {config.name}
         </span>
       </div>
     </div>

@@ -265,7 +265,10 @@ const AboutUs: React.FC = () => {
               <div className="flex justify-center gap-4">
                 <a 
                   href="/knowledge-base" 
-                  className="btn btn-orange parallax-small text-black flex items-center gap-2"
+                  className="btn parallax-small text-black flex items-center gap-2"
+                  style={{ backgroundColor: '#faaa16' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}
                 >
                   <Sparkles className="size-4" />
                   Explore Tools
