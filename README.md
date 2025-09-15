@@ -1,5 +1,29 @@
 # DayGen
 
+## Environment Setup
+
+Create a `.env` file in the root directory with the following variables:
+
+```bash
+# Gemini API Key
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# BFL API Configuration
+BFL_API_KEY=your_bfl_api_key_here
+BFL_API_BASE=https://api.bfl.ai
+BFL_WEBHOOK_SECRET=your_webhook_secret_here
+
+# OpenAI API Key for ChatGPT Image Generation
+OPENAI_API_KEY=sk-your_openai_api_key_here
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# Base URL for webhooks (update for production)
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+```
+
 ## Site Password Protection
 
 This repo includes two layers of protection:

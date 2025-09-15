@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Wand2, X, Sparkles, Play, History as HistoryIcon, SplitSquareVertical, Upload, Image as ImageIcon, Copy, Download, Settings, ChevronDown, Edit as EditIcon } from "lucide-react";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
+import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import type { FluxModelType } from "../lib/bfl";
 // import { MODEL_CAPABILITIES } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
@@ -8,6 +9,7 @@ import { usePromptHistory } from '../hooks/usePromptHistory';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import type { FluxGeneratedImage } from '../hooks/useFluxImageGeneration';
+import type { ChatGPTGeneratedImage } from '../hooks/useChatGPTImageGeneration';
 // import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
 
 // Types
@@ -31,7 +33,7 @@ interface Settings {
 interface RunResult {
   id: string;
   mode: Mode;
-  model: FluxModelType;
+  model: FluxModelType | "chatgpt-image";
   imageDataUrl: string;
   baseImageDataUrl?: string;
   settings: Settings;
@@ -58,7 +60,8 @@ const EDIT_TASKS: EditTask[] = ["Inpaint", "Outpaint", "Replace", "Style transfe
 // Only editing models with full names
 const FLUX_EDIT_MODELS = [
   { id: 'flux-e1', name: 'Flux Kontext Pro', description: 'High-quality image editing' },
-  { id: 'flux-e2', name: 'Flux Kontext Max', description: 'Highest quality image editing' }
+  { id: 'flux-e2', name: 'Flux Kontext Max', description: 'Highest quality image editing' },
+  { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' }
 ] as const;
 
 function uid() {
@@ -93,7 +96,7 @@ export default function Edit() {
   
   // State
   const [mode] = useState<Mode>("edit");
-  const [model, setModel] = useState<FluxModelType>("flux-e1");
+  const [model, setModel] = useState<FluxModelType | "chatgpt-image">("flux-e1");
   const [task, setTask] = useState<TaskChip>("Inpaint");
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
   const [baseImage, setBaseImage] = useState<string | undefined>(undefined);
@@ -114,9 +117,18 @@ export default function Edit() {
   
   // Flux generation hook
   const { 
-    isLoading: isRunning, 
-    generateImage
+    isLoading: fluxLoading, 
+    generateImage: generateFluxImage
   } = useFluxImageGeneration();
+
+  // ChatGPT Image generation hook
+  const {
+    isLoading: chatgptLoading,
+    generateImage: generateChatGPTImage
+  } = useChatGPTImageGeneration();
+
+  // Combined loading state
+  const isRunning = fluxLoading || chatgptLoading;
 
   // Shortcuts
   useGenerateShortcuts({ onGenerate: () => handleRun("run") });
@@ -124,8 +136,8 @@ export default function Edit() {
   // Prefill from share
   usePrefillFromShare((data: any) => {
     if (data?.prompt) setSettings(prev => ({ ...prev, prompt: data.prompt }));
-    if (data?.model && ['flux-e1', 'flux-e2'].includes(data.model as FluxModelType)) {
-      setModel(data.model as FluxModelType);
+    if (data?.model && ['flux-e1', 'flux-e2', 'chatgpt-image'].includes(data.model)) {
+      setModel(data.model as FluxModelType | "chatgpt-image");
     }
   });
 
@@ -186,12 +198,16 @@ export default function Edit() {
 
   // Smart model routing for editing
   useEffect(() => {
+    if (model === "chatgpt-image") {
+      // Don't auto-switch ChatGPT Image model
+      return;
+    }
     if (task === "Outpaint" || isLargeResize(settings.width, settings.height)) {
       setModel("flux-e2");
     } else {
       setModel("flux-e1");
     }
-  }, [task, settings.width, settings.height]);
+  }, [task, settings.width, settings.height, model]);
 
   // URL param sync
   useEffect(() => {
@@ -220,17 +236,30 @@ export default function Edit() {
         const effectiveSeed = settings.seedLocked ? settings.seed : settings.seed + i;
         const s = { ...settings, seed: effectiveSeed };
         
-        const result = await generateImage({
-          prompt: s.prompt,
-          model,
-          width: s.width,
-          height: s.height,
-          seed: s.seed,
-          safety_tolerance: s.safety === "low" ? 1 : s.safety === "medium" ? 2 : 3,
-          input_image: baseImage,
-          input_image_2: maskDataUrl,
-          output_format: 'png'
-        });
+        let result;
+        if (model === "chatgpt-image") {
+          // Use ChatGPT Image generation for editing
+          result = await generateChatGPTImage({
+            prompt: s.prompt,
+            size: `${s.width}x${s.height}` as '256x256' | '512x512' | '1024x1024' | '1024x1536' | '1536x1024',
+            quality: s.safety === "high" ? 'high' : 'standard',
+            background: 'transparent',
+            n: 1
+          });
+        } else {
+          // Use Flux generation
+          result = await generateFluxImage({
+            prompt: s.prompt,
+            model: model as FluxModelType,
+            width: s.width,
+            height: s.height,
+            seed: s.seed,
+            safety_tolerance: s.safety === "low" ? 1 : s.safety === "medium" ? 2 : 3,
+            input_image: baseImage,
+            input_image_2: maskDataUrl,
+            output_format: 'png'
+          });
+        }
         
         outputs.push(result.url);
       }
@@ -515,7 +544,7 @@ export default function Edit() {
                           <button
                             key={m.id}
                             onClick={() => {
-                              setModel(m.id as FluxModelType);
+                              setModel(m.id as FluxModelType | "chatgpt-image");
                               setIsModelSelectorOpen(false);
                             }}
                             className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-d-mid hover:text-brand transition-colors ${

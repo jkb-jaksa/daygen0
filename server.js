@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -15,13 +16,20 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
+
+// Multer setup for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Import API routes
 import { GoogleGenAI } from '@google/genai';
+import OpenAI, { toFile } from 'openai';
 
 // Gemini API setup
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// OpenAI API setup for ChatGPT Image Generation
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Gemini image generation endpoint
 app.post('/api/generate-image', async (req, res) => {
@@ -64,6 +72,130 @@ app.post('/api/generate-image', async (req, res) => {
     });
   }
 });
+
+// ChatGPT Image Generation endpoint
+app.post('/api/chatgpt-image', async (req, res) => {
+  try {
+    const {
+      prompt,
+      n = 1,                        // NEW: multiple outputs
+      size = '1024x1024',           // 256x256, 512x512, 1024x1024, 1024x1536, 1536x1024
+      quality = 'high',              // 'standard' | 'high'
+      background = 'transparent'     // 'transparent' | 'white' | 'black' (transparent requires PNG)
+    } = req.body ?? {};
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Provide a text "prompt" string.' });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    const result = await openai.images.generate({
+      model: 'gpt-image-1', // Using gpt-image-1 as requested
+      prompt,
+      n,
+      size: size || '1024x1024',
+      quality: quality || 'high',
+      background: background || 'transparent'
+    });
+
+    const dataUrls = (result.data || [])
+      .map(d => d.b64_json)
+      .filter(Boolean)
+      .map(b64 => `data:image/png;base64,${b64}`);
+
+    if (!dataUrls.length) {
+      return res.status(502).json({ error: 'No image(s) returned from OpenAI.' });
+    }
+
+    // Return array of data URLs for multiple images
+    res.json({ 
+      dataUrls: dataUrls,
+      mimeType: 'image/png'
+    });
+  } catch (err) {
+    console.error('ChatGPT Image generation error:', err);
+    const msg = err?.response?.data?.error?.message || err?.message || 'Unexpected error';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ChatGPT Image Editing endpoint
+app.post(
+  '/api/chatgpt-image/edit',
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'mask', maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const { 
+        prompt, 
+        n = 1, 
+        size = '1024x1024', 
+        quality = 'high', 
+        background = 'transparent' 
+      } = req.body ?? {};
+      
+      const base = req.files?.image?.[0];
+      const mask = req.files?.mask?.[0]; // optional
+
+      if (!prompt || typeof prompt !== 'string') {
+        return res.status(400).json({ error: 'Provide a text "prompt" string.' });
+      }
+      if (!base) {
+        return res.status(400).json({ error: 'Upload an "image" file to edit.' });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: 'OpenAI API key not configured' });
+      }
+
+      // Convert buffers to File-like objects for the SDK
+      const imageFile = await toFile(base.buffer, base.originalname || 'image.png');
+      const maskFile = mask ? await toFile(mask.buffer, mask.originalname || 'mask.png') : undefined;
+
+      const result = await openai.images.edits({
+        model: 'gpt-image-1',
+        prompt,
+        image: imageFile,
+        mask: maskFile,
+        n,
+        size,
+        quality,
+        background
+      });
+
+      const dataUrls = (result.data || [])
+        .map(d => d.url)
+        .filter(Boolean);
+
+      if (!dataUrls.length) {
+        return res.status(502).json({ error: 'No image(s) returned from OpenAI.' });
+      }
+
+      // Fetch all images and convert to base64
+      const base64Images = [];
+      for (const imageUrl of dataUrls) {
+        const imageResponse = await fetch(imageUrl);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const base64 = Buffer.from(imageBuffer).toString('base64');
+        base64Images.push(`data:image/png;base64,${base64}`);
+      }
+
+      res.json({ 
+        dataUrls: base64Images,
+        mimeType: 'image/png'
+      });
+    } catch (err) {
+      console.error('ChatGPT Image editing error:', err);
+      const msg = err?.response?.data?.error?.message || err?.message || 'Unexpected error';
+      res.status(500).json({ error: msg });
+    }
+  }
+);
 
 // BFL API endpoints
 const BASE = process.env.BFL_API_BASE || 'https://api.bfl.ai';

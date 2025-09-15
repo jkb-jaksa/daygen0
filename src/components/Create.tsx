@@ -5,6 +5,8 @@ import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
+import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
+import type { ChatGPTGeneratedImage } from "../hooks/useChatGPTImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
@@ -32,11 +34,11 @@ const AI_MODELS = [
   { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as Accent, id: "flux-pro-1.1-ultra" },
   { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: Edit, accent: "violet" as Accent, id: "flux-kontext-pro" },
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
+  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen-4" },
   { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
   { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-4.0" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
-  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -202,7 +204,8 @@ const Create: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
   const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
   const isFlux = selectedModel.startsWith("flux-");
-  const isComingSoon = !isGemini && !isFlux;
+  const isChatGPT = selectedModel === "chatgpt-image";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -265,10 +268,19 @@ const Create: React.FC = () => {
     clearGeneratedImage: clearFluxImage,
   } = useFluxImageGeneration();
 
+  const {
+    isLoading: chatgptLoading,
+    error: chatgptError,
+    generatedImage: chatgptImage,
+    generateImage: generateChatGPTImage,
+    clearError: clearChatGPTError,
+    clearGeneratedImage: clearChatGPTImage,
+  } = useChatGPTImageGeneration();
+
   // Combined state for UI
-  const isLoading = geminiLoading || fluxLoading;
-  const error = geminiError || fluxError;
-  const generatedImage = geminiImage || fluxImage;
+  const isLoading = geminiLoading || fluxLoading || chatgptLoading;
+  const error = geminiError || fluxError || chatgptError;
+  const generatedImage = geminiImage || fluxImage || chatgptImage;
 
   // Load gallery and liked images from localStorage on mount
   useEffect(() => {
@@ -676,6 +688,7 @@ const Create: React.FC = () => {
       clearAllReferences();
       clearGeminiImage();
       clearFluxImage();
+      clearChatGPTImage();
       
       // Set this image as the reference
       setReferenceFiles([file]);
@@ -827,7 +840,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini and FLUX models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, and ChatGPT Image models are available.');
       return;
     }
 
@@ -842,7 +855,7 @@ const Create: React.FC = () => {
         });
       }
 
-      let img: GeneratedImage | FluxGeneratedImage;
+      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage;
 
       if (isGemini) {
         // Use Gemini generation
@@ -862,6 +875,14 @@ const Create: React.FC = () => {
           temperature,
           outputLength,
           topP,
+        });
+      } else if (isChatGPT) {
+        // Use ChatGPT Image generation
+        img = await generateChatGPTImage({
+          prompt: prompt.trim(),
+          size: '1024x1024',
+          quality: 'high',
+          background: 'transparent',
         });
       } else if (isFlux) {
         // Use Flux generation
@@ -978,9 +999,10 @@ const Create: React.FC = () => {
       }
     } catch (error) {
       console.error('Error generating image:', error);
-      // Clear any previous errors from both hooks
+      // Clear any previous errors from all hooks
       clearGeminiError();
       clearFluxError();
+      clearChatGPTError();
     }
   };
 
@@ -2757,14 +2779,14 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image is available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, and ChatGPT Image models are available.');
                               return;
                             }
                             handleModelSelect(model.name);
@@ -2854,7 +2876,7 @@ const Create: React.FC = () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
                 <p className="font-raleway text-sm">{error}</p>
                 <button
-                  onClick={() => { clearGeminiError(); clearFluxError(); }}
+                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss
