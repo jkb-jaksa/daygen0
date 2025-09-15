@@ -26,10 +26,17 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
   },
   'runway-gen4': {
     id: 'runway-gen4',
-    name: 'Runway Gen-4',
-    shortName: 'Runway',
-    description: 'Runway Gen-4',
-    isAvailable: false
+    name: 'Runway Gen-4 Image',
+    shortName: 'Runway Gen-4',
+    description: 'Runway Gen-4 Image Generation with reference support',
+    isAvailable: true
+  },
+  'runway-gen4-turbo': {
+    id: 'runway-gen4-turbo',
+    name: 'Runway Gen-4 Turbo',
+    shortName: 'Runway Turbo',
+    description: 'Runway Gen-4 Turbo (requires reference images)',
+    isAvailable: true
   },
   'dalle-3': {
     id: 'dalle-3',
@@ -43,7 +50,7 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     name: 'Qwen Image',
     shortName: 'Qwen',
     description: 'Qwen Image',
-    isAvailable: false
+    isAvailable: true
   },
   'chatgpt-image': {
     id: 'chatgpt-image',

@@ -9,6 +9,10 @@ import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import type { ChatGPTGeneratedImage } from "../hooks/useChatGPTImageGeneration";
 import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
 import type { IdeogramGeneratedImage } from "../hooks/useIdeogramImageGeneration";
+import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
+import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
+import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
+import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
@@ -37,10 +41,11 @@ const AI_MODELS = [
   { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: Edit, accent: "violet" as Accent, id: "flux-kontext-pro" },
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
-  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen-4" },
-  { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-4.0" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
+  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
+  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
+  { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-4.0" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -208,10 +213,17 @@ const Create: React.FC = () => {
   const isFlux = selectedModel.startsWith("flux-");
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram;
+  const isQwen = selectedModel === "qwen-image";
+  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
+  
+  // Qwen-specific state
+  const [qwenSize, setQwenSize] = useState<string>('1328*1328');
+  const [qwenPromptExtend, setQwenPromptExtend] = useState<boolean>(true);
+  const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [gallery, setGallery] = useState<(GeneratedImage | FluxGeneratedImage)[]>([]);
@@ -287,9 +299,22 @@ const Create: React.FC = () => {
     clearError: clearIdeogramError,
   } = useIdeogramImageGeneration();
 
+  const {
+    isLoading: qwenLoading,
+    error: qwenError,
+    generateImage: generateQwenImage,
+  } = useQwenImageGeneration();
+
+  const {
+    isLoading: runwayLoading,
+    error: runwayError,
+    generateImage: generateRunwayImage,
+    clearError: clearRunwayError,
+  } = useRunwayImageGeneration();
+
   // Combined state for UI
-  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading;
-  const error = geminiError || fluxError || chatgptError || ideogramError;
+  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError;
   const generatedImage = geminiImage || fluxImage || chatgptImage;
 
   // Load gallery and liked images from localStorage on mount
@@ -850,7 +875,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, and Ideogram models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, and Runway models are available.');
       return;
     }
 
@@ -865,7 +890,7 @@ const Create: React.FC = () => {
         });
       }
 
-      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage;
+      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage;
 
       if (isGemini) {
         // Use Gemini generation
@@ -906,6 +931,36 @@ const Create: React.FC = () => {
           throw new Error('Ideogram generation failed');
         }
         img = ideogramResult[0]; // Take the first generated image
+      } else if (isQwen) {
+        // Use Qwen Image generation
+        const qwenResult = await generateQwenImage({
+          prompt: prompt.trim(),
+          size: qwenSize,
+          prompt_extend: qwenPromptExtend,
+          watermark: qwenWatermark,
+        });
+        if (!qwenResult || qwenResult.length === 0) {
+          throw new Error('Qwen generation failed');
+        }
+        img = qwenResult[0]; // Take the first generated image
+      } else if (isRunway) {
+        // Use Runway generation
+        const runwayResult = await generateRunwayImage({
+          prompt: prompt.trim(),
+          model: selectedModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
+          uiModel: selectedModel, // Pass the UI model ID for display
+          references: await (async () => {
+            if (referenceFiles.length === 0) return undefined;
+            const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.readAsDataURL(f);
+            })));
+            return arr;
+          })(),
+          ratio: "1920:1080", // Default ratio, could be made configurable
+        });
+        img = runwayResult;
       } else if (isFlux) {
         // Use Flux generation
         const fluxParams: any = {
@@ -1026,6 +1081,7 @@ const Create: React.FC = () => {
       clearFluxError();
       clearChatGPTError();
       clearIdeogramError();
+      clearRunwayError();
     }
   };
 
@@ -2762,6 +2818,65 @@ const Create: React.FC = () => {
                       </div>
                     </SettingsPortal>
                   )}
+
+                  {isQwen && (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Qwen Image Settings</div>
+                        
+                        {/* Size */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-d-white font-raleway">Image Size</label>
+                          </div>
+                          <select 
+                            value={qwenSize} 
+                            onChange={(e) => setQwenSize(e.target.value)}
+                            className="w-full px-3 py-2 bg-d-dark border border-d-mid rounded-lg text-d-white text-sm focus:outline-none focus:border-d-orange-1"
+                          >
+                            <option value="1328*1328">1328×1328 (1:1)</option>
+                            <option value="1664*928">1664×928 (16:9)</option>
+                            <option value="1472*1140">1472×1140 (4:3)</option>
+                            <option value="1140*1472">1140×1472 (3:4)</option>
+                            <option value="928*1664">928×1664 (9:16)</option>
+                          </select>
+                          <div className="text-xs text-d-white font-raleway">Choose the aspect ratio for your generated image</div>
+                        </div>
+                        
+                        {/* Prompt Extend */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-d-white font-raleway">Prompt Extend</label>
+                            <input 
+                              type="checkbox" 
+                              checked={qwenPromptExtend} 
+                              onChange={(e) => setQwenPromptExtend(e.target.checked)}
+                              className="w-4 h-4 text-d-orange-1 bg-d-dark border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                          </div>
+                          <div className="text-xs text-d-white font-raleway">Automatically enhance short prompts (adds ~3-4s latency)</div>
+                        </div>
+                        
+                        {/* Watermark */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-d-white font-raleway">Watermark</label>
+                            <input 
+                              type="checkbox" 
+                              checked={qwenWatermark} 
+                              onChange={(e) => setQwenWatermark(e.target.checked)}
+                              className="w-4 h-4 text-d-orange-1 bg-d-dark border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                          </div>
+                          <div className="text-xs text-d-white font-raleway">Add watermark to generated images</div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -2802,14 +2917,14 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, and ChatGPT Image models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, and Runway models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

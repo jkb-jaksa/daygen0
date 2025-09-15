@@ -3,6 +3,10 @@ import { Wand2, X, Sparkles, Play, History as HistoryIcon, SplitSquareVertical, 
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
+import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
+import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
+import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
+import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import type { FluxModelType } from "../lib/bfl";
 // import { MODEL_CAPABILITIES } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
@@ -34,7 +38,7 @@ interface Settings {
 interface RunResult {
   id: string;
   mode: Mode;
-  model: FluxModelType | "chatgpt-image" | "ideogram";
+  model: FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo";
   imageDataUrl: string;
   baseImageDataUrl?: string;
   settings: Settings;
@@ -63,7 +67,10 @@ const FLUX_EDIT_MODELS = [
   { id: 'flux-e1', name: 'Flux Kontext Pro', description: 'High-quality image editing' },
   { id: 'flux-e2', name: 'Flux Kontext Max', description: 'Highest quality image editing' },
   { id: 'ideogram', name: 'Ideogram 3.0', description: 'Advanced image generation, editing, and enhancement' },
-  { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' }
+  { id: 'qwen-image', name: 'Qwen Image', description: 'Great image editing' },
+  { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' },
+  { id: 'runway-gen4', name: 'Runway Gen-4', description: 'Advanced image generation with reference support' },
+  { id: 'runway-gen4-turbo', name: 'Runway Gen-4 Turbo', description: 'Fast generation with reference images' }
 ] as const;
 
 function uid() {
@@ -71,7 +78,7 @@ function uid() {
 }
 
 // Helper: keep only lean fields for storage (matches Create section)
-const toStorable = (items: FluxGeneratedImage[]) =>
+const toStorable = (items: (FluxGeneratedImage | QwenGeneratedImage)[]) =>
   items.map(({ url, prompt, model, timestamp, ownerId }) => ({
     url, prompt, model, timestamp, ownerId
   }));
@@ -111,7 +118,7 @@ export default function Edit() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Gallery state for Edit section only
-  const [editGallery, setEditGallery] = useState<FluxGeneratedImage[]>([]);
+  const [editGallery, setEditGallery] = useState<(FluxGeneratedImage | QwenGeneratedImage)[]>([]);
   
   // Refs
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
@@ -135,8 +142,20 @@ export default function Edit() {
     generateImage: generateIdeogramImage
   } = useIdeogramImageGeneration();
 
+  // Qwen Image generation hook
+  const {
+    isLoading: qwenLoading,
+    generateImage: generateQwenImage
+  } = useQwenImageGeneration();
+
+  // Runway Image generation hook
+  const {
+    isLoading: runwayLoading,
+    generateImage: generateRunwayImage
+  } = useRunwayImageGeneration();
+
   // Combined loading state
-  const isRunning = fluxLoading || chatgptLoading || ideogramLoading;
+  const isRunning = fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading;
 
   // Shortcuts
   useGenerateShortcuts({ onGenerate: () => handleRun("run") });
@@ -154,7 +173,7 @@ export default function Edit() {
     try {
       const raw = localStorage.getItem(key("editGallery"));
       if (raw) {
-        const parsed = JSON.parse(raw) as FluxGeneratedImage[];
+        const parsed = JSON.parse(raw) as (FluxGeneratedImage | QwenGeneratedImage)[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Validate that each item has required properties
           const validImages = parsed.filter(img => img && img.url && img.prompt && img.timestamp);
@@ -172,7 +191,7 @@ export default function Edit() {
   }, []);
 
   // Save edit gallery to localStorage whenever it changes
-  const persistEditGallery = (galleryData: FluxGeneratedImage[]) => {
+  const persistEditGallery = (galleryData: (FluxGeneratedImage | QwenGeneratedImage)[]) => {
     try {
       localStorage.setItem(key("editGallery"), JSON.stringify(toStorable(galleryData)));
       console.log('Edit gallery backup persisted with', galleryData.length, 'images');
@@ -206,8 +225,8 @@ export default function Edit() {
 
   // Smart model routing for editing
   useEffect(() => {
-    if (model === "chatgpt-image") {
-      // Don't auto-switch ChatGPT Image model
+    if (model === "chatgpt-image" || model === "qwen-image") {
+      // Don't auto-switch ChatGPT Image or Qwen Image models
       return;
     }
     if (task === "Outpaint" || isLargeResize(settings.width, settings.height)) {
@@ -263,6 +282,25 @@ export default function Edit() {
             num_images: 1,
           });
           result = ideogramResults[0]; // Take the first result
+        } else if (model === "qwen-image") {
+          // Use Qwen Image generation for editing
+          const qwenResults = await generateQwenImage({
+            prompt: s.prompt,
+            size: `${s.width}*${s.height}`,
+            prompt_extend: true,
+            watermark: false,
+          });
+          result = qwenResults[0]; // Take the first result
+        } else if (model === "runway-gen4" || model === "runway-gen4-turbo") {
+          // Use Runway Image generation for editing
+          const runwayResults = await generateRunwayImage({
+            prompt: s.prompt,
+            model: model === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
+            uiModel: model,
+            ratio: `${s.width}:${s.height}`,
+            seed: s.seed,
+          });
+          result = runwayResults[0]; // Take the first result
         } else {
           // Use Flux generation
           result = await generateFluxImage({
@@ -299,7 +337,7 @@ export default function Edit() {
       addPrompt(settings.prompt);
       
       // Add to edit gallery
-      const editImages: FluxGeneratedImage[] = outputs.map((imageDataUrl) => ({
+      const editImages: (FluxGeneratedImage | QwenGeneratedImage)[] = outputs.map((imageDataUrl) => ({
         url: imageDataUrl,
         prompt: settings.prompt,
         model: model,
@@ -314,9 +352,9 @@ export default function Edit() {
         const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
         
         // Deduplicate by URL
-        const dedup = (list: FluxGeneratedImage[]) => {
+        const dedup = (list: (FluxGeneratedImage | QwenGeneratedImage)[]) => {
           const seen = new Set<string>();
-          const out: FluxGeneratedImage[] = [];
+          const out: (FluxGeneratedImage | QwenGeneratedImage)[] = [];
           for (const it of list) {
             if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
               seen.add(it.url);
@@ -561,7 +599,7 @@ export default function Edit() {
                           <button
                             key={m.id}
                             onClick={() => {
-                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram");
+                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo");
                               setIsModelSelectorOpen(false);
                             }}
                             className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-d-mid hover:text-brand transition-colors ${

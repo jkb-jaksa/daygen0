@@ -13,7 +13,7 @@ const MODEL_CONFIG = {
     name: 'Gemini 2.5 Flash Image',
     shortName: 'G2.5',
     icon: '🤖',
-    description: 'Google Gemini 2.5 Flash Image'
+    description: 'Google Gemini 2.5 Flash Image - Best for image editing and multimodal tasks'
   },
   'flux-pro-1.1': {
     name: 'FLUX Pro 1.1',
@@ -45,17 +45,17 @@ const MODEL_CONFIG = {
     icon: '⚡',
     description: 'FLUX.1 Kontext Pro / Max'
   },
-  'runway-gen-4': {
-    name: 'Runway Gen-4',
-    shortName: 'RW',
-    icon: '🎬',
-    description: 'Runway Gen-4'
-  },
   'runway-gen4': {
     name: 'Runway Gen-4',
     shortName: 'RW',
     icon: '🎬',
-    description: 'Runway Gen-4'
+    description: 'Runway Gen-4 - Advanced image generation with reference support'
+  },
+  'runway-gen4-turbo': {
+    name: 'Runway Gen-4 Turbo',
+    shortName: 'RWT',
+    icon: '🎬',
+    description: 'Runway Gen-4 Turbo - Fast generation with reference images'
   },
   'ideogram': {
     name: 'Ideogram 3.0',
@@ -79,13 +79,13 @@ const MODEL_CONFIG = {
     name: 'Qwen Image',
     shortName: 'QW',
     icon: '🧠',
-    description: 'Qwen Image'
+    description: 'Qwen Image - Great for image editing and generation'
   },
   'chatgpt-image': {
     name: 'ChatGPT Image',
     shortName: 'GPT',
     icon: '💬',
-    description: 'ChatGPT Image'
+    description: 'ChatGPT Image - Popular image generation model'
   }
 } as const;
 

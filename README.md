@@ -19,6 +19,10 @@ OPENAI_API_KEY=sk-your_openai_api_key_here
 # Ideogram API Key for advanced image generation and editing
 IDEOGRAM_API_KEY=your_ideogram_api_key_here
 
+# Qwen Image API (Alibaba Cloud DashScope) for text-to-image and image editing
+DASHSCOPE_API_KEY=your_dashscope_api_key_here
+DASHSCOPE_BASE=https://dashscope-intl.aliyuncs.com/api/v1
+
 # Server Configuration
 PORT=3000
 NODE_ENV=development
@@ -38,6 +42,7 @@ DayGen supports multiple AI models for image generation and editing:
 - **FLUX Kontext Pro/Max** - Advanced image editing with text prompts
 - **ChatGPT Image** - Popular image generation model
 - **Ideogram 3.0** - Advanced image generation, editing, and enhancement
+- **Qwen Image** - Alibaba Cloud's text-to-image and image editing model
 
 ### Ideogram 3.0 Features
 - **Generate**: Text-to-image with aspect ratio control and style presets
@@ -46,6 +51,13 @@ DayGen supports multiple AI models for image generation and editing:
 - **Replace Background**: Automatic subject detection and background replacement
 - **Upscale**: High-quality image upscaling with detail control
 - **Describe**: Automatic image captioning and alt text generation
+
+### Qwen Image Features
+- **Generate**: Text-to-image with multiple aspect ratios (1:1, 16:9, 4:3, 3:4, 9:16)
+- **Edit**: Image-to-image editing with text prompts
+- **Prompt Extend**: Automatic enhancement of short prompts
+- **Watermark Control**: Optional watermarking of generated images
+- **High Quality**: Professional-grade image generation up to 1664×928 resolution
 
 For detailed Ideogram integration documentation, see [IDEOGRAM_INTEGRATION.md](./IDEOGRAM_INTEGRATION.md).
 

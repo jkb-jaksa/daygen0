@@ -33,6 +33,7 @@ import {
   ideogramDescribe 
 } from './src/lib/ideogram.js';
 import { persistIdeogramUrl } from './src/lib/storage.js';
+import RunwayML, { TaskFailedError } from '@runwayml/sdk';
 
 // Gemini API setup
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -556,6 +557,117 @@ app.post('/api/ideogram/describe', upload.single('image'), async (req, res) => {
   }
 });
 
+// Runway API endpoints
+const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY;
+
+// Helper function to download image from URL and convert to base64
+async function downloadImageToBase64(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const contentType = response.headers.get('content-type') || 'image/png';
+    
+    return {
+      dataUrl: `data:${contentType};base64,${base64}`,
+      contentType
+    };
+  } catch (error) {
+    console.error('Error downloading image:', error);
+    throw error;
+  }
+}
+
+// Runway Image Generation endpoint
+app.post('/api/runway/image', async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      model = 'gen4_image',
+      ratio = '1920:1080',
+      seed,
+      references = []
+    } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!RUNWAY_API_KEY) {
+      return res.status(500).json({ error: 'RUNWAY_API_KEY is not configured' });
+    }
+
+    // Initialize Runway client
+    const client = new RunwayML({
+      apiKey: RUNWAY_API_KEY
+    });
+
+    // Prepare reference images (convert base64 data URLs to the format Runway expects)
+    const runwayReferences = references
+      .filter(ref => ref && typeof ref === 'string' && ref.startsWith('data:'))
+      .map(ref => ({ uri: ref }));
+
+    // Build request parameters
+    const params = {
+      model,
+      ratio,
+      promptText: prompt,
+      ...(runwayReferences.length > 0 && { referenceImages: runwayReferences }),
+      ...(seed !== undefined && { seed })
+    };
+
+    console.log('Runway request params:', JSON.stringify(params, null, 2));
+
+    // Create task and wait for output
+    const task = await client.textToImage
+      .create(params)
+      .waitForTaskOutput({ 
+        timeout: 5 * 60 * 1000 // 5 minutes timeout
+      });
+
+    const outputUrl = task.output?.[0];
+    if (!outputUrl) {
+      throw new Error('No output URL returned from Runway');
+    }
+
+    // Download the image and convert to base64
+    const { dataUrl, contentType } = await downloadImageToBase64(outputUrl);
+
+    res.json({
+      dataUrl,
+      contentType,
+      taskId: task.id,
+      meta: { 
+        ratio, 
+        seed, 
+        refs: runwayReferences.length,
+        model 
+      }
+    });
+
+  } catch (error) {
+    console.error('Runway Image generation error:', error);
+    
+    if (error instanceof TaskFailedError) {
+      return res.status(422).json({
+        error: 'Runway task failed',
+        code: 'RUNWAY_TASK_FAILED',
+        details: error.taskDetails
+      });
+    }
+    
+    res.status(500).json({
+      error: 'Generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // BFL API endpoints
 const BASE = process.env.BFL_API_BASE || 'https://api.bfl.ai';
 const KEY = process.env.BFL_API_KEY;
@@ -785,7 +897,7 @@ app.get('/api/flux/download', async (req, res) => {
     const buffer = Buffer.from(arrayBuffer);
     const base64 = buffer.toString('base64');
     const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
-    const dataUrl = `data:${contentType};base64,${base64}`;
+    const resultDataUrl = `data:${contentType};base64,${base64}`;
     
     res.json({ dataUrl, contentType });
   } catch (error) {
@@ -793,6 +905,198 @@ app.get('/api/flux/download', async (req, res) => {
     res.status(500).json({
       error: 'Failed to download image',
       details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Qwen Image API endpoints
+const DASHSCOPE_BASE = process.env.DASHSCOPE_BASE || 'https://dashscope-intl.aliyuncs.com/api/v1';
+const DASHSCOPE_ENDPOINT = `${DASHSCOPE_BASE}/services/aigc/multimodal-generation/generation`;
+const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY;
+
+// Qwen Image Generation (text-to-image)
+app.post('/api/qwen/image', async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      size = '1328*1328', 
+      seed, 
+      negative_prompt, 
+      prompt_extend = true, 
+      watermark = false 
+    } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+
+    if (!DASHSCOPE_KEY) {
+      return res.status(500).json({ error: 'DASHSCOPE_API_KEY is not configured' });
+    }
+
+    // Qwen-Image: exactly one text item in content
+    const body = {
+      model: 'qwen-image',
+      input: {
+        messages: [
+          {
+            role: 'user',
+            content: [{ text: prompt }],
+          },
+        ],
+      },
+      parameters: {
+        ...(size ? { size } : {}),
+        ...(typeof seed === 'number' ? { seed } : {}),
+        ...(negative_prompt ? { negative_prompt } : {}),
+        prompt_extend,
+        watermark,
+      },
+    };
+
+    const resp = await fetch(DASHSCOPE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DASHSCOPE_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      return res.status(resp.status).json({ 
+        error: data?.message ?? 'DashScope error', 
+        code: data?.code 
+      });
+    }
+
+    const imageUrl = data?.output?.choices?.[0]?.message?.content?.find((c) => c.image)?.image ??
+      data?.output?.choices?.[0]?.message?.content?.[0]?.image;
+
+    if (!imageUrl) {
+      return res.status(502).json({ error: 'No image in response', raw: data });
+    }
+
+    // Download the image and convert to base64 data URL
+    const imageRes = await fetch(imageUrl);
+    if (!imageRes.ok) {
+      throw new Error(`Failed to download image: ${imageRes.status}`);
+    }
+    
+    const arrayBuffer = await imageRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+    const resultDataUrl = `data:${contentType};base64,${base64}`;
+
+    res.json({ 
+      dataUrl: resultDataUrl, 
+      contentType,
+      usage: data?.usage 
+    });
+
+  } catch (err) {
+    console.error('Qwen Image generation error:', err);
+    res.status(500).json({
+      error: err?.message ?? 'Server error'
+    });
+  }
+});
+
+// Qwen Image Edit (image-to-image editing)
+app.post('/api/qwen/image-edit', upload.single('image'), async (req, res) => {
+  try {
+    const file = req.file;
+    const { 
+      prompt, 
+      negative_prompt, 
+      watermark = false, 
+      seed 
+    } = req.body;
+
+    if (!file) {
+      return res.status(400).json({ error: 'Missing image file' });
+    }
+    if (!prompt) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+
+    if (!DASHSCOPE_KEY) {
+      return res.status(500).json({ error: 'DASHSCOPE_API_KEY is not configured' });
+    }
+
+    // Convert upload to a Data URL (Qwen accepts public URL OR base64 data URL)
+    const ab = file.buffer;
+    const b64 = Buffer.from(ab).toString('base64');
+    const imageDataUrl = `data:${file.mimetype};base64,${b64}`;
+
+    // Qwen-Image-Edit: exactly one image + one text in content
+    const body = {
+      model: 'qwen-image-edit',
+      input: {
+        messages: [
+          {
+            role: 'user',
+            content: [{ image: imageDataUrl }, { text: prompt }],
+          },
+        ],
+      },
+      parameters: {
+        ...(negative_prompt ? { negative_prompt } : {}),
+        ...(typeof seed === 'number' && !Number.isNaN(seed) ? { seed } : {}),
+        watermark,
+      },
+    };
+
+    const resp = await fetch(DASHSCOPE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${DASHSCOPE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      return res.status(resp.status).json({ 
+        error: data?.message ?? 'DashScope error', 
+        code: data?.code 
+      });
+    }
+
+    const imageUrl = data?.output?.choices?.[0]?.message?.content?.find((c) => c.image)?.image ??
+      data?.output?.choices?.[0]?.message?.content?.[0]?.image;
+
+    if (!imageUrl) {
+      return res.status(502).json({ error: 'No image in response', raw: data });
+    }
+
+    // Download the image and convert to base64 data URL
+    const imageRes = await fetch(imageUrl);
+    if (!imageRes.ok) {
+      throw new Error(`Failed to download image: ${imageRes.status}`);
+    }
+    
+    const arrayBuffer = await imageRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+    const resultDataUrl = `data:${contentType};base64,${base64}`;
+
+    res.json({ 
+      dataUrl: resultDataUrl, 
+      contentType,
+      usage: data?.usage 
+    });
+
+  } catch (err) {
+    console.error('Qwen Image edit error:', err);
+    res.status(500).json({
+      error: err?.message ?? 'Server error'
     });
   }
 });
@@ -837,7 +1141,7 @@ app.post('/api/flux/webhook', async (req, res) => {
         const buffer = Buffer.from(arrayBuffer);
         const base64 = buffer.toString('base64');
         const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
-        const dataUrl = `data:${contentType};base64,${base64}`;
+        const resultDataUrl = `data:${contentType};base64,${base64}`;
 
         console.log('Job completed successfully:', body.id);
         
@@ -893,5 +1197,8 @@ app.listen(PORT, () => {
   console.log(`🔑 BFL API Key configured: ${KEY ? 'Yes' : 'No'}`);
   console.log(`🌍 BFL Base URL: ${BASE}`);
   console.log(`🎨 Ideogram API Key configured: ${process.env.IDEOGRAM_API_KEY ? 'Yes' : 'No'}`);
+  console.log(`🤖 Qwen Image API Key configured: ${DASHSCOPE_KEY ? 'Yes' : 'No'}`);
+  console.log(`🌐 Qwen Base URL: ${DASHSCOPE_BASE}`);
+  console.log(`🎬 Runway API Key configured: ${RUNWAY_API_KEY ? 'Yes' : 'No'}`);
   console.log(`📸 Images will be stored as base64 data URLs (no external storage required)`);
 });
