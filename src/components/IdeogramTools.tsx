@@ -18,8 +18,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
     upscaleImage,
     describeImage,
     clearError,
-    clearGeneratedImages,
-    reset
+    clearGeneratedImages
   } = useIdeogramImageGeneration();
 
   const [activeTab, setActiveTab] = useState<'generate' | 'edit' | 'reframe' | 'replace' | 'upscale' | 'describe'>('generate');

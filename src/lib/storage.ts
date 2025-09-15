@@ -1,6 +1,6 @@
 import { fetch } from "undici";
 
-export async function persistIdeogramUrl(url: string, key: string) {
+export async function persistIdeogramUrl(url: string) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`Download failed ${r.status}`);
   const buf = Buffer.from(await r.arrayBuffer());

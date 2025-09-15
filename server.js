@@ -250,7 +250,7 @@ app.post('/api/ideogram/generate', async (req, res) => {
     if (result.data) {
       for (let i = 0; i < result.data.length; i++) {
         const key = `ideogram/generate/${Date.now()}-${i}.png`;
-        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        const dataUrl = await persistIdeogramUrl(result.data[i].url);
         persistedUrls.push(dataUrl);
       }
     }
@@ -325,7 +325,7 @@ app.post('/api/ideogram/edit', upload.fields([
     if (result.data) {
       for (let i = 0; i < result.data.length; i++) {
         const key = `ideogram/edit/${Date.now()}-${i}.png`;
-        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        const dataUrl = await persistIdeogramUrl(result.data[i].url);
         persistedUrls.push(dataUrl);
       }
     }
@@ -386,7 +386,7 @@ app.post('/api/ideogram/reframe', upload.single('image'), async (req, res) => {
     if (result.data) {
       for (let i = 0; i < result.data.length; i++) {
         const key = `ideogram/reframe/${Date.now()}-${i}.png`;
-        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        const dataUrl = await persistIdeogramUrl(result.data[i].url);
         persistedUrls.push(dataUrl);
       }
     }
@@ -447,7 +447,7 @@ app.post('/api/ideogram/replace-background', upload.single('image'), async (req,
     if (result.data) {
       for (let i = 0; i < result.data.length; i++) {
         const key = `ideogram/replace-background/${Date.now()}-${i}.png`;
-        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        const dataUrl = await persistIdeogramUrl(result.data[i].url);
         persistedUrls.push(dataUrl);
       }
     }
@@ -503,7 +503,7 @@ app.post('/api/ideogram/upscale', upload.single('image'), async (req, res) => {
     if (result.data) {
       for (let i = 0; i < result.data.length; i++) {
         const key = `ideogram/upscale/${Date.now()}-${i}.png`;
-        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        const dataUrl = await persistIdeogramUrl(result.data[i].url);
         persistedUrls.push(dataUrl);
       }
     }
