@@ -127,7 +127,7 @@ export default function Navbar() {
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-mid h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-mid h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-raleway">
               {items.map((item) => (
@@ -171,7 +171,7 @@ export default function Navbar() {
                 <button
                   ref={accountBtnRef}
                   onClick={() => setMenuOpen(v => !v)}
-                  className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 hover:text-orange-400 transition-colors"
+                  className="parallax-mid flex items-center gap-2 rounded-full border bg-d-dark/50 border-d-mid text-d-text px-3 py-1.5 hover:bg-d-dark/70 hover:text-brand transition-colors"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="My account"
@@ -239,14 +239,14 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className="rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-sm text-d-text shadow-xl transition-colors duration-200"
+            className="rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-sm text-d-text shadow-xl transition-colors duration-200 py-2"
           >
             <button
               onClick={() => {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
               role="menuitem"
             >
               My account
@@ -257,7 +257,7 @@ export default function Navbar() {
                 signOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-3 py-2 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
               role="menuitem"
             >
               Sign out

@@ -33,8 +33,8 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
         </div>
 
         <div className="flex gap-2 mb-6">
-          <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Login</button>
-          <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Sign up</button>
+          <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-brand"}`}>Login</button>
+          <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-brand"}`}>Sign up</button>
         </div>
 
         <div className="space-y-3">
@@ -45,14 +45,14 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
             {mode === "signup" && (
               <div>
                 <label className="block text-sm text-d-text mb-2 font-cabin">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your name" />
+                <input value={name} onChange={e=>setName(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your name" />
               </div>
             )}
             <div>
               <label className="block text-sm text-d-text mb-2 font-cabin">Email</label>
-              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
+              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
             </div>
-            <button type="submit" className="btn btn-orange text-black w-full mt-4 font-cabin">Continue</button>
+            <button type="submit" className="w-full mt-4 px-4 py-2 text-black font-cabin rounded-lg transition-colors" style={{ backgroundColor: '#faaa16' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}>Continue</button>
           </form>
         </div>
         <p className="text-xs text-d-light mt-4 text-center font-raleway">No password — this is a demo-only login to test flows.</p>
