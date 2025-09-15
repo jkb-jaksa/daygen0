@@ -63,6 +63,12 @@ const MODEL_CONFIG = {
     icon: '📦',
     description: 'Advanced image generation, editing, and enhancement'
   },
+  'seedream-3.0': {
+    name: 'SeeDream 3.0',
+    shortName: 'SD3.0',
+    icon: '🍃',
+    description: 'SeeDream 3.0 - High-quality text-to-image generation with editing capabilities'
+  },
   'seedream-4.0': {
     name: 'Seedream 4.0',
     shortName: 'SD',

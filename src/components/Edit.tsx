@@ -6,6 +6,7 @@ import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration"
 import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
+import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 // import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import type { FluxModelType } from "../lib/bfl";
 // import { MODEL_CAPABILITIES } from "../lib/bfl";
@@ -38,7 +39,7 @@ interface Settings {
 interface RunResult {
   id: string;
   mode: Mode;
-  model: FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo";
+  model: FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0";
   imageDataUrl: string;
   baseImageDataUrl?: string;
   settings: Settings;
@@ -70,7 +71,8 @@ const FLUX_EDIT_MODELS = [
   { id: 'qwen-image', name: 'Qwen Image', description: 'Great image editing' },
   { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' },
   { id: 'runway-gen4', name: 'Runway Gen-4', description: 'Advanced image generation with reference support' },
-  { id: 'runway-gen4-turbo', name: 'Runway Gen-4 Turbo', description: 'Fast generation with reference images' }
+  { id: 'runway-gen4-turbo', name: 'Runway Gen-4 Turbo', description: 'Fast generation with reference images' },
+  { id: 'seedream-3.0', name: 'SeeDream 3.0', description: 'High-quality text-to-image generation with editing capabilities' }
 ] as const;
 
 function uid() {
@@ -105,7 +107,7 @@ export default function Edit() {
   
   // State
   const [mode] = useState<Mode>("edit");
-  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo">("flux-e1");
+  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0">("flux-e1");
   const [task, setTask] = useState<TaskChip>("Inpaint");
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
   const [baseImage, setBaseImage] = useState<string | undefined>(undefined);
@@ -154,8 +156,14 @@ export default function Edit() {
     generateImage: generateRunwayImage
   } = useRunwayImageGeneration();
 
+  // SeeDream Image generation hook
+  const {
+    isLoading: seedreamLoading,
+    generateImage: generateSeeDreamImage
+  } = useSeeDreamImageGeneration();
+
   // Combined loading state
-  const isRunning = fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading;
+  const isRunning = fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading;
 
   // Shortcuts
   useGenerateShortcuts({ onGenerate: () => handleRun("run") });
@@ -163,8 +171,8 @@ export default function Edit() {
   // Prefill from share
   usePrefillFromShare((data: any) => {
     if (data?.prompt) setSettings(prev => ({ ...prev, prompt: data.prompt }));
-    if (data?.model && ['flux-e1', 'flux-e2', 'chatgpt-image', 'ideogram'].includes(data.model)) {
-      setModel(data.model as FluxModelType | "chatgpt-image" | "ideogram");
+    if (data?.model && ['flux-e1', 'flux-e2', 'chatgpt-image', 'ideogram', 'seedream-3.0'].includes(data.model)) {
+      setModel(data.model as FluxModelType | "chatgpt-image" | "ideogram" | "seedream-3.0");
     }
   });
 
@@ -301,6 +309,14 @@ export default function Edit() {
             seed: s.seed,
           });
           result = runwayResult; // Runway hook returns a single result
+        } else if (model === "seedream-3.0") {
+          // Use SeeDream Image generation for editing
+          const seedreamResult = await generateSeeDreamImage({
+            prompt: s.prompt,
+            size: `${s.width}x${s.height}`,
+            n: 1,
+          });
+          result = seedreamResult;
         } else {
           // Use Flux generation
           result = await generateFluxImage({
@@ -599,15 +615,15 @@ export default function Edit() {
                           <button
                             key={m.id}
                             onClick={() => {
-                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo");
+                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0");
                               setIsModelSelectorOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-d-mid hover:text-brand transition-colors ${
+                            className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-d-mid hover:text-brand transition-colors ${
                               model === m.id ? 'bg-d-orange-1 text-d-black' : 'text-d-white'
                             }`}
                           >
-                            <div className="font-medium">{m.name}</div>
-                            <div className="text-xs opacity-75">{m.description}</div>
+                            <div className="font-medium text-xs">{m.name}</div>
+                            <div className="text-[10px] opacity-75">{m.description}</div>
                           </button>
                         ))}
                       </div>

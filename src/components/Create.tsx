@@ -13,6 +13,7 @@ import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
+import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
@@ -45,7 +46,7 @@ const AI_MODELS = [
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
-  { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-4.0" },
+  { name: "SeeDream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -215,7 +216,8 @@ const Create: React.FC = () => {
   const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway;
+  const isSeeDream = selectedModel === "seedream-3.0";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -312,10 +314,18 @@ const Create: React.FC = () => {
     clearError: clearRunwayError,
   } = useRunwayImageGeneration();
 
+  const {
+    isLoading: seedreamLoading,
+    error: seedreamError,
+    generatedImage: seedreamImage,
+    generateImage: generateSeeDreamImage,
+    clearError: clearSeeDreamError,
+  } = useSeeDreamImageGeneration();
+
   // Combined state for UI
-  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading;
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError;
-  const generatedImage = geminiImage || fluxImage || chatgptImage;
+  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError;
+  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage;
 
   // Load gallery and liked images from localStorage on mount
   useEffect(() => {
@@ -961,6 +971,14 @@ const Create: React.FC = () => {
           ratio: "1920:1080", // Default ratio, could be made configurable
         });
         img = runwayResult;
+      } else if (isSeeDream) {
+        // Use SeeDream generation
+        const seedreamResult = await generateSeeDreamImage({
+          prompt: prompt.trim(),
+          size: "1024x1024",
+          n: 1,
+        });
+        img = seedreamResult;
       } else if (isFlux) {
         // Use Flux generation
         const fluxParams: any = {
@@ -1082,6 +1100,7 @@ const Create: React.FC = () => {
       clearChatGPTError();
       clearIdeogramError();
       clearRunwayError();
+      clearSeeDreamError();
     }
   };
 
@@ -2917,20 +2936,20 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, and Runway models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, and SeeDream models are available.');
                               return;
                             }
                             handleModelSelect(model.name);
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-3 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-3 group ${
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
                               ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
                               : isComingSoon
@@ -2938,23 +2957,23 @@ const Create: React.FC = () => {
                               : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
                           }`}
                         >
-                          <model.Icon className={`w-4 h-4 flex-shrink-0 transition-colors duration-100 ${
+                          <model.Icon className={`w-3.5 h-3.5 flex-shrink-0 transition-colors duration-100 ${
                             isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
                           }`} />
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-xs font-cabin truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
                             }`}>
                               {model.name}
                             </div>
-                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                            <div className={`text-[10px] font-raleway truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-brand'
                             }`}>
                               {isComingSoon ? 'Coming soon.' : model.desc}
                             </div>
                           </div>
                           {isSelected && (
-                            <div className="w-2 h-2 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                       );
@@ -3014,7 +3033,7 @@ const Create: React.FC = () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
                 <p className="font-raleway text-sm">{error}</p>
                 <button
-                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); }}
+                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearSeeDreamError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss
