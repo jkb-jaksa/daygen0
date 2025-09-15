@@ -5,7 +5,6 @@ import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
-import { getModelInfo } from '../utils/modelUtils';
 import { usePromptHistory } from '../hooks/usePromptHistory';
 import { PromptHistoryChips } from './PromptHistoryChips';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';

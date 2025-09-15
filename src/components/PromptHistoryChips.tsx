@@ -1,5 +1,5 @@
 import React from "react";
-import { PromptEntry } from "../lib/promptHistory";
+import type { PromptEntry } from "../lib/promptHistory";
 import { Play } from "lucide-react";
 
 type Props = {

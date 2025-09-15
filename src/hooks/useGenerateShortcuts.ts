@@ -19,7 +19,7 @@ export function useGenerateShortcuts({ onGenerate, enabled = true }: Options) {
   const onKeyDown = useCallback(
     async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (!enabled) return;
-      if (e.isComposing) return; // don't interfere with IME input
+      if ((e.nativeEvent as any).isComposing) return; // don't interfere with IME input
       if (e.key !== "Enter") return;
 
       const mod = modKeyPressed(e);

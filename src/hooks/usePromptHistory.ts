@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import type { PromptEntry } from "../lib/promptHistory";
 import {
-  PromptEntry,
   loadPromptHistory,
   addPrompt as addPromptRaw,
   clearPromptHistory as clearRaw,
