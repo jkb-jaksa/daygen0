@@ -21,7 +21,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
   const visible = history.slice(0, maxVisible);
 
   return (
-    <div className="mt-4 px-4">
+    <div className="mt-4 w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-d-white/60 font-raleway font-medium">
@@ -44,7 +44,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
           <div key={idx} className="group flex items-center overflow-hidden rounded-lg border border-d-mid bg-d-black/40 hover:bg-d-black/60 transition-all duration-200">
             <button
               type="button"
-              className="flex-1 truncate px-3 py-2 text-sm text-d-white hover:text-brand transition-colors duration-200 font-raleway text-left"
+              className="flex-1 px-3 py-2 text-sm text-d-white hover:text-brand transition-colors duration-200 font-raleway text-left break-words"
               title={e.text}
               onClick={() => onSelect(e.text)}
             >
