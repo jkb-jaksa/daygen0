@@ -14,6 +14,7 @@ import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
+import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
@@ -47,6 +48,7 @@ const AI_MODELS = [
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
   { name: "SeeDream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
+  { name: "Reve Image", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -217,7 +219,8 @@ const Create: React.FC = () => {
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
   const isSeeDream = selectedModel === "seedream-3.0";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream;
+  const isReve = selectedModel === "reve-image";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -228,8 +231,8 @@ const Create: React.FC = () => {
   const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [gallery, setGallery] = useState<(GeneratedImage | FluxGeneratedImage)[]>([]);
-  const [selectedFullImage, setSelectedFullImage] = useState<(GeneratedImage | FluxGeneratedImage) | null>(null);
+  const [gallery, setGallery] = useState<(GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]>([]);
+  const [selectedFullImage, setSelectedFullImage] = useState<(GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage) | null>(null);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
   
@@ -322,17 +325,24 @@ const Create: React.FC = () => {
     clearError: clearSeeDreamError,
   } = useSeeDreamImageGeneration();
 
+  const {
+    isLoading: reveLoading,
+    error: reveError,
+    generatedImage: reveImage,
+    generateImage: generateReveImage,
+  } = useReveImageGeneration();
+
   // Combined state for UI
-  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading;
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError;
-  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage;
+  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading || reveLoading;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError;
+  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
 
   // Load gallery and liked images from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key("gallery"));
       if (raw) {
-        const parsed = JSON.parse(raw) as (GeneratedImage | FluxGeneratedImage)[];
+        const parsed = JSON.parse(raw) as (GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Validate that each item has required properties
           const validImages = parsed.filter(img => img && img.url && img.prompt && img.timestamp);
@@ -489,13 +499,13 @@ const Create: React.FC = () => {
   };
 
   // Helper: keep only lean fields for storage
-  const toStorable = (items: (GeneratedImage | FluxGeneratedImage)[]) =>
+  const toStorable = (items: (GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]) =>
     items.map(({ url, prompt, model, timestamp, ownerId }) => ({
       url, prompt, model, timestamp, ownerId
     }));
 
   // Backup function to persist gallery state
-  const persistGallery = (galleryData: (GeneratedImage | FluxGeneratedImage)[]) => {
+  const persistGallery = (galleryData: (GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]) => {
     try {
       localStorage.setItem(key("gallery"), JSON.stringify(toStorable(galleryData)));
       console.log('Gallery backup persisted with', galleryData.length, 'images');
@@ -885,7 +895,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, and Runway models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, SeeDream, and Reve models are available.');
       return;
     }
 
@@ -900,7 +910,7 @@ const Create: React.FC = () => {
         });
       }
 
-      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage;
+      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage;
 
       if (isGemini) {
         // Use Gemini generation
@@ -979,6 +989,24 @@ const Create: React.FC = () => {
           n: 1,
         });
         img = seedreamResult;
+      } else if (isReve) {
+        // Use Reve generation
+        const reveResult = await generateReveImage({
+          prompt: prompt.trim(),
+          model: "reve-image-1.0",
+          width: 1024,
+          height: 1024,
+          references: await (async () => {
+            if (referenceFiles.length === 0) return undefined;
+            const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.readAsDataURL(f);
+            })));
+            return arr;
+          })(),
+        });
+        img = reveResult;
       } else if (isFlux) {
         // Use Flux generation
         const fluxParams: any = {
@@ -2936,14 +2964,14 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, and SeeDream models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, SeeDream, and Reve models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

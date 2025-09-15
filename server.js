@@ -1200,6 +1200,11 @@ const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.ap-southeast.bytep
 const ARK_API_KEY = process.env.ARK_API_KEY;
 const SEEDREAM_MODEL_ID = "seedream-3-0-t2i-250415";
 
+// Reve API routes
+const REVE_BASE_URL = process.env.REVE_BASE_URL || "https://api.reve.com";
+const REVE_API_KEY = process.env.REVE_API_KEY;
+const REVE_PROJECT_ID = process.env.REVE_PROJECT_ID;
+
 // SeeDream text-to-image generation
 app.post('/api/seedream/generate', async (req, res) => {
   try {
@@ -1366,6 +1371,342 @@ app.post('/api/seedream/edit', upload.fields([
   }
 });
 
+// Reve Image Generation API endpoints
+// Reve text-to-image generation
+app.post('/api/reve/generate', async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      negative_prompt,
+      width = 1024, 
+      height = 1024,
+      aspect_ratio,
+      model = "reve-image-1.0",
+      guidance_scale,
+      steps,
+      seed,
+      batch_size = 1
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: "Missing prompt" });
+    }
+    if (!REVE_API_KEY) {
+      return res.status(500).json({ error: "Server missing REVE_API_KEY" });
+    }
+
+    console.log(`[reve] Generating image with prompt: ${prompt.substring(0, 100)}...`);
+
+    // Build request body for Reve API
+    const requestBody = {
+      prompt,
+      ...(negative_prompt && { negative_prompt }),
+      ...(seed !== undefined && { seed }),
+      ...(guidance_scale && { guidance_scale }),
+      ...(steps && { steps }),
+    };
+
+    // Reve API endpoint for image generation
+    const endpoint = `${REVE_BASE_URL}/v1/image/create`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${REVE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[reve] API error: ${response.status} - ${errorText}`);
+      return res.status(response.status).json({ 
+        error: `Reve API error: ${errorText}` 
+      });
+    }
+
+    const json = await response.json();
+    
+    // Reve API returns images directly in the response
+    if (json.data && json.data.length > 0) {
+      const imageData = json.data[0];
+      const imageUrl = imageData.url || imageData.b64_json;
+      
+      if (!imageUrl) {
+        return res.status(502).json({ error: 'No image URL in response', raw: json });
+      }
+
+      console.log(`[reve] Image generated successfully`);
+      
+      res.json({ 
+        success: true,
+        image_url: imageUrl,
+        prompt: prompt,
+        model: model || "reve-image-1.0"
+      });
+    } else {
+      return res.status(502).json({ error: 'No image data in response', raw: json });
+    }
+
+  } catch (error) {
+    console.error('Reve generation error:', error);
+    res.status(500).json({
+      error: error?.message || 'Reve generation failed'
+    });
+  }
+});
+
+// Reve image edit/inpaint
+app.post('/api/reve/edit', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'mask', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      strength,
+      width = 1024, 
+      height = 1024,
+      model = "reve-image-1.0",
+      seed
+    } = req.body;
+    
+    const imageFile = req.files?.image?.[0];
+    const maskFile = req.files?.mask?.[0];
+
+    if (!prompt || !imageFile) {
+      return res.status(400).json({ error: "Missing prompt or image file" });
+    }
+    if (!REVE_API_KEY) {
+      return res.status(500).json({ error: "Server missing REVE_API_KEY" });
+    }
+
+    console.log(`[reve] Editing image with prompt: ${prompt.substring(0, 100)}...`);
+
+    // Build multipart form data for Reve
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('image', imageFile.buffer, {
+      filename: imageFile.originalname || 'image.png',
+      contentType: imageFile.mimetype || 'image/png'
+    });
+    
+    if (maskFile) {
+      formData.append('mask', maskFile.buffer, {
+        filename: maskFile.originalname || 'mask.png',
+        contentType: maskFile.mimetype || 'image/png'
+      });
+    }
+
+    if (width) formData.append('width', String(width));
+    if (height) formData.append('height', String(height));
+    if (model) formData.append('model', model);
+    if (seed !== undefined) formData.append('seed', String(seed));
+    if (strength !== undefined) formData.append('strength', String(strength));
+
+    // Reve API endpoint for image editing
+    const endpoint = `${REVE_BASE_URL}/v1/image/edit`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${REVE_API_KEY}`,
+        // Don't set Content-Type; fetch will set multipart boundary
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[reve] Edit API error: ${response.status} - ${errorText}`);
+      return res.status(response.status).json({ 
+        error: `Reve edit API error: ${errorText}` 
+      });
+    }
+
+    const json = await response.json();
+    
+    // Reve returns job ID for async processing
+    const jobId = json.id || json.job_id;
+    if (!jobId) {
+      return res.status(502).json({ error: 'No job ID in response', raw: json });
+    }
+
+    console.log(`[reve] Edit job created with ID: ${jobId}`);
+    
+    res.json({ 
+      job_id: jobId,
+      status: 'queued',
+      polling_url: `${REVE_BASE_URL}/v1/jobs/${jobId}`
+    });
+
+  } catch (error) {
+    console.error('Reve edit error:', error);
+    res.status(500).json({
+      error: error?.message || 'Reve edit failed'
+    });
+  }
+});
+
+// Reve image remix endpoint
+app.post('/api/reve/remix', upload.fields([
+  { name: 'image', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      width = 1024, 
+      height = 1024,
+      model = "reve-image-1.0",
+      seed,
+      guidance_scale,
+      steps
+    } = req.body;
+    
+    const imageFile = req.files?.image?.[0];
+
+    if (!prompt || !imageFile) {
+      return res.status(400).json({ error: "Missing prompt or reference image file" });
+    }
+    if (!REVE_API_KEY) {
+      return res.status(500).json({ error: "Server missing REVE_API_KEY" });
+    }
+
+    console.log(`[reve] Remixing image with prompt: ${prompt.substring(0, 100)}...`);
+
+    // Build multipart form data for Reve
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('image', imageFile.buffer, {
+      filename: imageFile.originalname || 'image.png',
+      contentType: imageFile.mimetype || 'image/png'
+    });
+
+    if (width) formData.append('width', String(width));
+    if (height) formData.append('height', String(height));
+    if (model) formData.append('model', model);
+    if (seed !== undefined) formData.append('seed', String(seed));
+    if (guidance_scale !== undefined) formData.append('guidance_scale', String(guidance_scale));
+    if (steps !== undefined) formData.append('steps', String(steps));
+
+    // Reve API endpoint for image remix
+    const endpoint = `${REVE_BASE_URL}/v1/image/remix`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${REVE_API_KEY}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[reve] Remix API error: ${response.status} - ${errorText}`);
+      return res.status(response.status).json({ 
+        error: `Reve API error: ${errorText}` 
+      });
+    }
+
+    const json = await response.json();
+    
+    // Reve returns job ID for async processing
+    const jobId = json.id || json.job_id || json.request_id;
+    if (!jobId) {
+      return res.status(502).json({ error: 'No job ID in response', raw: json });
+    }
+
+    console.log(`[reve] Remix job created with ID: ${jobId}`);
+    
+    res.json({ 
+      job_id: jobId,
+      status: 'queued',
+      polling_url: `${REVE_BASE_URL}/v1/jobs/${jobId}`
+    });
+
+  } catch (error) {
+    console.error('Reve remix error:', error);
+    res.status(500).json({
+      error: error?.message || 'Reve remix failed'
+    });
+  }
+});
+
+// Reve job status polling
+app.get('/api/reve/jobs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Missing job ID" });
+    }
+    if (!REVE_API_KEY) {
+      return res.status(500).json({ error: "Server missing REVE_API_KEY" });
+    }
+
+    console.log(`[reve] Checking status for job: ${id}`);
+
+    const response = await fetch(`${REVE_BASE_URL}/v1/images/${id}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${REVE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[reve] Status API error: ${response.status} - ${errorText}`);
+      return res.status(response.status).json({ 
+        error: `Reve status API error: ${errorText}` 
+      });
+    }
+
+    const json = await response.json();
+    
+    // If job is completed and has images, download and convert to base64
+    if (json.status === 'succeeded' && json.images && json.images.length > 0) {
+      const images = [];
+      for (const imageData of json.images) {
+        try {
+          const imageUrl = imageData.url || imageData.b64;
+          if (imageUrl) {
+            if (imageUrl.startsWith('data:')) {
+              // Already base64
+              images.push(imageUrl);
+            } else {
+              // Download and convert to base64
+              const imageRes = await fetch(imageUrl);
+              if (imageRes.ok) {
+                const arrayBuffer = await imageRes.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const base64 = buffer.toString('base64');
+                const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+                images.push(`data:${contentType};base64,${base64}`);
+              }
+            }
+          }
+        } catch (downloadError) {
+          console.error(`[reve] Error downloading image:`, downloadError);
+        }
+      }
+      
+      json.images = images;
+    }
+
+    console.log(`[reve] Job ${id} status: ${json.status}`);
+    
+    res.json(json);
+
+  } catch (error) {
+    console.error('Reve status check error:', error);
+    res.status(500).json({
+      error: error?.message || 'Reve status check failed'
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
@@ -1378,5 +1719,7 @@ app.listen(PORT, () => {
   console.log(`🎬 Runway API Key configured: ${RUNWAY_API_KEY ? 'Yes' : 'No'}`);
   console.log(`🌱 SeeDream 3.0 API Key configured: ${ARK_API_KEY ? 'Yes' : 'No'}`);
   console.log(`🌐 SeeDream Base URL: ${ARK_BASE_URL}`);
+  console.log(`🎨 Reve API Key configured: ${REVE_API_KEY ? 'Yes' : 'No'}`);
+  console.log(`🌐 Reve Base URL: ${REVE_BASE_URL}`);
   console.log(`📸 Images will be stored as base64 data URLs (no external storage required)`);
 });
