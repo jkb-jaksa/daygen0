@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import FAQSection from "./components/Faq";
 import Subpage from "./components/subpage/Subpage";
 import Create from "./components/Create";
+import Edit from "./components/Edit";
 import Footer from "./components/Footer";
 import Account from "./components/Account";
 import KnowledgeBase from "./components/KnowledgeBase";
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/ai-tools" element={<ToolsSection />} />
           <Route path="/ai-tools/:id" element={<Subpage />} />
           <Route path="/create" element={<Create />} />
+          <Route path="/edit" element={<Edit />} />
           <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

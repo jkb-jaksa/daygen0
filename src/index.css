@@ -1,9 +1,9 @@
+/* React Image Crop styles */
+@import 'react-image-crop/dist/ReactCrop.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* React Image Crop styles */
-@import 'react-image-crop/dist/ReactCrop.css';
 
 /* Custom gradient animation for loading states */
 @keyframes gradient-x {

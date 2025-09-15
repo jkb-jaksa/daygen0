@@ -1,8 +1,8 @@
 // BFL API utility library for Flux image generation
 // Based on BFL documentation: https://docs.bfl.ml/quick_start/generating_images
 
-const BASE = process.env.BFL_API_BASE || 'https://api.bfl.ai';
-const KEY = process.env.BFL_API_KEY!;
+const BASE = (import.meta as any).env?.VITE_BFL_API_BASE || 'https://api.bfl.ai';
+const KEY = (import.meta as any).env?.VITE_BFL_API_KEY;
 
 export type CreateJobResponse = { 
   id: string; 
@@ -21,12 +21,35 @@ export type BFLJobResult = {
 };
 
 export type FluxModel = 
+  | 'flux-t1' 
+  | 'flux-t2' 
+  | 'flux-e1' 
+  | 'flux-e2'
   | 'flux-pro-1.1' 
   | 'flux-pro-1.1-ultra' 
   | 'flux-kontext-pro' 
   | 'flux-kontext-max'
   | 'flux-pro' 
   | 'flux-dev';
+
+// New simplified model types for the unified interface
+export type FluxModelType = 'flux-t1' | 'flux-t2' | 'flux-e1' | 'flux-e2';
+
+// Model mapping for backward compatibility
+export const FLUX_MODEL_MAP: Record<FluxModelType, FluxModel> = {
+  'flux-t1': 'flux-pro-1.1',
+  'flux-t2': 'flux-pro-1.1-ultra', 
+  'flux-e1': 'flux-kontext-pro',
+  'flux-e2': 'flux-kontext-max'
+};
+
+// Model capabilities
+export const MODEL_CAPABILITIES = {
+  'flux-t1': { type: 'text-to-image', quality: 'high', speed: 'medium' },
+  'flux-t2': { type: 'text-to-image', quality: 'medium', speed: 'high' },
+  'flux-e1': { type: 'image-editing', quality: 'high', speed: 'medium' },
+  'flux-e2': { type: 'image-editing', quality: 'high', speed: 'high' }
+} as const;
 
 export type FluxJobParams = {
   prompt: string;
@@ -73,7 +96,7 @@ export async function bflCreateJob<T extends Record<string, unknown>>(
   body: T
 ): Promise<CreateJobResponse> {
   if (!KEY) {
-    throw new BFLAPIError('BFL_API_KEY is not configured', 500);
+    throw new BFLAPIError('VITE_BFL_API_KEY is not configured', 500);
   }
 
   const res = await fetch(`${BASE}${path}`, {
@@ -127,7 +150,7 @@ export async function bflPoll<ResultShape = BFLJobResult>(
   pollingUrl: string
 ): Promise<ResultShape> {
   if (!KEY) {
-    throw new BFLAPIError('BFL_API_KEY is not configured', 500);
+    throw new BFLAPIError('VITE_BFL_API_KEY is not configured', 500);
   }
 
   const res = await fetch(pollingUrl, {
@@ -239,8 +262,8 @@ export async function createFluxJob(
   
   // Add webhook configuration if requested
   const webhookPayload = useWebhook ? {
-    webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/flux/webhook`,
-    webhook_secret: process.env.BFL_WEBHOOK_SECRET,
+    webhook_url: `${(import.meta as any).env?.VITE_BASE_URL || 'http://localhost:3000'}/api/flux/webhook`,
+    webhook_secret: (import.meta as any).env?.VITE_BFL_WEBHOOK_SECRET,
   } : {};
 
   // Prepare the request body

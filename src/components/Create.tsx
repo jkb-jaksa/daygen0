@@ -2577,7 +2577,7 @@ const Create: React.FC = () => {
                   disabled={isLoading || !prompt.trim()}
                   className="btn text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
                   style={{ backgroundColor: '#faaa16' }}
-                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffb833')}
+                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffc977')}
                   onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#faaa16')}
                 >
                   {isLoading ? (

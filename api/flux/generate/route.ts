@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createFluxJob, BFLAPIError, FluxModel, FluxJobParams } from '@/src/lib/bfl';
+import { createFluxJob, BFLAPIError, FluxModel, FluxJobParams, FluxModelType, FLUX_MODEL_MAP } from '@/src/lib/bfl';
 
 export const runtime = 'nodejs';
 
 type RequestBody = {
-  model: FluxModel;
+  model: FluxModel | FluxModelType;
   prompt: string;
   // Sizing options
   width?: number;
@@ -40,8 +40,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate model
-    const validModels: FluxModel[] = [
+    // Validate model and map to BFL model if needed
+    const validModels: (FluxModel | FluxModelType)[] = [
+      'flux-t1', 'flux-t2', 'flux-e1', 'flux-e2',
       'flux-pro-1.1',
       'flux-pro-1.1-ultra', 
       'flux-kontext-pro',
@@ -56,6 +57,11 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Map simplified model names to BFL model names
+    const bflModel = body.model in FLUX_MODEL_MAP 
+      ? FLUX_MODEL_MAP[body.model as FluxModelType]
+      : body.model as FluxModel;
 
     // Prepare parameters
     const params: FluxJobParams = {
@@ -78,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // Create the job
     const { id, polling_url } = await createFluxJob(
-      body.model,
+      bflModel,
       params,
       body.useWebhook !== false // Default to true
     );

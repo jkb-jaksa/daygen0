@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { FluxModel } from '../lib/bfl';
+import type { FluxModel, FluxModelType } from '../lib/bfl';
+import { FLUX_MODEL_MAP } from '../lib/bfl';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -21,7 +22,7 @@ export interface FluxImageGenerationState {
 
 export interface FluxImageGenerationOptions {
   prompt: string;
-  model: FluxModel;
+  model: FluxModel | FluxModelType;
   // Sizing options
   width?: number;
   height?: number;
@@ -66,6 +67,11 @@ export const useFluxImageGeneration = () => {
     try {
       const { prompt, model, references, useWebhook = false, ...params } = options;
 
+      // Map model to BFL model if needed
+      const bflModel = model in FLUX_MODEL_MAP 
+        ? FLUX_MODEL_MAP[model as FluxModelType]
+        : model as FluxModel;
+
       // Submit the job
       const apiUrl = 'http://localhost:3000/api/flux/generate';
 
@@ -76,7 +82,7 @@ export const useFluxImageGeneration = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt, 
-          model,
+          model: bflModel,
           ...params,
           useWebhook
         }),

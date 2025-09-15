@@ -123,7 +123,7 @@ export default function Navbar() {
     }, 100);
   };
 
-  const items = ["create", "knowledge base", "prompts", "services", "about us"] as const;
+  const items = ["create", "edit", "knowledge base", "prompts", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
@@ -148,6 +148,7 @@ export default function Navbar() {
                   key={item}
                   href={
                     item === "create" ? "/create" : 
+                    item === "edit" ? "/edit" : 
                     item === "knowledge base" ? "/knowledge-base" : 
                     item === "services" ? "/services" : 
                     item === "about us" ? "/about-us" : 
@@ -248,6 +249,27 @@ export default function Navbar() {
                         </div>
                         <span>{category.label}</span>
                       </button>
+                    ))}
+                  </div>
+                ) : activeMenu === "edit" ? (
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { key: "inpaint", label: "inpaint", Icon: Edit },
+                      { key: "outpaint", label: "outpaint", Icon: ImageIcon },
+                      { key: "replace", label: "replace", Icon: VideoIcon },
+                      { key: "style", label: "style transfer", Icon: Users },
+                      { key: "upscale", label: "upscale", Icon: Volume2 },
+                    ].map((category) => (
+                      <a
+                        key={category.key}
+                        href="/edit"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                      >
+                        <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                          <category.Icon className="size-3.5" />
+                        </div>
+                        <span>{category.label}</span>
+                      </a>
                     ))}
                   </div>
                 ) : (
