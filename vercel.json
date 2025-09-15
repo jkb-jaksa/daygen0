@@ -1,20 +1,23 @@
 {
   "version": 2,
-  "functions": {
-    "api/flux/generate.ts": {
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
     },
-    "api/flux/result.ts": {
-      "maxDuration": 10
-    },
-    "api/flux/download.ts": {
-      "maxDuration": 30
-    },
-    "api/flux/webhook.ts": {
-      "maxDuration": 30
+    {
+      "src": "dist/**",
+      "use": "@vercel/static"
     }
-  },
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dist/$1"
+    }
   ]
 }
