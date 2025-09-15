@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { Upload, X, Camera } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
+import { getModelDisplayName } from "../utils/modelUtils";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -338,7 +339,7 @@ export default function Account() {
             />
             <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-4">
               <p className="text-white font-raleway text-sm mb-1">{selectedImage.prompt}</p>
-              <p className="text-gray-300 font-raleway text-xs">Model: {selectedImage.model}</p>
+              <p className="text-gray-300 font-raleway text-xs">Model: {getModelDisplayName(selectedImage.model)}</p>
             </div>
           </div>
         </div>

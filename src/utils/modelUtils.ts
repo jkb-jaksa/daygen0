@@ -51,6 +51,13 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     shortName: 'ChatGPT',
     description: 'ChatGPT Image',
     isAvailable: false
+  },
+  'ideogram': {
+    id: 'ideogram',
+    name: 'Ideogram 3.0',
+    shortName: 'Ideogram 3.0',
+    description: 'Advanced image generation, editing, and enhancement',
+    isAvailable: true
   }
 };
 

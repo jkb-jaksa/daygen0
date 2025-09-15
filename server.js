@@ -24,6 +24,15 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Import API routes
 import { GoogleGenAI } from '@google/genai';
 import OpenAI, { toFile } from 'openai';
+import { 
+  ideogramGenerate, 
+  ideogramEdit, 
+  ideogramReframe, 
+  ideogramReplaceBg, 
+  ideogramUpscale, 
+  ideogramDescribe 
+} from './src/lib/ideogram.js';
+import { persistIdeogramUrl } from './src/lib/storage.js';
 
 // Gemini API setup
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -196,6 +205,356 @@ app.post(
     }
   }
 );
+
+// Ideogram API endpoints
+// Ideogram Generate (text-to-image)
+app.post('/api/ideogram/generate', async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      aspect_ratio, 
+      resolution, 
+      rendering_speed = 'DEFAULT', 
+      num_images = 1, 
+      seed, 
+      style_preset, 
+      style_type,
+      negative_prompt 
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    // Convert aspect ratio format from "16:9" to "16x9" for Ideogram
+    const ideogramAspectRatio = aspect_ratio ? aspect_ratio.replace(':', 'x') : undefined;
+    
+    const result = await ideogramGenerate({
+      prompt,
+      aspect_ratio: ideogramAspectRatio,
+      resolution,
+      rendering_speed,
+      num_images,
+      seed,
+      style_preset,
+      style_type,
+      negative_prompt
+    });
+
+    // Convert ephemeral URLs to base64 data URLs
+    const persistedUrls = [];
+    if (result.data) {
+      for (let i = 0; i < result.data.length; i++) {
+        const key = `ideogram/generate/${Date.now()}-${i}.png`;
+        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        persistedUrls.push(dataUrl);
+      }
+    }
+
+    res.json({ 
+      dataUrls: persistedUrls,
+      mimeType: 'image/png'
+    });
+
+  } catch (error) {
+    console.error('Ideogram Generate error:', error);
+    res.status(500).json({
+      error: 'Generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Ideogram Edit (image+mask)
+app.post('/api/ideogram/edit', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'mask', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      rendering_speed = 'DEFAULT', 
+      seed, 
+      num_images = 1, 
+      style_preset, 
+      style_type 
+    } = req.body;
+    
+    const imageFile = req.files?.image?.[0];
+    const maskFile = req.files?.mask?.[0];
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+    if (!imageFile) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+    if (!maskFile) {
+      return res.status(400).json({ error: 'Mask file is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    const result = await ideogramEdit({
+      image: { 
+        filename: imageFile.originalname || 'image.png', 
+        data: imageFile.buffer, 
+        contentType: imageFile.mimetype 
+      },
+      mask: { 
+        filename: maskFile.originalname || 'mask.png', 
+        data: maskFile.buffer, 
+        contentType: maskFile.mimetype 
+      },
+      prompt,
+      rendering_speed,
+      seed,
+      num_images,
+      style_preset,
+      style_type
+    });
+
+    // Convert ephemeral URLs to base64 data URLs
+    const persistedUrls = [];
+    if (result.data) {
+      for (let i = 0; i < result.data.length; i++) {
+        const key = `ideogram/edit/${Date.now()}-${i}.png`;
+        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        persistedUrls.push(dataUrl);
+      }
+    }
+
+    res.json({ 
+      dataUrls: persistedUrls,
+      mimeType: 'image/png'
+    });
+
+  } catch (error) {
+    console.error('Ideogram Edit error:', error);
+    res.status(500).json({
+      error: 'Edit failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Ideogram Reframe (square image -> target resolution)
+app.post('/api/ideogram/reframe', upload.single('image'), async (req, res) => {
+  try {
+    const { 
+      resolution, 
+      rendering_speed = 'DEFAULT', 
+      seed, 
+      num_images = 1, 
+      style_preset 
+    } = req.body;
+    
+    const imageFile = req.file;
+
+    if (!resolution) {
+      return res.status(400).json({ error: 'Resolution is required' });
+    }
+    if (!imageFile) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    const result = await ideogramReframe({
+      image: { 
+        filename: imageFile.originalname || 'image.png', 
+        data: imageFile.buffer, 
+        contentType: imageFile.mimetype 
+      },
+      resolution,
+      rendering_speed,
+      seed,
+      num_images,
+      style_preset
+    });
+
+    // Convert ephemeral URLs to base64 data URLs
+    const persistedUrls = [];
+    if (result.data) {
+      for (let i = 0; i < result.data.length; i++) {
+        const key = `ideogram/reframe/${Date.now()}-${i}.png`;
+        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        persistedUrls.push(dataUrl);
+      }
+    }
+
+    res.json({ 
+      dataUrls: persistedUrls,
+      mimeType: 'image/png'
+    });
+
+  } catch (error) {
+    console.error('Ideogram Reframe error:', error);
+    res.status(500).json({
+      error: 'Reframe failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Ideogram Replace Background
+app.post('/api/ideogram/replace-background', upload.single('image'), async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      rendering_speed = 'DEFAULT', 
+      seed, 
+      num_images = 1, 
+      style_preset 
+    } = req.body;
+    
+    const imageFile = req.file;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+    if (!imageFile) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    const result = await ideogramReplaceBg({
+      image: { 
+        filename: imageFile.originalname || 'image.png', 
+        data: imageFile.buffer, 
+        contentType: imageFile.mimetype 
+      },
+      prompt,
+      rendering_speed,
+      seed,
+      num_images,
+      style_preset
+    });
+
+    // Convert ephemeral URLs to base64 data URLs
+    const persistedUrls = [];
+    if (result.data) {
+      for (let i = 0; i < result.data.length; i++) {
+        const key = `ideogram/replace-background/${Date.now()}-${i}.png`;
+        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        persistedUrls.push(dataUrl);
+      }
+    }
+
+    res.json({ 
+      dataUrls: persistedUrls,
+      mimeType: 'image/png'
+    });
+
+  } catch (error) {
+    console.error('Ideogram Replace Background error:', error);
+    res.status(500).json({
+      error: 'Replace Background failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Ideogram Upscale
+app.post('/api/ideogram/upscale', upload.single('image'), async (req, res) => {
+  try {
+    const { 
+      resemblance = 60, 
+      detail = 90, 
+      prompt: upscalePrompt 
+    } = req.body;
+    
+    const imageFile = req.file;
+
+    if (!imageFile) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    const result = await ideogramUpscale({
+      image: { 
+        filename: imageFile.originalname || 'image.png', 
+        data: imageFile.buffer, 
+        contentType: imageFile.mimetype 
+      },
+      image_request: {
+        resemblance,
+        detail,
+        prompt: upscalePrompt
+      }
+    });
+
+    // Convert ephemeral URLs to base64 data URLs
+    const persistedUrls = [];
+    if (result.data) {
+      for (let i = 0; i < result.data.length; i++) {
+        const key = `ideogram/upscale/${Date.now()}-${i}.png`;
+        const dataUrl = await persistIdeogramUrl(result.data[i].url, key);
+        persistedUrls.push(dataUrl);
+      }
+    }
+
+    res.json({ 
+      dataUrls: persistedUrls,
+      mimeType: 'image/png'
+    });
+
+  } catch (error) {
+    console.error('Ideogram Upscale error:', error);
+    res.status(500).json({
+      error: 'Upscale failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Ideogram Describe
+app.post('/api/ideogram/describe', upload.single('image'), async (req, res) => {
+  try {
+    const { model_version = 'V_3' } = req.body;
+    
+    const imageFile = req.file;
+
+    if (!imageFile) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    const result = await ideogramDescribe({
+      filename: imageFile.originalname || 'image.png', 
+      data: imageFile.buffer, 
+      contentType: imageFile.mimetype 
+    }, model_version);
+
+    res.json({ 
+      descriptions: result.descriptions || []
+    });
+
+  } catch (error) {
+    console.error('Ideogram Describe error:', error);
+    res.status(500).json({
+      error: 'Describe failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // BFL API endpoints
 const BASE = process.env.BFL_API_BASE || 'https://api.bfl.ai';
@@ -533,4 +892,6 @@ app.listen(PORT, () => {
   console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
   console.log(`🔑 BFL API Key configured: ${KEY ? 'Yes' : 'No'}`);
   console.log(`🌍 BFL Base URL: ${BASE}`);
+  console.log(`🎨 Ideogram API Key configured: ${process.env.IDEOGRAM_API_KEY ? 'Yes' : 'No'}`);
+  console.log(`📸 Images will be stored as base64 data URLs (no external storage required)`);
 });

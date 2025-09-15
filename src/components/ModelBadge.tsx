@@ -58,10 +58,10 @@ const MODEL_CONFIG = {
     description: 'Runway Gen-4'
   },
   'ideogram': {
-    name: 'Ideogram',
-    shortName: 'ID',
+    name: 'Ideogram 3.0',
+    shortName: 'ID3.0',
     icon: '📦',
-    description: 'Ideogram'
+    description: 'Advanced image generation, editing, and enhancement'
   },
   'seedream-4.0': {
     name: 'Seedream 4.0',

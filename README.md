@@ -16,6 +16,9 @@ BFL_WEBHOOK_SECRET=your_webhook_secret_here
 # OpenAI API Key for ChatGPT Image Generation
 OPENAI_API_KEY=sk-your_openai_api_key_here
 
+# Ideogram API Key for advanced image generation and editing
+IDEOGRAM_API_KEY=your_ideogram_api_key_here
+
 # Server Configuration
 PORT=3000
 NODE_ENV=development
@@ -23,6 +26,28 @@ NODE_ENV=development
 # Base URL for webhooks (update for production)
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
+
+## 🎨 AI Image Generation Features
+
+DayGen supports multiple AI models for image generation and editing:
+
+### Supported Models
+- **Gemini 2.5 Flash Image** - Best for image editing and manipulation
+- **FLUX Pro 1.1** - High-quality text-to-image generation
+- **FLUX Pro 1.1 Ultra** - Ultra-high quality 4MP+ generation
+- **FLUX Kontext Pro/Max** - Advanced image editing with text prompts
+- **ChatGPT Image** - Popular image generation model
+- **Ideogram 3.0** - Advanced image generation, editing, and enhancement
+
+### Ideogram 3.0 Features
+- **Generate**: Text-to-image with aspect ratio control and style presets
+- **Edit**: Image editing with mask support
+- **Reframe**: Convert square images to any target resolution
+- **Replace Background**: Automatic subject detection and background replacement
+- **Upscale**: High-quality image upscaling with detail control
+- **Describe**: Automatic image captioning and alt text generation
+
+For detailed Ideogram integration documentation, see [IDEOGRAM_INTEGRATION.md](./IDEOGRAM_INTEGRATION.md).
 
 ## Site Password Protection
 

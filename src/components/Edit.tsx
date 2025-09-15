@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Wand2, X, Sparkles, Play, History as HistoryIcon, SplitSquareVertical, Upload, Image as ImageIcon, Copy, Download, Settings, ChevronDown, Edit as EditIcon } from "lucide-react";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
+import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
 import type { FluxModelType } from "../lib/bfl";
 // import { MODEL_CAPABILITIES } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
@@ -9,6 +10,7 @@ import { usePromptHistory } from '../hooks/usePromptHistory';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import type { FluxGeneratedImage } from '../hooks/useFluxImageGeneration';
+import { getModelDisplayName } from '../utils/modelUtils';
 // import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
 
 // Types
@@ -32,7 +34,7 @@ interface Settings {
 interface RunResult {
   id: string;
   mode: Mode;
-  model: FluxModelType | "chatgpt-image";
+  model: FluxModelType | "chatgpt-image" | "ideogram";
   imageDataUrl: string;
   baseImageDataUrl?: string;
   settings: Settings;
@@ -60,6 +62,7 @@ const EDIT_TASKS: EditTask[] = ["Inpaint", "Outpaint", "Replace", "Style transfe
 const FLUX_EDIT_MODELS = [
   { id: 'flux-e1', name: 'Flux Kontext Pro', description: 'High-quality image editing' },
   { id: 'flux-e2', name: 'Flux Kontext Max', description: 'Highest quality image editing' },
+  { id: 'ideogram', name: 'Ideogram 3.0', description: 'Advanced image generation, editing, and enhancement' },
   { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' }
 ] as const;
 
@@ -95,7 +98,7 @@ export default function Edit() {
   
   // State
   const [mode] = useState<Mode>("edit");
-  const [model, setModel] = useState<FluxModelType | "chatgpt-image">("flux-e1");
+  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram">("flux-e1");
   const [task, setTask] = useState<TaskChip>("Inpaint");
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
   const [baseImage, setBaseImage] = useState<string | undefined>(undefined);
@@ -126,8 +129,14 @@ export default function Edit() {
     generateImage: generateChatGPTImage
   } = useChatGPTImageGeneration();
 
+  // Ideogram Image generation hook
+  const {
+    isLoading: ideogramLoading,
+    generateImage: generateIdeogramImage
+  } = useIdeogramImageGeneration();
+
   // Combined loading state
-  const isRunning = fluxLoading || chatgptLoading;
+  const isRunning = fluxLoading || chatgptLoading || ideogramLoading;
 
   // Shortcuts
   useGenerateShortcuts({ onGenerate: () => handleRun("run") });
@@ -135,8 +144,8 @@ export default function Edit() {
   // Prefill from share
   usePrefillFromShare((data: any) => {
     if (data?.prompt) setSettings(prev => ({ ...prev, prompt: data.prompt }));
-    if (data?.model && ['flux-e1', 'flux-e2', 'chatgpt-image'].includes(data.model)) {
-      setModel(data.model as FluxModelType | "chatgpt-image");
+    if (data?.model && ['flux-e1', 'flux-e2', 'chatgpt-image', 'ideogram'].includes(data.model)) {
+      setModel(data.model as FluxModelType | "chatgpt-image" | "ideogram");
     }
   });
 
@@ -245,6 +254,15 @@ export default function Edit() {
             background: 'transparent',
             n: 1
           });
+        } else if (model === "ideogram") {
+          // Use Ideogram generation for editing
+          const ideogramResults = await generateIdeogramImage({
+            prompt: s.prompt,
+            aspect_ratio: `${s.width}:${s.height}`,
+            rendering_speed: 'DEFAULT',
+            num_images: 1,
+          });
+          result = ideogramResults[0]; // Take the first result
         } else {
           // Use Flux generation
           result = await generateFluxImage({
@@ -543,7 +561,7 @@ export default function Edit() {
                           <button
                             key={m.id}
                             onClick={() => {
-                              setModel(m.id as FluxModelType | "chatgpt-image");
+                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram");
                               setIsModelSelectorOpen(false);
                             }}
                             className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-d-mid hover:text-brand transition-colors ${
@@ -650,7 +668,7 @@ export default function Edit() {
                       <img src={r.imageDataUrl} alt="Result" className="aspect-square w-full object-cover" />
                       <div className="absolute inset-x-0 bottom-0 grid gap-1 bg-gradient-to-t from-black/70 to-transparent p-2 text-[10px]">
                         <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 rounded bg-d-mid text-[10px]">{r.model}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-d-mid text-[10px]">{getModelDisplayName(r.model)}</span>
                           <span className="text-d-mid">{formatDims(r.settings.width, r.settings.height)}</span>
                           <span className="text-d-mid">Seed {r.settings.seed}</span>
                         </div>

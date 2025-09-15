@@ -7,6 +7,8 @@ import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import type { ChatGPTGeneratedImage } from "../hooks/useChatGPTImageGeneration";
+import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
+import type { IdeogramGeneratedImage } from "../hooks/useIdeogramImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
@@ -34,9 +36,9 @@ const AI_MODELS = [
   { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as Accent, id: "flux-pro-1.1-ultra" },
   { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: Edit, accent: "violet" as Accent, id: "flux-kontext-pro" },
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen-4" },
-  { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
   { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-4.0" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
 ];
@@ -205,7 +207,8 @@ const Create: React.FC = () => {
   const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
   const isFlux = selectedModel.startsWith("flux-");
   const isChatGPT = selectedModel === "chatgpt-image";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT;
+  const isIdeogram = selectedModel === "ideogram";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -277,9 +280,16 @@ const Create: React.FC = () => {
     clearGeneratedImage: clearChatGPTImage,
   } = useChatGPTImageGeneration();
 
+  const {
+    isLoading: ideogramLoading,
+    error: ideogramError,
+    generateImage: generateIdeogramImage,
+    clearError: clearIdeogramError,
+  } = useIdeogramImageGeneration();
+
   // Combined state for UI
-  const isLoading = geminiLoading || fluxLoading || chatgptLoading;
-  const error = geminiError || fluxError || chatgptError;
+  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading;
+  const error = geminiError || fluxError || chatgptError || ideogramError;
   const generatedImage = geminiImage || fluxImage || chatgptImage;
 
   // Load gallery and liked images from localStorage on mount
@@ -840,7 +850,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, and ChatGPT Image models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, and Ideogram models are available.');
       return;
     }
 
@@ -855,7 +865,7 @@ const Create: React.FC = () => {
         });
       }
 
-      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage;
+      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage;
 
       if (isGemini) {
         // Use Gemini generation
@@ -884,6 +894,18 @@ const Create: React.FC = () => {
           quality: 'high',
           background: 'transparent',
         });
+      } else if (isIdeogram) {
+        // Use Ideogram generation
+        const ideogramResult = await generateIdeogramImage({
+          prompt: prompt.trim(),
+          aspect_ratio: '1:1',
+          rendering_speed: 'DEFAULT',
+          num_images: 1,
+        });
+        if (!ideogramResult || ideogramResult.length === 0) {
+          throw new Error('Ideogram generation failed');
+        }
+        img = ideogramResult[0]; // Take the first generated image
       } else if (isFlux) {
         // Use Flux generation
         const fluxParams: any = {
@@ -1003,6 +1025,7 @@ const Create: React.FC = () => {
       clearGeminiError();
       clearFluxError();
       clearChatGPTError();
+      clearIdeogramError();
     }
   };
 
@@ -2779,7 +2802,7 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram";
                       
                       return (
                         <button
