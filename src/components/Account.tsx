@@ -14,6 +14,13 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // Keep the input in sync if user loads after first render, but don't override user input
+  useEffect(() => {
+    if (user?.name && name === "") {
+      setName(user.name);
+    }
+  }, [user?.name]);
+
 
   const galleryKey = useMemo(() => storagePrefix + "gallery", [storagePrefix]);
 
@@ -62,9 +69,21 @@ export default function Account() {
   };
 
   const handleSaveProfile = () => {
-    updateProfile({ name });
+    const trimmed = (name ?? "").trim();
     
-    // Only redirect if there's a 'next' parameter (user was redirected here from auth flow)
+    if (!trimmed) {
+      alert("Please enter your display name");
+      return;
+    }
+    
+    // Compare with the current user name (also trimmed for consistency)
+    const currentUserName = (user?.name ?? "").trim();
+    if (trimmed !== currentUserName) {
+      // Only update if there are changes
+      updateProfile({ name: trimmed });
+    }
+    
+    // Always navigate to close the section, regardless of whether changes were made
     const nextPath = searchParams.get('next');
     if (nextPath) {
       try {
@@ -74,8 +93,10 @@ export default function Account() {
         console.error('Failed to decode next path:', e);
         navigate('/create'); // fallback
       }
+    } else {
+      // If no 'next' parameter, redirect to create page to close account section
+      navigate('/create');
     }
-    // If no 'next' parameter, just save and stay on account page
   };
 
   const nextPath = searchParams.get('next');
@@ -204,7 +225,10 @@ export default function Account() {
           <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
           <input className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
-            <button className="btn btn-white text-black font-raleway" onClick={handleSaveProfile}>
+            <button
+              className="btn btn-white text-black font-raleway disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleSaveProfile}
+            >
               Save
             </button>
             <button className="btn btn-orange text-black font-raleway" onClick={signOut}>Log out</button>
