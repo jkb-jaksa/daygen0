@@ -260,8 +260,8 @@ const Create: React.FC = () => {
     isLoading: fluxLoading,
     error: fluxError,
     generatedImage: fluxImage,
-    jobStatus,
-    progress,
+    jobStatus, // Required for Flux generation logic
+    progress, // Required for Flux generation logic
     generateImage: generateFluxImage,
     clearError: clearFluxError,
     clearGeneratedImage: clearFluxImage,
@@ -2329,19 +2329,7 @@ const Create: React.FC = () => {
                           {/* Animated background */}
                           <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-orange-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
                           
-                          {/* Progress text overlay for Flux */}
-                          {isFlux && progress && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                              <div className="text-white text-sm text-center px-4">
-                                <div className="font-medium">{progress}</div>
-                                {jobStatus && (
-                                  <div className="text-xs opacity-75 mt-1 capitalize">{jobStatus}</div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Loading overlay */}
+                          {/* Loading overlay - same for all models */}
                           <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                             <div className="text-center">
                               {/* Spinning loader */}
@@ -2599,9 +2587,7 @@ const Create: React.FC = () => {
                   ) : (
                     <Wand2 className="w-4 h-4" />
                   )}
-                  {isLoading ? (
-                    isFlux && progress ? progress : "Generating..."
-                  ) : "Generate"}
+                  {isLoading ? "Generating..." : "Generate"}
                 </button>
               </Tooltip>
             </div>

@@ -67,8 +67,7 @@ export const useFluxImageGeneration = () => {
       const { prompt, model, references, useWebhook = false, ...params } = options;
 
       // Submit the job
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const apiUrl = `${origin}/api/flux/generate`;
+      const apiUrl = 'http://localhost:3000/api/flux/generate';
 
       console.log('[flux] POST', apiUrl);
       
@@ -141,7 +140,7 @@ export const useFluxImageGeneration = () => {
         console.log(`[flux] Polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`${origin}/api/flux/result?pollingUrl=${encodeURIComponent(pollingUrl)}`);
+          const pollRes = await fetch(`http://localhost:3000/api/flux/result?pollingUrl=${encodeURIComponent(pollingUrl)}`);
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);
@@ -152,7 +151,7 @@ export const useFluxImageGeneration = () => {
           
           if (result.status === 'Ready' && result.result?.sample) {
             // Download the image via our server to avoid CORS issues
-            const downloadRes = await fetch(`${origin}/api/flux/download?url=${encodeURIComponent(result.result.sample)}`);
+            const downloadRes = await fetch(`http://localhost:3000/api/flux/download?url=${encodeURIComponent(result.result.sample)}`);
             if (!downloadRes.ok) {
               throw new Error(`Failed to download image: ${downloadRes.status}`);
             }
