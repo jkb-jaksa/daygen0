@@ -9,7 +9,6 @@ import { usePromptHistory } from '../hooks/usePromptHistory';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import type { FluxGeneratedImage } from '../hooks/useFluxImageGeneration';
-import type { ChatGPTGeneratedImage } from '../hooks/useChatGPTImageGeneration';
 // import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
 
 // Types
