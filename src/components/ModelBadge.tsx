@@ -15,11 +15,41 @@ const MODEL_CONFIG = {
     icon: '🤖',
     description: 'Google Gemini 2.5 Flash Image'
   },
+  'flux-pro-1.1': {
+    name: 'FLUX Pro 1.1',
+    shortName: 'F1.1',
+    icon: '⚡',
+    description: 'FLUX Pro 1.1 - High-quality text-to-image generation'
+  },
+  'flux-pro-1.1-ultra': {
+    name: 'FLUX Pro 1.1 Ultra',
+    shortName: 'F1.1U',
+    icon: '⚡',
+    description: 'FLUX Pro 1.1 Ultra - Ultra-high quality 4MP+ generation'
+  },
+  'flux-kontext-pro': {
+    name: 'FLUX Kontext Pro',
+    shortName: 'FKP',
+    icon: '🎨',
+    description: 'FLUX Kontext Pro - Image editing with text prompts'
+  },
+  'flux-kontext-max': {
+    name: 'FLUX Kontext Max',
+    shortName: 'FKM',
+    icon: '🎨',
+    description: 'FLUX Kontext Max - Highest quality image editing'
+  },
   'flux-pro': {
     name: 'FLUX.1 Kontext Pro / Max',
     shortName: 'FLUX',
     icon: '⚡',
     description: 'FLUX.1 Kontext Pro / Max'
+  },
+  'runway-gen-4': {
+    name: 'Runway Gen-4',
+    shortName: 'RW',
+    icon: '🎬',
+    description: 'Runway Gen-4'
   },
   'runway-gen4': {
     name: 'Runway Gen-4',
@@ -32,6 +62,12 @@ const MODEL_CONFIG = {
     shortName: 'ID',
     icon: '📦',
     description: 'Ideogram'
+  },
+  'seedream-4.0': {
+    name: 'Seedream 4.0',
+    shortName: 'SD',
+    icon: '🍃',
+    description: 'Seedream 4.0'
   },
   'seedream-4': {
     name: 'Seedream 4.0',

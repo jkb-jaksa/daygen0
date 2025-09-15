@@ -3,6 +3,9 @@ import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
+import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
+import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
+import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
 import { usePromptHistory } from '../hooks/usePromptHistory';
@@ -24,13 +27,16 @@ type Folder = {
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent },
-  { name: "FLUX.1 Kontext Pro / Max", desc: "Great for image editing with text prompts.", Icon: Wand2, accent: "blue" as Accent },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent },
-  { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent },
-  { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent },
-  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent },
-  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent },
+  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
+  { name: "FLUX Pro 1.1", desc: "High-quality text-to-image generation.", Icon: Wand2, accent: "blue" as Accent, id: "flux-pro-1.1" },
+  { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as Accent, id: "flux-pro-1.1-ultra" },
+  { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: Edit, accent: "violet" as Accent, id: "flux-kontext-pro" },
+  { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen-4" },
+  { name: "Ideogram", desc: "Great for product visualizations and person swaps.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
+  { name: "Seedream 4.0", desc: "Great image model.", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-4.0" },
+  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
+  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -194,14 +200,16 @@ const Create: React.FC = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
-  const isBanana = selectedModel === "gemini-2.5-flash-image-preview";
+  const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
+  const isFlux = selectedModel.startsWith("flux-");
+  const isComingSoon = !isGemini && !isFlux;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [gallery, setGallery] = useState<GeneratedImage[]>([]);
-  const [selectedFullImage, setSelectedFullImage] = useState<GeneratedImage | null>(null);
+  const [gallery, setGallery] = useState<(GeneratedImage | FluxGeneratedImage)[]>([]);
+  const [selectedFullImage, setSelectedFullImage] = useState<(GeneratedImage | FluxGeneratedImage) | null>(null);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
   
@@ -240,20 +248,36 @@ const Create: React.FC = () => {
   
   // Use the Gemini image generation hook
   const {
-    isLoading,
-    error,
-    generatedImage,
-    generateImage,
-    clearError,
-    clearGeneratedImage,
+    isLoading: geminiLoading,
+    error: geminiError,
+    generatedImage: geminiImage,
+    generateImage: generateGeminiImage,
+    clearError: clearGeminiError,
+    clearGeneratedImage: clearGeminiImage,
   } = useGeminiImageGeneration();
+
+  const {
+    isLoading: fluxLoading,
+    error: fluxError,
+    generatedImage: fluxImage,
+    jobStatus,
+    progress,
+    generateImage: generateFluxImage,
+    clearError: clearFluxError,
+    clearGeneratedImage: clearFluxImage,
+  } = useFluxImageGeneration();
+
+  // Combined state for UI
+  const isLoading = geminiLoading || fluxLoading;
+  const error = geminiError || fluxError;
+  const generatedImage = geminiImage || fluxImage;
 
   // Load gallery and liked images from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key("gallery"));
       if (raw) {
-        const parsed = JSON.parse(raw) as GeneratedImage[];
+        const parsed = JSON.parse(raw) as (GeneratedImage | FluxGeneratedImage)[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Validate that each item has required properties
           const validImages = parsed.filter(img => img && img.url && img.prompt && img.timestamp);
@@ -410,13 +434,13 @@ const Create: React.FC = () => {
   };
 
   // Helper: keep only lean fields for storage
-  const toStorable = (items: GeneratedImage[]) =>
+  const toStorable = (items: (GeneratedImage | FluxGeneratedImage)[]) =>
     items.map(({ url, prompt, model, timestamp, ownerId }) => ({
       url, prompt, model, timestamp, ownerId
     }));
 
   // Backup function to persist gallery state
-  const persistGallery = (galleryData: GeneratedImage[]) => {
+  const persistGallery = (galleryData: (GeneratedImage | FluxGeneratedImage)[]) => {
     try {
       localStorage.setItem(key("gallery"), JSON.stringify(toStorable(galleryData)));
       console.log('Gallery backup persisted with', galleryData.length, 'images');
@@ -652,7 +676,8 @@ const Create: React.FC = () => {
       
       // Clear existing references and generated image to show references
       clearAllReferences();
-      clearGeneratedImage();
+      clearGeminiImage();
+      clearFluxImage();
       
       // Set this image as the reference
       setReferenceFiles([file]);
@@ -732,8 +757,8 @@ const Create: React.FC = () => {
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // Only handle paste for Banana model (same as drag & drop)
-    if (!isBanana) return;
+    // Only handle paste for Gemini model (same as drag & drop)
+    if (!isGemini) return;
     
     const items = Array.from(event.clipboardData.items);
     const imageItems = items.filter(item => item.type.startsWith('image/'));
@@ -802,9 +827,9 @@ const Create: React.FC = () => {
       return;
     }
 
-    // Only allow Gemini model for now
-    if (!isBanana) {
-      alert('This model is coming soon! Currently only Gemini 2.5 Flash Image is available.');
+    // Check if model is supported
+    if (isComingSoon) {
+      alert('This model is coming soon! Currently only Gemini and FLUX models are available.');
       return;
     }
 
@@ -819,23 +844,63 @@ const Create: React.FC = () => {
         });
       }
 
-      const img = await generateImage({
-        prompt: prompt.trim(),
-        model: selectedModel,
-        imageData,
-        references: await (async () => {
-          if (referenceFiles.length === 0) return undefined;
-          const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+      let img: GeneratedImage | FluxGeneratedImage;
+
+      if (isGemini) {
+        // Use Gemini generation
+        img = await generateGeminiImage({
+          prompt: prompt.trim(),
+          model: selectedModel,
+          imageData,
+          references: await (async () => {
+            if (referenceFiles.length === 0) return undefined;
+            const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.readAsDataURL(f);
+            })));
+            return arr;
+          })(),
+          temperature,
+          outputLength,
+          topP,
+        });
+      } else if (isFlux) {
+        // Use Flux generation
+        const fluxParams: any = {
+          prompt: prompt.trim(),
+          model: selectedModel as FluxModel,
+          width: 1024,
+          height: 1024,
+          useWebhook: false, // Use polling for local development
+        };
+
+        // Add input image for Kontext models
+        if ((selectedModel === 'flux-kontext-pro' || selectedModel === 'flux-kontext-max') && imageData) {
+          fluxParams.input_image = imageData;
+        }
+
+        // Add reference images as additional input images for Kontext
+        if ((selectedModel === 'flux-kontext-pro' || selectedModel === 'flux-kontext-max') && referenceFiles.length > 0) {
+          const referenceImages = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
             const r = new FileReader();
             r.onload = () => resolve(r.result as string);
             r.readAsDataURL(f);
           })));
-          return arr;
-        })(),
-        temperature: isBanana ? temperature : undefined,
-        outputLength: isBanana ? outputLength : undefined,
-        topP: isBanana ? topP : undefined,
-      });
+          
+          if (referenceImages[0]) fluxParams.input_image_2 = referenceImages[0];
+          if (referenceImages[1]) fluxParams.input_image_3 = referenceImages[1];
+          if (referenceImages[2]) fluxParams.input_image_4 = referenceImages[2];
+        }
+
+        const fluxResult = await generateFluxImage(fluxParams);
+        if (!fluxResult) {
+          throw new Error('Flux generation failed');
+        }
+        img = fluxResult;
+      } else {
+        throw new Error('Unsupported model');
+      }
 
       // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
@@ -856,9 +921,9 @@ const Create: React.FC = () => {
           // Validate current gallery items first
           const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
           
-          const dedup = (list: GeneratedImage[]) => {
+          const dedup = (list: (GeneratedImage | FluxGeneratedImage)[]) => {
             const seen = new Set<string>();
-            const out: GeneratedImage[] = [];
+            const out: (GeneratedImage | FluxGeneratedImage)[] = [];
             for (const it of list) {
               if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
                 seen.add(it.url);
@@ -915,6 +980,9 @@ const Create: React.FC = () => {
       }
     } catch (error) {
       console.error('Error generating image:', error);
+      // Clear any previous errors from both hooks
+      clearGeminiError();
+      clearFluxError();
     }
   };
 
@@ -928,18 +996,9 @@ const Create: React.FC = () => {
   usePrefillFromShare(setPrompt);
 
   const handleModelSelect = (modelName: string) => {
-    // Map model names to actual model IDs
-    const modelMap: Record<string, string> = {
-      "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
-      "FLUX.1 Kontext Pro / Max": "flux-pro",
-      "Runway Gen-4": "runway-gen4",
-      "Ideogram": "ideogram",
-      "Seedream 4.0": "seedream-4",
-      "Qwen Image": "qwen-image",
-      "ChatGPT Image": "chatgpt-image",
-    };
-    
-    setSelectedModel(modelMap[modelName] || "gemini-2.5-flash-image-preview");
+    // Find model by name and get its ID
+    const model = AI_MODELS.find(m => m.name === modelName);
+    setSelectedModel(model?.id || "gemini-2.5-flash-image-preview");
   };
 
   const toggleSettings = () => {
@@ -952,17 +1011,7 @@ const Create: React.FC = () => {
 
   // Get current model info
   const getCurrentModel = () => {
-    const modelMap: Record<string, string> = {
-      "gemini-2.5-flash-image-preview": "Gemini 2.5 Flash Image",
-      "flux-pro": "FLUX.1 Kontext Pro / Max",
-      "runway-gen4": "Runway Gen-4",
-      "ideogram": "Ideogram",
-      "seedream-4": "Seedream 4.0",
-      "qwen-image": "Qwen Image",
-      "chatgpt-image": "ChatGPT Image",
-    };
-    const modelName = modelMap[selectedModel] || "Gemini 2.5 Flash Image";
-    return AI_MODELS.find(model => model.name === modelName) || AI_MODELS[0];
+    return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
 
   // Cleanup object URL when component unmounts or file changes
@@ -2280,6 +2329,18 @@ const Create: React.FC = () => {
                           {/* Animated background */}
                           <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-orange-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
                           
+                          {/* Progress text overlay for Flux */}
+                          {isFlux && progress && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                              <div className="text-white text-sm text-center px-4">
+                                <div className="font-medium">{progress}</div>
+                                {jobStatus && (
+                                  <div className="text-xs opacity-75 mt-1 capitalize">{jobStatus}</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
                           {/* Loading overlay */}
                           <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                             <div className="text-center">
@@ -2505,11 +2566,11 @@ const Create: React.FC = () => {
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           <div 
-            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border ${isDragging && isBanana ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
             style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
-            onDragOver={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(true); }}
+            onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => { if (!isBanana) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+            onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
           >
             <div>
               <textarea
@@ -2524,7 +2585,7 @@ const Create: React.FC = () => {
               />
             </div>
             <div className="absolute right-4 bottom-4 flex items-center gap-2">
-              <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : !isBanana ? "This model is coming soon!" : ""}>
+              <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : isComingSoon ? "This model is coming soon!" : ""}>
                 <button 
                   onClick={handleGenerateImage}
                   disabled={isLoading || !prompt.trim()}
@@ -2538,7 +2599,9 @@ const Create: React.FC = () => {
                   ) : (
                     <Wand2 className="w-4 h-4" />
                   )}
-                  {isLoading ? "Generating..." : "Generate"}
+                  {isLoading ? (
+                    isFlux && progress ? progress : "Generating..."
+                  ) : "Generate"}
                 </button>
               </Tooltip>
             </div>
@@ -2548,11 +2611,11 @@ const Create: React.FC = () => {
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={isBanana ? handleRefsClick : undefined}
+                  onClick={isGemini ? handleRefsClick : undefined}
                   title="Add reference image"
                   aria-label="Add reference image"
-                  disabled={!isBanana}
-                  className={`${isBanana ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
+                  disabled={!isGemini}
+                  className={`${isGemini ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -2571,11 +2634,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={isBanana ? toggleSettings : () => alert('Settings are only available for Gemini models.')}
-                    title={isBanana ? "Settings" : "Settings only available for Gemini models"}
+                    onClick={isGemini ? toggleSettings : () => alert('Settings are only available for Gemini models.')}
+                    title={isGemini ? "Settings" : "Settings only available for Gemini models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200 ${
-                      isBanana 
+                      isGemini 
                         ? "bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid" 
                         : "bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -2584,7 +2647,7 @@ const Create: React.FC = () => {
                   </button>
                   
                   {/* Settings Dropdown Portal */}
-                  {isBanana && (
+                  {isGemini && (
                     <SettingsPortal 
                       anchorRef={settingsRef}
                       open={isSettingsOpen}
@@ -2709,19 +2772,8 @@ const Create: React.FC = () => {
                     onClose={() => setIsModelSelectorOpen(false)}
                   >
                     {AI_MODELS.map((model) => {
-                      const modelMap: Record<string, string> = {
-                        "Gemini 2.5 Flash Image": "gemini-2.5-flash-image-preview",
-                        "FLUX.1 Kontext Pro / Max": "flux-pro",
-                        "Runway Gen-4": "runway-gen4",
-                        "Ideogram": "ideogram",
-                        "Seedream 4.0": "seedream-4",
-                        "Qwen Image": "qwen-image",
-                        "ChatGPT Image": "chatgpt-image",
-                      };
-                      const modelId = modelMap[model.name] || "gemini-2.5-flash-image-preview";
-                      const isSelected = selectedModel === modelId;
-                      
-                      const isComingSoon = modelId !== "gemini-2.5-flash-image-preview";
+                      const isSelected = selectedModel === model.id;
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview";
                       
                       return (
                         <button
@@ -2743,16 +2795,16 @@ const Create: React.FC = () => {
                           }`}
                         >
                           <model.Icon className={`w-4 h-4 flex-shrink-0 transition-colors duration-100 ${
-                            isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white/60 group-hover:text-brand'
+                            isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
                           }`} />
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
-                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text/80 group-hover:text-brand'
+                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
                             }`}>
                               {model.name}
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white/50 group-hover:text-brand'
+                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-brand'
                             }`}>
                               {isComingSoon ? 'Coming soon.' : model.desc}
                             </div>
@@ -2818,7 +2870,7 @@ const Create: React.FC = () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
                 <p className="font-raleway text-sm">{error}</p>
                 <button
-                  onClick={clearError}
+                  onClick={() => { clearGeminiError(); clearFluxError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss
