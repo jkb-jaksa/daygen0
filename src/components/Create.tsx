@@ -345,10 +345,8 @@ const Create: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (storageEstimate?.quota) {
-      console.log('Storage estimate updated:', storageEstimate);
-      setStorageUsage(storageEstimate);
-    }
+    console.log('Storage estimate updated:', storageEstimate);
+    setStorageUsage(storageEstimate);
   }, [storageEstimate]);
 
   useEffect(() => () => {

@@ -95,10 +95,17 @@ export const removePersistedValue = async (prefix: string, key: StorageKey) => {
 };
 
 export const estimateStorage = async () => {
-  if (!canUseWindow || !('storage' in navigator) || !navigator.storage?.estimate) return null;
+  console.log('estimateStorage called, canUseWindow:', canUseWindow, 'storage in navigator:', 'storage' in navigator, 'estimate available:', !!navigator.storage?.estimate);
+  if (!canUseWindow || !('storage' in navigator) || !navigator.storage?.estimate) {
+    console.log('Storage not available, returning null');
+    return null;
+  }
   try {
-    return await navigator.storage.estimate();
-  } catch {
+    const result = await navigator.storage.estimate();
+    console.log('Storage estimate result:', result);
+    return result;
+  } catch (error) {
+    console.error('Storage estimate error:', error);
     return null;
   }
 };

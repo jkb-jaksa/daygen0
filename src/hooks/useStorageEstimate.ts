@@ -35,14 +35,18 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
   }, []);
 
   const refresh = useCallback(async () => {
+    console.log('Refreshing storage estimate, supported:', supported);
     if (!supported) {
+      console.log('Storage not supported, setting estimate to null');
       if (mountedRef.current) setEstimate(null);
       return;
     }
     try {
       const res = await estimateStorage();
+      console.log('Raw storage estimate result:', res);
       if (!mountedRef.current) return;
       if (!res?.quota) {
+        console.log('No quota in storage estimate, setting to null');
         setEstimate(null);
         return;
       }
