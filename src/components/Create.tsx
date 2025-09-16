@@ -1826,55 +1826,6 @@ const Create: React.FC = () => {
           {/* Gallery - compressed to avoid overlap with left menu */}
           <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
             <div className="w-full mb-4" ref={galleryRef}>
-              {isCacheBarVisible && (
-                <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
-                  <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
-                    <span>Cache usage</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-d-white/80 normal-case">
-                        {storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —'}
-                      </span>
-                      <button 
-                        onClick={() => refreshStorageEstimate()}
-                        className="text-xs px-2 py-1 bg-d-mid hover:bg-d-orange-1/20 rounded text-d-white/60 hover:text-d-orange-1 transition-colors"
-                      >
-                        Refresh
-                      </button>
-                      <button 
-                        onClick={() => setIsCacheBarVisible(false)}
-                        className="text-xs p-1 hover:bg-d-orange-1/20 rounded text-d-white/60 hover:text-d-orange-1 transition-colors"
-                        title="Close cache bar"
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </div>
-                  </div>
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
-                  <div
-                    className="h-full rounded-full bg-warm-gradient transition-[width] duration-300"
-                    style={{ width: `${storageUsage ? storagePercentUsed * 100 : 0}%` }}
-                  />
-                </div>
-                  {persistentStorageStatus === 'denied' && (
-                    <div className="mt-3 flex items-center gap-2 text-[11px] font-raleway text-red-300">
-                      <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
-                      Browser may clear cached images sooner because persistent storage is disabled.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Show cache bar button when hidden */}
-              {!isCacheBarVisible && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => setIsCacheBarVisible(true)}
-                    className={`${glass.tight} text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1`}
-                  >
-                    Show cache usage
-                  </button>
-                </div>
-              )}
 
               {/* Liked View */}
               {activeCategory === "favourites" && (
@@ -2934,6 +2885,61 @@ const Create: React.FC = () => {
             />
           )}
 
+          {/* Cache Usage - Below Recent Prompts */}
+          {activeCategory === "image" && !selectedFolder && (
+            <div className="mt-4 w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
+              {isCacheBarVisible && (
+                <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
+                  <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
+                    <span>Cache usage</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-d-white/80 normal-case">
+                        {storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —'}
+                      </span>
+                      <button 
+                        onClick={() => refreshStorageEstimate()}
+                        className="text-xs px-2 py-1 bg-d-mid hover:bg-d-orange-1/20 rounded text-d-white/60 hover:text-d-orange-1 transition-colors"
+                      >
+                        Refresh
+                      </button>
+                      <button 
+                        onClick={() => setIsCacheBarVisible(false)}
+                        className="text-xs p-1 hover:bg-d-orange-1/20 rounded text-d-white/60 hover:text-d-orange-1 transition-colors"
+                        title="Close cache bar"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  </div>
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
+                  <div
+                    className="h-full rounded-full bg-warm-gradient transition-[width] duration-300"
+                    style={{ width: `${storageUsage ? storagePercentUsed * 100 : 0}%` }}
+                  />
+                </div>
+                  {persistentStorageStatus === 'denied' && (
+                    <div className="mt-3 flex items-center gap-2 text-[11px] font-raleway text-red-300">
+                      <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
+                      Browser may clear cached images sooner because persistent storage is disabled.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Show cache bar button when hidden */}
+              {!isCacheBarVisible && (
+                <div className="mb-4">
+                  <button 
+                    onClick={() => setIsCacheBarVisible(true)}
+                    className={`${glass.tight} text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1`}
+                  >
+                    Show cache usage
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           
 
           
@@ -3369,8 +3375,8 @@ const Create: React.FC = () => {
                 
                 {/* Action buttons - only show for generated images, not reference images */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-end px-4 h-14 pointer-events-none">
-                    <div className="mt-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
+                  <div className="absolute inset-x-0 top-0 flex items-start justify-end px-4 pt-8 pointer-events-none">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
                       <button 
                         type="button" 
                         onClick={() => confirmDeleteImage((selectedFullImage || generatedImage)!.url)} 

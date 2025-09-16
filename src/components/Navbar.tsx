@@ -222,7 +222,7 @@ export default function Navbar() {
       {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
       <div
         className={`fixed left-0 right-0 z-[49] ${activeMenu ? "pointer-events-auto" : "pointer-events-none"}`}
-        style={{ top: Math.max(navH - 1, 0) }}
+        style={{ top: navH }}
       >
         <div
           className="glass-liquid willchange-backdrop isolate border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200"
