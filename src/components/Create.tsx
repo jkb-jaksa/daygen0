@@ -252,7 +252,7 @@ const ImageActionMenuPortal: React.FC<{
     if (!open || !anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
     setPos({
-      top: rect.bottom + 8,
+      top: rect.bottom + 4,
       left: rect.left,
       width: Math.max(200, rect.width),
     });
@@ -300,7 +300,6 @@ const ImageActionMenuPortal: React.FC<{
         zIndex: 1100,
       }}
       className={`${glass.tight} py-2`}
-      onMouseLeave={onClose}
     >
       {children}
     </div>,
@@ -2898,7 +2897,9 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
+                              className={`absolute bottom-0 left-0 right-0 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10 ${
+                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              }`}
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
@@ -2985,7 +2986,9 @@ const Create: React.FC = () => {
                             Copy prompt
                           </div>
                           
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                        <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-200 ${
+                          imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}>
                           {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
                           <div className="flex items-center gap-0.5">
                             <button 
