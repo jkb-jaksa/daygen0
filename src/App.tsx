@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import FAQSection from "./components/Faq";
 import Subpage from "./components/subpage/Subpage";
@@ -30,8 +30,8 @@ function Home() {
             Your gateway to mastering creative AI tools. Explore our knowledge base to discover the best tools for your creative projects.
           </p>
           <div className="flex justify-center gap-4">
-            <a 
-              href="/knowledge-base" 
+            <Link 
+              to="/knowledge-base" 
               className="px-6 py-3 text-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
               style={{
                 backgroundColor: '#faaa16'
@@ -44,13 +44,13 @@ function Home() {
               }}
             >
               Explore Knowledge Base
-            </a>
-            <a 
-              href="/create" 
+            </Link>
+            <Link 
+              to="/create" 
               className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
             >
               Start Creating
-            </a>
+            </Link>
           </div>
         </div>
       </section>

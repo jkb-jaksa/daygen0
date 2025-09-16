@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface IdeogramGeneratedImage {
   url: string;
@@ -91,7 +92,7 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/ideogram/generate';
+      const apiUrl = getApiUrl('/api/ideogram/generate');
       
       console.log('[ideogram] POST', apiUrl);
       
@@ -155,7 +156,7 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/ideogram/edit';
+      const apiUrl = getApiUrl('/api/ideogram/edit');
       
       const formData = new FormData();
       formData.append('image', options.image);
@@ -225,7 +226,7 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/ideogram/reframe';
+      const apiUrl = getApiUrl('/api/ideogram/reframe');
       
       const formData = new FormData();
       formData.append('image', options.image);
@@ -293,7 +294,7 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/ideogram/replace-background';
+      const apiUrl = getApiUrl('/api/ideogram/replace-background');
       
       const formData = new FormData();
       formData.append('image', options.image);
@@ -360,7 +361,7 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/ideogram/upscale';
+      const apiUrl = getApiUrl('/api/ideogram/upscale');
       
       const formData = new FormData();
       formData.append('image', options.image);
@@ -423,7 +424,7 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/ideogram/describe';
+      const apiUrl = getApiUrl('/api/ideogram/describe');
       
       const formData = new FormData();
       formData.append('image', options.image);

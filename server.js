@@ -4,6 +4,7 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 // Load environment variables
 dotenv.config();
@@ -13,6 +14,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isVercel = process.env.VERCEL === '1';
 
 // Middleware
 app.use(cors());
@@ -25,6 +27,43 @@ app.get('/test', (req, res) => {
 
 // Multer setup for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
+
+function appendMulterFile(form, fieldName, file, fallbackName) {
+  if (!file) return;
+  const filename = file.originalname && file.originalname.trim() !== ''
+    ? file.originalname
+    : fallbackName;
+  const mimeType = file.mimetype || 'application/octet-stream';
+  const blob = new Blob([file.buffer], { type: mimeType });
+  form.append(fieldName, blob, filename);
+}
+
+function resolvePublicBaseUrl(req) {
+  const envBase = process.env.NEXT_PUBLIC_BASE_URL
+    || process.env.PUBLIC_BASE_URL
+    || process.env.VITE_BASE_URL
+    || process.env.BASE_URL
+    || process.env.VERCEL_URL;
+
+  if (envBase && typeof envBase === 'string') {
+    const trimmed = envBase.replace(/\/$/, '');
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  }
+
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const proto = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : (forwardedProto?.split(',')[0] || req.protocol || 'https');
+  const hostHeader = Array.isArray(forwardedHost)
+    ? forwardedHost[0]
+    : (forwardedHost || req.headers.host);
+
+  return hostHeader ? `${proto}://${hostHeader}`.replace(/\/$/, '') : '';
+}
 
 // Import API routes
 import { GoogleGenAI } from '@google/genai';
@@ -750,8 +789,13 @@ app.post('/api/flux/generate', async (req, res) => {
 
     // Add webhook configuration if requested
     if (body.useWebhook !== false) {
-      params.webhook_url = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/flux/webhook`;
-      params.webhook_secret = process.env.BFL_WEBHOOK_SECRET;
+      const publicBase = resolvePublicBaseUrl(req);
+      if (publicBase) {
+        params.webhook_url = `${publicBase}/api/flux/webhook`;
+        params.webhook_secret = process.env.BFL_WEBHOOK_SECRET;
+      } else {
+        console.warn('Flux webhook requested but no public base URL could be resolved.');
+      }
     }
 
     // Create the job
@@ -904,7 +948,7 @@ app.get('/api/flux/download', async (req, res) => {
     const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
     const resultDataUrl = `data:${contentType};base64,${base64}`;
     
-    res.json({ dataUrl, contentType });
+    res.json({ dataUrl: resultDataUrl, contentType });
   } catch (error) {
     console.error('Image download error:', error);
     res.status(500).json({
@@ -1154,7 +1198,7 @@ app.post('/api/flux/webhook', async (req, res) => {
           ok: true, 
           id: body.id, 
           status: 'completed',
-          url: dataUrl 
+          url: resultDataUrl 
         });
         
       } catch (error) {
@@ -1304,17 +1348,8 @@ app.post('/api/seedream/edit', upload.fields([
     formData.append('prompt', prompt);
     formData.append('size', size);
     formData.append('n', String(n));
-    formData.append('image', imageFile.buffer, {
-      filename: imageFile.originalname || 'image.png',
-      contentType: imageFile.mimetype || 'image/png'
-    });
-    
-    if (maskFile) {
-      formData.append('mask', maskFile.buffer, {
-        filename: maskFile.originalname || 'mask.png',
-        contentType: maskFile.mimetype || 'image/png'
-      });
-    }
+    appendMulterFile(formData, 'image', imageFile, 'image.png');
+    appendMulterFile(formData, 'mask', maskFile, 'mask.png');
 
     const response = await fetch(`${ARK_BASE_URL}/images/edits`, {
       method: "POST",
@@ -1427,27 +1462,75 @@ app.post('/api/reve/generate', async (req, res) => {
     }
 
     const json = await response.json();
-    
-    // Reve API returns images directly in the response
-    if (json.data && json.data.length > 0) {
-      const imageData = json.data[0];
-      const imageUrl = imageData.url || imageData.b64_json;
-      
-      if (!imageUrl) {
-        return res.status(502).json({ error: 'No image URL in response', raw: json });
-      }
 
-      console.log(`[reve] Image generated successfully`);
-      
-      res.json({ 
-        success: true,
-        image_url: imageUrl,
-        prompt: prompt,
-        model: model || "reve-image-1.0"
-      });
-    } else {
-      return res.status(502).json({ error: 'No image data in response', raw: json });
+    const jobId = json.id || json.job_id || json.request_id || null;
+    const defaultMime = json.mime || json.mime_type || 'image/png';
+
+    const images = [];
+    const pushImage = (value, mimeHint) => {
+      if (!value || typeof value !== 'string') return;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      if (trimmed.startsWith('data:') || /^https?:\/\//i.test(trimmed)) {
+        images.push(trimmed);
+        return;
+      }
+      const mime = mimeHint || defaultMime;
+      images.push(`data:${mime};base64,${trimmed}`);
+    };
+
+    if (typeof json.image === 'string') {
+      pushImage(json.image, json.image_mime || json.mime_type || json.mime);
     }
+
+    if (Array.isArray(json.images)) {
+      for (const entry of json.images) {
+        if (typeof entry === 'string') {
+          pushImage(entry);
+        } else if (entry) {
+          pushImage(entry.url, entry.mime || entry.mime_type);
+          pushImage(entry.b64 || entry.b64_json, entry.mime || entry.mime_type);
+        }
+      }
+    }
+
+    if (Array.isArray(json.data)) {
+      for (const entry of json.data) {
+        if (!entry) continue;
+        if (typeof entry === 'string') {
+          pushImage(entry);
+        } else {
+          pushImage(entry.url, entry.mime || entry.mime_type);
+          pushImage(entry.image_url, entry.mime || entry.mime_type);
+          pushImage(entry.b64 || entry.b64_json, entry.mime || entry.mime_type);
+        }
+      }
+    }
+
+    if (images.length > 0) {
+      console.log(`[reve] Image generated successfully`);
+      return res.json({
+        success: true,
+        status: 'completed',
+        image_url: images[0],
+        images,
+        prompt,
+        model: model || 'reve-image-1.0',
+        job_id: jobId,
+      });
+    }
+
+    if (jobId) {
+      console.log(`[reve] Job ${jobId} created, awaiting processing`);
+      return res.json({
+        success: true,
+        status: json.status || 'queued',
+        job_id: jobId,
+        polling_url: `${REVE_BASE_URL}/v1/jobs/${jobId}`,
+      });
+    }
+
+    return res.status(502).json({ error: 'No image data in response', raw: json });
 
   } catch (error) {
     console.error('Reve generation error:', error);
@@ -1487,17 +1570,8 @@ app.post('/api/reve/edit', upload.fields([
     // Build multipart form data for Reve
     const formData = new FormData();
     formData.append('prompt', prompt);
-    formData.append('image', imageFile.buffer, {
-      filename: imageFile.originalname || 'image.png',
-      contentType: imageFile.mimetype || 'image/png'
-    });
-    
-    if (maskFile) {
-      formData.append('mask', maskFile.buffer, {
-        filename: maskFile.originalname || 'mask.png',
-        contentType: maskFile.mimetype || 'image/png'
-      });
-    }
+    appendMulterFile(formData, 'image', imageFile, 'image.png');
+    appendMulterFile(formData, 'mask', maskFile, 'mask.png');
 
     if (width) formData.append('width', String(width));
     if (height) formData.append('height', String(height));
@@ -1578,10 +1652,7 @@ app.post('/api/reve/remix', upload.fields([
     // Build multipart form data for Reve
     const formData = new FormData();
     formData.append('prompt', prompt);
-    formData.append('image', imageFile.buffer, {
-      filename: imageFile.originalname || 'image.png',
-      contentType: imageFile.mimetype || 'image/png'
-    });
+    appendMulterFile(formData, 'image', imageFile, 'image.png');
 
     if (width) formData.append('width', String(width));
     if (height) formData.append('height', String(height));
@@ -1707,19 +1778,32 @@ app.get('/api/reve/jobs/:id', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`🔑 BFL API Key configured: ${KEY ? 'Yes' : 'No'}`);
-  console.log(`🌍 BFL Base URL: ${BASE}`);
-  console.log(`🎨 Ideogram API Key configured: ${process.env.IDEOGRAM_API_KEY ? 'Yes' : 'No'}`);
-  console.log(`🤖 Qwen Image API Key configured: ${DASHSCOPE_KEY ? 'Yes' : 'No'}`);
-  console.log(`🌐 Qwen Base URL: ${DASHSCOPE_BASE}`);
-  console.log(`🎬 Runway API Key configured: ${RUNWAY_API_KEY ? 'Yes' : 'No'}`);
-  console.log(`🌱 SeeDream 3.0 API Key configured: ${ARK_API_KEY ? 'Yes' : 'No'}`);
-  console.log(`🌐 SeeDream Base URL: ${ARK_BASE_URL}`);
-  console.log(`🎨 Reve API Key configured: ${REVE_API_KEY ? 'Yes' : 'No'}`);
-  console.log(`🌐 Reve Base URL: ${REVE_BASE_URL}`);
-  console.log(`📸 Images will be stored as base64 data URLs (no external storage required)`);
-});
+// Serve static client in non-Vercel environments to avoid SPA route 404s
+const distDir = join(__dirname, 'dist');
+if (!isVercel && existsSync(join(distDir, 'index.html'))) {
+  app.use(express.static(distDir));
+  app.get('*', (req, res) => {
+    res.sendFile(join(distDir, 'index.html'));
+  });
+}
+
+// Start server locally; on Vercel the express app is exported for serverless usage
+if (!isVercel) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
+    console.log(`🔑 BFL API Key configured: ${KEY ? 'Yes' : 'No'}`);
+    console.log(`🌍 BFL Base URL: ${BASE}`);
+    console.log(`🎨 Ideogram API Key configured: ${process.env.IDEOGRAM_API_KEY ? 'Yes' : 'No'}`);
+    console.log(`🤖 Qwen Image API Key configured: ${DASHSCOPE_KEY ? 'Yes' : 'No'}`);
+    console.log(`🌐 Qwen Base URL: ${DASHSCOPE_BASE}`);
+    console.log(`🎬 Runway API Key configured: ${RUNWAY_API_KEY ? 'Yes' : 'No'}`);
+    console.log(`🌱 SeeDream 3.0 API Key configured: ${ARK_API_KEY ? 'Yes' : 'No'}`);
+    console.log(`🌐 SeeDream Base URL: ${ARK_BASE_URL}`);
+    console.log(`🎨 Reve API Key configured: ${REVE_API_KEY ? 'Yes' : 'No'}`);
+    console.log(`🌐 Reve Base URL: ${REVE_BASE_URL}`);
+    console.log(`📸 Images will be stored as base64 data URLs (no external storage required)`);
+  });
+}
+
+export default app;

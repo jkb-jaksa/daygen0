@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface QwenGeneratedImage {
   url: string;
@@ -54,7 +55,7 @@ export const useQwenImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/qwen/image';
+      const apiUrl = getApiUrl('/api/qwen/image');
       
       console.log('[qwen] POST', apiUrl);
       
@@ -117,7 +118,7 @@ export const useQwenImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = 'http://localhost:3000/api/qwen/image-edit';
+      const apiUrl = getApiUrl('/api/qwen/image-edit');
       
       const formData = new FormData();
       formData.append('image', options.image);

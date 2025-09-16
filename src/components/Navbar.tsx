@@ -1,5 +1,5 @@
 import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
@@ -143,24 +143,27 @@ export default function Navbar() {
               className="parallax-mid h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-raleway">
-              {items.map((item) => (
-                <a
-                  key={item}
-                  href={
-                    item === "create" ? "/create" : 
-                    item === "edit" ? "/edit" : 
-                    item === "knowledge base" ? "/knowledge-base" : 
-                    item === "services" ? "/services" : 
-                    item === "about us" ? "/about-us" : 
-                    item === "prompts" ? "/prompts" : 
-                    "#"
-                  }
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
-                  onMouseEnter={() => setActiveMenu(item)}
-                >
-                  {item}
-                </a>
-              ))}
+              {items.map((item) => {
+                const path =
+                  item === "create" ? "/create" : 
+                  item === "edit" ? "/edit" : 
+                  item === "knowledge base" ? "/knowledge-base" : 
+                  item === "services" ? "/services" : 
+                  item === "about us" ? "/about-us" : 
+                  item === "prompts" ? "/prompts" : 
+                  "#";
+
+                return (
+                  <Link
+                    key={item}
+                    to={path}
+                    className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
+                    onMouseEnter={() => setActiveMenu(item)}
+                  >
+                    {item}
+                  </Link>
+                );
+              })}
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
@@ -260,16 +263,17 @@ export default function Navbar() {
                       { key: "style", label: "style transfer", Icon: Users },
                       { key: "upscale", label: "upscale", Icon: Volume2 },
                     ].map((category) => (
-                      <a
+                      <Link
                         key={category.key}
-                        href="/edit"
+                        to="/edit"
+                        onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
                           <category.Icon className="size-3.5" />
                         </div>
                         <span>{category.label}</span>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 ) : (

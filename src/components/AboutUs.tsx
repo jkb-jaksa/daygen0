@@ -1,5 +1,6 @@
 import type React from "react";
 import { Users, Target, Lightbulb, Heart, Sparkles, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const AboutUs: React.FC = () => {
 
@@ -263,8 +264,8 @@ const AboutUs: React.FC = () => {
                 to discover and master the best AI tools for their projects.
               </p>
               <div className="flex justify-center gap-4">
-                <a 
-                  href="/knowledge-base" 
+                <Link 
+                  to="/knowledge-base" 
                   className="btn parallax-small text-black flex items-center gap-2"
                   style={{ backgroundColor: '#faaa16' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
@@ -272,14 +273,14 @@ const AboutUs: React.FC = () => {
                 >
                   <Sparkles className="size-4" />
                   Explore Tools
-                </a>
-                <a 
-                  href="/create" 
+                </Link>
+                <Link 
+                  to="/create" 
                   className="btn btn-white parallax-small text-black flex items-center gap-2"
                 >
                   <Zap className="size-4" />
                   Start Creating
-                </a>
+                </Link>
               </div>
             </div>
           </div>

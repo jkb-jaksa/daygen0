@@ -72,6 +72,20 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     shortName: 'SeeDream 3.0',
     description: 'High-quality text-to-image generation with editing capabilities',
     isAvailable: true
+  },
+  'reve-image-1.0': {
+    id: 'reve-image-1.0',
+    name: 'Reve 1.0',
+    shortName: 'Reve',
+    description: 'Great text-to-image and image editing',
+    isAvailable: true
+  },
+  'reve-image': {
+    id: 'reve-image',
+    name: 'Reve',
+    shortName: 'Reve',
+    description: 'Great text-to-image and image editing',
+    isAvailable: true
   }
 };
 

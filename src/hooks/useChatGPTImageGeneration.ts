@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -43,7 +44,7 @@ export const useChatGPTImageGeneration = () => {
       const { prompt, n = 1, size = '1024x1024', quality = 'high', background = 'transparent' } = options;
 
       // Use the ChatGPT Image API endpoint
-      const apiUrl = 'http://localhost:3000/api/chatgpt-image';
+      const apiUrl = getApiUrl('/api/chatgpt-image');
 
       console.log('[chatgpt-image] POST', apiUrl);
       

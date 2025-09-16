@@ -32,9 +32,15 @@ export default function Account() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(galleryKey);
-      if (raw) setGallery(JSON.parse(raw));
-    } catch {}
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setGallery(parsed);
+      }
+    } catch (e) {
+      console.error('Account - Error loading gallery:', e);
+    }
   }, [galleryKey]);
+
 
   const handleProfilePicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

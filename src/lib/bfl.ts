@@ -1,6 +1,8 @@
 // BFL API utility library for Flux image generation
 // Based on BFL documentation: https://docs.bfl.ml/quick_start/generating_images
 
+import { API_BASE_URL } from '../utils/api';
+
 const BASE = (import.meta as any).env?.VITE_BFL_API_BASE || 'https://api.bfl.ai';
 const KEY = (import.meta as any).env?.VITE_BFL_API_KEY;
 
@@ -261,10 +263,15 @@ export async function createFluxJob(
   const path = getModelPath(model);
   
   // Add webhook configuration if requested
-  const webhookPayload = useWebhook ? {
-    webhook_url: `${(import.meta as any).env?.VITE_BASE_URL || 'http://localhost:3000'}/api/flux/webhook`,
-    webhook_secret: (import.meta as any).env?.VITE_BFL_WEBHOOK_SECRET,
-  } : {};
+  const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  const webhookOrigin = (API_BASE_URL && API_BASE_URL.length > 0 ? API_BASE_URL : fallbackOrigin).replace(/\/$/, '');
+
+  const webhookPayload = useWebhook && webhookOrigin
+    ? {
+        webhook_url: `${webhookOrigin}/api/flux/webhook`,
+        webhook_secret: (import.meta as any).env?.VITE_BFL_WEBHOOK_SECRET,
+      }
+    : {};
 
   // Prepare the request body
   const createBody = {

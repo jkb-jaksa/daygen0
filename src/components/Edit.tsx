@@ -7,6 +7,7 @@ import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
+import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 // import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import type { FluxModelType } from "../lib/bfl";
 // import { MODEL_CAPABILITIES } from "../lib/bfl";
@@ -39,7 +40,7 @@ interface Settings {
 interface RunResult {
   id: string;
   mode: Mode;
-  model: FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0";
+  model: FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image";
   imageDataUrl: string;
   baseImageDataUrl?: string;
   settings: Settings;
@@ -67,12 +68,13 @@ const EDIT_TASKS: EditTask[] = ["Inpaint", "Outpaint", "Replace", "Style transfe
 const FLUX_EDIT_MODELS = [
   { id: 'flux-e1', name: 'Flux Kontext Pro', description: 'High-quality image editing' },
   { id: 'flux-e2', name: 'Flux Kontext Max', description: 'Highest quality image editing' },
+  { id: 'reve-image', name: 'Reve', description: 'Great text-to-image and image editing' },
   { id: 'ideogram', name: 'Ideogram 3.0', description: 'Advanced image generation, editing, and enhancement' },
   { id: 'qwen-image', name: 'Qwen Image', description: 'Great image editing' },
-  { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' },
   { id: 'runway-gen4', name: 'Runway Gen-4', description: 'Advanced image generation with reference support' },
   { id: 'runway-gen4-turbo', name: 'Runway Gen-4 Turbo', description: 'Fast generation with reference images' },
-  { id: 'seedream-3.0', name: 'SeeDream 3.0', description: 'High-quality text-to-image generation with editing capabilities' }
+  { id: 'seedream-3.0', name: 'SeeDream 3.0', description: 'High-quality text-to-image generation with editing capabilities' },
+  { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' }
 ] as const;
 
 function uid() {
@@ -107,7 +109,7 @@ export default function Edit() {
   
   // State
   const [mode] = useState<Mode>("edit");
-  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0">("flux-e1");
+  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image">("flux-e1");
   const [task, setTask] = useState<TaskChip>("Inpaint");
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
   const [baseImage, setBaseImage] = useState<string | undefined>(undefined);
@@ -162,8 +164,14 @@ export default function Edit() {
     generateImage: generateSeeDreamImage
   } = useSeeDreamImageGeneration();
 
+  // Reve Image generation hook
+  const {
+    isLoading: reveLoading,
+    generateImage: generateReveImage
+  } = useReveImageGeneration();
+
   // Combined loading state
-  const isRunning = fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading;
+  const isRunning = fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading || reveLoading;
 
   // Shortcuts
   useGenerateShortcuts({ onGenerate: () => handleRun("run") });
@@ -233,8 +241,8 @@ export default function Edit() {
 
   // Smart model routing for editing
   useEffect(() => {
-    if (model === "chatgpt-image" || model === "qwen-image") {
-      // Don't auto-switch ChatGPT Image or Qwen Image models
+    if (model === "chatgpt-image" || model === "qwen-image" || model === "reve-image") {
+      // Don't auto-switch ChatGPT Image, Qwen Image, or Reve models
       return;
     }
     if (task === "Outpaint" || isLargeResize(settings.width, settings.height)) {
@@ -317,6 +325,15 @@ export default function Edit() {
             n: 1,
           });
           result = seedreamResult;
+        } else if (model === "reve-image") {
+          // Use Reve Image generation for editing
+          const reveResult = await generateReveImage({
+            prompt: s.prompt,
+            width: s.width,
+            height: s.height,
+            seed: s.seed,
+          });
+          result = reveResult;
         } else {
           // Use Flux generation
           result = await generateFluxImage({
@@ -615,7 +632,7 @@ export default function Edit() {
                           <button
                             key={m.id}
                             onClick={() => {
-                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0");
+                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image");
                               setIsModelSelectorOpen(false);
                             }}
                             className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-d-mid hover:text-brand transition-colors ${

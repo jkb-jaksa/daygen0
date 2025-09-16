@@ -88,7 +88,63 @@ export const useReveImageGeneration = () => {
         throw new Error(errorMessage);
       }
 
-      const { job_id, polling_url } = await res.json();
+      const submission = await res.json();
+
+      const submissionImages: string[] = Array.isArray(submission?.images)
+        ? submission.images.filter((img: unknown): img is string => typeof img === 'string' && img.length > 0)
+        : [];
+      const directImage = submission?.image_url || submission?.image || submissionImages[0];
+      const submissionJobId: string | undefined = submission?.job_id || submission?.id || submission?.request_id;
+      const resolvedJobId = submissionJobId || (directImage ? `reve-direct-${Date.now()}` : undefined);
+
+      if (directImage && submission?.status === 'completed') {
+        const generatedImage: ReveGeneratedImage = {
+          url: directImage,
+          prompt,
+          model,
+          timestamp: new Date().toISOString(),
+          jobId: resolvedJobId!,
+          references: references || undefined,
+        };
+
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          jobStatus: 'completed',
+          progress: 'Generation complete!',
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      }
+
+      if (directImage && !submissionJobId) {
+        const generatedImage: ReveGeneratedImage = {
+          url: directImage,
+          prompt,
+          model,
+          timestamp: new Date().toISOString(),
+          jobId: resolvedJobId!,
+          references: references || undefined,
+        };
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          jobStatus: 'completed',
+          progress: 'Generation complete!',
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      }
+
+      if (!submissionJobId) {
+        throw new Error('Reve API did not return job information or image data.');
+      }
 
       setState(prev => ({
         ...prev,
@@ -100,7 +156,7 @@ export const useReveImageGeneration = () => {
       let attempts = 0;
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
-      console.log('[reve] Starting polling for job:', job_id);
+      console.log('[reve] Starting polling for job:', submissionJobId);
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
@@ -109,7 +165,7 @@ export const useReveImageGeneration = () => {
         console.log(`[reve] Polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`/api/reve/jobs/${job_id}`);
+          const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);
@@ -124,7 +180,7 @@ export const useReveImageGeneration = () => {
               prompt,
               model,
               timestamp: new Date().toISOString(),
-              jobId: job_id,
+              jobId: submissionJobId,
               references: references || undefined,
             };
 
@@ -144,6 +200,28 @@ export const useReveImageGeneration = () => {
             throw new Error(`Generation failed: ${result.error || 'Unknown error'}`);
           }
           
+          if (result.status === 'completed' && result.image_url) {
+            const generatedImage: ReveGeneratedImage = {
+              url: result.image_url,
+              prompt,
+              model,
+              timestamp: new Date().toISOString(),
+              jobId: submissionJobId,
+              references: references || undefined,
+            };
+
+            setState(prev => ({
+              ...prev,
+              isLoading: false,
+              jobStatus: 'completed',
+              progress: 'Generation complete!',
+              generatedImage,
+              error: null,
+            }));
+
+            return generatedImage;
+          }
+
           // Update progress
           setState(prev => ({
             ...prev,
@@ -219,7 +297,60 @@ export const useReveImageGeneration = () => {
         throw new Error(errorMessage);
       }
 
-      const { job_id, polling_url } = await res.json();
+      const submission = await res.json();
+
+      const submissionImages: string[] = Array.isArray(submission?.images)
+        ? (submission.images as unknown[]).filter((img): img is string => typeof img === 'string' && img.length > 0)
+        : [];
+      const directImage = submission?.image_url || submission?.image || submissionImages[0];
+      const submissionJobId: string | undefined = submission?.job_id || submission?.id || submission?.request_id;
+      const resolvedJobId = submissionJobId || (directImage ? `reve-edit-${Date.now()}` : undefined);
+
+      if (directImage && submission?.status === 'completed') {
+        const generatedImage: ReveGeneratedImage = {
+          url: directImage,
+          prompt,
+          model,
+          timestamp: new Date().toISOString(),
+          jobId: resolvedJobId!,
+        };
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          jobStatus: 'completed',
+          progress: 'Edit complete!',
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      }
+
+      if (directImage && !submissionJobId) {
+        const generatedImage: ReveGeneratedImage = {
+          url: directImage,
+          prompt,
+          model,
+          timestamp: new Date().toISOString(),
+          jobId: resolvedJobId!,
+        };
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          jobStatus: 'completed',
+          progress: 'Edit complete!',
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      }
+
+      if (!submissionJobId) {
+        throw new Error('Reve API did not return job information or image data.');
+      }
 
       setState(prev => ({
         ...prev,
@@ -231,7 +362,7 @@ export const useReveImageGeneration = () => {
       let attempts = 0;
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
-      console.log('[reve] Starting polling for edit job:', job_id);
+      console.log('[reve] Starting polling for edit job:', submissionJobId);
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
@@ -240,7 +371,7 @@ export const useReveImageGeneration = () => {
         console.log(`[reve] Edit polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`/api/reve/jobs/${job_id}`);
+          const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);
@@ -255,7 +386,7 @@ export const useReveImageGeneration = () => {
               prompt,
               model,
               timestamp: new Date().toISOString(),
-              jobId: job_id,
+              jobId: submissionJobId,
             };
 
             setState(prev => ({
@@ -273,7 +404,28 @@ export const useReveImageGeneration = () => {
           if (result.status === 'failed' || result.status === 'canceled') {
             throw new Error(`Edit failed: ${result.error || 'Unknown error'}`);
           }
-          
+
+          if (result.status === 'completed' && result.image_url) {
+            const generatedImage: ReveGeneratedImage = {
+              url: result.image_url,
+              prompt,
+              model,
+              timestamp: new Date().toISOString(),
+              jobId: submissionJobId,
+            };
+
+            setState(prev => ({
+              ...prev,
+              isLoading: false,
+              jobStatus: 'completed',
+              progress: 'Edit complete!',
+              generatedImage,
+              error: null,
+            }));
+
+            return generatedImage;
+          }
+
           // Update progress
           setState(prev => ({
             ...prev,

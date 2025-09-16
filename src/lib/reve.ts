@@ -38,14 +38,12 @@ export interface ReveClientOptions {
 export class ReveClient {
   private baseUrl: string;
   private apiKey: string;
-  private projectId?: string;
   private timeout: number;
 
   constructor(opts: ReveClientOptions) {
     assert(opts.apiKey, "REVE_API_KEY missing");
     this.baseUrl = (opts.baseUrl ?? process.env.REVE_BASE_URL ?? "https://api.reve.com").replace(/\/+$/, "");
     this.apiKey = opts.apiKey;
-    this.projectId = opts.projectId ?? process.env.REVE_PROJECT_ID;
     this.timeout = opts.timeoutMs ?? 60000;
   }
 

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface SeeDreamGeneratedImage {
   url: string;
@@ -48,7 +49,7 @@ export const useSeeDreamImageGeneration = () => {
 
       console.log('[seedream] Generating image with prompt:', prompt.substring(0, 100) + '...');
       
-      const res = await fetch('http://localhost:3000/api/seedream/generate', {
+      const res = await fetch(getApiUrl('/api/seedream/generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, size, n }),
@@ -117,7 +118,7 @@ export const useSeeDreamImageGeneration = () => {
         formData.append('mask', mask);
       }
       
-      const res = await fetch('http://localhost:3000/api/seedream/edit', {
+      const res = await fetch(getApiUrl('/api/seedream/edit'), {
         method: 'POST',
         body: formData,
       });

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface GeneratedImage {
   url: string;
@@ -42,7 +43,7 @@ export const useRunwayImageGeneration = () => {
       const { prompt, model = 'gen4_image', uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
 
       // Use the Runway API endpoint
-      const apiUrl = 'http://localhost:3000/api/runway/image';
+      const apiUrl = getApiUrl('/api/runway/image');
 
       console.log('[runway] POST', apiUrl);
       

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface GeneratedImage {
   url: string;
@@ -43,7 +44,7 @@ export const useGeminiImageGeneration = () => {
       const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
       // Use the new API endpoint structure
-      const apiUrl = 'http://localhost:3000/api/generate-image';
+      const apiUrl = getApiUrl('/api/generate-image');
 
       console.log('[image] POST', apiUrl);
       
