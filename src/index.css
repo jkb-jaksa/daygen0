@@ -110,69 +110,49 @@ html, body {
 /* Base button class - common properties for all buttons */
 .btn {
   align-items: center;
-  background: none;
-  border: none;
-  border-radius: 32px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
   box-sizing: border-box;
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
   font-weight: 500;
-  height: 32px; /* fixed height for consistent button size */
+  gap: 0.5rem;
+  height: 36px;
   justify-content: center;
   line-height: 1;
+  min-width: 120px;
   overflow: hidden;
-  padding: 0 12px; /* no vertical padding since we have fixed height */
-  width: 140px; /* fixed width for all buttons - accommodates 'learn more' text */
+  padding: 0 18px;
   position: relative;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   will-change: transform;
   z-index: 1;
 }
 
-/* Orange gradient pill button with blurred overlay */
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Solid orange primary button */
 .btn-orange {
-  --warm1: var(--d-orange-1, #faaa16);
-  --warm2: var(--d-orange-2, #e43a63);
-  /* Ensure consistent sizing */
+  background-color: var(--d-orange-1);
+  border-color: color-mix(in srgb, var(--d-orange-1) 80%, white 20%);
+  color: var(--d-black);
   flex-shrink: 0;
 }
 
-.btn-orange::before {
-  background:
-    linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    linear-gradient(
-      150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%
-    );
-  border-radius: 32px;
-  content: "";
-  filter: blur(2px);
-  inset: 0;
-  position: absolute;
-  transition: all 0.2s ease;
-  z-index: -1;
+.btn-orange:hover {
+  background-color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+  border-color: color-mix(in srgb, var(--d-orange-1) 65%, white 35%);
 }
 
-@supports (background: linear-gradient(in oklch, red, blue)) {
-  .btn-orange::before {
-    background:
-      linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-      linear-gradient(
-        in oklch 150deg,
-        var(--d-orange-1) 0%,
-        var(--d-orange-1) 26%,
-        color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
-        color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
-        color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
-        var(--d-orange-2) 88%,
-        var(--d-orange-2) 100%
-      );
-  }
+.btn-orange:active {
+  background-color: color-mix(in srgb, var(--d-orange-1) 70%, black 30%);
+  border-color: color-mix(in srgb, var(--d-orange-1) 70%, black 30%);
 }
 
 /* Warm gradient panel background (matches btn-orange gradient) */
@@ -188,6 +168,11 @@ html, body {
       var(--warm2) 88%,
       var(--warm2) 100%
     );
+}
+
+/* Warm gradient utility for progress indicators / subtle fills */
+.bg-warm-gradient {
+  background: linear-gradient(90deg, var(--d-orange-1), var(--d-orange-2));
 }
 
 @supports (background: linear-gradient(in oklch, red, blue)) {
@@ -505,85 +490,32 @@ html, body {
 }
 
 
-/* Soft white pill button with blurred overlay */
+/* Soft white pill button */
 .btn-white {
-  /* inherits all base properties from .btn */
-  /* Ensure consistent sizing */
+  background-color: var(--d-white);
+  border-color: color-mix(in srgb, var(--d-white) 60%, white 40%);
+  color: var(--d-black);
   flex-shrink: 0;
-}
-
-.btn-white::before {
-  background: rgba(240, 250, 255, 1);
-  border-radius: 32px;
-  content: "";
-  filter: blur(2px);
-  inset: 0;
-  position: absolute;
-  transition: all 0.2s ease;
-  z-index: -1;
 }
 
 .btn-white:hover {
-  overflow: hidden;
+  background-color: var(--d-text);
+  border-color: color-mix(in srgb, var(--d-white) 40%, white 60%);
+  color: var(--d-black);
 }
 
-.btn-white:hover::before {
-  background: rgba(245, 255, 255, 1);
-  border-radius: 32px;
-  filter: blur(2px);
-}
-
-/* Black button with d-text color - inspired by btn-white */
+/* Black button */
 .btn-black {
-  /* inherits all base properties from .btn */
-  /* Ensure consistent sizing */
+  background-color: var(--d-black);
+  border-color: var(--d-dark);
+  color: var(--d-white);
   flex-shrink: 0;
 }
 
-.btn-black::before {
-  background: rgba(20, 20, 20, 1);
-  border-radius: 32px;
-  content: "";
-  filter: blur(2px);
-  inset: 0;
-  position: absolute;
-  transition: all 0.2s ease;
-  z-index: -1;
-}
-
 .btn-black:hover {
-  overflow: hidden;
+  background-color: color-mix(in srgb, var(--d-black) 85%, white 15%);
+  border-color: var(--d-mid);
 }
-
-.btn-black:hover::before {
-  background: rgba(30, 30, 30, 1);
-  border-radius: 32px;
-  filter: blur(2px);
-}
-
-/* Force Book a Call button to match other buttons exactly */
-.relative.z-10.px-12.py-16.text-center.text-b-black .btn.btn-black {
-  height: 32px !important;
-  width: 140px !important;
-  min-height: 32px !important;
-  min-width: 140px !important;
-  max-height: 32px !important;
-  max-width: 140px !important;
-  flex-shrink: 0 !important;
-  display: inline-flex !important;
-  box-sizing: border-box !important;
-}
-
-/* Ensure all buttons maintain consistent size */
-.btn {
-  height: 32px !important;
-  width: 140px !important;
-  min-height: 32px !important;
-  min-width: 140px !important;
-  max-height: 32px !important;
-  max-width: 140px !important;
-}
-
 
 .white-gradient {
   background: linear-gradient(
@@ -656,7 +588,7 @@ html, body {
   justify-content: center;
   padding: 0.375rem; /* 6px padding ensures icon doesn't touch edges */
   place-items: center;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s;
+  transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s;
   width: 32px; /* match footer size-8 */
   -webkit-backdrop-filter: blur(96px) brightness(.6) contrast(1.1) saturate(.8);
   backdrop-filter: blur(96px) brightness(.6) contrast(1.1) saturate(.8);
@@ -669,6 +601,10 @@ html, body {
   transform: scale(1.01);
 }
 
+.favorite-toggle .heart-icon {
+  pointer-events: none;
+}
+
 /* Line clamp utility for text truncation */
 .line-clamp-4 {
   display: -webkit-box;
@@ -677,4 +613,3 @@ html, body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-

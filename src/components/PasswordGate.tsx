@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { buttons } from "../styles/designSystem";
 
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
@@ -77,16 +78,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
             <div className="flex gap-3 justify-center">
               <button
                 type="submit"
-                className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
-                style={{
-                  backgroundColor: '#faaa16'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffb833';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#faaa16';
-                }}
+                className={`${buttons.primary} font-semibold`}
               >
                 Unlock
               </button>

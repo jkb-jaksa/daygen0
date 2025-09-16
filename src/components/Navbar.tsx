@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
+import { buttons } from "../styles/designSystem";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -169,10 +170,10 @@ export default function Navbar() {
           <div className="flex items-center gap-2 md:gap-3">
             {!user ? (
               <>
-                <button className="btn btn-white parallax-small text-black" onClick={()=>setShowAuth("login")}>
+                <button className={`${buttons.secondary} parallax-small`} onClick={()=>setShowAuth("login")}>
                   Log In
                 </button>
-                <button className="btn parallax-small text-black" style={{ backgroundColor: '#faaa16' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'} onClick={()=>setShowAuth("signup")}>
+                <button className={`${buttons.primary} parallax-small`} onClick={()=>setShowAuth("signup")}>
                   Sign Up
                 </button>
                 <button 

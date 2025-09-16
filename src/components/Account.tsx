@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getModelDisplayName } from "../utils/modelUtils";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
+import { buttons } from "../styles/designSystem";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -247,26 +248,17 @@ export default function Account() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingPic}
-                  className="btn btn-white text-black font-raleway"
+                  className={buttons.secondary}
                 >
-                  <Upload className="size-4 mr-1" />
+                  <Upload className="size-4" />
                   {isUploadingPic ? "Uploading..." : "Upload"}
                 </button>
                 {user.profilePic && (
                   <button
                     onClick={handleRemoveProfilePic}
-                    className="btn text-black font-raleway"
-                    style={{
-                      backgroundColor: '#faaa16'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#ffb833';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#faaa16';
-                    }}
+                    className={buttons.primary}
                   >
-                    <X className="size-4 mr-1" />
+                    <X className="size-4" />
                     Remove
                   </button>
                 )}
@@ -278,22 +270,13 @@ export default function Account() {
           <input className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
             <button
-              className="btn btn-white text-black font-raleway disabled:opacity-50 disabled:cursor-not-allowed"
+              className={buttons.secondary}
               onClick={handleSaveProfile}
             >
               Save
             </button>
             <button 
-              className="btn text-black font-raleway"
-              style={{
-                backgroundColor: '#faaa16'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffb833';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#faaa16';
-              }}
+              className={buttons.primary}
               onClick={signOut}
             >
               Log out

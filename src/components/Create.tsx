@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
@@ -27,6 +27,7 @@ import { compressDataUrl } from "../lib/imageCompression";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
+import { layout, buttons, glass } from "../styles/designSystem";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -287,6 +288,7 @@ const Create: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [gallery, setGallery] = useState<(GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]>([]);
   const [selectedFullImage, setSelectedFullImage] = useState<(GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage) | null>(null);
+  const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
   
@@ -330,6 +332,37 @@ const Create: React.FC = () => {
       window.removeEventListener('navigateToCategory', handleCategoryNavigation as EventListener);
     };
   }, []);
+
+  // Keyboard navigation for gallery
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle navigation when not in a form input
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (isFullSizeOpen) {
+          navigateFullSizeImage('prev');
+        } else {
+          navigateGallery('prev');
+        }
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        if (isFullSizeOpen) {
+          navigateFullSizeImage('next');
+        } else {
+          navigateGallery('next');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullSizeOpen, gallery.length, currentGalleryIndex]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -813,6 +846,34 @@ const Create: React.FC = () => {
   };
 
 
+  const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    const ownerCard = target.closest('.group') as HTMLElement | null;
+    if (ownerCard) {
+      const triggerRect = target.getBoundingClientRect();
+      const cardRect = ownerCard.getBoundingClientRect();
+      const relativeTop = triggerRect.top - cardRect.top;
+      const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
+      tooltip.style.top = `${relativeTop - 8}px`;
+      tooltip.style.left = `${relativeLeft}px`;
+      tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+    }
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  };
+
+
+  const hideHoverTooltip = (tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  };
+
+
   const createNewFolder = () => {
     if (!newFolderName.trim()) return;
     
@@ -849,6 +910,40 @@ const Create: React.FC = () => {
     } catch (err) {
       console.error('Failed to copy prompt:', err);
     }
+  };
+
+  // Gallery navigation functions
+  const navigateGallery = (direction: 'prev' | 'next') => {
+    const totalImages = gallery.length;
+    if (totalImages === 0) return;
+    
+    setCurrentGalleryIndex(prev => {
+      if (direction === 'prev') {
+        return prev > 0 ? prev - 1 : totalImages - 1;
+      } else {
+        return prev < totalImages - 1 ? prev + 1 : 0;
+      }
+    });
+  };
+
+  const openImageAtIndex = (index: number) => {
+    if (gallery[index]) {
+      setSelectedFullImage(gallery[index]);
+      setCurrentGalleryIndex(index);
+      setIsFullSizeOpen(true);
+    }
+  };
+
+  const navigateFullSizeImage = (direction: 'prev' | 'next') => {
+    const totalImages = gallery.length;
+    if (totalImages === 0) return;
+    
+    const newIndex = direction === 'prev' 
+      ? (currentGalleryIndex > 0 ? currentGalleryIndex - 1 : totalImages - 1)
+      : (currentGalleryIndex < totalImages - 1 ? currentGalleryIndex + 1 : 0);
+    
+    setCurrentGalleryIndex(newIndex);
+    setSelectedFullImage(gallery[newIndex]);
   };
 
   const enhancePrompt = async () => {
@@ -1377,18 +1472,18 @@ const Create: React.FC = () => {
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
-    <div className="relative min-h-screen text-d-text overflow-hidden">
+    <div className={layout.page}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] px-4 py-2 text-d-white text-sm font-raleway z-[100] transition-all duration-300">
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-300 ${glass.surface}`}>
           {copyNotification}
         </div>
       )}
 
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
-        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <Trash2 className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
@@ -1402,25 +1497,16 @@ const Create: React.FC = () => {
                   }
                 </p>
               </div>
-              <div className="flex gap-3 justify-center">
+              <div className="flex justify-center gap-3">
                 <button
                   onClick={handleDeleteCancelled}
-                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
+                  className={buttons.ghost}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirmed}
-                  className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
-                  style={{
-                    backgroundColor: '#faaa16'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#ffb833';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#faaa16';
-                  }}
+                  className={buttons.primary}
                 >
                   Delete
                 </button>
@@ -1432,8 +1518,8 @@ const Create: React.FC = () => {
 
       {/* New folder dialog */}
       {newFolderDialog && (
-        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
@@ -1463,7 +1549,7 @@ const Create: React.FC = () => {
                   }}
                 />
               </div>
-              <div className="flex gap-3 justify-center">
+              <div className="flex justify-center gap-3">
                 <button
                   onClick={() => {
                     setNewFolderDialog(false);
@@ -1474,23 +1560,14 @@ const Create: React.FC = () => {
                       setAddToFolderDialog(true);
                     }
                   }}
-                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
+                  className={buttons.ghost}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createNewFolder}
                   disabled={!newFolderName.trim()}
-                  className="px-4 py-2 text-d-black disabled:cursor-not-allowed disabled:opacity-50 rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
-                  style={{
-                    backgroundColor: '#faaa16'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#ffb833';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#faaa16';
-                  }}
+                  className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   Create
                 </button>
@@ -1502,8 +1579,8 @@ const Create: React.FC = () => {
 
       {/* Add to folder dialog */}
       {addToFolderDialog && (
-        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
@@ -1524,19 +1601,14 @@ const Create: React.FC = () => {
                         setAddToFolderDialog(false);
                         setNewFolderDialog(true);
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 group mx-auto"
-                      style={{ backgroundColor: '#faaa16' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}
+                      className={`${buttons.pillWarm} mx-auto`}
                       title="Create new folder"
                       aria-label="Create new folder"
                     >
-                      <svg className="w-3.5 h-3.5 text-black transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-3.5 w-3.5 text-b-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      <span className="text-black font-raleway text-xs font-medium transition-colors duration-200">
-                        New Folder
-                      </span>
+                      <span>New Folder</span>
                     </button>
                   </div>
                 ) : (
@@ -1598,13 +1670,13 @@ const Create: React.FC = () => {
                 )}
               </div>
               
-              <div className="flex gap-3 justify-center">
+              <div className="flex justify-center gap-3">
                 <button
                   onClick={() => {
                     setAddToFolderDialog(false);
                     setSelectedImageForFolder("");
                   }}
-                  className="px-4 py-2 bg-d-black/40 hover:bg-d-black border border-d-mid text-d-white hover:text-brand rounded-lg transition-colors duration-200 font-cabin text-base"
+                  className={buttons.ghost}
                 >
                   Cancel
                 </button>
@@ -1613,10 +1685,7 @@ const Create: React.FC = () => {
                     setAddToFolderDialog(false);
                     setSelectedImageForFolder("");
                   }}
-                  className="px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-cabin text-base font-medium"
-                  style={{ backgroundColor: '#faaa16' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}
+                  className={buttons.primary}
                 >
                   Done
                 </button>
@@ -1628,10 +1697,10 @@ const Create: React.FC = () => {
 
       
       {/* Background overlay to show gradient behind navbar */}
-      <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
+      <div className={layout.backdrop} aria-hidden="true" />
       
       {/* PLATFORM HERO */}
-      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-[calc(var(--nav-h)+0.25rem)] pb-48">
+      <header className={`relative z-10 ${layout.container} pt-[calc(var(--nav-h)+0.25rem)] pb-48`}>
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Removed "Create now" heading per request */}
@@ -1640,7 +1709,7 @@ const Create: React.FC = () => {
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
             <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
-              <div className="h-full overflow-auto glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] pl-3 pr-5 py-4 flex items-start">
+              <div className={`${glass.surface} flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
                   <div className="text-xs text-d-white/60 font-raleway font-medium uppercase tracking-wider mb-1">
@@ -1782,7 +1851,7 @@ const Create: React.FC = () => {
                   </div>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#faaa16] via-[#ffcd66] to-[#faaa16] transition-[width] duration-300"
+                    className="h-full rounded-full bg-warm-gradient transition-[width] duration-300"
                     style={{ width: `${storageUsage ? storagePercentUsed * 100 : 0}%` }}
                   />
                 </div>
@@ -1800,7 +1869,7 @@ const Create: React.FC = () => {
                 <div className="mb-4">
                   <button 
                     onClick={() => setIsCacheBarVisible(true)}
-                    className="text-xs px-3 py-2 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:bg-d-orange-1/20 rounded-lg text-d-white hover:text-d-orange-1 transition-colors font-raleway"
+                    className={`${glass.tight} text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1`}
                   >
                     Show cache usage
                   </button>
@@ -1847,32 +1916,12 @@ const Create: React.FC = () => {
                                         e.stopPropagation();
                                         copyPromptToClipboard(img.prompt);
                                       }}
-                                      className="text-d-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
-                                      style={{ color: '#C4CCCC' }}
-                                      onMouseEnter={(e) => { 
-                                        e.currentTarget.style.color = '#faaa16'; 
-                                        const tooltip = document.querySelector(`[data-tooltip-for="fav-${img.url}-${idx}"]`) as HTMLElement;
-                                        if (tooltip) {
-                                          const rect = e.currentTarget.getBoundingClientRect();
-                                          const galleryRect = e.currentTarget.closest('.group')?.getBoundingClientRect();
-                                          if (galleryRect) {
-                                            const relativeTop = rect.top - galleryRect.top;
-                                            const relativeLeft = rect.left - galleryRect.left + rect.width / 2;
-                                            tooltip.style.top = `${relativeTop - 8}px`;
-                                            tooltip.style.left = `${relativeLeft}px`;
-                                            tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-                                          }
-                                          tooltip.classList.remove('opacity-0');
-                                          tooltip.classList.add('opacity-100');
-                                        }
+                                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                      onMouseEnter={(e) => {
+                                        showHoverTooltip(e.currentTarget, `fav-${img.url}-${idx}`);
                                       }}
-                                      onMouseLeave={(e) => { 
-                                        e.currentTarget.style.color = '#C4CCCC'; 
-                                        const tooltip = document.querySelector(`[data-tooltip-for="fav-${img.url}-${idx}"]`) as HTMLElement;
-                                        if (tooltip) {
-                                          tooltip.classList.remove('opacity-100');
-                                          tooltip.classList.add('opacity-0');
-                                        }
+                                      onMouseLeave={() => {
+                                        hideHoverTooltip(`fav-${img.url}-${idx}`);
                                       }}
                                     >
                                       <Copy className="w-3.5 h-3.5" />
@@ -1910,10 +1959,7 @@ const Create: React.FC = () => {
                                       link.target = '_blank';
                                       link.click();
                                     }}
-                                    className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer"
-                                    style={{ color: '#C4CCCC' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
+                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
                                   >
                                     View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                   </button>
@@ -1953,12 +1999,12 @@ const Create: React.FC = () => {
                           <button 
                             type="button" 
                             onClick={() => toggleFavorite(img.url)} 
-                            className="image-action-btn" 
+                            className="image-action-btn favorite-toggle" 
                             title="Remove from liked" 
                             aria-label="Remove from liked"
                           >
                             <Heart 
-                              className="w-3.5 h-3.5 transition-colors duration-200 fill-red-500 text-red-500" 
+                              className="heart-icon w-3.5 h-3.5 transition-colors duration-200 fill-red-500 text-red-500" 
                             />
                           </button>
                           <button type="button" onClick={() => handleUseAsReference(img)} className="image-action-btn" title="Use as reference" aria-label="Use as reference"><Copy className="w-3.5 h-3.5" /></button>
@@ -2030,32 +2076,12 @@ const Create: React.FC = () => {
                                         e.stopPropagation();
                                         copyPromptToClipboard(img.prompt);
                                       }}
-                                      className="text-d-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
-                                      style={{ color: '#C4CCCC' }}
-                                      onMouseEnter={(e) => { 
-                                        e.currentTarget.style.color = '#faaa16'; 
-                                        const tooltip = document.querySelector(`[data-tooltip-for="hist-${img.url}-${idx}"]`) as HTMLElement;
-                                        if (tooltip) {
-                                          const rect = e.currentTarget.getBoundingClientRect();
-                                          const galleryRect = e.currentTarget.closest('.group')?.getBoundingClientRect();
-                                          if (galleryRect) {
-                                            const relativeTop = rect.top - galleryRect.top;
-                                            const relativeLeft = rect.left - galleryRect.left + rect.width / 2;
-                                            tooltip.style.top = `${relativeTop - 8}px`;
-                                            tooltip.style.left = `${relativeLeft}px`;
-                                            tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-                                          }
-                                          tooltip.classList.remove('opacity-0');
-                                          tooltip.classList.add('opacity-100');
-                                        }
+                                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                      onMouseEnter={(e) => {
+                                        showHoverTooltip(e.currentTarget, `hist-${img.url}-${idx}`);
                                       }}
-                                      onMouseLeave={(e) => { 
-                                        e.currentTarget.style.color = '#C4CCCC'; 
-                                        const tooltip = document.querySelector(`[data-tooltip-for="hist-${img.url}-${idx}"]`) as HTMLElement;
-                                        if (tooltip) {
-                                          tooltip.classList.remove('opacity-100');
-                                          tooltip.classList.add('opacity-0');
-                                        }
+                                      onMouseLeave={() => {
+                                        hideHoverTooltip(`hist-${img.url}-${idx}`);
                                       }}
                                     >
                                       <Copy className="w-3.5 h-3.5" />
@@ -2087,16 +2113,12 @@ const Create: React.FC = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      // Open the first reference image in a new tab
                                       const link = document.createElement('a');
                                       link.href = img.references![0];
                                       link.target = '_blank';
                                       link.click();
                                     }}
-                                    className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer"
-                                    style={{ color: '#C4CCCC' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
+                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
                                   >
                                     View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                   </button>
@@ -2133,19 +2155,19 @@ const Create: React.FC = () => {
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <button 
-                            type="button" 
-                            onClick={() => toggleFavorite(img.url)} 
-                            className="image-action-btn" 
-                            title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
-                            aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                          >
-                            <Heart 
-                              className={`w-3.5 h-3.5 transition-colors duration-200 ${
-                                favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white hover:text-brand'
-                              }`} 
-                            />
-                          </button>
+                    <button 
+                      type="button" 
+                      onClick={() => toggleFavorite(img.url)} 
+                      className="image-action-btn favorite-toggle" 
+                      title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                      aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                    >
+                      <Heart 
+                        className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                          favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                        }`} 
+                      />
+                    </button>
                           <ShareButton 
                             prompt={img.prompt || ""} 
                             size="sm"
@@ -2282,10 +2304,7 @@ const Create: React.FC = () => {
                       
                       <button
                         onClick={() => setNewFolderDialog(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-raleway text-sm font-medium"
-                        style={{ backgroundColor: '#faaa16' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}
+                        className={buttons.primary}
                       >
                         <FolderPlus className="w-4 h-4" />
                         New Folder
@@ -2301,10 +2320,7 @@ const Create: React.FC = () => {
                         </p>
                         <button
                           onClick={() => setNewFolderDialog(true)}
-                          className="flex items-center gap-2 px-4 py-2 text-d-black rounded-lg transition-colors duration-200 font-raleway text-sm font-medium"
-                          style={{ backgroundColor: '#faaa16' }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}
+                          className={buttons.primary}
                         >
                           <FolderPlus className="w-4 h-4" />
                           Create First Folder
@@ -2457,32 +2473,12 @@ const Create: React.FC = () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                        className="text-d-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
-                                        style={{ color: '#C4CCCC' }}
-                                        onMouseEnter={(e) => { 
-                                          e.currentTarget.style.color = '#faaa16'; 
-                                          const tooltip = document.querySelector(`[data-tooltip-for="folder-${folder.id}-${img.url}-${idx}"]`) as HTMLElement;
-                                          if (tooltip) {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            const galleryRect = e.currentTarget.closest('.group')?.getBoundingClientRect();
-                                            if (galleryRect) {
-                                              const relativeTop = rect.top - galleryRect.top;
-                                              const relativeLeft = rect.left - galleryRect.left + rect.width / 2;
-                                              tooltip.style.top = `${relativeTop - 8}px`;
-                                              tooltip.style.left = `${relativeLeft}px`;
-                                              tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-                                            }
-                                            tooltip.classList.remove('opacity-0');
-                                            tooltip.classList.add('opacity-100');
-                                          }
+                                        className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                        onMouseEnter={(e) => {
+                                          showHoverTooltip(e.currentTarget, `folder-${folder.id}-${img.url}-${idx}`);
                                         }}
-                                        onMouseLeave={(e) => { 
-                                          e.currentTarget.style.color = '#C4CCCC'; 
-                                          const tooltip = document.querySelector(`[data-tooltip-for="folder-${folder.id}-${img.url}-${idx}"]`) as HTMLElement;
-                                          if (tooltip) {
-                                            tooltip.classList.remove('opacity-100');
-                                            tooltip.classList.add('opacity-0');
-                                          }
+                                        onMouseLeave={() => {
+                                          hideHoverTooltip(`folder-${folder.id}-${img.url}-${idx}`);
                                         }}
                                       >
                                         <Copy className="w-3.5 h-3.5" />
@@ -2514,16 +2510,12 @@ const Create: React.FC = () => {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Open the first reference image in a new tab
                                         const link = document.createElement('a');
                                         link.href = img.references![0];
                                         link.target = '_blank';
                                         link.click();
                                       }}
-                                      className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer"
-                                      style={{ color: '#C4CCCC' }}
-                                      onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
-                                      onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
+                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
                                     >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -2565,7 +2557,7 @@ const Create: React.FC = () => {
                             >
                               <Heart 
                                 className={`w-3.5 h-3.5 transition-colors duration-200 ${
-                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white hover:text-brand'
+                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white group-hover:text-d-orange-1'
                                 }`} 
                               />
                             </button>
@@ -2700,7 +2692,49 @@ const Create: React.FC = () => {
 
                 {/* Default Gallery View - Only for Image Category */}
                 {activeCategory === "image" && !selectedFolder && (
-                  <div className="grid grid-cols-4 gap-3 w-full" data-category="image">
+                  <div className="relative" data-category="image">
+                    {/* Navigation arrows */}
+                    {gallery.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => navigateGallery('prev')}
+                          className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 text-d-white rounded-[40px] p-2 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-200 group"
+                          title="Previous image (←)"
+                          aria-label="Previous image"
+                        >
+                          <ChevronLeft className="w-5 h-5 transition-colors duration-200 group-hover:text-d-orange-1" />
+                        </button>
+                        <button
+                          onClick={() => navigateGallery('next')}
+                          className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 text-d-white rounded-[40px] p-2 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-200 group"
+                          title="Next image (→)"
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="w-5 h-5 transition-colors duration-200 group-hover:text-d-orange-1" />
+                        </button>
+                        
+                        {/* Navigation indicator */}
+                        <div className={`${glass.tight} absolute bottom-4 left-1/2 -translate-x-1/2 z-10 rounded-full px-3 py-1`}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-d-white text-xs font-raleway">
+                              {currentGalleryIndex + 1} / {gallery.length}
+                            </span>
+                            <div className="flex gap-1">
+                              {gallery.map((_, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`w-1.5 h-1.5 rounded-full transition-colors duration-200 ${
+                                    idx === currentGalleryIndex ? 'bg-d-orange-1' : 'bg-d-white/30'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
+                    <div className="grid grid-cols-4 gap-3 w-full">
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -2730,8 +2764,8 @@ const Create: React.FC = () => {
                     if (!isPlaceholder) {
                       const img = item as GeneratedImage;
                       return (
-                        <div key={`${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
-                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
+                        <div key={`${img.url}-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large group">
+                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { openImageAtIndex(idx); }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
@@ -2754,33 +2788,13 @@ const Create: React.FC = () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                        className="text-d-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
-                                        style={{ color: '#C4CCCC' }}
-                                        onMouseEnter={(e) => { 
-                                          e.currentTarget.style.color = '#faaa16'; 
-                                          const tooltip = document.querySelector(`[data-tooltip-for="${img.url}-${idx}"]`) as HTMLElement;
-                                          if (tooltip) {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            const galleryRect = e.currentTarget.closest('.group')?.getBoundingClientRect();
-                                            if (galleryRect) {
-                                              const relativeTop = rect.top - galleryRect.top;
-                                              const relativeLeft = rect.left - galleryRect.left + rect.width / 2;
-                                              tooltip.style.top = `${relativeTop - 8}px`;
-                                              tooltip.style.left = `${relativeLeft}px`;
-                                              tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-                                            }
-                                            tooltip.classList.remove('opacity-0');
-                                            tooltip.classList.add('opacity-100');
-                                          }
-                                        }}
-                                        onMouseLeave={(e) => { 
-                                          e.currentTarget.style.color = '#C4CCCC'; 
-                                          const tooltip = document.querySelector(`[data-tooltip-for="${img.url}-${idx}"]`) as HTMLElement;
-                                          if (tooltip) {
-                                            tooltip.classList.remove('opacity-100');
-                                            tooltip.classList.add('opacity-0');
-                                          }
-                                        }}
+                                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                      onMouseEnter={(e) => {
+                                        showHoverTooltip(e.currentTarget, `${img.url}-${idx}`);
+                                      }}
+                                      onMouseLeave={() => {
+                                        hideHoverTooltip(`${img.url}-${idx}`);
+                                      }}
                                       >
                                         <Copy className="w-3.5 h-3.5" />
                                       </button>
@@ -2808,20 +2822,16 @@ const Create: React.FC = () => {
                                         </div>
                                       ))}
                                     </div>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        // Open the first reference image in a new tab
-                                        const link = document.createElement('a');
-                                        link.href = img.references![0];
-                                        link.target = '_blank';
-                                        link.click();
-                                      }}
-                                      className="text-xs text-d-white font-raleway transition-colors duration-200 cursor-pointer"
-                                      style={{ color: '#C4CCCC' }}
-                                      onMouseEnter={(e) => { e.currentTarget.style.color = '#faaa16'; }}
-                                      onMouseLeave={(e) => { e.currentTarget.style.color = '#C4CCCC'; }}
-                                    >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const link = document.createElement('a');
+                                      link.href = img.references![0];
+                                      link.target = '_blank';
+                                      link.click();
+                                    }}
+                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
+                                  >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
                                   </div>
@@ -2860,13 +2870,13 @@ const Create: React.FC = () => {
                           <button 
                             type="button" 
                             onClick={() => toggleFavorite(img.url)} 
-                            className="image-action-btn" 
+                            className="image-action-btn favorite-toggle" 
                             title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                             aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                           >
                             <Heart 
-                              className={`w-3.5 h-3.5 transition-colors duration-200 ${
-                                favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white hover:text-brand'
+                              className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                               }`} 
                             />
                           </button>
@@ -2901,6 +2911,7 @@ const Create: React.FC = () => {
                       </div>
                     );
                   })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -2929,7 +2940,7 @@ const Create: React.FC = () => {
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           <div 
-            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
             style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
             onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
@@ -2958,10 +2969,7 @@ const Create: React.FC = () => {
                 <button 
                   onClick={handleGenerateImage}
                   disabled={!hasGenerationCapacity || !prompt.trim()}
-                  className="btn text-black flex items-center gap-2 disabled:cursor-not-allowed p-0"
-                  style={{ backgroundColor: '#faaa16' }}
-                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffb833')}
-                  onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#faaa16')}
+                  className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {isButtonSpinning ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -3331,6 +3339,28 @@ const Create: React.FC = () => {
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
             >
               <div className="relative max-w-[95vw] max-h-[90vh] group" onClick={(e) => e.stopPropagation()}>
+                {/* Navigation arrows for full-size modal */}
+                {gallery.length > 1 && (selectedFullImage || generatedImage) && (
+                  <>
+                    <button
+                      onClick={() => navigateFullSizeImage('prev')}
+                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 group opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                      title="Previous image (←)"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-6 h-6 transition-colors duration-100 hover:text-d-orange-1" />
+                    </button>
+                    <button
+                      onClick={() => navigateFullSizeImage('next')}
+                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 group opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                      title="Next image (→)"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-6 h-6 transition-colors duration-100 hover:text-d-orange-1" />
+                    </button>
+                  </>
+                )}
+                
                 <img 
                   src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string} 
                   alt="Full size" 
@@ -3339,78 +3369,80 @@ const Create: React.FC = () => {
                 
                 {/* Action buttons - only show for generated images, not reference images */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className="absolute top-6 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button 
-                      type="button" 
-                      onClick={() => confirmDeleteImage((selectedFullImage || generatedImage)!.url)} 
-                      className="image-action-btn" 
-                      title="Delete image" 
-                      aria-label="Delete image"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => toggleFavorite((selectedFullImage || generatedImage)!.url)} 
-                      className="image-action-btn" 
-                      title={favorites.has((selectedFullImage || generatedImage)!.url) ? "Remove from liked" : "Add to liked"} 
-                      aria-label={favorites.has((selectedFullImage || generatedImage)!.url) ? "Remove from liked" : "Add to liked"}
-                    >
-                      <Heart 
-                        className={`w-3.5 h-3.5 transition-colors duration-200 ${
-                          favorites.has((selectedFullImage || generatedImage)!.url) 
-                            ? "fill-red-500 text-red-500" 
-                            : "text-d-white hover:text-red-500"
-                        }`} 
+                  <div className="absolute inset-x-0 top-0 flex items-start justify-end px-4 h-14 pointer-events-none">
+                    <div className="mt-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
+                      <button 
+                        type="button" 
+                        onClick={() => confirmDeleteImage((selectedFullImage || generatedImage)!.url)} 
+                        className="image-action-btn" 
+                        title="Delete image" 
+                        aria-label="Delete image"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => toggleFavorite((selectedFullImage || generatedImage)!.url)} 
+                        className="image-action-btn favorite-toggle" 
+                        title={favorites.has((selectedFullImage || generatedImage)!.url) ? "Remove from liked" : "Add to liked"} 
+                        aria-label={favorites.has((selectedFullImage || generatedImage)!.url) ? "Remove from liked" : "Add to liked"}
+                      >
+                        <Heart 
+                          className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                            favorites.has((selectedFullImage || generatedImage)!.url) 
+                              ? "fill-red-500 text-red-500" 
+                              : "text-current fill-none"
+                          }`} 
+                        />
+                      </button>
+                      <ShareButton 
+                        prompt={(selectedFullImage || generatedImage)?.prompt || ""} 
+                        size="sm"
+                        className="image-action-btn !px-2 !py-1 !text-xs"
+                        onCopy={() => {
+                          setCopyNotification('Link copied!');
+                          setTimeout(() => setCopyNotification(null), 2000);
+                        }}
                       />
-                    </button>
-                    <ShareButton 
-                      prompt={(selectedFullImage || generatedImage)?.prompt || ""} 
-                      size="sm"
-                      className="image-action-btn !px-2 !py-1 !text-xs"
-                      onCopy={() => {
-                        setCopyNotification('Link copied!');
-                        setTimeout(() => setCopyNotification(null), 2000);
-                      }}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        handleUseAsReference(selectedFullImage || generatedImage!);
-                        setIsFullSizeOpen(false);
-                        setSelectedFullImage(null);
-                        setSelectedReferenceImage(null);
-                      }} 
-                      className="image-action-btn" 
-                      title="Use as reference" 
-                      aria-label="Use as reference"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => handleAddToFolder((selectedFullImage || generatedImage)!.url)} 
-                      className="image-action-btn" 
-                      title="Add to folder" 
-                      aria-label="Add to folder"
-                    >
-                      <FolderPlus className="w-3.5 h-3.5" />
-                    </button>
-                    <a 
-                      href={(selectedFullImage || generatedImage)!.url} 
-                      download 
-                      className="image-action-btn" 
-                      title="Download image" 
-                      aria-label="Download image"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </a>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          handleUseAsReference(selectedFullImage || generatedImage!);
+                          setIsFullSizeOpen(false);
+                          setSelectedFullImage(null);
+                          setSelectedReferenceImage(null);
+                        }} 
+                        className="image-action-btn" 
+                        title="Use as reference" 
+                        aria-label="Use as reference"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleAddToFolder((selectedFullImage || generatedImage)!.url)} 
+                        className="image-action-btn" 
+                        title="Add to folder" 
+                        aria-label="Add to folder"
+                      >
+                        <FolderPlus className="w-3.5 h-3.5" />
+                      </button>
+                      <a 
+                        href={(selectedFullImage || generatedImage)!.url} 
+                        download 
+                        className="image-action-btn" 
+                        title="Download image" 
+                        aria-label="Download image"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
                 )}
                 
                 {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 text-white opacity-0 group-hover:opacity-100">
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-2xl p-3 text-white opacity-0 group-hover:opacity-100">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 pr-3">
                         <div className="text-sm">
@@ -3422,14 +3454,7 @@ const Create: React.FC = () => {
                                   e.stopPropagation();
                                   copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
                                 }}
-                                className="text-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
-                                style={{ color: '#C4CCCC' }}
-                                onMouseEnter={(e) => { 
-                                  e.currentTarget.style.color = '#faaa16'; 
-                                }}
-                                onMouseLeave={(e) => { 
-                                  e.currentTarget.style.color = '#C4CCCC'; 
-                                }}
+                                className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>

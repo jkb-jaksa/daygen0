@@ -1,6 +1,7 @@
 import type React from "react";
 import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
+import { layout, text, cards } from "../styles/designSystem";
 
 interface FAQItem {
   question: string;
@@ -76,9 +77,9 @@ const FAQSection: React.FC = () => {
   return (
     <div className="relative bg-[#0b0b0c]">
       {/* Gray header strip with heading */}
-      <section className="relative w-full overflow-hidden color-gradient border-b border-d-black">
-        <div className="mx-auto max-w-[85rem] px-6 py-16 justify-items-center">
-          <h2 className="text-5xl font-normal text-d-text text-center font-raleway">
+      <section className={layout.sectionDivider}>
+        <div className={`${layout.container} py-16 justify-items-center`}>
+          <h2 className={`${text.sectionHeading} text-center`}>
             FAQ
           </h2>
         </div>
@@ -87,49 +88,47 @@ const FAQSection: React.FC = () => {
       </section>
 
       {/* FAQ content section */}
-      <section className="py-12 px-6">
-        <div className="mx-auto max-w-[85rem]">
-          {/* FAQ Items */}
-          <div className="mx-auto max-w-4xl space-y-4">
-            {faqData.map((item, index) => (
-              <div
-                key={index}
-                className={`parallax-small tag-gradient relative rounded-[32px] overflow-hidden cursor-pointer border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200`}
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
+      <section className={`${layout.container} ${layout.sectionPaddingTight}`}>
+        {/* FAQ Items */}
+        <div className="mx-auto max-w-4xl space-y-4">
+          {faqData.map((item, index) => (
+            <div
+              key={index}
+              className={`${cards.shell} cursor-pointer overflow-hidden`}
+              onMouseMove={onMove}
+              onMouseEnter={onEnter}
+              onMouseLeave={onLeave}
+            >
+              <button
+                onClick={() => toggleQuestion(index)}
+                className="flex w-full items-center justify-between px-8 py-3 text-left appearance-none bg-transparent border-0 focus:outline-none focus:ring-0"
               >
-                <button
-                  onClick={() => toggleQuestion(index)}
-                  className="w-full px-8 py-3 flex items-center justify-between text-left appearance-none bg-transparent border-0 focus:outline-none focus:ring-0"
-                >
-                  <span className="text-d-text text-base font-normal pr-4 font-raleway">
-                    {item.question}
-                  </span>
-                  <div className="flex-shrink-0 size-8 flex items-center justify-center">
-                    {openIndex === index ? (
-                      <Minus className="text-d-white size-4" />
-                    ) : (
-                      <Plus className="text-d-white size-4" />
-                    )}
-                  </div>
-                </button>
+                <span className="pr-4 text-base font-normal font-raleway text-d-text">
+                  {item.question}
+                </span>
+                <div className="flex size-8 flex-shrink-0 items-center justify-center">
+                  {openIndex === index ? (
+                    <Minus className="size-4 text-d-white" />
+                  ) : (
+                    <Plus className="size-4 text-d-white" />
+                  )}
+                </div>
+              </button>
 
-                {/* Answer */}
-                <div
-                  className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                    openIndex === index ? "max-h-48" : "max-h-0"
-                  }`}
-                >
-                  <div className="px-8 pb-4">
-                    <p className="text-d-white text-base leading-relaxed font-raleway">
-                      {item.answer}
-                    </p>
-                  </div>
+              {/* Answer */}
+              <div
+                className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                  openIndex === index ? "max-h-48" : "max-h-0"
+                }`}
+              >
+                <div className="px-8 pb-4">
+                  <p className="text-base font-raleway leading-relaxed text-d-white">
+                    {item.answer}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

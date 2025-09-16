@@ -1,6 +1,7 @@
 import type React from "react";
 import { Users, Target, Lightbulb, Heart, Sparkles, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { layout, text, cards, panels, buttons } from "../styles/designSystem";
 
 const AboutUs: React.FC = () => {
 
@@ -106,20 +107,20 @@ const AboutUs: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen text-d-text overflow-hidden">
+    <div className={layout.page}>
       {/* Background overlay to show gradient behind navbar */}
-      <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
+      <div className={layout.backdrop} aria-hidden="true" />
       
       {/* Main content */}
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="relative w-full overflow-hidden color-gradient border-b border-d-black">
-          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-12 pb-16">
+        <section className={layout.sectionDivider}>
+          <div className={`${layout.container} pt-12 pb-16`}>
             <div className="text-center">
-              <h1 className="text-6xl font-light tracking-tight leading-[1.1] font-cabin mb-4">
+              <h1 className={`${text.heroHeading} mb-4`}>
                 about us
               </h1>
-              <p className="text-xl text-d-white/80 font-raleway max-w-3xl mx-auto">
+              <p className="mx-auto max-w-3xl text-xl font-raleway text-d-white/80">
                 We're a passionate team of creatives, researchers, and technologists 
                 dedicated to making AI-powered creativity accessible to everyone.
               </p>
@@ -129,35 +130,29 @@ const AboutUs: React.FC = () => {
         </section>
 
         {/* Mission Section */}
-        <section className="py-16 px-6 lg:px-8 bg-[#0b0b0c]">
-          <div className="mx-auto max-w-[85rem]">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-normal text-d-text font-raleway mb-6">
-                our mission
-              </h2>
-              <div className="max-w-4xl mx-auto">
-                <div className="relative rounded-[64px] overflow-hidden isolate">
-                  {/* OUTER HALO */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -inset-6 rounded-[72px] blur-3xl"
-                    style={{
-                      background:
-                        "radial-gradient(90% 60% at 50% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0) 70%)",
-                    }}
-                  />
-                  {/* WARM GRADIENT BACKGROUND */}
-                  <div className="panel-warm-bg absolute inset-0" />
-                  {/* SUBTLE INNER RING */}
-                  <div className="absolute inset-0 ring-1 ring-white/40 rounded-[64px]" />
-                  {/* Content */}
-                  <div className="relative z-10 px-12 py-16 text-center text-b-black">
-                    <p className="text-2xl font-raleway leading-relaxed">
-                      To democratize creative AI by providing clear guidance, 
-                      curated tools, and expert insights that help creators 
-                      of all levels unlock their full potential.
-                    </p>
-                  </div>
+        <section className={`${layout.container} ${layout.sectionPadding} bg-[#0b0b0c]`}>
+          <div className="text-center mb-16">
+            <h2 className={`${text.sectionHeading} mb-6`}>
+              our mission
+            </h2>
+            <div className="mx-auto max-w-4xl">
+              <div className={cards.panel}>
+                <div
+                  aria-hidden
+                  className={panels.halo}
+                  style={{
+                    background:
+                      "radial-gradient(90% 60% at 50% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0) 70%)",
+                  }}
+                />
+                <div className={panels.warm} />
+                <div className={panels.ring} />
+                <div className="relative z-10 px-12 py-16 text-center text-b-black">
+                  <p className="text-2xl font-raleway leading-relaxed">
+                    To democratize creative AI by providing clear guidance, 
+                    curated tools, and expert insights that help creators 
+                    of all levels unlock their full potential.
+                  </p>
                 </div>
               </div>
             </div>
@@ -165,123 +160,112 @@ const AboutUs: React.FC = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 px-6 lg:px-8">
-          <div className="mx-auto max-w-[85rem]">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-4xl font-light text-d-orange-1 font-cabin mb-2">
-                    {stat.number}
-                  </div>
-                  <div className="text-d-white font-raleway">
-                    {stat.label}
-                  </div>
+        <section className={`${layout.container} ${layout.sectionPadding}`}>
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="mb-2 text-4xl font-light font-cabin text-d-orange-1">
+                  {stat.number}
                 </div>
-              ))}
-            </div>
+                <div className="font-raleway text-d-white">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Values Section */}
-        <section className="py-16 px-6 lg:px-8 bg-[#0b0b0c]">
-          <div className="mx-auto max-w-[85rem]">
-            <h2 className="text-4xl font-normal text-d-text text-center font-raleway mb-16">
-              our values
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {values.map((value, index) => (
-                <div
-                  key={index}
-                  className="parallax-small tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-6 transition-all duration-200 cursor-pointer"
-                  onMouseMove={onMove}
-                  onMouseEnter={onEnter}
-                  onMouseLeave={onLeave}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="size-12 grid place-items-center rounded-lg bg-d-orange-1/20 border border-d-orange-1/30 mb-4">
-                      <value.icon className="size-6 text-d-orange-1" />
-                    </div>
-                    <h3 className="text-xl font-cabin text-d-text mb-3">
-                      {value.title}
-                    </h3>
-                    <p className="text-d-white font-raleway text-sm leading-relaxed">
-                      {value.description}
-                    </p>
+        <section className={`${layout.container} ${layout.sectionPadding} bg-[#0b0b0c]`}>
+          <h2 className={`${text.sectionHeading} mb-16 text-center`}>
+            our values
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {values.map((value, index) => (
+              <div
+                key={index}
+                className={`${cards.shell} cursor-pointer p-6`}
+                onMouseMove={onMove}
+                onMouseEnter={onEnter}
+                onMouseLeave={onLeave}
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4 grid size-12 place-items-center rounded-lg border border-d-orange-1/30 bg-d-orange-1/20">
+                    <value.icon className="size-6 text-d-orange-1" />
                   </div>
+                  <h3 className="mb-3 text-xl font-cabin text-d-text">
+                    {value.title}
+                  </h3>
+                  <p className="text-sm font-raleway leading-relaxed text-d-white">
+                    {value.description}
+                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Team Section */}
-        <section className="py-16 px-6 lg:px-8">
-          <div className="mx-auto max-w-[85rem]">
-            <h2 className="text-4xl font-normal text-d-text text-center font-raleway mb-16">
-              meet the team
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {teamMembers.map((member, index) => {
-                const s = accentStyles[member.accent];
-                return (
-                  <div
-                    key={index}
-                    className="parallax-small tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-6 transition-all duration-200 cursor-pointer"
-                    onMouseMove={onMove}
-                    onMouseEnter={onEnter}
-                    onMouseLeave={onLeave}
-                  >
-                    <div className="text-center">
-                      <div className={`size-16 grid place-items-center rounded-lg border mx-auto mb-4 ${s.badge}`}>
-                        <Users className="size-8" />
-                      </div>
-                      <h3 className="text-xl font-cabin text-d-text mb-2">
-                        {member.name}
-                      </h3>
-                      <div className="text-d-orange-1 font-raleway text-sm mb-3">
-                        {member.role}
-                      </div>
-                      <p className="text-d-white font-raleway text-sm leading-relaxed">
-                        {member.description}
-                      </p>
+        <section className={`${layout.container} ${layout.sectionPadding}`}>
+          <h2 className={`${text.sectionHeading} mb-16 text-center`}>
+            meet the team
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {teamMembers.map((member, index) => {
+              const s = accentStyles[member.accent];
+              return (
+                <div
+                  key={index}
+                  className={`${cards.shell} cursor-pointer p-6`}
+                  onMouseMove={onMove}
+                  onMouseEnter={onEnter}
+                  onMouseLeave={onLeave}
+                >
+                  <div className="text-center">
+                    <div className={`mx-auto mb-4 grid size-16 place-items-center rounded-lg border ${s.badge}`}>
+                      <Users className="size-8" />
                     </div>
+                    <h3 className="mb-2 text-xl font-cabin text-d-text">
+                      {member.name}
+                    </h3>
+                    <div className="mb-3 text-sm font-raleway text-d-orange-1">
+                      {member.role}
+                    </div>
+                    <p className="text-sm font-raleway leading-relaxed text-d-white">
+                      {member.description}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 px-6 lg:px-8 bg-[#0b0b0c]">
-          <div className="mx-auto max-w-[85rem]">
-            <div className="text-center">
-              <h2 className="text-4xl font-normal text-d-text font-raleway mb-6">
-                ready to create?
-              </h2>
-              <p className="text-d-white text-lg font-raleway mb-8 max-w-2xl mx-auto">
-                Join thousands of creators who are already using our platform 
-                to discover and master the best AI tools for their projects.
-              </p>
-              <div className="flex justify-center gap-4">
-                <Link 
-                  to="/knowledge-base" 
-                  className="btn parallax-small text-black flex items-center gap-2"
-                  style={{ backgroundColor: '#faaa16' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}
-                >
-                  <Sparkles className="size-4" />
-                  Explore Tools
-                </Link>
-                <Link 
-                  to="/create" 
-                  className="btn btn-white parallax-small text-black flex items-center gap-2"
-                >
-                  <Zap className="size-4" />
-                  Start Creating
-                </Link>
-              </div>
+        <section className={`${layout.container} ${layout.sectionPadding} bg-[#0b0b0c]`}>
+          <div className="text-center">
+            <h2 className={`${text.sectionHeading} mb-6`}>
+              ready to create?
+            </h2>
+            <p className="mx-auto mb-8 max-w-2xl text-lg font-raleway text-d-white">
+              Join thousands of creators who are already using our platform 
+              to discover and master the best AI tools for their projects.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Link 
+                to="/knowledge-base" 
+                className={`${buttons.primary} parallax-small`}
+              >
+                <Sparkles className="size-4" />
+                Tools
+              </Link>
+              <Link 
+                to="/create" 
+                className={`${buttons.secondary} parallax-small`}
+              >
+                <Zap className="size-4" />
+                Create
+              </Link>
             </div>
           </div>
         </section>

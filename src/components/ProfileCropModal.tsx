@@ -3,6 +3,7 @@ import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import type { Crop, PixelCrop } from 'react-image-crop';
 import { X, Check, RotateCcw } from 'lucide-react';
 import 'react-image-crop/dist/ReactCrop.css';
+import { buttons } from "../styles/designSystem";
 
 interface ProfileCropModalProps {
   isOpen: boolean;
@@ -164,7 +165,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
 
             <button
               onClick={resetCrop}
-              className="btn btn-white text-black text-sm font-raleway flex items-center gap-2"
+              className={`${buttons.secondary} text-sm`}
             >
               <RotateCcw className="w-4 h-4" />
               Reset
@@ -201,23 +202,14 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
           <div className="flex justify-end gap-3 pt-4 border-t border-d-dark">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-d-white hover:text-brand rounded-lg transition-colors font-raleway"
+              className={`${buttons.subtle} h-9 px-4`}
             >
               Cancel
             </button>
             <button
               onClick={onDownloadCropClick}
               disabled={!completedCrop}
-              className="px-4 py-2 text-black font-raleway font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-              style={{
-                backgroundColor: '#faaa16'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffb833';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#faaa16';
-              }}
+              className={`${buttons.primary} font-semibold`}
             >
               <Check className="w-4 h-4" />
               Apply Crop

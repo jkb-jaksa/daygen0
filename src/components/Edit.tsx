@@ -20,6 +20,7 @@ import { getModelDisplayName } from '../utils/modelUtils';
 import { formatBytes, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
+import { buttons } from "../styles/designSystem";
 // import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
 
 // Types
@@ -615,9 +616,9 @@ export default function Edit() {
                   />
                   <button
                     onClick={clearBaseImage}
-                    className="absolute right-2 top-2 p-1 rounded bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                    className="absolute right-2 top-2 image-action-btn"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 {mode === "edit" && (
@@ -727,7 +728,7 @@ export default function Edit() {
                   <button
                     ref={modelSelectorRef}
                     onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-mid bg-d-black hover:bg-d-mid hover:text-brand transition-colors font-raleway"
+                    className={`${buttons.subtle} h-9 px-3`}
                   >
                     <span className="text-sm">{FLUX_EDIT_MODELS.find(m => m.id === model)?.name || 'Select Model'}</span>
                     <ChevronDown className="h-4 w-4" />
@@ -769,7 +770,7 @@ export default function Edit() {
                 <button
                   onClick={() => handleRun("run")}
                   disabled={!canRun || isRunning}
-                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-d-orange-1 text-d-black hover:bg-[#ffc977] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-raleway font-bold"
+                  className={`${buttons.primary} font-semibold`}
                 >
                   {isRunning ? (
                     <>
@@ -794,7 +795,7 @@ export default function Edit() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowBeforeAfter(!showBeforeAfter)}
-                  className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-d-mid hover:bg-d-mid hover:text-brand transition-colors font-raleway"
+                  className={`${buttons.subtle} h-8 px-3`}
                 >
                   <SplitSquareVertical className="h-3 w-3" />
                   {showBeforeAfter ? "Side-by-side" : "Before/After"}
@@ -802,7 +803,7 @@ export default function Edit() {
                 <button
                   onClick={() => handleRun("variations")}
                   disabled={!canRun || isRunning}
-                  className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-d-mid hover:bg-d-mid hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={`${buttons.subtle} h-8 px-3 disabled:cursor-not-allowed`}
                 >
                   <Sparkles className="h-3 w-3" />
                   Variations
@@ -864,32 +865,32 @@ export default function Edit() {
                         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                           <button
                             onClick={() => setActiveResult(r)}
-                            className="p-1 rounded bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                            className="image-action-btn"
                             title="Open"
                           >
-                            <Sparkles className="h-3 w-3" />
+                            <Sparkles className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleRun("variations")}
-                            className="p-1 rounded bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                            className="image-action-btn"
                             title="Variations"
                           >
-                            <Sparkles className="h-3 w-3" />
+                            <Sparkles className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => navigator.clipboard.writeText(r.imageDataUrl)}
-                            className="p-1 rounded bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                            className="image-action-btn"
                             title="Copy"
                           >
-                            <Copy className="h-3 w-3" />
+                            <Copy className="w-3.5 h-3.5" />
                           </button>
                           <a
                             href={r.imageDataUrl}
                             download={`daygen-${r.id}.png`}
-                            className="p-1 rounded bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                            className="image-action-btn"
                             title="Download"
                           >
-                            <Download className="h-3 w-3" />
+                            <Download className="w-3.5 h-3.5" />
                           </a>
                         </div>
                       </div>
@@ -988,14 +989,7 @@ export default function Edit() {
                                     e.stopPropagation();
                                     navigator.clipboard.writeText(img.prompt);
                                   }}
-                                  className="text-d-white hover:text-d-orange-1 transition-colors duration-200 cursor-pointer ml-3 relative z-20 inline"
-                                  style={{ color: '#C4CCCC' }}
-                                  onMouseEnter={(e) => { 
-                                    e.currentTarget.style.color = '#faaa16'; 
-                                  }}
-                                  onMouseLeave={(e) => { 
-                                    e.currentTarget.style.color = '#C4CCCC'; 
-                                  }}
+                                  className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
                                 >
                                   <Copy className="w-3.5 h-3.5" />
                                 </button>
@@ -1027,7 +1021,7 @@ export default function Edit() {
                           e.stopPropagation();
                           navigator.clipboard.writeText(img.url);
                         }}
-                        className="p-1.5 rounded-full bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                        className="image-action-btn"
                         title="Copy image"
                       >
                         <Copy className="w-3.5 h-3.5" />
@@ -1035,7 +1029,7 @@ export default function Edit() {
                       <a
                         href={img.url}
                         download={`daygen-edit-${Date.now()}.png`}
-                        className="p-1.5 rounded-full bg-d-dark/80 text-d-white hover:bg-d-mid hover:text-brand transition-colors"
+                        className="image-action-btn"
                         title="Download"
                       >
                         <Download className="w-3.5 h-3.5" />

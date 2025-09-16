@@ -1,5 +1,6 @@
 import type React from "react";
 import { FileText, Sparkles, Clock, Zap, Palette, Wand2 } from "lucide-react";
+import { layout, text, cards, panels, buttons } from "../styles/designSystem";
 
 const Prompts: React.FC = () => {
   const comingSoonFeatures = [
@@ -74,20 +75,20 @@ const Prompts: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen text-d-text overflow-hidden">
+    <div className={layout.page}>
       {/* Background overlay to show gradient behind navbar */}
-      <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
+      <div className={layout.backdrop} aria-hidden="true" />
       
       {/* Main content */}
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="relative w-full overflow-hidden color-gradient border-b border-d-black">
-          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-12 pb-16">
+        <section className={layout.sectionDivider}>
+          <div className={`${layout.container} pt-12 pb-16`}>
             <div className="text-center">
-              <h1 className="text-6xl font-light tracking-tight leading-[1.1] font-cabin mb-4">
+              <h1 className={`${text.heroHeading} mb-4`}>
                 prompts
               </h1>
-              <p className="text-xl text-d-white/80 font-raleway max-w-3xl mx-auto">
+              <p className="mx-auto max-w-3xl text-xl font-raleway text-d-white/80">
                 Your creative prompt and style library is coming soon. 
                 Get ready to unlock unlimited creative possibilities.
               </p>
@@ -97,42 +98,36 @@ const Prompts: React.FC = () => {
         </section>
 
         {/* Coming Soon Section */}
-        <section className="py-16 px-6 lg:px-8 bg-[#0b0b0c]">
-          <div className="mx-auto max-w-[85rem]">
-            <div className="text-center mb-16">
-              <div className="relative rounded-[64px] overflow-hidden isolate max-w-4xl mx-auto">
-                {/* OUTER HALO */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-6 rounded-[72px] blur-3xl"
-                  style={{
-                    background:
-                      "radial-gradient(90% 60% at 50% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0) 70%)",
-                  }}
-                />
-                {/* WARM GRADIENT BACKGROUND */}
-                <div className="panel-warm-bg absolute inset-0" />
-                {/* SUBTLE INNER RING */}
-                <div className="absolute inset-0 ring-1 ring-white/40 rounded-[64px]" />
-                {/* Content */}
-                <div className="relative z-10 px-12 py-16 text-center text-b-black">
-                  <div className="flex justify-center mb-6">
-                    <div className="size-16 grid place-items-center rounded-full bg-d-orange-1/20 border border-d-orange-1/30">
-                      <Clock className="size-8 text-d-orange-1" />
-                    </div>
+        <section className={`${layout.container} ${layout.sectionPadding} bg-[#0b0b0c]`}>
+          <div className="text-center">
+            <div className={`${cards.panel} mx-auto mb-16 max-w-4xl`}>
+              <div
+                aria-hidden
+                className={panels.halo}
+                style={{
+                  background:
+                    "radial-gradient(90% 60% at 50% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0) 70%)",
+                }}
+              />
+              <div className={panels.warm} />
+              <div className={panels.ring} />
+              <div className="relative z-10 px-12 py-16 text-center text-b-black">
+                <div className="mb-6 flex justify-center">
+                  <div className="size-16 grid place-items-center rounded-full border border-d-orange-1/30 bg-d-orange-1/20">
+                    <Clock className="size-8 text-d-orange-1" />
                   </div>
-                  <h2 className="text-4xl font-normal text-b-black font-raleway mb-4">
-                    Coming Soon
-                  </h2>
-                  <p className="text-xl font-raleway leading-relaxed mb-6">
-                    We're building something amazing for you. 
-                    A comprehensive library of prompts and styles 
-                    that will revolutionize your creative workflow.
-                  </p>
-                  <div className="flex justify-center items-center gap-2 text-lg font-raleway">
-                    <Zap className="size-5 text-d-orange-1" />
-                    <span>Stay tuned for updates</span>
-                  </div>
+                </div>
+                <h2 className={`${text.sectionHeading} mb-4 text-b-black`}>
+                  Coming Soon
+                </h2>
+                <p className="mb-6 text-xl font-raleway leading-relaxed">
+                  We're building something amazing for you. 
+                  A comprehensive library of prompts and styles 
+                  that will revolutionize your creative workflow.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-lg font-raleway">
+                  <Zap className="size-5 text-d-orange-1" />
+                  <span>Stay tuned for updates</span>
                 </div>
               </div>
             </div>
@@ -140,64 +135,60 @@ const Prompts: React.FC = () => {
         </section>
 
         {/* Features Preview Section */}
-        <section className="py-16 px-6 lg:px-8">
-          <div className="mx-auto max-w-[85rem]">
-            <h2 className="text-4xl font-normal text-d-text text-center font-raleway mb-16">
-              what's coming
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {comingSoonFeatures.map((feature, index) => {
-                const s = accentStyles[feature.accent];
-                return (
-                  <div
-                    key={index}
-                    className="parallax-small tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-6 transition-all duration-200 cursor-pointer"
-                    onMouseMove={onMove}
-                    onMouseEnter={onEnter}
-                    onMouseLeave={onLeave}
-                  >
-                    <div className="text-center">
-                      <div className={`size-12 grid place-items-center rounded-lg border mx-auto mb-4 ${s.badge}`}>
-                        <feature.icon className="size-6" />
-                      </div>
-                      <h3 className="text-xl font-cabin text-d-text mb-3">
-                        {feature.title}
-                      </h3>
-                      <p className="text-d-white font-raleway text-sm leading-relaxed">
-                        {feature.description}
-                      </p>
+        <section className={`${layout.container} ${layout.sectionPadding}`}>
+          <h2 className={`${text.sectionHeading} mb-16 text-center`}>
+            what's coming
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {comingSoonFeatures.map((feature, index) => {
+              const s = accentStyles[feature.accent];
+              return (
+                <div
+                  key={index}
+                  className={`${cards.shell} cursor-pointer p-6`}
+                  onMouseMove={onMove}
+                  onMouseEnter={onEnter}
+                  onMouseLeave={onLeave}
+                >
+                  <div className="text-center">
+                    <div className={`mx-auto mb-4 grid size-12 place-items-center rounded-lg border ${s.badge}`}>
+                      <feature.icon className="size-6" />
                     </div>
+                    <h3 className="mb-3 text-xl font-cabin text-d-text">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm font-raleway leading-relaxed text-d-white">
+                      {feature.description}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         {/* Early Access Section */}
-        <section className="py-16 px-6 lg:px-8 bg-[#0b0b0c]">
-          <div className="mx-auto max-w-[85rem]">
-            <div className="text-center">
-              <h2 className="text-4xl font-normal text-d-text font-raleway mb-6">
-                want early access?
-              </h2>
-              <p className="text-d-white text-lg font-raleway mb-8 max-w-2xl mx-auto">
-                Be the first to know when our prompt and style library launches. 
-                Get exclusive early access and help shape the future of creative AI.
-              </p>
-              <div className="flex justify-center gap-4">
-                <button className="btn parallax-small text-black flex items-center gap-2" style={{ backgroundColor: '#faaa16' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}>
-                  <Sparkles className="size-4" />
-                  Get Notified
-                </button>
-                <a 
-                  href="/knowledge-base" 
-                  className="btn btn-white parallax-small text-black flex items-center gap-2"
-                >
-                  <Zap className="size-4" />
-                  Explore Tools
-                </a>
-              </div>
+        <section className={`${layout.container} ${layout.sectionPadding} bg-[#0b0b0c]`}>
+          <div className="text-center">
+            <h2 className={`${text.sectionHeading} mb-6`}>
+              want early access?
+            </h2>
+            <p className="mx-auto mb-8 max-w-2xl text-lg font-raleway text-d-white">
+              Be the first to know when our prompt and style library launches. 
+              Get exclusive early access and help shape the future of creative AI.
+            </p>
+            <div className="flex justify-center gap-4">
+              <button className={`${buttons.primary} parallax-small`}> 
+                <Sparkles className="size-4" />
+                Get Notified
+              </button>
+              <a 
+                href="/knowledge-base" 
+                className={`${buttons.secondary} parallax-small`}
+              >
+                <Zap className="size-4" />
+                Tools
+              </a>
             </div>
           </div>
         </section>

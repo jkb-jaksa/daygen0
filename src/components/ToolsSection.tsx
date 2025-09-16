@@ -20,6 +20,7 @@ import {
   Leaf,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
+import { layout, text, cards, buttons } from "../styles/designSystem";
 
 // --- Minimal card + layout utilities ---
 const cx = (...classes: Array<string | undefined | false>) =>
@@ -325,8 +326,8 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
   return (
     <div
       className={cx(
-        "group tag-gradient relative rounded-[32px] border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid p-5 parallax-small",
-        "transition-all duration-200 cursor-pointer h-full flex flex-col"
+        cards.shell,
+        "group h-full cursor-pointer p-5 flex flex-col"
       )}
       onMouseMove={onMove}
       onMouseEnter={onEnter}
@@ -355,11 +356,11 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
       <p className="relative z-10 mt-0.5 text-d-white text-base font-normal font-raleway">{desc}</p>
       <div className="flex-1" />
       {href ? (
-        <Link to={href} className="relative z-10 self-start mt-4 inline-block btn btn-white text-black">
+        <Link to={href} className={`${buttons.secondary} parallax-small mt-4 self-start`}>
           learn more
         </Link>
       ) : (
-        <button type="button" className="relative z-10 self-start mt-4 btn btn-white parallax-small text-black">
+        <button type="button" className={`${buttons.secondary} parallax-small mt-4 self-start`}>
           learn more
         </button>
       )}
@@ -370,20 +371,23 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
 export default function ToolsSection() {
   const [activeCategory, setActiveCategory] = useState<string>("image");
   return (
-    <div className="min-h-screen bg-black text-d-text">
-      {/* Hero Section */}
-      <section className="relative w-full overflow-hidden color-gradient border-b border-d-black">
-        <div className="mx-auto max-w-[85rem] px-6 py-16  justify-items-center">
-          <h2 className="text-5xl font-normal text-d-text font-raleway">
-            tools
-          </h2>
-        </div>
-        {/* Subtle gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent" />
-      </section>
+    <div className={layout.page}>
+      <div className={layout.backdrop} aria-hidden="true" />
 
-      {/* Main Content */}
-      <section className="mx-auto max-w-[85rem] px-6 py-8">
+      <div className="relative z-10">
+        {/* Hero Section */}
+        <section className={layout.sectionDivider}>
+          <div className={`${layout.container} py-16 justify-items-center`}>
+            <h2 className={text.sectionHeading}>
+              tools
+            </h2>
+          </div>
+          {/* Subtle gradient overlay */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent" />
+        </section>
+
+        {/* Main Content */}
+        <section className={`${layout.container} py-8`}>
         <div className="mt-4 grid grid-cols-[150px,1fr] gap-4 mb-20">
           {/* Heading aligned with cards */}
           <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">
@@ -472,7 +476,8 @@ export default function ToolsSection() {
             </div>
           )}
         </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

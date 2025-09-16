@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import GoogleLogin from "./GoogleLogin";
+import { buttons, glass } from "../styles/designSystem";
 
 interface AuthModalProps {
   open: boolean;
@@ -25,7 +26,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4" aria-modal="true" role="dialog">
-      <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4 transition-colors duration-200">
+      <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
         <div className="text-center mb-6">
           <h3 className="text-d-text font-cabin text-xl mb-2">{mode === "login" ? "Log in" : "Sign up"}</h3>
           <p className="text-d-light text-sm font-raleway">Welcome to DayGen</p>
@@ -52,7 +53,9 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               <label className="block text-sm text-d-text mb-2 font-cabin">Email</label>
               <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
             </div>
-            <button type="submit" className="w-full mt-4 px-4 py-2 text-black font-cabin rounded-lg transition-colors" style={{ backgroundColor: '#faaa16' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffb833'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faaa16'}>Continue</button>
+            <button type="submit" className={`${buttons.blockPrimary} mt-4 font-cabin`}>
+              Continue
+            </button>
           </form>
         </div>
         <p className="text-xs text-d-light mt-4 text-center font-raleway">No password — this is a demo-only login to test flows.</p>

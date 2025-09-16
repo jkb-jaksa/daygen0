@@ -1,11 +1,12 @@
 import type React from "react";
 import ContactSection from "./ContactSection";
+import { layout } from "../styles/designSystem";
 
 const Services: React.FC = () => {
   return (
-    <div className="relative min-h-screen text-d-text overflow-hidden">
+    <div className={layout.page}>
       {/* Background overlay to show gradient behind navbar */}
-      <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
+      <div className={layout.backdrop} aria-hidden="true" />
       
       {/* Main content */}
       <div className="relative z-10">

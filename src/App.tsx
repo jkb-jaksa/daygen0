@@ -12,51 +12,45 @@ import Services from "./components/Services";
 import AboutUs from "./components/AboutUs";
 import Prompts from "./components/Prompts";
 import { useAuth } from "./auth/AuthContext";
+import { layout, text, buttons } from "./styles/designSystem";
 
 function Home() {
   return (
-    <div className="relative min-h-screen bg-black text-white">
-      {/* Welcome Section */}
-      <section className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-20 pb-16">
-        <div className="text-center">
-          <h1 className="text-6xl font-light tracking-tight leading-[1.1] mb-4 font-cabin">
-            welcome to
-          </h1>
-          <div className="text-5xl font-normal tracking-tight leading-[1.05] mb-8 font-cabin">
-            <span className="text-white">day</span>
-            <span className="text-orange-500">gen</span>
+    <div className={layout.page}>
+      <div className={layout.backdrop} aria-hidden="true" />
+
+      <div className="relative z-10">
+        {/* Welcome Section */}
+        <section className={`${layout.container} pt-20 pb-16`}>
+          <div className="text-center">
+            <h1 className={`${text.heroHeading} mb-4`}>
+              welcome to
+            </h1>
+            <div className={`${text.subHeading} mb-8`}> 
+              <span className="text-white-gradient">day</span>
+              <span className="text-brand">gen</span>
+            </div>
+            <p className="mx-auto mb-8 max-w-2xl text-lg text-d-white/75 font-raleway">
+              Your gateway to mastering creative AI tools. Explore our knowledge base to discover the best tools for your creative projects.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Link 
+                to="/knowledge-base" 
+                className={`${buttons.primary} parallax-small`}
+              >
+                Knowledge Base
+              </Link>
+              <Link 
+                to="/create" 
+                className={`${buttons.secondary} parallax-small`}
+              >
+                Create
+              </Link>
+            </div>
           </div>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
-            Your gateway to mastering creative AI tools. Explore our knowledge base to discover the best tools for your creative projects.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link 
-              to="/knowledge-base" 
-              className="px-6 py-3 text-black rounded-lg transition-colors duration-200 font-cabin font-bold text-base"
-              style={{
-                backgroundColor: '#faaa16'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffb833';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#faaa16';
-              }}
-            >
-              Explore Knowledge Base
-            </Link>
-            <Link 
-              to="/create" 
-              className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              Start Creating
-            </Link>
-          </div>
-        </div>
-      </section>
-      
-      {/* Main content */}
-      <div>
+        </section>
+
+        {/* Main content */}
         <FAQSection />
       </div>
     </div>
