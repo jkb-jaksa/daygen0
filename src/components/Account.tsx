@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { Upload, X, Camera } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getModelDisplayName } from "../utils/modelUtils";
+import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -27,19 +28,27 @@ export default function Account() {
   }, [user?.name]);
 
 
-  const galleryKey = useMemo(() => storagePrefix + "gallery", [storagePrefix]);
-
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(galleryKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setGallery(parsed);
+    let cancelled = false;
+
+    const loadGallery = async () => {
+      try {
+        await migrateKeyToIndexedDb(storagePrefix, 'gallery');
+        const stored = await getPersistedValue<GalleryItem[]>(storagePrefix, 'gallery');
+        if (!cancelled && Array.isArray(stored)) {
+          setGallery(stored);
+        }
+      } catch (error) {
+        console.error('Account - Error loading gallery:', error);
       }
-    } catch (e) {
-      console.error('Account - Error loading gallery:', e);
-    }
-  }, [galleryKey]);
+    };
+
+    void loadGallery();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storagePrefix]);
 
 
   const handleProfilePicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

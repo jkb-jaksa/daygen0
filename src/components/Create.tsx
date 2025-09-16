@@ -23,6 +23,9 @@ import { PromptHistoryChips } from './PromptHistoryChips';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import { ShareButton } from './ShareButton';
+import { compressDataUrl } from "../lib/imageCompression";
+import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
+import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -34,6 +37,52 @@ type Folder = {
   createdAt: Date;
   imageIds: string[]; // Array of image URLs in this folder
 };
+
+type GalleryImageLike =
+  | GeneratedImage
+  | FluxGeneratedImage
+  | import("../hooks/useReveImageGeneration").ReveGeneratedImage;
+
+type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string };
+type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };
+
+type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
+
+type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[] };
+
+const isJobBackedImage = (item: GalleryImageLike): item is FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage =>
+  'jobId' in item && typeof item.jobId === 'string';
+
+const toStorable = (items: GalleryImageLike[]): StoredGalleryImage[] =>
+  items.map(item => ({
+    url: item.url,
+    prompt: item.prompt,
+    model: item.model,
+    timestamp: item.timestamp,
+    ownerId: item.ownerId,
+    ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
+  }));
+
+const hydrateStoredGallery = (items: StoredGalleryImage[]): GalleryImageLike[] =>
+  items.map((item, index) => {
+    const base = {
+      url: item.url,
+      prompt: item.prompt,
+      model: item.model ?? 'unknown',
+      timestamp: item.timestamp,
+      ownerId: item.ownerId,
+    };
+
+    if (item.model?.startsWith('flux') || item.model?.startsWith('reve')) {
+      const fallbackJobId = item.jobId ?? `restored-${index}-${Date.now()}`;
+      return {
+        ...base,
+        jobId: fallbackJobId,
+      } as GalleryImageLike;
+    }
+
+    return base as GalleryImageLike;
+  });
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
@@ -196,7 +245,6 @@ const Create: React.FC = () => {
   );
   
   const { user, storagePrefix } = useAuth();
-  const key = (k: string) => `${storagePrefix}${k}`;
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
@@ -205,6 +253,7 @@ const Create: React.FC = () => {
   const refsInputRef = useRef<HTMLInputElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
   const settingsRef = useRef<HTMLButtonElement | null>(null);
+  const persistentStorageRequested = useRef(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
@@ -236,7 +285,10 @@ const Create: React.FC = () => {
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
   
+  const MAX_PARALLEL_GENERATIONS = 5;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const [activeGenerationQueue, setActiveGenerationQueue] = useState<Array<{ id: string; prompt: string; model: string }>>([]);
+  const hasGenerationCapacity = activeGenerationQueue.length < MAX_PARALLEL_GENERATIONS;
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -252,6 +304,11 @@ const Create: React.FC = () => {
   const maxGalleryTiles = 16; // 4x4 grid layout
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
+  const [storageUsage, setStorageUsage] = useState<StorageEstimateSnapshot | null>(null);
+  const [persistentStorageStatus, setPersistentStorageStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown');
+  const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isButtonSpinning, setIsButtonSpinning] = useState(false);
 
   // Handle category switching from external navigation (e.g., navbar)
   useEffect(() => {
@@ -268,10 +325,40 @@ const Create: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
+    if (!storage?.persisted) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const persisted = await storage.persisted();
+        if (!cancelled && persisted) {
+          setPersistentStorageStatus('granted');
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (storageEstimate?.quota) {
+      setStorageUsage(storageEstimate);
+    }
+  }, [storageEstimate]);
+
+  useEffect(() => () => {
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+  }, []);
+
   
   // Use the Gemini image generation hook
   const {
-    isLoading: geminiLoading,
     error: geminiError,
     generatedImage: geminiImage,
     generateImage: generateGeminiImage,
@@ -280,7 +367,6 @@ const Create: React.FC = () => {
   } = useGeminiImageGeneration();
 
   const {
-    isLoading: fluxLoading,
     error: fluxError,
     generatedImage: fluxImage,
     generateImage: generateFluxImage,
@@ -289,7 +375,6 @@ const Create: React.FC = () => {
   } = useFluxImageGeneration();
 
   const {
-    isLoading: chatgptLoading,
     error: chatgptError,
     generatedImage: chatgptImage,
     generateImage: generateChatGPTImage,
@@ -298,27 +383,23 @@ const Create: React.FC = () => {
   } = useChatGPTImageGeneration();
 
   const {
-    isLoading: ideogramLoading,
     error: ideogramError,
     generateImage: generateIdeogramImage,
     clearError: clearIdeogramError,
   } = useIdeogramImageGeneration();
 
   const {
-    isLoading: qwenLoading,
     error: qwenError,
     generateImage: generateQwenImage,
   } = useQwenImageGeneration();
 
   const {
-    isLoading: runwayLoading,
     error: runwayError,
     generateImage: generateRunwayImage,
     clearError: clearRunwayError,
   } = useRunwayImageGeneration();
 
   const {
-    isLoading: seedreamLoading,
     error: seedreamError,
     generatedImage: seedreamImage,
     generateImage: generateSeeDreamImage,
@@ -326,191 +407,184 @@ const Create: React.FC = () => {
   } = useSeeDreamImageGeneration();
 
   const {
-    isLoading: reveLoading,
     error: reveError,
     generatedImage: reveImage,
     generateImage: generateReveImage,
   } = useReveImageGeneration();
 
   // Combined state for UI
-  const isLoading = geminiLoading || fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading || reveLoading;
   const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
 
-  // Load gallery and liked images from localStorage on mount
+  // Load gallery state and related metadata from client storage
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(key("gallery"));
-      if (raw) {
-        const parsed = JSON.parse(raw) as (GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Validate that each item has required properties
-          const validImages = parsed.filter(img => img && img.url && img.prompt && img.timestamp);
-          console.log('Loading gallery from localStorage with', validImages.length, 'valid images out of', parsed.length, 'total');
-          console.log('Gallery images with references:', validImages.filter(img => img.references && img.references.length > 0));
-          
-          if (validImages.length !== parsed.length) {
+    let cancelled = false;
+
+    const loadPersistedState = async () => {
+      try {
+        await Promise.all([
+          migrateKeyToIndexedDb(storagePrefix, 'gallery'),
+          migrateKeyToIndexedDb(storagePrefix, 'favorites'),
+          migrateKeyToIndexedDb(storagePrefix, 'uploads'),
+          migrateKeyToIndexedDb(storagePrefix, 'folders'),
+        ]);
+
+        const [storedGallery, storedFavorites, storedUploads, storedFolders] = await Promise.all([
+          getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'gallery'),
+          getPersistedValue<string[]>(storagePrefix, 'favorites'),
+          getPersistedValue<SerializedUpload[]>(storagePrefix, 'uploads'),
+          getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders'),
+        ]);
+
+        if (cancelled) return;
+
+        if (Array.isArray(storedGallery) && storedGallery.length > 0) {
+          const validImages = storedGallery.filter(img => img && img.url && img.prompt && img.timestamp);
+          console.log('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
+          console.log('Gallery images with references:', validImages.filter(img => (img as any).references && (img as any).references.length > 0));
+
+          const hydrated = hydrateStoredGallery(validImages);
+
+          if (validImages.length !== storedGallery.length) {
             console.warn('Some images were invalid and removed from gallery');
-            // Update localStorage with only valid images
-            localStorage.setItem(key("gallery"), JSON.stringify(toStorable(validImages)));
+            void setPersistedValue(storagePrefix, 'gallery', toStorable(hydrated));
           }
-          
-          setGallery(validImages);
+
+          setGallery(hydrated);
         } else {
-          console.log('No valid gallery data found in localStorage');
+          console.log('No gallery data found in client storage');
         }
-      } else {
-        console.log('No gallery data found in localStorage');
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to load gallery", e);
-      // Clear corrupted data
-      localStorage.removeItem(key("gallery"));
-    }
 
-    try {
-      const rawFavorites = localStorage.getItem(key("favorites"));
-      if (rawFavorites) {
-        const parsed = JSON.parse(rawFavorites) as string[];
-        if (Array.isArray(parsed)) {
-          setFavorites(new Set(parsed));
+        if (Array.isArray(storedFavorites)) {
+          setFavorites(new Set(storedFavorites));
         }
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to load liked images", e);
-    }
 
-    // Load uploaded images from localStorage on mount
-    try {
-      const rawUploads = localStorage.getItem(key("uploads"));
-      if (rawUploads) {
-        const parsed = JSON.parse(rawUploads);
-        if (Array.isArray(parsed)) {
-          // Restore uploaded images (we'll store preview URLs and metadata)
-          const restoredUploads = parsed.map((item: any) => ({
+        if (Array.isArray(storedUploads)) {
+          const restoredUploads = storedUploads.map(item => ({
             id: item.id,
-            file: new File([], item.fileName, { type: item.fileType }), // Create a minimal File object
+            file: new File([], item.fileName, { type: item.fileType }),
             previewUrl: item.previewUrl,
             uploadDate: new Date(item.uploadDate)
           }));
           setUploadedImages(restoredUploads);
         }
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to load uploaded images", e);
-    }
 
-    // Load folders from localStorage on mount
-    try {
-      const rawFolders = localStorage.getItem(key("folders"));
-      if (rawFolders) {
-        const parsed = JSON.parse(rawFolders);
-        if (Array.isArray(parsed)) {
-          const restoredFolders = parsed.map((folder: any) => ({
+        if (Array.isArray(storedFolders)) {
+          const restoredFolders = storedFolders.map(folder => ({
             ...folder,
             createdAt: new Date(folder.createdAt)
           }));
           setFolders(restoredFolders);
         }
+
+        if (!cancelled) {
+          await refreshStorageEstimate();
+        }
+      } catch (error) {
+        console.error('Failed to load persisted gallery data', error);
+        if (!cancelled) {
+          await removePersistedValue(storagePrefix, 'gallery');
+        }
       }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to load folders", e);
-    }
+    };
+
+    void loadPersistedState();
+
+    return () => {
+      cancelled = true;
+    };
   }, [storagePrefix]);
 
   // Backup gallery state periodically to prevent data loss
   useEffect(() => {
     if (gallery.length > 0) {
       const backupInterval = setInterval(() => {
-        persistGallery(gallery);
-      }, 120000); // Backup every 2 minutes to reduce localStorage writes
+        void persistGallery(gallery);
+      }, 120000); // Backup every 2 minutes to reduce client storage writes
 
       return () => clearInterval(backupInterval);
     }
   }, [gallery]);
 
+  useEffect(() => {
+    if (gallery.length < 10 || persistentStorageRequested.current) return;
+    persistentStorageRequested.current = true;
+
+    void (async () => {
+      const persisted = await requestPersistentStorage();
+      setPersistentStorageStatus(prev => prev === 'granted' ? 'granted' : (persisted ? 'granted' : 'denied'));
+      await refreshStorageEstimate();
+    })();
+  }, [gallery.length, refreshStorageEstimate]);
+
   // Backup gallery state when component unmounts
   useEffect(() => {
     return () => {
       if (gallery.length > 0) {
-        persistGallery(gallery);
+        void persistGallery(gallery);
       }
     };
   }, [gallery]);
 
-  const persistFavorites = (next: Set<string>) => {
+  const persistFavorites = async (next: Set<string>) => {
     setFavorites(next);
     try {
-      localStorage.setItem(key("favorites"), JSON.stringify(Array.from(next)));
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to persist liked images", e);
+      await setPersistedValue(storagePrefix, 'favorites', Array.from(next));
+      await refreshStorageEstimate();
+    } catch (error) {
+      console.error('Failed to persist liked images', error);
     }
   };
 
-  const persistUploadedImages = (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
+  const persistUploadedImages = async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
     setUploadedImages(uploads);
     try {
-      // Convert File objects to a serializable format
-      const serializableUploads = uploads.map(upload => ({
+      const serializableUploads: SerializedUpload[] = uploads.map(upload => ({
         id: upload.id,
         fileName: upload.file.name,
         fileType: upload.file.type,
         previewUrl: upload.previewUrl,
         uploadDate: upload.uploadDate.toISOString()
       }));
-      localStorage.setItem(key("uploads"), JSON.stringify(serializableUploads));
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to persist uploaded images", e);
+      await setPersistedValue(storagePrefix, 'uploads', serializableUploads);
+      await refreshStorageEstimate();
+    } catch (error) {
+      console.error('Failed to persist uploaded images', error);
     }
   };
 
-  // Helper: compress data URL to reduce storage size
-  const compressDataUrl = async (
-    srcDataUrl: string,
-    maxW = 1024,
-    quality = 0.78
-  ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const scale = Math.min(1, maxW / img.width);
-          const w = Math.round(img.width * scale);
-          const h = Math.round(img.height * scale);
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d')!;
-          ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        } catch (error) {
-          reject(error);
-        }
-      };
-      img.onerror = reject;
-      img.src = srcDataUrl;
-    });
-  };
-
-  // Helper: keep only lean fields for storage
-  const toStorable = (items: (GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]) =>
-    items.map(({ url, prompt, model, timestamp, ownerId }) => ({
-      url, prompt, model, timestamp, ownerId
-    }));
-
   // Backup function to persist gallery state
-  const persistGallery = (galleryData: (GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]) => {
+  const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+    const persistLean = async (data: GalleryImageLike[]) => {
+      await setPersistedValue(storagePrefix, 'gallery', toStorable(data));
+      await refreshStorageEstimate();
+    };
     try {
-      localStorage.setItem(key("gallery"), JSON.stringify(toStorable(galleryData)));
+      await persistLean(galleryData);
       console.log('Gallery backup persisted with', galleryData.length, 'images');
-    } catch (e) {
-      console.error("Failed to backup gallery", e);
+      return galleryData;
+    } catch (error) {
+      console.error('Failed to persist gallery', error);
+
+      if (galleryData.length <= 1) {
+        return galleryData;
+      }
+
+      const trimmed = [...galleryData];
+      while (trimmed.length > 0) {
+        trimmed.pop();
+        try {
+          await persistLean(trimmed);
+          console.log('Gallery persisted after trimming to', trimmed.length, 'images');
+          return trimmed;
+        } catch (retryError) {
+          if (trimmed.length === 0) {
+            console.error('Failed to persist gallery even after trimming', retryError);
+          }
+        }
+      }
+
+      return trimmed;
     }
   };
 
@@ -521,7 +595,7 @@ const Create: React.FC = () => {
     } else {
       newFavorites.add(imageUrl);
     }
-    persistFavorites(newFavorites);
+    void persistFavorites(newFavorites);
   };
 
   const focusPromptBar = () => {
@@ -543,40 +617,34 @@ const Create: React.FC = () => {
   const handleDeleteConfirmed = () => {
     if (deleteConfirmation.imageUrl) {
       // Remove from gallery
+      let nextGallery: GalleryImageLike[] = [];
       setGallery(currentGallery => {
         const updated = currentGallery.filter(img => img && img.url !== deleteConfirmation.imageUrl);
-        // Persist to localStorage with error handling
-        try {
-          localStorage.setItem(key("gallery"), JSON.stringify(toStorable(updated)));
-          console.log('Gallery updated after deletion with', updated.length, 'images');
-        } catch (e) {
-          console.error("Failed to persist gallery after deletion", e);
-          // Try to clear and retry
-          try {
-            localStorage.removeItem(key("gallery"));
-            localStorage.setItem(key("gallery"), JSON.stringify(toStorable(updated)));
-            console.log('Gallery persisted after deletion with cleanup');
-          } catch (retryError) {
-            console.error("Failed to persist gallery after deletion even after cleanup", retryError);
-          }
-        }
+        nextGallery = updated;
         return updated;
       });
+
+      void (async () => {
+        const persisted = await persistGallery(nextGallery);
+        if (persisted.length !== nextGallery.length) {
+          setGallery(persisted);
+        }
+      })();
       
       // Remove from liked if it was liked
       if (favorites.has(deleteConfirmation.imageUrl)) {
         const newFavorites = new Set(favorites);
         newFavorites.delete(deleteConfirmation.imageUrl);
-        persistFavorites(newFavorites);
+        void persistFavorites(newFavorites);
       }
     } else if (deleteConfirmation.uploadId) {
       // Remove uploaded image
       const updatedUploads = uploadedImages.filter(upload => upload.id !== deleteConfirmation.uploadId);
-      persistUploadedImages(updatedUploads);
+      void persistUploadedImages(updatedUploads);
     } else if (deleteConfirmation.folderId) {
       // Remove folder
       const updatedFolders = folders.filter(folder => folder.id !== deleteConfirmation.folderId);
-      persistFolders(updatedFolders);
+      void persistFolders(updatedFolders);
       
       // If the deleted folder was selected, clear selection
       if (selectedFolder === deleteConfirmation.folderId) {
@@ -591,13 +659,19 @@ const Create: React.FC = () => {
     setDeleteConfirmation({show: false, imageUrl: null, uploadId: null, folderId: null});
   };
 
-  const persistFolders = (folders: Folder[]) => {
-    setFolders(folders);
+  const persistFolders = async (nextFolders: Folder[]) => {
+    setFolders(nextFolders);
     try {
-      localStorage.setItem(key("folders"), JSON.stringify(folders));
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to persist folders", e);
+      const serialised: SerializedFolder[] = nextFolders.map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        createdAt: folder.createdAt.toISOString(),
+        imageIds: folder.imageIds,
+      }));
+      await setPersistedValue(storagePrefix, 'folders', serialised);
+      await refreshStorageEstimate();
+    } catch (error) {
+      console.error('Failed to persist folders', error);
     }
   };
 
@@ -615,7 +689,7 @@ const Create: React.FC = () => {
       return folder;
     });
     
-    persistFolders(updatedFolders);
+    void persistFolders(updatedFolders);
     
   };
 
@@ -630,7 +704,7 @@ const Create: React.FC = () => {
       return folder;
     });
     
-    persistFolders(updatedFolders);
+    void persistFolders(updatedFolders);
   };
 
   const handleAddToFolder = (imageUrl: string) => {
@@ -664,7 +738,7 @@ const Create: React.FC = () => {
       imageIds: []
     };
     
-    persistFolders([...folders, newFolder]);
+    void persistFolders([...folders, newFolder]);
     setNewFolderName("");
     setNewFolderDialog(false);
     
@@ -778,7 +852,7 @@ const Create: React.FC = () => {
         previewUrl: url,
         uploadDate: new Date()
       };
-      persistUploadedImages([...uploadedImages, newUpload]);
+      void persistUploadedImages([...uploadedImages, newUpload]);
       
       console.log('Selected file:', file.name);
     } else {
@@ -819,7 +893,7 @@ const Create: React.FC = () => {
       previewUrl: URL.createObjectURL(file),
       uploadDate: new Date()
     }));
-    persistUploadedImages([...uploadedImages, ...newUploads]);
+    void persistUploadedImages([...uploadedImages, ...newUploads]);
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -862,7 +936,7 @@ const Create: React.FC = () => {
         previewUrl: URL.createObjectURL(file),
         uploadDate: new Date()
       }));
-      persistUploadedImages([...uploadedImages, ...newUploads]);
+      void persistUploadedImages([...uploadedImages, ...newUploads]);
       
     } catch (error) {
       console.error('Error handling paste:', error);
@@ -888,7 +962,8 @@ const Create: React.FC = () => {
   };
 
   const handleGenerateImage = async () => {
-    if (!prompt.trim()) {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) {
       alert('Please enter a prompt for image generation.');
       return;
     }
@@ -899,50 +974,87 @@ const Create: React.FC = () => {
       return;
     }
 
+    if (activeGenerationQueue.length >= MAX_PARALLEL_GENERATIONS) {
+      setCopyNotification(`You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once.`);
+      setTimeout(() => setCopyNotification(null), 2500);
+      return;
+    }
+
+    const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const modelForGeneration = selectedModel;
+    const fileForGeneration = selectedFile;
+    const referencesForGeneration = referenceFiles.slice(0);
+    const temperatureForGeneration = temperature;
+    const outputLengthForGeneration = outputLength;
+    const topPForGeneration = topP;
+    const qwenSizeForGeneration = qwenSize;
+    const qwenPromptExtendForGeneration = qwenPromptExtend;
+    const qwenWatermarkForGeneration = qwenWatermark;
+
+    const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration };
+    setActiveGenerationQueue(prev => [...prev, jobMeta]);
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 400);
+
     try {
       // Convert uploaded image to base64 if available
       let imageData: string | undefined;
-      if (selectedFile) {
+      if (fileForGeneration) {
         imageData = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(selectedFile);
+          reader.readAsDataURL(fileForGeneration);
         });
       }
 
       let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage;
 
-      if (isGemini) {
+      const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image-preview";
+      const isFluxModel = modelForGeneration.startsWith("flux-");
+      const isChatGPTModel = modelForGeneration === "chatgpt-image";
+      const isIdeogramModel = modelForGeneration === "ideogram";
+      const isQwenModel = modelForGeneration === "qwen-image";
+      const isRunwayModel = modelForGeneration === "runway-gen4" || modelForGeneration === "runway-gen4-turbo";
+      const isSeeDreamModel = modelForGeneration === "seedream-3.0";
+      const isReveModel = modelForGeneration === "reve-image";
+
+      if (isGeminiModel) {
         // Use Gemini generation
         img = await generateGeminiImage({
-          prompt: prompt.trim(),
-          model: selectedModel,
+          prompt: trimmedPrompt,
+          model: modelForGeneration,
           imageData,
           references: await (async () => {
-            if (referenceFiles.length === 0) return undefined;
-            const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            if (referencesForGeneration.length === 0) return undefined;
+            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
               const r = new FileReader();
               r.onload = () => resolve(r.result as string);
               r.readAsDataURL(f);
             })));
             return arr;
           })(),
-          temperature,
-          outputLength,
-          topP,
+          temperature: temperatureForGeneration,
+          outputLength: outputLengthForGeneration,
+          topP: topPForGeneration,
         });
-      } else if (isChatGPT) {
+      } else if (isChatGPTModel) {
         // Use ChatGPT Image generation
         img = await generateChatGPTImage({
-          prompt: prompt.trim(),
+          prompt: trimmedPrompt,
           size: '1024x1024',
           quality: 'high',
           background: 'transparent',
         });
-      } else if (isIdeogram) {
+      } else if (isIdeogramModel) {
         // Use Ideogram generation
         const ideogramResult = await generateIdeogramImage({
-          prompt: prompt.trim(),
+          prompt: trimmedPrompt,
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
@@ -951,27 +1063,27 @@ const Create: React.FC = () => {
           throw new Error('Ideogram generation failed');
         }
         img = ideogramResult[0]; // Take the first generated image
-      } else if (isQwen) {
+      } else if (isQwenModel) {
         // Use Qwen Image generation
         const qwenResult = await generateQwenImage({
-          prompt: prompt.trim(),
-          size: qwenSize,
-          prompt_extend: qwenPromptExtend,
-          watermark: qwenWatermark,
+          prompt: trimmedPrompt,
+          size: qwenSizeForGeneration,
+          prompt_extend: qwenPromptExtendForGeneration,
+          watermark: qwenWatermarkForGeneration,
         });
         if (!qwenResult || qwenResult.length === 0) {
           throw new Error('Qwen generation failed');
         }
         img = qwenResult[0]; // Take the first generated image
-      } else if (isRunway) {
+      } else if (isRunwayModel) {
         // Use Runway generation
         const runwayResult = await generateRunwayImage({
-          prompt: prompt.trim(),
-          model: selectedModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
-          uiModel: selectedModel, // Pass the UI model ID for display
+          prompt: trimmedPrompt,
+          model: modelForGeneration === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
+          uiModel: modelForGeneration, // Pass the UI model ID for display
           references: await (async () => {
-            if (referenceFiles.length === 0) return undefined;
-            const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            if (referencesForGeneration.length === 0) return undefined;
+            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
               const r = new FileReader();
               r.onload = () => resolve(r.result as string);
               r.readAsDataURL(f);
@@ -981,24 +1093,24 @@ const Create: React.FC = () => {
           ratio: "1920:1080", // Default ratio, could be made configurable
         });
         img = runwayResult;
-      } else if (isSeeDream) {
+      } else if (isSeeDreamModel) {
         // Use SeeDream generation
         const seedreamResult = await generateSeeDreamImage({
-          prompt: prompt.trim(),
+          prompt: trimmedPrompt,
           size: "1024x1024",
           n: 1,
         });
         img = seedreamResult;
-      } else if (isReve) {
+      } else if (isReveModel) {
         // Use Reve generation
         const reveResult = await generateReveImage({
-          prompt: prompt.trim(),
+          prompt: trimmedPrompt,
           model: "reve-image-1.0",
           width: 1024,
           height: 1024,
           references: await (async () => {
-            if (referenceFiles.length === 0) return undefined;
-            const arr = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            if (referencesForGeneration.length === 0) return undefined;
+            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
               const r = new FileReader();
               r.onload = () => resolve(r.result as string);
               r.readAsDataURL(f);
@@ -1007,24 +1119,24 @@ const Create: React.FC = () => {
           })(),
         });
         img = reveResult;
-      } else if (isFlux) {
+      } else if (isFluxModel) {
         // Use Flux generation
         const fluxParams: any = {
-          prompt: prompt.trim(),
-          model: selectedModel as FluxModel,
+          prompt: trimmedPrompt,
+          model: modelForGeneration as FluxModel,
           width: 1024,
           height: 1024,
           useWebhook: false, // Use polling for local development
         };
 
         // Add input image for Kontext models
-        if ((selectedModel === 'flux-kontext-pro' || selectedModel === 'flux-kontext-max') && imageData) {
+        if ((modelForGeneration === 'flux-kontext-pro' || modelForGeneration === 'flux-kontext-max') && imageData) {
           fluxParams.input_image = imageData;
         }
 
         // Add reference images as additional input images for Kontext
-        if ((selectedModel === 'flux-kontext-pro' || selectedModel === 'flux-kontext-max') && referenceFiles.length > 0) {
-          const referenceImages = await Promise.all(referenceFiles.slice(0, 3).map(f => new Promise<string>((resolve) => {
+        if ((modelForGeneration === 'flux-kontext-pro' || modelForGeneration === 'flux-kontext-max') && referencesForGeneration.length > 0) {
+          const referenceImages = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
             const r = new FileReader();
             r.onload = () => resolve(r.result as string);
             r.readAsDataURL(f);
@@ -1059,13 +1171,14 @@ const Create: React.FC = () => {
         console.log('Adding new image to gallery. Current gallery size:', gallery.length);
         
         // Use functional update to ensure we get the latest gallery state
+        let computedNext: GalleryImageLike[] = [];
         setGallery(currentGallery => {
           // Validate current gallery items first
           const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
-          
-          const dedup = (list: (GeneratedImage | FluxGeneratedImage)[]) => {
+
+          const dedup = (list: GalleryImageLike[]) => {
             const seen = new Set<string>();
-            const out: (GeneratedImage | FluxGeneratedImage)[] = [];
+            const out: GalleryImageLike[] = [];
             for (const it of list) {
               if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
                 seen.add(it.url);
@@ -1075,50 +1188,26 @@ const Create: React.FC = () => {
             console.log('Deduplication: input length', list.length, 'output length', out.length);
             return out;
           };
-          
+
           // Create new gallery with new image first, then existing valid images
           const newGallery = dedup([imgWithOwner, ...validCurrentGallery]);
-          // Keep reasonable number of images to avoid localStorage quota issues
+          // Keep reasonable number of images to avoid exhausting client storage quota
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           console.log('Final gallery size after dedup and slice:', next.length);
-          
-          // Persist to localStorage with robust error handling
-          try {
-            localStorage.setItem(key("gallery"), JSON.stringify(toStorable(next)));
-            console.log('Gallery persisted to localStorage with', next.length, 'images');
-          } catch (e) {
-            console.error("Failed to persist gallery - localStorage quota exceeded", e);
-            // Robust fallback: keep shrinking until write succeeds
-            let cut = next.slice(); // copy
-            let ok = false;
-            while (cut.length > 0 && !ok) {
-              cut.pop();
-              try {
-                localStorage.setItem(key("gallery"), JSON.stringify(toStorable(cut)));
-                ok = true;
-                console.log('Gallery persisted with reduced size:', cut.length, 'images');
-              } catch (_) { 
-                // keep trimming
-              }
-            }
-            if (!ok) {
-              // last resort: only the newest, already compressed one
-              try {
-                localStorage.setItem(key("gallery"), JSON.stringify(toStorable([imgWithOwner])));
-                console.log('Gallery cleared and persisted with new image only');
-                return [imgWithOwner];
-              } catch (finalError) {
-                console.error("Failed to persist even with single image", finalError);
-              }
-            }
-            return cut;
-          }
-          
+
+          computedNext = next;
           return next;
         });
+
+        void (async () => {
+          const persisted = await persistGallery(computedNext);
+          if (persisted.length !== computedNext.length) {
+            setGallery(persisted);
+          }
+        })();
         
         // Save prompt to history on successful generation
-        addPrompt(prompt.trim());
+        addPrompt(trimmedPrompt);
       }
     } catch (error) {
       console.error('Error generating image:', error);
@@ -1129,12 +1218,19 @@ const Create: React.FC = () => {
       clearIdeogramError();
       clearRunwayError();
       clearSeeDreamError();
+    } finally {
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+      setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
     }
   };
 
   // Keyboard shortcuts
   const { onKeyDown } = useGenerateShortcuts({
-    enabled: !isLoading,
+    enabled: hasGenerationCapacity,
     onGenerate: handleGenerateImage,
   });
 
@@ -1159,6 +1255,8 @@ const Create: React.FC = () => {
   const getCurrentModel = () => {
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
+
+  const storagePercentUsed = storageUsage ? Math.min(storageUsage.percentUsed, 1) : 0;
 
   // Cleanup object URL when component unmounts or file changes
   useEffect(() => {
@@ -1566,16 +1664,37 @@ const Create: React.FC = () => {
                     <span>my folders</span>
                   </button>
                 </aside>
-              </div>
             </div>
-            {/* Gallery - compressed to avoid overlap with left menu */}
-            <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
-              <div className="w-full mb-4" ref={galleryRef}>
-                {/* Liked View */}
-                {activeCategory === "favourites" && (
-                  <div className="w-full">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
+          </div>
+          {/* Gallery - compressed to avoid overlap with left menu */}
+          <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
+            <div className="w-full mb-4" ref={galleryRef}>
+              <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
+                  <span>Cache usage</span>
+                  <span className="text-d-white/80 normal-case">
+                    {storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —'}
+                  </span>
+                </div>
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#faaa16] via-[#ffcd66] to-[#faaa16] transition-[width] duration-300"
+                    style={{ width: `${storageUsage ? storagePercentUsed * 100 : 0}%` }}
+                  />
+                </div>
+                {persistentStorageStatus === 'denied' && (
+                  <div className="mt-3 flex items-center gap-2 text-[11px] font-raleway text-red-300">
+                    <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
+                    Browser may clear cached images sooner because persistent storage is disabled.
+                  </div>
+                )}
+              </div>
+
+              {/* Liked View */}
+              {activeCategory === "favourites" && (
+                <div className="w-full">
+                  {/* Back to Gallery Button */}
+                  <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
                         className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
@@ -2465,39 +2584,32 @@ const Create: React.FC = () => {
                 {/* Default Gallery View - Only for Image Category */}
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="grid grid-cols-4 gap-3 w-full" data-category="image">
-                    {[...(isLoading ? [{ type: 'loading', prompt }] : []), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - (isLoading ? 1 : 0))).fill(null)].map((item, idx) => {
+                    {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
-                    const isLoadingItem = item && typeof item === 'object' && 'type' in item && item.type === 'loading';
-                    
-                    if (isLoadingItem) {
+                    const isPending = typeof item === 'object' && item !== null && 'pending' in item;
+
+                    if (isPending) {
+                      const pending = item as PendingGalleryItem;
                       return (
-                        <div key={`loading-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
-                          {/* Animated background */}
+                        <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
                           <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-orange-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
-                          
-                          {/* Loading overlay - same for all models */}
                           <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                             <div className="text-center">
-                              {/* Spinning loader */}
                               <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
-                              
-                              {/* Loading text */}
                               <div className="text-d-white text-xs font-raleway animate-pulse">
                                 Generating...
                               </div>
                             </div>
                           </div>
-                          
-                          {/* Prompt preview */}
                           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
                             <p className="text-d-white text-xs font-raleway line-clamp-2 opacity-75">
-                              {prompt}
+                              {pending.prompt}
                             </p>
                           </div>
                         </div>
                       );
                     }
-                    
+
                     if (!isPlaceholder) {
                       const img = item as GeneratedImage;
                       return (
@@ -2719,21 +2831,27 @@ const Create: React.FC = () => {
               />
             </div>
             <div className="absolute right-4 bottom-4 flex items-center gap-2">
-              <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : isComingSoon ? "This model is coming soon!" : ""}>
+              <Tooltip text={!prompt.trim()
+                ? "Enter your prompt to generate"
+                : !hasGenerationCapacity
+                  ? `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`
+                  : isComingSoon
+                    ? "This model is coming soon!"
+                    : ""}>
                 <button 
                   onClick={handleGenerateImage}
-                  disabled={isLoading || !prompt.trim()}
-                  className="btn text-black flex items-center gap-1 disabled:cursor-not-allowed p-0"
+                  disabled={!hasGenerationCapacity || !prompt.trim()}
+                  className="btn text-black flex items-center gap-2 disabled:cursor-not-allowed p-0"
                   style={{ backgroundColor: '#faaa16' }}
                   onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffc977')}
                   onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#faaa16')}
                 >
-                  {isLoading ? (
+                  {isButtonSpinning ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Wand2 className="w-4 h-4" />
                   )}
-                  {isLoading ? "Generating..." : "Generate"}
+                  Generate
                 </button>
               </Tooltip>
             </div>

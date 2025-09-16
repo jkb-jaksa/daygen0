@@ -17,6 +17,8 @@ import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import type { FluxGeneratedImage } from '../hooks/useFluxImageGeneration';
 import { getModelDisplayName } from '../utils/modelUtils';
+import { formatBytes, useStorageEstimate } from "../hooks/useStorageEstimate";
+import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
 
 // Types
@@ -81,11 +83,41 @@ function uid() {
   return Math.random().toString(36).slice(2);
 }
 
+type EditGalleryImage = FluxGeneratedImage | QwenGeneratedImage;
+
+type StoredEditImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string };
+
+const isFluxEditImage = (item: EditGalleryImage): item is FluxGeneratedImage =>
+  'jobId' in item && typeof item.jobId === 'string';
+
 // Helper: keep only lean fields for storage (matches Create section)
-const toStorable = (items: (FluxGeneratedImage | QwenGeneratedImage)[]) =>
-  items.map(({ url, prompt, model, timestamp, ownerId }) => ({
-    url, prompt, model, timestamp, ownerId
+const toStorable = (items: EditGalleryImage[]): StoredEditImage[] =>
+  items.map(item => ({
+    url: item.url,
+    prompt: item.prompt,
+    model: item.model,
+    timestamp: item.timestamp,
+    ownerId: item.ownerId,
+    ...(isFluxEditImage(item) ? { jobId: item.jobId } : {}),
   }));
+
+const hydrateStoredEditGallery = (items: StoredEditImage[]): EditGalleryImage[] =>
+  items.map((item, index) => {
+    const base = {
+      url: item.url,
+      prompt: item.prompt,
+      model: item.model ?? 'flux-e1',
+      timestamp: item.timestamp,
+      ownerId: item.ownerId,
+    };
+
+    if (item.model?.startsWith('flux')) {
+      const fallbackJobId = item.jobId ?? `edit-restored-${index}-${Date.now()}`;
+      return { ...base, jobId: fallbackJobId } as EditGalleryImage;
+    }
+
+    return base as EditGalleryImage;
+  });
 
 function formatDims(w: number, h: number) {
   return `${w}×${h}`;
@@ -105,7 +137,8 @@ export default function Edit() {
   
   // Use same key function as Create section
   const { storagePrefix } = useAuth();
-  const key = (k: string) => `${storagePrefix}${k}`;
+  const { estimate: storageEstimate, refresh: refreshStorageEstimate, supported: storageEstimateSupported } = useStorageEstimate();
+  const [persistentStorageGranted, setPersistentStorageGranted] = useState<boolean | null>(null);
   
   // State
   const [mode] = useState<Mode>("edit");
@@ -184,35 +217,104 @@ export default function Edit() {
     }
   });
 
-  // Load edit gallery from localStorage on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(key("editGallery"));
-      if (raw) {
-        const parsed = JSON.parse(raw) as (FluxGeneratedImage | QwenGeneratedImage)[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Validate that each item has required properties
-          const validImages = parsed.filter(img => img && img.url && img.prompt && img.timestamp);
-          console.log('Loading edit gallery from localStorage with', validImages.length, 'valid images out of', parsed.length, 'total');
-          setEditGallery(validImages);
-        } else {
-          console.log('No valid edit gallery data found in localStorage');
+    const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
+    if (!storage?.persisted) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const persisted = await storage.persisted();
+        if (!cancelled) {
+          setPersistentStorageGranted(persisted);
         }
-      } else {
-        console.log('No edit gallery data found in localStorage');
+      } catch {
+        if (!cancelled) {
+          setPersistentStorageGranted(null);
+        }
       }
-    } catch (error) {
-      console.error('Error loading edit gallery from localStorage:', error);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Save edit gallery to localStorage whenever it changes
-  const persistEditGallery = (galleryData: (FluxGeneratedImage | QwenGeneratedImage)[]) => {
+  // Load edit gallery from client storage on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadEditGallery = async () => {
+      try {
+        await migrateKeyToIndexedDb(storagePrefix, 'editGallery');
+
+        const stored = await getPersistedValue<StoredEditImage[]>(storagePrefix, 'editGallery');
+
+        if (cancelled) return;
+
+        if (Array.isArray(stored) && stored.length > 0) {
+          const validImages = stored.filter(img => img && img.url && img.prompt && img.timestamp);
+          console.log('Loading edit gallery from client storage with', validImages.length, 'valid images out of', stored.length, 'total');
+
+          const hydrated = hydrateStoredEditGallery(validImages);
+
+          if (validImages.length !== stored.length) {
+            console.warn('Some edit images were invalid and removed from gallery');
+            void setPersistedValue(storagePrefix, 'editGallery', toStorable(hydrated));
+          }
+
+          setEditGallery(hydrated);
+        } else {
+          console.log('No edit gallery data found in client storage');
+        }
+
+        if (!cancelled) {
+          await refreshStorageEstimate();
+        }
+      } catch (error) {
+        console.error('Error loading edit gallery from client storage:', error);
+        if (!cancelled) {
+          await removePersistedValue(storagePrefix, 'editGallery');
+        }
+      }
+    };
+
+    void loadEditGallery();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storagePrefix]);
+
+  // Save edit gallery to client storage whenever it changes
+  const persistEditGallery = async (galleryData: EditGalleryImage[]): Promise<EditGalleryImage[]> => {
+    const lean = toStorable(galleryData);
     try {
-      localStorage.setItem(key("editGallery"), JSON.stringify(toStorable(galleryData)));
+      await setPersistedValue(storagePrefix, 'editGallery', lean);
+      await refreshStorageEstimate();
       console.log('Edit gallery backup persisted with', galleryData.length, 'images');
-    } catch (e) {
-      console.error("Failed to backup edit gallery", e);
+      return galleryData;
+    } catch (error) {
+      console.error('Failed to persist edit gallery', error);
+
+      if (galleryData.length <= 1) {
+        return galleryData;
+      }
+
+      const trimmed = [...galleryData];
+      while (trimmed.length > 0) {
+        trimmed.pop();
+        try {
+          await setPersistedValue(storagePrefix, 'editGallery', toStorable(trimmed));
+          await refreshStorageEstimate();
+          console.log('Edit gallery persisted after trimming to', trimmed.length, 'images');
+          return trimmed;
+        } catch (retryError) {
+          if (trimmed.length === 0) {
+            console.error('Failed to persist edit gallery even after trimming', retryError);
+          }
+        }
+      }
+
+      return trimmed;
     }
   };
 
@@ -380,14 +482,15 @@ export default function Edit() {
         references: baseImage ? [baseImage] : undefined
       }));
       
+      let nextGallery: EditGalleryImage[] = [];
       setEditGallery(currentGallery => {
         // Validate current gallery items first
         const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
-        
+
         // Deduplicate by URL
-        const dedup = (list: (FluxGeneratedImage | QwenGeneratedImage)[]) => {
+        const dedup = (list: EditGalleryImage[]) => {
           const seen = new Set<string>();
-          const out: (FluxGeneratedImage | QwenGeneratedImage)[] = [];
+          const out: EditGalleryImage[] = [];
           for (const it of list) {
             if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
               seen.add(it.url);
@@ -396,17 +499,22 @@ export default function Edit() {
           }
           return out;
         };
-        
+
         // Add new images to the beginning
         const next = [...editImages, ...validCurrentGallery];
         const deduped = dedup(next);
-        
-        // Persist to localStorage
-        persistEditGallery(deduped);
-        
+        nextGallery = deduped;
+
         console.log('Added', editImages.length, 'images to edit gallery. Total edit gallery size:', deduped.length);
         return deduped;
       });
+
+      void (async () => {
+        const persisted = await persistEditGallery(nextGallery);
+        if (persisted.length !== nextGallery.length) {
+          setEditGallery(persisted);
+        }
+      })();
       
       if (!settings.seedLocked) {
         setSettings((s) => ({ ...s, seed: s.seed + count }));
@@ -784,6 +892,49 @@ export default function Edit() {
 
           {/* Recent Edits Gallery */}
           <div className="space-y-4">
+            {storageEstimateSupported ? (
+              storageEstimate && (
+                <div
+                  className={`rounded-lg border px-4 py-3 ${
+                    storageEstimate.percentUsed >= 0.8
+                      ? 'border-red-500/40 bg-red-500/10'
+                      : 'border-d-mid bg-d-dark/70'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/60">
+                    <span>Local cache usage</span>
+                    <span className="text-d-white/80 normal-case">
+                      {formatBytes(storageEstimate.usage)} / {formatBytes(storageEstimate.quota)}
+                    </span>
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-d-dark/40">
+                    <div
+                      className={`h-full rounded-full ${
+                        storageEstimate.percentUsed >= 0.8 ? 'bg-red-400' : 'bg-d-orange-1'
+                      }`}
+                      style={{ width: `${Math.min(storageEstimate.percentUsed, 1) * 100}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[11px] font-raleway text-d-white/60">
+                    <span>{(Math.min(storageEstimate.percentUsed, 1) * 100).toFixed(1)}% used</span>
+                    <span>
+                      Updated {new Date(storageEstimate.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  {persistentStorageGranted === false && (
+                    <div className="mt-2 flex items-center gap-2 text-[11px] font-raleway text-red-300">
+                      <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
+                      Browser may clear cached edits because persistent storage is not granted.
+                    </div>
+                  )}
+                </div>
+              )
+            ) : (
+              <div className="rounded-lg border border-d-mid bg-d-dark/70 px-4 py-3 text-[11px] font-raleway text-d-white/60">
+                Storage usage metrics unavailable in this browser.
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium font-cabin">Recent Edits</div>
               <div className="flex items-center gap-2 text-xs text-d-mid">

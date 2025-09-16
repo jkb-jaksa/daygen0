@@ -884,8 +884,12 @@ app.get('/api/flux/result', async (req, res) => {
       'api.us.bfl.ai',
       'api.eu1.bfl.ai',
       'api.us1.bfl.ai',
-      'api.eu4.bfl.ai',  // Add eu4 domain
-      'api.us4.bfl.ai'   // Add us4 domain
+      'api.eu2.bfl.ai',
+      'api.us2.bfl.ai',
+      'api.eu3.bfl.ai',
+      'api.us3.bfl.ai',
+      'api.eu4.bfl.ai',
+      'api.us4.bfl.ai'
     ];
     
     const url = new URL(pollingUrl);
@@ -937,7 +941,9 @@ app.get('/api/flux/download', async (req, res) => {
     }
 
     // Download the image from BFL's delivery URL
-    const imageRes = await fetch(url);
+    const imageRes = await fetch(url, {
+      headers: KEY ? { 'x-key': KEY } : undefined,
+    });
     if (!imageRes.ok) {
       throw new Error(`Failed to download image: ${imageRes.status}`);
     }
