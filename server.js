@@ -85,44 +85,155 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 // OpenAI API setup for ChatGPT Image Generation
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function parseNumeric(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) {
+      const parsed = Number(trimmed);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
+
+function normalizeInlineImage(rawValue, fallbackMime = 'image/png') {
+  if (typeof rawValue !== 'string') return null;
+  const trimmed = rawValue.trim();
+  if (!trimmed) return null;
+
+  const dataUrlPrefixMatch = trimmed.match(/^data:([^;,]+);base64,/i);
+  let mime = fallbackMime;
+  let base64 = trimmed;
+
+  if (dataUrlPrefixMatch) {
+    mime = dataUrlPrefixMatch[1] || fallbackMime;
+    base64 = trimmed.slice(dataUrlPrefixMatch[0].length);
+  }
+
+  // Remove whitespace that some encoders insert every 76 chars
+  const sanitized = base64.replace(/\s+/g, '');
+  if (!sanitized) return null;
+
+  return {
+    mimeType: mime || fallbackMime,
+    data: sanitized,
+  };
+}
+
 // Gemini image generation endpoint
 app.post('/api/generate-image', async (req, res) => {
   try {
-    const { prompt, imageBase64, mimeType } = req.body;
+    const {
+      prompt,
+      imageBase64,
+      mimeType,
+      model,
+      references,
+      temperature,
+      outputLength,
+      topP,
+    } = req.body ?? {};
 
-    // Build contents: text-only OR text+image (for edits)
-    const contents =
-      imageBase64
-        ? [
-            { text: prompt ?? "" },
-            { inlineData: { mimeType: mimeType || "image/png", data: imageBase64 } },
-          ]
-        : [prompt ?? ""];
+    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    if (!promptText) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image-preview",
-      contents,
-    });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'Gemini API key not configured' });
+    }
 
-    const parts = response?.candidates?.[0]?.content?.parts ?? [];
-    const imgPart = parts.find((p) => p.inlineData);
-    const txtPart = parts.find((p) => p.text);
+    const targetModel =
+      typeof model === 'string' && model.trim()
+        ? model.trim()
+        : 'gemini-2.5-flash-image-preview';
+
+    const primaryInline = normalizeInlineImage(imageBase64, mimeType || 'image/png');
+    const referenceInlineParts = Array.isArray(references)
+      ? references
+          .map((ref) => normalizeInlineImage(ref))
+          .filter((part) => part !== null)
+      : [];
+
+    const hasImageInputs = Boolean(primaryInline) || referenceInlineParts.length > 0;
+
+    // For text-only prompts, use generateContent with a text prompt
+    if (!hasImageInputs) {
+      const response = await ai.models.generateContent({
+        model: targetModel,
+        contents: [{ text: promptText }],
+      });
+
+      const candidateParts = response?.candidates?.[0]?.content?.parts ?? [];
+      const imgPart = candidateParts.find((p) => p.inlineData?.data);
+      const txtPart = candidateParts.find((p) => p.text);
+
+      if (!imgPart?.inlineData?.data) {
+        return res.status(400).json({
+          error: txtPart?.text || 'No image returned',
+        });
+      }
+
+      res.json({
+        mimeType: imgPart.inlineData.mimeType || 'image/png',
+        imageBase64: imgPart.inlineData.data,
+      });
+      return;
+    }
+
+    // Fall back to generateContent when we need to send inline image references.
+    const parts = [{ text: promptText }];
+    if (primaryInline) {
+      parts.push({ inlineData: { mimeType: primaryInline.mimeType, data: primaryInline.data } });
+    }
+    for (const ref of referenceInlineParts) {
+      parts.push({ inlineData: { mimeType: ref.mimeType, data: ref.data } });
+    }
+
+    const generationConfig = {};
+    const temperatureValue = parseNumeric(temperature);
+    if (temperatureValue !== undefined) generationConfig.temperature = temperatureValue;
+    const topPValue = parseNumeric(topP);
+    if (topPValue !== undefined) generationConfig.topP = topPValue;
+    const maxOutputTokensValue = parseNumeric(outputLength);
+    if (maxOutputTokensValue !== undefined) generationConfig.maxOutputTokens = maxOutputTokensValue;
+
+    const requestPayload = {
+      model: targetModel,
+      contents: [
+        {
+          role: 'user',
+          parts,
+        },
+      ],
+    };
+
+    if (Object.keys(generationConfig).length > 0) {
+      requestPayload.config = generationConfig;
+    }
+
+    const response = await ai.models.generateContent(requestPayload);
+
+    const candidateParts = response?.candidates?.[0]?.content?.parts ?? [];
+    const imgPart = candidateParts.find((p) => p.inlineData?.data);
+    const txtPart = candidateParts.find((p) => p.text);
 
     if (!imgPart?.inlineData?.data) {
       return res.status(400).json({
-        error: txtPart?.text || "No image returned"
+        error: txtPart?.text || 'No image returned',
       });
     }
 
     res.json({
-      mimeType: imgPart.inlineData.mimeType || "image/png",
+      mimeType: imgPart.inlineData.mimeType || primaryInline?.mimeType || 'image/png',
       imageBase64: imgPart.inlineData.data,
     });
   } catch (err) {
-    console.error(err);
+    console.error('Gemini image generation error:', err);
     res.status(500).json({
-      error: "Generation failed",
-      details: String(err?.message || err)
+      error: 'Generation failed',
+      details: String(err?.message || err),
     });
   }
 });

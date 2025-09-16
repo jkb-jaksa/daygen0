@@ -1125,7 +1125,7 @@ const Create: React.FC = () => {
     const isOpen = imageActionMenu?.id === menuId;
 
     return (
-      <div className="image-action-group flex items-center gap-1">
+      <div className="image-action-group flex items-center gap-0.5">
         <div className="relative">
           <button
             type="button"
