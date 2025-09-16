@@ -500,12 +500,15 @@ const Create: React.FC = () => {
   useEffect(() => {
     if (gallery.length > 0) {
       const backupInterval = setInterval(() => {
-        void persistGallery(gallery);
+        // Only backup if gallery still has images
+        if (gallery.length > 0) {
+          void persistGallery(gallery);
+        }
       }, 120000); // Backup every 2 minutes to reduce client storage writes
 
       return () => clearInterval(backupInterval);
     }
-  }, [gallery]);
+  }, [gallery.length]); // Only depend on gallery length, not the entire gallery array
 
   useEffect(() => {
     if (gallery.length < 10 || persistentStorageRequested.current) return;
@@ -525,7 +528,7 @@ const Create: React.FC = () => {
         void persistGallery(gallery);
       }
     };
-  }, [gallery]);
+  }, []); // Only run on unmount, not on every gallery change
 
   const persistFavorites = async (next: Set<string>) => {
     setFavorites(next);
@@ -556,6 +559,12 @@ const Create: React.FC = () => {
 
   // Backup function to persist gallery state
   const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+    // Don't persist empty galleries - this prevents race conditions
+    if (galleryData.length === 0) {
+      console.warn('Skipping persistence of empty gallery to prevent data loss');
+      return galleryData;
+    }
+
     const persistLean = async (data: GalleryImageLike[]) => {
       await setPersistedValue(storagePrefix, 'gallery', toStorable(data));
       await refreshStorageEstimate();
