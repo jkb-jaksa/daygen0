@@ -13,7 +13,11 @@ const bytesFormatter = new Intl.NumberFormat('en-US', {
 });
 
 export const formatBytes = (value: number): string => {
-  if (!Number.isFinite(value) || value <= 0) return '0 MB';
+  console.log('formatBytes called with value:', value);
+  if (!Number.isFinite(value) || value <= 0) {
+    console.log('formatBytes returning 0 MB for value:', value);
+    return '0 MB';
+  }
   const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
   let idx = 0;
   let size = value;
@@ -21,7 +25,9 @@ export const formatBytes = (value: number): string => {
     size /= 1024;
     idx += 1;
   }
-  return `${bytesFormatter.format(size)} ${units[idx]}`;
+  const result = `${bytesFormatter.format(size)} ${units[idx]}`;
+  console.log('formatBytes result:', result);
+  return result;
 };
 
 export const useStorageEstimate = (options?: { auto?: boolean }) => {

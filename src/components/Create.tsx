@@ -352,7 +352,11 @@ const Create: React.FC = () => {
   // Force refresh storage estimate on mount
   useEffect(() => {
     console.log('Component mounted, refreshing storage estimate');
-    refreshStorageEstimate();
+    // Add a small delay to ensure the component is fully mounted
+    setTimeout(() => {
+      console.log('Delayed refresh of storage estimate');
+      refreshStorageEstimate();
+    }, 100);
   }, [refreshStorageEstimate]);
 
   useEffect(() => () => {
