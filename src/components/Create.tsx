@@ -26,6 +26,7 @@ import { ShareButton } from './ShareButton';
 import { compressDataUrl } from "../lib/imageCompression";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
+import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -123,7 +124,9 @@ const ModelMenuPortal: React.FC<{
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (open && menuRef.current && 
+          !menuRef.current.contains(event.target as Node) && 
+          !anchorRef.current?.contains(event.target as Node)) {
         onClose();
       }
     };
@@ -158,7 +161,7 @@ const ModelMenuPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-64 overflow-y-auto"
+      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-80 overflow-y-auto"
     >
       {children}
     </div>,
@@ -189,7 +192,9 @@ const SettingsPortal: React.FC<{
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (open && menuRef.current && 
+          !menuRef.current.contains(event.target as Node) && 
+          !anchorRef.current?.contains(event.target as Node)) {
         onClose();
       }
     };
@@ -1626,7 +1631,7 @@ const Create: React.FC = () => {
       <div className="herogradient absolute inset-0 z-0" aria-hidden="true" />
       
       {/* PLATFORM HERO */}
-      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-48">
+      <header className="relative z-10 mx-auto max-w-[85rem] px-6 lg:px-8 pt-[calc(var(--nav-h)+0.25rem)] pb-48">
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Removed "Create now" heading per request */}
@@ -1634,7 +1639,7 @@ const Create: React.FC = () => {
           {/* Categories + Gallery row */}
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
-            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.5rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
+            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
               <div className="h-full overflow-auto glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] pl-3 pr-5 py-4 flex items-start">
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
@@ -3176,12 +3181,22 @@ const Create: React.FC = () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-200 gap-2 group"
+                    className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid hover:border-d-orange-1 flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-200 gap-2 group"
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
-                      const Icon = currentModel.Icon;
-                      return <Icon className="w-4 h-4 group-hover:text-brand transition-colors duration-200" />;
+                      if (hasToolLogo(currentModel.name)) {
+                        return (
+                          <img 
+                            src={getToolLogo(currentModel.name)!} 
+                            alt={`${currentModel.name} logo`}
+                            className="w-5 h-5 object-contain rounded flex-shrink-0"
+                          />
+                        );
+                      } else {
+                        const Icon = currentModel.Icon;
+                        return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
+                      }
                     })()}
                     <span className="text-xs font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
                   </button>
@@ -3212,12 +3227,20 @@ const Create: React.FC = () => {
                               ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
                               : isComingSoon
                               ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
-                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-orange-1"
                           }`}
                         >
-                          <model.Icon className={`w-3.5 h-3.5 flex-shrink-0 transition-colors duration-100 ${
-                            isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
-                          }`} />
+                          {hasToolLogo(model.name) ? (
+                            <img 
+                              src={getToolLogo(model.name)!} 
+                              alt={`${model.name} logo`}
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-xs font-cabin truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'

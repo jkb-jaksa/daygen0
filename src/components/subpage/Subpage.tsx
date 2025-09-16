@@ -1,6 +1,7 @@
 import type React from "react";
 import { useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
+import { getToolLogo, hasToolLogo } from "../../utils/toolLogos";
 
 type DetailSection = { heading: string; body: string };
 type DetailPage = {
@@ -849,8 +850,16 @@ export default function Subpage() {
               className="rounded-2xl bg-white/5 border border-d-black p-5 hover:border-d-mid transition-colors duration-200"
             >
               <div className="flex items-center gap-3">
-                {/* optional icon slot */}
-                <div className="h-8 w-8 rounded-lg bg-white/10" />
+                {/* tool logo or placeholder */}
+                {hasToolLogo(t.title) ? (
+                  <img 
+                    src={getToolLogo(t.title)!} 
+                    alt={`${t.title} logo`}
+                    className="h-7 w-7 object-contain rounded-lg"
+                  />
+                ) : (
+                  <div className="h-7 w-7 rounded-lg bg-white/10" />
+                )}
                 <h3 className="text-lg font-cabin">{t.title}</h3>
               </div>
               <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>

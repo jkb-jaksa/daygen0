@@ -19,6 +19,7 @@ import {
   Mic,
   Leaf,
 } from "lucide-react";
+import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 
 // --- Minimal card + layout utilities ---
 const cx = (...classes: Array<string | undefined | false>) =>
@@ -91,7 +92,7 @@ const TOOLS: Tool[] = [
     href: "/ai-tools/tools",
   },
   {
-    name: "Gemini 2.5 Flash Image (Nano Banana)",
+    name: "Gemini 2.5 Flash Image",
     desc: "Best image editing.",
     Icon: Sparkles,
     accent: "yellow",
@@ -333,14 +334,22 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
     >
       {/* No overlay; tag-gradient provides subtle glow only */}
       <div className="relative z-10 flex items-center gap-3">
-        <div
-          className={cx(
-            "size-8 grid place-items-center rounded-lg border",
-            s.badge
-          )}
-        >
-          <Icon className="size-5" />
-        </div>
+        {hasToolLogo(name) ? (
+          <img 
+            src={getToolLogo(name)!} 
+            alt={`${name} logo`}
+            className="size-7 object-contain rounded-lg"
+          />
+        ) : (
+          <div
+            className={cx(
+              "size-7 grid place-items-center rounded-lg border",
+              s.badge
+            )}
+          >
+            <Icon className="size-5" />
+          </div>
+        )}
         <div className="text-d-text text-xl font-light font-cabin">{name}</div>
       </div>
       <p className="relative z-10 mt-0.5 text-d-white text-base font-normal font-raleway">{desc}</p>

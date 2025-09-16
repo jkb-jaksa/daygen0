@@ -212,7 +212,7 @@ export default function Navbar() {
               </div>
             )}
             <button aria-label="Search" className="parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
-              <Search className="size-5" />
+              <Search className="size-4" />
             </button>
           </div>
         </div>

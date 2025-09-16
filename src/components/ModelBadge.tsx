@@ -1,4 +1,5 @@
 import React from 'react';
+import { getToolLogo, hasToolLogo } from '../utils/toolLogos';
 
 interface ModelBadgeProps {
   model: string;
@@ -146,11 +147,19 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
       `}
       title={config.description}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         {showIcon && (
-          <span className="text-xs leading-none">
-            {config.icon}
-          </span>
+          hasToolLogo(config.name) ? (
+            <img 
+              src={getToolLogo(config.name)!} 
+              alt={`${config.name} logo`}
+              className="w-3 h-3 object-contain rounded flex-shrink-0"
+            />
+          ) : (
+            <span className="text-xs leading-none">
+              {config.icon}
+            </span>
+          )
         )}
         <span className="leading-none">
           {config.name}

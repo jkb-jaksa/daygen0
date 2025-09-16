@@ -19,6 +19,7 @@ import type { FluxGeneratedImage } from '../hooks/useFluxImageGeneration';
 import { getModelDisplayName } from '../utils/modelUtils';
 import { formatBytes, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, setPersistedValue } from "../lib/clientStorage";
+import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 // import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
 
 // Types
@@ -543,9 +544,9 @@ export default function Edit() {
   const currentTasks = EDIT_TASKS;
 
   return (
-    <div className="relative min-h-screen text-d-text overflow-hidden pt-16">
+    <div className="relative min-h-screen text-d-text overflow-hidden pt-12">
       {/* Main two-column layout */}
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 p-6 md:grid-cols-[400px_1fr]">
+      <div className="mx-auto grid max-w-[85rem] grid-cols-1 gap-6 px-6 lg:px-8 py-6 md:grid-cols-[400px_1fr]">
         {/* Left panel */}
         <div className="space-y-4">
           {/* Task chips */}
@@ -743,12 +744,21 @@ export default function Edit() {
                               setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image");
                               setIsModelSelectorOpen(false);
                             }}
-                            className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-d-mid hover:text-brand transition-colors ${
+                            className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-d-mid hover:text-brand transition-colors flex items-center gap-2 ${
                               model === m.id ? 'bg-d-orange-1 text-d-black' : 'text-d-white'
                             }`}
                           >
-                            <div className="font-medium text-xs">{m.name}</div>
-                            <div className="text-[10px] opacity-75">{m.description}</div>
+                            {hasToolLogo(m.name) ? (
+                              <img 
+                                src={getToolLogo(m.name)!} 
+                                alt={`${m.name} logo`}
+                                className="w-5 h-5 object-contain rounded flex-shrink-0"
+                              />
+                            ) : null}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs">{m.name}</div>
+                              <div className="text-[10px] opacity-75">{m.description}</div>
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -800,7 +810,7 @@ export default function Edit() {
               </div>
             </div>
             <div className="p-4">
-              <div className="relative grid min-h-[420px] w-full place-items-center rounded-lg glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark">
+              <div className="relative grid min-h-[420px] w-full place-items-center rounded-lg bg-d-black">
                 {!activeResult ? (
                   <EmptyState hasBase={!!baseImage} />
                 ) : baseImage && showBeforeAfter ? (
