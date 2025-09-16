@@ -20,8 +20,8 @@ Add the following environment variables to your `.env` file:
 
 ```bash
 # Reve API Configuration
-REVE_BASE_URL=https://reveai.pro
-REVE_API_KEY=papi.a7ec5c5d-f7f1-4cc4-b526-b331c048b26d.V95iGIuGQjGNMha4ilIo2bGudUOoWbvE
+REVE_BASE_URL=https://api.reve.com
+REVE_API_KEY=your_reve_api_key_here
 REVE_PROJECT_ID=your_reve_project_id_here
 REVE_WEBHOOK_SECRET=your_reve_webhook_secret_here
 ```

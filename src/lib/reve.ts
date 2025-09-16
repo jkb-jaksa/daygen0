@@ -88,7 +88,7 @@ export class ReveClient {
   async createEdit(params: EditParams): Promise<{ job_id: string }> {
     // Many providers require multipart/form-data for images.
     // If Reve requires JSON-upload URLs, adjust accordingly.
-    const endpoint = `${this.baseUrl}/edit`;
+    const endpoint = `${this.baseUrl}/v1/image/edit`;
 
     const form = new FormData();
     form.set("prompt", params.prompt);
@@ -125,7 +125,7 @@ export class ReveClient {
     // Common patterns:
     //   GET /v1/jobs/:id
     //   or  GET /v1/images/generations/:id
-    const endpoint = `${this.baseUrl}/v1/images/${jobId}`;
+    const endpoint = `${this.baseUrl}/v1/jobs/${jobId}`;
 
     const res = await fetch(endpoint, {
       headers: this.headers(),

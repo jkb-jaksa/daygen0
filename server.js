@@ -1647,7 +1647,7 @@ app.get('/api/reve/jobs/:id', async (req, res) => {
 
     console.log(`[reve] Checking status for job: ${id}`);
 
-    const response = await fetch(`${REVE_BASE_URL}/v1/images/${id}`, {
+    const response = await fetch(`${REVE_BASE_URL}/v1/jobs/${id}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${REVE_API_KEY}`,

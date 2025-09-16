@@ -68,7 +68,7 @@ export const useReveImageGeneration = () => {
       const { prompt, model = "reve-image-1.0", references, ...params } = options;
 
       // Submit the job
-      const apiUrl = 'http://localhost:3000/api/reve/generate';
+      const apiUrl = '/api/reve/generate';
 
       console.log('[reve] POST', apiUrl);
       
@@ -109,7 +109,7 @@ export const useReveImageGeneration = () => {
         console.log(`[reve] Polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`http://localhost:3000/api/reve/jobs/${job_id}`);
+          const pollRes = await fetch(`/api/reve/jobs/${job_id}`);
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);
@@ -204,7 +204,7 @@ export const useReveImageGeneration = () => {
       });
 
       // Submit the edit job
-      const apiUrl = 'http://localhost:3000/api/reve/edit';
+      const apiUrl = '/api/reve/edit';
 
       console.log('[reve] POST edit', apiUrl);
       
@@ -240,7 +240,7 @@ export const useReveImageGeneration = () => {
         console.log(`[reve] Edit polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`http://localhost:3000/api/reve/jobs/${job_id}`);
+          const pollRes = await fetch(`/api/reve/jobs/${job_id}`);
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);

@@ -23,6 +23,19 @@ IDEOGRAM_API_KEY=your_ideogram_api_key_here
 DASHSCOPE_API_KEY=your_dashscope_api_key_here
 DASHSCOPE_BASE=https://dashscope-intl.aliyuncs.com/api/v1
 
+# Runway API Key for Gen-4 and Gen-4 Turbo models
+RUNWAY_API_KEY=your_runway_api_key_here
+
+# SeeDream 3.0 API Key for high-quality image generation
+ARK_API_KEY=your_ark_api_key_here
+ARK_BASE=https://ark.ap-southeast.bytepluses.com/api/v3
+
+# Reve API Key for text-to-image and image editing
+REVE_API_KEY=your_reve_api_key_here
+REVE_BASE_URL=https://api.reve.com
+REVE_PROJECT_ID=your_reve_project_id_here
+REVE_WEBHOOK_SECRET=your_reve_webhook_secret_here
+
 # Server Configuration
 PORT=3000
 NODE_ENV=development
@@ -43,6 +56,10 @@ DayGen supports multiple AI models for image generation and editing:
 - **ChatGPT Image** - Popular image generation model
 - **Ideogram 3.0** - Advanced image generation, editing, and enhancement
 - **Qwen Image** - Alibaba Cloud's text-to-image and image editing model
+- **Runway Gen-4** - Great image model with control & editing features
+- **Runway Gen-4 Turbo** - Fast Runway generation with reference images
+- **SeeDream 3.0** - High-quality text-to-image generation with editing capabilities
+- **Reve Image** - Great text-to-image and image editing
 
 ### Ideogram 3.0 Features
 - **Generate**: Text-to-image with aspect ratio control and style presets
@@ -59,7 +76,30 @@ DayGen supports multiple AI models for image generation and editing:
 - **Watermark Control**: Optional watermarking of generated images
 - **High Quality**: Professional-grade image generation up to 1664×928 resolution
 
-For detailed Ideogram integration documentation, see [IDEOGRAM_INTEGRATION.md](./IDEOGRAM_INTEGRATION.md).
+### Runway Gen-4 Features
+- **Generate**: High-quality text-to-image generation
+- **Edit**: Advanced image editing with precise control
+- **Reference Images**: Use reference images to guide generation
+- **Style Transfer**: Apply artistic styles to generated images
+- **High Resolution**: Generate images up to 4MP resolution
+
+### SeeDream 3.0 Features
+- **Generate**: High-quality text-to-image generation
+- **Edit**: Image editing with text prompts
+- **Style Control**: Multiple artistic styles and presets
+- **Aspect Ratios**: Support for various aspect ratios
+- **Fast Generation**: Optimized for speed and quality
+
+### Reve Image Features
+- **Generate**: Text-to-image generation from descriptions
+- **Edit**: Modify existing images using text instructions
+- **Remix**: Combine text prompts with reference images
+- **Async Processing**: Jobs processed asynchronously with status polling
+- **Base64 Storage**: Images stored as base64 data URLs
+
+For detailed integration documentation, see:
+- [IDEOGRAM_INTEGRATION.md](./IDEOGRAM_INTEGRATION.md)
+- [REVE_INTEGRATION.md](./REVE_INTEGRATION.md)
 
 ## Site Password Protection
 
