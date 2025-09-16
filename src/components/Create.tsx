@@ -355,6 +355,19 @@ const Create: React.FC = () => {
 
   // Force refresh storage estimate on mount and request persistent storage
   useEffect(() => {
+    // Check if persistent storage is already granted
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        if (granted) {
+          console.log('Persistent storage already granted');
+          setPersistentStorageStatus('granted');
+          return; // Don't set up user interaction listeners if already granted
+        }
+      }).catch(() => {
+        // Ignore errors on initial check
+      });
+    }
+
     // Request persistent storage to prevent browser from clearing cached images
     // Only request after user interaction to increase chances of approval
     const requestPersistentStorage = () => {
@@ -362,12 +375,17 @@ const Create: React.FC = () => {
         navigator.storage.persist().then(granted => {
           if (granted) {
             console.log('Persistent storage granted');
+            setPersistentStorageStatus('granted');
           } else {
             console.warn('Persistent storage denied - browser may clear cached images sooner');
+            setPersistentStorageStatus('denied');
           }
         }).catch(error => {
           console.error('Error requesting persistent storage:', error);
+          setPersistentStorageStatus('denied');
         });
+      } else {
+        setPersistentStorageStatus('denied');
       }
     };
 
