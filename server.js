@@ -940,12 +940,27 @@ app.get('/api/flux/download', async (req, res) => {
       return res.status(400).json({ error: 'Missing url parameter' });
     }
 
+    if (!KEY) {
+      return res.status(500).json({
+        error: 'BFL_API_KEY is not configured'
+      });
+    }
+
+    console.log('Attempting to download image from:', url);
+    console.log('Using API key:', KEY ? 'Yes' : 'No');
+
     // Download the image from BFL's delivery URL
     const imageRes = await fetch(url, {
       headers: KEY ? { 'x-key': KEY } : undefined,
     });
+    
+    console.log('Download response status:', imageRes.status);
+    console.log('Download response headers:', Object.fromEntries(imageRes.headers.entries()));
+    
     if (!imageRes.ok) {
-      throw new Error(`Failed to download image: ${imageRes.status}`);
+      const errorText = await imageRes.text();
+      console.error('Download failed with response:', errorText);
+      throw new Error(`Failed to download image: ${imageRes.status} - ${errorText}`);
     }
     
     const arrayBuffer = await imageRes.arrayBuffer();
@@ -954,6 +969,7 @@ app.get('/api/flux/download', async (req, res) => {
     const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
     const resultDataUrl = `data:${contentType};base64,${base64}`;
     
+    console.log('Successfully downloaded image, size:', buffer.length, 'bytes');
     res.json({ dataUrl: resultDataUrl, contentType });
   } catch (error) {
     console.error('Image download error:', error);

@@ -198,6 +198,10 @@ export const useFluxImageGeneration = () => {
           
         } catch (pollError) {
           console.error('Polling error:', pollError);
+          // If it's a download error, stop polling immediately
+          if (pollError instanceof Error && pollError.message.includes('Failed to download image')) {
+            throw pollError;
+          }
           // Continue polling unless it's a critical error
           if (attempts >= maxAttempts - 1) {
             throw pollError;
