@@ -2960,7 +2960,7 @@ const Create: React.FC = () => {
                   disabled={!hasGenerationCapacity || !prompt.trim()}
                   className="btn text-black flex items-center gap-2 disabled:cursor-not-allowed p-0"
                   style={{ backgroundColor: '#faaa16' }}
-                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffc977')}
+                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#ffb833')}
                   onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#faaa16')}
                 >
                   {isButtonSpinning ? (
