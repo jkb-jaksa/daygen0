@@ -23,7 +23,7 @@ export default function Navbar() {
   useLayoutEffect(() => {
     const measure = () => {
       if (navRef.current) {
-        const h = Math.round(navRef.current.getBoundingClientRect().height);
+        const h = Math.ceil(navRef.current.getBoundingClientRect().height);
         setNavH(h);
       }
     };
@@ -135,7 +135,7 @@ export default function Navbar() {
         ref={navRef}
         className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
       >
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-sm">
+        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-sm min-h-[3.5rem]">
           <div className="flex items-center gap-6 md:gap-8">
             <img
               src="/daygen-color-nobg.png"
@@ -170,10 +170,10 @@ export default function Navbar() {
           <div className="flex items-center gap-2 md:gap-3">
             {!user ? (
               <>
-                <button className={`${buttons.secondary} parallax-small`} onClick={()=>setShowAuth("login")}>
+                <button className={`${buttons.secondary} btn-compact parallax-small`} onClick={()=>setShowAuth("login")}>
                   Log In
                 </button>
-                <button className={`${buttons.primary} parallax-small`} onClick={()=>setShowAuth("signup")}>
+                <button className={`${buttons.primary} btn-compact parallax-small`} onClick={()=>setShowAuth("signup")}>
                   Sign Up
                 </button>
                 <button 
@@ -222,7 +222,7 @@ export default function Navbar() {
       {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
       <div
         className={`fixed left-0 right-0 z-[49] ${activeMenu ? "pointer-events-auto" : "pointer-events-none"}`}
-        style={{ top: navH }}
+        style={{ top: Math.max(navH - 1, 0) }}
       >
         <div
           className="glass-liquid willchange-backdrop isolate border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200"

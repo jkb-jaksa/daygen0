@@ -132,6 +132,13 @@ html, body {
   z-index: 1;
 }
 
+/* Compact button variant for tighter vertical spaces like the navbar */
+.btn-compact {
+  height: 32px;
+  min-width: 0;
+  padding: 0 16px;
+}
+
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
