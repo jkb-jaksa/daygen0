@@ -349,6 +349,12 @@ const Create: React.FC = () => {
     setStorageUsage(storageEstimate);
   }, [storageEstimate]);
 
+  // Force refresh storage estimate on mount
+  useEffect(() => {
+    console.log('Component mounted, refreshing storage estimate');
+    refreshStorageEstimate();
+  }, [refreshStorageEstimate]);
+
   useEffect(() => () => {
     if (spinnerTimeoutRef.current) {
       clearTimeout(spinnerTimeoutRef.current);
