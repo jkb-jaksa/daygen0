@@ -94,10 +94,10 @@ const MODEL_CONFIG = {
     description: 'ChatGPT Image - Popular image generation model'
   },
   'reve-image-1.0': {
-    name: 'Reve 1.0',
+    name: 'Reve',
     shortName: 'Reve',
     icon: '✨',
-    description: 'Reve 1.0 - Great text-to-image and image editing'
+    description: 'Reve - Great text-to-image and image editing'
   },
   'reve-image': {
     name: 'Reve',
