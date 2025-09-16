@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 
-export interface SeeDreamGeneratedImage {
+export interface SeedreamGeneratedImage {
   url: string;
   prompt: string;
   model: string;
@@ -10,19 +10,19 @@ export interface SeeDreamGeneratedImage {
   ownerId?: string; // Optional user ID who generated the image
 }
 
-export interface SeeDreamImageGenerationState {
+export interface SeedreamImageGenerationState {
   isLoading: boolean;
   error: string | null;
-  generatedImage: SeeDreamGeneratedImage | null;
+  generatedImage: SeedreamGeneratedImage | null;
 }
 
-export interface SeeDreamImageGenerationOptions {
+export interface SeedreamImageGenerationOptions {
   prompt: string;
   size?: string;
   n?: number;
 }
 
-export interface SeeDreamImageEditOptions {
+export interface SeedreamImageEditOptions {
   prompt: string;
   image: File;
   mask?: File;
@@ -31,13 +31,13 @@ export interface SeeDreamImageEditOptions {
 }
 
 export const useSeeDreamImageGeneration = () => {
-  const [state, setState] = useState<SeeDreamImageGenerationState>({
+  const [state, setState] = useState<SeedreamImageGenerationState>({
     isLoading: false,
     error: null,
     generatedImage: null,
   });
 
-  const generateImage = useCallback(async (options: SeeDreamImageGenerationOptions) => {
+  const generateImage = useCallback(async (options: SeedreamImageGenerationOptions) => {
     setState(prev => ({
       ...prev,
       isLoading: true,
@@ -67,7 +67,7 @@ export const useSeeDreamImageGeneration = () => {
         throw new Error('No images generated');
       }
 
-      const generatedImage: SeeDreamGeneratedImage = {
+      const generatedImage: SeedreamGeneratedImage = {
         url: images[0], // images[0] is already a complete data URL
         prompt,
         model: 'seedream-3.0',
@@ -97,7 +97,7 @@ export const useSeeDreamImageGeneration = () => {
     }
   }, []);
 
-  const editImage = useCallback(async (options: SeeDreamImageEditOptions) => {
+  const editImage = useCallback(async (options: SeedreamImageEditOptions) => {
     setState(prev => ({
       ...prev,
       isLoading: true,
@@ -135,7 +135,7 @@ export const useSeeDreamImageGeneration = () => {
         throw new Error('No images generated');
       }
 
-      const generatedImage: SeeDreamGeneratedImage = {
+      const generatedImage: SeedreamGeneratedImage = {
         url: images[0], // images[0] is already a complete data URL
         prompt,
         model: 'seedream-3.0',

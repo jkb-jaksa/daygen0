@@ -75,7 +75,7 @@ const FLUX_EDIT_MODELS = [
   { id: 'qwen-image', name: 'Qwen Image', description: 'Great image editing' },
   { id: 'runway-gen4', name: 'Runway Gen-4', description: 'Advanced image generation with reference support' },
   { id: 'runway-gen4-turbo', name: 'Runway Gen-4 Turbo', description: 'Fast generation with reference images' },
-  { id: 'seedream-3.0', name: 'SeeDream 3.0', description: 'High-quality text-to-image generation with editing capabilities' },
+  { id: 'seedream-3.0', name: 'Seedream 3.0', description: 'High-quality text-to-image generation with editing capabilities' },
   { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' }
 ] as const;
 
@@ -191,7 +191,7 @@ export default function Edit() {
     generateImage: generateRunwayImage
   } = useRunwayImageGeneration();
 
-  // SeeDream Image generation hook
+  // Seedream Image generation hook
   const {
     isLoading: seedreamLoading,
     generateImage: generateSeeDreamImage
@@ -420,7 +420,7 @@ export default function Edit() {
           });
           result = runwayResult; // Runway hook returns a single result
         } else if (model === "seedream-3.0") {
-          // Use SeeDream Image generation for editing
+          // Use Seedream Image generation for editing
           const seedreamResult = await generateSeeDreamImage({
             prompt: s.prompt,
             size: `${s.width}x${s.height}`,

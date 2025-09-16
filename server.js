@@ -1261,7 +1261,7 @@ app.post('/api/flux/webhook', async (req, res) => {
   }
 });
 
-// SeeDream 3.0 Image Generation API routes
+// Seedream 3.0 Image Generation API routes
 const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.ap-southeast.bytepluses.com/api/v3";
 const ARK_API_KEY = process.env.ARK_API_KEY;
 const SEEDREAM_MODEL_ID = "seedream-3-0-t2i-250415";
@@ -1271,7 +1271,7 @@ const REVE_BASE_URL = process.env.REVE_BASE_URL || "https://api.reve.com";
 const REVE_API_KEY = process.env.REVE_API_KEY;
 const REVE_PROJECT_ID = process.env.REVE_PROJECT_ID;
 
-// SeeDream text-to-image generation
+// Seedream text-to-image generation
 app.post('/api/seedream/generate', async (req, res) => {
   try {
     const { prompt, size = "1024x1024", n = 1 } = req.body;
@@ -1303,13 +1303,13 @@ app.post('/api/seedream/generate', async (req, res) => {
       const errorText = await response.text();
       console.error(`[seedream] API error: ${response.status} - ${errorText}`);
       return res.status(response.status).json({ 
-        error: `SeeDream API error: ${errorText}` 
+        error: `Seedream API error: ${errorText}` 
       });
     }
 
     const json = await response.json();
     
-    // SeeDream returns URLs, not base64 data, so we need to download and convert
+    // Seedream returns URLs, not base64 data, so we need to download and convert
     const imageUrls = (json?.data || []).map((x) => x.url);
     
     console.log(`[seedream] Generated ${imageUrls.length} image(s)`);
@@ -1338,14 +1338,14 @@ app.post('/api/seedream/generate', async (req, res) => {
     
     res.json({ images });
   } catch (error) {
-    console.error('SeeDream generation error:', error);
+    console.error('Seedream generation error:', error);
     res.status(500).json({
-      error: error?.message || 'SeeDream generation failed'
+      error: error?.message || 'Seedream generation failed'
     });
   }
 });
 
-// SeeDream image edit/inpaint
+// Seedream image edit/inpaint
 app.post('/api/seedream/edit', upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'mask', maxCount: 1 }
@@ -1386,13 +1386,13 @@ app.post('/api/seedream/edit', upload.fields([
       const errorText = await response.text();
       console.error(`[seedream] Edit API error: ${response.status} - ${errorText}`);
       return res.status(response.status).json({ 
-        error: `SeeDream edit API error: ${errorText}` 
+        error: `Seedream edit API error: ${errorText}` 
       });
     }
 
     const json = await response.json();
     
-    // SeeDream returns URLs, not base64 data, so we need to download and convert
+    // Seedream returns URLs, not base64 data, so we need to download and convert
     const imageUrls = (json?.data || []).map((x) => x.url);
     
     console.log(`[seedream] Edited ${imageUrls.length} image(s)`);
@@ -1421,9 +1421,9 @@ app.post('/api/seedream/edit', upload.fields([
     
     res.json({ images });
   } catch (error) {
-    console.error('SeeDream edit error:', error);
+    console.error('Seedream edit error:', error);
     res.status(500).json({
-      error: error?.message || 'SeeDream edit failed'
+      error: error?.message || 'Seedream edit failed'
     });
   }
 });
@@ -1825,8 +1825,8 @@ if (!isVercel) {
     console.log(`🤖 Qwen Image API Key configured: ${DASHSCOPE_KEY ? 'Yes' : 'No'}`);
     console.log(`🌐 Qwen Base URL: ${DASHSCOPE_BASE}`);
     console.log(`🎬 Runway API Key configured: ${RUNWAY_API_KEY ? 'Yes' : 'No'}`);
-    console.log(`🌱 SeeDream 3.0 API Key configured: ${ARK_API_KEY ? 'Yes' : 'No'}`);
-    console.log(`🌐 SeeDream Base URL: ${ARK_BASE_URL}`);
+    console.log(`🌱 Seedream 3.0 API Key configured: ${ARK_API_KEY ? 'Yes' : 'No'}`);
+    console.log(`🌐 Seedream Base URL: ${ARK_BASE_URL}`);
     console.log(`🎨 Reve API Key configured: ${REVE_API_KEY ? 'Yes' : 'No'}`);
     console.log(`🌐 Reve Base URL: ${REVE_BASE_URL}`);
     console.log(`📸 Images will be stored as base64 data URLs (no external storage required)`);

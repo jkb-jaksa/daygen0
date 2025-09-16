@@ -26,7 +26,7 @@ DASHSCOPE_BASE=https://dashscope-intl.aliyuncs.com/api/v1
 # Runway API Key for Gen-4 and Gen-4 Turbo models
 RUNWAY_API_KEY=your_runway_api_key_here
 
-# SeeDream 3.0 API Key for high-quality image generation
+# Seedream 3.0 API Key for high-quality image generation
 ARK_API_KEY=your_ark_api_key_here
 ARK_BASE=https://ark.ap-southeast.bytepluses.com/api/v3
 
@@ -58,7 +58,7 @@ DayGen supports multiple AI models for image generation and editing:
 - **Qwen Image** - Alibaba Cloud's text-to-image and image editing model
 - **Runway Gen-4** - Great image model with control & editing features
 - **Runway Gen-4 Turbo** - Fast Runway generation with reference images
-- **SeeDream 3.0** - High-quality text-to-image generation with editing capabilities
+- **Seedream 3.0** - High-quality text-to-image generation with editing capabilities
 - **Reve Image** - Great text-to-image and image editing
 
 ### Ideogram 3.0 Features
@@ -83,7 +83,7 @@ DayGen supports multiple AI models for image generation and editing:
 - **Style Transfer**: Apply artistic styles to generated images
 - **High Resolution**: Generate images up to 4MP resolution
 
-### SeeDream 3.0 Features
+### Seedream 3.0 Features
 - **Generate**: High-quality text-to-image generation
 - **Edit**: Image editing with text prompts
 - **Style Control**: Multiple artistic styles and presets

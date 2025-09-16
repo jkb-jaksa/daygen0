@@ -96,7 +96,7 @@ const AI_MODELS = [
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
-  { name: "SeeDream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
 ];
 
@@ -989,7 +989,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, SeeDream, and Reve models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, and Reve models are available.');
       return;
     }
 
@@ -1113,7 +1113,7 @@ const Create: React.FC = () => {
         });
         img = runwayResult;
       } else if (isSeeDreamModel) {
-        // Use SeeDream generation
+        // Use Seedream generation
         const seedreamResult = await generateSeeDreamImage({
           prompt: trimmedPrompt,
           size: "1024x1024",
@@ -3108,7 +3108,7 @@ const Create: React.FC = () => {
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, SeeDream, and Reve models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, and Reve models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

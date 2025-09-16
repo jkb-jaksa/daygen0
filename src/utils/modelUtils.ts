@@ -68,8 +68,8 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
   },
   'seedream-3.0': {
     id: 'seedream-3.0',
-    name: 'SeeDream 3.0',
-    shortName: 'SeeDream 3.0',
+    name: 'Seedream 3.0',
+    shortName: 'Seedream 3.0',
     description: 'High-quality text-to-image generation with editing capabilities',
     isAvailable: true
   },
