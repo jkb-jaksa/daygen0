@@ -439,7 +439,8 @@ const Create: React.FC = () => {
         if (cancelled) return;
 
         if (Array.isArray(storedGallery) && storedGallery.length > 0) {
-          const validImages = storedGallery.filter(img => img && img.url && img.prompt && img.timestamp);
+          // Be more lenient with validation - only require url
+          const validImages = storedGallery.filter(img => img && img.url);
           console.log('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
           console.log('Gallery images with references:', validImages.filter(img => (img as any).references && (img as any).references.length > 0));
 
@@ -566,25 +567,33 @@ const Create: React.FC = () => {
     } catch (error) {
       console.error('Failed to persist gallery', error);
 
-      if (galleryData.length <= 1) {
+      // Don't trim the gallery too aggressively - keep at least 5 images
+      if (galleryData.length <= 5) {
+        console.warn('Gallery too small to trim, returning original data');
         return galleryData;
       }
 
-      const trimmed = [...galleryData];
-      while (trimmed.length > 0) {
-        trimmed.pop();
+      // Try trimming to half the size first, then gradually reduce
+      const trimSizes = [
+        Math.floor(galleryData.length / 2),
+        Math.floor(galleryData.length / 4),
+        5, // Minimum size
+      ];
+
+      for (const size of trimSizes) {
         try {
+          const trimmed = galleryData.slice(0, size);
           await persistLean(trimmed);
           console.log('Gallery persisted after trimming to', trimmed.length, 'images');
           return trimmed;
         } catch (retryError) {
-          if (trimmed.length === 0) {
-            console.error('Failed to persist gallery even after trimming', retryError);
-          }
+          console.warn(`Failed to persist gallery with ${size} images, trying smaller size`);
         }
       }
 
-      return trimmed;
+      // If all else fails, return the original data without persisting
+      console.error('Failed to persist gallery even after trimming, returning original data');
+      return galleryData;
     }
   };
 
@@ -1000,7 +1009,7 @@ const Create: React.FC = () => {
     spinnerTimeoutRef.current = setTimeout(() => {
       setIsButtonSpinning(false);
       spinnerTimeoutRef.current = null;
-    }, 400);
+    }, 1000);
 
     try {
       // Convert uploaded image to base64 if available
@@ -1168,19 +1177,17 @@ const Create: React.FC = () => {
           ownerId: user?.id,
           references: undefined // strip heavy field
         };
-        console.log('Adding new image to gallery. Current gallery size:', gallery.length);
-        
         // Use functional update to ensure we get the latest gallery state
         let computedNext: GalleryImageLike[] = [];
         setGallery(currentGallery => {
-          // Validate current gallery items first
-          const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
-
+          console.log('Adding new image to gallery. Current gallery size:', currentGallery.length);
+          
+          // Keep all existing gallery items, don't filter them out
           const dedup = (list: GalleryImageLike[]) => {
             const seen = new Set<string>();
             const out: GalleryImageLike[] = [];
             for (const it of list) {
-              if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
+              if (it?.url && !seen.has(it.url)) {
                 seen.add(it.url);
                 out.push(it);
               }
@@ -1189,8 +1196,8 @@ const Create: React.FC = () => {
             return out;
           };
 
-          // Create new gallery with new image first, then existing valid images
-          const newGallery = dedup([imgWithOwner, ...validCurrentGallery]);
+          // Create new gallery with new image first, then existing images
+          const newGallery = dedup([imgWithOwner, ...currentGallery]);
           // Keep reasonable number of images to avoid exhausting client storage quota
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           console.log('Final gallery size after dedup and slice:', next.length);
