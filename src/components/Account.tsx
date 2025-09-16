@@ -343,7 +343,7 @@ export default function Account() {
           <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors group"
+              className="absolute top-6 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors group"
             >
               <X className="w-6 h-6 text-white group-hover:text-brand transition-colors" />
             </button>

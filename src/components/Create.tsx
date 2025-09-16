@@ -3223,7 +3223,7 @@ const Create: React.FC = () => {
                 
                 {/* Action buttons - only show for generated images, not reference images */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute top-6 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button 
                       type="button" 
                       onClick={() => confirmDeleteImage((selectedFullImage || generatedImage)!.url)} 

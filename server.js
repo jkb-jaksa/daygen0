@@ -1804,8 +1804,13 @@ app.get('/api/reve/jobs/:id', async (req, res) => {
 const distDir = join(__dirname, 'dist');
 if (!isVercel && existsSync(join(distDir, 'index.html'))) {
   app.use(express.static(distDir));
-  app.get('*', (req, res) => {
-    res.sendFile(join(distDir, 'index.html'));
+  // SPA fallback - serve index.html for any non-API routes
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(join(distDir, 'index.html'));
+    } else {
+      next();
+    }
   });
 }
 
