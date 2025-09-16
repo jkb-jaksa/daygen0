@@ -52,12 +52,11 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
       console.log('Raw storage estimate result:', res);
       console.log('Raw storage estimate type:', typeof res);
       console.log('Raw storage estimate keys:', res ? Object.keys(res) : 'null');
-      if (!mountedRef.current) return;
       console.log('Checking quota condition - res:', res, 'res?.quota:', res?.quota, '!res?.quota:', !res?.quota);
       if (!res || !res.quota) {
         console.log('No quota in storage estimate, setting to null');
         console.log('res:', res, 'res?.quota:', res?.quota);
-        setEstimate(null);
+        if (mountedRef.current) setEstimate(null);
         return;
       }
       const usage = res.usage ?? 0;
@@ -69,7 +68,9 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
         timestamp: Date.now(),
       };
       console.log('Storage estimate refreshed:', newEstimate);
-      setEstimate(newEstimate);
+      if (mountedRef.current) {
+        setEstimate(newEstimate);
+      }
     } catch (error) {
       console.error('Failed to refresh storage estimate:', error);
       if (mountedRef.current) {
