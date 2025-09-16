@@ -50,9 +50,12 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
     try {
       const res = await estimateStorage();
       console.log('Raw storage estimate result:', res);
+      console.log('Raw storage estimate type:', typeof res);
+      console.log('Raw storage estimate keys:', res ? Object.keys(res) : 'null');
       if (!mountedRef.current) return;
       if (!res?.quota) {
         console.log('No quota in storage estimate, setting to null');
+        console.log('res:', res, 'res?.quota:', res?.quota);
         setEstimate(null);
         return;
       }

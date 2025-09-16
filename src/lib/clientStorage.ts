@@ -103,6 +103,7 @@ export const estimateStorage = async () => {
   try {
     const result = await navigator.storage.estimate();
     console.log('Storage estimate result:', result);
+    console.log('Storage estimate details - usage:', result?.usage, 'quota:', result?.quota);
     return result;
   } catch (error) {
     console.error('Storage estimate error:', error);
