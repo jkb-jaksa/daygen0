@@ -1695,9 +1695,23 @@ const Create: React.FC = () => {
               <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
                   <span>Cache usage</span>
-                  <span className="text-d-white/80 normal-case">
-                    {storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-d-white/80 normal-case">
+                      {(() => {
+                        console.log('Rendering cache usage, storageUsage:', storageUsage);
+                        return storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —';
+                      })()}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        console.log('Manual refresh clicked');
+                        refreshStorageEstimate();
+                      }}
+                      className="text-xs px-2 py-1 bg-d-mid hover:bg-d-white/20 rounded text-d-white/60 hover:text-d-white/80"
+                    >
+                      Refresh
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
                   <div

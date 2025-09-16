@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Storage Test</title>
+</head>
+<body>
+    <h1>Storage Estimate Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        async function testStorage() {
+            const output = document.getElementById('output');
+            
+            // Test 1: Check if storage is supported
+            output.innerHTML += '<p>Storage supported: ' + (typeof navigator !== 'undefined' && !!navigator.storage?.estimate) + '</p>';
+            
+            if (typeof navigator !== 'undefined' && navigator.storage?.estimate) {
+                try {
+                    const estimate = await navigator.storage.estimate();
+                    output.innerHTML += '<p>Raw estimate: ' + JSON.stringify(estimate) + '</p>';
+                    
+                    if (estimate && estimate.quota) {
+                        const usage = estimate.usage || 0;
+                        const quota = estimate.quota;
+                        const percentUsed = quota === 0 ? 0 : usage / quota;
+                        
+                        output.innerHTML += '<p>Usage: ' + usage + ' bytes</p>';
+                        output.innerHTML += '<p>Quota: ' + quota + ' bytes</p>';
+                        output.innerHTML += '<p>Percent used: ' + (percentUsed * 100).toFixed(2) + '%</p>';
+                        
+                        // Test formatBytes function
+                        function formatBytes(value) {
+                            if (!Number.isFinite(value) || value <= 0) return '0 MB';
+                            const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+                            let idx = 0;
+                            let size = value;
+                            while (size >= 1024 && idx < units.length - 1) {
+                                size /= 1024;
+                                idx += 1;
+                            }
+                            return `${size.toFixed(1)} ${units[idx]}`;
+                        }
+                        
+                        output.innerHTML += '<p>Formatted usage: ' + formatBytes(usage) + '</p>';
+                        output.innerHTML += '<p>Formatted quota: ' + formatBytes(quota) + '</p>';
+                    } else {
+                        output.innerHTML += '<p>No quota available</p>';
+                    }
+                } catch (error) {
+                    output.innerHTML += '<p>Error: ' + error.message + '</p>';
+                }
+            }
+        }
+        
+        testStorage();
+    </script>
+</body>
+</html>
