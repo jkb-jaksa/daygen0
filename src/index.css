@@ -608,6 +608,25 @@ html, body {
   transform: scale(1.01);
 }
 
+.image-action-btn--labelled {
+  display: inline-flex;
+  gap: 0.4rem;
+  justify-content: center;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  width: auto;
+  font-family: var(--font-raleway, "Raleway", sans-serif);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.image-action-btn--labelled svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}
+
 .favorite-toggle .heart-icon {
   pointer-events: none;
 }

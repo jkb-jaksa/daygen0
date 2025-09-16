@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
-import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
+import type { FluxGeneratedImage, FluxImageGenerationOptions } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import type { ChatGPTGeneratedImage } from "../hooks/useChatGPTImageGeneration";
 import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
@@ -238,6 +239,75 @@ const SettingsPortal: React.FC<{
   );
 };
 
+const ImageActionMenuPortal: React.FC<{
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ anchorEl, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!open || !anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: Math.max(200, rect.width),
+    });
+  }, [open, anchorEl]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        open &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !(anchorEl && anchorEl.contains(event.target as Node))
+      ) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, anchorEl, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 1100,
+      }}
+      className={`${glass.tight} py-2`}
+      onMouseLeave={onClose}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
+
 const Create: React.FC = () => {
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
@@ -251,6 +321,7 @@ const Create: React.FC = () => {
   );
   
   const { user, storagePrefix } = useAuth();
+  const navigate = useNavigate();
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
@@ -308,7 +379,9 @@ const Create: React.FC = () => {
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string>("");
   const [returnToFolderDialog, setReturnToFolderDialog] = useState<boolean>(false);
-  const maxGalleryTiles = 16; // 4x4 grid layout
+  const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
+  const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
+  const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
@@ -515,6 +588,7 @@ const Create: React.FC = () => {
   // Combined state for UI
   const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
+  const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
   // Load gallery state and related metadata from client storage
   useEffect(() => {
@@ -542,7 +616,6 @@ const Create: React.FC = () => {
           // Be more lenient with validation - only require url
           const validImages = storedGallery.filter(img => img && img.url);
           console.log('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
-          console.log('Gallery images with references:', validImages.filter(img => (img as any).references && (img as any).references.length > 0));
 
           const hydrated = hydrateStoredGallery(validImages);
 
@@ -695,8 +768,8 @@ const Create: React.FC = () => {
           await persistLean(trimmed);
           console.log('Gallery persisted after trimming to', trimmed.length, 'images');
           return trimmed;
-        } catch (retryError) {
-          console.warn(`Failed to persist gallery with ${size} images, trying smaller size`);
+        } catch (persistError) {
+          console.warn(`Failed to persist gallery with ${size} images, trying smaller size`, persistError);
         }
       }
 
@@ -988,7 +1061,7 @@ const Create: React.FC = () => {
   };
 
   // Handle reference button click - set image as reference and focus prompt bar
-  const handleUseAsReference = async (img: GeneratedImage) => {
+  const handleUseAsReference = async (img: GalleryImageLike) => {
     try {
       // Convert the image URL to a File object
       const file = await urlToFile(img.url, `reference-${Date.now()}.png`);
@@ -1012,6 +1085,104 @@ const Create: React.FC = () => {
       console.error('Error setting image as reference:', error);
       alert('Failed to set image as reference. Please try again.');
     }
+  };
+
+  const closeImageActionMenu = () => {
+    setImageActionMenu(null);
+    setImageActionMenuImage(null);
+  };
+
+  const toggleImageActionMenu = (id: string, anchor: HTMLElement, image: GalleryImageLike) => {
+    setImageActionMenu(prev => {
+      if (prev?.id === id) {
+        setImageActionMenuImage(null);
+        return null;
+      }
+      setImageActionMenuImage(image);
+      return { id, anchor };
+    });
+  };
+
+  const handleEditMenuSelect = () => {
+    closeImageActionMenu();
+    navigate('/edit');
+  };
+
+  const handleUseAsReferenceFromMenu = () => {
+    if (!imageActionMenuImage) return;
+    const triggeredFromFullSize = imageActionMenu?.id?.startsWith('fullsize');
+    handleUseAsReference(imageActionMenuImage).then(() => {
+      if (triggeredFromFullSize) {
+        setIsFullSizeOpen(false);
+        setSelectedFullImage(null);
+        setSelectedReferenceImage(null);
+      }
+    });
+    closeImageActionMenu();
+  };
+
+  const renderHoverPrimaryActions = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
+    const isOpen = imageActionMenu?.id === menuId;
+
+    return (
+      <div className="image-action-group flex items-center gap-1">
+        <div className="relative">
+          <button
+            type="button"
+            className="image-action-btn image-action-btn--labelled"
+            title="Edit"
+            aria-haspopup="menu"
+            aria-expanded={isOpen}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleImageActionMenu(menuId, event.currentTarget, image);
+            }}
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Edit</span>
+          </button>
+          <ImageActionMenuPortal
+            anchorEl={isOpen ? imageActionMenu?.anchor ?? null : null}
+            open={isOpen}
+            onClose={closeImageActionMenu}
+          >
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleEditMenuSelect();
+              }}
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleUseAsReferenceFromMenu();
+              }}
+            >
+              <Copy className="h-4 w-4" />
+              Use as reference
+            </button>
+          </ImageActionMenuPortal>
+        </div>
+        <button
+          type="button"
+          className="image-action-btn image-action-btn--labelled"
+          title="Animate"
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          <Camera className="w-3.5 h-3.5" />
+          <span>Animate</span>
+        </button>
+      </div>
+    );
   };
 
 
@@ -1301,7 +1472,7 @@ const Create: React.FC = () => {
         img = reveResult;
       } else if (isFluxModel) {
         // Use Flux generation
-        const fluxParams: any = {
+        const fluxParams: FluxImageGenerationOptions = {
           prompt: trimmedPrompt,
           model: modelForGeneration as FluxModel,
           width: 1024,
@@ -1841,7 +2012,7 @@ const Create: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-3 gap-3 w-full">
                     {gallery.filter(img => favorites.has(img.url)).map((img, idx) => (
                       <div key={`fav-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
                         <img src={img.url} alt={img.prompt || `Liked ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
@@ -1937,38 +2108,40 @@ const Create: React.FC = () => {
                           Copy prompt
                         </div>
                         
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                          <button 
-                            type="button" 
-                            onClick={() => confirmDeleteImage(img.url)} 
-                            className="image-action-btn" 
-                            title="Delete image" 
-                            aria-label="Delete image"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => toggleFavorite(img.url)} 
-                            className="image-action-btn favorite-toggle" 
-                            title="Remove from liked" 
-                            aria-label="Remove from liked"
-                          >
-                            <Heart 
-                              className="heart-icon w-3.5 h-3.5 transition-colors duration-200 fill-red-500 text-red-500" 
-                            />
-                          </button>
-                          <button type="button" onClick={() => handleUseAsReference(img)} className="image-action-btn" title="Use as reference" aria-label="Use as reference"><Copy className="w-3.5 h-3.5" /></button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleAddToFolder(img.url)} 
-                            className="image-action-btn" 
-                            title="Add to folder" 
-                            aria-label="Add to folder"
-                          >
-                            <FolderPlus className="w-3.5 h-3.5" />
-                          </button>
-                          <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                          {renderHoverPrimaryActions(`fav-actions-${idx}-${img.url}`, img)}
+                          <div className="flex items-center gap-0.5">
+                            <button 
+                              type="button" 
+                              onClick={() => confirmDeleteImage(img.url)} 
+                              className="image-action-btn" 
+                              title="Delete image" 
+                              aria-label="Delete image"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => toggleFavorite(img.url)} 
+                              className="image-action-btn favorite-toggle" 
+                              title="Remove from liked" 
+                              aria-label="Remove from liked"
+                            >
+                              <Heart 
+                                className="heart-icon w-3.5 h-3.5 transition-colors duration-200 fill-red-500 text-red-500" 
+                              />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleAddToFolder(img.url)} 
+                              className="image-action-btn" 
+                              title="Add to folder" 
+                              aria-label="Add to folder"
+                            >
+                              <FolderPlus className="w-3.5 h-3.5" />
+                            </button>
+                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2001,7 +2174,7 @@ const Create: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-3 gap-3 w-full">
                     {gallery.map((img, idx) => (
                       <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
                         <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
@@ -2096,49 +2269,51 @@ const Create: React.FC = () => {
                           Copy prompt
                         </div>
                         
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                          <button 
-                            type="button" 
-                            onClick={() => confirmDeleteImage(img.url)} 
-                            className="image-action-btn" 
-                            title="Delete image" 
-                            aria-label="Delete image"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                    <button 
-                      type="button" 
-                      onClick={() => toggleFavorite(img.url)} 
-                      className="image-action-btn favorite-toggle" 
-                      title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
-                      aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                    >
-                      <Heart 
-                        className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                          favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                        }`} 
-                      />
-                    </button>
-                          <ShareButton 
-                            prompt={img.prompt || ""} 
-                            size="sm"
-                            className="image-action-btn !px-2 !py-1 !text-xs"
-                            onCopy={() => {
-                              setCopyNotification('Link copied!');
-                              setTimeout(() => setCopyNotification(null), 2000);
-                            }}
-                          />
-                          <button type="button" onClick={() => handleUseAsReference(img)} className="image-action-btn" title="Use as reference" aria-label="Use as reference"><Copy className="w-3.5 h-3.5" /></button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleAddToFolder(img.url)} 
-                            className="image-action-btn" 
-                            title="Add to folder" 
-                            aria-label="Add to folder"
-                          >
-                            <FolderPlus className="w-3.5 h-3.5" />
-                          </button>
-                          <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                          {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
+                          <div className="flex items-center gap-0.5">
+                            <button 
+                              type="button" 
+                              onClick={() => confirmDeleteImage(img.url)} 
+                              className="image-action-btn" 
+                              title="Delete image" 
+                              aria-label="Delete image"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => toggleFavorite(img.url)} 
+                              className="image-action-btn favorite-toggle" 
+                              title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                              aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                            >
+                              <Heart 
+                                className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                }`} 
+                              />
+                            </button>
+                            <ShareButton 
+                              prompt={img.prompt || ""} 
+                              size="sm"
+                              className="image-action-btn !px-2 !py-1 !text-xs"
+                              onCopy={() => {
+                                setCopyNotification('Link copied!');
+                                setTimeout(() => setCopyNotification(null), 2000);
+                              }}
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => handleAddToFolder(img.url)} 
+                              className="image-action-btn" 
+                              title="Add to folder" 
+                              aria-label="Add to folder"
+                            >
+                              <FolderPlus className="w-3.5 h-3.5" />
+                            </button>
+                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2171,7 +2346,7 @@ const Create: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-3 gap-3 w-full">
                     {uploadedImages.map((upload, idx) => (
                       <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
                         <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -2278,7 +2453,7 @@ const Create: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full">
+                      <div className="grid grid-cols-3 gap-3 w-full">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
                         <div className="w-full aspect-square relative">
@@ -2392,7 +2567,7 @@ const Create: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-3 gap-3 w-full">
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -2489,40 +2664,42 @@ const Create: React.FC = () => {
                             Copy prompt
                           </div>
                           
-                          <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                            <button 
-                              type="button" 
-                              onClick={() => confirmDeleteImage(img.url)} 
-                              className="image-action-btn" 
-                              title="Delete image" 
-                              aria-label="Delete image"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => toggleFavorite(img.url)} 
-                              className="image-action-btn" 
-                              title={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"} 
-                              aria-label={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"}
-                            >
-                              <Heart 
-                                className={`w-3.5 h-3.5 transition-colors duration-200 ${
-                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white group-hover:text-d-orange-1'
-                                }`} 
-                              />
-                            </button>
-                            <button type="button" onClick={() => handleUseAsReference(img)} className="image-action-btn" title="Use as reference" aria-label="Use as reference"><Copy className="w-3.5 h-3.5" /></button>
-                            <button 
-                              type="button" 
-                              onClick={() => removeImageFromFolder(img.url, selectedFolder!)} 
-                              className="image-action-btn" 
-                              title="Remove from folder" 
-                              aria-label="Remove from folder"
-                            >
-                              <Folder className="w-3.5 h-3.5" />
-                            </button>
-                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                          <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                            {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
+                            <div className="flex items-center gap-0.5">
+                              <button 
+                                type="button" 
+                                onClick={() => confirmDeleteImage(img.url)} 
+                                className="image-action-btn" 
+                                title="Delete image" 
+                                aria-label="Delete image"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => toggleFavorite(img.url)} 
+                                className="image-action-btn" 
+                                title={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"} 
+                                aria-label={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"}
+                              >
+                                <Heart 
+                                  className={`w-3.5 h-3.5 transition-colors duration-200 ${
+                                    favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white group-hover:text-d-orange-1'
+                                  }`} 
+                                />
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => removeImageFromFolder(img.url, selectedFolder!)} 
+                                className="image-action-btn" 
+                                title="Remove from folder" 
+                                aria-label="Remove from folder"
+                              >
+                                <Folder className="w-3.5 h-3.5" />
+                              </button>
+                              <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                            </div>
                           </div>
                         </div>
                       ));
@@ -2685,7 +2862,7 @@ const Create: React.FC = () => {
                       </>
                     )}
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-3 gap-3 w-full">
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -2808,49 +2985,51 @@ const Create: React.FC = () => {
                             Copy prompt
                           </div>
                           
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                          <button 
-                            type="button" 
-                            onClick={() => confirmDeleteImage(img.url)} 
-                            className="image-action-btn" 
-                            title="Delete image" 
-                            aria-label="Delete image"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => toggleFavorite(img.url)} 
-                            className="image-action-btn favorite-toggle" 
-                            title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
-                            aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                          >
-                            <Heart 
-                              className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                                favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                              }`} 
+                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                          {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
+                          <div className="flex items-center gap-0.5">
+                            <button 
+                              type="button" 
+                              onClick={() => confirmDeleteImage(img.url)} 
+                              className="image-action-btn" 
+                              title="Delete image" 
+                              aria-label="Delete image"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => toggleFavorite(img.url)} 
+                              className="image-action-btn favorite-toggle" 
+                              title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                              aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                            >
+                              <Heart 
+                                className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                }`} 
+                              />
+                            </button>
+                            <ShareButton 
+                              prompt={img.prompt || ""} 
+                              size="sm"
+                              className="image-action-btn !px-2 !py-1 !text-xs"
+                              onCopy={() => {
+                                setCopyNotification('Link copied!');
+                                setTimeout(() => setCopyNotification(null), 2000);
+                              }}
                             />
-                          </button>
-                          <ShareButton 
-                            prompt={img.prompt || ""} 
-                            size="sm"
-                            className="image-action-btn !px-2 !py-1 !text-xs"
-                            onCopy={() => {
-                              setCopyNotification('Link copied!');
-                              setTimeout(() => setCopyNotification(null), 2000);
-                            }}
-                          />
-                          <button type="button" onClick={() => handleUseAsReference(img)} className="image-action-btn" title="Use as reference" aria-label="Use as reference"><Copy className="w-3.5 h-3.5" /></button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleAddToFolder(img.url)} 
-                            className="image-action-btn" 
-                            title="Add to folder" 
-                            aria-label="Add to folder"
-                          >
-                            <FolderPlus className="w-3.5 h-3.5" />
-                          </button>
-                          <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                            <button 
+                              type="button" 
+                              onClick={() => handleAddToFolder(img.url)} 
+                              className="image-action-btn" 
+                              title="Add to folder" 
+                              aria-label="Add to folder"
+                            >
+                              <FolderPlus className="w-3.5 h-3.5" />
+                            </button>
+                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                          </div>
                         </div>
                         </div>
                       );
@@ -3374,12 +3553,15 @@ const Create: React.FC = () => {
                 />
                 
                 {/* Action buttons - only show for generated images, not reference images */}
-                {(selectedFullImage || generatedImage) && (
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-end px-4 pt-8 pointer-events-none">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
+                {activeFullSizeImage && (
+                  <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-8 pointer-events-none">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
+                      {renderHoverPrimaryActions(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
                       <button 
                         type="button" 
-                        onClick={() => confirmDeleteImage((selectedFullImage || generatedImage)!.url)} 
+                        onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
                         className="image-action-btn" 
                         title="Delete image" 
                         aria-label="Delete image"
@@ -3388,21 +3570,21 @@ const Create: React.FC = () => {
                       </button>
                       <button 
                         type="button" 
-                        onClick={() => toggleFavorite((selectedFullImage || generatedImage)!.url)} 
+                        onClick={() => toggleFavorite(activeFullSizeImage.url)} 
                         className="image-action-btn favorite-toggle" 
-                        title={favorites.has((selectedFullImage || generatedImage)!.url) ? "Remove from liked" : "Add to liked"} 
-                        aria-label={favorites.has((selectedFullImage || generatedImage)!.url) ? "Remove from liked" : "Add to liked"}
+                        title={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"} 
+                        aria-label={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"}
                       >
                         <Heart 
                           className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                            favorites.has((selectedFullImage || generatedImage)!.url) 
+                            favorites.has(activeFullSizeImage.url) 
                               ? "fill-red-500 text-red-500" 
                               : "text-current fill-none"
                           }`} 
                         />
                       </button>
                       <ShareButton 
-                        prompt={(selectedFullImage || generatedImage)?.prompt || ""} 
+                        prompt={activeFullSizeImage.prompt || ""} 
                         size="sm"
                         className="image-action-btn !px-2 !py-1 !text-xs"
                         onCopy={() => {
@@ -3412,21 +3594,7 @@ const Create: React.FC = () => {
                       />
                       <button 
                         type="button" 
-                        onClick={() => {
-                          handleUseAsReference(selectedFullImage || generatedImage!);
-                          setIsFullSizeOpen(false);
-                          setSelectedFullImage(null);
-                          setSelectedReferenceImage(null);
-                        }} 
-                        className="image-action-btn" 
-                        title="Use as reference" 
-                        aria-label="Use as reference"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => handleAddToFolder((selectedFullImage || generatedImage)!.url)} 
+                        onClick={() => handleAddToFolder(activeFullSizeImage.url)} 
                         className="image-action-btn" 
                         title="Add to folder" 
                         aria-label="Add to folder"
@@ -3434,7 +3602,7 @@ const Create: React.FC = () => {
                         <FolderPlus className="w-3.5 h-3.5" />
                       </button>
                       <a 
-                        href={(selectedFullImage || generatedImage)!.url} 
+                        href={activeFullSizeImage.url} 
                         download 
                         className="image-action-btn" 
                         title="Download image" 
