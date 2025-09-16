@@ -346,6 +346,7 @@ const Create: React.FC = () => {
 
   useEffect(() => {
     if (storageEstimate?.quota) {
+      console.log('Storage estimate updated:', storageEstimate);
       setStorageUsage(storageEstimate);
     }
   }, [storageEstimate]);
@@ -1220,6 +1221,8 @@ const Create: React.FC = () => {
           if (persisted.length !== computedNext.length) {
             setGallery(persisted);
           }
+          // Refresh storage estimate after adding image to gallery
+          await refreshStorageEstimate();
         })();
         
         // Save prompt to history on successful generation

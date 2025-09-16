@@ -48,13 +48,16 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
       }
       const usage = res.usage ?? 0;
       const quota = res.quota;
-      setEstimate({
+      const newEstimate = {
         usage,
         quota,
         percentUsed: quota === 0 ? 0 : usage / quota,
         timestamp: Date.now(),
-      });
-    } catch {
+      };
+      console.log('Storage estimate refreshed:', newEstimate);
+      setEstimate(newEstimate);
+    } catch (error) {
+      console.error('Failed to refresh storage estimate:', error);
       if (mountedRef.current) {
         setEstimate(null);
       }
