@@ -800,7 +800,7 @@ export default function Edit() {
               </div>
             </div>
             <div className="p-4">
-              <div className="relative grid min-h-[420px] w-full place-items-center rounded-lg bg-d-black">
+              <div className="relative grid min-h-[420px] w-full place-items-center rounded-lg glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark">
                 {!activeResult ? (
                   <EmptyState hasBase={!!baseImage} />
                 ) : baseImage && showBeforeAfter ? (
