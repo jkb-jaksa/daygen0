@@ -1229,8 +1229,10 @@ const Create: React.FC = () => {
           if (persisted.length !== computedNext.length) {
             setGallery(persisted);
           }
-          // Refresh storage estimate after adding image to gallery
-          await refreshStorageEstimate();
+          // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
+          setTimeout(() => {
+            refreshStorageEstimate();
+          }, 100);
         })();
         
         // Save prompt to history on successful generation
