@@ -37,31 +37,24 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
   }, []);
 
   const refresh = useCallback(async () => {
-    console.log('Storage estimate refresh called, supported:', supported, 'mounted:', mountedRef.current);
     if (!supported) {
-      console.log('Storage not supported, setting estimate to null');
       if (mountedRef.current) setEstimate(null);
       return;
     }
     try {
-      console.log('Calling estimateStorage...');
       const res = await estimateStorage();
-      console.log('Storage estimate result:', res);
       if (!res) {
-        console.log('No storage estimate result, setting to null');
         if (mountedRef.current) setEstimate(null);
         return;
       }
       const usage = res.usage ?? 0;
       const quota = res.quota ?? 0;
-      console.log('Storage usage:', usage, 'quota:', quota);
       const newEstimate = {
         usage,
         quota,
         percentUsed: quota === 0 ? 0 : usage / quota,
         timestamp: Date.now(),
       };
-      console.log('Setting new storage estimate:', newEstimate);
       // Always set the estimate, even if component appears unmounted
       // This handles cases where the component is being remounted
       setEstimate(newEstimate);

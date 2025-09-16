@@ -355,16 +355,11 @@ const Create: React.FC = () => {
 
   // Force refresh storage estimate on mount and request persistent storage
   useEffect(() => {
-    console.log('Component mount effect running');
-    console.log('Navigator storage available:', typeof navigator !== 'undefined' && navigator.storage);
-    console.log('Persist method available:', typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist);
-    
     // Request persistent storage to prevent browser from clearing cached images
     // Only request after user interaction to increase chances of approval
     const requestPersistentStorage = () => {
       if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
         navigator.storage.persist().then(granted => {
-          console.log('Persistent storage request result:', granted);
           if (granted) {
             console.log('Persistent storage granted');
           } else {
@@ -373,8 +368,6 @@ const Create: React.FC = () => {
         }).catch(error => {
           console.error('Error requesting persistent storage:', error);
         });
-      } else {
-        console.warn('Persistent storage not supported in this browser');
       }
     };
 
@@ -390,7 +383,6 @@ const Create: React.FC = () => {
     
     // Add a small delay to ensure the component is fully mounted
     setTimeout(() => {
-      console.log('Refreshing storage estimate after mount delay');
       refreshStorageEstimate();
     }, 100);
 
