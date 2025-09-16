@@ -1762,13 +1762,13 @@ const Create: React.FC = () => {
                       </span>
                       <button 
                         onClick={() => refreshStorageEstimate()}
-                        className="text-xs px-2 py-1 bg-d-mid hover:bg-d-white/20 rounded text-d-white/60 hover:text-d-white/80"
+                        className="text-xs px-2 py-1 bg-d-mid hover:bg-d-orange-1/20 rounded text-d-white/60 hover:text-d-orange-1 transition-colors"
                       >
                         Refresh
                       </button>
                       <button 
                         onClick={() => setIsCacheBarVisible(false)}
-                        className="text-xs p-1 hover:bg-d-white/20 rounded text-d-white/60 hover:text-d-white/80 transition-colors"
+                        className="text-xs p-1 hover:bg-d-orange-1/20 rounded text-d-white/60 hover:text-d-orange-1 transition-colors"
                         title="Close cache bar"
                       >
                         <X className="size-3" />
@@ -1795,7 +1795,7 @@ const Create: React.FC = () => {
                 <div className="mb-4">
                   <button 
                     onClick={() => setIsCacheBarVisible(true)}
-                    className="text-xs px-3 py-2 bg-d-mid hover:bg-d-white/20 rounded-lg text-d-white/60 hover:text-d-white/80 transition-colors font-raleway"
+                    className="text-xs px-3 py-2 bg-d-mid hover:bg-d-orange-1/20 rounded-lg text-d-white/60 hover:text-d-orange-1 transition-colors font-raleway"
                   >
                     Show cache usage
                   </button>
