@@ -345,11 +345,27 @@ const Create: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setStorageUsage(storageEstimate);
-  }, [storageEstimate]);
+    if (storageEstimate) {
+      setStorageUsage(storageEstimate);
+    } else {
+      // If storage estimate is null, try to refresh it
+      refreshStorageEstimate();
+    }
+  }, [storageEstimate, refreshStorageEstimate]);
 
-  // Force refresh storage estimate on mount
+  // Force refresh storage estimate on mount and request persistent storage
   useEffect(() => {
+    // Request persistent storage to prevent browser from clearing cached images
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        if (granted) {
+          console.log('Persistent storage granted');
+        } else {
+          console.warn('Persistent storage denied - browser may clear cached images sooner');
+        }
+      });
+    }
+    
     // Add a small delay to ensure the component is fully mounted
     setTimeout(() => {
       refreshStorageEstimate();
@@ -1224,7 +1240,8 @@ const Create: React.FC = () => {
         void (async () => {
           const persisted = await persistGallery(computedNext);
           if (persisted.length !== computedNext.length) {
-            setGallery(persisted);
+            // Only update if there's a significant difference
+            console.warn(`Gallery persistence mismatch: expected ${computedNext.length}, got ${persisted.length}`);
           }
           // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
           setTimeout(() => {

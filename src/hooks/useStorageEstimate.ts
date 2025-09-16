@@ -43,12 +43,12 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
     }
     try {
       const res = await estimateStorage();
-      if (!res || !res.quota) {
+      if (!res) {
         if (mountedRef.current) setEstimate(null);
         return;
       }
       const usage = res.usage ?? 0;
-      const quota = res.quota;
+      const quota = res.quota ?? 0;
       const newEstimate = {
         usage,
         quota,
