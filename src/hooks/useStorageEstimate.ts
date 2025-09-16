@@ -62,11 +62,9 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
         timestamp: Date.now(),
       };
       console.log('Setting new storage estimate:', newEstimate);
-      if (mountedRef.current) {
-        setEstimate(newEstimate);
-      } else {
-        console.log('Component unmounted, not setting estimate');
-      }
+      // Always set the estimate, even if component appears unmounted
+      // This handles cases where the component is being remounted
+      setEstimate(newEstimate);
     } catch (error) {
       console.error('Failed to refresh storage estimate:', error);
       if (mountedRef.current) {

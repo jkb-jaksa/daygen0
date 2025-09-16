@@ -360,26 +360,45 @@ const Create: React.FC = () => {
     console.log('Persist method available:', typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist);
     
     // Request persistent storage to prevent browser from clearing cached images
-    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
-      navigator.storage.persist().then(granted => {
-        console.log('Persistent storage request result:', granted);
-        if (granted) {
-          console.log('Persistent storage granted');
-        } else {
-          console.warn('Persistent storage denied - browser may clear cached images sooner');
-        }
-      }).catch(error => {
-        console.error('Error requesting persistent storage:', error);
-      });
-    } else {
-      console.warn('Persistent storage not supported in this browser');
-    }
+    // Only request after user interaction to increase chances of approval
+    const requestPersistentStorage = () => {
+      if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().then(granted => {
+          console.log('Persistent storage request result:', granted);
+          if (granted) {
+            console.log('Persistent storage granted');
+          } else {
+            console.warn('Persistent storage denied - browser may clear cached images sooner');
+          }
+        }).catch(error => {
+          console.error('Error requesting persistent storage:', error);
+        });
+      } else {
+        console.warn('Persistent storage not supported in this browser');
+      }
+    };
+
+    // Request persistent storage on first user interaction
+    const handleUserInteraction = () => {
+      requestPersistentStorage();
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+    
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
     
     // Add a small delay to ensure the component is fully mounted
     setTimeout(() => {
       console.log('Refreshing storage estimate after mount delay');
       refreshStorageEstimate();
     }, 100);
+
+    // Cleanup event listeners
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
   }, [refreshStorageEstimate]);
 
   useEffect(() => () => {
