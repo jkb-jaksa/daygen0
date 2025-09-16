@@ -1795,7 +1795,7 @@ const Create: React.FC = () => {
                 <div className="mb-4">
                   <button 
                     onClick={() => setIsCacheBarVisible(true)}
-                    className="text-xs px-3 py-2 bg-d-mid hover:bg-d-orange-1/20 rounded-lg text-d-white/60 hover:text-d-orange-1 transition-colors font-raleway"
+                    className="text-xs px-3 py-2 glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:bg-d-orange-1/20 rounded-lg text-d-white/60 hover:text-d-orange-1 transition-colors font-raleway"
                   >
                     Show cache usage
                   </button>
