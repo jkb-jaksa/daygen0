@@ -13,9 +13,7 @@ const bytesFormatter = new Intl.NumberFormat('en-US', {
 });
 
 export const formatBytes = (value: number): string => {
-  console.log('formatBytes called with value:', value);
   if (!Number.isFinite(value) || value <= 0) {
-    console.log('formatBytes returning 0 MB for value:', value);
     return '0 MB';
   }
   const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -25,9 +23,7 @@ export const formatBytes = (value: number): string => {
     size /= 1024;
     idx += 1;
   }
-  const result = `${bytesFormatter.format(size)} ${units[idx]}`;
-  console.log('formatBytes result:', result);
-  return result;
+  return `${bytesFormatter.format(size)} ${units[idx]}`;
 };
 
 export const useStorageEstimate = (options?: { auto?: boolean }) => {
@@ -41,21 +37,13 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
   }, []);
 
   const refresh = useCallback(async () => {
-    console.log('Refreshing storage estimate, supported:', supported);
     if (!supported) {
-      console.log('Storage not supported, setting estimate to null');
       if (mountedRef.current) setEstimate(null);
       return;
     }
     try {
       const res = await estimateStorage();
-      console.log('Raw storage estimate result:', res);
-      console.log('Raw storage estimate type:', typeof res);
-      console.log('Raw storage estimate keys:', res ? Object.keys(res) : 'null');
-      console.log('Checking quota condition - res:', res, 'res?.quota:', res?.quota, '!res?.quota:', !res?.quota);
       if (!res || !res.quota) {
-        console.log('No quota in storage estimate, setting to null');
-        console.log('res:', res, 'res?.quota:', res?.quota);
         if (mountedRef.current) setEstimate(null);
         return;
       }
@@ -67,7 +55,6 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
         percentUsed: quota === 0 ? 0 : usage / quota,
         timestamp: Date.now(),
       };
-      console.log('Storage estimate refreshed:', newEstimate);
       if (mountedRef.current) {
         setEstimate(newEstimate);
       }

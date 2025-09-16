@@ -345,16 +345,13 @@ const Create: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Storage estimate updated:', storageEstimate);
     setStorageUsage(storageEstimate);
   }, [storageEstimate]);
 
   // Force refresh storage estimate on mount
   useEffect(() => {
-    console.log('Component mounted, refreshing storage estimate');
     // Add a small delay to ensure the component is fully mounted
     setTimeout(() => {
-      console.log('Delayed refresh of storage estimate');
       refreshStorageEstimate();
     }, 100);
   }, [refreshStorageEstimate]);
@@ -1699,26 +1696,20 @@ const Create: React.FC = () => {
           <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
             <div className="w-full mb-4" ref={galleryRef}>
               <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
-                <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
-                  <span>Cache usage</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-d-white/80 normal-case">
-                      {(() => {
-                        console.log('Rendering cache usage, storageUsage:', storageUsage);
-                        return storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —';
-                      })()}
-                    </span>
-                    <button 
-                      onClick={() => {
-                        console.log('Manual refresh clicked');
-                        refreshStorageEstimate();
-                      }}
-                      className="text-xs px-2 py-1 bg-d-mid hover:bg-d-white/20 rounded text-d-white/60 hover:text-d-white/80"
-                    >
-                      Refresh
-                    </button>
-                  </div>
-                </div>
+        <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
+          <span>Cache usage</span>
+          <div className="flex items-center gap-2">
+            <span className="text-d-white/80 normal-case">
+              {storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —'}
+            </span>
+            <button 
+              onClick={() => refreshStorageEstimate()}
+              className="text-xs px-2 py-1 bg-d-mid hover:bg-d-white/20 rounded text-d-white/60 hover:text-d-white/80"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#faaa16] via-[#ffcd66] to-[#faaa16] transition-[width] duration-300"
