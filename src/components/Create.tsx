@@ -3190,9 +3190,10 @@ const Create: React.FC = () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
+                  className={`${isGemini ? 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full border transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
+                  <span className="text-sm font-raleway">Add reference</span>
                 </button>
                 <div className="relative settings-dropdown">
                   <button

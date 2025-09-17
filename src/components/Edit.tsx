@@ -1440,9 +1440,10 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid'} flex items-center gap-2 h-8 px-3 rounded-full border transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
+              <span className="text-sm font-raleway">Add more references</span>
             </button>
             
             {/* Model Selector */}
@@ -1556,7 +1557,19 @@ export default function Edit() {
                       }}
                     />
                     {item.isPrimary ? (
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-[10px] font-cabin uppercase tracking-wide text-d-orange-1">Base</span>
+                      <>
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-[10px] font-cabin uppercase tracking-wide text-d-orange-1">Base</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteImage();
+                          }}
+                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
+                          title="Remove base reference"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </>
                     ) : (
                       <button
                         onClick={(e) => {
