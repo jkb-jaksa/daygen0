@@ -168,6 +168,8 @@ export default function Edit() {
   const [isImageDragging, setIsImageDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
+  const [isEditWithPromptMode, setIsEditWithPromptMode] = useState<boolean>(false);
+  const [isPreciseEditMode, setIsPreciseEditMode] = useState<boolean>(false);
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -458,6 +460,28 @@ export default function Edit() {
   // Mode toggle functions
   const toggleMoveMode = () => {
     setIsMoveMode(!isMoveMode);
+  };
+
+  const toggleEditWithPromptMode = () => {
+    if (isEditWithPromptMode) {
+      // If currently active, deactivate it
+      setIsEditWithPromptMode(false);
+    } else {
+      // If not active, activate it and deactivate the other mode
+      setIsEditWithPromptMode(true);
+      setIsPreciseEditMode(false);
+    }
+  };
+
+  const togglePreciseEditMode = () => {
+    if (isPreciseEditMode) {
+      // If currently active, deactivate it
+      setIsPreciseEditMode(false);
+    } else {
+      // If not active, activate it and deactivate the other mode
+      setIsPreciseEditMode(true);
+      setIsEditWithPromptMode(false);
+    }
   };
 
   // Reset image to default position and size
@@ -847,6 +871,32 @@ export default function Edit() {
               >
                 <Move className="w-4 h-4" />
               </button>
+              
+              <button
+                onClick={toggleEditWithPromptMode}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                  isEditWithPromptMode 
+                    ? 'text-d-orange-1 border-d-orange-1' 
+                    : 'text-d-white border-d-dark hover:border-d-orange-1'
+                }`}
+                title="Edit with prompt"
+              >
+                <EditIcon className="w-4 h-4" />
+                Edit with prompt
+              </button>
+              
+              <button
+                onClick={togglePreciseEditMode}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                  isPreciseEditMode 
+                    ? 'text-d-orange-1 border-d-orange-1' 
+                    : 'text-d-white border-d-dark hover:border-d-orange-1'
+                }`}
+                title="Precise edit"
+              >
+                <Wand2 className="w-4 h-4" />
+                Precise edit
+              </button>
             </div>
           )}
 
@@ -1177,7 +1227,7 @@ export default function Edit() {
             
             <button
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
-              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
+              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-brand rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />
