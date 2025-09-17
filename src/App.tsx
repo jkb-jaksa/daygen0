@@ -6,7 +6,7 @@ import Create from "./components/Create";
 import Edit from "./components/Edit";
 import Footer from "./components/Footer";
 import Account from "./components/Account";
-import KnowledgeBase from "./components/KnowledgeBase";
+import UseCases from "./components/UseCases";
 import ToolsSection from "./components/ToolsSection";
 import Services from "./components/Services";
 import AboutUs from "./components/AboutUs";
@@ -31,14 +31,14 @@ function Home() {
               <span className="text-brand">gen</span>
             </div>
             <p className="mx-auto mb-8 max-w-2xl text-lg text-d-white/75 font-raleway">
-              Your gateway to mastering creative AI tools. Explore our knowledge base to discover the best tools for your creative projects.
+              Your gateway to mastering creative AI tools. Explore our use cases to discover the best tools for your creative projects.
             </p>
             <div className="flex justify-center gap-4">
               <Link 
-                to="/knowledge-base" 
+                to="/use-cases" 
                 className={`${buttons.primary} parallax-small`}
               >
-                Knowledge Base
+                Use Cases
               </Link>
               <Link 
                 to="/create" 
@@ -81,7 +81,8 @@ export default function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/knowledge-base" element={<KnowledgeBase />} />
+          <Route path="/use-cases" element={<UseCases />} />
+          <Route path="/tools" element={<ToolsSection />} />
           <Route path="/services" element={<Services />} />
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/prompts" element={<Prompts />} />

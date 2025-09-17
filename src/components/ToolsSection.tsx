@@ -375,16 +375,6 @@ export default function ToolsSection() {
       <div className={layout.backdrop} aria-hidden="true" />
 
       <div className="relative z-10">
-        {/* Hero Section */}
-        <section className={layout.sectionDivider}>
-          <div className={`${layout.container} py-16 justify-items-center`}>
-            <h2 className={text.sectionHeading}>
-              tools
-            </h2>
-          </div>
-          {/* Subtle gradient overlay */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent" />
-        </section>
 
         {/* Main Content */}
         <section className={`${layout.container} py-8`}>

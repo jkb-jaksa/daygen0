@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Star, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -380,8 +380,67 @@ const Create: React.FC = () => {
   const [returnToFolderDialog, setReturnToFolderDialog] = useState<boolean>(false);
   const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
+  const [historyFilters, setHistoryFilters] = useState<{
+    liked: boolean;
+    model: string;
+    type: 'all' | 'image' | 'video';
+    folder: string;
+  }>({
+    liked: false,
+    model: 'all',
+    type: 'all',
+    folder: 'all'
+  });
   const maxGalleryTiles = 18; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
+  
+  // Helper functions for filters
+  const getAvailableModels = () => {
+    // For now, all models are image models, video models list is empty
+    if (historyFilters.type === 'video') {
+      return []; // No video models available yet
+    } else if (historyFilters.type === 'image') {
+      return AI_MODELS.map(model => model.id).sort();
+    } else {
+      // 'all' type - show all models
+      return AI_MODELS.map(model => model.id).sort();
+    }
+  };
+  
+  const getAvailableFolders = () => {
+    return folders.map(folder => folder.id);
+  };
+  
+  
+  // Filter function for history
+  const filterGalleryItems = (items: typeof gallery) => {
+    return items.filter(item => {
+      // Liked filter
+      if (historyFilters.liked && !favorites.has(item.url)) {
+        return false;
+      }
+      
+      // Model filter
+      if (historyFilters.model !== 'all' && item.model !== historyFilters.model) {
+        return false;
+      }
+      
+      // Folder filter
+      if (historyFilters.folder !== 'all') {
+        const selectedFolder = folders.find(f => f.id === historyFilters.folder);
+        if (!selectedFolder || !selectedFolder.imageIds.includes(item.url)) {
+          return false;
+        }
+      }
+      
+      // Type filter (for now, we'll assume all items are images)
+      if (historyFilters.type !== 'all' && historyFilters.type !== 'image') {
+        return false;
+      }
+      
+      return true;
+    });
+  };
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
   const [storageUsage, setStorageUsage] = useState<StorageEstimateSnapshot | null>(null);
@@ -1178,14 +1237,14 @@ const Create: React.FC = () => {
         <button
           type="button"
           className="image-action-btn image-action-btn--labelled"
-          title="Animate"
+          title="Create video"
           onClick={(event) => {
             event.stopPropagation();
             setActiveCategory("video");
           }}
         >
           <Camera className="w-3.5 h-3.5" />
-          <span>Make video</span>
+          <span>Create video</span>
         </button>
       </div>
     );
@@ -1935,9 +1994,8 @@ const Create: React.FC = () => {
                     library
                   </div>
                   
-                  {/* Library sections in order: liked, history, uploads, new folder, my folders */}
+                  {/* Library sections in order: history, uploads, new folder, my folders */}
                   {[
-                    { key: "favourites", label: "liked", Icon: Star },
                     { key: "history", label: "history", Icon: History },
                     { key: "uploads", label: "uploads", Icon: Upload },
                   ].map((cat) => {
@@ -2005,184 +2063,116 @@ const Create: React.FC = () => {
           <div className="w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
             <div className="w-full mb-4" ref={galleryRef}>
 
-              {/* Liked View */}
-              {activeCategory === "favourites" && (
-                <div className="w-full">
-                  {/* Back to Gallery Button */}
-                  <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-3 w-full">
-                    {gallery.filter(img => favorites.has(img.url)).map((img, idx) => (
-                      <div key={`fav-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
-                        <img src={img.url} alt={img.prompt || `Liked ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
-                        
-                        {/* Hover prompt overlay */}
-                        {img.prompt && (
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
-                            style={{
-                              background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                              backdropFilter: 'blur(12px)',
-                              WebkitBackdropFilter: 'blur(12px)',
-                              height: 'fit-content'
-                            }}
-                          >
-                            <div className="w-full p-4">
-                              <div className="mb-2">
-                                <div className="relative">
-                                  <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
-                                    {img.prompt}
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        copyPromptToClipboard(img.prompt);
-                                      }}
-                                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
-                                      onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `fav-${img.url}-${idx}`);
-                                      }}
-                                      onMouseLeave={() => {
-                                        hideHoverTooltip(`fav-${img.url}-${idx}`);
-                                      }}
-                                    >
-                                      <Copy className="w-3.5 h-3.5" />
-                                    </button>
-                                  </p>
-                                </div>
-                              </div>
-                              {img.references && img.references.length > 0 && (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="flex gap-1">
-                                    {img.references.map((ref, refIdx) => (
-                                      <div key={refIdx} className="relative">
-                                        <img 
-                                          src={ref} 
-                                          alt={`Reference ${refIdx + 1}`} 
-                                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedReferenceImage(ref);
-                                            setIsFullSizeOpen(true);
-                                          }}
-                                        />
-                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
-                                          {refIdx + 1}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Open the first reference image in a new tab
-                                      const link = document.createElement('a');
-                                      link.href = img.references![0];
-                                      link.target = '_blank';
-                                      link.click();
-                                    }}
-                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
-                                  >
-                                    View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
-                                  </button>
-                                </div>
-                              )}
-                              {/* Model Badge */}
-                              <div className="flex justify-start mt-2">
-                                <ModelBadge model={img.model} size="md" />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Tooltip positioned outside the hover overlay container */}
-                        <div 
-                          data-tooltip-for={`fav-${img.url}-${idx}`}
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                          style={{ 
-                            left: '50%', 
-                            transform: 'translateX(-50%) translateY(-100%)',
-                            top: '-8px'
-                          }}
-                        >
-                          Copy prompt
-                        </div>
-                        
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                          {renderHoverPrimaryActions(`fav-actions-${idx}-${img.url}`, img)}
-                          <div className="flex items-center gap-0.5">
-                            <button 
-                              type="button" 
-                              onClick={() => confirmDeleteImage(img.url)} 
-                              className="image-action-btn" 
-                              title="Delete image" 
-                              aria-label="Delete image"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => toggleFavorite(img.url)} 
-                              className="image-action-btn favorite-toggle" 
-                              title="Remove from liked" 
-                              aria-label="Remove from liked"
-                            >
-                              <Heart 
-                                className="heart-icon w-3.5 h-3.5 transition-colors duration-200 fill-red-500 text-red-500" 
-                              />
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => handleAddToFolder(img.url)} 
-                              className="image-action-btn" 
-                              title="Add to folder" 
-                              aria-label="Add to folder"
-                            >
-                              <FolderPlus className="w-3.5 h-3.5" />
-                            </button>
-                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Empty state for liked */}
-                    {gallery.filter(img => favorites.has(img.url)).length === 0 && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Star className="w-12 h-12 text-d-white/30 mb-4" />
-                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No liked images yet</h3>
-                        <p className="text-base font-raleway text-d-white/40 max-w-md">
-                          Click the heart icon on any generated image to add it to your liked images.
-                        </p>
-                      </div>
-                    )}
-                    </div>
-                  </div>
-                )}
                 
                 {/* History View */}
                 {activeCategory === "history" && (
                   <div className="w-full">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
+                    {/* Filters Section */}
+                    <div className="mb-4 p-3 rounded-lg border border-d-dark bg-d-black/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Settings className="w-4 h-4 text-d-orange-1" />
+                          <h3 className="text-sm font-cabin text-d-white">Filters</h3>
+                        </div>
+                        <button
+                          onClick={() => setHistoryFilters({
+                            liked: false,
+                            model: 'all',
+                            type: 'all',
+                            folder: 'all'
+                          })}
+                          className="px-2.5 py-1 text-xs text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        {/* Liked Filter */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs text-d-white/70 font-raleway">Liked</label>
+                          <button
+                            onClick={() => setHistoryFilters(prev => ({ ...prev, liked: !prev.liked }))}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                              historyFilters.liked 
+                                ? 'text-d-orange-1 border-d-orange-1' 
+                                : 'text-d-white border-d-dark hover:border-d-orange-1'
+                            }`}
+                          >
+                            <Heart className={`w-4 h-4 ${historyFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
+                            <span>{historyFilters.liked ? 'Liked only' : 'All images'}</span>
+                          </button>
+                        </div>
+                        
+                        {/* Type Filter */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs text-d-white/70 font-raleway">Type</label>
+                          <select
+                            value={historyFilters.type}
+                            onChange={(e) => {
+                              const newType = e.target.value as 'all' | 'image' | 'video';
+                              setHistoryFilters(prev => ({ 
+                                ...prev, 
+                                type: newType,
+                                model: 'all' // Reset model filter when type changes
+                              }));
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
+                          >
+                            <option value="all">All types</option>
+                            <option value="image">Image</option>
+                            <option value="video">Video</option>
+                          </select>
+                        </div>
+                        
+                        {/* Model Filter */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs text-d-white/70 font-raleway">Model</label>
+                          <select
+                            value={historyFilters.model}
+                            onChange={(e) => setHistoryFilters(prev => ({ ...prev, model: e.target.value }))}
+                            className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
+                            disabled={getAvailableModels().length === 0}
+                          >
+                            <option value="all">All models</option>
+                            {getAvailableModels().map(modelId => {
+                              const model = AI_MODELS.find(m => m.id === modelId);
+                              return (
+                                <option key={modelId} value={modelId}>{model?.name || modelId}</option>
+                              );
+                            })}
+                            {getAvailableModels().length === 0 && (
+                              <option value="none" disabled>No models available</option>
+                            )}
+                          </select>
+                        </div>
+                        
+                        {/* Folder Filter */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs text-d-white/70 font-raleway">Folder</label>
+                          <select
+                            value={historyFilters.folder}
+                            onChange={(e) => setHistoryFilters(prev => ({ ...prev, folder: e.target.value }))}
+                            className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
+                            disabled={getAvailableFolders().length === 0}
+                          >
+                            <option value="all">All folders</option>
+                            {getAvailableFolders().map(folderId => {
+                              const folder = folders.find(f => f.id === folderId);
+                              return (
+                                <option key={folderId} value={folderId}>{folder?.name || folderId}</option>
+                              );
+                            })}
+                            {getAvailableFolders().length === 0 && (
+                              <option value="none" disabled>No folders available</option>
+                            )}
+                          </select>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-3 w-full">
-                    {gallery.map((img, idx) => (
+                    {filterGalleryItems(gallery).map((img, idx) => (
                       <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                         <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                         
@@ -2335,6 +2325,17 @@ const Create: React.FC = () => {
                         </p>
                       </div>
                     )}
+                    
+                    {/* Empty state for filtered results */}
+                    {gallery.length > 0 && filterGalleryItems(gallery).length === 0 && (
+                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                        <Settings className="w-16 h-16 text-d-white/30 mb-4" />
+                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No results found</h3>
+                        <p className="text-base font-raleway text-d-white/40 max-w-md">
+                          Try adjusting your filters to see more results.
+                        </p>
+                      </div>
+                    )}
                     </div>
                   </div>
                 )}
@@ -2342,16 +2343,6 @@ const Create: React.FC = () => {
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
                   <div className="w-full">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
                     
                     <div className="grid grid-cols-3 gap-3 w-full">
                     {uploadedImages.map((upload, idx) => (
@@ -2734,18 +2725,7 @@ const Create: React.FC = () => {
                 
                 {/* Coming Soon Sections */}
                 {activeCategory === "text" && (
-                  <div className="w-full" data-category="text">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
-                    
+                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="text">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Edit className="w-16 h-16 text-d-orange-1 mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Text Generation Coming Soon</h3>
@@ -2757,18 +2737,7 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "video" && (
-                  <div className="w-full" data-category="video">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
-                    
+                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="video">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <VideoIcon className="w-16 h-16 text-d-orange-1 mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Video Generation Coming Soon</h3>
@@ -2780,18 +2749,7 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "avatars" && (
-                  <div className="w-full" data-category="avatars">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
-                    
+                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="avatars">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Users className="w-16 h-16 text-d-orange-1 mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Avatar Generation Coming Soon</h3>
@@ -2803,18 +2761,7 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "audio" && (
-                  <div className="w-full" data-category="audio">
-                    {/* Back to Gallery Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
-                    
+                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="audio">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Volume2 className="w-16 h-16 text-d-orange-1 mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Audio Generation Coming Soon</h3>
@@ -2828,46 +2775,6 @@ const Create: React.FC = () => {
                 {/* Default Gallery View - Only for Image Category */}
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
-                    {/* Navigation arrows */}
-                    {gallery.length > 0 && (
-                      <>
-                        <button
-                          onClick={() => navigateGallery('prev')}
-                          className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 text-d-white rounded-[40px] p-2 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-200 group"
-                          title="Previous image (←)"
-                          aria-label="Previous image"
-                        >
-                          <ChevronLeft className="w-5 h-5 transition-colors duration-200 group-hover:text-d-orange-1" />
-                        </button>
-                        <button
-                          onClick={() => navigateGallery('next')}
-                          className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 text-d-white rounded-[40px] p-2 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-200 group"
-                          title="Next image (→)"
-                          aria-label="Next image"
-                        >
-                          <ChevronRight className="w-5 h-5 transition-colors duration-200 group-hover:text-d-orange-1" />
-                        </button>
-                        
-                        {/* Navigation indicator */}
-                        <div className={`${glass.tight} absolute bottom-4 left-1/2 -translate-x-1/2 z-10 rounded-full px-3 py-1`}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-d-white text-xs font-raleway">
-                              {currentGalleryIndex + 1} / {gallery.length}
-                            </span>
-                            <div className="flex gap-1">
-                              {gallery.map((_, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`w-1.5 h-1.5 rounded-full transition-colors duration-200 ${
-                                    idx === currentGalleryIndex ? 'bg-d-orange-1' : 'bg-d-white/30'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
                     
                     <div className="grid grid-cols-3 gap-3 w-full">
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {

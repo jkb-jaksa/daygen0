@@ -168,7 +168,6 @@ export default function Edit() {
   const [isImageDragging, setIsImageDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
-  const [isEditWithPromptMode, setIsEditWithPromptMode] = useState<boolean>(false);
   const [isPreciseEditMode, setIsPreciseEditMode] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [maskData, setMaskData] = useState<string | null>(null);
@@ -472,26 +471,9 @@ export default function Edit() {
     setIsMoveMode(!isMoveMode);
   };
 
-  const toggleEditWithPromptMode = () => {
-    if (isEditWithPromptMode) {
-      // If currently active, deactivate it
-      setIsEditWithPromptMode(false);
-    } else {
-      // If not active, activate it and deactivate the other mode
-      setIsEditWithPromptMode(true);
-      setIsPreciseEditMode(false);
-    }
-  };
 
   const togglePreciseEditMode = () => {
-    if (isPreciseEditMode) {
-      // If currently active, deactivate it
-      setIsPreciseEditMode(false);
-    } else {
-      // If not active, activate it and deactivate the other mode
-      setIsPreciseEditMode(true);
-      setIsEditWithPromptMode(false);
-    }
+    setIsPreciseEditMode(!isPreciseEditMode);
   };
 
   // Mask drawing functions
@@ -1236,19 +1218,6 @@ export default function Edit() {
                 title="Toggle move mode"
               >
                 <Move className="w-4 h-4" />
-              </button>
-              
-              <button
-                onClick={toggleEditWithPromptMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
-                  isEditWithPromptMode 
-                    ? 'text-d-orange-1 border-d-orange-1' 
-                    : 'text-d-white border-d-dark hover:border-d-orange-1'
-                }`}
-                title="Text prompt only"
-              >
-                <EditIcon className="w-4 h-4" />
-                Text prompt only
               </button>
               
               <button

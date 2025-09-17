@@ -124,7 +124,7 @@ export default function Navbar() {
     }, 100);
   };
 
-  const items = ["create", "edit", "knowledge base", "prompts", "services", "about us"] as const;
+  const items = ["create", "edit", "use cases", "tools", "prompts", "courses", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
@@ -148,8 +148,10 @@ export default function Navbar() {
                 const path =
                   item === "create" ? "/create" : 
                   item === "edit" ? "/edit" : 
-                  item === "knowledge base" ? "/knowledge-base" : 
+                  item === "use cases" ? "/use-cases" : 
+                  item === "tools" ? "/tools" : 
                   item === "services" ? "/services" : 
+                  item === "courses" ? "/courses" : 
                   item === "about us" ? "/about-us" : 
                   item === "prompts" ? "/prompts" : 
                   "#";
@@ -277,6 +279,12 @@ export default function Navbar() {
                       </Link>
                     ))}
                   </div>
+                ) : activeMenu === "use cases" ? (
+                  <div className="text-base font-cabin text-d-white/85">Use cases coming soon.</div>
+                ) : activeMenu === "tools" ? (
+                  <div className="text-base font-cabin text-d-white/85">Tools coming soon.</div>
+                ) : activeMenu === "courses" ? (
+                  <div className="text-base font-cabin text-d-white/85">Courses coming soon.</div>
                 ) : (
                   <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
                 )}
