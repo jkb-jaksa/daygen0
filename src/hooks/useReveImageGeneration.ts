@@ -68,7 +68,7 @@ export const useReveImageGeneration = () => {
       const { prompt, model = "reve-image-1.0", references, ...params } = options;
 
       // Submit the job
-      const apiUrl = '/api/reve/generate';
+      const apiUrl = getApiUrl('/api/unified-generate');
 
       console.log('[reve] POST', apiUrl);
       
@@ -77,7 +77,7 @@ export const useReveImageGeneration = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt, 
-          model,
+          model: 'reve-image',
           ...params
         }),
       });

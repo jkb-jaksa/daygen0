@@ -49,10 +49,10 @@ export const useSeeDreamImageGeneration = () => {
 
       console.log('[seedream] Generating image with prompt:', prompt.substring(0, 100) + '...');
       
-      const res = await fetch(getApiUrl('/api/seedream/generate'), {
+      const res = await fetch(getApiUrl('/api/unified-generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, size, n }),
+        body: JSON.stringify({ prompt, size, n, model: 'seedream-3.0' }),
       });
 
       if (!res.ok) {
@@ -118,7 +118,7 @@ export const useSeeDreamImageGeneration = () => {
         formData.append('mask', mask);
       }
       
-      const res = await fetch(getApiUrl('/api/seedream/edit'), {
+      const res = await fetch(getApiUrl('/api/unified-generate'), {
         method: 'POST',
         body: formData,
       });

@@ -44,7 +44,7 @@ export const useGeminiImageGeneration = () => {
       const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
       // Use the new API endpoint structure
-      const apiUrl = getApiUrl('/api/generate-image');
+      const apiUrl = getApiUrl('/api/unified-generate');
 
       console.log('[image] POST', apiUrl);
       

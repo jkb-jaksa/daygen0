@@ -92,14 +92,14 @@ export const useIdeogramImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = getApiUrl('/api/ideogram/generate');
+      const apiUrl = getApiUrl('/api/unified-generate');
       
       console.log('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options),
+        body: JSON.stringify({ ...options, model: 'ideogram' }),
       });
 
       if (!res.ok) {

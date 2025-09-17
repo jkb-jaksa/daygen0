@@ -55,14 +55,14 @@ export const useQwenImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = getApiUrl('/api/qwen/image');
+      const apiUrl = getApiUrl('/api/unified-generate');
       
       console.log('[qwen] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options),
+        body: JSON.stringify({ ...options, model: 'qwen-image' }),
       });
 
       if (!res.ok) {
