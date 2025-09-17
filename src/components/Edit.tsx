@@ -576,7 +576,7 @@ export default function Edit() {
               left: '50%',
               transform: 'translateX(-50%)',
               width: 'auto',
-              bottom: '10rem'
+              bottom: '12rem'
             }}>
               <div className="flex justify-between items-center rounded-lg px-8 py-2 willchange-backdrop isolate backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark" style={{ minWidth: '320px' }}>
                 <button
