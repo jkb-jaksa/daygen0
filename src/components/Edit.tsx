@@ -1,11 +1,13 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Upload, X, Wand2, Loader2, Plus, Settings } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
+import { useLocation } from "react-router-dom";
 
 // Minimal Edit component with upload interface
 
 // Main Component
 export default function Edit() {
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -123,6 +125,25 @@ export default function Edit() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isSettingsOpen]);
+
+  // Handle navigation state to automatically load image from Create section
+  useEffect(() => {
+    const state = location.state as { imageToEdit?: any } | null;
+    if (state?.imageToEdit) {
+      const imageData = state.imageToEdit;
+      // Create a mock File object from the image URL
+      fetch(imageData.url)
+        .then(response => response.blob())
+        .then(blob => {
+          const file = new File([blob], `edit-${Date.now()}.png`, { type: blob.type });
+          setSelectedFile(file);
+          setPreviewUrl(imageData.url);
+        })
+        .catch(error => {
+          console.error('Error loading image for editing:', error);
+        });
+    }
+  }, [location.state]);
 
   // Tooltip component
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (

@@ -1091,6 +1091,15 @@ const Create: React.FC = () => {
     setImageActionMenuImage(null);
   };
 
+  const handleEditMenuSelect = () => {
+    closeImageActionMenu();
+    if (imageActionMenuImage) {
+      navigate('/edit', { state: { imageToEdit: imageActionMenuImage } });
+    } else {
+      navigate('/edit');
+    }
+  };
+
   const toggleImageActionMenu = (id: string, anchor: HTMLElement, image: GalleryImageLike) => {
     setImageActionMenu(prev => {
       if (prev?.id === id) {
@@ -1102,10 +1111,7 @@ const Create: React.FC = () => {
     });
   };
 
-  const handleEditMenuSelect = () => {
-    closeImageActionMenu();
-    navigate('/edit');
-  };
+
 
   const handleUseAsReferenceFromMenu = () => {
     if (!imageActionMenuImage) return;
@@ -3532,19 +3538,19 @@ const Create: React.FC = () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 group opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
-                      <ChevronLeft className="w-6 h-6 transition-colors duration-100 hover:text-d-orange-1" />
+                      <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 group opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
                       title="Next image (→)"
                       aria-label="Next image"
                     >
-                      <ChevronRight className="w-6 h-6 transition-colors duration-100 hover:text-d-orange-1" />
+                      <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
                     </button>
                   </>
                 )}
