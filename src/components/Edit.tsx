@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Upload, X, Wand2, Loader2, Plus, Settings, ChevronDown } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 
 // Minimal Edit component with upload interface
@@ -24,7 +24,6 @@ export default function Edit() {
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,10 +61,6 @@ export default function Edit() {
   const clearAllReferences = () => {
     setReferenceFiles([]);
     setReferencePreviews([]);
-  };
-
-  const toggleModelSelector = () => {
-    setIsModelSelectorOpen(!isModelSelectorOpen);
   };
 
   const toggleSettings = () => {
