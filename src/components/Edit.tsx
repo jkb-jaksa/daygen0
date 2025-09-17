@@ -1331,7 +1331,7 @@ export default function Edit() {
               {maskData && (
                 <button
                   onClick={clearMask}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 bg-d-orange-1/20 text-d-white border-d-orange-1/30 hover:bg-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1"
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} bg-d-orange-1/20 text-d-white border-d-orange-1/30 hover:bg-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1`}
                   title="Clear mask"
                 >
                   <X className="w-4 h-4" />
