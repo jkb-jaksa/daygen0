@@ -16,7 +16,6 @@ export default function Edit() {
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
