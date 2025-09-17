@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Minus } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Minus, Move, Maximize2 } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -102,7 +102,12 @@ export default function Edit() {
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
-  const [imageSize, setImageSize] = useState<number>(60); // Percentage scale
+  const [imageSize, setImageSize] = useState<number>(100); // Percentage scale
+  const [imagePosition, setImagePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isImageDragging, setIsImageDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isResizeMode, setIsResizeMode] = useState<boolean>(false);
+  const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -224,6 +229,58 @@ export default function Edit() {
 
   const decreaseImageSize = () => {
     setImageSize(prev => Math.max(prev - 10, 20)); // Min 20%
+  };
+
+  // Mode toggle functions
+  const toggleResizeMode = () => {
+    setIsResizeMode(!isResizeMode);
+    setIsMoveMode(false); // Disable move mode when enabling resize
+  };
+
+  const toggleMoveMode = () => {
+    setIsMoveMode(!isMoveMode);
+    setIsResizeMode(false); // Disable resize mode when enabling move
+  };
+
+  // Image drag handling functions (only work in move mode)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isMoveMode || e.target === e.currentTarget) return; // Only drag in move mode
+    setIsImageDragging(true);
+    setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isImageDragging || !isMoveMode) return;
+    setImagePosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsImageDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMoveMode || e.touches.length !== 1) return;
+    if (e.target === e.currentTarget) return;
+    const touch = e.touches[0];
+    setIsImageDragging(true);
+    setDragStart({ x: touch.clientX - imagePosition.x, y: touch.clientY - imagePosition.y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isImageDragging || !isMoveMode || e.touches.length !== 1) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    setImagePosition({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsImageDragging(false);
   };
 
   // Keyboard shortcuts for generation
@@ -405,7 +462,7 @@ export default function Edit() {
 
           {/* Uploaded Image Preview */}
           {previewUrl && (
-            <div className="w-full max-w-6xl mx-auto">
+            <div className="w-full max-w-4xl mx-auto -mt-20">
               <div 
                 className="relative transition-colors duration-200"
                 style={{ 
@@ -425,51 +482,65 @@ export default function Edit() {
                 }}
               >
                 <div 
-                  className="w-full h-[500px] relative"
-                  style={{ transform: `scale(${imageSize / 100})` }}
+                  className="w-full h-[400px] relative"
+                  style={{ 
+                    transform: `scale(${imageSize / 100}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                    cursor: isImageDragging ? 'grabbing' : (isMoveMode ? 'grab' : (isResizeMode ? 'nw-resize' : 'pointer'))
+                  }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onDoubleClick={() => {
+                    setSelectedFullImage(previewUrl);
+                    setIsFullSizeOpen(true);
+                  }}
                 >
                   <img 
                     src={previewUrl} 
                     alt="Uploaded file preview" 
-                    className="w-full h-full object-cover cursor-pointer transition-transform duration-200"
-                    onClick={() => {
-                      setSelectedFullImage(previewUrl);
-                      setIsFullSizeOpen(true);
-                    }}
+                    className="w-full h-full object-cover select-none pointer-events-none"
+                    draggable={false}
                   />
                   <button
                     onClick={handleDeleteImage}
-                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
+                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5 pointer-events-auto"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
                 
-                {/* Image Size Controls */}
-                <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-d-black/80 rounded-lg p-2">
-                  <button
-                    onClick={decreaseImageSize}
-                    disabled={imageSize <= 20}
-                    className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Decrease size"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
-                    {imageSize}%
-                  </span>
-                  <button
-                    onClick={increaseImageSize}
-                    disabled={imageSize >= 200}
-                    className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Increase size"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Image Size Controls - only show in resize mode */}
+                {isResizeMode && (
+                  <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-d-black/80 rounded-lg p-2">
+                    <button
+                      onClick={decreaseImageSize}
+                      disabled={imageSize <= 20}
+                      className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Decrease size"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
+                      {imageSize}%
+                    </span>
+                    <button
+                      onClick={increaseImageSize}
+                      disabled={imageSize >= 200}
+                      className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Increase size"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
+
 
           {/* Generated Image Display */}
           {geminiImage && (
@@ -511,6 +582,37 @@ export default function Edit() {
           )}
         </div>
       </header>
+
+
+      {/* Mode Toggle Buttons - positioned right above prompt bar */}
+      {previewUrl && (
+        <div className="fixed z-30 flex justify-center gap-4" style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '6rem' }}>
+          <button
+            onClick={toggleResizeMode}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors duration-200 ${
+              isResizeMode 
+                ? 'bg-d-orange-1 text-d-white border-d-orange-1' 
+                : 'bg-d-black/40 text-d-white border-d-mid hover:bg-d-mid'
+            }`}
+            title="Toggle resize mode"
+          >
+            <Maximize2 className="w-2.5 h-2.5" />
+            Resize
+          </button>
+          <button
+            onClick={toggleMoveMode}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors duration-200 ${
+              isMoveMode 
+                ? 'bg-d-orange-1 text-d-white border-d-orange-1' 
+                : 'bg-d-black/40 text-d-white border-d-mid hover:bg-d-mid'
+            }`}
+            title="Toggle move mode"
+          >
+            <Move className="w-2.5 h-2.5" />
+            Move
+          </button>
+        </div>
+      )}
 
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
@@ -772,6 +874,7 @@ export default function Edit() {
         onChange={handleRefsSelected}
         className="hidden"
       />
+
 
       {/* Full-size image modal */}
       {isFullSizeOpen && selectedFullImage && (
