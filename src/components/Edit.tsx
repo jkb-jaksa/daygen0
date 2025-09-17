@@ -1,1271 +1,381 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
-import { Wand2, X, Sparkles, Play, History as HistoryIcon, SplitSquareVertical, Upload, Image as ImageIcon, Copy, Download, Settings, ChevronDown, Edit as EditIcon } from "lucide-react";
-import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
-import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
-import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
-import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
-import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
-import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
-import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
-import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
-// import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
-import type { FluxModelType } from "../lib/bfl";
-// import { MODEL_CAPABILITIES } from "../lib/bfl";
-import { useAuth } from "../auth/AuthContext";
-import { usePromptHistory } from '../hooks/usePromptHistory';
-import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
-import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
-import type { FluxGeneratedImage } from '../hooks/useFluxImageGeneration';
-import { getModelDisplayName } from '../utils/modelUtils';
-import { formatBytes, useStorageEstimate } from "../hooks/useStorageEstimate";
-import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { buttons } from "../styles/designSystem";
-// import type { GeneratedImage } from '../hooks/useGeminiImageGeneration';
+import React, { useRef, useState, useEffect } from "react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, ChevronDown } from "lucide-react";
+import { layout, glass, buttons } from "../styles/designSystem";
 
-// Types
-type Mode = "edit";
-type EditTask = "Inpaint" | "Outpaint" | "Replace" | "Style transfer" | "Background remove" | "Upscale";
-type TaskChip = EditTask;
-
-interface Settings {
-  prompt: string;
-  negativePrompt: string;
-  width: number;
-  height: number;
-  seed: number;
-  seedLocked: boolean;
-  guidance: number;
-  steps: number;
-  variations: number;
-  safety: "low" | "medium" | "high";
-}
-
-interface RunResult {
-  id: string;
-  mode: Mode;
-  model: FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image";
-  imageDataUrl: string;
-  baseImageDataUrl?: string;
-  settings: Settings;
-  createdAt: number;
-  parentId?: string;
-}
-
-// Constants
-const DEFAULT_SETTINGS: Settings = {
-  prompt: "make it more vibrant and professional",
-  negativePrompt: "",
-  width: 768,
-  height: 768,
-  seed: Math.floor(Math.random() * 1_000_000),
-  seedLocked: false,
-  guidance: 7.5,
-  steps: 28,
-  variations: 1,
-  safety: "medium",
-};
-
-const EDIT_TASKS: EditTask[] = ["Inpaint", "Outpaint", "Replace", "Style transfer", "Background remove", "Upscale"];
-
-// Only editing models with full names
-const FLUX_EDIT_MODELS = [
-  { id: 'flux-e1', name: 'Flux Kontext Pro', description: 'High-quality image editing' },
-  { id: 'flux-e2', name: 'Flux Kontext Max', description: 'Highest quality image editing' },
-  { id: 'reve-image', name: 'Reve', description: 'Great text-to-image and image editing' },
-  { id: 'ideogram', name: 'Ideogram 3.0', description: 'Advanced image generation, editing, and enhancement' },
-  { id: 'qwen-image', name: 'Qwen Image', description: 'Great image editing' },
-  { id: 'runway-gen4', name: 'Runway Gen-4', description: 'Advanced image generation with reference support' },
-  { id: 'runway-gen4-turbo', name: 'Runway Gen-4 Turbo', description: 'Fast generation with reference images' },
-  { id: 'seedream-3.0', name: 'Seedream 3.0', description: 'High-quality text-to-image generation with editing capabilities' },
-  { id: 'chatgpt-image', name: 'ChatGPT Image', description: 'Popular image editing model' }
-] as const;
-
-function uid() {
-  return Math.random().toString(36).slice(2);
-}
-
-type EditGalleryImage = FluxGeneratedImage | QwenGeneratedImage;
-
-type StoredEditImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string };
-
-const isFluxEditImage = (item: EditGalleryImage): item is FluxGeneratedImage =>
-  'jobId' in item && typeof item.jobId === 'string';
-
-// Helper: keep only lean fields for storage (matches Create section)
-const toStorable = (items: EditGalleryImage[]): StoredEditImage[] =>
-  items.map(item => ({
-    url: item.url,
-    prompt: item.prompt,
-    model: item.model,
-    timestamp: item.timestamp,
-    ownerId: item.ownerId,
-    ...(isFluxEditImage(item) ? { jobId: item.jobId } : {}),
-  }));
-
-const hydrateStoredEditGallery = (items: StoredEditImage[]): EditGalleryImage[] =>
-  items.map((item, index) => {
-    const base = {
-      url: item.url,
-      prompt: item.prompt,
-      model: item.model ?? 'flux-e1',
-      timestamp: item.timestamp,
-      ownerId: item.ownerId,
-    };
-
-    if (item.model?.startsWith('flux')) {
-      const fallbackJobId = item.jobId ?? `edit-restored-${index}-${Date.now()}`;
-      return { ...base, jobId: fallbackJobId } as EditGalleryImage;
-    }
-
-    return base as EditGalleryImage;
-  });
-
-function formatDims(w: number, h: number) {
-  return `${w}×${h}`;
-}
-
-function isLargeResize(w: number, h: number) {
-  return Math.max(w, h) >= 1536;
-}
+// Minimal Edit component with upload interface
 
 // Main Component
 export default function Edit() {
-  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
-  // Prompt history
-  const userKey = user?.id || user?.email || "anon";
-  const { addPrompt } = usePromptHistory(userKey, 20);
-  
-  // Use same key function as Create section
-  const { storagePrefix } = useAuth();
-  const { estimate: storageEstimate, refresh: refreshStorageEstimate, supported: storageEstimateSupported } = useStorageEstimate();
-  const [persistentStorageGranted, setPersistentStorageGranted] = useState<boolean | null>(null);
-  
-  // State
-  const [mode] = useState<Mode>("edit");
-  const [model, setModel] = useState<FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image">("flux-e1");
-  const [task, setTask] = useState<TaskChip>("Inpaint");
-  const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
-  const [baseImage, setBaseImage] = useState<string | undefined>(undefined);
-  const [maskDataUrl, setMaskDataUrl] = useState<string | undefined>(undefined);
-  const [activeResult, setActiveResult] = useState<RunResult | undefined>(undefined);
-  const [results, setResults] = useState<RunResult[]>([]);
-  const [showBeforeAfter, setShowBeforeAfter] = useState(true);
-  const [compareSlider, setCompareSlider] = useState(50);
-  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  // Prompt bar state
+  const [prompt, setPrompt] = useState<string>("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
+  const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
-  // Gallery state for Edit section only
-  const [editGallery, setEditGallery] = useState<(FluxGeneratedImage | QwenGeneratedImage | any)[]>([]);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isButtonSpinning, setIsButtonSpinning] = useState(false);
+  const [temperature, setTemperature] = useState(0.8);
+  const [topP, setTopP] = useState(0.95);
+  const [topK, setTopK] = useState(64);
   
   // Refs
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
-  
-  // Flux generation hook
-  const { 
-    isLoading: fluxLoading, 
-    generateImage: generateFluxImage
-  } = useFluxImageGeneration();
 
-  // ChatGPT Image generation hook
-  const {
-    isLoading: chatgptLoading,
-    generateImage: generateChatGPTImage
-  } = useChatGPTImageGeneration();
-
-  // Ideogram Image generation hook
-  const {
-    isLoading: ideogramLoading,
-    generateImage: generateIdeogramImage
-  } = useIdeogramImageGeneration();
-
-  // Qwen Image generation hook
-  const {
-    isLoading: qwenLoading,
-    generateImage: generateQwenImage
-  } = useQwenImageGeneration();
-
-  // Runway Image generation hook
-  const {
-    isLoading: runwayLoading,
-    generateImage: generateRunwayImage
-  } = useRunwayImageGeneration();
-
-  // Seedream Image generation hook
-  const {
-    isLoading: seedreamLoading,
-    generateImage: generateSeeDreamImage
-  } = useSeeDreamImageGeneration();
-
-  // Reve Image generation hook
-  const {
-    isLoading: reveLoading,
-    generateImage: generateReveImage
-  } = useReveImageGeneration();
-
-  // Combined loading state
-  const isRunning = fluxLoading || chatgptLoading || ideogramLoading || qwenLoading || runwayLoading || seedreamLoading || reveLoading;
-
-  // Shortcuts
-  useGenerateShortcuts({ onGenerate: () => handleRun("run") });
-  
-  // Prefill from share
-  usePrefillFromShare((data: any) => {
-    if (data?.prompt) setSettings(prev => ({ ...prev, prompt: data.prompt }));
-    if (data?.model && ['flux-e1', 'flux-e2', 'chatgpt-image', 'ideogram', 'seedream-3.0'].includes(data.model)) {
-      setModel(data.model as FluxModelType | "chatgpt-image" | "ideogram" | "seedream-3.0");
-    }
-  });
-
-  useEffect(() => {
-    const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
-    if (!storage?.persisted) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const persisted = await storage.persisted();
-        if (!cancelled) {
-          setPersistentStorageGranted(persisted);
-        }
-      } catch {
-        if (!cancelled) {
-          setPersistentStorageGranted(null);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Load edit gallery from client storage on mount
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadEditGallery = async () => {
-      try {
-        await migrateKeyToIndexedDb(storagePrefix, 'editGallery');
-
-        const stored = await getPersistedValue<StoredEditImage[]>(storagePrefix, 'editGallery');
-
-        if (cancelled) return;
-
-        if (Array.isArray(stored) && stored.length > 0) {
-          const validImages = stored.filter(img => img && img.url && img.prompt && img.timestamp);
-          console.log('Loading edit gallery from client storage with', validImages.length, 'valid images out of', stored.length, 'total');
-
-          const hydrated = hydrateStoredEditGallery(validImages);
-
-          if (validImages.length !== stored.length) {
-            console.warn('Some edit images were invalid and removed from gallery');
-            void setPersistedValue(storagePrefix, 'editGallery', toStorable(hydrated));
-          }
-
-          setEditGallery(hydrated);
-        } else {
-          console.log('No edit gallery data found in client storage');
-        }
-
-        if (!cancelled) {
-          await refreshStorageEstimate();
-        }
-      } catch (error) {
-        console.error('Error loading edit gallery from client storage:', error);
-        if (!cancelled) {
-          await removePersistedValue(storagePrefix, 'editGallery');
-        }
-      }
-    };
-
-    void loadEditGallery();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [storagePrefix]);
-
-  // Save edit gallery to client storage whenever it changes
-  const persistEditGallery = async (galleryData: EditGalleryImage[]): Promise<EditGalleryImage[]> => {
-    const lean = toStorable(galleryData);
-    try {
-      await setPersistedValue(storagePrefix, 'editGallery', lean);
-      await refreshStorageEstimate();
-      console.log('Edit gallery backup persisted with', galleryData.length, 'images');
-      return galleryData;
-    } catch (error) {
-      console.error('Failed to persist edit gallery', error);
-
-      if (galleryData.length <= 1) {
-        return galleryData;
-      }
-
-      const trimmed = [...galleryData];
-      while (trimmed.length > 0) {
-        trimmed.pop();
-        try {
-          await setPersistedValue(storagePrefix, 'editGallery', toStorable(trimmed));
-          await refreshStorageEstimate();
-          console.log('Edit gallery persisted after trimming to', trimmed.length, 'images');
-          return trimmed;
-        } catch (retryError) {
-          if (trimmed.length === 0) {
-            console.error('Failed to persist edit gallery even after trimming', retryError);
-          }
-        }
-      }
-
-      return trimmed;
-    }
-  };
-
-  // Paste-to-upload => auto switch to Edit
-  useEffect(() => {
-    function onPaste(e: ClipboardEvent) {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (const item of items) {
-        if (item.type.startsWith("image/")) {
-          const file = item.getAsFile();
-          if (file) {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setSelectedFile(file);
             const reader = new FileReader();
             reader.onload = () => {
-              const dataUrl = reader.result as string;
-              setBaseImage(dataUrl);
+        setPreviewUrl(reader.result as string);
             };
             reader.readAsDataURL(file);
           }
+  };
+
+  const handleDeleteImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Prompt bar handlers
+  const handleGenerateImage = () => {
+    if (!prompt.trim()) return;
+    setIsButtonSpinning(true);
+    // TODO: Implement generation logic
+    setTimeout(() => setIsButtonSpinning(false), 2000);
+  };
+
+  const handleRefsClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const clearAllReferences = () => {
+    setReferenceFiles([]);
+    setReferencePreviews([]);
+  };
+
+  const toggleModelSelector = () => {
+    setIsModelSelectorOpen(!isModelSelectorOpen);
+  };
+
+  const toggleSettings = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      handleGenerateImage();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          const combined = [...referenceFiles, file].slice(0, 3);
+          setReferenceFiles(combined);
+          const readers = combined.map(f => URL.createObjectURL(f));
+          setReferencePreviews(readers);
         }
       }
     }
-    window.addEventListener("paste", onPaste);
-    return () => window.removeEventListener("paste", onPaste);
-  }, []);
+  };
 
-  // Smart model routing for editing
+  const handleUploadPaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          setSelectedFile(file);
+          const reader = new FileReader();
+          reader.onload = () => {
+            setPreviewUrl(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  };
+
+  // Click outside handler for settings dropdown
   useEffect(() => {
-    if (model === "chatgpt-image" || model === "qwen-image" || model === "reve-image") {
-      // Don't auto-switch ChatGPT Image, Qwen Image, or Reve models
-      return;
-    }
-    if (task === "Outpaint" || isLargeResize(settings.width, settings.height)) {
-      setModel("flux-e2");
-    } else {
-      setModel("flux-e1");
-    }
-  }, [task, settings.width, settings.height, model]);
-
-  // URL param sync
-  useEffect(() => {
-    const usp = new URLSearchParams(window.location.search);
-    usp.set("mode", mode);
-    usp.set("model", model);
-    usp.set("seed", String(settings.seed));
-    usp.set("w", String(settings.width));
-    usp.set("h", String(settings.height));
-    const url = `${window.location.pathname}?${usp.toString()}`;
-    window.history.replaceState({}, "", url);
-  }, [mode, model, settings.seed, settings.width, settings.height]);
-
-  const canRun = useMemo(() => {
-    return !!baseImage && !!settings.prompt.trim();
-  }, [settings.prompt, baseImage]);
-
-  async function handleRun(_kind: "run" | "variations" = "run") {
-    if (!canRun || isRunning) return;
-
-    try {
-      const outputs: string[] = [];
-      const count = Math.max(1, settings.variations);
-      
-      for (let i = 0; i < count; i++) {
-        const effectiveSeed = settings.seedLocked ? settings.seed : settings.seed + i;
-        const s = { ...settings, seed: effectiveSeed };
-        
-        let result;
-        if (model === "chatgpt-image") {
-          // Use ChatGPT Image generation for editing
-          result = await generateChatGPTImage({
-            prompt: s.prompt,
-            size: `${s.width}x${s.height}` as '256x256' | '512x512' | '1024x1024' | '1024x1536' | '1536x1024',
-            quality: s.safety === "high" ? 'high' : 'standard',
-            background: 'transparent',
-            n: 1
-          });
-        } else if (model === "ideogram") {
-          // Use Ideogram generation for editing
-          const ideogramResults = await generateIdeogramImage({
-            prompt: s.prompt,
-            aspect_ratio: `${s.width}:${s.height}`,
-            rendering_speed: 'DEFAULT',
-            num_images: 1,
-          });
-          result = ideogramResults[0]; // Take the first result
-        } else if (model === "qwen-image") {
-          // Use Qwen Image generation for editing
-          const qwenResults = await generateQwenImage({
-            prompt: s.prompt,
-            size: `${s.width}*${s.height}`,
-            prompt_extend: true,
-            watermark: false,
-          });
-          result = qwenResults[0]; // Take the first result
-        } else if (model === "runway-gen4" || model === "runway-gen4-turbo") {
-          // Use Runway Image generation for editing
-          const runwayResult = await generateRunwayImage({
-            prompt: s.prompt,
-            model: model === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
-            uiModel: model,
-            ratio: `${s.width}:${s.height}`,
-            seed: s.seed,
-          });
-          result = runwayResult; // Runway hook returns a single result
-        } else if (model === "seedream-3.0") {
-          // Use Seedream Image generation for editing
-          const seedreamResult = await generateSeeDreamImage({
-            prompt: s.prompt,
-            size: `${s.width}x${s.height}`,
-            n: 1,
-          });
-          result = seedreamResult;
-        } else if (model === "reve-image") {
-          // Use Reve Image generation for editing
-          const reveResult = await generateReveImage({
-            prompt: s.prompt,
-            width: s.width,
-            height: s.height,
-            seed: s.seed,
-          });
-          result = reveResult;
-        } else {
-          // Use Flux generation
-          result = await generateFluxImage({
-            prompt: s.prompt,
-            model: model as FluxModelType,
-            width: s.width,
-            height: s.height,
-            seed: s.seed,
-            safety_tolerance: s.safety === "low" ? 1 : s.safety === "medium" ? 2 : 3,
-            input_image: baseImage,
-            input_image_2: maskDataUrl,
-            output_format: 'png'
-          });
-        }
-        
-        outputs.push(result.url);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
       }
-
-      const created = outputs.map((imageDataUrl) => ({
-        id: uid(),
-        mode,
-        model,
-        imageDataUrl,
-        baseImageDataUrl: baseImage,
-        settings: { ...settings },
-        createdAt: Date.now(),
-        parentId: activeResult?.id,
-      }));
-
-      setResults((prev) => [...created, ...prev]);
-      setActiveResult(created[0]);
-      
-      // Add to prompt history
-      addPrompt(settings.prompt);
-      
-      // Add to edit gallery
-      const editImages: (FluxGeneratedImage | QwenGeneratedImage)[] = outputs.map((imageDataUrl) => ({
-        url: imageDataUrl,
-        prompt: settings.prompt,
-        model: model,
-        timestamp: new Date().toISOString(),
-        ownerId: user?.id,
-        jobId: `edit-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        references: baseImage ? [baseImage] : undefined
-      }));
-      
-      let nextGallery: EditGalleryImage[] = [];
-      setEditGallery(currentGallery => {
-        // Validate current gallery items first
-        const validCurrentGallery = currentGallery.filter(item => item && item.url && item.prompt && item.timestamp);
-
-        // Deduplicate by URL
-        const dedup = (list: EditGalleryImage[]) => {
-          const seen = new Set<string>();
-          const out: EditGalleryImage[] = [];
-          for (const it of list) {
-            if (it?.url && it?.prompt && it?.timestamp && !seen.has(it.url)) {
-              seen.add(it.url);
-              out.push(it);
-            }
-          }
-          return out;
-        };
-
-        // Add new images to the beginning
-        const next = [...editImages, ...validCurrentGallery];
-        const deduped = dedup(next);
-        nextGallery = deduped;
-
-        console.log('Added', editImages.length, 'images to edit gallery. Total edit gallery size:', deduped.length);
-        return deduped;
-      });
-
-      void (async () => {
-        const persisted = await persistEditGallery(nextGallery);
-        if (persisted.length !== nextGallery.length) {
-          setEditGallery(persisted);
-        }
-      })();
-      
-      if (!settings.seedLocked) {
-        setSettings((s) => ({ ...s, seed: s.seed + count }));
-      }
-    } catch (error) {
-      console.error('Generation failed:', error);
-    }
-  }
-
-  function handleDrop(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    const file = files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setBaseImage(dataUrl);
     };
-    reader.readAsDataURL(file);
-  }
 
-  function clearBaseImage() {
-    setBaseImage(undefined);
-    setMaskDataUrl(undefined);
-  }
+    if (isSettingsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
 
-  const currentTasks = EDIT_TASKS;
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSettingsOpen]);
 
-  return (
-    <div className="relative min-h-screen text-d-text overflow-hidden pt-12">
-      {/* Main two-column layout */}
-      <div className="mx-auto grid max-w-[85rem] grid-cols-1 gap-6 px-6 lg:px-8 py-6 md:grid-cols-[400px_1fr]">
-        {/* Left panel */}
-        <div className="space-y-4">
-          {/* Task chips */}
-          <div className="rounded-lg border border-d-mid bg-d-dark p-4">
-            <div className="text-sm font-medium mb-3 font-cabin">Task</div>
-            <div className="flex flex-wrap gap-2">
-              {currentTasks.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTask(t)}
-                  className={`rounded-full px-3 py-1 text-sm transition-colors font-raleway ${
-                    task === t 
-                      ? "bg-d-orange-1 text-d-black" 
-                      : "bg-d-mid text-d-white hover:bg-d-mid/80 hover:text-brand"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prompt */}
-          <div className="rounded-lg border border-d-mid bg-d-dark p-4">
-            <div className="text-sm font-medium mb-3 font-cabin">Prompt</div>
-            <textarea
-              value={settings.prompt}
-              onChange={(e) => setSettings({ ...settings, prompt: e.target.value })}
-              placeholder="Describe what you want to change in the image…"
-              className="w-full min-h-[96px] p-3 rounded-lg border border-d-mid bg-d-black text-d-white placeholder-d-mid resize-y focus:outline-none focus:border-d-orange-1 font-raleway"
-            />
-            <input
-              value={settings.negativePrompt}
-              onChange={(e) => setSettings({ ...settings, negativePrompt: e.target.value })}
-              placeholder="Negative prompt (optional)"
-              className="w-full mt-2 p-3 rounded-lg border border-d-mid bg-d-black text-d-white placeholder-d-mid focus:outline-none focus:border-d-orange-1 font-raleway"
-            />
-            <div className="flex items-center justify-between mt-3 text-xs text-d-mid">
-              <span>Tip: Paste (⌘V) or drop an image to start editing.</span>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={settings.seedLocked}
-                  onChange={(e) => setSettings({ ...settings, seedLocked: e.target.checked })}
-                  className="rounded"
-                />
-                Seed lock
-              </label>
-            </div>
-          </div>
-
-          {/* Asset area */}
-          <div className="rounded-lg border border-d-mid bg-d-dark p-4">
-            <div className="text-sm font-medium mb-3 font-cabin">
-              Image to edit
-            </div>
-            {!baseImage ? (
-              <Dropzone onDrop={handleDrop} />
-            ) : (
-              <div className="space-y-3">
-                <div className="relative overflow-hidden rounded-lg border border-d-mid">
-                  <img 
-                    src={baseImage} 
-                    alt="Base" 
-                    className="block max-h-80 w-full object-contain bg-d-black" 
-                  />
-                  <button
-                    onClick={clearBaseImage}
-                    className="absolute right-2 top-2 image-action-btn"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                {mode === "edit" && (
-                  <MaskEditor baseImage={baseImage} onMaskChange={setMaskDataUrl} />
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Advanced settings */}
-          <div className="rounded-lg border border-d-mid bg-d-dark p-4">
-            <button
-              ref={settingsRef}
-              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className="flex items-center gap-2 text-sm font-medium mb-3 font-cabin"
-            >
-              <Settings className="h-4 w-4" />
-              Advanced
-              <ChevronDown className={`h-4 w-4 transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {isSettingsOpen && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-d-mid">Width</label>
-                    <input
-                      type="number"
-                      value={settings.width}
-                      min={256}
-                      max={2048}
-                      onChange={(e) => setSettings({ ...settings, width: Number(e.target.value) })}
-                      className="w-full mt-1 p-2 rounded border border-d-mid bg-d-black text-d-white text-sm focus:outline-none focus:border-d-orange-1 font-raleway"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-d-mid">Height</label>
-                    <input
-                      type="number"
-                      value={settings.height}
-                      min={256}
-                      max={2048}
-                      onChange={(e) => setSettings({ ...settings, height: Number(e.target.value) })}
-                      className="w-full mt-1 p-2 rounded border border-d-mid bg-d-black text-d-white text-sm focus:outline-none focus:border-d-orange-1 font-raleway"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-d-mid">Guidance (CFG)</label>
-                    <input
-                      type="number"
-                      step={0.5}
-                      value={settings.guidance}
-                      onChange={(e) => setSettings({ ...settings, guidance: Number(e.target.value) })}
-                      className="w-full mt-1 p-2 rounded border border-d-mid bg-d-black text-d-white text-sm focus:outline-none focus:border-d-orange-1 font-raleway"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-d-mid">Steps</label>
-                    <input
-                      type="number"
-                      value={settings.steps}
-                      onChange={(e) => setSettings({ ...settings, steps: Number(e.target.value) })}
-                      className="w-full mt-1 p-2 rounded border border-d-mid bg-d-black text-d-white text-sm focus:outline-none focus:border-d-orange-1 font-raleway"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-d-mid">Variations</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={8}
-                      value={settings.variations}
-                      onChange={(e) => setSettings({ ...settings, variations: Number(e.target.value) })}
-                      className="w-full mt-1 p-2 rounded border border-d-mid bg-d-black text-d-white text-sm focus:outline-none focus:border-d-orange-1 font-raleway"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-d-mid">Safety</label>
-                    <select
-                      value={settings.safety}
-                      onChange={(e) => setSettings({ ...settings, safety: e.target.value as "low" | "medium" | "high" })}
-                      className="w-full mt-1 p-2 rounded border border-d-mid bg-d-black text-d-white text-sm focus:outline-none focus:border-d-orange-1 font-raleway"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+  // Tooltip component
+  const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
+    <div className="relative inline-flex items-center group">
+      {children}
+      {text && (
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
+          {text}
         </div>
-
-        {/* Right panel */}
-        <div className="space-y-4">
-          {/* Model picker and run button */}
-          <div className="rounded-lg border border-d-mid bg-d-dark p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium font-cabin">Model & Run</div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button
-                    ref={modelSelectorRef}
-                    onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
-                    className={`${buttons.subtle} h-9 px-3`}
-                  >
-                    <span className="text-sm">{FLUX_EDIT_MODELS.find(m => m.id === model)?.name || 'Select Model'}</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                  
-                  {isModelSelectorOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50">
-                      <div className="p-3">
-                        <div className="text-xs text-d-mid mb-3 font-cabin">Image Editing Models</div>
-                        {FLUX_EDIT_MODELS.map(m => (
-                          <button
-                            key={m.id}
-                            onClick={() => {
-                              setModel(m.id as FluxModelType | "chatgpt-image" | "ideogram" | "qwen-image" | "runway-gen4" | "runway-gen4-turbo" | "seedream-3.0" | "reve-image");
-                              setIsModelSelectorOpen(false);
-                            }}
-                            className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-d-mid hover:text-brand transition-colors flex items-center gap-2 ${
-                              model === m.id ? 'bg-d-orange-1 text-d-black' : 'text-d-white'
-                            }`}
-                          >
-                            {hasToolLogo(m.name) ? (
-                              <img 
-                                src={getToolLogo(m.name)!} 
-                                alt={`${m.name} logo`}
-                                className="w-5 h-5 object-contain rounded flex-shrink-0"
-                              />
-                            ) : null}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-xs">{m.name}</div>
-                              <div className="text-[10px] opacity-75">{m.description}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <button
-                  onClick={() => handleRun("run")}
-                  disabled={!canRun || isRunning}
-                  className={`${buttons.primary} font-semibold`}
-                >
-                  {isRunning ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-d-black border-t-transparent" />
-                      Running...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4" />
-                      Run
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Canvas */}
-          <div className="rounded-lg border border-d-mid bg-d-dark overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-d-mid">
-              <div className="text-sm font-medium font-cabin">Canvas</div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowBeforeAfter(!showBeforeAfter)}
-                  className={`${buttons.subtle} h-8 px-3`}
-                >
-                  <SplitSquareVertical className="h-3 w-3" />
-                  {showBeforeAfter ? "Side-by-side" : "Before/After"}
-                </button>
-                <button
-                  onClick={() => handleRun("variations")}
-                  disabled={!canRun || isRunning}
-                  className={`${buttons.subtle} h-8 px-3 disabled:cursor-not-allowed`}
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Variations
-                </button>
-              </div>
-            </div>
-            <div className="p-4">
-              <div className="relative grid min-h-[420px] w-full place-items-center rounded-lg bg-d-black">
-                {!activeResult ? (
-                  <EmptyState hasBase={!!baseImage} />
-                ) : baseImage && showBeforeAfter ? (
-                  <BeforeAfter
-                    before={activeResult.baseImageDataUrl || baseImage}
-                    after={activeResult.imageDataUrl}
-                    slider={compareSlider}
-                    onSlider={setCompareSlider}
-                  />
-                ) : (
-                  <img
-                    src={activeResult.imageDataUrl}
-                    alt={settings.prompt || "Result"}
-                    className="max-h-[80vh] w-full max-w-full object-contain"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Results tray */}
-          <div className="rounded-lg border border-d-mid bg-d-dark">
-            <div className="flex items-center justify-between p-4 border-b border-d-mid">
-              <div className="text-sm font-medium font-cabin">Results</div>
-              <div className="flex items-center gap-2 text-xs text-d-mid">
-                <HistoryIcon className="h-4 w-4" />
-                {results.length} items
-              </div>
-            </div>
-            <div className="p-4">
-              {results.length === 0 ? (
-                <div className="text-sm text-d-mid text-center py-8">
-                  No results yet. Click <span className="text-d-accent">Run</span> to generate.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  {results.map((r) => (
-                    <div
-                      key={r.id}
-                      className={`group relative overflow-hidden rounded-lg border ${
-                        activeResult?.id === r.id ? "border-d-orange-1" : "border-d-mid"
-                      }`}
-                    >
-                      <img src={r.imageDataUrl} alt="Result" className="aspect-square w-full object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 grid gap-1 bg-gradient-to-t from-black/70 to-transparent p-2 text-[10px]">
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 rounded bg-d-mid text-[10px]">{getModelDisplayName(r.model)}</span>
-                          <span className="text-d-mid">{formatDims(r.settings.width, r.settings.height)}</span>
-                          <span className="text-d-mid">Seed {r.settings.seed}</span>
-                        </div>
-                        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            onClick={() => setActiveResult(r)}
-                            className="image-action-btn"
-                            title="Open"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleRun("variations")}
-                            className="image-action-btn"
-                            title="Variations"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(r.imageDataUrl)}
-                            className="image-action-btn"
-                            title="Copy"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                          <a
-                            href={r.imageDataUrl}
-                            download={`daygen-${r.id}.png`}
-                            className="image-action-btn"
-                            title="Download"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Edits Gallery */}
-          <div className="space-y-4">
-            {storageEstimateSupported ? (
-              storageEstimate && (
-                <div
-                  className={`rounded-lg border px-4 py-3 ${
-                    storageEstimate.percentUsed >= 0.8
-                      ? 'border-red-500/40 bg-red-500/10'
-                      : 'border-d-mid bg-d-dark/70'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/60">
-                    <span>Local cache usage</span>
-                    <span className="text-d-white/80 normal-case">
-                      {formatBytes(storageEstimate.usage)} / {formatBytes(storageEstimate.quota)}
-                    </span>
-                  </div>
-                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-d-dark/40">
-                    <div
-                      className={`h-full rounded-full ${
-                        storageEstimate.percentUsed >= 0.8 ? 'bg-red-400' : 'bg-d-orange-1'
-                      }`}
-                      style={{ width: `${Math.min(storageEstimate.percentUsed, 1) * 100}%` }}
-                    />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px] font-raleway text-d-white/60">
-                    <span>{(Math.min(storageEstimate.percentUsed, 1) * 100).toFixed(1)}% used</span>
-                    <span>
-                      Updated {new Date(storageEstimate.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  {persistentStorageGranted === false && (
-                    <div className="mt-2 flex items-center gap-2 text-[11px] font-raleway text-red-300">
-                      <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
-                      Browser may clear cached edits because persistent storage is not granted.
-                    </div>
-                  )}
-                </div>
-              )
-            ) : (
-              <div className="rounded-lg border border-d-mid bg-d-dark/70 px-4 py-3 text-[11px] font-raleway text-d-white/60">
-                Storage usage metrics unavailable in this browser.
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium font-cabin">Recent Edits</div>
-              <div className="flex items-center gap-2 text-xs text-d-mid">
-                <EditIcon className="h-4 w-4" />
-                {editGallery.length} items
-              </div>
-            </div>
-            
-            {editGallery.length === 0 ? (
-              <div className="text-sm text-d-mid text-center py-8">
-                <EditIcon className="w-16 h-16 text-d-white/30 mb-4 mx-auto" />
-                <h3 className="text-xl font-raleway text-d-white/60 mb-2">No edits yet</h3>
-                <p className="text-sm font-raleway text-d-white/40 max-w-md mx-auto">
-                  Your recent edits will appear here once you start creating images.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-                {editGallery.map((img, idx) => (
-                  <div key={`edit-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
-                    <img src={img.url} alt={img.prompt || `Edited ${idx+1}`} className="w-full aspect-square object-cover" />
-                    
-                    {/* Hover prompt overlay */}
-                    {img.prompt && (
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
-                        style={{
-                          background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                          backdropFilter: 'blur(12px)',
-                          WebkitBackdropFilter: 'blur(12px)',
-                          height: 'fit-content'
-                        }}
-                      >
-                        <div className="w-full p-4">
-                          <div className="mb-2">
-                            <div className="relative">
-                              <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-3">
-                                {img.prompt}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(img.prompt);
-                                  }}
-                                  className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                              </p>
-                            </div>
-                          </div>
-                          {img.references && img.references.length > 0 && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="flex gap-1">
-                                {img.references.map((ref: string, refIdx: number) => (
-                                  <div key={refIdx} className="w-4 h-4 rounded border border-d-mid bg-d-black overflow-hidden">
-                                    <img src={ref} alt={`Reference ${refIdx + 1}`} className="w-full h-full object-cover" />
-                                  </div>
-                                ))}
-                              </div>
-                              <span className="text-xs text-d-white/60 font-raleway">
-                                {img.references.length} reference{img.references.length !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Action buttons overlay */}
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(img.url);
-                        }}
-                        className="image-action-btn"
-                        title="Copy image"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                      <a
-                        href={img.url}
-                        download={`daygen-edit-${Date.now()}.png`}
-                        className="image-action-btn"
-                        title="Download"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Subcomponents
-function EmptyState({ hasBase }: { hasBase: boolean }) {
-  return (
-    <div className="flex flex-col items-center gap-3 p-8 text-center text-d-mid">
-      <Wand2 className="h-8 w-8" />
-      {!hasBase ? (
-        <>
-          <div className="text-sm">Upload an image to start editing.</div>
-          <div className="text-xs">Paste (⌘V) or drop an image to begin.</div>
-        </>
-      ) : (
-        <>
-          <div className="text-sm">Use the mask to paint areas you want to change, then Run.</div>
-          <div className="text-xs">Toggle Before/After to compare.</div>
-        </>
       )}
     </div>
   );
-}
-
-function Dropzone({ onDrop }: { onDrop: (files: FileList | null) => void }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [isOver, setIsOver] = useState(false);
-
-  function onDrag(e: React.DragEvent) {
-    e.preventDefault();
-    if (e.type === "dragover") setIsOver(true);
-    if (e.type === "dragleave") setIsOver(false);
-  }
-
-  function onDropHandler(e: React.DragEvent) {
-    e.preventDefault();
-    setIsOver(false);
-    const files = e.dataTransfer.files;
-    onDrop(files);
-  }
 
   return (
-    <div
-      onDragOver={onDrag}
-      onDragLeave={onDrag}
-      onDrop={onDropHandler}
-      className={`grid place-items-center rounded-lg border border-dashed p-8 text-center transition-colors ${
-        isOver ? "border-d-orange-1 bg-d-orange-1/5" : "border-d-mid bg-d-black"
-      }`}
-    >
-      <div className="flex flex-col items-center gap-2">
-        <Upload className="h-6 w-6 text-d-mid" />
-        <div className="text-sm text-d-white">
-          Drop or click to add an image to edit
+    <div className={layout.page}>
+      {/* Background overlay to show gradient behind navbar */}
+      <div className={layout.backdrop} aria-hidden="true" />
+      
+      {/* PLATFORM HERO - Vertically centered */}
+      <header className={`relative z-10 h-screen flex items-center justify-center ${layout.container}`}>
+        {/* Centered content */}
+        <div className="flex flex-col items-center justify-center text-center">
+
+          {/* Upload Interface - only show when no image is uploaded */}
+          {!previewUrl && (
+            <div className="w-full max-w-md mx-auto">
+              <div 
+                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-d-white/30 hover:border-d-orange-1/50'}`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => { 
+                  e.preventDefault(); 
+                  setIsDragging(false);
+                  const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                  if (files.length > 0) {
+                    const file = files[0];
+                    setSelectedFile(file);
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setPreviewUrl(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                onPaste={handleUploadPaste}
+              >
+                <Upload className="w-16 h-16 text-d-white/40 mx-auto mb-4" />
+                <p className="text-lg font-cabin text-d-text mb-2">Upload your image</p>
+                <p className="text-sm font-raleway text-d-white mb-6">
+                  Click anywhere, drag and drop, or paste your image to get started
+                </p>
+                
+                {/* Upload Button */}
+                <div className={`${buttons.primary} font-semibold inline-flex items-center gap-2`}>
+                  <Upload className="w-4 h-4" />
+                  Upload
+                </div>
+                
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Uploaded Image Preview */}
+          {previewUrl && (
+            <div className="w-full max-w-lg mx-auto mt-8">
+              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
+                <img 
+                  src={previewUrl} 
+                  alt="Uploaded file preview" 
+                  className="w-full h-32 object-cover"
+                />
+                <button
+                  onClick={handleDeleteImage}
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="px-4 py-3 bg-d-black/80 text-d-white text-sm text-center">
+                  {selectedFile?.name}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="mt-2 flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-d-mid hover:bg-d-mid hover:text-brand transition-colors font-raleway"
+      </header>
+
+      {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
+      {selectedFile && (
+        <div 
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+          style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
         >
-          <ImageIcon className="h-4 w-4" />
-          Choose image
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => onDrop(e.target.files)}
-        />
-      </div>
-    </div>
-  );
-}
-
-function BeforeAfter({ 
-  before, 
-  after, 
-  slider, 
-  onSlider 
-}: { 
-  before: string; 
-  after: string; 
-  slider: number; 
-  onSlider: (v: number) => void; 
-}) {
-  return (
-    <div className="relative w-full max-w-4xl">
-      <img src={before} alt="Before" className="block w-full rounded-lg object-contain" />
-      <div
-        className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg"
-        style={{ clipPath: `inset(0 ${100 - slider}% 0 0)` }}
-      >
-        <img src={after} alt="After" className="block w-full object-contain" />
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={100}
-        value={slider}
-        onChange={(e) => onSlider(Number(e.target.value))}
-        className="absolute inset-x-8 bottom-4 w-[calc(100%-4rem)]"
-      />
-      <div className="absolute left-4 bottom-4 rounded bg-black/50 px-2 py-1 text-xs">Before</div>
-      <div className="absolute right-4 bottom-4 rounded bg-black/50 px-2 py-1 text-xs">After</div>
-    </div>
-  );
-}
-
-function MaskEditor({ 
-  baseImage, 
-  onMaskChange 
-}: { 
-  baseImage: string; 
-  onMaskChange: (mask: string | undefined) => void; 
-}) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const overlayRef = useRef<HTMLCanvasElement | null>(null);
-  const [brush, setBrush] = useState(30);
-  const [feather, setFeather] = useState(8);
-  const [erase, setErase] = useState(false);
-
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      const c = canvasRef.current!;
-      const o = overlayRef.current!;
-      c.width = img.width;
-      c.height = img.height;
-      o.width = img.width;
-      o.height = img.height;
-      const ctx = c.getContext("2d")!;
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, c.width, c.height);
-      const octx = o.getContext("2d")!;
-      octx.clearRect(0, 0, o.width, o.height);
-      onMaskChange(undefined);
-    };
-    img.src = baseImage;
-  }, [baseImage, onMaskChange]);
-
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      const o = overlayRef.current!;
-      const rect = o.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * o.width;
-      const y = ((e.clientY - rect.top) / rect.height) * o.height;
-      const octx = o.getContext("2d")!;
-      octx.globalCompositeOperation = erase ? "destination-out" : "source-over";
-      const radgrad = octx.createRadialGradient(x, y, feather, x, y, brush);
-      radgrad.addColorStop(0, "rgba(255,255,255,0.9)");
-      radgrad.addColorStop(1, "rgba(255,255,255,0)");
-      octx.fillStyle = radgrad;
-      octx.beginPath();
-      octx.arc(x, y, brush, 0, Math.PI * 2);
-      octx.fill();
-    }
-
-    let drawing = false;
-    const o = overlayRef.current!;
-
-    function down(e: MouseEvent) {
-      drawing = true;
-      handle(e);
-    }
-    function move(e: MouseEvent) {
-      if (drawing) handle(e);
-    }
-    function up() {
-      drawing = false;
-      const c = canvasRef.current!;
-      const ctx = c.getContext("2d")!;
-      const octx = overlayRef.current!.getContext("2d")!;
-      ctx.globalCompositeOperation = "source-over";
-      ctx.drawImage(overlayRef.current!, 0, 0);
-      octx.clearRect(0, 0, overlayRef.current!.width, overlayRef.current!.height);
-      onMaskChange(c.toDataURL("image/png"));
-    }
-
-    o.addEventListener("mousedown", down);
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
-    return () => {
-      o.removeEventListener("mousedown", down);
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
-    };
-  }, [brush, feather, erase, onMaskChange]);
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <label className="text-xs text-d-mid">Brush</label>
-        <input 
-          type="range" 
-          min={5} 
-          max={200} 
-          value={brush} 
-          onChange={(e) => setBrush(Number(e.target.value))}
-          className="flex-1"
-        />
-        <label className="text-xs text-d-mid">Feather</label>
-        <input 
-          type="range" 
-          min={0} 
-          max={60} 
-          value={feather} 
-          onChange={(e) => setFeather(Number(e.target.value))}
-          className="flex-1"
-        />
-        <div className="flex items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={erase}
-            onChange={(e) => setErase(e.target.checked)}
-            className="rounded"
+        <div>
+          <textarea
+            ref={promptTextareaRef}
+            placeholder="Describe what you want to create..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={onKeyDown}
+            onPaste={handlePaste}
+            rows={2}
+            className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
           />
-          <label className="text-d-mid">Eraser</label>
         </div>
+        <div className="absolute right-4 bottom-4 flex items-center gap-2">
+          <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
+            <button 
+              onClick={handleGenerateImage}
+              disabled={!prompt.trim()}
+              className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              {isButtonSpinning ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Wand2 className="w-4 h-4" />
+              )}
+              Generate
+            </button>
+          </Tooltip>
+        </div>
+        {/* Left icons and references overlayed so they don't shift textarea left edge */}
+        <div className="absolute left-4 bottom-4 flex items-center gap-3 pointer-events-auto">
+          {/* Action buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleRefsClick}
+              title="Add reference image"
+              aria-label="Add reference image"
+              className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            {referencePreviews.length > 0 && (
+              <button
+                type="button"
+                onClick={clearAllReferences}
+                title="Clear all references"
+                aria-label="Clear all references"
+                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-red-400 border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <div className="relative settings-dropdown">
+              <button
+                ref={settingsRef}
+                type="button"
+                onClick={toggleSettings}
+                title="Settings"
+                aria-label="Settings"
+                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          
+          {/* Reference previews */}
+          {referencePreviews.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              {referencePreviews.map((preview, index) => (
+                <div key={index} className="relative w-8 h-8 rounded-lg overflow-hidden border border-d-mid bg-d-black">
+                  <img 
+                    src={preview} 
+                    alt={`Reference ${index + 1}`} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Settings Dropdown */}
+        {isSettingsOpen && (
+          <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50 p-4">
+            <div className="space-y-4">
+              <div className="text-sm font-cabin text-d-text mb-3">Settings</div>
+              
+              {/* Temperature */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-d-white font-raleway">Temperature</label>
+                  <span className="text-xs text-d-orange-1 font-mono">{temperature}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.1}
+                  max={1.0}
+                  step={0.1}
+                  value={temperature}
+                  onChange={(e) => setTemperature(Number(e.target.value))}
+                  className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              
+              {/* Top P */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-d-white font-raleway">Top P</label>
+                  <span className="text-xs text-d-orange-1 font-mono">{topP}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  value={topP}
+                  onChange={(e) => setTopP(Number(e.target.value))}
+                  className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              
+              {/* Top K */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-d-white font-raleway">Top K</label>
+                  <span className="text-xs text-d-orange-1 font-mono">{topK}</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={topK}
+                  onChange={(e) => setTopK(Number(e.target.value))}
+                  className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <div className="relative w-full overflow-auto rounded-lg border border-d-mid bg-d-black">
-        <img src={baseImage} alt="Base" className="pointer-events-none block w-full select-none object-contain" />
-        <canvas ref={overlayRef} className="absolute inset-0 h-full w-full" />
-        <canvas ref={canvasRef} className="invisible absolute inset-0" />
-      </div>
+      )}
     </div>
   );
 }
