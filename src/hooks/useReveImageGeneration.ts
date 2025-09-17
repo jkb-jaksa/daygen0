@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export interface ReveGeneratedImage {
   url: string;

@@ -40,7 +40,7 @@ export const useRunwayImageGeneration = () => {
     }));
 
     try {
-      const { prompt, model = 'gen4_image', uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
+      const { prompt, uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
 
       // Use the Runway API endpoint
       const apiUrl = getApiUrl('/api/unified-generate');
