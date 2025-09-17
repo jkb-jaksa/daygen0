@@ -1,9 +1,10 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, X } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
+import Pricing from "./Pricing";
 import { buttons } from "../styles/designSystem";
 
 export default function Navbar() {
@@ -15,6 +16,29 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
+
+  // Prevent body scroll when pricing modal is open and handle escape key
+  useEffect(() => {
+    if (showPricing) {
+      document.body.style.overflow = 'hidden';
+      
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setShowPricing(false);
+        }
+      };
+      
+      document.addEventListener('keydown', handleEscape);
+      
+      return () => {
+        document.body.style.overflow = 'unset';
+        document.removeEventListener('keydown', handleEscape);
+      };
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [showPricing]);
   const accountBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -187,32 +211,55 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <div className="relative">
-                <button
-                  ref={accountBtnRef}
-                  onClick={() => setMenuOpen(v => !v)}
-                  className="parallax-mid flex items-center gap-1.5 rounded-full border bg-d-dark/50 border-d-mid text-d-white px-2.5 py-1 hover:bg-d-dark/70 hover:text-brand transition-colors"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  aria-label="My account"
+              <>
+                {/* Credit Usage Button */}
+                <button 
+                  className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-3 py-1.5 hover:bg-black/30 hover:text-brand transition-colors"
+                  aria-label="Credit usage"
                 >
-                  {user.profilePic ? (
-                    <img
-                      src={user.profilePic}
-                      alt="Profile"
-                      className="size-5 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span
-                      className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-cabin"
-                      style={{ background: user.color || "#faaa16" }}
-                    >
-                      {(user.name || user.email)[0]?.toUpperCase()}
-                    </span>
-                  )}
-                  <span className="hidden sm:inline font-cabin text-base py-0.5">{user.name || user.email}</span>
+                  <CreditCard className="size-4" />
+                  <span className="hidden sm:inline font-cabin text-sm">
+                    <span className="text-d-white/70">Credits:</span> 1,247
+                  </span>
+                  <span className="sm:hidden font-cabin text-sm">1,247</span>
                 </button>
-              </div>
+                
+                {/* Upgrade Button */}
+                <button 
+                  className={`${buttons.primary} btn-compact parallax-small flex items-center gap-1.5`}
+                  onClick={() => setShowPricing(true)}
+                >
+                  <Zap className="size-4" />
+                  <span className="hidden sm:inline">Upgrade</span>
+                </button>
+                
+                <div className="relative">
+                  <button
+                    ref={accountBtnRef}
+                    onClick={() => setMenuOpen(v => !v)}
+                    className="parallax-mid flex items-center gap-1.5 rounded-full border glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-2.5 py-1 hover:bg-black/30 hover:text-brand transition-colors"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    aria-label="My account"
+                  >
+                    {user.profilePic ? (
+                      <img
+                        src={user.profilePic}
+                        alt="Profile"
+                        className="size-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span
+                        className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-cabin"
+                        style={{ background: user.color || "#faaa16" }}
+                      >
+                        {(user.name || user.email)[0]?.toUpperCase()}
+                      </span>
+                    )}
+                    <span className="hidden sm:inline font-cabin text-base py-0.5">{user.name || user.email}</span>
+                  </button>
+                </div>
+              </>
             )}
             <button aria-label="Search" className="parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
               <Search className="size-5" />
@@ -296,6 +343,31 @@ export default function Navbar() {
 
       {/* Auth modal */}
       <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />
+      
+      {/* Pricing modal */}
+      {showPricing && createPortal(
+        <div 
+          className="fixed inset-0 bg-black z-[100] overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPricing(false);
+            }
+          }}
+        >
+          <button
+            onClick={() => {
+              console.log('X button clicked');
+              setShowPricing(false);
+            }}
+            className="fixed top-6 right-6 z-[110] bg-d-black/50 text-d-white p-2 rounded-full hover:bg-d-black/70 hover:text-d-orange-1 transition-colors duration-200 cursor-pointer"
+            aria-label="Close pricing modal"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <Pricing />
+        </div>,
+        document.body
+      )}
       
       {/* User dropdown - anchored to trigger via portal */}
       {menuOpen &&
