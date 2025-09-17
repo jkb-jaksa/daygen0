@@ -25,7 +25,7 @@
   /* Daygen dark palette */
   --d-text: #FAFAFA;
   /* Slightly darken d-white globally (very subtle) */
-  --d-white: #C4CCCC;
+  --d-white: #C1C9C9;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
   --d-light: #8E9393;
   /* Mid tone: made a bit lighter for hover/border contrast */
@@ -615,7 +615,7 @@ html, body {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
   width: auto;
-  font-family: var(--font-raleway, "Raleway", sans-serif);
+  font-family: var(--font-cabin, "Cabin", sans-serif);
   font-size: 0.75rem;
   line-height: 1.25rem;
   font-weight: 500;

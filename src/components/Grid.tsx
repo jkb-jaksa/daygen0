@@ -269,7 +269,7 @@ export function Grid() {
                 key={index}
                 type="button"
                 onClick={() => setActive(item.label)}
-                className={`parallax-small flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                className={`parallax-small flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                   isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                 }`}
                 aria-pressed={isActive}

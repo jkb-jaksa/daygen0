@@ -784,7 +784,7 @@ export default function Edit() {
                     return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
                   }
                 })()}
-                <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                <span className="text-sm font-cabin hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}

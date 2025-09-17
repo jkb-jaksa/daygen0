@@ -1153,7 +1153,7 @@ const Create: React.FC = () => {
           >
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
               onClick={(event) => {
                 event.stopPropagation();
                 handleEditMenuSelect();
@@ -1164,7 +1164,7 @@ const Create: React.FC = () => {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
               onClick={(event) => {
                 event.stopPropagation();
                 handleUseAsReferenceFromMenu();
@@ -1889,7 +1889,7 @@ const Create: React.FC = () => {
               <div className={`${glass.surface} flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
-                  <div className="text-xs text-d-white/60 font-raleway font-medium uppercase tracking-wider mb-1">
+                  <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
                     generate
                   </div>
                   
@@ -1907,7 +1907,7 @@ const Create: React.FC = () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
@@ -1930,7 +1930,7 @@ const Create: React.FC = () => {
                   <div className="border-t border-d-dark my-2"></div>
                   
                   {/* Library section */}
-                  <div className="text-xs text-d-white/60 font-raleway font-medium uppercase tracking-wider mb-1">
+                  <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
                     library
                   </div>
                   
@@ -1946,7 +1946,7 @@ const Create: React.FC = () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
@@ -1969,7 +1969,7 @@ const Create: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setNewFolderDialog(true)}
-                    className="parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                    className="parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                   >
                     <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
                       <FolderPlus className="size-3.5" />
@@ -1981,7 +1981,7 @@ const Create: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMyFoldersClick}
-                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                       activeCategory === "my-folders" ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                     }`}
                     aria-pressed={activeCategory === "my-folders"}
@@ -2155,7 +2155,7 @@ const Create: React.FC = () => {
                     {/* Empty state for liked */}
                     {gallery.filter(img => favorites.has(img.url)).length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Star className="w-16 h-16 text-d-white/30 mb-4" />
+                        <Star className="w-12 h-12 text-d-white/30 mb-4" />
                         <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No liked images yet</h3>
                         <p className="text-base font-raleway text-d-white/40 max-w-md">
                           Click the heart icon on any generated image to add it to your liked images.
@@ -3047,7 +3047,10 @@ const Create: React.FC = () => {
                     // Placeholder tile
                     return (
                       <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square cursor-pointer hover:bg-[#222427] hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
-                        <div className="text-d-light font-raleway text-sm text-center px-2">Create something amazing.</div>
+                        <div className="flex flex-col items-center gap-2 text-center px-2">
+                          <ImageIcon className="w-8 h-8 text-d-light" />
+                          <div className="text-d-light font-raleway text-base">Create something amazing.</div>
+                        </div>
                       </div>
                     );
                   })}
@@ -3392,7 +3395,7 @@ const Create: React.FC = () => {
                         return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
                       }
                     })()}
-                    <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                    <span className="text-sm font-cabin hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -3436,7 +3439,7 @@ const Create: React.FC = () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-xs font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
                             }`}>
                               {model.name}
