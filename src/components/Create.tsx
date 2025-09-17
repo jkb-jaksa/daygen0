@@ -2020,13 +2020,13 @@ const Create: React.FC = () => {
                     
                     <div className="grid grid-cols-3 gap-3 w-full">
                     {gallery.filter(img => favorites.has(img.url)).map((img, idx) => (
-                      <div key={`fav-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
+                      <div key={`fav-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                         <img src={img.url} alt={img.prompt || `Liked ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                         
                         {/* Hover prompt overlay */}
                         {img.prompt && (
                           <div 
-                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
+                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                             style={{
                               background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                               backdropFilter: 'blur(12px)',
@@ -2182,13 +2182,13 @@ const Create: React.FC = () => {
                     
                     <div className="grid grid-cols-3 gap-3 w-full">
                     {gallery.map((img, idx) => (
-                      <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
+                      <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                         <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                         
                         {/* Hover prompt overlay */}
                         {img.prompt && (
                           <div 
-                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
+                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                             style={{
                               background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                               backdropFilter: 'blur(12px)',
@@ -2354,12 +2354,12 @@ const Create: React.FC = () => {
                     
                     <div className="grid grid-cols-3 gap-3 w-full">
                     {uploadedImages.map((upload, idx) => (
-                      <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
+                      <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                         <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
                         
                         {/* Upload info overlay */}
                         <div 
-                          className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
+                          className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                           style={{
                             background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                             backdropFilter: 'blur(12px)',
@@ -2461,7 +2461,7 @@ const Create: React.FC = () => {
                     ) : (
                       <div className="grid grid-cols-3 gap-3 w-full">
                         {folders.map((folder) => (
-                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
+                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
                         <div className="w-full aspect-square relative">
                           {folder.imageIds.length > 0 ? (
                             <div className="w-full h-full relative">
@@ -2581,13 +2581,13 @@ const Create: React.FC = () => {
                       const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
                       
                       return folderImages.map((img, idx) => (
-                        <div key={`folder-${folder.id}-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large">
+                        <div key={`folder-${folder.id}-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                           <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
+                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
@@ -2898,13 +2898,13 @@ const Create: React.FC = () => {
                     if (!isPlaceholder) {
                       const img = item as GeneratedImage;
                       return (
-                        <div key={`${img.url}-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200 parallax-large group">
+                        <div key={`${img.url}-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group">
                           <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { openImageAtIndex(idx); }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className={`absolute bottom-0 left-0 right-0 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10 ${
+                              className={`absolute bottom-0 left-0 right-0 transition-all duration-200 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               style={{
@@ -3566,10 +3566,10 @@ const Create: React.FC = () => {
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-8 pointer-events-none">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-in-out pointer-events-auto">
                       {renderHoverPrimaryActions(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
                     </div>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-out pointer-events-auto">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-in-out pointer-events-auto">
                       <button 
                         type="button" 
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
