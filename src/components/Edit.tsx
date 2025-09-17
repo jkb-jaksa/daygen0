@@ -1258,17 +1258,17 @@ export default function Edit() {
                     ? 'text-d-orange-1 border-d-orange-1' 
                     : 'text-d-white border-d-dark hover:border-d-orange-1'
                 }`}
-                title="Precise edit"
+                title="Draw a mask"
               >
                 <Wand2 className="w-4 h-4" />
-                Precise edit
+                Draw a mask
               </button>
 
               {/* Brush controls - only show when precise edit mode is active */}
               {isPreciseEditMode && (
                 <>
                   {/* Brush size control */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark bg-d-black/40">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark ${glass.base}`}>
                     <span className="text-d-white text-xs font-raleway">Size:</span>
                     <input
                       type="range"
@@ -1298,7 +1298,7 @@ export default function Edit() {
               <button
                 onClick={undoStroke}
                 disabled={allPaths.length === 0}
-                className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Undo last stroke"
               >
                 <Undo2 className="w-4 h-4" />
@@ -1308,7 +1308,7 @@ export default function Edit() {
               <button
                 onClick={redoStroke}
                 disabled={redoStack.length === 0}
-                className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Redo last stroke"
               >
                 <Redo2 className="w-4 h-4" />
