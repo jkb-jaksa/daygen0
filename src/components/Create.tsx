@@ -1181,10 +1181,11 @@ const Create: React.FC = () => {
           title="Animate"
           onClick={(event) => {
             event.stopPropagation();
+            setActiveCategory("video");
           }}
         >
           <Camera className="w-3.5 h-3.5" />
-          <span>Animate</span>
+          <span>Make video</span>
         </button>
       </div>
     );
@@ -3568,10 +3569,14 @@ const Create: React.FC = () => {
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-in-out pointer-events-auto">
+                    <div className={`transition-opacity duration-200 ease-in-out pointer-events-auto ${
+                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}>
                       {renderHoverPrimaryActions(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
                     </div>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-in-out pointer-events-auto">
+                    <div className={`flex items-center gap-0.5 transition-opacity duration-200 ease-in-out pointer-events-auto ${
+                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}>
                       <button 
                         type="button" 
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
