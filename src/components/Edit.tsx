@@ -508,7 +508,7 @@ export default function Edit() {
 
           {/* Uploaded Image Preview */}
           {previewUrl && (
-            <div className="w-full max-w-4xl mx-auto -mt-32">
+            <div className="w-full max-w-4xl mx-auto -mt-32 relative">
               <div className="relative transition-colors duration-200">
                 <div 
                   className="w-full h-[400px] relative"
@@ -570,12 +570,11 @@ export default function Edit() {
             </div>
           )}
 
-          {/* Image Size Controls - sticky positioned above Move button */}
+          {/* Image Size Controls - absolutely positioned to overlay over image */}
           {previewUrl && isMoveMode && (
-            <div className="sticky z-40 flex justify-center gap-2 mb-2" style={{ 
-              left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
-              right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
-              transform: 'none',
+            <div className="absolute z-50 flex justify-center gap-2" style={{ 
+              left: '50%',
+              transform: 'translateX(-50%)',
               width: 'auto',
               bottom: '10rem'
             }}>
