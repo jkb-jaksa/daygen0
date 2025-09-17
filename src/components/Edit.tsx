@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Pencil, Eraser, Undo2, Redo2 } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Eraser, Undo2, Redo2 } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -178,7 +178,6 @@ export default function Edit() {
   const [showBrushPreview, setShowBrushPreview] = useState<boolean>(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [allPaths, setAllPaths] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
-  const [undoStack, setUndoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
   const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
   
   // Refs
@@ -606,9 +605,6 @@ export default function Edit() {
     
     // Add current path to all paths if it has content
     if (currentPath.length > 1) {
-      // Save current state to undo stack before adding new stroke
-      setUndoStack(prev => [...prev, allPaths]);
-      
       setAllPaths(prev => [...prev, { 
         points: [...currentPath], 
         brushSize: brushSize, 
@@ -643,7 +639,6 @@ export default function Edit() {
     setMaskData(null);
     setCurrentPath([]);
     setAllPaths([]);
-    setUndoStack([]);
     setRedoStack([]);
   };
 
@@ -706,9 +701,6 @@ export default function Edit() {
     
     // Get the last state from redo stack
     const lastState = redoStack[redoStack.length - 1];
-    
-    // Save current state to undo stack
-    setUndoStack(prev => [...prev, allPaths]);
     
     // Restore the state
     setAllPaths(lastState);
