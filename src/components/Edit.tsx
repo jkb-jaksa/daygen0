@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -265,6 +265,12 @@ export default function Edit() {
     setIsMoveMode(!isMoveMode);
   };
 
+  // Reset image to default position and size
+  const resetImageToDefault = () => {
+    setImagePosition({ x: 0, y: 0 });
+    setImageSize(100);
+  };
+
   // Image drag handling functions (only work in move mode)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isMoveMode) return; // Only drag in move mode
@@ -514,7 +520,7 @@ export default function Edit() {
                   <img 
                     src={previewUrl} 
                     alt="Uploaded file preview" 
-                    className="w-full h-full object-cover select-none pointer-events-none"
+                    className="w-full h-full object-cover select-none pointer-events-none rounded-lg"
                     draggable={false}
                   />
                   
@@ -584,9 +590,18 @@ export default function Edit() {
                 </button>
                 
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
-                    {imageSize}%
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
+                      {imageSize}%
+                    </span>
+                    <button
+                      onClick={resetImageToDefault}
+                      className="p-1 text-d-white hover:text-d-orange-1 transition-colors duration-200"
+                      title="Reset to default position and size"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
                   <input
                     type="range"
                     min="10"
