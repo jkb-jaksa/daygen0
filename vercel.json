@@ -3,22 +3,7 @@
     "api/generate-image.ts": {
       "maxDuration": 30
     },
-    "api/ideogram/generate.ts": {
-      "maxDuration": 30
-    },
-    "api/runway/image.ts": {
-      "maxDuration": 30
-    },
-    "api/qwen/image.ts": {
-      "maxDuration": 30
-    },
-    "api/seedream/generate.ts": {
-      "maxDuration": 30
-    },
-    "api/chatgpt-image.ts": {
-      "maxDuration": 30
-    },
-    "api/reve/generate.ts": {
+    "api/unified-generate.ts": {
       "maxDuration": 30
     }
   },
