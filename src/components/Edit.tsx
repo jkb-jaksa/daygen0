@@ -1,16 +1,37 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
+import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
+import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
+import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
+import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
+import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
+import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
+import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 
-// AI Model data for Edit section - only Gemini 2.5 Flash Image Gen
+// AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
   { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview" },
+  { name: "FLUX Pro 1.1", desc: "High-quality text-to-image generation.", Icon: Wand2, accent: "blue" as const, id: "flux-pro-1.1" },
+  { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as const, id: "flux-pro-1.1-ultra" },
+  { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: EditIcon, accent: "violet" as const, id: "flux-kontext-pro" },
+  { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: EditIcon, accent: "purple" as const, id: "flux-kontext-max" },
+  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image" },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram" },
+  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as const, id: "qwen-image" },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4" },
+  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as const, id: "runway-gen4-turbo" },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0" },
+  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as const, id: "chatgpt-image" },
 ];
+
+const MAX_REFERENCE_IMAGES = 3;
+const ADDITIONAL_REFERENCE_LIMIT = MAX_REFERENCE_IMAGES - 1;
 
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -123,6 +144,16 @@ export default function Edit() {
   const [isDragging, setIsDragging] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
+  const referenceDisplayItems = useMemo(() => {
+    const items: { url: string; isPrimary: boolean; index?: number }[] = [];
+    if (previewUrl) {
+      items.push({ url: previewUrl, isPrimary: true });
+    }
+    referencePreviews.forEach((url, idx) => {
+      items.push({ url, isPrimary: false, index: idx });
+    });
+    return items;
+  }, [previewUrl, referencePreviews]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
   const [temperature, setTemperature] = useState(0.8);
@@ -144,7 +175,7 @@ export default function Edit() {
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Use the Gemini image generation hook
+  // Use all image generation hooks
   const {
     error: geminiError,
     generatedImage: geminiImage,
@@ -152,6 +183,113 @@ export default function Edit() {
     clearError: clearGeminiError,
     clearGeneratedImage: clearGeminiImage,
   } = useGeminiImageGeneration();
+
+  const {
+    error: fluxError,
+    generatedImage: fluxImage,
+    generateImage: generateFluxImage,
+    clearError: clearFluxError,
+    clearGeneratedImage: clearFluxImage,
+  } = useFluxImageGeneration();
+
+  const {
+    error: chatGPTError,
+    generatedImage: chatGPTImage,
+    generateImage: generateChatGPTImage,
+    clearError: clearChatGPTError,
+    clearGeneratedImage: clearChatGPTImage,
+  } = useChatGPTImageGeneration();
+
+  const {
+    error: ideogramError,
+    generatedImages: ideogramImages,
+    generateImage: generateIdeogramImage,
+    clearError: clearIdeogramError,
+    clearGeneratedImages: clearIdeogramImages,
+  } = useIdeogramImageGeneration();
+
+  const {
+    error: qwenError,
+    generatedImages: qwenImages,
+    generateImage: generateQwenImage,
+    clearError: clearQwenError,
+    clearGeneratedImages: clearQwenImages,
+  } = useQwenImageGeneration();
+
+  const {
+    error: runwayError,
+    generatedImage: runwayImage,
+    generateImage: generateRunwayImage,
+    clearError: clearRunwayError,
+    clearImage: clearRunwayImage,
+  } = useRunwayImageGeneration();
+
+  const {
+    error: seeDreamError,
+    generatedImage: seeDreamImage,
+    generateImage: generateSeeDreamImage,
+    clearError: clearSeeDreamError,
+    clearGeneratedImage: clearSeeDreamImage,
+  } = useSeeDreamImageGeneration();
+
+  const {
+    error: reveError,
+    generatedImage: reveImage,
+    generateImage: generateReveImage,
+    clearError: clearReveError,
+    clearGeneratedImage: clearReveImage,
+  } = useReveImageGeneration();
+
+  // Determine which model is selected and get the appropriate state
+  const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
+  const isFlux = selectedModel.startsWith("flux-");
+  const isChatGPT = selectedModel === "chatgpt-image";
+  const isIdeogram = selectedModel === "ideogram";
+  const isQwen = selectedModel === "qwen-image";
+  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
+  const isSeeDream = selectedModel === "seedream-3.0";
+  const isReve = selectedModel === "reve-image";
+
+  // Get the current error and generated image based on selected model
+  const currentError = isGemini ? geminiError : 
+                      isFlux ? fluxError :
+                      isChatGPT ? chatGPTError :
+                      isIdeogram ? ideogramError :
+                      isQwen ? qwenError :
+                      isRunway ? runwayError :
+                      isSeeDream ? seeDreamError :
+                      isReve ? reveError : null;
+
+  const currentGeneratedImage = isGemini ? geminiImage :
+                               isFlux ? fluxImage :
+                               isChatGPT ? chatGPTImage :
+                               isIdeogram ? (ideogramImages.length > 0 ? ideogramImages[0] : null) :
+                               isQwen ? (qwenImages.length > 0 ? qwenImages[0] : null) :
+                               isRunway ? runwayImage :
+                               isSeeDream ? seeDreamImage :
+                               isReve ? reveImage : null;
+
+  const clearCurrentError = () => {
+    if (isGemini) clearGeminiError();
+    else if (isFlux) clearFluxError();
+    else if (isChatGPT) clearChatGPTError();
+    else if (isIdeogram) clearIdeogramError();
+    else if (isQwen) clearQwenError();
+    else if (isRunway) clearRunwayError();
+    else if (isSeeDream) clearSeeDreamError();
+    else if (isReve) clearReveError();
+  };
+
+  const clearCurrentGeneratedImage = () => {
+    if (isGemini) clearGeminiImage();
+    else if (isFlux) clearFluxImage();
+    else if (isChatGPT) clearChatGPTImage();
+    else if (isIdeogram) clearIdeogramImages();
+    else if (isQwen) clearQwenImages();
+    else if (isRunway) clearRunwayImage();
+    else if (isSeeDream) clearSeeDreamImage();
+    else if (isReve) clearReveImage();
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -177,9 +315,9 @@ export default function Edit() {
   const handleGenerateImage = async () => {
     if (!prompt.trim() || !selectedFile) return;
     setIsButtonSpinning(true);
-    
+
     try {
-      // Convert the selected file to base64 for Gemini
+      // Convert the selected file to base64
       const imageData = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -187,7 +325,7 @@ export default function Edit() {
       });
 
       // Convert reference files to base64
-      const referenceImages = await Promise.all(referenceFiles.map(f => 
+      const additionalReferences = await Promise.all(referenceFiles.map(f =>
         new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
@@ -195,14 +333,71 @@ export default function Edit() {
         })
       ));
 
-      await generateGeminiImage({
-        prompt,
-        imageData: imageData,
-        references: referenceImages,
-        temperature,
-        topP,
-        outputLength: topK,
-      });
+      const allReferences = [imageData, ...additionalReferences];
+
+      // Generate image based on selected model
+      if (isGemini) {
+        await generateGeminiImage({
+          prompt,
+          imageData: imageData,
+          references: allReferences,
+          model: selectedModel,
+          temperature,
+          topP,
+          outputLength: topK,
+        });
+      } else if (isFlux) {
+        await generateFluxImage({
+          prompt,
+          model: selectedModel as any,
+          input_image: imageData,
+          input_image_2: additionalReferences[0],
+          input_image_3: additionalReferences[1],
+          input_image_4: additionalReferences[2],
+        });
+      } else if (isChatGPT) {
+        await generateChatGPTImage({
+          prompt,
+          size: '1024x1024',
+          quality: 'high',
+        });
+      } else if (isIdeogram) {
+        await generateIdeogramImage({
+          prompt,
+          aspect_ratio: '1:1',
+          rendering_speed: 'DEFAULT',
+          num_images: 1,
+        });
+      } else if (isQwen) {
+        await generateQwenImage({
+          prompt,
+          size: '1024x1024',
+          prompt_extend: true,
+          watermark: false,
+        });
+      } else if (isRunway) {
+        await generateRunwayImage({
+          prompt,
+          model: selectedModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
+          uiModel: selectedModel,
+          references: allReferences,
+          ratio: "1920:1080",
+        });
+      } else if (isSeeDream) {
+        await generateSeeDreamImage({
+          prompt,
+          size: "1024x1024",
+          n: 1,
+        });
+      } else if (isReve) {
+        await generateReveImage({
+          prompt,
+          model: "reve-image-1.0",
+          width: 1024,
+          height: 1024,
+          references: allReferences,
+        });
+      }
     } catch (error) {
       console.error('Error generating image:', error);
     } finally {
@@ -211,13 +406,13 @@ export default function Edit() {
   };
 
   const handleRefsClick = () => {
-    if (referenceFiles.length >= 2) return; // Don't allow more than 2 references
+    if (referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT) return; // Don't allow more than 2 extra references
     refFileInputRef.current?.click();
   };
 
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []).filter(f => f.type.startsWith('image/'));
-    const combined = [...referenceFiles, ...files].slice(0, 2); // Limit to 2 references
+    const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT); // Limit to extra references only
     setReferenceFiles(combined);
     // create previews
     const readers = combined.map(f => URL.createObjectURL(f));
@@ -359,9 +554,9 @@ export default function Edit() {
       if (files.length === 0) return;
       
       // Add to reference files (same logic as handleRefsSelected)
-      const combined = [...referenceFiles, ...files].slice(0, 2); // Limit to 2 references
+      const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT); // Limit to extra references only
       setReferenceFiles(combined);
-      
+
       // Create previews
       const readers = combined.map(f => URL.createObjectURL(f));
       setReferencePreviews(readers);
@@ -656,16 +851,16 @@ export default function Edit() {
           )}
 
           {/* Generated Image Display */}
-          {geminiImage && (
+          {currentGeneratedImage && (
             <div className="w-full max-w-lg mx-auto mt-4">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
                 <img 
-                  src={geminiImage.url} 
+                  src={currentGeneratedImage.url} 
                   alt="Generated image" 
                   className="w-full h-64 object-cover"
                 />
                 <button
-                  onClick={() => clearGeminiImage()}
+                  onClick={() => clearCurrentGeneratedImage()}
                   className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
@@ -678,17 +873,17 @@ export default function Edit() {
           )}
 
           {/* Error Display */}
-          {geminiError && (
+          {currentError && (
             <div className="w-full max-w-lg mx-auto mt-4">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-red-500/50">
                 <button
-                  onClick={() => clearGeminiError()}
+                  onClick={() => clearCurrentError()}
                   className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
                 <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
-                  Error: {geminiError}
+                  Error: {currentError}
                 </div>
               </div>
             </div>
@@ -709,11 +904,11 @@ export default function Edit() {
             e.preventDefault(); 
             setIsDragging(false); 
             const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); 
-            if (files.length) { 
-              const combined = [...referenceFiles, ...files].slice(0, 2); 
-              setReferenceFiles(combined); 
-              const readers = combined.map(f => URL.createObjectURL(f)); 
-              setReferencePreviews(readers); 
+            if (files.length) {
+              const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT);
+              setReferenceFiles(combined);
+              const readers = combined.map(f => URL.createObjectURL(f));
+              setReferencePreviews(readers);
             } 
           }}
         >
@@ -754,8 +949,8 @@ export default function Edit() {
               onClick={handleRefsClick}
               title="Add reference image"
               aria-label="Add reference image"
-              disabled={referenceFiles.length >= 2}
-              className={`${referenceFiles.length >= 2 ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
+              disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -855,31 +1050,37 @@ export default function Edit() {
           </div>
           
           {/* Reference images display - to the right of buttons */}
-          {referencePreviews.length > 0 && (
+          {referenceDisplayItems.length > 0 && (
             <div className="flex items-center gap-2">
-              <div className="text-base text-d-white/80 font-raleway">Reference ({referencePreviews.length}/2):</div>
+              <div className="text-base text-d-white/80 font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
               <div className="flex items-center gap-1.5">
-                {referencePreviews.map((url, idx) => (
-                  <div key={idx} className="relative group">
-                    <img 
-                      src={url} 
-                      alt={`Reference ${idx+1}`} 
-                      className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200" 
+                {referenceDisplayItems.map((item, idx) => (
+                  <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
+                    <img
+                      src={item.url}
+                      alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
+                      className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
                       onClick={() => {
-                        setSelectedFullImage(url);
+                        setSelectedFullImage(item.url);
                         setIsFullSizeOpen(true);
                       }}
                     />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearReference(idx);
-                      }}
-                      className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
-                      title="Remove reference"
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
+                    {item.isPrimary ? (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-[10px] font-cabin uppercase tracking-wide text-d-orange-1">Base</span>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof item.index === 'number') {
+                            clearReference(item.index);
+                          }
+                        }}
+                        className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
+                        title="Remove reference"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
