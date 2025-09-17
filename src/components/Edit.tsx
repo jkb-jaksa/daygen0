@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Pencil, Eraser } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Pencil, Eraser, Undo2, Redo2 } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -172,12 +172,14 @@ export default function Edit() {
   const [isPreciseEditMode, setIsPreciseEditMode] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [maskData, setMaskData] = useState<string | null>(null);
-  const [brushSize, setBrushSize] = useState<number>(35);
+  const [brushSize, setBrushSize] = useState<number>(60);
   const [isEraseMode, setIsEraseMode] = useState<boolean>(false);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showBrushPreview, setShowBrushPreview] = useState<boolean>(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
-  const [allPaths, setAllPaths] = useState<{ x: number; y: number }[][]>([]);
+  const [allPaths, setAllPaths] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
+  const [undoStack, setUndoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
+  const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -542,23 +544,31 @@ export default function Edit() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Clear the canvas
+    // Clear the canvas completely
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Set up drawing style
-    ctx.strokeStyle = isEraseMode ? 'rgba(0, 0, 0, 0)' : 'rgba(250, 170, 22, 0.75)';
+    // Draw all completed paths first
+    ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
     ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.globalCompositeOperation = isEraseMode ? 'destination-out' : 'source-over';
+    ctx.globalCompositeOperation = 'source-over';
     
-    // Draw all completed paths
-    allPaths.forEach(path => {
-      if (path.length > 0) {
+    allPaths.forEach(pathData => {
+      if (pathData.points.length > 0) {
+        ctx.lineWidth = pathData.brushSize;
+        if (pathData.isErase) {
+          // For erase paths, use destination-out to remove pixels
+          ctx.globalCompositeOperation = 'destination-out';
+        } else {
+          // For draw paths, use source-over to add pixels
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        
         ctx.beginPath();
-        ctx.moveTo(path[0].x, path[0].y);
-        for (let i = 1; i < path.length; i++) {
-          ctx.lineTo(path[i].x, path[i].y);
+        ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
+        for (let i = 1; i < pathData.points.length; i++) {
+          ctx.lineTo(pathData.points[i].x, pathData.points[i].y);
         }
         ctx.stroke();
       }
@@ -566,6 +576,13 @@ export default function Edit() {
     
     // Draw the current path being drawn
     if (currentPath.length > 0) {
+      ctx.lineWidth = brushSize;
+      if (isEraseMode) {
+        ctx.globalCompositeOperation = 'destination-out';
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      
       ctx.beginPath();
       ctx.moveTo(currentPath[0].x, currentPath[0].y);
       for (let i = 1; i < currentPath.length; i++) {
@@ -573,6 +590,11 @@ export default function Edit() {
       }
       ctx.stroke();
     }
+    
+    // Apply the mask color to all non-erased areas
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = 'rgba(250, 170, 22, 0.75)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, [allPaths, currentPath, brushSize, isEraseMode]);
 
   const stopDrawing = () => {
@@ -584,14 +606,27 @@ export default function Edit() {
     
     // Add current path to all paths if it has content
     if (currentPath.length > 1) {
-      setAllPaths(prev => [...prev, [...currentPath]]);
+      // Save current state to undo stack before adding new stroke
+      setUndoStack(prev => [...prev, allPaths]);
+      
+      setAllPaths(prev => [...prev, { 
+        points: [...currentPath], 
+        brushSize: brushSize, 
+        isErase: isEraseMode 
+      }]);
+      
+      // Clear redo stack when new action is performed
+      setRedoStack([]);
     }
     
     // Clear current path
     setCurrentPath([]);
     
-    // Save the mask data after a brief delay to ensure state is updated
+    // Immediately redraw the entire canvas with consistent opacity
+    // This ensures all strokes have the same opacity regardless of overlap
     setTimeout(() => {
+      redrawCanvas();
+      // Save the mask data after redraw
       const maskDataUrl = canvas.toDataURL();
       setMaskData(maskDataUrl);
     }, 0);
@@ -608,6 +643,121 @@ export default function Edit() {
     setMaskData(null);
     setCurrentPath([]);
     setAllPaths([]);
+    setUndoStack([]);
+    setRedoStack([]);
+  };
+
+  const undoStroke = () => {
+    if (allPaths.length === 0) return;
+    
+    // Save current state to redo stack
+    setRedoStack(prev => [...prev, allPaths]);
+    
+    // Remove last stroke
+    const newPaths = allPaths.slice(0, -1);
+    setAllPaths(newPaths);
+    
+    // Update mask data immediately without setTimeout
+    const canvas = canvasRef.current;
+    if (canvas) {
+      // Clear and redraw immediately
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw all remaining paths
+        ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'source-over';
+        
+        newPaths.forEach(pathData => {
+          if (pathData.points.length > 0) {
+            ctx.lineWidth = pathData.brushSize;
+            if (pathData.isErase) {
+              ctx.globalCompositeOperation = 'destination-out';
+            } else {
+              ctx.globalCompositeOperation = 'source-over';
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
+            for (let i = 1; i < pathData.points.length; i++) {
+              ctx.lineTo(pathData.points[i].x, pathData.points[i].y);
+            }
+            ctx.stroke();
+          }
+        });
+        
+        // Apply the mask color
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = 'rgba(250, 170, 22, 0.75)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const maskDataUrl = canvas.toDataURL();
+        setMaskData(maskDataUrl);
+      }
+    }
+  };
+
+  const redoStroke = () => {
+    if (redoStack.length === 0) return;
+    
+    // Get the last state from redo stack
+    const lastState = redoStack[redoStack.length - 1];
+    
+    // Save current state to undo stack
+    setUndoStack(prev => [...prev, allPaths]);
+    
+    // Restore the state
+    setAllPaths(lastState);
+    
+    // Remove from redo stack
+    setRedoStack(prev => prev.slice(0, -1));
+    
+    // Update mask data immediately without setTimeout
+    const canvas = canvasRef.current;
+    if (canvas) {
+      // Clear and redraw immediately
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw all paths
+        ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'source-over';
+        
+        lastState.forEach(pathData => {
+          if (pathData.points.length > 0) {
+            ctx.lineWidth = pathData.brushSize;
+            if (pathData.isErase) {
+              ctx.globalCompositeOperation = 'destination-out';
+            } else {
+              ctx.globalCompositeOperation = 'source-over';
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
+            for (let i = 1; i < pathData.points.length; i++) {
+              ctx.lineTo(pathData.points[i].x, pathData.points[i].y);
+            }
+            ctx.stroke();
+          }
+        });
+        
+        // Apply the mask color
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = 'rgba(250, 170, 22, 0.75)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const maskDataUrl = canvas.toDataURL();
+        setMaskData(maskDataUrl);
+      }
+    }
   };
 
   const toggleEraseMode = () => {
@@ -616,7 +766,7 @@ export default function Edit() {
 
   // Brush preview functions
   const handleBrushMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isPreciseEditMode) return;
+    if (!isPreciseEditMode || isMoveMode) return;
     
     const target = e.currentTarget;
     const rect = target.getBoundingClientRect();
@@ -723,6 +873,26 @@ export default function Edit() {
     enabled: !isButtonSpinning,
     onGenerate: handleGenerateImage,
   });
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        if (event.key === 'z' && !event.shiftKey) {
+          event.preventDefault();
+          undoStroke();
+        } else if (event.key === 'y' || (event.key === 'z' && event.shiftKey)) {
+          event.preventDefault();
+          redoStroke();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [allPaths, redoStack]);
 
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -940,23 +1110,25 @@ export default function Edit() {
                     />
                   )}
 
-                  {/* Mask drawing canvas - only visible in precise edit mode */}
+                  {/* Mask drawing canvas - visible when precise edit mode is active */}
                   {isPreciseEditMode && (
                     <canvas
                       ref={canvasRef}
-                      className="absolute inset-0 w-full h-full z-20 cursor-crosshair"
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
+                      className={`absolute inset-0 w-full h-full z-20 ${
+                        isMoveMode ? 'pointer-events-none' : 'cursor-crosshair'
+                      }`}
+                      onMouseDown={isMoveMode ? undefined : startDrawing}
+                      onMouseMove={isMoveMode ? undefined : draw}
+                      onMouseUp={isMoveMode ? undefined : stopDrawing}
+                      onMouseLeave={isMoveMode ? undefined : stopDrawing}
+                      onTouchStart={isMoveMode ? undefined : startDrawing}
+                      onTouchMove={isMoveMode ? undefined : draw}
+                      onTouchEnd={isMoveMode ? undefined : stopDrawing}
                     />
                   )}
 
-                  {/* Brush preview circle - only visible in precise edit mode */}
-                  {isPreciseEditMode && showBrushPreview && (
+                  {/* Brush preview circle - only visible in precise edit mode and not in move mode */}
+                  {isPreciseEditMode && !isMoveMode && showBrushPreview && (
                     <div
                       className="absolute pointer-events-none z-30 border-2 border-d-orange-1 rounded-full"
                       style={{
@@ -964,7 +1136,7 @@ export default function Edit() {
                         top: mousePosition.y - brushSize / 2,
                         width: brushSize,
                         height: brushSize,
-                        borderColor: isEraseMode ? '#ef4444' : '#faaa16',
+                        borderColor: isEraseMode ? '#faaa16' : '#faaa16',
                         opacity: 0.8
                       }}
                     />
@@ -1081,10 +1253,10 @@ export default function Edit() {
                     ? 'text-d-orange-1 border-d-orange-1' 
                     : 'text-d-white border-d-dark hover:border-d-orange-1'
                 }`}
-                title="Edit with prompt"
+                title="Text prompt only"
               >
                 <EditIcon className="w-4 h-4" />
-                Edit with prompt
+                Text prompt only
               </button>
               
               <button
@@ -1103,32 +1275,18 @@ export default function Edit() {
               {/* Brush controls - only show when precise edit mode is active */}
               {isPreciseEditMode && (
                 <>
-                  {/* Erase mode toggle */}
-                  <button
-                    onClick={toggleEraseMode}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
-                      isEraseMode 
-                        ? 'text-red-300 border-red-500/50 bg-red-500/20' 
-                        : 'text-d-white border-d-dark hover:border-d-orange-1'
-                    }`}
-                    title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
-                  >
-                    {isEraseMode ? <Eraser className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                    {isEraseMode ? 'Erase' : 'Draw'}
-                  </button>
-
                   {/* Brush size control */}
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark bg-d-black/40">
                     <span className="text-d-white text-xs font-raleway">Size:</span>
                     <input
                       type="range"
                       min="2"
-                      max="100"
+                      max="200"
                       value={brushSize}
                       onChange={(e) => setBrushSize(Number(e.target.value))}
                       className="w-16 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
                       style={{
-                        background: `linear-gradient(to right, #faaa16 0%, #faaa16 ${(brushSize - 2) / 98 * 100}%, rgba(250, 170, 22, 0.3) ${(brushSize - 2) / 98 * 100}%, rgba(250, 170, 22, 0.3) 100%)`,
+                        background: `linear-gradient(to right, #faaa16 0%, #faaa16 ${(brushSize - 2) / 198 * 100}%, rgba(250, 170, 22, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(250, 170, 22, 0.3) 100%)`,
                         WebkitAppearance: 'none',
                         appearance: 'none',
                         height: '4px',
@@ -1144,15 +1302,47 @@ export default function Edit() {
                 </>
               )}
 
+              {/* Undo button */}
+              <button
+                onClick={undoStroke}
+                disabled={allPaths.length === 0}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Undo last stroke"
+              >
+                <Undo2 className="w-4 h-4" />
+              </button>
+
+              {/* Redo button */}
+              <button
+                onClick={redoStroke}
+                disabled={redoStack.length === 0}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Redo last stroke"
+              >
+                <Redo2 className="w-4 h-4" />
+              </button>
+
+              {/* Erase toggle */}
+              <button
+                onClick={toggleEraseMode}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} ${
+                  isEraseMode 
+                    ? 'text-d-orange-1 border-d-orange-1 bg-d-orange-1/20' 
+                    : 'text-d-white border-d-dark hover:text-d-orange-1'
+                }`}
+                title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
+              >
+                <Eraser className="w-3.5 h-3.5" />
+              </button>
+
               {/* Clear mask button - only show when mask exists */}
               {maskData && (
                 <button
                   onClick={clearMask}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30 hover:border-red-500/50 font-raleway text-sm"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 bg-d-orange-1/20 text-d-white border-d-orange-1/30 hover:bg-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1"
                   title="Clear mask"
                 >
                   <X className="w-4 h-4" />
-                  Clear mask
                 </button>
               )}
             </div>
