@@ -73,7 +73,7 @@ const ModelMenuPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-80 overflow-y-auto"
+      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
     >
       {children}
     </div>,
@@ -766,7 +766,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid hover:border-d-orange-1 flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-200 gap-2 group"
+                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid hover:border-d-orange-1 flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-100 gap-2 group"
               >
                 {(() => {
                   const currentModel = getCurrentModel();
