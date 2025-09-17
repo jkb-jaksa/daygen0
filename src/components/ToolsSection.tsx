@@ -20,7 +20,7 @@ import {
   Leaf,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { layout, text, cards, buttons } from "../styles/designSystem";
+import { layout, cards, buttons } from "../styles/designSystem";
 
 // --- Minimal card + layout utilities ---
 const cx = (...classes: Array<string | undefined | false>) =>
