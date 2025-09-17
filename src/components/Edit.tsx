@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Minus, Move, Maximize2 } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -83,6 +83,36 @@ const ModelMenuPortal: React.FC<{
 
 // Main Component
 export default function Edit() {
+  // Add CSS for orange slider thumb
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #faaa16;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #faaa16;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -106,7 +136,6 @@ export default function Edit() {
   const [imagePosition, setImagePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isImageDragging, setIsImageDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isResizeMode, setIsResizeMode] = useState<boolean>(false);
   const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   
   // Refs
@@ -222,44 +251,55 @@ export default function Edit() {
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
 
-  // Image size control functions
+  // Image resize functions (only work in move mode)
   const increaseImageSize = () => {
-    setImageSize(prev => Math.min(prev + 10, 200)); // Max 200%
+    setImageSize(prev => Math.min(prev + 10, 2000)); // Max 2000%
   };
 
   const decreaseImageSize = () => {
-    setImageSize(prev => Math.max(prev - 10, 20)); // Min 20%
+    setImageSize(prev => Math.max(prev - 10, 1)); // Min 1%
   };
 
   // Mode toggle functions
-  const toggleResizeMode = () => {
-    setIsResizeMode(!isResizeMode);
-    setIsMoveMode(false); // Disable move mode when enabling resize
-  };
-
   const toggleMoveMode = () => {
     setIsMoveMode(!isMoveMode);
-    setIsResizeMode(false); // Disable resize mode when enabling move
   };
 
   // Image drag handling functions (only work in move mode)
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isMoveMode || e.target === e.currentTarget) return; // Only drag in move mode
+    if (!isMoveMode) return; // Only drag in move mode
+    e.preventDefault();
     setIsImageDragging(true);
     setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isImageDragging || !isMoveMode) return;
+    e.preventDefault();
     setImagePosition({
       x: e.clientX - dragStart.x,
       y: e.clientY - dragStart.y
     });
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!isImageDragging) return;
+    e.preventDefault();
     setIsImageDragging(false);
   };
+
+  // Add document event listeners for dragging
+  useEffect(() => {
+    if (isImageDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isImageDragging, dragStart, isMoveMode]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMoveMode || e.touches.length !== 1) return;
@@ -462,41 +502,13 @@ export default function Edit() {
 
           {/* Uploaded Image Preview */}
           {previewUrl && (
-            <div className="w-full max-w-4xl mx-auto -mt-20">
-              <div 
-                className="relative transition-colors duration-200"
-                style={{ 
-                  backgroundColor: imageSize < 100 ? 'transparent' : '#1a1a1a',
-                  overflow: imageSize < 100 ? 'hidden' : 'visible'
-                }}
-                onWheel={(e) => {
-                  // Only respond to trackpad pinch gestures (when ctrlKey is pressed)
-                  if (e.ctrlKey) {
-                    e.preventDefault();
-                    if (e.deltaY < 0) {
-                      increaseImageSize();
-                    } else {
-                      decreaseImageSize();
-                    }
-                  }
-                }}
-              >
+            <div className="w-full max-w-4xl mx-auto -mt-32">
+              <div className="relative transition-colors duration-200">
                 <div 
                   className="w-full h-[400px] relative"
                   style={{ 
                     transform: `scale(${imageSize / 100}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                    cursor: isImageDragging ? 'grabbing' : (isMoveMode ? 'grab' : (isResizeMode ? 'nw-resize' : 'pointer'))
-                  }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  onDoubleClick={() => {
-                    setSelectedFullImage(previewUrl);
-                    setIsFullSizeOpen(true);
+                    transformOrigin: 'center center'
                   }}
                 >
                   <img 
@@ -504,6 +516,41 @@ export default function Edit() {
                     alt="Uploaded file preview" 
                     className="w-full h-full object-cover select-none pointer-events-none"
                     draggable={false}
+                  />
+                  
+                  {/* Draggable overlay - only visible in move mode */}
+                  {isMoveMode && (
+                    <div
+                      className="absolute inset-0 w-full h-full z-10"
+                      style={{ 
+                        cursor: isImageDragging ? 'grabbing' : 'grab'
+                      }}
+                      onWheel={(e) => {
+                        // Only resize with Ctrl+scroll (two-finger pinch gesture)
+                        if (e.ctrlKey) {
+                          e.preventDefault();
+                          if (e.deltaY < 0) {
+                            increaseImageSize();
+                          } else {
+                            decreaseImageSize();
+                          }
+                        }
+                      }}
+                      onMouseDown={handleMouseDown}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    />
+                  )}
+                  
+                  {/* Double-click handler for full-size view */}
+                  <div
+                    className="absolute inset-0 w-full h-full"
+                    onDoubleClick={() => {
+                      setSelectedFullImage(previewUrl);
+                      setIsFullSizeOpen(true);
+                    }}
+                    style={{ pointerEvents: isMoveMode ? 'none' : 'auto' }}
                   />
                   <button
                     onClick={handleDeleteImage}
@@ -513,34 +560,86 @@ export default function Edit() {
                   </button>
                 </div>
                 
-                {/* Image Size Controls - only show in resize mode */}
-                {isResizeMode && (
-                  <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-d-black/80 rounded-lg p-2">
-                    <button
-                      onClick={decreaseImageSize}
-                      disabled={imageSize <= 20}
-                      className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Decrease size"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
-                      {imageSize}%
-                    </span>
-                    <button
-                      onClick={increaseImageSize}
-                      disabled={imageSize >= 200}
-                      className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Increase size"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           )}
 
+          {/* Image Size Controls - sticky positioned above Move button */}
+          {previewUrl && isMoveMode && (
+            <div className="sticky z-40 flex justify-center gap-2 mb-2" style={{ 
+              left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
+              right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
+              transform: 'none',
+              width: 'auto',
+              bottom: '10rem'
+            }}>
+              <div className="flex justify-between items-center rounded-lg px-8 py-2 willchange-backdrop isolate backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark" style={{ minWidth: '320px' }}>
+                <button
+                  onClick={decreaseImageSize}
+                  disabled={imageSize <= 1}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.base} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  title="Decrease size"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
+                    {imageSize}%
+                  </span>
+                  <input
+                    type="range"
+                    min="10"
+                    max="2000"
+                    step="10"
+                    value={imageSize}
+                    onChange={(e) => setImageSize(Number(e.target.value))}
+                    className="w-40 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #faaa16 0%, #faaa16 ${(imageSize - 10) / 19.9 * 100}%, rgba(250, 170, 22, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(250, 170, 22, 0.3) 100%)`,
+                      WebkitAppearance: 'none',
+                      appearance: 'none',
+                      height: '4px',
+                      outline: 'none',
+                      borderRadius: '5px'
+                    }}
+                    title="Adjust image size"
+                  />
+                </div>
+                
+                <button
+                  onClick={increaseImageSize}
+                  disabled={imageSize >= 2000}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.base} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  title="Increase size"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mode Toggle Buttons - fixed positioned above prompt bar */}
+          {previewUrl && (
+            <div className="fixed bottom-36 left-1/2 transform -translate-x-1/2 z-50 flex justify-center gap-2" style={{ 
+              left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
+              right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
+              transform: 'none',
+              width: 'auto'
+            }}>
+              <button
+                onClick={toggleMoveMode}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                  isMoveMode 
+                    ? 'text-d-orange-1 border-d-orange-1' 
+                    : 'text-d-white border-d-dark hover:border-d-orange-1'
+                }`}
+                title="Toggle move mode"
+              >
+                <Move className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Generated Image Display */}
           {geminiImage && (
@@ -584,35 +683,6 @@ export default function Edit() {
       </header>
 
 
-      {/* Mode Toggle Buttons - positioned right above prompt bar */}
-      {previewUrl && (
-        <div className="fixed z-30 flex justify-center gap-4" style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '6rem' }}>
-          <button
-            onClick={toggleResizeMode}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors duration-200 ${
-              isResizeMode 
-                ? 'bg-d-orange-1 text-d-white border-d-orange-1' 
-                : 'bg-d-black/40 text-d-white border-d-mid hover:bg-d-mid'
-            }`}
-            title="Toggle resize mode"
-          >
-            <Maximize2 className="w-2.5 h-2.5" />
-            Resize
-          </button>
-          <button
-            onClick={toggleMoveMode}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors duration-200 ${
-              isMoveMode 
-                ? 'bg-d-orange-1 text-d-white border-d-orange-1' 
-                : 'bg-d-black/40 text-d-white border-d-mid hover:bg-d-mid'
-            }`}
-            title="Toggle move mode"
-          >
-            <Move className="w-2.5 h-2.5" />
-            Move
-          </button>
-        </div>
-      )}
 
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
