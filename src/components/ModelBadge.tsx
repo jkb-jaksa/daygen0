@@ -153,7 +153,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
             <img 
               src={getToolLogo(config.name)!} 
               alt={`${config.name} logo`}
-              className="w-3 h-3 object-contain rounded flex-shrink-0"
+              className="w-4 h-4 object-contain rounded flex-shrink-0"
             />
           ) : (
             <span className="text-xs leading-none">

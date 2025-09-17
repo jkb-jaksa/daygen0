@@ -482,8 +482,8 @@ export default function Edit() {
                 onPaste={handleUploadPaste}
               >
                 <Upload className="w-16 h-16 text-d-white/40 mx-auto mb-4" />
-                <p className="text-lg font-cabin text-d-text mb-2">Upload your image</p>
-                <p className="text-sm font-raleway text-d-white mb-6">
+                <p className="text-xl font-cabin text-d-text mb-2">Upload your image</p>
+                <p className="text-base font-raleway text-d-white mb-6">
                   Click anywhere, drag and drop, or paste your image to get started
                 </p>
                 
@@ -671,7 +671,7 @@ export default function Edit() {
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <div className="px-4 py-3 bg-d-black/80 text-d-white text-sm text-center">
+                <div className="px-4 py-3 bg-d-black/80 text-d-white text-base text-center">
                   Generated with {getCurrentModel().name}
                 </div>
               </div>
@@ -727,7 +727,7 @@ export default function Edit() {
             onKeyDown={onKeyDown}
             onPaste={handlePaste}
             rows={2}
-            className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
+            className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
           />
         </div>
         <div className="absolute right-4 bottom-4 flex items-center gap-2">
@@ -784,7 +784,7 @@ export default function Edit() {
                     return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
                   }
                 })()}
-                <span className="text-xs font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}
@@ -821,12 +821,12 @@ export default function Edit() {
                         }`} />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className={`text-xs font-cabin truncate transition-colors duration-100 ${
+                        <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
                           isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                         }`}>
                           {model.name}
                         </div>
-                        <div className={`text-[10px] font-raleway truncate transition-colors duration-100 ${
+                        <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                           isSelected ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
                         }`}>
                           {model.desc}
@@ -858,7 +858,7 @@ export default function Edit() {
           {/* Reference images display - to the right of buttons */}
           {referencePreviews.length > 0 && (
             <div className="flex items-center gap-2">
-              <div className="text-sm text-d-white/80 font-raleway">Reference ({referencePreviews.length}/2):</div>
+              <div className="text-base text-d-white/80 font-raleway">Reference ({referencePreviews.length}/2):</div>
               <div className="flex items-center gap-1.5">
                 {referencePreviews.map((url, idx) => (
                   <div key={idx} className="relative group">
@@ -897,7 +897,7 @@ export default function Edit() {
               {/* Temperature */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-d-white font-raleway">Temperature</label>
+                  <label className="text-sm text-d-white font-raleway">Temperature</label>
                   <span className="text-xs text-d-orange-1 font-mono">{temperature}</span>
                 </div>
                 <input
@@ -914,7 +914,7 @@ export default function Edit() {
               {/* Top P */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-d-white font-raleway">Top P</label>
+                  <label className="text-sm text-d-white font-raleway">Top P</label>
                   <span className="text-xs text-d-orange-1 font-mono">{topP}</span>
                 </div>
                 <input
@@ -931,7 +931,7 @@ export default function Edit() {
               {/* Top K */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-d-white font-raleway">Top K</label>
+                  <label className="text-sm text-d-white font-raleway">Top K</label>
                   <span className="text-xs text-d-orange-1 font-mono">{topK}</span>
                 </div>
                 <input

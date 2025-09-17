@@ -135,15 +135,15 @@ export default function Navbar() {
         ref={navRef}
         className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
       >
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-sm min-h-[3.5rem]">
+        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base min-h-[3.5rem]">
           <div className="flex items-center gap-6 md:gap-8">
             <img
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-mid h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-mid h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-raleway">
+            <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-cabin">
               {items.map((item) => {
                 const path =
                   item === "create" ? "/create" : 
@@ -167,7 +167,7 @@ export default function Navbar() {
               })}
             </div>
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1 md:gap-2">
             {!user ? (
               <>
                 <button className={`${buttons.secondary} btn-compact parallax-small`} onClick={()=>setShowAuth("login")}>
@@ -208,12 +208,12 @@ export default function Navbar() {
                       {(user.name || user.email)[0]?.toUpperCase()}
                     </span>
                   )}
-                  <span className="hidden sm:inline font-raleway text-sm py-0.5">{user.name || user.email}</span>
+                  <span className="hidden sm:inline font-cabin text-base py-0.5">{user.name || user.email}</span>
                 </button>
               </div>
             )}
             <button aria-label="Search" className="parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
-              <Search className="size-4" />
+              <Search className="size-5" />
             </button>
           </div>
         </div>
@@ -228,10 +228,10 @@ export default function Navbar() {
           className="glass-liquid willchange-backdrop isolate border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200"
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
-          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-sm text-d-text">
+          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
-                <div className="text-sm font-light font-cabin mb-4">
+                <div className="text-base font-light font-cabin mb-4">
                   {activeMenu}
                 </div>
                 {activeMenu === "create" ? (
@@ -246,7 +246,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
                           <category.Icon className="size-3.5" />
@@ -268,7 +268,7 @@ export default function Navbar() {
                         key={category.key}
                         to="/edit"
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
                           <category.Icon className="size-3.5" />
@@ -278,7 +278,7 @@ export default function Navbar() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm font-raleway text-d-white/85">Coming soon.</div>
+                  <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
                 )}
               </div>
             )}
@@ -302,14 +302,14 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className="rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-sm text-d-text shadow-xl transition-colors duration-200 py-2"
+            className="rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-base text-d-text shadow-xl transition-colors duration-200 py-2"
           >
             <button
               onClick={() => {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               My account
@@ -320,7 +320,7 @@ export default function Navbar() {
                 signOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               Sign out

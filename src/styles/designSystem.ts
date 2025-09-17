@@ -23,8 +23,8 @@ export const cards = {
 };
 
 export const buttons = {
-  primary: "btn btn-orange font-raleway text-sm gap-2",
-  secondary: "btn btn-white font-raleway text-sm gap-2",
+  primary: "btn btn-orange font-cabin text-base gap-2",
+  secondary: "btn btn-white font-cabin text-base gap-2",
   ghost: "inline-flex h-10 items-center justify-center gap-2 rounded-full border border-d-mid bg-d-black/40 px-4 text-sm font-raleway text-d-white transition-colors duration-200 hover:border-d-light hover:text-brand",
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-brand",
   pillWarm: "inline-flex items-center justify-center gap-2 rounded-full bg-[var(--d-orange-1)] px-3 py-1.5 text-xs font-raleway font-medium text-b-black transition-colors duration-200 hover:bg-[#ffb833]",

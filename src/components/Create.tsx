@@ -312,7 +312,7 @@ const Create: React.FC = () => {
     <div className="relative inline-flex items-center group">
       {children}
       {text && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
           {text}
         </div>
       )}
@@ -1664,10 +1664,10 @@ const Create: React.FC = () => {
             <div className="text-center">
               <div className="mb-4">
                 <Trash2 className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
-                <h3 className="text-lg font-cabin text-d-text mb-2">
+                <h3 className="text-xl font-cabin text-d-text mb-2">
                   {deleteConfirmation.folderId ? 'Delete Folder' : 'Delete Image'}
                 </h3>
-                <p className="text-sm text-d-white font-raleway">
+                <p className="text-base text-d-white font-raleway">
                   {deleteConfirmation.folderId 
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : 'Are you sure you want to delete this image? This action cannot be undone.'
@@ -1700,8 +1700,8 @@ const Create: React.FC = () => {
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
-                <h3 className="text-lg font-cabin text-d-text mb-2">Create New Folder</h3>
-                <p className="text-sm text-d-white font-raleway mb-4">
+                <h3 className="text-xl font-cabin text-d-text mb-2">Create New Folder</h3>
+                <p className="text-base text-d-white font-raleway mb-4">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -1761,8 +1761,8 @@ const Create: React.FC = () => {
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
-                <h3 className="text-lg font-cabin text-d-text mb-2">Manage Folders</h3>
-                <p className="text-sm text-d-white font-raleway mb-4">
+                <h3 className="text-xl font-cabin text-d-text mb-2">Manage Folders</h3>
+                <p className="text-base text-d-white font-raleway mb-4">
                   Check folders to add or remove this image from.
                 </p>
               </div>
@@ -1771,7 +1771,7 @@ const Create: React.FC = () => {
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
                     <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
-                    <p className="text-sm text-d-white/50 mb-4">No folders available</p>
+                    <p className="text-base text-d-white/50 mb-4">No folders available</p>
                     <button
                       onClick={() => {
                         setReturnToFolderDialog(true);
@@ -1907,7 +1907,7 @@ const Create: React.FC = () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
@@ -1946,7 +1946,7 @@ const Create: React.FC = () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
@@ -1969,7 +1969,7 @@ const Create: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setNewFolderDialog(true)}
-                    className="parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                    className="parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                   >
                     <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
                       <FolderPlus className="size-3.5" />
@@ -1981,7 +1981,7 @@ const Create: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMyFoldersClick}
-                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
                       activeCategory === "my-folders" ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                     }`}
                     aria-pressed={activeCategory === "my-folders"}
@@ -2001,7 +2001,7 @@ const Create: React.FC = () => {
             </div>
           </div>
           {/* Gallery - compressed to avoid overlap with left menu */}
-          <div className="w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
+          <div className="w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
             <div className="w-full mb-4" ref={galleryRef}>
 
               {/* Liked View */}
@@ -2011,7 +2011,7 @@ const Create: React.FC = () => {
                   <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2026,7 +2026,7 @@ const Create: React.FC = () => {
                         {/* Hover prompt overlay */}
                         {img.prompt && (
                           <div 
-                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
+                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
                             style={{
                               background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                               backdropFilter: 'blur(12px)',
@@ -2037,7 +2037,7 @@ const Create: React.FC = () => {
                             <div className="w-full p-4">
                               <div className="mb-2">
                                 <div className="relative">
-                                  <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-3">
+                                  <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
                                     {img.prompt}
                                     <button
                                       onClick={(e) => {
@@ -2114,7 +2114,7 @@ const Create: React.FC = () => {
                           Copy prompt
                         </div>
                         
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           {renderHoverPrimaryActions(`fav-actions-${idx}-${img.url}`, img)}
                           <div className="flex items-center gap-0.5">
                             <button 
@@ -2156,8 +2156,8 @@ const Create: React.FC = () => {
                     {gallery.filter(img => favorites.has(img.url)).length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Star className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No liked images yet</h3>
-                        <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No liked images yet</h3>
+                        <p className="text-base font-raleway text-d-white/40 max-w-md">
                           Click the heart icon on any generated image to add it to your liked images.
                         </p>
                       </div>
@@ -2173,7 +2173,7 @@ const Create: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2188,7 +2188,7 @@ const Create: React.FC = () => {
                         {/* Hover prompt overlay */}
                         {img.prompt && (
                           <div 
-                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
+                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
                             style={{
                               background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                               backdropFilter: 'blur(12px)',
@@ -2199,7 +2199,7 @@ const Create: React.FC = () => {
                             <div className="w-full p-4">
                               <div className="mb-2">
                                 <div className="relative">
-                                  <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-3">
+                                  <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
                                     {img.prompt}
                                     <button
                                       onClick={(e) => {
@@ -2275,7 +2275,7 @@ const Create: React.FC = () => {
                           Copy prompt
                         </div>
                         
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
                           <div className="flex items-center gap-0.5">
                             <button 
@@ -2328,8 +2328,8 @@ const Create: React.FC = () => {
                     {gallery.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <History className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No history yet</h3>
-                        <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No history yet</h3>
+                        <p className="text-base font-raleway text-d-white/40 max-w-md">
                           Your generation history will appear here once you start creating images.
                         </p>
                       </div>
@@ -2345,7 +2345,7 @@ const Create: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2359,7 +2359,7 @@ const Create: React.FC = () => {
                         
                         {/* Upload info overlay */}
                         <div 
-                          className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
+                          className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
                           style={{
                             background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                             backdropFilter: 'blur(12px)',
@@ -2370,7 +2370,7 @@ const Create: React.FC = () => {
                           <div className="w-full p-4">
                             <div className="mb-2">
                               <div className="relative">
-                                <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-2">
+                                <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
                                   {upload.file.name}
                                 </p>
                                 <p className="text-d-white/60 text-xs font-raleway mt-1">
@@ -2381,7 +2381,7 @@ const Create: React.FC = () => {
                           </div>
                         </div>
                         
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           <button 
                             type="button" 
                             onClick={(e) => {
@@ -2411,8 +2411,8 @@ const Create: React.FC = () => {
                     {uploadedImages.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Upload className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No uploads yet</h3>
-                        <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No uploads yet</h3>
+                        <p className="text-base font-raleway text-d-white/40 max-w-md">
                           Upload images using the file input, drag and drop them onto the prompt bar, or paste them directly from your clipboard to see them here.
                         </p>
                       </div>
@@ -2428,7 +2428,7 @@ const Create: React.FC = () => {
                     <div className="mb-6 flex items-center justify-between">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2446,8 +2446,8 @@ const Create: React.FC = () => {
                     {folders.length === 0 ? (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Folder className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-xl font-raleway text-d-white/60 mb-2">No folders yet</h3>
-                        <p className="text-sm font-raleway text-d-white/40 max-w-md mb-4">
+                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No folders yet</h3>
+                        <p className="text-base font-raleway text-d-white/40 max-w-md mb-4">
                           Create your first folder to organize your images.
                         </p>
                         <button
@@ -2472,7 +2472,7 @@ const Create: React.FC = () => {
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
-                              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 opacity-0 group-hover:opacity-100">
+                              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                                 <Folder className="w-12 h-12 text-d-white/80 mb-2" />
                                 <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
@@ -2509,7 +2509,7 @@ const Create: React.FC = () => {
                           )}
                         </div>
                         
-                        <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                        <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           <button 
                             type="button" 
                             onClick={(e) => {
@@ -2538,7 +2538,7 @@ const Create: React.FC = () => {
                       <div className="flex items-center justify-between mb-4">
                         <button
                           onClick={() => setSelectedFolder(null)}
-                          className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                          className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                         >
                           <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                           Back to folders
@@ -2587,7 +2587,7 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out pointer-events-auto flex items-end z-10"
+                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-out pointer-events-auto flex items-end z-10"
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
@@ -2598,7 +2598,7 @@ const Create: React.FC = () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-3">
+                                    <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         onClick={(e) => {
@@ -2670,7 +2670,7 @@ const Create: React.FC = () => {
                             Copy prompt
                           </div>
                           
-                          <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
+                          <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                             {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                             <div className="flex items-center gap-0.5">
                               <button 
@@ -2738,7 +2738,7 @@ const Create: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2761,7 +2761,7 @@ const Create: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2784,7 +2784,7 @@ const Create: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2807,7 +2807,7 @@ const Create: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-sm group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
                       >
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
                         Go back
@@ -2887,7 +2887,7 @@ const Create: React.FC = () => {
                             </div>
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
-                            <p className="text-d-white text-xs font-raleway line-clamp-2 opacity-75">
+                            <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
                               {pending.prompt}
                             </p>
                           </div>
@@ -2917,7 +2917,7 @@ const Create: React.FC = () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-white text-sm font-raleway leading-relaxed line-clamp-3">
+                                    <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         onClick={(e) => {
@@ -3060,23 +3060,25 @@ const Create: React.FC = () => {
 
           {/* Prompt History Chips - Below Gallery */}
           {activeCategory === "image" && !selectedFolder && (
-            <PromptHistoryChips
-              history={history}
-              onSelect={(text) => setPrompt(text)}
-              onRun={(text) => {
-                setPrompt(text);
-                // Fire and record
-                handleGenerateImage().then(() => {
-                  // The addPrompt is already called in handleGenerateImage on success
-                });
-              }}
-              onClear={clear}
-            />
+            <div className="w-full pl-3">
+              <PromptHistoryChips
+                history={history}
+                onSelect={(text) => setPrompt(text)}
+                onRun={(text) => {
+                  setPrompt(text);
+                  // Fire and record
+                  handleGenerateImage().then(() => {
+                    // The addPrompt is already called in handleGenerateImage on success
+                  });
+                }}
+                onClear={clear}
+              />
+            </div>
           )}
 
           {/* Cache Usage - Below Recent Prompts */}
           {activeCategory === "image" && !selectedFolder && (
-            <div className="mt-4 w-full max-w-[calc(100%-140px)] lg:max-w-[calc(100%-140px)] md:max-w-[calc(100%-120px)] sm:max-w-full ml-auto md:ml-[140px] lg:ml-[140px]">
+            <div className="mt-4 w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
               {isCacheBarVisible && (
                 <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
@@ -3150,7 +3152,7 @@ const Create: React.FC = () => {
                 onKeyDown={onKeyDown}
                 onPaste={handlePaste}
                 rows={2}
-                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
+                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
             <div className="absolute right-4 bottom-4 flex items-center gap-2">
@@ -3390,7 +3392,7 @@ const Create: React.FC = () => {
                         return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
                       }
                     })()}
-                    <span className="text-xs font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                    <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -3439,7 +3441,7 @@ const Create: React.FC = () => {
                             }`}>
                               {model.name}
                             </div>
-                            <div className={`text-[10px] font-raleway truncate transition-colors duration-100 ${
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-brand'
                             }`}>
                               {isComingSoon ? 'Coming soon.' : model.desc}
@@ -3622,31 +3624,29 @@ const Create: React.FC = () => {
                 
                 {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-2xl p-3 text-white opacity-0 group-hover:opacity-100">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 pr-3">
-                        <div className="text-sm">
-                          <div className="font-medium font-cabin">
-                            {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
-                            {(selectedFullImage || generatedImage)?.prompt && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
-                                }}
-                                className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-2xl p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-lg font-medium font-cabin">
+                          {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
+                          {(selectedFullImage || generatedImage)?.prompt && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
+                              }}
+                              className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <ModelBadge 
-                          model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
-                          size="sm" 
-                        />
+                        <div className="mt-2">
+                          <ModelBadge 
+                            model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
+                            size="md" 
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
