@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Pencil, Eraser } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -170,12 +170,21 @@ export default function Edit() {
   const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   const [isEditWithPromptMode, setIsEditWithPromptMode] = useState<boolean>(false);
   const [isPreciseEditMode, setIsPreciseEditMode] = useState<boolean>(false);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [maskData, setMaskData] = useState<string | null>(null);
+  const [brushSize, setBrushSize] = useState<number>(35);
+  const [isEraseMode, setIsEraseMode] = useState<boolean>(false);
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [showBrushPreview, setShowBrushPreview] = useState<boolean>(false);
+  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [allPaths, setAllPaths] = useState<{ x: number; y: number }[][]>([]);
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Use all image generation hooks
   const {
@@ -484,6 +493,144 @@ export default function Edit() {
     }
   };
 
+  // Mask drawing functions
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isPreciseEditMode) return;
+    setIsDrawing(true);
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    
+    // Start new path
+    const newPath = [{ x, y }];
+    setCurrentPath(newPath);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !isPreciseEditMode) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    
+    // Add point to current path
+    const newPath = [...currentPath, { x, y }];
+    setCurrentPath(newPath);
+    
+    // Redraw everything without clearing the canvas
+    redrawCanvas();
+  };
+
+  // Function to redraw the entire canvas with all paths
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Set up drawing style
+    ctx.strokeStyle = isEraseMode ? 'rgba(0, 0, 0, 0)' : 'rgba(250, 170, 22, 0.75)';
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalCompositeOperation = isEraseMode ? 'destination-out' : 'source-over';
+    
+    // Draw all completed paths
+    allPaths.forEach(path => {
+      if (path.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length; i++) {
+          ctx.lineTo(path[i].x, path[i].y);
+        }
+        ctx.stroke();
+      }
+    });
+    
+    // Draw the current path being drawn
+    if (currentPath.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(currentPath[0].x, currentPath[0].y);
+      for (let i = 1; i < currentPath.length; i++) {
+        ctx.lineTo(currentPath[i].x, currentPath[i].y);
+      }
+      ctx.stroke();
+    }
+  }, [allPaths, currentPath, brushSize, isEraseMode]);
+
+  const stopDrawing = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Add current path to all paths if it has content
+    if (currentPath.length > 1) {
+      setAllPaths(prev => [...prev, [...currentPath]]);
+    }
+    
+    // Clear current path
+    setCurrentPath([]);
+    
+    // Save the mask data after a brief delay to ensure state is updated
+    setTimeout(() => {
+      const maskDataUrl = canvas.toDataURL();
+      setMaskData(maskDataUrl);
+    }, 0);
+  };
+
+  const clearMask = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setMaskData(null);
+    setCurrentPath([]);
+    setAllPaths([]);
+  };
+
+  const toggleEraseMode = () => {
+    setIsEraseMode(!isEraseMode);
+  };
+
+  // Brush preview functions
+  const handleBrushMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPreciseEditMode) return;
+    
+    const target = e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setMousePosition({ x, y });
+    setShowBrushPreview(true);
+  };
+
+  const handleBrushMouseLeave = () => {
+    setShowBrushPreview(false);
+  };
+
   // Reset image to default position and size
   const resetImageToDefault = () => {
     setImagePosition({ x: 0, y: 0 });
@@ -498,7 +645,7 @@ export default function Edit() {
     setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleImageMouseMove = (e: MouseEvent) => {
     if (!isImageDragging || !isMoveMode) return;
     e.preventDefault();
     setImagePosition({
@@ -516,15 +663,38 @@ export default function Edit() {
   // Add document event listeners for dragging
   useEffect(() => {
     if (isImageDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mousemove', handleImageMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mousemove', handleImageMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isImageDragging, dragStart, isMoveMode]);
+
+  // Set up canvas for mask drawing
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !previewUrl) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size to match the image container
+    const container = canvas.parentElement;
+    if (container) {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+  }, [previewUrl, isPreciseEditMode]);
+
+  // Redraw canvas when paths or settings change
+  useEffect(() => {
+    if (isPreciseEditMode) {
+      redrawCanvas();
+    }
+  }, [isPreciseEditMode, redrawCanvas]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMoveMode || e.touches.length !== 1) return;
@@ -735,6 +905,8 @@ export default function Edit() {
                     transform: `scale(${imageSize / 100}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
                     transformOrigin: 'center center'
                   }}
+                  onMouseMove={handleBrushMouseMove}
+                  onMouseLeave={handleBrushMouseLeave}
                 >
                   <img 
                     src={previewUrl} 
@@ -765,6 +937,36 @@ export default function Edit() {
                       onTouchStart={handleTouchStart}
                       onTouchMove={handleTouchMove}
                       onTouchEnd={handleTouchEnd}
+                    />
+                  )}
+
+                  {/* Mask drawing canvas - only visible in precise edit mode */}
+                  {isPreciseEditMode && (
+                    <canvas
+                      ref={canvasRef}
+                      className="absolute inset-0 w-full h-full z-20 cursor-crosshair"
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                    />
+                  )}
+
+                  {/* Brush preview circle - only visible in precise edit mode */}
+                  {isPreciseEditMode && showBrushPreview && (
+                    <div
+                      className="absolute pointer-events-none z-30 border-2 border-d-orange-1 rounded-full"
+                      style={{
+                        left: mousePosition.x - brushSize / 2,
+                        top: mousePosition.y - brushSize / 2,
+                        width: brushSize,
+                        height: brushSize,
+                        borderColor: isEraseMode ? '#ef4444' : '#faaa16',
+                        opacity: 0.8
+                      }}
                     />
                   )}
                   
@@ -897,6 +1099,62 @@ export default function Edit() {
                 <Wand2 className="w-4 h-4" />
                 Precise edit
               </button>
+
+              {/* Brush controls - only show when precise edit mode is active */}
+              {isPreciseEditMode && (
+                <>
+                  {/* Erase mode toggle */}
+                  <button
+                    onClick={toggleEraseMode}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                      isEraseMode 
+                        ? 'text-red-300 border-red-500/50 bg-red-500/20' 
+                        : 'text-d-white border-d-dark hover:border-d-orange-1'
+                    }`}
+                    title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
+                  >
+                    {isEraseMode ? <Eraser className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                    {isEraseMode ? 'Erase' : 'Draw'}
+                  </button>
+
+                  {/* Brush size control */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark bg-d-black/40">
+                    <span className="text-d-white text-xs font-raleway">Size:</span>
+                    <input
+                      type="range"
+                      min="2"
+                      max="100"
+                      value={brushSize}
+                      onChange={(e) => setBrushSize(Number(e.target.value))}
+                      className="w-16 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #faaa16 0%, #faaa16 ${(brushSize - 2) / 98 * 100}%, rgba(250, 170, 22, 0.3) ${(brushSize - 2) / 98 * 100}%, rgba(250, 170, 22, 0.3) 100%)`,
+                        WebkitAppearance: 'none',
+                        appearance: 'none',
+                        height: '4px',
+                        outline: 'none',
+                        borderRadius: '5px'
+                      }}
+                      title="Adjust brush size"
+                    />
+                    <span className="text-d-orange-1 text-xs font-mono min-w-[2rem] text-center">
+                      {brushSize}px
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* Clear mask button - only show when mask exists */}
+              {maskData && (
+                <button
+                  onClick={clearMask}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30 hover:border-red-500/50 font-raleway text-sm"
+                  title="Clear mask"
+                >
+                  <X className="w-4 h-4" />
+                  Clear mask
+                </button>
+              )}
             </div>
           )}
 

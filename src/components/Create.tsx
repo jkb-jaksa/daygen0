@@ -380,7 +380,7 @@ const Create: React.FC = () => {
   const [returnToFolderDialog, setReturnToFolderDialog] = useState<boolean>(false);
   const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
-  const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
+  const maxGalleryTiles = 18; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
@@ -1890,7 +1890,7 @@ const Create: React.FC = () => {
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
                   <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
-                    generate
+                    create
                   </div>
                   
                   {/* Main categories */}
@@ -3658,7 +3658,7 @@ const Create: React.FC = () => {
                 
                 <button
                   onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
-                  className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
+                  className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-brand rounded-full p-1.5 backdrop-strong transition-colors duration-200"
                   aria-label="Close full size view"
                 >
                   <X className="w-4 h-4" />

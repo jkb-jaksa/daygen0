@@ -1911,6 +1911,307 @@ app.get('/api/reve/jobs/:id', async (req, res) => {
   }
 });
 
+// Unified Generate API endpoint - routes to appropriate handlers based on model
+app.post('/api/unified-generate', async (req, res) => {
+  try {
+    const { model, prompt, imageBase64, mimeType, references, ...otherParams } = req.body ?? {};
+
+    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    if (!promptText) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!model) {
+      return res.status(400).json({ error: 'Model is required' });
+    }
+
+    // Route to appropriate handler based on model
+    switch (model) {
+      case 'gemini-2.5-flash-image-preview':
+        return await handleUnifiedGemini(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      
+      case 'ideogram':
+        return await handleUnifiedIdeogram(req, res, { prompt: promptText, ...otherParams });
+      
+      case 'qwen-image':
+        return await handleUnifiedQwen(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      
+      case 'runway-gen4':
+      case 'runway-gen4-turbo':
+        return await handleUnifiedRunway(req, res, { prompt: promptText, model, imageBase64, mimeType, references });
+      
+      case 'seedream-3.0':
+        return await handleUnifiedSeedream(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      
+      case 'chatgpt-image':
+        return await handleUnifiedChatGPT(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      
+      case 'reve-image':
+        return await handleUnifiedReve(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      
+      default:
+        return res.status(400).json({ error: `Unsupported model: ${model}` });
+    }
+  } catch (err) {
+    console.error('Unified API error:', err);
+    res.status(500).json({
+      error: 'Generation failed',
+      details: String(err?.message || err),
+    });
+  }
+});
+
+// Unified Gemini 2.5 Flash Image handler
+async function handleUnifiedGemini(req, res, { prompt, imageBase64, mimeType, references }) {
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Gemini API key not configured' });
+  }
+
+  const targetModel = 'gemini-2.5-flash-image-preview';
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const parts = [{ text: prompt }];
+
+  if (imageBase64) {
+    const primaryInline = normalizeInlineImage(imageBase64, mimeType || 'image/png');
+    if (primaryInline) {
+      parts.push({ 
+        inlineData: { 
+          mimeType: primaryInline.mimeType, 
+          data: primaryInline.data 
+        } 
+      });
+    }
+  }
+
+  if (references && Array.isArray(references)) {
+    for (const ref of references) {
+      const refInline = normalizeInlineImage(ref);
+      if (refInline) {
+        parts.push({ 
+          inlineData: { 
+            mimeType: refInline.mimeType, 
+            data: refInline.data 
+          } 
+        });
+      }
+    }
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }] })
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `Gemini API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  const candidateParts = result?.candidates?.[0]?.content?.parts ?? [];
+  const imgPart = candidateParts.find((p) => p.inlineData?.data);
+
+  if (!imgPart?.inlineData?.data) {
+    return res.status(400).json({ error: 'No image returned from Gemini 2.5 Flash Image' });
+  }
+
+  res.json({
+    success: true,
+    mimeType: imgPart.inlineData.mimeType || 'image/png',
+    imageBase64: imgPart.inlineData.data,
+    model: targetModel
+  });
+}
+
+// Unified Ideogram handler
+async function handleUnifiedIdeogram(req, res, { prompt, ...params }) {
+  if (!process.env.IDEOGRAM_API_KEY) {
+    return res.status(500).json({ error: 'Ideogram API key not configured' });
+  }
+
+  const response = await fetch('https://api.ideogram.ai/api/v1/images', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.IDEOGRAM_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt,
+      model: 'ideogram-v3',
+      ...params
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `Ideogram API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  res.json(result);
+}
+
+// Unified Qwen handler
+async function handleUnifiedQwen(req, res, { prompt, imageBase64, mimeType, references }) {
+  if (!process.env.DASHSCOPE_API_KEY) {
+    return res.status(500).json({ error: 'Qwen API key not configured' });
+  }
+
+  const messages = [{ role: 'user', content: [{ type: 'text', text: prompt }] }];
+
+  if (imageBase64) {
+    const primaryInline = normalizeInlineImage(imageBase64, mimeType || 'image/png');
+    if (primaryInline) {
+      messages[0].content.push({
+        type: 'image_url',
+        image_url: { url: `data:${primaryInline.mimeType};base64,${primaryInline.data}` }
+      });
+    }
+  }
+
+  const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'wanx-v1',
+      input: { prompt },
+      parameters: { size: '1024*1024', n: 1 }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `Qwen API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  res.json(result);
+}
+
+// Unified Runway handler
+async function handleUnifiedRunway(req, res, { prompt, model, imageBase64, mimeType, references }) {
+  if (!process.env.RUNWAY_API_KEY) {
+    return res.status(500).json({ error: 'Runway API key not configured' });
+  }
+
+  const response = await fetch('https://api.runwayml.com/v1/image_generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RUNWAY_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model === 'runway-gen4-turbo' ? 'gen4_image_turbo' : 'gen4_image',
+      prompt,
+      ratio: '16:9'
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `Runway API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  res.json(result);
+}
+
+// Unified Seedream handler
+async function handleUnifiedSeedream(req, res, { prompt, imageBase64, mimeType, references }) {
+  if (!process.env.ARK_API_KEY) {
+    return res.status(500).json({ error: 'Seedream API key not configured' });
+  }
+
+  const response = await fetch('https://ark.ap-southeast.bytepluses.com/api/v3/image/generate', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.ARK_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'seedream-v3',
+      prompt,
+      width: 1024,
+      height: 1024,
+      num_images: 1
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `Seedream API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  res.json(result);
+}
+
+// Unified ChatGPT handler
+async function handleUnifiedChatGPT(req, res, { prompt, imageBase64, mimeType, references }) {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+
+  const response = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size: '1024x1024'
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `OpenAI API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  res.json(result);
+}
+
+// Unified Reve handler
+async function handleUnifiedReve(req, res, { prompt, imageBase64, mimeType, references }) {
+  if (!process.env.REVE_API_KEY) {
+    return res.status(500).json({ error: 'Reve API key not configured' });
+  }
+
+  const response = await fetch('https://api.reve.com/v1/images/generate', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.REVE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt,
+      model: 'reve-v1',
+      width: 1024,
+      height: 1024
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return res.status(response.status).json({ error: `Reve API error: ${response.status}`, details: errorText });
+  }
+
+  const result = await response.json();
+  res.json(result);
+}
+
 // Serve static client in non-Vercel environments to avoid SPA route 404s
 const distDir = join(__dirname, 'dist');
 if (!isVercel && existsSync(join(distDir, 'index.html'))) {
