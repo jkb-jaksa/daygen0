@@ -1164,14 +1164,15 @@ export default function Edit() {
       {/* Full-size image modal */}
       {isFullSizeOpen && selectedFullImage && (
         <div
-          className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-black/80 flex items-start justify-center p-4"
           onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
         >
-          <div className="relative max-w-[95vw] max-h-[90vh] group" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
             <img 
               src={selectedFullImage} 
               alt="Full size" 
               className="max-w-full max-h-[90vh] object-contain" 
+              style={{ objectPosition: 'top' }}
             />
             
             <button

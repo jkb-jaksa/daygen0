@@ -3531,10 +3531,10 @@ const Create: React.FC = () => {
           {/* Full-size image modal */}
           {isFullSizeOpen && (selectedFullImage || generatedImage || selectedReferenceImage) && (
             <div
-              className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+              className="fixed inset-0 z-[60] bg-black/80 flex items-start justify-center p-4"
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
             >
-              <div className="relative max-w-[95vw] max-h-[90vh] group" onClick={(e) => e.stopPropagation()}>
+              <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
                 {/* Navigation arrows for full-size modal */}
                 {gallery.length > 1 && (selectedFullImage || generatedImage) && (
                   <>
@@ -3561,11 +3561,12 @@ const Create: React.FC = () => {
                   src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string} 
                   alt="Full size" 
                   className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+                  style={{ objectPosition: 'top' }}
                 />
                 
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-8 pointer-events-none">
+                  <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 ease-in-out pointer-events-auto">
                       {renderHoverPrimaryActions(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
                     </div>
