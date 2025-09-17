@@ -1300,6 +1300,7 @@ const Create: React.FC = () => {
   };
 
 
+
   const clearReference = (idx: number) => {
     const nextFiles = referenceFiles.filter((_, i) => i !== idx);
     const nextPreviews = referencePreviews.filter((_, i) => i !== idx);
@@ -3188,17 +3189,6 @@ const Create: React.FC = () => {
                 >
                   <Plus className="w-4 h-4" />
                 </button>
-                {referencePreviews.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearAllReferences}
-                    title="Clear all references"
-                    aria-label="Clear all references"
-                    className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-red-400 border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
                 <div className="relative settings-dropdown">
                   <button
                     ref={settingsRef}
@@ -3475,11 +3465,18 @@ const Create: React.FC = () => {
                         <img 
                           src={url} 
                           alt={`Reference ${idx+1}`} 
-                          className="w-9 h-9 rounded-lg object-cover border border-d-mid" 
+                          className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200" 
+                          onClick={() => {
+                            setSelectedReferenceImage(url);
+                            setIsFullSizeOpen(true);
+                          }}
                         />
                         <button
-                          onClick={() => clearReference(idx)}
-                          className="absolute -top-1 -right-1 bg-d-black/80 hover:bg-d-orange-1 text-d-text hover:text-d-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearReference(idx);
+                          }}
+                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
                           title="Remove reference"
                         >
                           <X className="w-2.5 h-2.5" />

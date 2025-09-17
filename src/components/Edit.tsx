@@ -1,9 +1,85 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Upload, X, Wand2, Loader2, Plus, Settings } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Minus } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
+import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
+import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
+import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 
-// Minimal Edit component with upload interface
+// AI Model data for Edit section - only Gemini 2.5 Flash Image Gen
+const AI_MODELS = [
+  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview" },
+];
+
+
+// Portal component for model menu to avoid clipping by parent containers
+const ModelMenuPortal: React.FC<{ 
+  anchorRef: React.RefObject<HTMLElement | null>; 
+  open: boolean; 
+  onClose: () => void; 
+  children: React.ReactNode;
+}> = ({ anchorRef, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    // Position above the trigger button with some offset
+    setPos({ 
+      top: rect.top - 8, // 8px offset above
+      left: rect.left, 
+      width: Math.max(384, rect.width) // Minimum 384px width (w-96 equivalent)
+    });
+  }, [open, anchorRef]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (open && menuRef.current && 
+          !menuRef.current.contains(event.target as Node) && 
+          !anchorRef.current?.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{ 
+        position: "fixed", 
+        top: pos.top, 
+        left: pos.left, 
+        width: pos.width, 
+        zIndex: 1000,
+        transform: 'translateY(-100%)' // Position above the trigger
+      }}
+      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-80 overflow-y-auto"
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
 
 // Main Component
 export default function Edit() {
@@ -22,10 +98,26 @@ export default function Edit() {
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
   const [topK, setTopK] = useState(64);
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
+  const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
+  const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
+  const [imageSize, setImageSize] = useState<number>(60); // Percentage scale
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
+  const modelSelectorRef = useRef<HTMLButtonElement>(null);
+  const refFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use the Gemini image generation hook
+  const {
+    error: geminiError,
+    generatedImage: geminiImage,
+    generateImage: generateGeminiImage,
+    clearError: clearGeminiError,
+    clearGeneratedImage: clearGeminiImage,
+  } = useGeminiImageGeneration();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -48,46 +140,131 @@ export default function Edit() {
   };
 
   // Prompt bar handlers
-  const handleGenerateImage = () => {
-    if (!prompt.trim()) return;
+  const handleGenerateImage = async () => {
+    if (!prompt.trim() || !selectedFile) return;
     setIsButtonSpinning(true);
-    // TODO: Implement generation logic
-    setTimeout(() => setIsButtonSpinning(false), 2000);
+    
+    try {
+      // Convert the selected file to base64 for Gemini
+      const imageData = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(selectedFile);
+      });
+
+      // Convert reference files to base64
+      const referenceImages = await Promise.all(referenceFiles.map(f => 
+        new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(f);
+        })
+      ));
+
+      await generateGeminiImage({
+        prompt,
+        imageData: imageData,
+        references: referenceImages,
+        temperature,
+        topP,
+        outputLength: topK,
+      });
+    } catch (error) {
+      console.error('Error generating image:', error);
+    } finally {
+      setIsButtonSpinning(false);
+    }
   };
 
   const handleRefsClick = () => {
-    fileInputRef.current?.click();
+    if (referenceFiles.length >= 2) return; // Don't allow more than 2 references
+    refFileInputRef.current?.click();
   };
 
-  const clearAllReferences = () => {
-    setReferenceFiles([]);
-    setReferencePreviews([]);
+  const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []).filter(f => f.type.startsWith('image/'));
+    const combined = [...referenceFiles, ...files].slice(0, 2); // Limit to 2 references
+    setReferenceFiles(combined);
+    // create previews
+    const readers = combined.map(f => URL.createObjectURL(f));
+    setReferencePreviews(readers);
+    // Clear the input so the same file can be selected again
+    event.target.value = '';
   };
+
+  const clearReference = (idx: number) => {
+    const nextFiles = referenceFiles.filter((_, i) => i !== idx);
+    const nextPreviews = referencePreviews.filter((_, i) => i !== idx);
+    // revoke removed url
+    const removed = referencePreviews[idx];
+    if (removed) URL.revokeObjectURL(removed);
+    setReferenceFiles(nextFiles);
+    setReferencePreviews(nextPreviews);
+  };
+
+
 
   const toggleSettings = () => {
     setIsSettingsOpen(!isSettingsOpen);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleGenerateImage();
-    }
+  const toggleModelSelector = () => {
+    setIsModelSelectorOpen(!isModelSelectorOpen);
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
+  // Get current model info
+  const getCurrentModel = () => {
+    return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
+  };
+
+  // Image size control functions
+  const increaseImageSize = () => {
+    setImageSize(prev => Math.min(prev + 10, 200)); // Max 200%
+  };
+
+  const decreaseImageSize = () => {
+    setImageSize(prev => Math.max(prev - 10, 20)); // Min 20%
+  };
+
+  // Keyboard shortcuts for generation
+  const { onKeyDown } = useGenerateShortcuts({
+    enabled: !isButtonSpinning,
+    onGenerate: handleGenerateImage,
+  });
+
+
+  const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(event.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    // If no images, allow default text paste behavior
+    if (imageItems.length === 0) return;
+    
+    // Only prevent default when we're actually handling images
+    event.preventDefault();
+    
+    try {
+      // Convert clipboard items to files
+      const files: File[] = [];
+      for (const item of imageItems) {
         const file = item.getAsFile();
         if (file) {
-          const combined = [...referenceFiles, file].slice(0, 3);
-          setReferenceFiles(combined);
-          const readers = combined.map(f => URL.createObjectURL(f));
-          setReferencePreviews(readers);
+          files.push(file);
         }
       }
+      
+      if (files.length === 0) return;
+      
+      // Add to reference files (same logic as handleRefsSelected)
+      const combined = [...referenceFiles, ...files].slice(0, 2); // Limit to 2 references
+      setReferenceFiles(combined);
+      
+      // Create previews
+      const readers = combined.map(f => URL.createObjectURL(f));
+      setReferencePreviews(readers);
+      
+    } catch (error) {
+      console.error('Error handling paste:', error);
     }
   };
 
@@ -126,6 +303,16 @@ export default function Edit() {
     };
   }, [isSettingsOpen]);
 
+  // Cleanup object URLs when component unmounts or files change
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      referencePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrl, referencePreviews]);
+
   // Handle navigation state to automatically load image from Create section
   useEffect(() => {
     const state = location.state as { imageToEdit?: any } | null;
@@ -162,8 +349,8 @@ export default function Edit() {
       {/* Background overlay to show gradient behind navbar */}
       <div className={layout.backdrop} aria-hidden="true" />
       
-      {/* PLATFORM HERO - Vertically centered */}
-      <header className={`relative z-10 h-screen flex items-center justify-center ${layout.container}`}>
+      {/* PLATFORM HERO - Always centered */}
+      <header className={`relative z-10 min-h-screen flex items-center justify-center ${layout.container}`}>
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
 
@@ -211,27 +398,113 @@ export default function Edit() {
                   onChange={handleFileSelect}
                   className="hidden"
                 />
+                
               </div>
             </div>
           )}
 
           {/* Uploaded Image Preview */}
           {previewUrl && (
-            <div className="w-full max-w-lg mx-auto mt-8">
+            <div className="w-full max-w-6xl mx-auto">
+              <div 
+                className="relative transition-colors duration-200"
+                style={{ 
+                  backgroundColor: imageSize < 100 ? 'transparent' : '#1a1a1a',
+                  overflow: imageSize < 100 ? 'hidden' : 'visible'
+                }}
+                onWheel={(e) => {
+                  // Only respond to trackpad pinch gestures (when ctrlKey is pressed)
+                  if (e.ctrlKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                      increaseImageSize();
+                    } else {
+                      decreaseImageSize();
+                    }
+                  }
+                }}
+              >
+                <div 
+                  className="w-full h-[500px] relative"
+                  style={{ transform: `scale(${imageSize / 100})` }}
+                >
+                  <img 
+                    src={previewUrl} 
+                    alt="Uploaded file preview" 
+                    className="w-full h-full object-cover cursor-pointer transition-transform duration-200"
+                    onClick={() => {
+                      setSelectedFullImage(previewUrl);
+                      setIsFullSizeOpen(true);
+                    }}
+                  />
+                  <button
+                    onClick={handleDeleteImage}
+                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {/* Image Size Controls */}
+                <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-d-black/80 rounded-lg p-2">
+                  <button
+                    onClick={decreaseImageSize}
+                    disabled={imageSize <= 20}
+                    className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Decrease size"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
+                    {imageSize}%
+                  </span>
+                  <button
+                    onClick={increaseImageSize}
+                    disabled={imageSize >= 200}
+                    className="p-1.5 rounded-md bg-d-dark hover:bg-d-mid text-d-white hover:text-d-orange-1 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Increase size"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Generated Image Display */}
+          {geminiImage && (
+            <div className="w-full max-w-lg mx-auto mt-4">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
                 <img 
-                  src={previewUrl} 
-                  alt="Uploaded file preview" 
-                  className="w-full h-32 object-cover"
+                  src={geminiImage.url} 
+                  alt="Generated image" 
+                  className="w-full h-64 object-cover"
                 />
                 <button
-                  onClick={handleDeleteImage}
+                  onClick={() => clearGeminiImage()}
                   className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
                 <div className="px-4 py-3 bg-d-black/80 text-d-white text-sm text-center">
-                  {selectedFile?.name}
+                  Generated with {getCurrentModel().name}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {geminiError && (
+            <div className="w-full max-w-lg mx-auto mt-4">
+              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-red-500/50">
+                <button
+                  onClick={() => clearGeminiError()}
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
+                  Error: {geminiError}
                 </div>
               </div>
             </div>
@@ -246,7 +519,17 @@ export default function Edit() {
           style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+          onDrop={(e) => { 
+            e.preventDefault(); 
+            setIsDragging(false); 
+            const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); 
+            if (files.length) { 
+              const combined = [...referenceFiles, ...files].slice(0, 2); 
+              setReferenceFiles(combined); 
+              const readers = combined.map(f => URL.createObjectURL(f)); 
+              setReferencePreviews(readers); 
+            } 
+          }}
         >
         <div>
           <textarea
@@ -285,21 +568,92 @@ export default function Edit() {
               onClick={handleRefsClick}
               title="Add reference image"
               aria-label="Add reference image"
-              className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+              disabled={referenceFiles.length >= 2}
+              className={`${referenceFiles.length >= 2 ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid'} grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
             </button>
-            {referencePreviews.length > 0 && (
+            
+            {/* Model Selector */}
+            <div className="relative model-selector">
               <button
+                ref={modelSelectorRef}
                 type="button"
-                onClick={clearAllReferences}
-                title="Clear all references"
-                aria-label="Clear all references"
-                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-red-400 border-d-mid grid place-items-center h-8 w-8 rounded-full border p-0 transition-colors duration-200"
+                onClick={toggleModelSelector}
+                className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid hover:border-d-orange-1 flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-200 gap-2 group"
               >
-                <X className="w-4 h-4" />
+                {(() => {
+                  const currentModel = getCurrentModel();
+                  if (hasToolLogo(currentModel.name)) {
+                    return (
+                      <img 
+                        src={getToolLogo(currentModel.name)!} 
+                        alt={`${currentModel.name} logo`}
+                        className="w-5 h-5 object-contain rounded flex-shrink-0"
+                      />
+                    );
+                  } else {
+                    const Icon = currentModel.Icon;
+                    return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
+                  }
+                })()}
+                <span className="text-xs font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
               </button>
-            )}
+              
+              {/* Model Dropdown Portal */}
+              <ModelMenuPortal 
+                anchorRef={modelSelectorRef}
+                open={isModelSelectorOpen}
+                onClose={() => setIsModelSelectorOpen(false)}
+              >
+                {AI_MODELS.map((model) => {
+                  const isSelected = selectedModel === model.id;
+                  
+                  return (
+                    <button
+                      key={model.name}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setIsModelSelectorOpen(false);
+                      }}
+                      className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                        isSelected 
+                          ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
+                          : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-orange-1"
+                      }`}
+                    >
+                      {hasToolLogo(model.name) ? (
+                        <img 
+                          src={getToolLogo(model.name)!} 
+                          alt={`${model.name} logo`}
+                          className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                        />
+                      ) : (
+                        <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                        }`} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-xs font-cabin truncate transition-colors duration-100 ${
+                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                        }`}>
+                          {model.name}
+                        </div>
+                        <div className={`text-[10px] font-raleway truncate transition-colors duration-100 ${
+                          isSelected ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                        }`}>
+                          {model.desc}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                      )}
+                    </button>
+                  );
+                })}
+              </ModelMenuPortal>
+            </div>
+            
             <div className="relative settings-dropdown">
               <button
                 ref={settingsRef}
@@ -314,18 +668,35 @@ export default function Edit() {
             </div>
           </div>
           
-          {/* Reference previews */}
+          {/* Reference images display - to the right of buttons */}
           {referencePreviews.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              {referencePreviews.map((preview, index) => (
-                <div key={index} className="relative w-8 h-8 rounded-lg overflow-hidden border border-d-mid bg-d-black">
-                  <img 
-                    src={preview} 
-                    alt={`Reference ${index + 1}`} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-d-white/80 font-raleway">Reference ({referencePreviews.length}/2):</div>
+              <div className="flex items-center gap-1.5">
+                {referencePreviews.map((url, idx) => (
+                  <div key={idx} className="relative group">
+                    <img 
+                      src={url} 
+                      alt={`Reference ${idx+1}`} 
+                      className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200" 
+                      onClick={() => {
+                        setSelectedFullImage(url);
+                        setIsFullSizeOpen(true);
+                      }}
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearReference(idx);
+                      }}
+                      className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
+                      title="Remove reference"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -390,6 +761,40 @@ export default function Edit() {
           </div>
         )}
       </div>
+      )}
+
+      {/* Hidden file input for reference images */}
+      <input
+        ref={refFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleRefsSelected}
+        className="hidden"
+      />
+
+      {/* Full-size image modal */}
+      {isFullSizeOpen && selectedFullImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
+        >
+          <div className="relative max-w-[95vw] max-h-[90vh] group" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={selectedFullImage} 
+              alt="Full size" 
+              className="max-w-full max-h-[90vh] object-contain" 
+            />
+            
+            <button
+              onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
+              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white rounded-full p-1.5 backdrop-strong"
+              aria-label="Close full size view"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
