@@ -12,6 +12,8 @@ export const TOOL_LOGOS: Record<string, string> = {
   'Midjourney': '/midjourney logo.png',
   'Higgsfield': '/higgsfield logo.jpg',
   'Recraft': '/recraft logo.jpg',
+  'Recraft v3': '/recraft logo.jpg',
+  'Recraft v2': '/recraft logo.jpg',
   'Krea': '/krea logo.jpeg',
   'Magnific': '/magnific logo.png',
   'Freepik': '/freepik logo.png',

@@ -8,6 +8,12 @@ export const compressDataUrl = async (
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    
+    // Set crossOrigin for external URLs to avoid CORS issues
+    if (srcDataUrl.startsWith('http')) {
+      img.crossOrigin = 'anonymous';
+    }
+    
     img.onload = () => {
       try {
         const scale = Math.min(1, maxWidth / img.width);
@@ -24,10 +30,16 @@ export const compressDataUrl = async (
         ctx.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL('image/jpeg', quality));
       } catch (error) {
-        reject(error);
+        // If compression fails due to CORS, return the original URL
+        console.warn('Image compression failed, using original URL:', error);
+        resolve(srcDataUrl);
       }
     };
-    img.onerror = reject;
+    img.onerror = (error) => {
+      // If image loading fails, return the original URL
+      console.warn('Image loading failed, using original URL:', error);
+      resolve(srcDataUrl);
+    };
     img.src = srcDataUrl;
   });
 };

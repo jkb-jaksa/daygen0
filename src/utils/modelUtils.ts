@@ -86,6 +86,20 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     shortName: 'Reve',
     description: 'Great text-to-image and image editing',
     isAvailable: true
+  },
+  'recraft-v3': {
+    id: 'recraft-v3',
+    name: 'Recraft v3',
+    shortName: 'Recraft v3',
+    description: 'Advanced image generation with text layout and brand controls',
+    isAvailable: true
+  },
+  'recraft-v2': {
+    id: 'recraft-v2',
+    name: 'Recraft v2',
+    shortName: 'Recraft v2',
+    description: 'High-quality image generation and editing',
+    isAvailable: true
   }
 };
 

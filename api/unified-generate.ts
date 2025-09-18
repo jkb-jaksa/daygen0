@@ -31,6 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Model is required' });
     }
 
+    console.log('Unified API - Received model:', model, 'Type:', typeof model);
+
     // Route to appropriate handler based on model
     switch (model) {
       case 'gemini-2.5-flash-image-preview':
@@ -54,6 +56,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       case 'reve-image':
         return await handleReve(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      
+      case 'recraft-v3':
+      case 'recraft-v2':
+        return await handleRecraft(req, res, { prompt: promptText, model, ...otherParams });
       
       default:
         return res.status(400).json({ error: `Unsupported model: ${model}` });
@@ -316,4 +322,52 @@ async function handleReve(req: VercelRequest, res: VercelResponse, { prompt, ima
 
   const result = await response.json();
   res.json(result);
+}
+
+// Recraft handler
+async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+  console.log('Recraft handler called with model:', model);
+  
+  if (!process.env.RECRAFT_API_KEY) {
+    return res.status(500).json({ error: 'Recraft API key not configured' });
+  }
+
+  try {
+    const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RECRAFT_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        model: model === 'recraft-v2' ? 'recraftv2' : 'recraftv3',
+        style: params.style || 'realistic_image',
+        substyle: params.substyle,
+        size: params.size || '1024x1024',
+        n: params.n || 1,
+        negative_prompt: params.negative_prompt,
+        controls: params.controls,
+        text_layout: params.text_layout,
+        response_format: params.response_format || 'url',
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ 
+        error: `Recraft API error: ${response.status}`, 
+        details: errorText 
+      });
+    }
+
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    console.error('Recraft API error:', err);
+    res.status(500).json({ 
+      error: 'Recraft generation failed', 
+      details: String(err?.message || err) 
+    });
+  }
 }

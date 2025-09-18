@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2 } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -96,6 +96,8 @@ const AI_MODELS = [
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
+  { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3" },
+  { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
@@ -345,7 +347,8 @@ const Create: React.FC = () => {
   const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve;
+  const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -1679,7 +1682,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, and Reve models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, and Recraft models are available.');
       return;
     }
 
@@ -1732,6 +1735,7 @@ const Create: React.FC = () => {
       const isRunwayModel = modelForGeneration === "runway-gen4" || modelForGeneration === "runway-gen4-turbo";
       const isSeeDreamModel = modelForGeneration === "seedream-3.0";
       const isReveModel = modelForGeneration === "reve-image";
+      const isRecraftModel = modelForGeneration === "recraft-v3" || modelForGeneration === "recraft-v2";
 
       if (isGeminiModel) {
         // Use Gemini generation
@@ -1828,6 +1832,41 @@ const Create: React.FC = () => {
           })(),
         });
         img = reveResult;
+      } else if (isRecraftModel) {
+        // Use Recraft generation via unified API
+        const response = await fetch('/api/unified-generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: modelForGeneration,
+            prompt: trimmedPrompt,
+            style: 'realistic_image',
+            size: '1024x1024',
+            n: 1,
+            response_format: 'url'
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Recraft API error: ${errorData.error || response.statusText}`);
+        }
+
+        const result = await response.json();
+        if (!result.data || result.data.length === 0) {
+          throw new Error('No image returned from Recraft');
+        }
+
+        // Convert Recraft response to our GeneratedImage format
+        img = {
+          url: result.data[0].url,
+          prompt: trimmedPrompt,
+          model: modelForGeneration,
+          timestamp: new Date().toISOString(),
+          ownerId: user?.id
+        };
       } else if (isFluxModel) {
         // Use Flux generation
         const fluxParams: FluxImageGenerationOptions = {
@@ -3851,14 +3890,14 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, and Reve models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, and Recraft models are available.');
                               return;
                             }
                             handleModelSelect(model.name);
@@ -4070,7 +4109,7 @@ const Create: React.FC = () => {
                             </button>
                           )}
                         </div>
-                        <div className="mt-2">
+                        <div className="mt-2 flex justify-center">
                           <ModelBadge 
                             model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
                             size="md" 
