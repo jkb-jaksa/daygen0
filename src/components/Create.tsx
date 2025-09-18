@@ -256,7 +256,7 @@ const ImageActionMenuPortal: React.FC<{
     setPos({
       top: rect.bottom + 4,
       left: rect.left,
-      width: Math.max(280, rect.width),
+      width: Math.max(200, rect.width),
     });
   }, [open, anchorEl]);
 
