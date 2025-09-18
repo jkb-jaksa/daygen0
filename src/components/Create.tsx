@@ -2715,7 +2715,7 @@ const Create: React.FC = () => {
                           <span className="text-d-white font-raleway text-sm">
                             {(() => {
                               const folder = folders.find(f => f.id === selectedFolder);
-                              return folder ? folder.name : 'Unknown folder';
+                              return folder?.name || 'Unknown folder';
                             })()}
                           </span>
                         </div>
@@ -2725,14 +2725,14 @@ const Create: React.FC = () => {
                         <h2 className="text-2xl font-cabin text-d-text mb-2">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
-                            return folder ? folder.name : 'Unknown folder';
+                            return folder?.name || 'Unknown folder';
                           })()}
                         </h2>
                         <p className="text-d-white/60 font-raleway text-sm">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             if (!folder) return '0 images';
-                            const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                            const folderImages = gallery.filter(img => folder?.imageIds.includes(img.url));
                             return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
                           })()}
                         </p>
@@ -2744,10 +2744,10 @@ const Create: React.FC = () => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
                       
-                      const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                      const folderImages = gallery.filter(img => folder?.imageIds.includes(img.url));
                       
                       return folderImages.map((img, idx) => (
-                        <div key={`folder-${folder.id}-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
+                        <div key={`folder-${folder?.id}-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                           <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                           
                           {/* Hover prompt overlay */}
@@ -2773,10 +2773,10 @@ const Create: React.FC = () => {
                                         }}
                                         className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
                                         onMouseEnter={(e) => {
-                                          showHoverTooltip(e.currentTarget, `folder-${folder.id}-${img.url}-${idx}`);
+                                          showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
                                         onMouseLeave={() => {
-                                          hideHoverTooltip(`folder-${folder.id}-${img.url}-${idx}`);
+                                          hideHoverTooltip(`folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
                                       >
                                         <Copy className="w-3.5 h-3.5" />
@@ -2825,7 +2825,7 @@ const Create: React.FC = () => {
                           
                           {/* Tooltip positioned outside the hover overlay container */}
                           <div 
-                            data-tooltip-for={`folder-${folder.id}-${img.url}-${idx}`}
+                            data-tooltip-for={`folder-${folder?.id}-${img.url}-${idx}`}
                             className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
@@ -2837,7 +2837,7 @@ const Create: React.FC = () => {
                           </div>
                           
                           <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                            {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
+                            {renderHoverPrimaryActions(`folder-actions-${folder?.id}-${idx}-${img.url}`, img)}
                             <div className="flex items-center gap-0.5">
                               <button 
                                 type="button" 
@@ -2888,7 +2888,7 @@ const Create: React.FC = () => {
                     {/* Empty state for folder */}
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
-                      if (!folder || folder.imageIds.length === 0) {
+                      if (!folder || folder?.imageIds.length === 0) {
                         return (
                           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                             <Folder className="default-orange-icon mb-4" />
