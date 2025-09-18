@@ -1405,7 +1405,7 @@ const Create: React.FC = () => {
       <div className="relative">
         <button
           type="button"
-          className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+          className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
           title="Edit"
           aria-haspopup="menu"
           aria-expanded={isOpen}
@@ -1468,7 +1468,7 @@ const Create: React.FC = () => {
       <div className="relative">
         <button
           type="button"
-          className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+          className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
           title="More actions"
           aria-haspopup="menu"
           aria-expanded={isOpen}
@@ -2815,7 +2815,7 @@ const Create: React.FC = () => {
                                 event.stopPropagation();
                                 toggleImageSelection(img.url);
                               }}
-                              className={`image-action-btn image-select-toggle transition-opacity duration-200 ${
+                              className={`image-action-btn image-select-toggle transition-opacity duration-100 ${
                                 isSelected
                                   ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                                   : isSelectMode
@@ -2841,7 +2841,7 @@ const Create: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => confirmDeleteImage(img.url)}
-                                  className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                                  className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
                                   title="Delete image"
                                   aria-label="Delete image"
                                 >
@@ -2850,7 +2850,7 @@ const Create: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => toggleFavorite(img.url)}
-                                  className="image-action-btn favorite-toggle transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                                  className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
                                   title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                 >
@@ -2947,14 +2947,14 @@ const Create: React.FC = () => {
                               </div>
                             </div>
                             
-                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                               <button 
                                 type="button" 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   confirmDeleteUpload(upload.id);
                                 }}
-                                className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                 title="Delete upload" 
                                 aria-label="Delete upload"
                               >
@@ -2963,7 +2963,7 @@ const Create: React.FC = () => {
                               <a 
                                 href={upload.previewUrl} 
                                 download={upload.file.name} 
-                                className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                 title="Download image" 
                                 aria-label="Download image"
                               >
@@ -3060,7 +3060,7 @@ const Create: React.FC = () => {
                                 </div>
                               </div>
                               
-                              <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-200 ${
+                              <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
                                 imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}>
                                 {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
@@ -3069,7 +3069,7 @@ const Create: React.FC = () => {
                                   <button 
                                     type="button" 
                                     onClick={() => confirmDeleteImage(img.url)} 
-                                    className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                    className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                     title="Delete image" 
                                     aria-label="Delete image"
                                   >
@@ -3078,7 +3078,7 @@ const Create: React.FC = () => {
                                   <button 
                                     type="button" 
                                     onClick={() => toggleFavorite(img.url)} 
-                                    className="image-action-btn favorite-toggle transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                    className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                     title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                                     aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   >
@@ -3187,14 +3187,14 @@ const Create: React.FC = () => {
                           )}
                         </div>
                         
-                        <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           <button 
                             type="button" 
                             onClick={(e) => {
                               e.stopPropagation();
                               confirmDeleteFolder(folder.id);
                             }}
-                            className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                            className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                             title="Delete folder" 
                             aria-label="Delete folder"
                           >
@@ -3350,7 +3350,7 @@ const Create: React.FC = () => {
                             Copy prompt
                           </div>
                           
-                          <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-200 ${
+                          <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
                             imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                           }`}>
                             {renderHoverPrimaryActions(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
@@ -3359,7 +3359,7 @@ const Create: React.FC = () => {
                               <button 
                                 type="button" 
                                 onClick={() => confirmDeleteImage(img.url)} 
-                                className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                 title="Delete image" 
                                 aria-label="Delete image"
                               >
@@ -3368,7 +3368,7 @@ const Create: React.FC = () => {
                               <button 
                                 type="button" 
                                 onClick={() => toggleFavorite(img.url)} 
-                                className="image-action-btn favorite-toggle transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                 title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                                 aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                               >
@@ -3498,7 +3498,7 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className={`absolute bottom-0 left-0 right-0 transition-all duration-200 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               style={{
@@ -3596,7 +3596,7 @@ const Create: React.FC = () => {
                             <button 
                               type="button" 
                               onClick={() => confirmDeleteImage(img.url)} 
-                              className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                              className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                               title="Delete image" 
                               aria-label="Delete image"
                             >
@@ -3605,7 +3605,7 @@ const Create: React.FC = () => {
                             <button 
                               type="button" 
                               onClick={() => toggleFavorite(img.url)} 
-                              className="image-action-btn favorite-toggle transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                              className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                               title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                               aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                             >
@@ -4159,7 +4159,7 @@ const Create: React.FC = () => {
                       <button 
                         type="button" 
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
-                        className="image-action-btn transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                        className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                         title="Delete image" 
                         aria-label="Delete image"
                       >
@@ -4168,7 +4168,7 @@ const Create: React.FC = () => {
                       <button 
                         type="button" 
                         onClick={() => toggleFavorite(activeFullSizeImage.url)} 
-                        className="image-action-btn favorite-toggle transition-opacity duration-200 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                        className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                         title={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"} 
                         aria-label={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"}
                       >
