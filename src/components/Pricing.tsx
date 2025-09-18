@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Check, Zap, Crown, Sparkles, Star } from "lucide-react";
-import { layout, text, cards, buttons, glass } from "../styles/designSystem";
+import { layout, cards, glass } from "../styles/designSystem";
 
 type PricingTier = {
   id: string;
@@ -140,56 +140,8 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
   }
 ];
 
-const accentStyles = {
-  emerald: {
-    badge: "bg-emerald-500/20 border-emerald-500/30 text-emerald-400",
-    glow: "shadow-emerald-500/20",
-    text: "text-emerald-400"
-  },
-  yellow: {
-    badge: "bg-yellow-500/20 border-yellow-500/30 text-yellow-400",
-    glow: "shadow-yellow-500/20",
-    text: "text-yellow-400"
-  },
-  blue: {
-    badge: "bg-blue-500/20 border-blue-500/30 text-blue-400",
-    glow: "shadow-blue-500/20",
-    text: "text-blue-400"
-  },
-  violet: {
-    badge: "bg-violet-500/20 border-violet-500/30 text-violet-400",
-    glow: "shadow-violet-500/20",
-    text: "text-violet-400"
-  },
-  pink: {
-    badge: "bg-pink-500/20 border-pink-500/30 text-pink-400",
-    glow: "shadow-pink-500/20",
-    text: "text-pink-400"
-  },
-  cyan: {
-    badge: "bg-cyan-500/20 border-cyan-500/30 text-cyan-400",
-    glow: "shadow-cyan-500/20",
-    text: "text-cyan-400"
-  },
-  orange: {
-    badge: "bg-d-orange-1/20 border-d-orange-1/30 text-d-orange-1",
-    glow: "shadow-d-orange-1/20",
-    text: "text-d-orange-1"
-  },
-  lime: {
-    badge: "bg-lime-500/20 border-lime-500/30 text-lime-400",
-    glow: "shadow-lime-500/20",
-    text: "text-lime-400"
-  },
-  indigo: {
-    badge: "bg-indigo-500/20 border-indigo-500/30 text-indigo-400",
-    glow: "shadow-indigo-500/20",
-    text: "text-indigo-400"
-  }
-};
 
 function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSelected: boolean; onSelect: () => void }) {
-  const s = accentStyles[tier.accent];
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.currentTarget;

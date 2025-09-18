@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Settings, Download, Copy, Heart, History, Trash2, FolderPlus } from "lucide-react";
+import { Settings, Download, Copy, Heart, History as HistoryIcon, Trash2, FolderPlus, X } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
 import { ShareButton } from './ShareButton';
@@ -22,6 +22,13 @@ type Folder = {
   id: string;
   name: string;
   createdAt: Date;
+  imageIds: string[];
+};
+
+type SerializedFolder = {
+  id: string;
+  name: string;
+  createdAt: string;
   imageIds: string[];
 };
 
@@ -67,21 +74,29 @@ export default function History() {
     const userKey = user.id || user.email || "anon";
     const storagePrefix = `daygen_${userKey}_`;
 
-    // Load gallery
-    const storedGallery = getPersistedValue<GalleryImageLike[]>(`${storagePrefix}gallery`, []);
-    setGallery(storedGallery);
+    const loadData = async () => {
+      try {
+        // Load gallery
+        const storedGallery = await getPersistedValue<GalleryImageLike[]>(storagePrefix, 'gallery');
+        setGallery(storedGallery || []);
 
-    // Load favorites
-    const storedFavorites = getPersistedValue<string[]>(`${storagePrefix}favorites`, []);
-    setFavorites(new Set(storedFavorites));
+        // Load favorites
+        const storedFavorites = await getPersistedValue<string[]>(storagePrefix, 'favorites');
+        setFavorites(new Set(storedFavorites || []));
 
-    // Load folders
-    const storedFolders = getPersistedValue<SerializedFolder[]>(`${storagePrefix}folders`, []);
-    const hydratedFolders = storedFolders.map(f => ({
-      ...f,
-      createdAt: new Date(f.createdAt)
-    }));
-    setFolders(hydratedFolders);
+        // Load folders
+        const storedFolders = await getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders');
+        const hydratedFolders = (storedFolders || []).map((f: SerializedFolder) => ({
+          ...f,
+          createdAt: new Date(f.createdAt)
+        }));
+        setFolders(hydratedFolders);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+
+    loadData();
   }, [user]);
 
   // Helper functions for filters
@@ -152,7 +167,7 @@ export default function History() {
     if (user) {
       const userKey = user.id || user.email || "anon";
       const storagePrefix = `daygen_${userKey}_`;
-      setPersistedValue(`${storagePrefix}favorites`, Array.from(newFavorites));
+      setPersistedValue(storagePrefix, 'favorites', Array.from(newFavorites));
     }
   };
 
@@ -164,18 +179,18 @@ export default function History() {
         const userKey = user.id || user.email || "anon";
         const storagePrefix = `daygen_${userKey}_`;
         const updatedGallery = gallery.filter(img => img.url !== url);
-        setPersistedValue(`${storagePrefix}gallery`, updatedGallery);
+        setPersistedValue(storagePrefix, 'gallery', updatedGallery);
       }
     }
   };
 
-  const handleAddToFolder = (url: string) => {
+  const handleAddToFolder = (_url: string) => {
     // This would open a folder selection dialog
     // For now, just show an alert
     alert('Add to folder functionality would be implemented here');
   };
 
-  const showHoverTooltip = (element: HTMLElement, tooltipId: string) => {
+  const showHoverTooltip = (_element: HTMLElement, tooltipId: string) => {
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement;
     if (tooltip) {
       tooltip.style.opacity = '1';
@@ -190,7 +205,7 @@ export default function History() {
   };
 
   // Render hover primary actions
-  const renderHoverPrimaryActions = (id: string, img: GalleryImageLike) => {
+  const renderHoverPrimaryActions = (_id: string, img: GalleryImageLike) => {
     return (
       <div className="flex items-center gap-0.5">
         <button 
@@ -411,7 +426,7 @@ export default function History() {
                       )}
                       {/* Model Badge */}
                       <div className="flex justify-start mt-2">
-                        <ModelBadge model={img.model} size="md" />
+                        <ModelBadge model={img.model || 'unknown'} size="md" />
                       </div>
                     </div>
                   </div>
@@ -458,7 +473,6 @@ export default function History() {
                     <ShareButton 
                       prompt={img.prompt || ""} 
                       size="sm"
-                      className="image-action-btn !px-2 !py-1 !text-xs"
                       onCopy={() => {
                         setCopyNotification('Link copied!');
                         setTimeout(() => setCopyNotification(null), 2000);
@@ -482,7 +496,7 @@ export default function History() {
             {/* Empty state for history */}
             {gallery.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                <History className="w-16 h-16 text-d-white/30 mb-4" />
+                <HistoryIcon className="w-16 h-16 text-d-white/30 mb-4" />
                 <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No history yet</h3>
                 <p className="text-base font-raleway text-d-white/40 max-w-md">
                   Your generation history will appear here once you start creating images.
