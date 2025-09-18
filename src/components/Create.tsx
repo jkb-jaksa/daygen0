@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Circle, HeartOff, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -369,14 +369,15 @@ const Create: React.FC = () => {
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, uploadId: null, folderId: null});
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
-  const [selectedImageForFolder, setSelectedImageForFolder] = useState<string>("");
+  const [selectedImagesForFolder, setSelectedImagesForFolder] = useState<string[]>([]);
   const [returnToFolderDialog, setReturnToFolderDialog] = useState<boolean>(false);
   const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
@@ -393,6 +394,18 @@ const Create: React.FC = () => {
   });
   const maxGalleryTiles = 18; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
+  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, historyFilters, favorites, folders]);
+  const allVisibleSelected = useMemo(() => (
+    filteredGallery.length > 0 && filteredGallery.every(item => selectedImages.has(item.url))
+  ), [filteredGallery, selectedImages]);
+  const visibleSelectedCount = useMemo(
+    () => filteredGallery.filter(item => selectedImages.has(item.url)).length,
+    [filteredGallery, selectedImages],
+  );
+  const hasSelection = selectedImages.size > 0;
+  const pendingDeleteImageCount = deleteConfirmation.imageUrls?.length ?? 0;
+  const isDeletingFolder = Boolean(deleteConfirmation.folderId);
+  const isDeletingUpload = Boolean(deleteConfirmation.uploadId);
   
   // Helper functions for filters
   const getAvailableModels = () => {
@@ -752,6 +765,30 @@ const Create: React.FC = () => {
     })();
   }, [gallery.length, refreshStorageEstimate]);
 
+  useEffect(() => {
+    if (selectedImages.size === 0) return;
+    setSelectedImages(prev => {
+      if (prev.size === 0) return prev;
+      const available = new Set(gallery.map(item => item.url));
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach(url => {
+        if (available.has(url)) {
+          next.add(url);
+        } else {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [gallery, selectedImages.size]);
+
+  useEffect(() => {
+    if (activeCategory !== 'history' && selectedImages.size > 0) {
+      setSelectedImages(new Set());
+    }
+  }, [activeCategory, selectedImages.size]);
+
   // Backup gallery state when component unmounts
   useEffect(() => {
     return () => {
@@ -847,28 +884,115 @@ const Create: React.FC = () => {
     void persistFavorites(newFavorites);
   };
 
+  const addFavorites = (imageUrls: string[]) => {
+    if (imageUrls.length === 0) return;
+    const nextFavorites = new Set(favorites);
+    let changed = false;
+    imageUrls.forEach(url => {
+      if (!nextFavorites.has(url)) {
+        nextFavorites.add(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      void persistFavorites(nextFavorites);
+    }
+  };
+
+  const removeFavorites = (imageUrls: string[]) => {
+    if (imageUrls.length === 0) return;
+    const nextFavorites = new Set(favorites);
+    let changed = false;
+    imageUrls.forEach(url => {
+      if (nextFavorites.has(url)) {
+        nextFavorites.delete(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      void persistFavorites(nextFavorites);
+    }
+  };
+
+  const toggleImageSelection = (imageUrl: string) => {
+    setSelectedImages(prev => {
+      const next = new Set(prev);
+      if (next.has(imageUrl)) {
+        next.delete(imageUrl);
+      } else {
+        next.add(imageUrl);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (filteredGallery.length === 0) return;
+    setSelectedImages(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        filteredGallery.forEach(item => {
+          next.delete(item.url);
+        });
+      } else {
+        filteredGallery.forEach(item => {
+          next.add(item.url);
+        });
+      }
+      return next;
+    });
+  };
+
+  const clearImageSelection = () => {
+    if (selectedImages.size === 0) return;
+    setSelectedImages(new Set());
+  };
+
+  const confirmDeleteImages = (imageUrls: string[]) => {
+    if (imageUrls.length === 0) return;
+    setDeleteConfirmation({ show: true, imageUrl: null, imageUrls, uploadId: null, folderId: null });
+  };
+
+  const handleBulkDelete = () => {
+    confirmDeleteImages(Array.from(selectedImages));
+  };
+
+  const handleBulkLike = () => {
+    addFavorites(Array.from(selectedImages));
+  };
+
+  const handleBulkUnlike = () => {
+    removeFavorites(Array.from(selectedImages));
+  };
+
+  const handleBulkAddToFolder = () => {
+    if (selectedImages.size === 0) return;
+    setSelectedImagesForFolder(Array.from(selectedImages));
+    setAddToFolderDialog(true);
+  };
+
   const focusPromptBar = () => {
     promptTextareaRef.current?.focus();
   };
 
   const confirmDeleteImage = (imageUrl: string) => {
-    setDeleteConfirmation({show: true, imageUrl, uploadId: null, folderId: null});
+    setDeleteConfirmation({show: true, imageUrl, imageUrls: [imageUrl], uploadId: null, folderId: null});
   };
 
   const confirmDeleteUpload = (uploadId: string) => {
-    setDeleteConfirmation({show: true, imageUrl: null, uploadId, folderId: null});
+    setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId, folderId: null});
   };
 
   const confirmDeleteFolder = (folderId: string) => {
-    setDeleteConfirmation({show: true, imageUrl: null, uploadId: null, folderId});
+    setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId});
   };
 
   const handleDeleteConfirmed = () => {
-    if (deleteConfirmation.imageUrl) {
-      // Remove from gallery
+    if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
+      const urlsToDelete = new Set(deleteConfirmation.imageUrls);
       let nextGallery: GalleryImageLike[] = [];
       setGallery(currentGallery => {
-        const updated = currentGallery.filter(img => img && img.url !== deleteConfirmation.imageUrl);
+        const updated = currentGallery.filter(img => img && !urlsToDelete.has(img.url));
         nextGallery = updated;
         return updated;
       });
@@ -879,13 +1003,29 @@ const Create: React.FC = () => {
           setGallery(persisted);
         }
       })();
-      
-      // Remove from liked if it was liked
-      if (favorites.has(deleteConfirmation.imageUrl)) {
-        const newFavorites = new Set(favorites);
-        newFavorites.delete(deleteConfirmation.imageUrl);
-        void persistFavorites(newFavorites);
+
+      const nextFavorites = new Set(favorites);
+      let favoritesChanged = false;
+      urlsToDelete.forEach(url => {
+        if (nextFavorites.delete(url)) {
+          favoritesChanged = true;
+        }
+      });
+      if (favoritesChanged) {
+        void persistFavorites(nextFavorites);
       }
+
+      setSelectedImages(prev => {
+        if (prev.size === 0) return prev;
+        let changed = false;
+        const next = new Set(prev);
+        urlsToDelete.forEach(url => {
+          if (next.delete(url)) {
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
     } else if (deleteConfirmation.uploadId) {
       // Remove uploaded image
       const updatedUploads = uploadedImages.filter(upload => upload.id !== deleteConfirmation.uploadId);
@@ -900,12 +1040,11 @@ const Create: React.FC = () => {
         setSelectedFolder(null);
       }
     }
-    
-    setDeleteConfirmation({show: false, imageUrl: null, uploadId: null, folderId: null});
+    setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
   };
 
   const handleDeleteCancelled = () => {
-    setDeleteConfirmation({show: false, imageUrl: null, uploadId: null, folderId: null});
+    setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
   };
 
   const persistFolders = async (nextFolders: Folder[]) => {
@@ -924,55 +1063,79 @@ const Create: React.FC = () => {
     }
   };
 
-  const addImageToFolder = (imageUrl: string, folderId: string) => {
+  const addImageToFolder = (imageUrls: string | string[], folderId: string) => {
+    const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+    if (urls.length === 0) return;
+
+    let anyFolderChanged = false;
     const updatedFolders = folders.map(folder => {
       if (folder.id === folderId) {
-        // Add image if not already in folder
-        if (!folder.imageIds.includes(imageUrl)) {
+        const imageSet = new Set(folder.imageIds);
+        let changed = false;
+        urls.forEach(url => {
+          if (!imageSet.has(url)) {
+            imageSet.add(url);
+            changed = true;
+          }
+        });
+        if (changed) {
+          anyFolderChanged = true;
           return {
             ...folder,
-            imageIds: [...folder.imageIds, imageUrl]
+            imageIds: Array.from(imageSet),
           };
         }
       }
       return folder;
     });
-    
+
+    if (!anyFolderChanged) return;
     void persistFolders(updatedFolders);
-    
+
   };
 
-  const removeImageFromFolder = (imageUrl: string, folderId: string) => {
+  const removeImageFromFolder = (imageUrls: string | string[], folderId: string) => {
+    const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+    if (urls.length === 0) return;
+
+    const urlSet = new Set(urls);
+    let anyFolderChanged = false;
     const updatedFolders = folders.map(folder => {
       if (folder.id === folderId) {
-        return {
-          ...folder,
-          imageIds: folder.imageIds.filter(id => id !== imageUrl)
-        };
+        const filtered = folder.imageIds.filter(id => !urlSet.has(id));
+        if (filtered.length !== folder.imageIds.length) {
+          anyFolderChanged = true;
+          return {
+            ...folder,
+            imageIds: filtered,
+          };
+        }
       }
       return folder;
     });
-    
+
+    if (!anyFolderChanged) return;
     void persistFolders(updatedFolders);
   };
 
   const handleAddToFolder = (imageUrl: string) => {
-    setSelectedImageForFolder(imageUrl);
+    setSelectedImagesForFolder([imageUrl]);
     setAddToFolderDialog(true);
   };
 
-  const handleToggleImageInFolder = (imageUrl: string, folderId: string) => {
+  const handleToggleImageInFolder = (imageUrl: string | string[], folderId: string) => {
+    const urls = Array.isArray(imageUrl) ? imageUrl : [imageUrl];
     const folder = folders.find(f => f.id === folderId);
     if (!folder) return;
 
-    const isInFolder = folder.imageIds.includes(imageUrl);
-    
-    if (isInFolder) {
+    const allInFolder = urls.every(url => folder.imageIds.includes(url));
+
+    if (allInFolder) {
       // Remove from folder
-      removeImageFromFolder(imageUrl, folderId);
+      removeImageFromFolder(urls, folderId);
     } else {
       // Add to folder
-      addImageToFolder(imageUrl, folderId);
+      addImageToFolder(urls, folderId);
     }
   };
 
@@ -1736,13 +1899,22 @@ const Create: React.FC = () => {
               <div className="mb-4">
                 <Trash2 className="default-orange-icon mx-auto mb-4" />
                 <h3 className="text-xl font-cabin text-d-text mb-2">
-                  {deleteConfirmation.folderId ? 'Delete Folder' : 'Delete Image'}
+                  {isDeletingFolder
+                    ? 'Delete Folder'
+                    : isDeletingUpload
+                      ? 'Delete Upload'
+                      : pendingDeleteImageCount > 1
+                        ? `Delete ${pendingDeleteImageCount} Images`
+                        : 'Delete Image'}
                 </h3>
                 <p className="text-base font-raleway text-d-white">
-                  {deleteConfirmation.folderId 
+                  {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
-                    : 'Are you sure you want to delete this image? This action cannot be undone.'
-                  }
+                    : isDeletingUpload
+                      ? 'Are you sure you want to delete this upload? This action cannot be undone.'
+                      : pendingDeleteImageCount > 1
+                        ? `Are you sure you want to delete these ${pendingDeleteImageCount} images? This action cannot be undone.`
+                        : 'Are you sure you want to delete this image? This action cannot be undone.'}
                 </p>
               </div>
               <div className="flex justify-center gap-3">
@@ -1849,7 +2021,7 @@ const Create: React.FC = () => {
                 <FolderPlus className="default-orange-icon mx-auto mb-4" />
                 <h3 className="text-xl font-cabin text-d-text mb-2">Manage Folders</h3>
                 <p className="text-base font-raleway text-d-white mb-4">
-                  Check folders to add or remove this image from.
+                  Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these images' : 'this image'} from.
                 </p>
               </div>
               
@@ -1877,35 +2049,47 @@ const Create: React.FC = () => {
                 ) : (
                   <div className="space-y-2">
                     {folders.map((folder) => {
-                      const isInFolder = folder.imageIds.includes(selectedImageForFolder);
+                      const totalSelected = selectedImagesForFolder.length;
+                      const inFolderCount = selectedImagesForFolder.filter(url => folder.imageIds.includes(url)).length;
+                      const isFullyInFolder = totalSelected > 0 && inFolderCount === totalSelected;
+                      const isPartiallyInFolder = totalSelected > 0 && inFolderCount > 0 && inFolderCount < totalSelected;
                       return (
                         <label
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
-                            isInFolder
+                            isFullyInFolder
                               ? "bg-d-orange-1/10 border-d-orange-1 shadow-lg shadow-d-orange-1/20"
+                              : isPartiallyInFolder
+                                ? "bg-d-orange-1/10 border-d-orange-1/70"
                               : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
                           }`}
                         >
                           <input
                             type="checkbox"
-                            checked={isInFolder}
-                            onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
+                            checked={isFullyInFolder}
+                            onChange={() => handleToggleImageInFolder(selectedImagesForFolder, folder.id)}
                             className="sr-only"
+                            aria-checked={isPartiallyInFolder ? 'mixed' : isFullyInFolder}
                           />
                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                            isInFolder ? "border-d-orange-1 bg-d-orange-1" : "border-d-mid hover:border-d-orange-1/50"
+                            isFullyInFolder
+                              ? "border-d-orange-1 bg-d-orange-1"
+                              : isPartiallyInFolder
+                                ? "border-d-orange-1 bg-d-orange-1/30"
+                                : "border-d-mid hover:border-d-orange-1/50"
                           }`}>
-                            {isInFolder ? (
+                            {isFullyInFolder ? (
                               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
+                            ) : isPartiallyInFolder ? (
+                              <Minus className="w-3 h-3 text-d-orange-1" strokeWidth={3} />
                             ) : (
                               <div className="w-2 h-2 bg-transparent rounded"></div>
                             )}
                           </div>
                           <div className="flex-shrink-0">
-                            {isInFolder ? (
+                            {isFullyInFolder ? (
                               <div className="w-5 h-5 bg-d-orange-1/20 rounded-lg flex items-center justify-center">
                                 <Folder className="w-3 h-3 text-d-orange-1" />
                               </div>
@@ -1915,15 +2099,25 @@ const Create: React.FC = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-cabin truncate ${
-                              isInFolder ? 'text-d-orange-1' : 'text-d-text/80'
+                              isFullyInFolder ? 'text-d-orange-1' : 'text-d-text/80'
                             }`}>
                               {folder.name}
                             </div>
                             <div className={`text-xs ${
-                              isInFolder ? 'text-d-orange-1/70' : 'text-d-white/50'
+                              isFullyInFolder || isPartiallyInFolder ? 'text-d-orange-1/70' : 'text-d-white/50'
                             }`}>
                               {folder.imageIds.length} images
-                              {isInFolder && " (added)"}
+                              {totalSelected > 1 && (
+                                <>
+                                  {" • "}
+                                  {isFullyInFolder
+                                    ? 'All selected added'
+                                    : isPartiallyInFolder
+                                      ? `${inFolderCount} of ${totalSelected} selected`
+                                      : 'None of selected added'}
+                                </>
+                              )}
+                              {totalSelected === 1 && isFullyInFolder && " (added)"}
                             </div>
                           </div>
                         </label>
@@ -1937,7 +2131,7 @@ const Create: React.FC = () => {
                 <button
                   onClick={() => {
                     setAddToFolderDialog(false);
-                    setSelectedImageForFolder("");
+                    setSelectedImagesForFolder([]);
                   }}
                   className={`${buttons.ghost} h-12 min-w-[120px]`}
                 >
@@ -1946,7 +2140,7 @@ const Create: React.FC = () => {
                 <button
                   onClick={() => {
                     setAddToFolderDialog(false);
-                    setSelectedImageForFolder("");
+                    setSelectedImagesForFolder([]);
                   }}
                   className={buttons.primary}
                 >
@@ -2196,152 +2390,262 @@ const Create: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-3 w-full">
-                    {filterGalleryItems(gallery).map((img, idx) => (
-                      <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
-                        <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
-                        
-                        {/* Hover prompt overlay */}
-                        {img.prompt && (
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
-                            style={{
-                              background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                              backdropFilter: 'blur(12px)',
-                              WebkitBackdropFilter: 'blur(12px)',
-                              height: 'fit-content'
-                            }}
+
+                    {/* Selection Toolbar */}
+                    <div className={`${glass.surface} mb-4 flex flex-wrap items-center justify-between gap-3 p-3`}>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-raleway uppercase tracking-[0.2em] text-d-white/50">Selection</span>
+                          <span className="text-sm font-cabin text-d-white">{selectedImages.size}</span>
+                          <span className="text-xs font-raleway text-d-white/60">
+                            {selectedImages.size === 1 ? 'image selected' : 'images selected'}
+                          </span>
+                          {selectedImages.size !== visibleSelectedCount && (
+                            <span className="text-xs font-raleway text-d-white/50">
+                              ({visibleSelectedCount} visible)
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={toggleSelectAllVisible}
+                            disabled={filteredGallery.length === 0}
+                            className={`${buttons.subtle} !h-8 disabled:cursor-not-allowed disabled:opacity-50`}
                           >
-                            <div className="w-full p-4">
-                              <div className="mb-2">
-                                <div className="relative">
-                                  <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
-                                    {img.prompt}
+                            {allVisibleSelected ? 'Unselect visible' : 'Select visible'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={clearImageSelection}
+                            disabled={!hasSelection}
+                            className={`${buttons.subtle} !h-8 disabled:cursor-not-allowed disabled:opacity-50`}
+                          >
+                            Clear selection
+                          </button>
+                        </div>
+                      </div>
+                      {hasSelection && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleBulkLike}
+                            className={`${buttons.subtle} !h-8 gap-1.5`}
+                          >
+                            <Heart className="h-3.5 w-3.5" />
+                            <span>Like</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleBulkUnlike}
+                            className={`${buttons.subtle} !h-8 gap-1.5`}
+                          >
+                            <HeartOff className="h-3.5 w-3.5" />
+                            <span>Unlike</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleBulkAddToFolder}
+                            className={`${buttons.subtle} !h-8 gap-1.5`}
+                          >
+                            <FolderPlus className="h-3.5 w-3.5" />
+                            <span>Add to folder</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleBulkDelete}
+                            className={`${buttons.subtle} !h-8 gap-1.5 text-red-300 hover:text-red-200`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 w-full">
+                    {filteredGallery.map((img, idx) => {
+                      const isSelected = selectedImages.has(img.url);
+                      return (
+                        <div
+                          key={`hist-${img.url}-${idx}`}
+                          className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
+                            isSelected ? 'ring-2 ring-[var(--d-orange-1)] ring-offset-2 ring-offset-[#0b0c0d]' : ''
+                          }`}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.prompt || `Generated ${idx + 1}`}
+                            className="w-full aspect-square object-cover"
+                            onClick={() => {
+                              setSelectedFullImage(img);
+                              setIsFullSizeOpen(true);
+                            }}
+                          />
+
+                          {/* Hover prompt overlay */}
+                          {img.prompt && (
+                            <div
+                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                              style={{
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)',
+                                height: 'fit-content'
+                              }}
+                            >
+                              <div className="w-full p-4">
+                                <div className="mb-2">
+                                  <div className="relative">
+                                    <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
+                                      {img.prompt}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyPromptToClipboard(img.prompt);
+                                        }}
+                                        className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                        onMouseEnter={(e) => {
+                                          showHoverTooltip(e.currentTarget, `hist-${img.url}-${idx}`);
+                                        }}
+                                        onMouseLeave={() => {
+                                          hideHoverTooltip(`hist-${img.url}-${idx}`);
+                                        }}
+                                      >
+                                        <Copy className="w-3.5 h-3.5" />
+                                      </button>
+                                    </p>
+                                  </div>
+                                </div>
+                                {img.references && img.references.length > 0 && (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="flex gap-1">
+                                      {img.references.map((ref, refIdx) => (
+                                        <div key={refIdx} className="relative">
+                                          <img
+                                            src={ref}
+                                            alt={`Reference ${refIdx + 1}`}
+                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedReferenceImage(ref);
+                                              setIsFullSizeOpen(true);
+                                            }}
+                                          />
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
+                                            {refIdx + 1}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        copyPromptToClipboard(img.prompt);
+                                        const link = document.createElement('a');
+                                        link.href = img.references![0];
+                                        link.target = '_blank';
+                                        link.click();
                                       }}
-                                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
-                                      onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `hist-${img.url}-${idx}`);
-                                      }}
-                                      onMouseLeave={() => {
-                                        hideHoverTooltip(`hist-${img.url}-${idx}`);
-                                      }}
+                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
                                     >
-                                      <Copy className="w-3.5 h-3.5" />
+                                      View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
-                                  </p>
+                                  </div>
+                                )}
+                                {/* Model Badge */}
+                                <div className="flex justify-start mt-2">
+                                  <ModelBadge model={img.model} size="md" />
                                 </div>
                               </div>
-                              {img.references && img.references.length > 0 && (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="flex gap-1">
-                                    {img.references.map((ref, refIdx) => (
-                                      <div key={refIdx} className="relative">
-                                        <img 
-                                          src={ref} 
-                                          alt={`Reference ${refIdx + 1}`} 
-                                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedReferenceImage(ref);
-                                            setIsFullSizeOpen(true);
-                                          }}
-                                        />
-                                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
-                                          {refIdx + 1}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const link = document.createElement('a');
-                                      link.href = img.references![0];
-                                      link.target = '_blank';
-                                      link.click();
-                                    }}
-                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
-                                  >
-                                    View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
-                                  </button>
-                                </div>
-                              )}
-                              {/* Model Badge */}
-                              <div className="flex justify-start mt-2">
-                                <ModelBadge model={img.model} size="md" />
+                            </div>
+                          )}
+
+                          {/* Tooltip positioned outside the hover overlay container */}
+                          <div
+                            data-tooltip-for={`hist-${img.url}-${idx}`}
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            style={{
+                              left: '50%',
+                              transform: 'translateX(-50%) translateY(-100%)',
+                              top: '-8px'
+                            }}
+                          >
+                            Copy prompt
+                          </div>
+
+                          <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleImageSelection(img.url);
+                              }}
+                              className={`image-action-btn image-select-toggle transition-opacity duration-200 ${
+                                isSelected
+                                  ? 'image-select-toggle--active opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                              }`}
+                              aria-pressed={isSelected}
+                              aria-label={isSelected ? 'Unselect image' : 'Select image'}
+                            >
+                              {isSelected ? <Check className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
+                            </button>
+                            <div
+                              className={`ml-auto flex items-center gap-0.5 transition-opacity duration-200 ${
+                                imageActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                  ? 'opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
+                              }`}
+                            >
+                              {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
+                              <div className="flex items-center gap-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => confirmDeleteImage(img.url)}
+                                  className="image-action-btn"
+                                  title="Delete image"
+                                  aria-label="Delete image"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleFavorite(img.url)}
+                                  className="image-action-btn favorite-toggle"
+                                  title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                                  aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                                >
+                                  <Heart
+                                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                      favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                    }`}
+                                  />
+                                </button>
+                                <ShareButton
+                                  prompt={img.prompt || ""}
+                                  size="sm"
+                                  className="image-action-btn !px-2 !py-1 !text-xs"
+                                  onCopy={() => {
+                                    setCopyNotification('Link copied!');
+                                    setTimeout(() => setCopyNotification(null), 2000);
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddToFolder(img.url)}
+                                  className="image-action-btn"
+                                  title="Add to folder"
+                                  aria-label="Add to folder"
+                                >
+                                  <FolderPlus className="w-3.5 h-3.5" />
+                                </button>
+                                <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* Tooltip positioned outside the hover overlay container */}
-                        <div 
-                          data-tooltip-for={`hist-${img.url}-${idx}`}
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                          style={{ 
-                            left: '50%', 
-                            transform: 'translateX(-50%) translateY(-100%)',
-                            top: '-8px'
-                          }}
-                        >
-                          Copy prompt
                         </div>
-                        
-                        <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-200 ${
-                          imageActionMenu?.id === `history-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        }`}>
-                          {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
-                          <div className="flex items-center gap-0.5">
-                            <button 
-                              type="button" 
-                              onClick={() => confirmDeleteImage(img.url)} 
-                              className="image-action-btn" 
-                              title="Delete image" 
-                              aria-label="Delete image"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => toggleFavorite(img.url)} 
-                              className="image-action-btn favorite-toggle" 
-                              title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
-                              aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                            >
-                              <Heart 
-                                className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                                }`} 
-                              />
-                            </button>
-                            <ShareButton 
-                              prompt={img.prompt || ""} 
-                              size="sm"
-                              className="image-action-btn !px-2 !py-1 !text-xs"
-                              onCopy={() => {
-                                setCopyNotification('Link copied!');
-                                setTimeout(() => setCopyNotification(null), 2000);
-                              }}
-                            />
-                            <button 
-                              type="button" 
-                              onClick={() => handleAddToFolder(img.url)} 
-                              className="image-action-btn" 
-                              title="Add to folder" 
-                              aria-label="Add to folder"
-                            >
-                              <FolderPlus className="w-3.5 h-3.5" />
-                            </button>
-                            <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     
                     {/* Empty state for history */}
                     {gallery.length === 0 && (
@@ -2355,7 +2659,7 @@ const Create: React.FC = () => {
                     )}
                     
                     {/* Empty state for filtered results */}
-                    {gallery.length > 0 && filterGalleryItems(gallery).length === 0 && (
+                    {gallery.length > 0 && filteredGallery.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Settings className="default-orange-icon mb-4" />
                         <h3 className="text-xl font-cabin text-d-text mb-2">No results found</h3>
