@@ -18,7 +18,7 @@ export const text = {
 };
 
 export const cards = {
-  shell: "parallax-small tag-gradient relative rounded-[32px] border border-d-dark bg-black transition-all duration-200",
+  shell: "parallax-small tag-gradient relative rounded-[32px] border border-d-dark bg-black hover:border-d-mid transition-all duration-200",
   panel: "relative rounded-[64px] overflow-hidden isolate",
 };
 

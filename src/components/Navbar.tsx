@@ -214,6 +214,7 @@ export default function Navbar() {
               <>
                 {/* Credit Usage Button */}
                 <button 
+                  onClick={() => setShowPricing(true)}
                   className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-3 py-1.5 hover:bg-black/30 hover:text-brand transition-colors"
                   aria-label="Credit usage"
                 >

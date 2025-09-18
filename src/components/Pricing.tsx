@@ -222,7 +222,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className={`${cards.shell} ${isSelected ? 'ring-2 ring-d-light' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200`}
+      className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200`}
     >
       {/* Popular badge */}
       {tier.popular && (
@@ -263,7 +263,15 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
               tier.id === 'pro' ? 'text-brand-cyan' : 
               'text-brand-red'
             }`}>{tier.price}</span>
-            <span className="text-d-text font-raleway">/{tier.period}</span>
+            <span className="text-d-text font-raleway">
+              /{tier.period.includes('month') || tier.period.includes('year') ? (
+                <>
+                  {tier.period.split(' ')[0]} <span className="font-bold">{tier.period.split(' ')[1]}</span>
+                </>
+              ) : (
+                tier.period
+              )}
+            </span>
           </div>
         </div>
 
@@ -349,7 +357,7 @@ export default function Pricing() {
               </button>
               <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-d-text' : 'text-d-white'}`}>
                 Yearly
-                <span className="ml-1 text-xs text-d-orange-1 font-raleway">(Save 20%)</span>
+                <span className="ml-1 text-xs text-d-orange-1 font-cabin">(Save 20%)</span>
               </span>
             </div>
           </div>
