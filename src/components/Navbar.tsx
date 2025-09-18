@@ -195,6 +195,12 @@ export default function Navbar() {
           <div className="flex items-center gap-1 md:gap-2">
             {!user ? (
               <>
+                <button 
+                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => setShowPricing(true)}
+                >
+                  Pricing
+                </button>
                 <button className={`${buttons.secondary} btn-compact parallax-small`} onClick={()=>setShowAuth("login")}>
                   Log In
                 </button>

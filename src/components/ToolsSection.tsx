@@ -417,49 +417,49 @@ export default function ToolsSection() {
 
           {/* Cards Grid */}
           {activeCategory === "image" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "video" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {VIDEO_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "avatars" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {AVATAR_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "voice" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {VOICE_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "music" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {MUSIC_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "text" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {TEXT_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "3d" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
               {THREE_D_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}

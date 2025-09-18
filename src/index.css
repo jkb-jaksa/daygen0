@@ -664,7 +664,8 @@ html, body {
 }
 
 /* Keep Tailwind translate/rotate/skew while scaling on hover */
-.parallax-mid:hover {
+.parallax-mid:hover,
+.parallax-mid.parallax-active {
   --tw-scale-x: 1.01;
   --tw-scale-y: 1.01;
 }
@@ -675,7 +676,8 @@ html, body {
 }
 
 /* More pronounced effect for large elements */
-.parallax-large:hover {
+.parallax-large:hover,
+.parallax-large.parallax-active {
   transform: translateZ(150px) scale(1.015);
   transition: transform 0.2s;
 }
@@ -685,7 +687,8 @@ html, body {
   perspective: 1000px;
 }
 
-.parallax-small:hover {
+.parallax-small:hover,
+.parallax-small.parallax-active {
   transform: translateZ(100px) scale(1.005);
   transition: transform 0.2s;
 }
@@ -745,6 +748,21 @@ html, body {
 .image-action-btn--labelled svg {
   height: 0.95rem;
   width: 0.95rem;
+}
+
+.image-select-toggle {
+  z-index: 60;
+}
+
+.image-select-toggle--active {
+  background-color: rgba(255, 149, 77, 0.15);
+  border-color: var(--d-orange-1);
+  color: var(--d-orange-1);
+}
+
+.image-select-toggle:focus-visible {
+  outline: 2px solid var(--d-orange-1);
+  outline-offset: 2px;
 }
 
 .favorite-toggle .heart-icon {

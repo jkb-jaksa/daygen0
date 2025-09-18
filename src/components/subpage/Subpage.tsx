@@ -843,7 +843,7 @@ export default function Subpage() {
   if (conf.type === "tools") {
     return (
       <PageChrome title={conf.title} subtitle={conf.subtitle}>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {conf.items.map((t) => (
             <div
               key={t.title}

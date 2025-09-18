@@ -289,7 +289,7 @@ export function Grid() {
           })}
         </aside>
 
-        <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {sets.create.map((card) => (
             <Link
               key={card.slug}
@@ -313,7 +313,7 @@ export function Grid() {
       <section className="grid grid-cols-[150px,1fr] gap-4">
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">edit</h3>
 
-        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {sets.edit.map((card) => (
             <Link
               key={card.slug}
@@ -337,7 +337,7 @@ export function Grid() {
       <section className="grid grid-cols-[150px,1fr] gap-4">
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">personalize</h3>
 
-        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {sets.personalize.map((card) => (
             <Link
               key={card.slug}

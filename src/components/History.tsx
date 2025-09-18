@@ -350,7 +350,7 @@ export default function History() {
           </div>
           
           {/* Gallery Grid */}
-          <div className="grid grid-cols-3 gap-3 w-full">
+          <div className="grid grid-cols-4 gap-3 w-full">
             {filterGalleryItems(gallery).map((img, idx) => (
               <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                 <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
