@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -39,6 +39,7 @@ type Folder = {
   name: string;
   createdAt: Date;
   imageIds: string[]; // Array of image URLs in this folder
+  customThumbnail?: string; // Optional custom thumbnail URL
 };
 
 type GalleryImageLike =
@@ -51,7 +52,7 @@ type PendingGalleryItem = { pending: true; id: string; prompt: string; model: st
 
 type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
 
-type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[] };
+type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[]; customThumbnail?: string };
 
 const isJobBackedImage = (item: GalleryImageLike): item is FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage =>
   'jobId' in item && typeof item.jobId === 'string';
@@ -256,7 +257,7 @@ const ImageActionMenuPortal: React.FC<{
     setPos({
       top: rect.bottom + 4,
       left: rect.left,
-      width: Math.max(200, rect.width),
+      width: Math.max(280, rect.width),
     });
   }, [open, anchorEl]);
 
@@ -371,6 +372,7 @@ const Create: React.FC = () => {
   const hasGenerationCapacity = activeGenerationQueue.length < MAX_PARALLEL_GENERATIONS;
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
+  const [shouldAutoGenerateAfterModelSelect, setShouldAutoGenerateAfterModelSelect] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
@@ -379,6 +381,8 @@ const Create: React.FC = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
+  const [folderThumbnailDialog, setFolderThumbnailDialog] = useState<{show: boolean, folderId: string | null}>({show: false, folderId: null});
+  const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImagesForFolder, setSelectedImagesForFolder] = useState<string[]>([]);
@@ -1068,6 +1072,7 @@ const Create: React.FC = () => {
         name: folder.name,
         createdAt: folder.createdAt.toISOString(),
         imageIds: folder.imageIds,
+        customThumbnail: folder.customThumbnail,
       }));
       await setPersistedValue(storagePrefix, 'folders', serialised);
       await refreshStorageEstimate();
@@ -1139,6 +1144,53 @@ const Create: React.FC = () => {
   const handleRemoveFromFolder = (image: GalleryImageLike) => {
     setSelectedImagesForFolder([image.url]);
     setAddToFolderDialog(true);
+  };
+
+  const handleFolderThumbnailUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    setFolderThumbnailFile(file);
+  };
+
+  const handleSetFolderThumbnail = (folderId: string, thumbnailUrl: string) => {
+    const updatedFolders = folders.map(folder => 
+      folder.id === folderId 
+        ? { ...folder, customThumbnail: thumbnailUrl }
+        : folder
+    );
+    setFolders(updatedFolders);
+    void persistFolders(updatedFolders);
+    setFolderThumbnailDialog({show: false, folderId: null});
+    setFolderThumbnailFile(null);
+  };
+
+  const handleRemoveFolderThumbnail = (folderId: string) => {
+    const updatedFolders = folders.map(folder => 
+      folder.id === folderId 
+        ? { ...folder, customThumbnail: undefined }
+        : folder
+    );
+    setFolders(updatedFolders);
+    void persistFolders(updatedFolders);
+  };
+
+  const handleUploadFolderThumbnail = async () => {
+    if (!folderThumbnailFile || !folderThumbnailDialog.folderId) return;
+    
+    try {
+      // Create a local URL for the file
+      const fileUrl = URL.createObjectURL(folderThumbnailFile);
+      handleSetFolderThumbnail(folderThumbnailDialog.folderId, fileUrl);
+    } catch (error) {
+      console.error('Error processing thumbnail:', error);
+      alert('Error processing thumbnail');
+    }
   };
 
   const handleToggleImageInFolder = (imageUrl: string | string[], folderId: string) => {
@@ -1394,6 +1446,47 @@ const Create: React.FC = () => {
     closeImageActionMenu();
   };
 
+  const handleRerun = async () => {
+    if (!imageActionMenuImage) return;
+    
+    const image = imageActionMenuImage;
+    const originalModel = image.model;
+    const originalPrompt = image.prompt;
+    
+    // Set the prompt to the original prompt
+    setPrompt(originalPrompt);
+    
+    // Set the model to the original model used
+    setSelectedModel(originalModel);
+    
+    // Close the menu
+    closeImageActionMenu();
+    
+    // Wait a bit for state to update, then trigger generation
+    setTimeout(async () => {
+      await handleGenerateImage();
+    }, 100);
+  };
+
+  const handleRerunWithDifferentModel = () => {
+    if (!imageActionMenuImage) return;
+    
+    const image = imageActionMenuImage;
+    const originalPrompt = image.prompt;
+    
+    // Set the prompt to the original prompt
+    setPrompt(originalPrompt);
+    
+    // Set flag to auto-generate after model selection
+    setShouldAutoGenerateAfterModelSelect(true);
+    
+    // Close the menu
+    closeImageActionMenu();
+    
+    // Open the model selector
+    setIsModelSelectorOpen(true);
+  };
+
   const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
     return <div></div>;
   };
@@ -1447,6 +1540,28 @@ const Create: React.FC = () => {
           >
             <Copy className="h-4 w-4" />
             Use as reference
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleRerun();
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Rerun (same model)
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleRerunWithDifferentModel();
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Rerun (different model)
           </button>
           <button
             type="button"
@@ -2010,6 +2125,17 @@ const Create: React.FC = () => {
     // Find model by name and get its ID
     const model = AI_MODELS.find(m => m.name === modelName);
     setSelectedModel(model?.id || "gemini-2.5-flash-image-preview");
+    
+    // If we should auto-generate after model selection, do it
+    if (shouldAutoGenerateAfterModelSelect) {
+      setShouldAutoGenerateAfterModelSelect(false);
+      // Close the model selector
+      setIsModelSelectorOpen(false);
+      // Wait a bit for state to update, then trigger generation
+      setTimeout(async () => {
+        await handleGenerateImage();
+      }, 100);
+    }
   };
 
   const toggleSettings = () => {
@@ -2329,6 +2455,113 @@ const Create: React.FC = () => {
                 >
                   Done
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Folder thumbnail selection dialog */}
+      {folderThumbnailDialog.show && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+            <div className="text-center">
+              <div className="mb-4 relative">
+                <Folder className="default-orange-icon mx-auto mb-4" />
+                <h3 className="text-xl font-cabin text-d-text mb-2">Set Folder Thumbnail</h3>
+                <p className="text-base font-raleway text-d-white mb-4">
+                  Choose a custom thumbnail for this folder
+                </p>
+                {(() => {
+                  const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
+                  if (folder?.customThumbnail) {
+                    return (
+                      <button
+                        onClick={() => {
+                          handleRemoveFolderThumbnail(folder.id);
+                          setFolderThumbnailDialog({show: false, folderId: null});
+                          setFolderThumbnailFile(null);
+                        }}
+                        className="absolute top-0 right-0 w-8 h-8 rounded-full bg-d-orange-1/20 hover:bg-d-orange-1/30 text-d-orange-1 hover:text-d-orange-1 flex items-center justify-center transition-colors duration-200"
+                        title="Remove current thumbnail"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+              
+              <div className="mb-6">
+                {/* Upload new image */}
+                <div className="mb-4">
+                  <label className="block text-sm font-cabin text-d-text mb-2">
+                    Upload New Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFolderThumbnailUpload}
+                    className="w-full p-2 border border-d-dark rounded-lg bg-d-black text-d-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-cabin file:bg-d-orange-1 file:text-d-black file:cursor-pointer hover:file:bg-d-orange-1/90"
+                  />
+                  {folderThumbnailFile && (
+                    <div className="mt-2">
+                      <img 
+                        src={URL.createObjectURL(folderThumbnailFile)} 
+                        alt="Preview" 
+                        className="w-20 h-20 object-cover rounded-lg mx-auto"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Select from existing images */}
+                <div>
+                  <label className="block text-sm font-cabin text-d-text mb-2">
+                    Or Select from Folder Images
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                    {(() => {
+                      const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
+                      if (!folder) return null;
+                      const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                      return folderImages.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSetFolderThumbnail(folder.id, img.url)}
+                          className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-d-orange-1 transition-colors duration-200"
+                        >
+                          <img 
+                            src={img.url} 
+                            alt={`Option ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => {
+                    setFolderThumbnailDialog({show: false, folderId: null});
+                    setFolderThumbnailFile(null);
+                  }}
+                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                >
+                  Cancel
+                </button>
+                {folderThumbnailFile && (
+                  <button
+                    onClick={handleUploadFolderThumbnail}
+                    className={buttons.primary}
+                  >
+                    Done
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -2854,7 +3087,10 @@ const Create: React.FC = () => {
                                 {renderEditButton(`history-actions-${idx}-${img.url}`, img)}
                                 <button
                                   type="button"
-                                  onClick={() => confirmDeleteImage(img.url)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    confirmDeleteImage(img.url);
+                                  }}
                                   className={`image-action-btn transition-opacity duration-100 ${
                                     imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
                                       ? 'opacity-100 pointer-events-auto'
@@ -2867,7 +3103,10 @@ const Create: React.FC = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => toggleFavorite(img.url)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    toggleFavorite(img.url);
+                                  }}
                                   className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
                                     imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
                                       ? 'opacity-100 pointer-events-auto'
@@ -3042,7 +3281,7 @@ const Create: React.FC = () => {
                       
                       if (folderImages.length === 0) {
                         return (
-                          <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
+                          <div className="flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
                             <Folder className="default-orange-icon mb-4" />
                             <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
                             <p className="text-base font-raleway text-d-white max-w-md">
@@ -3119,7 +3358,10 @@ const Create: React.FC = () => {
                                   {renderEditButton(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                   <button 
                                     type="button" 
-                                    onClick={() => confirmDeleteImage(img.url)} 
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      confirmDeleteImage(img.url);
+                                    }} 
                                     className={`image-action-btn transition-opacity duration-100 ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
@@ -3132,7 +3374,10 @@ const Create: React.FC = () => {
                                   </button>
                                   <button 
                                     type="button" 
-                                    onClick={() => toggleFavorite(img.url)} 
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleFavorite(img.url);
+                                    }} 
                                     className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
@@ -3203,25 +3448,82 @@ const Create: React.FC = () => {
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small cursor-pointer" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
-                          {folder.imageIds.length > 0 ? (
+                          {folder.customThumbnail ? (
                             <div className="w-full h-full relative">
-                              {/* Show first image as main thumbnail */}
+                              {/* Show custom thumbnail */}
                               <img 
-                                src={folder.imageIds[0]} 
+                                src={folder.customThumbnail} 
                                 alt={`${folder.name} thumbnail`}
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
-                              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 opacity-100 transition-opacity duration-100">
+                              <div className="absolute inset-0 bg-black/60 group-hover:bg-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
                                 <Folder className="default-orange-icon mb-2" />
                                 <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                                 </p>
                               </div>
+                              
+                              {/* Set/Remove Thumbnail button - top right */}
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFolderThumbnailDialog({show: true, folderId: folder.id});
+                                }}
+                                className={`${glass.base} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                              >
+                                Set Thumbnail
+                              </button>
                               {/* Show additional thumbnails if more than 1 image */}
                               {folder.imageIds.length > 1 && (
-                                <div className="absolute top-2 right-2 bg-black/80 rounded-lg p-1 flex gap-1">
+                                <div className="absolute top-2 left-2 bg-black/80 rounded-lg p-1 flex gap-1">
+                                  {folder.imageIds.slice(1, 4).map((imageId, idx) => (
+                                    <img 
+                                      key={idx}
+                                      src={imageId} 
+                                      alt={`${folder.name} thumbnail ${idx + 2}`}
+                                      className="w-6 h-6 rounded object-cover"
+                                    />
+                                  ))}
+                                  {folder.imageIds.length > 4 && (
+                                    <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
+                                      <span className="text-xs text-d-orange-1 font-bold font-cabin">+{folder.imageIds.length - 4}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : folder.imageIds.length > 0 ? (
+                            <div className="w-full h-full relative">
+                              {/* Show first image as thumbnail when no custom thumbnail */}
+                              <img 
+                                src={folder.imageIds[0]} 
+                                alt={`${folder.name} thumbnail`}
+                                className="w-full h-full object-cover"
+                              />
+                              {/* Overlay with folder info */}
+                              <div className="absolute inset-0 bg-black/60 group-hover:bg-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
+                                <Folder className="default-orange-icon mb-2" />
+                                <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
+                                <p className="text-sm text-d-white font-raleway text-center">
+                                  {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
+                                </p>
+                              </div>
+                              
+                              {/* Set/Remove Thumbnail button - top right */}
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFolderThumbnailDialog({show: true, folderId: folder.id});
+                                }}
+                                className={`${glass.base} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                              >
+                                Set Thumbnail
+                              </button>
+                              {/* Show additional thumbnails if more than 1 image */}
+                              {folder.imageIds.length > 1 && (
+                                <div className="absolute top-2 left-2 bg-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId, idx) => (
                                     <img 
                                       key={idx}
@@ -3239,12 +3541,23 @@ const Create: React.FC = () => {
                               )}
                             </div>
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-6">
+                            <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
                               <Folder className="default-orange-icon mb-3" />
                               <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
                               <p className="text-sm text-d-white font-raleway text-center">
                                 No images yet
                               </p>
+                              
+                              {/* Set/Remove Thumbnail button for empty folders */}
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFolderThumbnailDialog({show: true, folderId: folder.id});
+                                }}
+                                className={`${glass.base} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                              >
+                                Set Thumbnail
+                              </button>
                             </div>
                           )}
                         </div>
@@ -3422,7 +3735,10 @@ const Create: React.FC = () => {
                               {renderEditButton(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
                               <button 
                                 type="button" 
-                                onClick={() => confirmDeleteImage(img.url)} 
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  confirmDeleteImage(img.url);
+                                }} 
                                 className={`image-action-btn transition-opacity duration-100 ${
                                   imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
                                     ? 'opacity-100 pointer-events-auto'
@@ -3435,7 +3751,10 @@ const Create: React.FC = () => {
                               </button>
                               <button 
                                 type="button" 
-                                onClick={() => toggleFavorite(img.url)} 
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  toggleFavorite(img.url);
+                                }} 
                                 className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
                                   imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
                                     ? 'opacity-100 pointer-events-auto'
@@ -3462,7 +3781,7 @@ const Create: React.FC = () => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder || folder?.imageIds.length === 0) {
                         return (
-                          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                          <div className="col-span-full flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
                             <Folder className="default-orange-icon mb-4" />
                             <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
                             <p className="text-base font-raleway text-d-white max-w-md">
@@ -3667,7 +3986,10 @@ const Create: React.FC = () => {
                             {renderEditButton(`gallery-actions-${idx}-${img.url}`, img)}
                             <button 
                               type="button" 
-                              onClick={() => confirmDeleteImage(img.url)} 
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                confirmDeleteImage(img.url);
+                              }} 
                               className={`image-action-btn transition-opacity duration-100 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                   ? 'opacity-100 pointer-events-auto'
@@ -3680,7 +4002,10 @@ const Create: React.FC = () => {
                             </button>
                             <button 
                               type="button" 
-                              onClick={() => toggleFavorite(img.url)} 
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleFavorite(img.url);
+                              }} 
                               className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                   ? 'opacity-100 pointer-events-auto'

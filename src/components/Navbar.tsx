@@ -1,4 +1,4 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, X } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, X, FileText, GraduationCap } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -148,7 +148,7 @@ export default function Navbar() {
     }, 100);
   };
 
-  const items = ["create", "edit", "knowledge base", "prompts", "courses", "services", "about us"] as const;
+  const items = ["create", "edit", "knowledge base", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
@@ -174,9 +174,7 @@ export default function Navbar() {
                   item === "edit" ? "/edit" : 
                   item === "knowledge base" ? "#" : 
                   item === "services" ? "/services" : 
-                  item === "courses" ? "/courses" : 
                   item === "about us" ? "/about-us" : 
-                  item === "prompts" ? "/prompts" : 
                   "#";
 
                 return (
@@ -354,9 +352,27 @@ export default function Navbar() {
                       </div>
                       <span>tools</span>
                     </Link>
+                    <Link
+                      to="/prompts"
+                      onClick={() => setActiveMenu(null)}
+                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                    >
+                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <FileText className="size-3.5" />
+                      </div>
+                      <span>prompts</span>
+                    </Link>
+                    <Link
+                      to="/courses"
+                      onClick={() => setActiveMenu(null)}
+                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                    >
+                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <GraduationCap className="size-3.5" />
+                      </div>
+                      <span>courses</span>
+                    </Link>
                   </div>
-                ) : activeMenu === "courses" ? (
-                  <div className="text-base font-cabin text-d-white/85">Courses coming soon.</div>
                 ) : (
                   <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
                 )}
