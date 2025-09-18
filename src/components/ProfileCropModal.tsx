@@ -143,7 +143,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
                 value={scale}
                 onChange={(e) => setScale(Number(e.target.value))}
                 className="w-20"
-                style={{ accentColor: '#faaa16' }}
+                style={{ accentColor: '#FF8C00' }}
               />
               <span className="text-xs text-d-white font-raleway">{Math.round(scale * 100)}%</span>
             </div>
@@ -158,7 +158,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
                 value={rotate}
                 onChange={(e) => setRotate(Number(e.target.value))}
                 className="w-20"
-                style={{ accentColor: '#faaa16' }}
+                style={{ accentColor: '#FF8C00' }}
               />
               <span className="text-xs text-d-white font-raleway">{rotate}°</span>
             </div>

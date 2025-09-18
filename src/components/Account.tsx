@@ -214,7 +214,7 @@ export default function Account() {
                 ) : (
                   <div 
                     className="size-12 rounded-full flex items-center justify-center text-white text-lg font-bold font-cabin border-2 border-d-dark group-hover:opacity-80 transition-opacity"
-                    style={{ background: user.color || "#faaa16" }}
+                    style={{ background: user.color || "#FF8C00" }}
                   >
                     {(user.name || user.email)[0]?.toUpperCase()}
                   </div>

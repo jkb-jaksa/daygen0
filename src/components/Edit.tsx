@@ -113,7 +113,7 @@ export default function Edit() {
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #faaa16;
+        background: #FF8C00;
         cursor: pointer;
         border: 2px solid #fff;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -122,7 +122,7 @@ export default function Edit() {
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #faaa16;
+        background: #FF8C00;
         cursor: pointer;
         border: 2px solid #fff;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -1110,7 +1110,7 @@ export default function Edit() {
                         top: mousePosition.y - brushSize / 2,
                         width: brushSize,
                         height: brushSize,
-                        borderColor: isEraseMode ? '#faaa16' : '#faaa16',
+                        borderColor: isEraseMode ? '#FF8C00' : '#FF8C00',
                         opacity: 0.8
                       }}
                     />
@@ -1177,7 +1177,7 @@ export default function Edit() {
                     onChange={(e) => setImageSize(Number(e.target.value))}
                     className="w-40 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
                     style={{
-                      background: `linear-gradient(to right, #faaa16 0%, #faaa16 ${(imageSize - 10) / 19.9 * 100}%, rgba(250, 170, 22, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(250, 170, 22, 0.3) 100%)`,
+                      background: `linear-gradient(to right, #FF8C00 0%, #FF8C00 ${(imageSize - 10) / 19.9 * 100}%, rgba(255, 140, 0, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(255, 140, 0, 0.3) 100%)`,
                       WebkitAppearance: 'none',
                       appearance: 'none',
                       height: '4px',
@@ -1247,7 +1247,7 @@ export default function Edit() {
                       onChange={(e) => setBrushSize(Number(e.target.value))}
                       className="w-16 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
                       style={{
-                        background: `linear-gradient(to right, #faaa16 0%, #faaa16 ${(brushSize - 2) / 198 * 100}%, rgba(250, 170, 22, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(250, 170, 22, 0.3) 100%)`,
+                        background: `linear-gradient(to right, #FF8C00 0%, #FF8C00 ${(brushSize - 2) / 198 * 100}%, rgba(255, 140, 0, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(255, 140, 0, 0.3) 100%)`,
                         WebkitAppearance: 'none',
                         appearance: 'none',
                         height: '4px',

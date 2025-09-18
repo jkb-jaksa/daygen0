@@ -255,7 +255,7 @@ export default function Navbar() {
                     ) : (
                       <span
                         className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-cabin"
-                        style={{ background: user.color || "#faaa16" }}
+                        style={{ background: user.color || "#FF8C00" }}
                       >
                         {(user.name || user.email)[0]?.toUpperCase()}
                       </span>
