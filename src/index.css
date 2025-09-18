@@ -759,3 +759,10 @@ html, body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Default orange icon for empty states */
+.default-orange-icon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--d-orange-1);
+}

@@ -1008,9 +1008,20 @@ const Create: React.FC = () => {
   const createNewFolder = () => {
     if (!newFolderName.trim()) return;
     
+    const trimmedName = newFolderName.trim();
+    
+    // Check for duplicate folder names (case-insensitive)
+    const isDuplicate = folders.some(folder => 
+      folder.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      return; // Don't create folder if name already exists
+    }
+    
     const newFolder: Folder = {
       id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: newFolderName.trim(),
+      name: trimmedName,
       createdAt: new Date(),
       imageIds: []
     };
@@ -1723,11 +1734,11 @@ const Create: React.FC = () => {
           <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
-                <Trash2 className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
+                <Trash2 className="default-orange-icon mx-auto mb-4" />
                 <h3 className="text-xl font-cabin text-d-text mb-2">
                   {deleteConfirmation.folderId ? 'Delete Folder' : 'Delete Image'}
                 </h3>
-                <p className="text-base text-d-white font-raleway">
+                <p className="text-base font-raleway text-d-white">
                   {deleteConfirmation.folderId 
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : 'Are you sure you want to delete this image? This action cannot be undone.'
@@ -1737,7 +1748,7 @@ const Create: React.FC = () => {
               <div className="flex justify-center gap-3">
                 <button
                   onClick={handleDeleteCancelled}
-                  className={buttons.ghost}
+                  className={`${buttons.ghost} h-12 min-w-[120px]`}
                 >
                   Cancel
                 </button>
@@ -1759,9 +1770,9 @@ const Create: React.FC = () => {
           <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
-                <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
+                <FolderPlus className="default-orange-icon mx-auto mb-4" />
                 <h3 className="text-xl font-cabin text-d-text mb-2">Create New Folder</h3>
-                <p className="text-base text-d-white font-raleway mb-4">
+                <p className="text-base font-raleway text-d-white mb-4">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -1769,7 +1780,13 @@ const Create: React.FC = () => {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className="w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
+                  className={`w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border transition-colors duration-200 focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway ${
+                    folders.some(folder => 
+                      folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
+                    ) && newFolderName.trim()
+                      ? 'border-d-orange-1 focus:border-d-orange-1' 
+                      : 'border-b-mid focus:border-d-light'
+                  }`}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -1785,6 +1802,13 @@ const Create: React.FC = () => {
                     }
                   }}
                 />
+                {folders.some(folder => 
+                  folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
+                ) && newFolderName.trim() && (
+                  <p className="text-d-orange-1 text-sm font-raleway mt-2">
+                    A folder with this name already exists
+                  </p>
+                )}
               </div>
               <div className="flex justify-center gap-3">
                 <button
@@ -1797,13 +1821,15 @@ const Create: React.FC = () => {
                       setAddToFolderDialog(true);
                     }
                   }}
-                  className={buttons.ghost}
+                  className={`${buttons.ghost} h-12 min-w-[120px]`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createNewFolder}
-                  disabled={!newFolderName.trim()}
+                  disabled={!newFolderName.trim() || folders.some(folder => 
+                    folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
+                  )}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   Create
@@ -1820,9 +1846,9 @@ const Create: React.FC = () => {
           <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
-                <FolderPlus className="w-12 h-12 text-d-orange-1 mx-auto mb-3" />
+                <FolderPlus className="default-orange-icon mx-auto mb-4" />
                 <h3 className="text-xl font-cabin text-d-text mb-2">Manage Folders</h3>
-                <p className="text-base text-d-white font-raleway mb-4">
+                <p className="text-base font-raleway text-d-white mb-4">
                   Check folders to add or remove this image from.
                 </p>
               </div>
@@ -1913,7 +1939,7 @@ const Create: React.FC = () => {
                     setAddToFolderDialog(false);
                     setSelectedImageForFolder("");
                   }}
-                  className={buttons.ghost}
+                  className={`${buttons.ghost} h-12 min-w-[120px]`}
                 >
                   Cancel
                 </button>
@@ -2068,7 +2094,7 @@ const Create: React.FC = () => {
                 {activeCategory === "history" && (
                   <div className="w-full">
                     {/* Filters Section */}
-                    <div className="mb-4 p-3 rounded-lg border border-d-dark bg-d-black/20">
+                    <div className={`mb-4 p-3 ${glass.surface}`}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Settings className="w-4 h-4 text-d-orange-1" />
@@ -2266,7 +2292,9 @@ const Create: React.FC = () => {
                           Copy prompt
                         </div>
                         
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                        <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-200 ${
+                          imageActionMenu?.id === `history-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}>
                           {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
                           <div className="flex items-center gap-0.5">
                             <button 
@@ -2318,9 +2346,9 @@ const Create: React.FC = () => {
                     {/* Empty state for history */}
                     {gallery.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <History className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No history yet</h3>
-                        <p className="text-base font-raleway text-d-white/40 max-w-md">
+                        <History className="default-orange-icon mb-4" />
+                        <h3 className="text-xl font-cabin text-d-text mb-2">No history yet</h3>
+                        <p className="text-base font-raleway text-d-white max-w-md">
                           Your generation history will appear here once you start creating images.
                         </p>
                       </div>
@@ -2329,9 +2357,9 @@ const Create: React.FC = () => {
                     {/* Empty state for filtered results */}
                     {gallery.length > 0 && filterGalleryItems(gallery).length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Settings className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No results found</h3>
-                        <p className="text-base font-raleway text-d-white/40 max-w-md">
+                        <Settings className="default-orange-icon mb-4" />
+                        <h3 className="text-xl font-cabin text-d-text mb-2">No results found</h3>
+                        <p className="text-base font-raleway text-d-white max-w-md">
                           Try adjusting your filters to see more results.
                         </p>
                       </div>
@@ -2343,73 +2371,219 @@ const Create: React.FC = () => {
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
                   <div className="w-full">
+                    {/* Back navigation */}
+                    <div className="mb-6 flex items-center justify-between">
+                      <button
+                        onClick={() => setActiveCategory("image")}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Go back
+                      </button>
+                    </div>
                     
-                    <div className="grid grid-cols-3 gap-3 w-full">
-                    {uploadedImages.map((upload, idx) => (
-                      <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
-                        <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
-                        
-                        {/* Upload info overlay */}
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
-                          style={{
-                            background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            height: 'fit-content'
-                          }}
-                        >
-                          <div className="w-full p-4">
-                            <div className="mb-2">
-                              <div className="relative">
-                                <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
-                                  {upload.file.name}
-                                </p>
-                                <p className="text-d-white/60 text-xs font-raleway mt-1">
-                                  Uploaded {upload.uploadDate.toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                          <button 
-                            type="button" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              confirmDeleteUpload(upload.id);
-                            }}
-                            className="image-action-btn" 
-                            title="Delete upload" 
-                            aria-label="Delete upload"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <a 
-                            href={upload.previewUrl} 
-                            download={upload.file.name} 
-                            className="image-action-btn" 
-                            title="Download image" 
-                            aria-label="Download image"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Empty state for uploads */}
-                    {uploadedImages.length === 0 && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Upload className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No uploads yet</h3>
-                        <p className="text-base font-raleway text-d-white/40 max-w-md">
-                          Upload images using the file input, drag and drop them onto the prompt bar, or paste them directly from your clipboard to see them here.
+                    {uploadedImages.length === 0 ? (
+                      /* Empty state for uploads */
+                      <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
+                        <Upload className="default-orange-icon mb-4" />
+                        <h3 className="text-xl font-cabin text-d-text mb-2">No uploads yet</h3>
+                        <p className="text-base font-raleway text-d-white max-w-md">
+                          Here you will see all your uploaded reference images that were used to create a new image or video.
                         </p>
                       </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-3 w-full">
+                        {uploadedImages.map((upload, idx) => (
+                          <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
+                            <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
+                            
+                            {/* Upload info overlay */}
+                            <div 
+                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                              style={{
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)',
+                                height: 'fit-content'
+                              }}
+                            >
+                              <div className="w-full p-4">
+                                <div className="mb-2">
+                                  <div className="relative">
+                                    <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
+                                      {upload.file.name}
+                                    </p>
+                                    <p className="text-d-white/60 text-xs font-raleway mt-1">
+                                      Uploaded {upload.uploadDate.toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                              <button 
+                                type="button" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  confirmDeleteUpload(upload.id);
+                                }}
+                                className="image-action-btn" 
+                                title="Delete upload" 
+                                aria-label="Delete upload"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <a 
+                                href={upload.previewUrl} 
+                                download={upload.file.name} 
+                                className="image-action-btn" 
+                                title="Download image" 
+                                aria-label="Download image"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
+                  </div>
+                )}
+                
+                {/* Folder View */}
+                {activeCategory === "folder-view" && selectedFolder && (
+                  <div className="w-full">
+                    {/* Back navigation */}
+                    <div className="mb-6 flex items-center justify-between">
+                      <button
+                        onClick={() => { setActiveCategory("my-folders"); setSelectedFolder(null); }}
+                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
+                      >
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
+                        Back to folders
+                      </button>
                     </div>
+                    
+                    {/* Folder header */}
+                    <div className="text-center mb-6">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Folder className="w-6 h-6 text-d-orange-1" />
+                        <h2 className="text-2xl font-cabin text-d-text">
+                          {(() => {
+                            const folder = folders.find(f => f.id === selectedFolder);
+                            return folder ? folder.name : 'Unknown folder';
+                          })()}
+                        </h2>
+                      </div>
+                      <p className="text-d-white/60 font-raleway text-sm">
+                        {(() => {
+                          const folder = folders.find(f => f.id === selectedFolder);
+                          if (!folder) return '0 images';
+                          const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                          return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
+                        })()}
+                      </p>
+                    </div>
+                    
+                    {(() => {
+                      const folder = folders.find(f => f.id === selectedFolder);
+                      if (!folder) return null;
+                      
+                      const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                      
+                      if (folderImages.length === 0) {
+                        return (
+                          <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
+                            <Folder className="default-orange-icon mb-4" />
+                            <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
+                            <p className="text-base font-raleway text-d-white max-w-md">
+                              Add images to this folder to see them here.
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <div className="grid grid-cols-3 gap-3 w-full">
+                          {folderImages.map((img, idx) => (
+                            <div key={`folder-image-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small cursor-pointer" onClick={() => { setSelectedReferenceImage(img.url); setIsFullSizeOpen(true); }}>
+                              <img src={img.url} alt={img.prompt || 'Generated image'} className="w-full aspect-square object-cover" />
+                              
+                              {/* Image info overlay */}
+                              <div 
+                                className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                                style={{
+                                  background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
+                                  backdropFilter: 'blur(12px)',
+                                  WebkitBackdropFilter: 'blur(12px)',
+                                  height: 'fit-content'
+                                }}
+                              >
+                                <div className="w-full p-4">
+                                  <div className="mb-2">
+                                    <div className="relative">
+                                      <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
+                                        {img.prompt || 'Generated image'}
+                                      </p>
+                                      <p className="text-d-white/60 text-xs font-raleway mt-1">
+                                        {img.timestamp ? new Date(img.timestamp).toLocaleDateString() : 'Generated'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                                {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
+                                <div className="flex items-center gap-0.5">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => confirmDeleteImage(img.url)} 
+                                    className="image-action-btn" 
+                                    title="Delete image" 
+                                    aria-label="Delete image"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => toggleFavorite(img.url)} 
+                                    className="image-action-btn favorite-toggle" 
+                                    title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                                    aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                                  >
+                                    <Heart 
+                                      className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                        favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                      }`} 
+                                    />
+                                  </button>
+                                  <ShareButton 
+                                    prompt={img.prompt || ""} 
+                                    size="sm"
+                                    onCopy={() => {
+                                      setCopyNotification('Link copied!');
+                                      setTimeout(() => setCopyNotification(null), 2000);
+                                    }}
+                                  />
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeImageFromFolder(img.url, selectedFolder!)} 
+                                    className="image-action-btn" 
+                                    title="Remove from folder" 
+                                    aria-label="Remove from folder"
+                                  >
+                                    <Folder className="w-3.5 h-3.5" />
+                                  </button>
+                                  <a href={img.url} download className="image-action-btn" title="Download image" aria-label="Download image"><Download className="w-3.5 h-3.5" /></a>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
                 
@@ -2437,9 +2611,9 @@ const Create: React.FC = () => {
                     
                     {folders.length === 0 ? (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Folder className="w-16 h-16 text-d-white/30 mb-4" />
-                        <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No folders yet</h3>
-                        <p className="text-base font-raleway text-d-white/40 max-w-md mb-4">
+                        <Folder className="default-orange-icon mb-4" />
+                        <h3 className="text-xl font-cabin text-d-text mb-2">No folders yet</h3>
+                        <p className="text-base font-raleway text-d-white max-w-md mb-4">
                           Create your first folder to organize your images.
                         </p>
                         <button
@@ -2447,13 +2621,13 @@ const Create: React.FC = () => {
                           className={buttons.primary}
                         >
                           <FolderPlus className="w-4 h-4" />
-                          Create First Folder
+                          Create Folder
                         </button>
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-3 w-full">
                         {folders.map((folder) => (
-                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large cursor-pointer" onClick={() => setSelectedFolder(folder.id)}>
+                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small cursor-pointer" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
                           {folder.imageIds.length > 0 ? (
                             <div className="w-full h-full relative">
@@ -2464,9 +2638,9 @@ const Create: React.FC = () => {
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
-                              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                                <Folder className="w-12 h-12 text-d-white/80 mb-2" />
-                                <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
+                              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 opacity-100 transition-opacity duration-100">
+                                <Folder className="default-orange-icon mb-2" />
+                                <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                                 </p>
@@ -2492,8 +2666,8 @@ const Create: React.FC = () => {
                             </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center p-6">
-                              <Folder className="w-16 h-16 text-d-white/60 mb-3" />
-                              <h3 className="text-lg font-raleway text-d-text mb-1 text-center">{folder.name}</h3>
+                              <Folder className="default-orange-icon mb-3" />
+                              <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
                               <p className="text-sm text-d-white font-raleway text-center">
                                 No images yet
                               </p>
@@ -2522,8 +2696,8 @@ const Create: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Folder Contents View */}
-                {selectedFolder && (
+                {/* Folder Contents View - Moved to separate section */}
+                {false && selectedFolder && (
                   <div className="w-full">
                     {/* Folder header with back button and info */}
                     <div className="mb-6">
@@ -2677,16 +2851,24 @@ const Create: React.FC = () => {
                               <button 
                                 type="button" 
                                 onClick={() => toggleFavorite(img.url)} 
-                                className="image-action-btn" 
-                                title={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"} 
-                                aria-label={favorites.has(img.url) ? "Remove from favorites" : "Add to favorites"}
+                                className="image-action-btn favorite-toggle" 
+                                title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
+                                aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                               >
                                 <Heart 
-                                  className={`w-3.5 h-3.5 transition-colors duration-200 ${
-                                    favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-d-white group-hover:text-d-orange-1'
+                                  className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                    favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                                   }`} 
                                 />
                               </button>
+                              <ShareButton 
+                                prompt={img.prompt || ""} 
+                                size="sm"
+                                onCopy={() => {
+                                  setCopyNotification('Link copied!');
+                                  setTimeout(() => setCopyNotification(null), 2000);
+                                }}
+                              />
                               <button 
                                 type="button" 
                                 onClick={() => removeImageFromFolder(img.url, selectedFolder!)} 
@@ -2709,9 +2891,9 @@ const Create: React.FC = () => {
                       if (!folder || folder.imageIds.length === 0) {
                         return (
                           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                            <Folder className="w-16 h-16 text-d-white/30 mb-4" />
-                            <h3 className="text-xl font-raleway text-d-white/60 mb-2">Folder is empty</h3>
-                            <p className="text-sm font-raleway text-d-white/40 max-w-md">
+                            <Folder className="default-orange-icon mb-4" />
+                            <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
+                            <p className="text-base font-raleway text-d-white max-w-md">
                               This folder doesn't contain any images yet.
                             </p>
                           </div>
@@ -2727,9 +2909,9 @@ const Create: React.FC = () => {
                 {activeCategory === "text" && (
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="text">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Edit className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <Edit className="default-orange-icon mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Text Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white max-w-md">
+                      <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you powerful text generation capabilities. Stay tuned!
                       </p>
                     </div>
@@ -2739,9 +2921,9 @@ const Create: React.FC = () => {
                 {activeCategory === "video" && (
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="video">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <VideoIcon className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <VideoIcon className="default-orange-icon mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Video Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white max-w-md">
+                      <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you amazing video generation features. Stay tuned!
                       </p>
                     </div>
@@ -2751,9 +2933,9 @@ const Create: React.FC = () => {
                 {activeCategory === "avatars" && (
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="avatars">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Users className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <Users className="default-orange-icon mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Avatar Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white max-w-md">
+                      <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you custom avatar generation. Stay tuned!
                       </p>
                     </div>
@@ -2763,9 +2945,9 @@ const Create: React.FC = () => {
                 {activeCategory === "audio" && (
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="audio">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Volume2 className="w-16 h-16 text-d-orange-1 mb-4" />
+                      <Volume2 className="default-orange-icon mb-4" />
                       <h3 className="text-xl font-cabin text-d-text mb-2">Audio Generation Coming Soon</h3>
-                      <p className="text-sm font-raleway text-d-white max-w-md">
+                      <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you audio generation capabilities. Stay tuned!
                       </p>
                     </div>
@@ -3047,13 +3229,14 @@ const Create: React.FC = () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          <div 
-            className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
-            style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
-            onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
-          >
+          {activeCategory !== "history" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && (
+            <div 
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
+              onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+            >
             <div>
               <textarea
                 ref={promptTextareaRef}
@@ -3402,6 +3585,7 @@ const Create: React.FC = () => {
               )}
             </div>
           </div>
+          )}
           
           <div className="flex gap-4">
             <input
