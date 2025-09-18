@@ -476,7 +476,7 @@ const Create: React.FC = () => {
   useEffect(() => {
     const handleCategoryNavigation = (event: CustomEvent) => {
       const category = event.detail?.category;
-      if (category && ['text', 'image', 'video', 'avatars', 'audio'].includes(category)) {
+      if (category && ['text', 'image', 'video', 'avatars', 'audio', 'history'].includes(category)) {
         setActiveCategory(category);
       }
     };
@@ -2605,7 +2605,7 @@ const Create: React.FC = () => {
                   
                   {/* Library section */}
                   <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
-                    library
+                    My creations
                   </div>
                   
                   {/* Library sections in order: history, uploads, folders */}

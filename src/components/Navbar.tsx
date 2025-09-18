@@ -438,6 +438,23 @@ export default function Navbar() {
             <button
               onClick={() => {
                 setMenuOpen(false);
+                navigate("/create");
+                // Dispatch custom event to switch to history view
+                setTimeout(() => {
+                  const event = new CustomEvent('navigateToCategory', { 
+                    detail: { category: "history" } 
+                  });
+                  window.dispatchEvent(event);
+                }, 100);
+              }}
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
+              role="menuitem"
+            >
+              My creations
+            </button>
+            <button
+              onClick={() => {
+                setMenuOpen(false);
                 signOut();
                 navigate("/");
               }}
