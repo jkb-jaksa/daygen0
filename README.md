@@ -36,6 +36,16 @@ REVE_BASE_URL=https://api.reve.com
 REVE_PROJECT_ID=your_reve_project_id_here
 REVE_WEBHOOK_SECRET=your_reve_webhook_secret_here
 
+# Recraft API Key for advanced image generation and editing
+VITE_RECRAFT_API_KEY=your_recraft_api_key_here
+VITE_RECRAFT_API_BASE=https://external.api.recraft.ai/v1
+
+# Client-side environment variables
+VITE_BFL_API_KEY=your_bfl_api_key_here
+VITE_BFL_API_BASE=https://api.bfl.ai
+VITE_BFL_WEBHOOK_SECRET=your_webhook_secret_here
+VITE_SITE_PASSWORD=your_dev_password_here
+
 # Server Configuration
 PORT=3000
 NODE_ENV=development
@@ -60,6 +70,16 @@ DayGen supports multiple AI models for image generation and editing:
 - **Runway Gen-4 Turbo** - Fast Runway generation with reference images
 - **Seedream 3.0** - High-quality text-to-image generation with editing capabilities
 - **Reve Image** - Great text-to-image and image editing
+- **Recraft v3** - Advanced image generation with text layout and brand controls
+- **Recraft v2** - High-quality image generation and editing
+
+### Gemini 2.5 Flash Image Features
+- **Generate**: Text-to-image generation from descriptions
+- **Edit**: Image-to-image editing with text prompts
+- **High Quality**: Professional-grade image generation
+- **Fast Processing**: Optimized for speed and efficiency
+- **Multiple Formats**: Support for various image formats
+- **Google Integration**: Seamless integration with Google AI services
 
 ### Ideogram 3.0 Features
 - **Generate**: Text-to-image with aspect ratio control and style presets
@@ -97,9 +117,34 @@ DayGen supports multiple AI models for image generation and editing:
 - **Async Processing**: Jobs processed asynchronously with status polling
 - **Base64 Storage**: Images stored as base64 data URLs
 
+### FLUX Features
+- **FLUX Pro 1.1**: Standard high-quality text-to-image generation
+- **FLUX Pro 1.1 Ultra**: Ultra-high quality 4MP+ generation
+- **FLUX Kontext Pro/Max**: Advanced image editing with text prompts
+- **Custom Dimensions**: Support for custom width/height settings
+- **Aspect Ratio Control**: Flexible aspect ratio options
+- **Webhook Integration**: Asynchronous processing with status updates
+- **Multiple Models**: Choose between different FLUX model variants
+- **High Resolution**: Generate images up to 4MP resolution
+
+### Recraft Features
+- **Generate**: Text-to-image generation with multiple styles and controls
+- **Image-to-Image**: Transform existing images with text prompts
+- **Inpainting**: Edit specific regions of images using masks
+- **Text Layout**: Position text elements precisely in generated images (v3 only)
+- **Brand Controls**: Specify colors, artistic levels, and background colors
+- **Vectorization**: Convert images to vector graphics
+- **Background Removal**: Automatic subject detection and background removal
+- **Upscaling**: High-quality image enhancement and upscaling
+- **Multiple Styles**: Realistic, digital illustration, vector, and icon styles
+
 For detailed integration documentation, see:
+- [GEMINI_INTEGRATION.md](./GEMINI_INTEGRATION.md)
+- [FLUX_INTEGRATION_GUIDE.md](./FLUX_INTEGRATION_GUIDE.md)
 - [IDEOGRAM_INTEGRATION.md](./IDEOGRAM_INTEGRATION.md)
 - [REVE_INTEGRATION.md](./REVE_INTEGRATION.md)
+- [RECRAFT_INTEGRATION.md](./RECRAFT_INTEGRATION.md)
+- [RUNWAY_INTEGRATION.md](./RUNWAY_INTEGRATION.md)
 
 ## Site Password Protection
 
