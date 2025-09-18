@@ -747,6 +747,21 @@ html, body {
   width: 0.95rem;
 }
 
+.image-select-toggle {
+  z-index: 60;
+}
+
+.image-select-toggle--active {
+  background-color: rgba(255, 149, 77, 0.15);
+  border-color: var(--d-orange-1);
+  color: var(--d-orange-1);
+}
+
+.image-select-toggle:focus-visible {
+  outline: 2px solid var(--d-orange-1);
+  outline-offset: 2px;
+}
+
 .favorite-toggle .heart-icon {
   pointer-events: none;
 }
