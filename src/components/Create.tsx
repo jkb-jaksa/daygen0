@@ -382,7 +382,7 @@ const Create: React.FC = () => {
   const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [moreActionMenu, setMoreActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
-  const [moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
+  const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [historyFilters, setHistoryFilters] = useState<{
     liked: boolean;
     model: string;
@@ -1383,7 +1383,7 @@ const Create: React.FC = () => {
     closeImageActionMenu();
   };
 
-  const renderHoverPrimaryActions = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
+  const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
     return <div></div>;
   };
 
