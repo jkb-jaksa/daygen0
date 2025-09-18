@@ -134,9 +134,9 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   };
 
   const sizeClasses = {
-    sm: 'px-2 py-1 text-xs',
-    md: 'px-3 py-1.5 text-xs',
-    lg: 'px-4 py-2 text-sm'
+    sm: 'px-1.5 py-0.5 text-xs',
+    md: 'px-2 py-1 text-xs',
+    lg: 'px-2.5 py-1 text-xs'
   };
 
   return (
@@ -159,13 +159,13 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
       `}
       title={config.description}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
         {showIcon && (
           hasToolLogo(config.name) ? (
             <img 
               src={getToolLogo(config.name)!} 
               alt={`${config.name} logo`}
-              className="w-4 h-4 object-contain rounded flex-shrink-0"
+              className="w-3 h-3 object-contain rounded flex-shrink-0"
             />
           ) : (
             <span className="text-xs leading-none">

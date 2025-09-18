@@ -1400,12 +1400,17 @@ const Create: React.FC = () => {
 
   const renderEditButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
     const isOpen = imageActionMenu?.id === menuId;
+    const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
 
     return (
       <div className="relative">
         <button
           type="button"
-          className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+          className={`image-action-btn transition-opacity duration-100 ${
+            anyMenuOpen 
+              ? 'opacity-100 pointer-events-auto' 
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+          }`}
           title="Edit"
           aria-haspopup="menu"
           aria-expanded={isOpen}
@@ -1462,13 +1467,18 @@ const Create: React.FC = () => {
 
   const renderMoreButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
     const isOpen = moreActionMenu?.id === menuId;
+    const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
     const isInFolder = selectedFolder && folders.find(f => f.id === selectedFolder)?.imageIds.includes(image.url);
 
     return (
       <div className="relative">
         <button
           type="button"
-          className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+          className={`image-action-btn transition-opacity duration-100 ${
+            anyMenuOpen 
+              ? 'opacity-100 pointer-events-auto' 
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+          }`}
           title="More actions"
           aria-haspopup="menu"
           aria-expanded={isOpen}
@@ -2721,7 +2731,9 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay - only show when not in select mode */}
                           {img.prompt && !isSelectMode && (
                             <div
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                              className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                                imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              }`}
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
@@ -2789,7 +2801,7 @@ const Create: React.FC = () => {
                                 )}
                                 {/* Model Badge */}
                                 <div className="flex justify-start mt-2">
-                                  <ModelBadge model={img.model} size="sm" />
+                                  <ModelBadge model={img.model} size="md" />
                                 </div>
                               </div>
                             </div>
@@ -2820,7 +2832,9 @@ const Create: React.FC = () => {
                                   ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                                   : isSelectMode
                                     ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                    : imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                      ? 'opacity-100 pointer-events-auto'
+                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                               }`}
                               aria-pressed={isSelected}
                               aria-label={isSelected ? 'Unselect image' : 'Select image'}
@@ -2841,7 +2855,11 @@ const Create: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => confirmDeleteImage(img.url)}
-                                  className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                                  className={`image-action-btn transition-opacity duration-100 ${
+                                    imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                      ? 'opacity-100 pointer-events-auto'
+                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                  }`}
                                   title="Delete image"
                                   aria-label="Delete image"
                                 >
@@ -2850,7 +2868,11 @@ const Create: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => toggleFavorite(img.url)}
-                                  className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                                  className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                                    imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                      ? 'opacity-100 pointer-events-auto'
+                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                  }`}
                                   title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                 >
@@ -3032,13 +3054,17 @@ const Create: React.FC = () => {
                       
                       return (
                         <div className="grid grid-cols-4 gap-3 w-full">
-                          {folderImages.map((img, idx) => (
+                          {folderImages.map((img, idx) => {
+                            const isSelected = selectedImages.has(img.url);
+                            return (
                             <div key={`folder-image-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small cursor-pointer" onClick={() => { setSelectedReferenceImage(img.url); setIsFullSizeOpen(true); }}>
                               <img src={img.url} alt={img.prompt || 'Generated image'} className="w-full aspect-square object-cover" />
                               
                               {/* Image info overlay */}
                               <div 
-                                className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                                className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                                  imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                }`}
                                 style={{
                                   background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                   backdropFilter: 'blur(12px)',
@@ -3052,24 +3078,53 @@ const Create: React.FC = () => {
                                       <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                       </p>
-                                      <p className="text-d-white/60 text-xs font-raleway mt-1">
-                                        {img.timestamp ? new Date(img.timestamp).toLocaleDateString() : 'Generated'}
-                                      </p>
+                                      {/* Model Badge */}
+                                      <div className="flex justify-start mt-2">
+                                        <ModelBadge model={img.model} size="md" />
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                               
-                              <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
-                                imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                              }`}>
-                                {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
+                              <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    toggleImageSelection(img.url);
+                                  }}
+                                  className={`image-action-btn image-select-toggle transition-opacity duration-100 ${
+                                    isSelected
+                                      ? 'image-select-toggle--active opacity-100 pointer-events-auto'
+                                      : isSelectMode
+                                        ? 'opacity-100 pointer-events-auto'
+                                        : imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
+                                          ? 'opacity-100 pointer-events-auto'
+                                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                  }`}
+                                  aria-pressed={isSelected}
+                                  aria-label={isSelected ? 'Unselect image' : 'Select image'}
+                                >
+                                  {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                                </button>
+                                {!isSelectMode && (
+                                  <div className={`ml-auto flex items-center gap-0.5 ${
+                                    imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
+                                      ? 'opacity-100 pointer-events-auto'
+                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
+                                  }`}>
+                                    {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                 <div className="flex items-center gap-0.5">
                                   {renderEditButton(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                   <button 
                                     type="button" 
                                     onClick={() => confirmDeleteImage(img.url)} 
-                                    className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                    className={`image-action-btn transition-opacity duration-100 ${
+                                      imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
+                                        ? 'opacity-100 pointer-events-auto'
+                                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                    }`}
                                     title="Delete image" 
                                     aria-label="Delete image"
                                   >
@@ -3078,7 +3133,11 @@ const Create: React.FC = () => {
                                   <button 
                                     type="button" 
                                     onClick={() => toggleFavorite(img.url)} 
-                                    className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                    className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                                      imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
+                                        ? 'opacity-100 pointer-events-auto'
+                                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                    }`}
                                     title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                                     aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   >
@@ -3090,9 +3149,12 @@ const Create: React.FC = () => {
                                   </button>
                                   {renderMoreButton(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                 </div>
+                                </div>
+                                )}
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       );
                     })()}
@@ -3267,7 +3329,9 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div 
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                              className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                                imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              }`}
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
@@ -3359,7 +3423,11 @@ const Create: React.FC = () => {
                               <button 
                                 type="button" 
                                 onClick={() => confirmDeleteImage(img.url)} 
-                                className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className={`image-action-btn transition-opacity duration-100 ${
+                                  imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
+                                    ? 'opacity-100 pointer-events-auto'
+                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                }`}
                                 title="Delete image" 
                                 aria-label="Delete image"
                               >
@@ -3368,7 +3436,11 @@ const Create: React.FC = () => {
                               <button 
                                 type="button" 
                                 onClick={() => toggleFavorite(img.url)} 
-                                className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                                  imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
+                                    ? 'opacity-100 pointer-events-auto'
+                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                }`}
                                 title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                                 aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                               >
@@ -3568,7 +3640,7 @@ const Create: React.FC = () => {
                                 )}
                                 {/* Model Badge */}
                                 <div className="flex justify-start mt-2">
-                                  <ModelBadge model={img.model} size="sm" />
+                                  <ModelBadge model={img.model} size="md" />
                                 </div>
                               </div>
                             </div>
@@ -3596,7 +3668,11 @@ const Create: React.FC = () => {
                             <button 
                               type="button" 
                               onClick={() => confirmDeleteImage(img.url)} 
-                              className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                              className={`image-action-btn transition-opacity duration-100 ${
+                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
+                                  ? 'opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                              }`}
                               title="Delete image" 
                               aria-label="Delete image"
                             >
@@ -3605,7 +3681,11 @@ const Create: React.FC = () => {
                             <button 
                               type="button" 
                               onClick={() => toggleFavorite(img.url)} 
-                              className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                              className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
+                                  ? 'opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                              }`}
                               title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                               aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                             >
@@ -4148,18 +4228,22 @@ const Create: React.FC = () => {
                 {activeFullSizeImage && (
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
                     <div className={`pointer-events-auto ${
-                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
                       {renderHoverPrimaryActions(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
                     </div>
                     <div className={`flex items-center gap-0.5 pointer-events-auto ${
-                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
                       {renderEditButton(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
                       <button 
                         type="button" 
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
-                        className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                        className={`image-action-btn transition-opacity duration-100 ${
+                          imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                        }`}
                         title="Delete image" 
                         aria-label="Delete image"
                       >
@@ -4168,7 +4252,11 @@ const Create: React.FC = () => {
                       <button 
                         type="button" 
                         onClick={() => toggleFavorite(activeFullSizeImage.url)} 
-                        className="image-action-btn favorite-toggle transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                        className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                          imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                        }`}
                         title={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"} 
                         aria-label={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"}
                       >
@@ -4187,7 +4275,9 @@ const Create: React.FC = () => {
                 
                 {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-2xl p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                  <div className={`absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-2xl p-4 text-white transition-opacity duration-100 ${
+                    imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}>
                     <div className="flex items-center justify-center">
                       <div className="text-center">
                         <div className="text-lg font-medium font-cabin">
