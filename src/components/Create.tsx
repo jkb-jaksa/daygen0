@@ -2730,7 +2730,7 @@ const Create: React.FC = () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-d-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         onClick={(e) => {
@@ -2787,7 +2787,7 @@ const Create: React.FC = () => {
                                 )}
                                 {/* Model Badge */}
                                 <div className="flex justify-start mt-2">
-                                  <ModelBadge model={img.model} size="md" />
+                                  <ModelBadge model={img.model} size="sm" />
                                 </div>
                               </div>
                             </div>
@@ -3509,7 +3509,7 @@ const Create: React.FC = () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-d-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         onClick={(e) => {
@@ -3566,12 +3566,12 @@ const Create: React.FC = () => {
                                 )}
                                 {/* Model Badge */}
                                 <div className="flex justify-start mt-2">
-                                  <ModelBadge model={img.model} size="md" />
+                                  <ModelBadge model={img.model} size="sm" />
                                 </div>
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Tooltip positioned outside the hover overlay container */}
                           <div 
                             data-tooltip-for={`${img.url}-${idx}`}
