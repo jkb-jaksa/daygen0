@@ -1141,11 +1141,6 @@ const Create: React.FC = () => {
     setAddToFolderDialog(true);
   };
 
-  const handleRemoveFromFolder = (image: GalleryImageLike) => {
-    setSelectedImagesForFolder([image.url]);
-    setAddToFolderDialog(true);
-  };
-
   const handleFolderThumbnailUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1583,7 +1578,6 @@ const Create: React.FC = () => {
   const renderMoreButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
     const isOpen = moreActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
-    const isInFolder = selectedFolder && folders.find(f => f.id === selectedFolder)?.imageIds.includes(image.url);
 
     return (
       <div className="relative">
@@ -1659,20 +1653,6 @@ const Create: React.FC = () => {
             <FolderPlus className="h-4 w-4" />
             Manage folders
           </button>
-          {isInFolder && (
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleRemoveFromFolder(image);
-                closeMoreActionMenu();
-              }}
-            >
-              <Folder className="h-4 w-4" />
-              Remove from folder
-            </button>
-          )}
         </ImageActionMenuPortal>
       </div>
     );
