@@ -34,7 +34,7 @@
   --d-black: #080B0B;
 
   /* Brand warm gradient stops */
-  --d-orange-1: #faaa16;
+  --d-orange-1: #ff8c00;
   --d-orange-2: #e43a63;
   
   /* Brand cyan color */
@@ -160,7 +160,7 @@ html, body {
 
 .btn-orange:hover {
   background-color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
-  border-color: color-mix(in srgb, var(--d-orange-1) 65%, white 35%);
+  border-color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
 }
 
 .btn-orange:active {
@@ -168,125 +168,23 @@ html, body {
   border-color: color-mix(in srgb, var(--d-orange-1) 70%, black 30%);
 }
 
-/* Warm gradient panel background (matches btn-orange gradient) */
+/* Warm panel background - solid orange */
 .panel-warm-bg {
-  --warm1: var(--d-orange-1, #faaa16);
-  --warm2: var(--d-orange-2, #e43a63);
   background:
     linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    linear-gradient(
-      150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%
-    );
+    var(--d-orange-1);
 }
 
-/* Warm gradient utility for progress indicators / subtle fills */
+/* Warm gradient utility - solid orange */
 .bg-warm-gradient {
-  background: linear-gradient(90deg, var(--d-orange-1), var(--d-orange-2));
+  background: var(--d-orange-1);
 }
 
-@supports (background: linear-gradient(in oklch, red, blue)) {
-  .panel-warm-bg {
-    background:
-      linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-      linear-gradient(
-        in oklch 150deg,
-        var(--d-orange-1) 0%,
-        var(--d-orange-1) 26%,
-        color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
-        color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
-        color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
-        var(--d-orange-2) 88%,
-        var(--d-orange-2) 100%
-      );
-  }
-}
 
-.btn-orange:hover {
-  overflow: hidden;
-}
 
-.btn-orange:hover::before {
-  background:
-    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-    linear-gradient(
-      150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%
-    );
-}
-
-@supports (background: linear-gradient(in oklch, red, blue)) {
-  .btn-orange:hover::before {
-    background:
-      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-      linear-gradient(
-        in oklch 150deg,
-        var(--warm1) 0%,
-        var(--warm1) 26%,
-        color-mix(in oklch, var(--warm1) 70%, var(--warm2) 30%) 34%,
-        color-mix(in oklch, var(--warm1) 50%, var(--warm2) 50%) 50%,
-        color-mix(in oklch, var(--warm1) 30%, var(--warm2) 70%) 66%,
-        var(--warm2) 88%,
-        var(--warm2) 100%
-      );
-  }
-}
-
-/* Gradient text using global warm palette */
-/* Fallback: solid warm color so non-supporting browsers don't show a block */
+/* Text warm gradient - solid orange */
 .text-warm-gradient {
   color: var(--d-orange-1);
-}
-
-@supports (background: linear-gradient(in oklch, red, blue)) {
-  .text-warm-gradient {
-    background:
-      linear-gradient(
-        in oklch 150deg,
-        var(--warm1) 0%,
-        var(--warm1) 26%,
-        color-mix(in oklch, var(--warm1) 70%, var(--warm2) 30%) 34%,
-        color-mix(in oklch, var(--warm1) 50%, var(--warm2) 50%) 50%,
-        color-mix(in oklch, var(--warm1) 30%, var(--warm2) 70%) 66%,
-        var(--warm2) 88%,
-        var(--warm2) 100%
-      );
-    -webkit-background-clip: text;
-    background-clip: text;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    color: transparent;
-    display: inline-block;
-    padding-bottom: 0.08em; /* avoid descender clipping */
-    -webkit-text-fill-color: transparent;
-  }
-}
-
-@supports (-webkit-background-clip: text) or (background-clip: text) {
-  .text-warm-gradient {
-    background:
-      linear-gradient(
-        150deg,
-        var(--d-orange-1) 0%,
-        var(--d-orange-1) 26%,
-        var(--d-orange-2) 88%,
-        var(--d-orange-2) 100%
-      );
-    -webkit-background-clip: text;
-    background-clip: text;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    color: transparent;
-    display: inline-block;
-    padding-bottom: 0.08em; /* avoid descender clipping */
-  -webkit-text-fill-color: transparent;
-  }
 }
 
 /* Simple reusable fade-in utility for 200ms transitions */
@@ -345,64 +243,18 @@ html, body {
   }
 }
 
-/* Brand warm gradient as a utility (text) - matches btn-orange gradient */
+/* Brand orange text utility - solid orange */
 .text-d-orange { 
   color: var(--d-orange-1);
-  --warm1: var(--d-orange-1, #faaa16);
-  --warm2: var(--d-orange-2, #e43a63);
-}
-
-@supports (background: linear-gradient(in oklch, red, blue)) {
-  .text-d-orange {
-    background: linear-gradient(
-      in oklch 150deg,
-      var(--d-orange-1) 0%,
-      var(--d-orange-1) 26%,
-      color-mix(in oklch, var(--d-orange-1) 70%, var(--d-orange-2) 30%) 34%,
-      color-mix(in oklch, var(--d-orange-1) 50%, var(--d-orange-2) 50%) 50%,
-      color-mix(in oklch, var(--d-orange-1) 30%, var(--d-orange-2) 70%) 66%,
-      var(--d-orange-2) 88%,
-      var(--d-orange-2) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    color: transparent;
-    display: inline-block;
-    padding-bottom: 0.08em; /* avoid descender clipping */
-    -webkit-text-fill-color: transparent;
-  }
-}
-
-@supports (-webkit-background-clip: text) or (background-clip: text) {
-  .text-d-orange {
-    background: linear-gradient(150deg,
-      var(--warm1) 0%,
-      var(--warm1) 26%,
-      var(--warm2) 88%,
-      var(--warm2) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    color: transparent;
-    display: inline-block;
-    padding-bottom: 0.08em; /* avoid descender clipping */
-    -webkit-text-fill-color: transparent;
-  }
 }
 
 /* Softer, lighter warm for active states */
-.text-d-orange-soft { color: #ffc977; }
-@supports (color: color-mix(in oklch, red, white)) {
-  .text-d-orange-soft {
-    color: color-mix(in oklch, var(--d-orange-1) 65%, white 35%);
-  }
+.text-d-orange-soft { 
+  color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%); 
 }
 
-/* Brand color - primary orange from gradient */
-.text-brand { color: #faaa16; }
+/* Brand color - primary orange */
+.text-brand { color: var(--d-orange-1); }
 
 /* Cyan button styles */
 .btn-cyan {

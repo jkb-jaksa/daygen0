@@ -2915,7 +2915,7 @@ const Create: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-5 gap-2 w-full">
+                    <div className="grid grid-cols-6 gap-2 w-full">
                     {filteredGallery.map((img, idx) => {
                       const isSelected = selectedImages.has(img.url);
                       return (
