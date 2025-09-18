@@ -373,6 +373,7 @@ const Create: React.FC = () => {
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -388,12 +389,12 @@ const Create: React.FC = () => {
   const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [historyFilters, setHistoryFilters] = useState<{
     liked: boolean;
-    model: string;
+    models: string[];
     type: 'all' | 'image' | 'video';
     folder: string;
   }>({
     liked: false,
-    model: 'all',
+    models: [],
     type: 'all',
     folder: 'all'
   });
@@ -409,7 +410,7 @@ const Create: React.FC = () => {
       }
       
       // Model filter
-      if (historyFilters.model !== 'all' && item.model !== historyFilters.model) {
+      if (historyFilters.models.length > 0 && !historyFilters.models.includes(item.model)) {
         return false;
       }
       
@@ -964,11 +965,17 @@ const Create: React.FC = () => {
   };
 
   const handleBulkLike = () => {
+    const count = selectedImages.size;
     addFavorites(Array.from(selectedImages));
+    setCopyNotification(`${count} image${count === 1 ? '' : 's'} liked!`);
+    setTimeout(() => setCopyNotification(null), 2000);
   };
 
   const handleBulkUnlike = () => {
+    const count = selectedImages.size;
     removeFavorites(Array.from(selectedImages));
+    setCopyNotification(`${count} image${count === 1 ? '' : 's'} unliked!`);
+    setTimeout(() => setCopyNotification(null), 2000);
   };
 
   const handleBulkAddToFolder = () => {
@@ -1243,7 +1250,8 @@ const Create: React.FC = () => {
   };
 
   const openImageAtIndex = (index: number) => {
-    if (gallery[index]) {
+    // Only open if the index is valid and within gallery bounds
+    if (index >= 0 && index < gallery.length && gallery[index]) {
       setSelectedFullImage(gallery[index]);
       setCurrentGalleryIndex(index);
       setIsFullSizeOpen(true);
@@ -2002,6 +2010,14 @@ const Create: React.FC = () => {
     setIsModelSelectorOpen(!isModelSelectorOpen);
   };
 
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    // Clear selection when exiting select mode
+    if (isSelectMode) {
+      setSelectedImages(new Set());
+    }
+  };
+
   // Get current model info
   const getCurrentModel = () => {
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
@@ -2442,7 +2458,7 @@ const Create: React.FC = () => {
                         <button
                           onClick={() => setHistoryFilters({
                             liked: false,
-                            model: 'all',
+                            models: [],
                             type: 'all',
                             folder: 'all'
                           })}
@@ -2479,7 +2495,7 @@ const Create: React.FC = () => {
                               setHistoryFilters(prev => ({ 
                                 ...prev, 
                                 type: newType,
-                                model: 'all' // Reset model filter when type changes
+                                models: [] // Reset model filter when type changes
                               }));
                             }}
                             className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
@@ -2493,23 +2509,87 @@ const Create: React.FC = () => {
                         {/* Model Filter */}
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Model</label>
-                          <select
-                            value={historyFilters.model}
-                            onChange={(e) => setHistoryFilters(prev => ({ ...prev, model: e.target.value }))}
-                            className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
-                            disabled={getAvailableModels().length === 0}
-                          >
-                            <option value="all">All models</option>
-                            {getAvailableModels().map(modelId => {
-                              const model = AI_MODELS.find(m => m.id === modelId);
-                              return (
-                                <option key={modelId} value={modelId}>{model?.name || modelId}</option>
-                              );
-                            })}
-                            {getAvailableModels().length === 0 && (
-                              <option value="none" disabled>No models available</option>
+                          <div className="relative">
+                            <div className="flex flex-wrap gap-1.5 min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus-within:border-d-orange-1 transition-colors duration-200">
+                              {historyFilters.models.length === 0 ? (
+                                <span className="text-d-white/50">All models</span>
+                              ) : (
+                                historyFilters.models.map(modelId => {
+                                  const model = AI_MODELS.find(m => m.id === modelId);
+                                  return (
+                                    <div key={modelId} className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 text-d-white rounded-md text-xs">
+                                      <span>{model?.name || modelId}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setHistoryFilters(prev => ({
+                                            ...prev,
+                                            models: prev.models.filter(id => id !== modelId)
+                                          }));
+                                        }}
+                                        className="hover:text-d-orange-1 transition-colors duration-200 ml-1 text-base font-bold"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  );
+                                })
+                              )}
+                              {historyFilters.models.length > 0 && (
+                                <select
+                                  value=""
+                                  onChange={(e) => {
+                                    const modelId = e.target.value;
+                                    if (modelId && !historyFilters.models.includes(modelId)) {
+                                      setHistoryFilters(prev => ({
+                                        ...prev,
+                                        models: [...prev.models, modelId]
+                                      }));
+                                    }
+                                    e.target.value = ""; // Reset select
+                                  }}
+                                  className="px-2 py-1 text-xs text-d-white/70 hover:text-d-orange-1 border border-dashed border-d-white/30 hover:border-d-orange-1 rounded transition-colors duration-200 bg-transparent cursor-pointer"
+                                >
+                                  <option value="">+ Add model</option>
+                                  {getAvailableModels().map(modelId => {
+                                    const model = AI_MODELS.find(m => m.id === modelId);
+                                    return (
+                                      <option key={modelId} value={modelId} disabled={historyFilters.models.includes(modelId)}>
+                                        {model?.name || modelId}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              )}
+                            </div>
+                            {historyFilters.models.length === 0 && (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const modelId = e.target.value;
+                                  if (modelId && !historyFilters.models.includes(modelId)) {
+                                    setHistoryFilters(prev => ({
+                                      ...prev,
+                                      models: [...prev.models, modelId]
+                                    }));
+                                  }
+                                  e.target.value = ""; // Reset select
+                                }}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                disabled={getAvailableModels().length === 0}
+                              >
+                              <option value="">Add model...</option>
+                              {getAvailableModels().map(modelId => {
+                                const model = AI_MODELS.find(m => m.id === modelId);
+                                return (
+                                  <option key={modelId} value={modelId} disabled={historyFilters.models.includes(modelId)}>
+                                    {model?.name || modelId}
+                                  </option>
+                                );
+                              })}
+                            </select>
                             )}
-                          </select>
+                          </div>
                         </div>
                         
                         {/* Folder Filter */}
@@ -2537,7 +2617,7 @@ const Create: React.FC = () => {
                     </div>
 
                     {/* Selection Toolbar */}
-                    <div className={`${glass.surface} mb-4 flex flex-wrap items-center justify-between gap-3 p-3`}>
+                    <div className={`${glass.surface} mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-cabin text-d-white">{selectedImages.size}</span>
@@ -2551,6 +2631,13 @@ const Create: React.FC = () => {
                           )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={toggleSelectMode}
+                            className={`${buttons.subtle} !h-8 text-d-white ${isSelectMode ? 'bg-d-orange-1/20 text-d-orange-1 border-d-orange-1/30' : ''}`}
+                          >
+                            {isSelectMode ? 'Done' : 'Select'}
+                          </button>
                           <button
                             type="button"
                             onClick={toggleSelectAllVisible}
@@ -2607,7 +2694,7 @@ const Create: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-5 gap-2 w-full">
                     {filteredGallery.map((img, idx) => {
                       const isSelected = selectedImages.has(img.url);
                       return (
@@ -2629,8 +2716,8 @@ const Create: React.FC = () => {
                             }}
                           />
 
-                          {/* Hover prompt overlay */}
-                          {img.prompt && (
+                          {/* Hover prompt overlay - only show when not in select mode */}
+                          {img.prompt && !isSelectMode && (
                             <div
                               className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                               style={{
@@ -2729,20 +2816,23 @@ const Create: React.FC = () => {
                               className={`image-action-btn image-select-toggle transition-opacity duration-200 ${
                                 isSelected
                                   ? 'image-select-toggle--active opacity-100 pointer-events-auto'
-                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                  : isSelectMode
+                                    ? 'opacity-100 pointer-events-auto'
+                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                               }`}
                               aria-pressed={isSelected}
                               aria-label={isSelected ? 'Unselect image' : 'Select image'}
                             >
                               {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                             </button>
-                            <div
-                              className={`ml-auto flex items-center gap-0.5 transition-opacity duration-200 ${
-                                imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
-                                  ? 'opacity-100 pointer-events-auto'
-                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
-                              }`}
-                            >
+                            {!isSelectMode && (
+                              <div
+                                className={`ml-auto flex items-center gap-0.5 transition-opacity duration-200 ${
+                                  imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                    ? 'opacity-100 pointer-events-auto'
+                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
+                                }`}
+                              >
                               {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
                               <div className="flex items-center gap-0.5">
                                 {renderEditButton(`history-actions-${idx}-${img.url}`, img)}
@@ -2771,6 +2861,7 @@ const Create: React.FC = () => {
                                 {renderMoreButton(`history-actions-${idx}-${img.url}`, img)}
                               </div>
                             </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -3369,6 +3460,8 @@ const Create: React.FC = () => {
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
+                    // Calculate the correct gallery index by subtracting pending items count
+                    const galleryIndex = idx - activeGenerationQueue.length;
 
                     if (isPending) {
                       const pending = item as PendingGalleryItem;
@@ -3398,7 +3491,7 @@ const Create: React.FC = () => {
                         <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`}>
-                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { openImageAtIndex(idx); }} />
+                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { openImageAtIndex(galleryIndex); }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
@@ -3862,7 +3955,7 @@ const Create: React.FC = () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className="bg-d-black/40 hover:bg-d-black text-d-white hover:text-brand border-d-mid hover:border-d-orange-1 flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-100 gap-2 group"
+                    className="bg-d-black/40 text-d-white hover:text-brand border-d-mid hover:border-d-orange-1 flex items-center justify-center h-8 px-3 rounded-full border transition-colors duration-100 gap-2 group"
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
