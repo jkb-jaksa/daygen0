@@ -75,7 +75,7 @@ const FAQSection: React.FC = () => {
   };
 
   return (
-    <div className="relative bg-[#0b0b0c]">
+    <div className="relative bg-black">
       {/* Gray header strip with heading */}
       <section className={layout.sectionDivider}>
         <div className={`${layout.container} py-16 justify-items-center`}>

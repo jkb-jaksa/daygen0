@@ -24,7 +24,6 @@ function Home() {
         <section className={`${layout.container} pt-20 pb-16`}>
           <div className="text-center">
             <h1 className={`${text.heroHeading} mb-4`}>
-              welcome to
             </h1>
             <div className={`${text.subHeading} mb-8`}> 
               <span className="text-white-gradient">day</span>

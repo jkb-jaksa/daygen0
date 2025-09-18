@@ -148,7 +148,7 @@ export default function Navbar() {
     }, 100);
   };
 
-  const items = ["create", "edit", "use cases", "tools", "prompts", "courses", "services", "about us"] as const;
+  const items = ["create", "edit", "knowledge base", "prompts", "courses", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
@@ -172,8 +172,7 @@ export default function Navbar() {
                 const path =
                   item === "create" ? "/create" : 
                   item === "edit" ? "/edit" : 
-                  item === "use cases" ? "/use-cases" : 
-                  item === "tools" ? "/tools" : 
+                  item === "knowledge base" ? "#" : 
                   item === "services" ? "/services" : 
                   item === "courses" ? "/courses" : 
                   item === "about us" ? "/about-us" : 
@@ -327,10 +326,29 @@ export default function Navbar() {
                       </Link>
                     ))}
                   </div>
-                ) : activeMenu === "use cases" ? (
-                  <div className="text-base font-cabin text-d-white/85">Use cases coming soon.</div>
-                ) : activeMenu === "tools" ? (
-                  <div className="text-base font-cabin text-d-white/85">Tools coming soon.</div>
+                ) : activeMenu === "knowledge base" ? (
+                  <div className="flex flex-col gap-1.5">
+                    <Link
+                      to="/use-cases"
+                      onClick={() => setActiveMenu(null)}
+                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                    >
+                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <Users className="size-3.5" />
+                      </div>
+                      <span>use cases</span>
+                    </Link>
+                    <Link
+                      to="/tools"
+                      onClick={() => setActiveMenu(null)}
+                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                    >
+                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <Edit className="size-3.5" />
+                      </div>
+                      <span>tools</span>
+                    </Link>
+                  </div>
                 ) : activeMenu === "courses" ? (
                   <div className="text-base font-cabin text-d-white/85">Courses coming soon.</div>
                 ) : (

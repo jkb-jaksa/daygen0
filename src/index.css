@@ -452,6 +452,19 @@ html, body {
   }
 }
 
+/* Lighter text color classes for pricing */
+.text-orange-lighter {
+  color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+}
+
+.text-cyan-lighter {
+  color: color-mix(in srgb, var(--brand-cyan) 78%, white 22%);
+}
+
+.text-red-lighter {
+  color: color-mix(in srgb, var(--brand-red) 78%, white 22%);
+}
+
 /* Red button styles */
 .btn-red {
   background-color: var(--brand-red);

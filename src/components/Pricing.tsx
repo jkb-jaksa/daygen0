@@ -248,9 +248,9 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         {/* Header */}
         <div className="mb-3">
           <h3 className={`text-3xl font-cabin font-light mb-1 ${
-            tier.id === 'free' ? 'text-d-orange-1' : 
-            tier.id === 'pro' ? 'text-brand-cyan' : 
-            'text-brand-red'
+            tier.id === 'free' ? 'text-orange-lighter' : 
+            tier.id === 'pro' ? 'text-cyan-lighter' : 
+            'text-red-lighter'
           }`}>{tier.name}</h3>
           <p className="text-sm text-d-text font-raleway">{tier.description}</p>
         </div>
@@ -259,9 +259,9 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
             <span className={`text-4xl font-cabin font-light ${
-              tier.id === 'free' ? 'text-d-orange-1' : 
-              tier.id === 'pro' ? 'text-brand-cyan' : 
-              'text-brand-red'
+              tier.id === 'free' ? 'text-orange-lighter' : 
+              tier.id === 'pro' ? 'text-cyan-lighter' : 
+              'text-red-lighter'
             }`}>{tier.price}</span>
             <span className="text-d-text font-raleway">
               /{tier.period.includes('month') || tier.period.includes('year') ? (
@@ -285,9 +285,9 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
                 'bg-brand-red/20'
               }`}>
                 <Check className={`w-3 h-3 ${
-                  tier.id === 'free' ? 'text-d-orange-1' : 
-                  tier.id === 'pro' ? 'text-brand-cyan' : 
-                  'text-brand-red'
+                  tier.id === 'free' ? 'text-orange-lighter' : 
+                  tier.id === 'pro' ? 'text-cyan-lighter' : 
+                  'text-red-lighter'
                 }`} />
               </div>
               <span className="text-sm font-raleway text-d-text leading-relaxed">{feature}</span>
