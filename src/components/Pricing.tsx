@@ -11,6 +11,7 @@ type PricingTier = {
   credits: number;
   features: string[];
   popular?: boolean;
+  bestValue?: boolean;
   icon: React.ComponentType<{ className?: string }>;
   accent: "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
 };
@@ -70,6 +71,7 @@ const PRICING_TIERS: PricingTier[] = [
       "Dedicated support",
       "Usage analytics"
     ],
+    bestValue: true,
     icon: Crown,
     accent: "violet"
   }
@@ -132,6 +134,7 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
       "Usage analytics",
       "20% savings"
     ],
+    bestValue: true,
     icon: Crown,
     accent: "violet"
   }
@@ -188,17 +191,55 @@ const accentStyles = {
 function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSelected: boolean; onSelect: () => void }) {
   const s = accentStyles[tier.accent];
 
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--x", `${x.toFixed(2)}%`);
+    el.style.setProperty("--y", `${y.toFixed(2)}%`);
+    const tx = (x - 50) / 10;
+    const ty = (y - 50) / 10;
+    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  };
+
+  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "200ms");
+    el.style.setProperty("--l", "1");
+  };
+
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "400ms");
+    el.style.setProperty("--l", "0");
+  };
+
   return (
     <div
       onClick={onSelect}
-      className={`${cards.shell} ${isSelected ? 'ring-2 ring-d-orange-1' : ''} group relative overflow-hidden p-6 cursor-pointer hover:ring-2 hover:ring-d-orange-1 transition-all duration-200`}
+      onMouseMove={onMove}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className={`${cards.shell} ${isSelected ? 'ring-2 ring-d-light' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200`}
     >
       {/* Popular badge */}
       {tier.popular && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="flex items-center gap-1.5 bg-d-orange-1 text-d-text px-5 py-2 rounded-full text-sm font-cabin font-medium shadow-lg">
+        <div className="absolute top-4 right-6 z-10">
+          <div className="flex items-center gap-1.5 bg-brand-cyan text-d-black px-4 py-1.5 rounded-full text-sm font-cabin font-medium shadow-lg">
             <Star className="w-4 h-4 fill-current" />
             Most Popular
+          </div>
+        </div>
+      )}
+
+      {/* Best Value badge */}
+      {tier.bestValue && (
+        <div className="absolute top-4 right-6 z-10">
+          <div className="flex items-center gap-1.5 bg-brand-red text-d-black px-4 py-1.5 rounded-full text-sm font-cabin font-medium shadow-lg">
+            <Crown className="w-4 h-4 fill-current" />
+            Best Value
           </div>
         </div>
       )}
@@ -206,14 +247,22 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="mb-3">
-          <h3 className="text-2xl font-cabin font-light text-d-text mb-1">{tier.name}</h3>
+          <h3 className={`text-3xl font-cabin font-light mb-1 ${
+            tier.id === 'free' ? 'text-d-orange-1' : 
+            tier.id === 'pro' ? 'text-brand-cyan' : 
+            'text-brand-red'
+          }`}>{tier.name}</h3>
           <p className="text-sm text-d-text font-raleway">{tier.description}</p>
         </div>
 
         {/* Pricing */}
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-cabin font-light text-d-text">{tier.price}</span>
+            <span className={`text-4xl font-cabin font-light ${
+              tier.id === 'free' ? 'text-d-orange-1' : 
+              tier.id === 'pro' ? 'text-brand-cyan' : 
+              'text-brand-red'
+            }`}>{tier.price}</span>
             <span className="text-d-text font-raleway">/{tier.period}</span>
           </div>
         </div>
@@ -222,8 +271,16 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         <div className="space-y-2 mb-6">
           {tier.features.map((feature, index) => (
             <div key={index} className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-d-orange-1/20 flex items-center justify-center mt-0.5">
-                <Check className="w-3 h-3 text-d-orange-1" />
+              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
+                tier.id === 'free' ? 'bg-d-orange-1/20' : 
+                tier.id === 'pro' ? 'bg-brand-cyan/20' : 
+                'bg-brand-red/20'
+              }`}>
+                <Check className={`w-3 h-3 ${
+                  tier.id === 'free' ? 'text-d-orange-1' : 
+                  tier.id === 'pro' ? 'text-brand-cyan' : 
+                  'text-brand-red'
+                }`} />
               </div>
               <span className="text-sm font-raleway text-d-text leading-relaxed">{feature}</span>
             </div>
@@ -233,8 +290,17 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         {/* CTA Button */}
         <div className="mt-auto">
           <button
-            className={`w-full btn btn-orange font-cabin text-base text-d-black transition-colors duration-200 ${
-              tier.popular ? 'shadow-lg shadow-d-orange-1/25' : ''
+            onClick={() => {
+              if (tier.id === 'free') {
+                window.location.href = '/';
+              }
+            }}
+            className={`w-full btn font-cabin text-base transition-colors duration-200 ${
+              tier.id === 'free' 
+                ? 'btn-orange' 
+                : tier.id === 'pro'
+                ? 'btn-cyan'
+                : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
             }`}
           >
             {tier.id === 'free' ? 'Get Started' : 'Upgrade Now'}
@@ -257,18 +323,17 @@ export default function Pricing() {
       
       <div className="relative z-10">
         {/* Header Section */}
-        <section className={`${layout.container} ${layout.heroPadding}`}>
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-light tracking-tight leading-[1.1] font-cabin mb-4 text-d-text">
+        <section className={`${layout.container} pt-8 pb-16`}>
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-light tracking-tight leading-[1.1] font-cabin mb-6 text-d-text">
               Choose your <span className="text-d-orange-1">plan</span>
             </h1>
-            <p className="mx-auto mb-8 max-w-2xl text-lg text-d-text font-raleway">
-              Unlock the full potential of AI creativity with our flexible pricing plans. 
-              Start free and scale as you grow.
+            <p className="mx-auto mb-6 max-w-2xl text-lg text-d-white font-raleway">
+              Unlock the full potential of daily generations.
             </p>
 
             {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="flex items-center justify-center gap-4 mb-6">
               <span className={`text-base font-raleway transition-colors ${billingPeriod === 'monthly' ? 'text-d-text' : 'text-d-white'}`}>
                 Monthly
               </span>
@@ -290,7 +355,7 @@ export default function Pricing() {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
             {currentTiers.map((tier) => (
               <PricingCard 
                 key={`${tier.id}-${billingPeriod}`} 
@@ -312,19 +377,19 @@ export default function Pricing() {
                   <div className="w-8 h-8 rounded-lg bg-d-orange-1/20 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-d-orange-1" />
                   </div>
-                  <span className="text-d-text font-raleway">Unlimited generations</span>
+                  <span className="text-d-white font-raleway">Unlimited generations</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-d-orange-1/20 flex items-center justify-center">
                     <Zap className="w-4 h-4 text-d-orange-1" />
                   </div>
-                  <span className="text-d-text font-raleway">Commercial usage rights</span>
+                  <span className="text-d-white font-raleway">Commercial usage rights</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-d-orange-1/20 flex items-center justify-center">
                     <Crown className="w-4 h-4 text-d-orange-1" />
                   </div>
-                  <span className="text-d-text font-raleway">Priority processing</span>
+                  <span className="text-d-white font-raleway">Priority processing</span>
                 </div>
               </div>
             </div>

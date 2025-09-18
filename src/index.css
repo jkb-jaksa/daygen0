@@ -30,12 +30,18 @@
   --d-light: #8E9393;
   /* Mid tone: made a bit lighter for hover/border contrast */
   --d-mid: #3A4040;
-  --d-dark: #181A1A;
-  --d-black: #0E1212;
+  --d-dark: #141616;
+  --d-black: #080B0B;
 
   /* Brand warm gradient stops */
   --d-orange-1: #faaa16;
   --d-orange-2: #e43a63;
+  
+  /* Brand cyan color */
+  --brand-cyan: rgb(3,188,189);
+  
+  /* Brand red color */
+  --brand-red: rgb(243,36,54);
 
   /* Back-compat mapping (can be removed once classes switched) */
   --color-text: var(--d-text);
@@ -119,12 +125,12 @@ html, body {
   font-family: inherit;
   font-weight: 500;
   gap: 0.5rem;
-  height: 36px;
+  height: 48px;
   justify-content: center;
   line-height: 1;
   min-width: 120px;
   overflow: hidden;
-  padding: 0 18px;
+  padding: 0 24px;
   position: relative;
   text-decoration: none;
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
@@ -397,6 +403,102 @@ html, body {
 
 /* Brand color - primary orange from gradient */
 .text-brand { color: #faaa16; }
+
+/* Cyan button styles */
+.btn-cyan {
+  background-color: var(--brand-cyan);
+  border-color: color-mix(in srgb, var(--brand-cyan) 80%, white 20%);
+  color: var(--d-black);
+  flex-shrink: 0;
+}
+
+.btn-cyan:hover {
+  background-color: color-mix(in srgb, var(--brand-cyan) 78%, white 22%);
+  border-color: color-mix(in srgb, var(--brand-cyan) 65%, white 35%);
+  overflow: hidden;
+}
+
+.btn-cyan:active {
+  background-color: color-mix(in srgb, var(--brand-cyan) 70%, black 30%);
+  border-color: color-mix(in srgb, var(--brand-cyan) 70%, black 30%);
+}
+
+.btn-cyan:hover::before {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
+    linear-gradient(
+      150deg,
+      var(--brand-cyan) 0%,
+      var(--brand-cyan) 26%,
+      color-mix(in srgb, var(--brand-cyan) 70%, white 30%) 88%,
+      color-mix(in srgb, var(--brand-cyan) 70%, white 30%) 100%
+    );
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .btn-cyan:hover::before {
+    background:
+      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
+      linear-gradient(
+        in oklch 150deg,
+        var(--brand-cyan) 0%,
+        var(--brand-cyan) 26%,
+        color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 34%,
+        color-mix(in oklch, var(--brand-cyan) 50%, white 50%) 50%,
+        color-mix(in oklch, var(--brand-cyan) 30%, white 70%) 66%,
+        color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 88%,
+        color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 100%
+      );
+  }
+}
+
+/* Red button styles */
+.btn-red {
+  background-color: var(--brand-red);
+  border-color: color-mix(in srgb, var(--brand-red) 80%, white 20%);
+  color: var(--d-black);
+  flex-shrink: 0;
+}
+
+.btn-red:hover {
+  background-color: color-mix(in srgb, var(--brand-red) 78%, white 22%);
+  border-color: color-mix(in srgb, var(--brand-red) 65%, white 35%);
+  overflow: hidden;
+}
+
+.btn-red:active {
+  background-color: color-mix(in srgb, var(--brand-red) 70%, black 30%);
+  border-color: color-mix(in srgb, var(--brand-red) 70%, black 30%);
+}
+
+.btn-red:hover::before {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
+    linear-gradient(
+      150deg,
+      var(--brand-red) 0%,
+      var(--brand-red) 26%,
+      color-mix(in srgb, var(--brand-red) 70%, white 30%) 88%,
+      color-mix(in srgb, var(--brand-red) 70%, white 30%) 100%
+    );
+}
+
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .btn-red:hover::before {
+    background:
+      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
+      linear-gradient(
+        in oklch 150deg,
+        var(--brand-red) 0%,
+        var(--brand-red) 26%,
+        color-mix(in oklch, var(--brand-red) 70%, white 30%) 34%,
+        color-mix(in oklch, var(--brand-red) 50%, white 50%) 50%,
+        color-mix(in oklch, var(--brand-red) 30%, white 70%) 66%,
+        color-mix(in oklch, var(--brand-red) 70%, white 30%) 88%,
+        color-mix(in oklch, var(--brand-red) 70%, white 30%) 100%
+      );
+  }
+}
 
 /* Thin separator gradient line utility */
 .color-gradient {
