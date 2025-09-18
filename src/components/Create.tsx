@@ -23,7 +23,6 @@ import { usePromptHistory } from '../hooks/usePromptHistory';
 import { PromptHistoryChips } from './PromptHistoryChips';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
-import { ShareButton } from './ShareButton';
 import { compressDataUrl } from "../lib/imageCompression";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
@@ -1603,32 +1602,31 @@ const Create: React.FC = () => {
           open={isOpen}
           onClose={closeMoreActionMenu}
         >
-          <div
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1 cursor-pointer"
-            onClick={(event) => {
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+            onClick={async (event) => {
               event.stopPropagation();
-              // Trigger share functionality
-              const shareButton = event.currentTarget.querySelector('[data-share-trigger]') as HTMLElement;
-              if (shareButton) {
-                shareButton.click();
+              try {
+                // Import the share utilities
+                const { makeRemixUrl, withUtm, copyLink } = await import("../lib/shareUtils");
+                const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+                const remixUrl = makeRemixUrl(baseUrl, image.prompt || "");
+                const trackedUrl = withUtm(remixUrl, "copy");
+                await copyLink(trackedUrl);
+                setCopyNotification('Link copied!');
+                setTimeout(() => setCopyNotification(null), 2000);
+                closeMoreActionMenu();
+              } catch (error) {
+                console.error('Failed to copy link:', error);
+                setCopyNotification('Failed to copy link');
+                setTimeout(() => setCopyNotification(null), 2000);
               }
             }}
           >
             <Share2 className="h-4 w-4" />
             Copy link
-            <div className="hidden">
-              <ShareButton
-                prompt={image.prompt || ""}
-                size="sm"
-                data-share-trigger
-                onCopy={() => {
-                  setCopyNotification('Link copied!');
-                  setTimeout(() => setCopyNotification(null), 2000);
-                  closeMoreActionMenu();
-                }}
-              />
-            </div>
-          </div>
+          </button>
           <a
             href={image.url}
             download
