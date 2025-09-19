@@ -45,4 +45,3 @@ export const compressDataUrl = async (
     img.src = srcDataUrl;
   });
 };
-import { debugWarn } from '../utils/debug';
