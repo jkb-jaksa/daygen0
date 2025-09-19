@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugLog } from '../utils/debug';
 
 export interface GeneratedImage {
   url: string;
@@ -45,7 +46,7 @@ export const useRunwayImageGeneration = () => {
       // Use the Runway API endpoint
       const apiUrl = getApiUrl('/api/unified-generate');
 
-      console.log('[runway] POST', apiUrl);
+      debugLog('[runway] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',

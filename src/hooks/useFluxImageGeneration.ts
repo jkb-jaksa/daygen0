@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
 import { getApiUrl } from '../utils/api';
+import { debugError, debugLog } from '../utils/debug';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -76,7 +77,7 @@ export const useFluxImageGeneration = () => {
       // Submit the job
       const apiUrl = getApiUrl('/api/flux/generate');
 
-      console.log('[flux] POST', apiUrl);
+      debugLog('[flux] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -138,13 +139,13 @@ export const useFluxImageGeneration = () => {
       let attempts = 0;
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
-      console.log('[flux] Starting polling for job:', id);
+      debugLog('[flux] Starting polling for job:', id);
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
         attempts++;
         
-        console.log(`[flux] Polling attempt ${attempts}/${maxAttempts}`);
+        debugLog(`[flux] Polling attempt ${attempts}/${maxAttempts}`);
         
         try {
           const pollRes = await fetch(getApiUrl(`/api/flux/result?pollingUrl=${encodeURIComponent(pollingUrl)}`));
@@ -154,7 +155,7 @@ export const useFluxImageGeneration = () => {
           }
 
           const result = await pollRes.json();
-          console.log('[flux] Polling result:', result.status);
+          debugLog('[flux] Polling result:', result.status);
           
           if (result.status === 'Ready' && result.result?.sample) {
             // Download the image via our server to avoid CORS issues
@@ -197,7 +198,7 @@ export const useFluxImageGeneration = () => {
           }));
           
         } catch (pollError) {
-          console.error('Polling error:', pollError);
+          debugError('Polling error:', pollError);
           // If it's a download error, stop polling immediately
           if (pollError instanceof Error && pollError.message.includes('Failed to download image')) {
             throw pollError;

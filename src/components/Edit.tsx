@@ -13,6 +13,7 @@ import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration"
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
+import { debugError } from "../utils/debug";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -410,7 +411,7 @@ export default function Edit() {
         });
       }
     } catch (error) {
-      console.error('Error generating image:', error);
+      debugError('Error generating image:', error);
     } finally {
       setIsButtonSpinning(false);
     }
@@ -900,7 +901,7 @@ export default function Edit() {
       setReferencePreviews(readers);
       
     } catch (error) {
-      console.error('Error handling paste:', error);
+      debugError('Error handling paste:', error);
     }
   };
 
@@ -963,7 +964,7 @@ export default function Edit() {
           setPreviewUrl(imageData.url);
         })
         .catch(error => {
-          console.error('Error loading image for editing:', error);
+          debugError('Error loading image for editing:', error);
         });
     }
   }, [location.state]);

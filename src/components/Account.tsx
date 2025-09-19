@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
 import { buttons, glass } from "../styles/designSystem";
+import { debugError, debugLog } from "../utils/debug";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -24,7 +25,7 @@ export default function Account() {
     if (user?.name && name === "") {
       setName(user.name);
     }
-  }, [user?.name]);
+  }, [user?.name, name]);
 
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function Account() {
           setGallery(stored);
         }
       } catch (error) {
-        console.error('Account - Error loading gallery:', error);
+        debugError('Account - Error loading gallery:', error);
       }
     };
 
@@ -125,7 +126,7 @@ export default function Account() {
         const decodedPath = decodeURIComponent(nextPath);
         navigate(decodedPath);
       } catch (e) {
-        console.error('Failed to decode next path:', e);
+        debugError('Failed to decode next path:', e);
         navigate('/create'); // fallback
       }
     } else {
@@ -142,10 +143,10 @@ export default function Account() {
     if (user && nextPath) {
       try {
         const decodedPath = decodeURIComponent(nextPath);
-        console.log('Account - redirecting authenticated user to:', decodedPath);
+        debugLog('Account - redirecting authenticated user to:', decodedPath);
         navigate(decodedPath, { replace: true });
       } catch (e) {
-        console.error('Failed to decode next path:', e);
+        debugError('Failed to decode next path:', e);
         navigate('/create', { replace: true });
       }
     }

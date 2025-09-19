@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useIdeogramImageGeneration } from '../hooks/useIdeogramImageGeneration';
+import { debugError } from '../utils/debug';
 
 interface IdeogramToolsProps {
   onImageGenerated?: (images: any[]) => void;
@@ -70,7 +71,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       const images = await generateImage(options);
       onImageGenerated?.(images);
     } catch (err) {
-      console.error('Generation failed:', err);
+      debugError('Generation failed:', err);
     }
   };
 
@@ -92,7 +93,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       });
       onImageGenerated?.(images);
     } catch (err) {
-      console.error('Edit failed:', err);
+      debugError('Edit failed:', err);
     }
   };
 
@@ -112,7 +113,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       });
       onImageGenerated?.(images);
     } catch (err) {
-      console.error('Reframe failed:', err);
+      debugError('Reframe failed:', err);
     }
   };
 
@@ -132,7 +133,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       });
       onImageGenerated?.(images);
     } catch (err) {
-      console.error('Replace background failed:', err);
+      debugError('Replace background failed:', err);
     }
   };
 
@@ -151,7 +152,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       });
       onImageGenerated?.(images);
     } catch (err) {
-      console.error('Upscale failed:', err);
+      debugError('Upscale failed:', err);
     }
   };
 
@@ -168,7 +169,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       });
       setDescriptions(result.map((d: any) => d.text));
     } catch (err) {
-      console.error('Describe failed:', err);
+      debugError('Describe failed:', err);
     }
   };
 

@@ -1,16 +1,52 @@
 import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, X, FileText, GraduationCap } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
 import Pricing from "./Pricing";
 import { buttons } from "../styles/designSystem";
 
+type MenuId = "create" | "edit" | "explore" | "knowledge base" | "services" | "about us";
+type MenuEntry = { key: string; label: string; Icon: LucideIcon };
+
+const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
+  { label: "create", path: "/create" },
+  { label: "edit", path: "/edit" },
+  { label: "explore", path: "/explore" },
+  { label: "knowledge base", path: "/use-cases" },
+  { label: "services", path: "/services" },
+  { label: "about us", path: "/about-us" },
+];
+
+const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
+  { key: "text", label: "text", Icon: Edit },
+  { key: "image", label: "image", Icon: ImageIcon },
+  { key: "video", label: "video", Icon: VideoIcon },
+  { key: "avatars", label: "avatars", Icon: Users },
+  { key: "audio", label: "audio", Icon: Volume2 },
+];
+
+const EDIT_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
+  { key: "inpaint", label: "inpaint", Icon: Edit },
+  { key: "outpaint", label: "outpaint", Icon: ImageIcon },
+  { key: "replace", label: "replace", Icon: VideoIcon },
+  { key: "style", label: "style transfer", Icon: Users },
+  { key: "upscale", label: "upscale", Icon: Volume2 },
+];
+
+const KNOWLEDGE_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
+  { to: "/use-cases", label: "use cases", Icon: Users },
+  { to: "/tools", label: "tools", Icon: Edit },
+  { to: "/prompts", label: "prompts", Icon: FileText },
+  { to: "/courses", label: "courses", Icon: GraduationCap },
+];
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
   const { user, logOut } = useAuth();
@@ -20,24 +56,26 @@ export default function Navbar() {
 
   // Prevent body scroll when pricing modal is open and handle escape key
   useEffect(() => {
-    if (showPricing) {
-      document.body.style.overflow = 'hidden';
-      
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          setShowPricing(false);
-        }
-      };
-      
-      document.addEventListener('keydown', handleEscape);
-      
-      return () => {
-        document.body.style.overflow = 'unset';
-        document.removeEventListener('keydown', handleEscape);
-      };
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    if (!showPricing) return;
+
+    const { body } = document;
+    if (!body) return;
+
+    const previousOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowPricing(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [showPricing]);
   const accountBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -103,7 +141,7 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  const scrollToTop = (duration = 200) => {
+  const scrollToTop = useCallback((duration = 200) => {
     const start = window.scrollY || document.documentElement.scrollTop;
     if (start === 0) return;
     if (duration <= 0) {
@@ -124,33 +162,36 @@ export default function Navbar() {
     };
 
     requestAnimationFrame(step);
-  };
+  }, []);
 
-  const handleLogoClick = () => {
+  const handleLogoClick = useCallback(() => {
     if (location.pathname === "/") {
-      // 200ms eased scroll to top
       scrollToTop(200);
     } else {
       navigate("/");
     }
-  };
+  }, [location.pathname, navigate, scrollToTop]);
 
-  const handleCategoryClick = (category: string) => {
+  const closeMenu = useCallback(() => setActiveMenu(null), []);
+
+  const emitNavigateToCategory = useCallback((category: string) => {
+    if (typeof window === "undefined") return;
+    const dispatch = () => window.dispatchEvent(new CustomEvent("navigateToCategory", {
+      detail: { category }
+    }));
+
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(dispatch));
+    } else {
+      setTimeout(dispatch, 0);
+    }
+  }, []);
+
+  const handleCategoryClick = useCallback((category: string) => {
     navigate("/create");
-    // Close the menu
-    setActiveMenu(null);
-    // Dispatch custom event to switch category in Create component
-    setTimeout(() => {
-      const event = new CustomEvent('navigateToCategory', { 
-        detail: { category } 
-      });
-      window.dispatchEvent(event);
-    }, 100);
-  };
-
-  const items = ["create", "edit", "explore", "knowledge base", "services", "about us"] as const;
-
-  const closeMenu = () => setActiveMenu(null);
+    closeMenu();
+    emitNavigateToCategory(category);
+  }, [navigate, closeMenu, emitNavigateToCategory]);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50" onMouseLeave={closeMenu}>
@@ -168,27 +209,17 @@ export default function Navbar() {
               className="parallax-large h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-cabin">
-              {items.map((item) => {
-                const path =
-                  item === "create" ? "/create" : 
-                  item === "edit" ? "/edit" : 
-                  item === "explore" ? "/explore" : 
-                  item === "knowledge base" ? "/use-cases" : 
-                  item === "services" ? "/services" : 
-                  item === "about us" ? "/about-us" : 
-                  "#";
-
-                return (
-                  <Link
-                    key={item}
-                    to={path}
-                    className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
-                    onMouseEnter={() => setActiveMenu(item)}
-                  >
-                    {item}
-                  </Link>
-                );
-              })}
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
+                  onMouseEnter={() => setActiveMenu(item.label)}
+                  onFocus={() => setActiveMenu(item.label)}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </div>
           <div className="flex items-center gap-1 md:gap-2">
@@ -290,13 +321,7 @@ export default function Navbar() {
                 </div>
                 {activeMenu === "create" ? (
                   <div className="flex flex-col gap-1.5">
-                    {[
-                      { key: "text", label: "text", Icon: Edit },
-                      { key: "image", label: "image", Icon: ImageIcon },
-                      { key: "video", label: "video", Icon: VideoIcon },
-                      { key: "avatars", label: "avatars", Icon: Users },
-                      { key: "audio", label: "audio", Icon: Volume2 },
-                    ].map((category) => (
+                    {CREATE_MENU_ITEMS.map((category) => (
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
@@ -311,13 +336,7 @@ export default function Navbar() {
                   </div>
                 ) : activeMenu === "edit" ? (
                   <div className="flex flex-col gap-1.5">
-                    {[
-                      { key: "inpaint", label: "inpaint", Icon: Edit },
-                      { key: "outpaint", label: "outpaint", Icon: ImageIcon },
-                      { key: "replace", label: "replace", Icon: VideoIcon },
-                      { key: "style", label: "style transfer", Icon: Users },
-                      { key: "upscale", label: "upscale", Icon: Volume2 },
-                    ].map((category) => (
+                    {EDIT_MENU_ITEMS.map((category) => (
                       <Link
                         key={category.key}
                         to="/edit"
@@ -335,46 +354,19 @@ export default function Navbar() {
                   <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
                 ) : activeMenu === "knowledge base" ? (
                   <div className="flex flex-col gap-1.5">
-                    <Link
-                      to="/use-cases"
-                      onClick={() => setActiveMenu(null)}
-                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
-                    >
-                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
-                        <Users className="size-3.5" />
-                      </div>
-                      <span>use cases</span>
-                    </Link>
-                    <Link
-                      to="/tools"
-                      onClick={() => setActiveMenu(null)}
-                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
-                    >
-                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
-                        <Edit className="size-3.5" />
-                      </div>
-                      <span>tools</span>
-                    </Link>
-                    <Link
-                      to="/prompts"
-                      onClick={() => setActiveMenu(null)}
-                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
-                    >
-                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
-                        <FileText className="size-3.5" />
-                      </div>
-                      <span>prompts</span>
-                    </Link>
-                    <Link
-                      to="/courses"
-                      onClick={() => setActiveMenu(null)}
-                      className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
-                    >
-                      <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
-                        <GraduationCap className="size-3.5" />
-                      </div>
-                      <span>courses</span>
-                    </Link>
+                    {KNOWLEDGE_MENU_LINKS.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setActiveMenu(null)}
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                      >
+                        <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                          <item.Icon className="size-3.5" />
+                        </div>
+                        <span>{item.label}</span>
+                      </Link>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
@@ -399,10 +391,7 @@ export default function Navbar() {
           }}
         >
           <button
-            onClick={() => {
-              console.log('X button clicked');
-              setShowPricing(false);
-            }}
+            onClick={() => setShowPricing(false)}
             className="fixed top-6 right-6 z-[110] bg-d-black/50 text-d-white p-2 rounded-full hover:bg-d-black/70 hover:text-d-orange-1 transition-colors duration-200 cursor-pointer"
             aria-label="Close pricing modal"
           >
@@ -442,13 +431,7 @@ export default function Navbar() {
               onClick={() => {
                 setMenuOpen(false);
                 navigate("/create");
-                // Dispatch custom event to switch to gallery view
-                setTimeout(() => {
-                  const event = new CustomEvent('navigateToCategory', { 
-                    detail: { category: "gallery" } 
-                  });
-                  window.dispatchEvent(event);
-                }, 100);
+                emitNavigateToCategory("gallery");
               }}
               className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
               role="menuitem"

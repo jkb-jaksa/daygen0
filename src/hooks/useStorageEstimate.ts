@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { estimateStorage } from '../lib/clientStorage';
+import { debugError } from '../utils/debug';
 
 export interface StorageEstimateSnapshot {
   usage: number;
@@ -59,7 +60,7 @@ export const useStorageEstimate = (options?: { auto?: boolean }) => {
       // This handles cases where the component is being remounted
       setEstimate(newEstimate);
     } catch (error) {
-      console.error('Failed to refresh storage estimate:', error);
+      debugError('Failed to refresh storage estimate:', error);
       if (mountedRef.current) {
         setEstimate(null);
       }

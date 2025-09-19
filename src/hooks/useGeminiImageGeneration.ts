@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugLog } from '../utils/debug';
 
 export interface GeneratedImage {
   url: string;
@@ -46,7 +47,7 @@ export const useGeminiImageGeneration = () => {
       // Use the new API endpoint structure
       const apiUrl = getApiUrl('/api/unified-generate');
 
-      console.log('[image] POST', apiUrl);
+      debugLog('[image] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',

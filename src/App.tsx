@@ -34,6 +34,7 @@ function Home() {
           {/* Main content */}
           <div className="text-center">
             <h1 className={`${text.heroHeading} mb-4`}>
+              Your all-in-one creative AI studio.
             </h1>
             <div className="mx-auto mb-6 max-w-2xl">
               <div className="text-3xl text-d-text font-raleway mb-6"><span className="text-d-orange">Generate</span>. Daydream.</div>

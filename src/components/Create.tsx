@@ -28,6 +28,7 @@ import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, request
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
+import { debugError, debugLog, debugWarn } from "../utils/debug";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -853,7 +854,7 @@ const Create: React.FC = () => {
     if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
       navigator.storage.persist().then(granted => {
         if (granted) {
-          console.log('Persistent storage already granted');
+          debugLog('Persistent storage already granted');
           setPersistentStorageStatus('granted');
           return; // Don't set up user interaction listeners if already granted
         }
@@ -868,14 +869,14 @@ const Create: React.FC = () => {
       if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
         navigator.storage.persist().then(granted => {
           if (granted) {
-            console.log('Persistent storage granted');
+            debugLog('Persistent storage granted');
             setPersistentStorageStatus('granted');
           } else {
-            console.warn('Persistent storage denied - browser may clear cached images sooner');
+            debugWarn('Persistent storage denied - browser may clear cached images sooner');
             setPersistentStorageStatus('denied');
           }
         }).catch(error => {
-          console.error('Error requesting persistent storage:', error);
+          debugError('Error requesting persistent storage:', error);
           setPersistentStorageStatus('denied');
         });
       } else {
@@ -997,18 +998,18 @@ const Create: React.FC = () => {
         if (Array.isArray(storedGallery) && storedGallery.length > 0) {
           // Be more lenient with validation - only require url
           const validImages = storedGallery.filter(img => img && img.url);
-          console.log('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
+          debugLog('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
 
           const hydrated = hydrateStoredGallery(validImages);
 
           if (validImages.length !== storedGallery.length) {
-            console.warn('Some images were invalid and removed from gallery');
+            debugWarn('Some images were invalid and removed from gallery');
             void setPersistedValue(storagePrefix, 'gallery', toStorable(hydrated));
           }
 
           setGallery(hydrated);
         } else {
-          console.log('No gallery data found in client storage');
+          debugLog('No gallery data found in client storage');
         }
 
         if (Array.isArray(storedFavorites)) {
@@ -1037,7 +1038,7 @@ const Create: React.FC = () => {
           await refreshStorageEstimate();
         }
       } catch (error) {
-        console.error('Failed to load persisted gallery data', error);
+        debugError('Failed to load persisted gallery data', error);
         if (!cancelled) {
           await removePersistedValue(storagePrefix, 'gallery');
         }
@@ -1115,7 +1116,7 @@ const Create: React.FC = () => {
       await setPersistedValue(storagePrefix, 'favorites', Array.from(next));
       await refreshStorageEstimate();
     } catch (error) {
-      console.error('Failed to persist liked images', error);
+      debugError('Failed to persist liked images', error);
     }
   };
 
@@ -1132,7 +1133,7 @@ const Create: React.FC = () => {
       await setPersistedValue(storagePrefix, 'uploads', serializableUploads);
       await refreshStorageEstimate();
     } catch (error) {
-      console.error('Failed to persist uploaded images', error);
+      debugError('Failed to persist uploaded images', error);
     }
   };
 
@@ -1140,7 +1141,7 @@ const Create: React.FC = () => {
   const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
     // Don't persist empty galleries - this prevents race conditions
     if (galleryData.length === 0) {
-      console.warn('Skipping persistence of empty gallery to prevent data loss');
+      debugWarn('Skipping persistence of empty gallery to prevent data loss');
       return galleryData;
     }
 
@@ -1150,14 +1151,14 @@ const Create: React.FC = () => {
     };
     try {
       await persistLean(galleryData);
-      console.log('Gallery backup persisted with', galleryData.length, 'images');
+      debugLog('Gallery backup persisted with', galleryData.length, 'images');
       return galleryData;
     } catch (error) {
-      console.error('Failed to persist gallery', error);
+      debugError('Failed to persist gallery', error);
 
       // Don't trim the gallery too aggressively - keep at least 5 images
       if (galleryData.length <= 5) {
-        console.warn('Gallery too small to trim, returning original data');
+        debugWarn('Gallery too small to trim, returning original data');
         return galleryData;
       }
 
@@ -1172,15 +1173,15 @@ const Create: React.FC = () => {
         try {
           const trimmed = galleryData.slice(0, size);
           await persistLean(trimmed);
-          console.log('Gallery persisted after trimming to', trimmed.length, 'images');
+          debugLog('Gallery persisted after trimming to', trimmed.length, 'images');
           return trimmed;
         } catch (persistError) {
-          console.warn(`Failed to persist gallery with ${size} images, trying smaller size`, persistError);
+          debugWarn(`Failed to persist gallery with ${size} images, trying smaller size`, persistError);
         }
       }
 
       // If all else fails, return the original data without persisting
-      console.error('Failed to persist gallery even after trimming, returning original data');
+      debugError('Failed to persist gallery even after trimming, returning original data');
       return galleryData;
     }
   };
@@ -1230,8 +1231,16 @@ const Create: React.FC = () => {
       const next = new Set(prev);
       if (next.has(imageUrl)) {
         next.delete(imageUrl);
+        // If no images are selected after this removal, exit select mode
+        if (next.size === 0 && isSelectMode) {
+          setIsSelectMode(false);
+        }
       } else {
         next.add(imageUrl);
+        // When selecting an individual image, activate select mode
+        if (!isSelectMode) {
+          setIsSelectMode(true);
+        }
       }
       return next;
     });
@@ -1245,10 +1254,18 @@ const Create: React.FC = () => {
         filteredGallery.forEach(item => {
           next.delete(item.url);
         });
+        // If no images are selected after unselecting all, exit select mode
+        if (next.size === 0 && isSelectMode) {
+          setIsSelectMode(false);
+        }
       } else {
         filteredGallery.forEach(item => {
           next.add(item.url);
         });
+        // When selecting all images, activate select mode
+        if (!isSelectMode) {
+          setIsSelectMode(true);
+        }
       }
       return next;
     });
@@ -1257,6 +1274,10 @@ const Create: React.FC = () => {
   const clearImageSelection = () => {
     if (selectedImages.size === 0) return;
     setSelectedImages(new Set());
+    // Exit select mode when clearing selection
+    if (isSelectMode) {
+      setIsSelectMode(false);
+    }
   };
 
   const confirmDeleteImages = (imageUrls: string[]) => {
@@ -1429,7 +1450,7 @@ const Create: React.FC = () => {
       await setPersistedValue(storagePrefix, 'folders', serialised);
       await refreshStorageEstimate();
     } catch (error) {
-      console.error('Failed to persist folders', error);
+      debugError('Failed to persist folders', error);
     }
   };
 
@@ -1535,7 +1556,7 @@ const Create: React.FC = () => {
       const fileUrl = URL.createObjectURL(folderThumbnailFile);
       handleSetFolderThumbnail(folderThumbnailDialog.folderId, fileUrl);
     } catch (error) {
-      console.error('Error processing thumbnail:', error);
+      debugError('Error processing thumbnail:', error);
       alert('Error processing thumbnail');
     }
   };
@@ -1630,7 +1651,7 @@ const Create: React.FC = () => {
       setCopyNotification('Prompt copied!');
       setTimeout(() => setCopyNotification(null), 2000);
     } catch (err) {
-      console.error('Failed to copy prompt:', err);
+      debugError('Failed to copy prompt:', err);
     }
   };
 
@@ -1672,7 +1693,7 @@ const Create: React.FC = () => {
   const enhancePrompt = async () => {
     if (!prompt.trim() || isEnhancing) return;
     
-    console.log('Enhancing prompt:', prompt);
+    debugLog('Enhancing prompt:', prompt);
     setIsEnhancing(true);
     
     try {
@@ -1684,19 +1705,19 @@ const Create: React.FC = () => {
         body: JSON.stringify({ prompt }),
       });
 
-      console.log('Response status:', response.status);
+      debugLog('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error:', errorText);
+        debugError('API Error:', errorText);
         throw new Error(`Failed to enhance prompt: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Enhanced prompt received:', data.enhancedPrompt);
+      debugLog('Enhanced prompt received:', data.enhancedPrompt);
       setPrompt(data.enhancedPrompt);
     } catch (err) {
-      console.error('Failed to enhance prompt:', err);
+      debugError('Failed to enhance prompt:', err);
       alert('Failed to enhance prompt. Please check the console for details.');
     } finally {
       setIsEnhancing(false);
@@ -1732,7 +1753,7 @@ const Create: React.FC = () => {
       // Focus the prompt bar
       focusPromptBar();
     } catch (error) {
-      console.error('Error setting image as reference:', error);
+      debugError('Error setting image as reference:', error);
       alert('Failed to set image as reference. Please try again.');
     }
   };
@@ -1997,7 +2018,7 @@ const Create: React.FC = () => {
                 setTimeout(() => setCopyNotification(null), 2000);
                 closeMoreActionMenu();
               } catch (error) {
-                console.error('Failed to copy link:', error);
+                debugError('Failed to copy link:', error);
                 setCopyNotification('Failed to copy link');
                 setTimeout(() => setCopyNotification(null), 2000);
               }
@@ -2071,7 +2092,7 @@ const Create: React.FC = () => {
     return (
       <div
         key={`${context}-${img.url}-${idx}`}
-        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-200 parallax-large ${
+        className={`group relative rounded-[24px] overflow-hidden border transition-all ${isSelectMode ? 'duration-100' : 'duration-200'} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-[var(--d-orange-1)] bg-d-black hover:bg-d-dark'
             : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
@@ -2283,7 +2304,7 @@ const Create: React.FC = () => {
       };
       void persistUploadedImages([...uploadedImages, newUpload]);
       
-      console.log('Selected file:', file.name);
+      debugLog('Selected file:', file.name);
     } else {
       alert('Please select a valid image file.');
     }
@@ -2368,7 +2389,7 @@ const Create: React.FC = () => {
       void persistUploadedImages([...uploadedImages, ...newUploads]);
       
     } catch (error) {
-      console.error('Error handling paste:', error);
+      debugError('Error handling paste:', error);
     }
   };
 
@@ -2637,7 +2658,7 @@ const Create: React.FC = () => {
         // Use functional update to ensure we get the latest gallery state
         let computedNext: GalleryImageLike[] = [];
         setGallery(currentGallery => {
-          console.log('Adding new image to gallery. Current gallery size:', currentGallery.length);
+          debugLog('Adding new image to gallery. Current gallery size:', currentGallery.length);
           
           // Keep all existing gallery items, don't filter them out
           const dedup = (list: GalleryImageLike[]) => {
@@ -2649,7 +2670,7 @@ const Create: React.FC = () => {
                 out.push(it);
               }
             }
-            console.log('Deduplication: input length', list.length, 'output length', out.length);
+            debugLog('Deduplication: input length', list.length, 'output length', out.length);
             return out;
           };
 
@@ -2657,7 +2678,7 @@ const Create: React.FC = () => {
           const newGallery = dedup([imgWithOwner, ...currentGallery]);
           // Keep reasonable number of images to avoid exhausting client storage quota
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
-          console.log('Final gallery size after dedup and slice:', next.length);
+          debugLog('Final gallery size after dedup and slice:', next.length);
 
           computedNext = next;
           return next;
@@ -2667,7 +2688,7 @@ const Create: React.FC = () => {
           const persisted = await persistGallery(computedNext);
           if (persisted.length !== computedNext.length) {
             // Only update if there's a significant difference
-            console.warn(`Gallery persistence mismatch: expected ${computedNext.length}, got ${persisted.length}`);
+            debugWarn(`Gallery persistence mismatch: expected ${computedNext.length}, got ${persisted.length}`);
           }
           // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
           setTimeout(() => {
@@ -2679,7 +2700,7 @@ const Create: React.FC = () => {
         addPrompt(trimmedPrompt);
       }
     } catch (error) {
-      console.error('Error generating image:', error);
+      debugError('Error generating image:', error);
       // Clear any previous errors from all hooks
       clearGeminiError();
       clearFluxError();

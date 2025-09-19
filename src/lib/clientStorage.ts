@@ -1,4 +1,5 @@
 import { createStore, del, get, set } from 'idb-keyval';
+import { debugError } from '../utils/debug';
 
 const DB_NAME = 'daygen-client-storage';
 const STORE_NAME = 'kv';
@@ -102,7 +103,7 @@ export const estimateStorage = async () => {
     const result = await navigator.storage.estimate();
     return result;
   } catch (error) {
-    console.error('Storage estimate error:', error);
+    debugError('Storage estimate error:', error);
     return null;
   }
 };

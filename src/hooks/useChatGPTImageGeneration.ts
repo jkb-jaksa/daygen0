@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugError, debugLog } from '../utils/debug';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -46,7 +47,7 @@ export const useChatGPTImageGeneration = () => {
       // Use the ChatGPT Image API endpoint
       const apiUrl = getApiUrl('/api/unified-generate');
 
-      console.log('[chatgpt-image] POST', apiUrl);
+      debugLog('[chatgpt-image] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -63,7 +64,7 @@ export const useChatGPTImageGeneration = () => {
         }),
       });
 
-      console.log('[chatgpt-image] Response status:', res.status);
+      debugLog('[chatgpt-image] Response status:', res.status);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -71,7 +72,7 @@ export const useChatGPTImageGeneration = () => {
       }
 
       const data = await res.json();
-      console.log('[chatgpt-image] Response data:', data);
+      debugLog('[chatgpt-image] Response data:', data);
 
       // Handle multiple images (dataUrls array) or single image (dataUrl)
       const imageUrls = data.dataUrls || (data.dataUrl ? [data.dataUrl] : []);
@@ -99,7 +100,7 @@ export const useChatGPTImageGeneration = () => {
 
       return generatedImage;
     } catch (error) {
-      console.error('[chatgpt-image] Generation failed:', error);
+      debugError('[chatgpt-image] Generation failed:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       

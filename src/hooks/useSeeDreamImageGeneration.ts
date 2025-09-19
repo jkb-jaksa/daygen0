@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugLog } from '../utils/debug';
 
 export interface SeedreamGeneratedImage {
   url: string;
@@ -47,7 +48,7 @@ export const useSeeDreamImageGeneration = () => {
     try {
       const { prompt, size = "1024x1024", n = 1 } = options;
 
-      console.log('[seedream] Generating image with prompt:', prompt.substring(0, 100) + '...');
+      debugLog('[seedream] Generating image with prompt:', `${prompt.substring(0, 100)}...`);
       
       const res = await fetch(getApiUrl('/api/unified-generate'), {
         method: 'POST',
@@ -107,7 +108,7 @@ export const useSeeDreamImageGeneration = () => {
     try {
       const { prompt, image, mask, size = "1024x1024", n = 1 } = options;
 
-      console.log('[seedream] Editing image with prompt:', prompt.substring(0, 100) + '...');
+      debugLog('[seedream] Editing image with prompt:', `${prompt.substring(0, 100)}...`);
       
       const formData = new FormData();
       formData.append('prompt', prompt);

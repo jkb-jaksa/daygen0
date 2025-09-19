@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { debugError, debugWarn } from "../utils/debug";
 
 declare global { 
   interface Window { 
@@ -30,9 +31,9 @@ export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) { 
-      console.warn("Missing VITE_GOOGLE_CLIENT_ID"); 
-      return; 
+    if (!clientId) {
+      debugWarn("Missing VITE_GOOGLE_CLIENT_ID");
+      return;
     }
 
     const s = document.createElement("script");
@@ -54,7 +55,7 @@ export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
             if (name || picture) updateProfile({ name, profilePic: picture });
             onSuccess?.();
           } catch (e) {
-            console.error("Google sign-in failed", e);
+            debugError("Google sign-in failed", e);
           }
         },
       });

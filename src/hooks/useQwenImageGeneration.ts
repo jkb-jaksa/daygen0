@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugLog } from '../utils/debug';
 
 export interface QwenGeneratedImage {
   url: string;
@@ -57,7 +58,7 @@ export const useQwenImageGeneration = () => {
     try {
       const apiUrl = getApiUrl('/api/unified-generate');
       
-      console.log('[qwen] POST', apiUrl);
+      debugLog('[qwen] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -127,7 +128,7 @@ export const useQwenImageGeneration = () => {
       if (options.seed !== undefined) formData.append('seed', String(options.seed));
       formData.append('watermark', String(options.watermark || false));
       
-      console.log('[qwen] POST', apiUrl);
+      debugLog('[qwen] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',

@@ -1,3 +1,5 @@
+import { debugWarn } from '../utils/debug';
+
 /**
  * Downscale and compress a data URL to keep client-side storage lean.
  */
@@ -31,15 +33,16 @@ export const compressDataUrl = async (
         resolve(canvas.toDataURL('image/jpeg', quality));
       } catch (error) {
         // If compression fails due to CORS, return the original URL
-        console.warn('Image compression failed, using original URL:', error);
+        debugWarn('Image compression failed, using original URL:', error);
         resolve(srcDataUrl);
       }
     };
     img.onerror = (error) => {
       // If image loading fails, return the original URL
-      console.warn('Image loading failed, using original URL:', error);
+      debugWarn('Image loading failed, using original URL:', error);
       resolve(srcDataUrl);
     };
     img.src = srcDataUrl;
   });
 };
+import { debugWarn } from '../utils/debug';

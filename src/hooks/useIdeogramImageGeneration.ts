@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugLog } from '../utils/debug';
 
 export interface IdeogramGeneratedImage {
   url: string;
@@ -94,7 +95,7 @@ export const useIdeogramImageGeneration = () => {
     try {
       const apiUrl = getApiUrl('/api/unified-generate');
       
-      console.log('[ideogram] POST', apiUrl);
+      debugLog('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -168,7 +169,7 @@ export const useIdeogramImageGeneration = () => {
       if (options.style_preset) formData.append('style_preset', options.style_preset);
       if (options.style_type) formData.append('style_type', options.style_type);
       
-      console.log('[ideogram] POST', apiUrl);
+      debugLog('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -236,7 +237,7 @@ export const useIdeogramImageGeneration = () => {
       if (options.num_images) formData.append('num_images', String(options.num_images));
       if (options.style_preset) formData.append('style_preset', options.style_preset);
       
-      console.log('[ideogram] POST', apiUrl);
+      debugLog('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -304,7 +305,7 @@ export const useIdeogramImageGeneration = () => {
       if (options.num_images) formData.append('num_images', String(options.num_images));
       if (options.style_preset) formData.append('style_preset', options.style_preset);
       
-      console.log('[ideogram] POST', apiUrl);
+      debugLog('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -369,7 +370,7 @@ export const useIdeogramImageGeneration = () => {
       if (options.detail !== undefined) formData.append('detail', String(options.detail));
       if (options.prompt) formData.append('prompt', options.prompt);
       
-      console.log('[ideogram] POST', apiUrl);
+      debugLog('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -430,7 +431,7 @@ export const useIdeogramImageGeneration = () => {
       formData.append('image', options.image);
       if (options.model_version) formData.append('model_version', options.model_version);
       
-      console.log('[ideogram] POST', apiUrl);
+      debugLog('[ideogram] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',

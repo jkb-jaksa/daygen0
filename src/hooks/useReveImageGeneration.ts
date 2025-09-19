@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugError, debugLog } from '../utils/debug';
 
 export interface ReveGeneratedImage {
   url: string;
@@ -71,7 +72,7 @@ export const useReveImageGeneration = () => {
       // Submit the job
       const apiUrl = getApiUrl('/api/unified-generate');
 
-      console.log('[reve] POST', apiUrl);
+      debugLog('[reve] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -157,13 +158,13 @@ export const useReveImageGeneration = () => {
       let attempts = 0;
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
-      console.log('[reve] Starting polling for job:', submissionJobId);
+      debugLog('[reve] Starting polling for job:', submissionJobId);
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
         attempts++;
         
-        console.log(`[reve] Polling attempt ${attempts}/${maxAttempts}`);
+        debugLog(`[reve] Polling attempt ${attempts}/${maxAttempts}`);
         
         try {
           const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
@@ -173,7 +174,7 @@ export const useReveImageGeneration = () => {
           }
 
           const result = await pollRes.json();
-          console.log('[reve] Polling result:', result.status);
+          debugLog('[reve] Polling result:', result.status);
           
           if (result.status === 'succeeded' && result.images && result.images.length > 0) {
             const generatedImage: ReveGeneratedImage = {
@@ -230,7 +231,7 @@ export const useReveImageGeneration = () => {
           }));
           
         } catch (pollError) {
-          console.error('Polling error:', pollError);
+          debugError('Polling error:', pollError);
           // Continue polling unless it's a critical error
           if (attempts >= maxAttempts - 1) {
             throw pollError;
@@ -285,7 +286,7 @@ export const useReveImageGeneration = () => {
       // Submit the edit job
       const apiUrl = '/api/reve/edit';
 
-      console.log('[reve] POST edit', apiUrl);
+      debugLog('[reve] POST edit', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -363,13 +364,13 @@ export const useReveImageGeneration = () => {
       let attempts = 0;
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
-      console.log('[reve] Starting polling for edit job:', submissionJobId);
+      debugLog('[reve] Starting polling for edit job:', submissionJobId);
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
         attempts++;
         
-        console.log(`[reve] Edit polling attempt ${attempts}/${maxAttempts}`);
+        debugLog(`[reve] Edit polling attempt ${attempts}/${maxAttempts}`);
         
         try {
           const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
@@ -379,7 +380,7 @@ export const useReveImageGeneration = () => {
           }
 
           const result = await pollRes.json();
-          console.log('[reve] Edit polling result:', result.status);
+          debugLog('[reve] Edit polling result:', result.status);
           
           if (result.status === 'succeeded' && result.images && result.images.length > 0) {
             const generatedImage: ReveGeneratedImage = {
@@ -434,7 +435,7 @@ export const useReveImageGeneration = () => {
           }));
           
         } catch (pollError) {
-          console.error('Edit polling error:', pollError);
+          debugError('Edit polling error:', pollError);
           // Continue polling unless it's a critical error
           if (attempts >= maxAttempts - 1) {
             throw pollError;
