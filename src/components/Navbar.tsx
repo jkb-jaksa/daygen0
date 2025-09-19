@@ -198,7 +198,7 @@ export default function Navbar() {
       {/* Top navbar */}
       <nav
         ref={navRef}
-        className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[72px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
+        className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[60px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
       >
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base min-h-[3.5rem]">
           <div className="flex items-center gap-6 md:gap-8">
@@ -250,7 +250,7 @@ export default function Navbar() {
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
-                  className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-3 py-1.5 hover:bg-d-dark/70 hover:text-brand transition-colors"
+                  className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-d-dark/90 backdrop-blur-[60px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-3 py-1.5 hover:bg-d-dark hover:text-brand transition-colors"
                   aria-label="Credit usage"
                 >
                   <CreditCard className="size-4" />
@@ -273,7 +273,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className="parallax-mid flex items-center gap-1.5 rounded-full border glass-liquid bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-2.5 py-1 hover:bg-d-dark/70 hover:text-brand transition-colors"
+                    className="parallax-mid flex items-center gap-1.5 rounded-full border glass-liquid bg-d-dark/90 backdrop-blur-[60px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-2.5 py-1 hover:bg-d-dark hover:text-brand transition-colors"
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -415,14 +415,14 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className="rounded-xl glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-base text-d-text shadow-xl transition-colors duration-200 py-2"
+            className="rounded-xl glass-liquid willchange-backdrop isolate bg-d-dark/90 backdrop-blur-[60px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-base text-d-text shadow-xl transition-colors duration-200 py-2"
           >
             <button
               onClick={() => {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               My account
@@ -433,7 +433,7 @@ export default function Navbar() {
                 navigate("/create");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               My creations
@@ -444,7 +444,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:bg-d-dark hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               Log out

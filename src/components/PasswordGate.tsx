@@ -57,7 +57,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
 
   return (
     <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4">
-      <div className="glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+      <div className="glass-liquid willchange-backdrop isolate bg-d-dark/90 backdrop-blur-[60px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
         <div className="text-center">
           <div className="mb-4">
             <h1 className="text-lg font-cabin text-d-text mb-2">Enter Password</h1>
