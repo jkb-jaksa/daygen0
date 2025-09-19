@@ -2117,7 +2117,8 @@ const Create: React.FC = () => {
               background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
-              height: 'fit-content'
+              height: 'fit-content',
+              contain: 'paint'
             }}
           >
             <div className="w-full p-4">
@@ -3700,13 +3701,14 @@ const Create: React.FC = () => {
                             <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
                             
                             {/* Upload info overlay */}
-                            <div 
+                            <div
                               className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
                                 WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content'
+                                height: 'fit-content',
+                                contain: 'paint'
                               }}
                             >
                               <div className="w-full p-4">
@@ -3815,7 +3817,7 @@ const Create: React.FC = () => {
                               <img src={img.url} alt={img.prompt || 'Generated image'} className="w-full aspect-square object-cover" />
                               
                               {/* Image info overlay */}
-                              <div 
+                              <div
                                 className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                   imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
@@ -3823,7 +3825,8 @@ const Create: React.FC = () => {
                                   background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                   backdropFilter: 'blur(12px)',
                                   WebkitBackdropFilter: 'blur(12px)',
-                                  height: 'fit-content'
+                                  height: 'fit-content',
+                                  contain: 'paint'
                                 }}
                               >
                                 <div className="w-full p-4">
@@ -4154,7 +4157,7 @@ const Create: React.FC = () => {
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
-                            <div 
+                            <div
                               className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
@@ -4162,7 +4165,8 @@ const Create: React.FC = () => {
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
                                 WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content'
+                                height: 'fit-content',
+                                contain: 'paint'
                               }}
                             >
                               <div className="w-full p-4">
@@ -4401,7 +4405,7 @@ const Create: React.FC = () => {
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
-                            <div 
+                            <div
                               className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
@@ -4409,7 +4413,8 @@ const Create: React.FC = () => {
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
                                 backdropFilter: 'blur(12px)',
                                 WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content'
+                                height: 'fit-content',
+                                contain: 'paint'
                               }}
                             >
                               <div className="w-full p-4">
