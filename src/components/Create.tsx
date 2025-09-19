@@ -174,7 +174,7 @@ const ModelMenuPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
+      className="willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
     >
       {children}
     </div>,
@@ -445,7 +445,7 @@ const SettingsPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-4"
+      className="willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-4"
     >
       {children}
     </div>,
@@ -2110,7 +2110,7 @@ const Create: React.FC = () => {
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
           >
@@ -2124,7 +2124,7 @@ const Create: React.FC = () => {
                         e.stopPropagation();
                         copyPromptToClipboard(img.prompt);
                       }}
-                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20 align-middle pointer-events-auto"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, tooltipId);
                       }}
@@ -2132,7 +2132,7 @@ const Create: React.FC = () => {
                         hideHoverTooltip(tooltipId);
                       }}
                     >
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3 h-3" />
                     </button>
                   </p>
                 </div>
@@ -2176,7 +2176,7 @@ const Create: React.FC = () => {
               <div className="flex justify-between items-center mt-2">
                 <ModelBadge model={img.model ?? 'unknown'} size="md" />
                 {img.isPublic && (
-                  <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                  <div className="glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
                     <div className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-d-orange-1" />
                       <span className="leading-none">Public</span>
@@ -3695,7 +3695,7 @@ const Create: React.FC = () => {
                             
                             {/* Upload info overlay */}
                             <div
-                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
+                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10"
                             >
                               <div className="w-full p-4">
                                 <div className="mb-2">
@@ -3799,12 +3799,12 @@ const Create: React.FC = () => {
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
-                            <div key={`folder-image-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small cursor-pointer" onClick={() => { setSelectedReferenceImage(img.url); setIsFullSizeOpen(true); }}>
+                            <div key={`folder-image-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }}>
                               <img src={img.url} alt={img.prompt || 'Generated image'} className="w-full aspect-square object-cover" />
                               
                               {/* Image info overlay */}
                               <div
-                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
                                   imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
                               >
@@ -3818,7 +3818,7 @@ const Create: React.FC = () => {
                                       <div className="flex justify-between items-center mt-2">
                                         <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                         {img.isPublic && (
-                                          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                          <div className="glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-orange-1" />
                                               <span className="leading-none">Public</span>
@@ -3943,7 +3943,7 @@ const Create: React.FC = () => {
                     ) : (
                       <div className="grid grid-cols-4 gap-3 w-full">
                         {folders.map((folder) => (
-                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small cursor-pointer" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
+                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
                           {folder.customThumbnail ? (
                             <div className="w-full h-full relative">
@@ -4139,7 +4139,7 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
                                 imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                             >
@@ -4154,7 +4154,7 @@ const Create: React.FC = () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                        className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                        className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
@@ -4162,7 +4162,7 @@ const Create: React.FC = () => {
                                           hideHoverTooltip(`folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
                                       >
-                                        <Copy className="w-3.5 h-3.5" />
+                                        <Copy className="w-3 h-3" />
                                       </button>
                                     </p>
                                   </div>
@@ -4381,7 +4381,7 @@ const Create: React.FC = () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                             >
@@ -4396,7 +4396,7 @@ const Create: React.FC = () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20 align-middle pointer-events-auto"
                                       onMouseEnter={(e) => {
                                         showHoverTooltip(e.currentTarget, `${img.url}-${idx}`);
                                       }}
@@ -4404,7 +4404,7 @@ const Create: React.FC = () => {
                                         hideHoverTooltip(`${img.url}-${idx}`);
                                       }}
                                       >
-                                        <Copy className="w-3.5 h-3.5" />
+                                        <Copy className="w-3 h-3" />
                                       </button>
                                     </p>
                                   </div>
@@ -4448,7 +4448,7 @@ const Create: React.FC = () => {
                                 <div className="flex justify-between items-center mt-2">
                                   <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                   {img.isPublic && (
-                                    <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                    <div className="glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
                                       <div className="flex items-center gap-1">
                                         <Globe className="w-3 h-3 text-d-orange-1" />
                                         <span className="leading-none">Public</span>
@@ -5027,7 +5027,7 @@ const Create: React.FC = () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
+                      className="glass-liquid isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -5035,7 +5035,7 @@ const Create: React.FC = () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className="glass-liquid isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
+                      className="glass-liquid isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
                       title="Next image (→)"
                       aria-label="Next image"
                     >
@@ -5102,12 +5102,12 @@ const Create: React.FC = () => {
                 
                 {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className={`absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-2xl p-4 text-white transition-opacity duration-100 ${
+                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-d-text transition-opacity duration-100 ${
                     imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}>
                     <div className="flex items-center justify-center">
                       <div className="text-center">
-                        <div className="text-lg font-medium font-cabin">
+                        <div className="text-sm font-raleway leading-relaxed">
                           {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
                           {(selectedFullImage || generatedImage)?.prompt && (
                             <button
@@ -5115,9 +5115,9 @@ const Create: React.FC = () => {
                                 e.stopPropagation();
                                 copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
                               }}
-                              className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                              className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20 align-middle pointer-events-auto"
                             >
-                              <Copy className="w-4 h-4" />
+                              <Copy className="w-3 h-3" />
                             </button>
                           )}
                         </div>
@@ -5127,7 +5127,7 @@ const Create: React.FC = () => {
                             size="md" 
                           />
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
-                            <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                            <div className="glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
                               <div className="flex items-center gap-1">
                                 <Globe className="w-3 h-3 text-d-orange-1" />
                                 <span className="leading-none">Public</span>

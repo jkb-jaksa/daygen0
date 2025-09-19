@@ -145,9 +145,9 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
         glass-liquid 
         willchange-backdrop 
         isolate 
-        bg-black/20 
+        bg-d-dark/50 
         backdrop-blur-[72px] 
-        backdrop-brightness-[.7] 
+        backdrop-brightness-[.85] 
         backdrop-contrast-[1.05] 
         backdrop-saturate-[.85] 
         text-d-white 

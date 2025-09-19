@@ -784,9 +784,9 @@ select option::-webkit-scrollbar-thumb:hover {
 
 /* Prompt Description Bar Effect */
 .PromptDescriptionBar {
-  background: linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.85) 10%, rgba(0,0,0,0.75) 25%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.35) 80%, rgba(0,0,0,0.2) 95%, rgba(0,0,0,0.08) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   height: fit-content;
   contain: paint;
 }

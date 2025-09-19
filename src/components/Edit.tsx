@@ -95,7 +95,7 @@ const ModelMenuPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
+      className="willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
     >
       {children}
     </div>,
@@ -1146,7 +1146,7 @@ export default function Edit() {
               width: 'auto',
               bottom: '12rem'
             }}>
-              <div className="flex justify-between items-center rounded-lg px-8 py-2 willchange-backdrop isolate backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark" style={{ minWidth: '320px' }}>
+              <div className="flex justify-between items-center rounded-lg px-8 py-2 willchange-backdrop isolate backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark" style={{ minWidth: '320px' }}>
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}

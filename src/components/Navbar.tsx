@@ -250,7 +250,7 @@ export default function Navbar() {
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
-                  className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-3 py-1.5 hover:bg-black/30 hover:text-brand transition-colors"
+                  className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-3 py-1.5 hover:bg-d-dark/70 hover:text-brand transition-colors"
                   aria-label="Credit usage"
                 >
                   <CreditCard className="size-4" />
@@ -273,7 +273,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className="parallax-mid flex items-center gap-1.5 rounded-full border glass-liquid bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-2.5 py-1 hover:bg-black/30 hover:text-brand transition-colors"
+                    className="parallax-mid flex items-center gap-1.5 rounded-full border glass-liquid bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border-d-dark text-d-white px-2.5 py-1 hover:bg-d-dark/70 hover:text-brand transition-colors"
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -415,7 +415,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className="rounded-xl glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-base text-d-text shadow-xl transition-colors duration-200 py-2"
+            className="rounded-xl glass-liquid willchange-backdrop isolate bg-d-dark/50 backdrop-blur-[72px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark text-base text-d-text shadow-xl transition-colors duration-200 py-2"
           >
             <button
               onClick={() => {
