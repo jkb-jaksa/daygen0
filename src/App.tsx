@@ -11,6 +11,7 @@ import ToolsSection from "./components/ToolsSection";
 import Services from "./components/Services";
 import AboutUs from "./components/AboutUs";
 import Prompts from "./components/Prompts";
+import Explore from "./components/Explore";
 import { useAuth } from "./auth/AuthContext";
 import { layout, text, buttons } from "./styles/designSystem";
 
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/prompts" element={<Prompts />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/ai-tools" element={<ToolsSection />} />
           <Route path="/ai-tools/:id" element={<Subpage />} />
           <Route path="/create" element={<Create />} />

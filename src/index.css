@@ -636,3 +636,86 @@ html, body {
   height: 3rem;
   color: var(--d-orange-1);
 }
+
+/* Custom select option hover styles for Gallery dropdowns */
+/* More specific selectors to override browser defaults */
+select option,
+select option:not(:disabled) {
+  background-color: var(--d-black) !important;
+  color: var(--d-white) !important;
+  background-image: none !important;
+}
+
+select option:hover,
+select option:not(:disabled):hover {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}
+
+select option:checked,
+select option:not(:disabled):checked {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}
+
+select option:focus,
+select option:not(:disabled):focus {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+select option:checked:focus,
+select option:not(:disabled):checked:focus {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}
+
+/* For Firefox */
+select option:checked:focus-visible,
+select option:not(:disabled):checked:focus-visible {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}
+
+/* Additional WebKit specific styles */
+select option::-webkit-scrollbar {
+  width: 8px;
+}
+
+select option::-webkit-scrollbar-track {
+  background: var(--d-black);
+}
+
+select option::-webkit-scrollbar-thumb {
+  background: var(--d-orange-1);
+  border-radius: 4px;
+}
+
+select option::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+}
+
+/* Force override for all select elements in the app */
+* select option {
+  background-color: var(--d-black) !important;
+  color: var(--d-white) !important;
+  background-image: none !important;
+}
+
+* select option:hover {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}
+
+* select option:checked {
+  background-color: var(--d-orange-1) !important;
+  color: var(--d-black) !important;
+  background-image: none !important;
+}

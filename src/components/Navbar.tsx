@@ -148,7 +148,7 @@ export default function Navbar() {
     }, 100);
   };
 
-  const items = ["create", "edit", "knowledge base", "services", "about us"] as const;
+  const items = ["create", "edit", "explore", "knowledge base", "services", "about us"] as const;
 
   const closeMenu = () => setActiveMenu(null);
 
@@ -172,6 +172,7 @@ export default function Navbar() {
                 const path =
                   item === "create" ? "/create" : 
                   item === "edit" ? "/edit" : 
+                  item === "explore" ? "/explore" : 
                   item === "knowledge base" ? "#" : 
                   item === "services" ? "/services" : 
                   item === "about us" ? "/about-us" : 
@@ -330,6 +331,8 @@ export default function Navbar() {
                       </Link>
                     ))}
                   </div>
+                ) : activeMenu === "explore" ? (
+                  <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
                 ) : activeMenu === "knowledge base" ? (
                   <div className="flex flex-col gap-1.5">
                     <Link

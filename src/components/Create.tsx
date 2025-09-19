@@ -181,6 +181,209 @@ const ModelMenuPortal: React.FC<{
   );
 };
 
+// Custom dropdown component for Gallery filters
+const CustomDropdown: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  disabled?: boolean;
+}> = ({ value, onChange, options, placeholder, disabled }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!isOpen || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setPos({ 
+      top: rect.bottom + window.scrollY + 4, // 4px gap below button
+      left: rect.left + window.scrollX, 
+      width: rect.width
+    });
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && 
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className="w-full px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span className={selectedOption ? 'text-d-white' : 'text-d-white/50'}>
+          {selectedOption?.label || placeholder || 'Select...'}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-d-black border border-d-mid rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+          }}
+        >
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-orange-1 hover:text-d-black ${
+                option.value === value 
+                  ? 'bg-d-orange-1 text-d-black' 
+                  : 'text-d-white hover:bg-d-orange-1 hover:text-d-black'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+// Custom multi-select dropdown component for Gallery model filters
+const CustomMultiSelect: React.FC<{
+  values: string[];
+  onChange: (values: string[]) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  disabled?: boolean;
+}> = ({ values, onChange, options, placeholder, disabled }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!isOpen || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setPos({ 
+      top: rect.bottom + window.scrollY + 4, // 4px gap below button
+      left: rect.left + window.scrollX, 
+      width: rect.width
+    });
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && 
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const toggleOption = (optionValue: string) => {
+    if (values.includes(optionValue)) {
+      onChange(values.filter(v => v !== optionValue));
+    } else {
+      onChange([...values, optionValue]);
+    }
+  };
+
+  const removeOption = (optionValue: string) => {
+    onChange(values.filter(v => v !== optionValue));
+  };
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="flex flex-wrap gap-1.5 flex-1">
+          {values.length === 0 ? (
+            <span className="text-d-white/50">{placeholder || 'Select...'}</span>
+          ) : (
+            values.map(value => {
+              const option = options.find(opt => opt.value === value);
+              return (
+                <div key={value} className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 text-d-white rounded-md text-xs">
+                  <span>{option?.label || value}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeOption(value);
+                    }}
+                    className="hover:text-d-orange-1 transition-colors duration-200 ml-1 text-base font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} flex-shrink-0`} />
+      </button>
+      
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-d-black border border-d-mid rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+          }}
+        >
+          {options.map((option) => {
+            const isSelected = values.includes(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => toggleOption(option.value)}
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-orange-1 hover:text-d-black ${
+                  isSelected 
+                    ? 'bg-d-orange-1 text-d-black' 
+                    : 'text-d-white hover:bg-d-orange-1 hover:text-d-black'
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
 // Portal component for settings menu to avoid clipping by parent containers
 const SettingsPortal: React.FC<{ 
   anchorRef: React.RefObject<HTMLElement | null>; 
@@ -2990,130 +3193,52 @@ const Create: React.FC = () => {
                         {/* Modality Filter */}
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Modality</label>
-                          <select
+                          <CustomDropdown
                             value={galleryFilters.type}
-                            onChange={(e) => {
-                              const newType = e.target.value as 'all' | 'image' | 'video';
+                            onChange={(value) => {
+                              const newType = value as 'all' | 'image' | 'video';
                               setGalleryFilters(prev => ({ 
                                 ...prev, 
                                 type: newType,
                                 models: [] // Reset model filter when type changes
                               }));
                             }}
-                            className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
-                          >
-                            <option value="all">All modalities</option>
-                            <option value="image">Image</option>
-                            <option value="video">Video</option>
-                          </select>
+                            options={[
+                              { value: "image", label: "Image" },
+                              { value: "video", label: "Video" }
+                            ]}
+                          />
                         </div>
                         
                         {/* Model Filter */}
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Model</label>
-                          <div className="relative">
-                            <div className="flex flex-wrap gap-1.5 min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus-within:border-d-orange-1 transition-colors duration-200">
-                              {galleryFilters.models.length === 0 ? (
-                                <span className="text-d-white/50">All models</span>
-                              ) : (
-                                galleryFilters.models.map(modelId => {
-                                  const model = AI_MODELS.find(m => m.id === modelId);
-                                  return (
-                                    <div key={modelId} className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 text-d-white rounded-md text-xs">
-                                      <span>{model?.name || modelId}</span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setGalleryFilters(prev => ({
-                                            ...prev,
-                                            models: prev.models.filter(id => id !== modelId)
-                                          }));
-                                        }}
-                                        className="hover:text-d-orange-1 transition-colors duration-200 ml-1 text-base font-bold"
-                                      >
-                                        ×
-                                      </button>
-                                    </div>
-                                  );
-                                })
-                              )}
-                              {galleryFilters.models.length > 0 && (
-                                <select
-                                  value=""
-                                  onChange={(e) => {
-                                    const modelId = e.target.value;
-                                    if (modelId && !galleryFilters.models.includes(modelId)) {
-                                      setGalleryFilters(prev => ({
-                                        ...prev,
-                                        models: [...prev.models, modelId]
-                                      }));
-                                    }
-                                    e.target.value = ""; // Reset select
-                                  }}
-                                  className="px-2 py-1 text-xs text-d-white/70 hover:text-d-orange-1 border border-dashed border-d-white/30 hover:border-d-orange-1 rounded transition-colors duration-200 bg-transparent cursor-pointer"
-                                >
-                                  <option value="">+ Add model</option>
-                                  {getAvailableModels().map(modelId => {
-                                    const model = AI_MODELS.find(m => m.id === modelId);
-                                    return (
-                                      <option key={modelId} value={modelId} disabled={galleryFilters.models.includes(modelId)}>
-                                        {model?.name || modelId}
-                                      </option>
-                                    );
-                                  })}
-                                </select>
-                              )}
-                            </div>
-                            {galleryFilters.models.length === 0 && (
-                              <select
-                                value=""
-                                onChange={(e) => {
-                                  const modelId = e.target.value;
-                                  if (modelId && !galleryFilters.models.includes(modelId)) {
-                                    setGalleryFilters(prev => ({
-                                      ...prev,
-                                      models: [...prev.models, modelId]
-                                    }));
-                                  }
-                                  e.target.value = ""; // Reset select
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                disabled={getAvailableModels().length === 0}
-                              >
-                              <option value="">Add model...</option>
-                              {getAvailableModels().map(modelId => {
-                                const model = AI_MODELS.find(m => m.id === modelId);
-                                return (
-                                  <option key={modelId} value={modelId} disabled={galleryFilters.models.includes(modelId)}>
-                                    {model?.name || modelId}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                            )}
-                          </div>
+                          <CustomMultiSelect
+                            values={galleryFilters.models}
+                            onChange={(models) => setGalleryFilters(prev => ({ ...prev, models }))}
+                            options={getAvailableModels().map(modelId => {
+                              const model = AI_MODELS.find(m => m.id === modelId);
+                              return { value: modelId, label: model?.name || modelId };
+                            })}
+                            placeholder="All models"
+                          />
                         </div>
                         
                         {/* Folder Filter */}
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Folder</label>
-                          <select
+                          <CustomDropdown
                             value={galleryFilters.folder}
-                            onChange={(e) => setGalleryFilters(prev => ({ ...prev, folder: e.target.value }))}
-                            className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
+                            onChange={(value) => setGalleryFilters(prev => ({ ...prev, folder: value }))}
+                            options={[
+                              ...getAvailableFolders().map(folderId => {
+                                const folder = folders.find(f => f.id === folderId);
+                                return { value: folderId, label: folder?.name || folderId };
+                              })
+                            ]}
                             disabled={getAvailableFolders().length === 0}
-                          >
-                            <option value="all">All folders</option>
-                            {getAvailableFolders().map(folderId => {
-                              const folder = folders.find(f => f.id === folderId);
-                              return (
-                                <option key={folderId} value={folderId}>{folder?.name || folderId}</option>
-                              );
-                            })}
-                            {getAvailableFolders().length === 0 && (
-                              <option value="none" disabled>No folders available</option>
-                            )}
-                          </select>
+                            placeholder={getAvailableFolders().length === 0 ? "No folders available" : undefined}
+                          />
                         </div>
                       </div>
                     </div>
@@ -3122,7 +3247,7 @@ const Create: React.FC = () => {
                     <div className={`${glass.surface} mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-cabin text-d-white">{selectedImages.size}</span>
+                          <span className="text-sm font-raleway text-d-white">{selectedImages.size}</span>
                           <span className="text-xs font-raleway text-d-white">
                             {selectedImages.size === 1 ? 'item selected' : 'items selected'}
                           </span>
