@@ -1014,7 +1014,7 @@ export default function Edit() {
                 }}
                 onPaste={handleUploadPaste}
               >
-                <Upload className="w-16 h-16 text-d-white/40 mx-auto mb-4" />
+                <Upload className="default-orange-icon mx-auto mb-4" />
                 <p className="text-xl font-cabin text-d-text mb-2">Upload your image</p>
                 <p className="text-base font-raleway text-d-white mb-6">
                   Click anywhere, drag and drop, or paste your image to get started
