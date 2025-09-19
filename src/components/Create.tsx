@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw, Grid3X3 } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw, Grid3X3, Globe, Lock, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -41,12 +41,18 @@ type Folder = {
   customThumbnail?: string; // Optional custom thumbnail URL
 };
 
-type GalleryImageLike =
-  | GeneratedImage
-  | FluxGeneratedImage
-  | import("../hooks/useReveImageGeneration").ReveGeneratedImage;
+type GalleryImageLike = {
+  url: string;
+  prompt: string;
+  model?: string;
+  timestamp: string;
+  ownerId?: string;
+  jobId?: string;
+  references?: string[];
+  isPublic?: boolean;
+};
 
-type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string };
+type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string; isPublic?: boolean };
 type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };
 
 type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
@@ -63,6 +69,7 @@ const toStorable = (items: GalleryImageLike[]): StoredGalleryImage[] =>
     model: item.model,
     timestamp: item.timestamp,
     ownerId: item.ownerId,
+    isPublic: item.isPublic,
     ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
   }));
 
@@ -74,6 +81,7 @@ const hydrateStoredGallery = (items: StoredGalleryImage[]): GalleryImageLike[] =
       model: item.model ?? 'unknown',
       timestamp: item.timestamp,
       ownerId: item.ownerId,
+      isPublic: item.isPublic ?? false,
     };
 
     if (item.model?.startsWith('flux') || item.model?.startsWith('reve')) {
@@ -309,6 +317,74 @@ const ImageActionMenuPortal: React.FC<{
   );
 };
 
+const BulkActionsMenuPortal: React.FC<{
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ anchorEl, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!open || !anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(200, rect.width),
+    });
+  }, [open, anchorEl]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        open &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !(anchorEl && anchorEl.contains(event.target as Node))
+      ) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, anchorEl, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 1100,
+      }}
+      className={`${glass.tight} py-2`}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
+
 const Create: React.FC = () => {
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
@@ -359,8 +435,8 @@ const Create: React.FC = () => {
   const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [gallery, setGallery] = useState<(GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage)[]>([]);
-  const [selectedFullImage, setSelectedFullImage] = useState<(GeneratedImage | FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage) | null>(null);
+  const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
+  const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
@@ -377,6 +453,8 @@ const Create: React.FC = () => {
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
+  const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
+  const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
@@ -390,18 +468,21 @@ const Create: React.FC = () => {
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [moreActionMenu, setMoreActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
+  const [bulkActionsMenu, setBulkActionsMenu] = useState<{ anchor: HTMLElement | null } | null>(null);
   const [galleryFilters, setGalleryFilters] = useState<{
     liked: boolean;
+    public: boolean;
     models: string[];
     type: 'all' | 'image' | 'video';
     folder: string;
   }>({
     liked: false,
+    public: false,
     models: [],
     type: 'all',
     folder: 'all'
   });
-  const maxGalleryTiles = 18; // ensures enough placeholders to fill the grid
+  const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
   
   // Filter function for gallery
@@ -412,8 +493,13 @@ const Create: React.FC = () => {
         return false;
       }
       
+      // Public filter
+      if (galleryFilters.public && !item.isPublic) {
+        return false;
+      }
+      
       // Model filter
-      if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.model)) {
+      if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.model ?? 'unknown')) {
         return false;
       }
       
@@ -987,6 +1073,58 @@ const Create: React.FC = () => {
     setAddToFolderDialog(true);
   };
 
+  const handleBulkPublish = () => {
+    const count = selectedImages.size;
+    setPublishConfirmation({show: true, count});
+  };
+
+  const handleBulkUnpublish = () => {
+    const count = selectedImages.size;
+    setUnpublishConfirmation({show: true, count});
+  };
+
+  const confirmBulkPublish = () => {
+    const count = selectedImages.size;
+    setGallery(currentGallery => {
+      const updatedGallery = currentGallery.map(img => 
+        selectedImages.has(img.url) 
+          ? { ...img, isPublic: true }
+          : img
+      );
+      // Persist the updated gallery
+      persistGallery(updatedGallery);
+      return updatedGallery;
+    });
+    setCopyNotification(`${count} image${count === 1 ? '' : 's'} published!`);
+    setTimeout(() => setCopyNotification(null), 2000);
+    setPublishConfirmation({show: false, count: 0});
+  };
+
+  const confirmBulkUnpublish = () => {
+    const count = selectedImages.size;
+    setGallery(currentGallery => {
+      const updatedGallery = currentGallery.map(img => 
+        selectedImages.has(img.url) 
+          ? { ...img, isPublic: false }
+          : img
+      );
+      // Persist the updated gallery
+      persistGallery(updatedGallery);
+      return updatedGallery;
+    });
+    setCopyNotification(`${count} image${count === 1 ? '' : 's'} unpublished!`);
+    setTimeout(() => setCopyNotification(null), 2000);
+    setUnpublishConfirmation({show: false, count: 0});
+  };
+
+  const cancelBulkPublish = () => {
+    setPublishConfirmation({show: false, count: 0});
+  };
+
+  const cancelBulkUnpublish = () => {
+    setUnpublishConfirmation({show: false, count: 0});
+  };
+
   const focusPromptBar = () => {
     promptTextareaRef.current?.focus();
   };
@@ -1394,6 +1532,32 @@ const Create: React.FC = () => {
     setMoreActionMenuImage(null);
   };
 
+  const closeBulkActionsMenu = () => {
+    setBulkActionsMenu(null);
+  };
+
+  const toggleBulkActionsMenu = (anchor: HTMLElement) => {
+    setBulkActionsMenu(prev => {
+      if (prev?.anchor === anchor) {
+        return null;
+      }
+      return { anchor };
+    });
+  };
+
+  const toggleImagePublicStatus = (imageUrl: string) => {
+    setGallery(currentGallery => {
+      const updatedGallery = currentGallery.map(img => 
+        img.url === imageUrl 
+          ? { ...img, isPublic: !img.isPublic }
+          : img
+      );
+      // Persist the updated gallery
+      persistGallery(updatedGallery);
+      return updatedGallery;
+    });
+  };
+
   const handleEditMenuSelect = () => {
     closeImageActionMenu();
     if (imageActionMenuImage) {
@@ -1451,7 +1615,7 @@ const Create: React.FC = () => {
     setPrompt(originalPrompt);
     
     // Set the model to the original model used
-    setSelectedModel(originalModel);
+    setSelectedModel(originalModel ?? 'unknown');
     
     // Close the menu
     closeImageActionMenu();
@@ -1650,6 +1814,27 @@ const Create: React.FC = () => {
           >
             <FolderPlus className="h-4 w-4" />
             Manage folders
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleImagePublicStatus(image.url);
+              closeMoreActionMenu();
+            }}
+          >
+            {image.isPublic ? (
+              <>
+                <Lock className="h-4 w-4" />
+                Unpublish
+              </>
+            ) : (
+              <>
+                <Globe className="h-4 w-4" />
+                Publish
+              </>
+            )}
           </button>
         </ImageActionMenuPortal>
       </div>
@@ -2152,7 +2337,7 @@ const Create: React.FC = () => {
 
   // Settings dropdown click outside handling is now handled by SettingsPortal component
 
-  // Handle keyboard events for delete confirmation
+  // Handle keyboard events for confirmation modals
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (deleteConfirmation.show) {
@@ -2161,12 +2346,24 @@ const Create: React.FC = () => {
         } else if (event.key === 'Enter') {
           handleDeleteConfirmed();
         }
+      } else if (publishConfirmation.show) {
+        if (event.key === 'Escape') {
+          cancelBulkPublish();
+        } else if (event.key === 'Enter') {
+          confirmBulkPublish();
+        }
+      } else if (unpublishConfirmation.show) {
+        if (event.key === 'Escape') {
+          cancelBulkUnpublish();
+        } else if (event.key === 'Enter') {
+          confirmBulkUnpublish();
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [deleteConfirmation.show]);
+  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show]);
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
@@ -2299,6 +2496,76 @@ const Create: React.FC = () => {
         </div>
       )}
 
+      {/* Publish confirmation dialog */}
+      {publishConfirmation.show && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+            <div className="text-center">
+              <div className="mb-4">
+                <Globe className="default-orange-icon mx-auto mb-4" />
+                <h3 className="text-xl font-cabin text-d-text mb-2">
+                  {publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`}
+                </h3>
+                <p className="text-base font-raleway text-d-white">
+                  {publishConfirmation.count === 1 
+                    ? 'Are you sure you want to publish this image? It will be visible to other users.'
+                    : `Are you sure you want to publish these ${publishConfirmation.count} images? They will be visible to other users.`}
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={cancelBulkPublish}
+                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBulkPublish}
+                  className={buttons.primary}
+                >
+                  Publish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unpublish confirmation dialog */}
+      {unpublishConfirmation.show && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+            <div className="text-center">
+              <div className="mb-4">
+                <Lock className="default-orange-icon mx-auto mb-4" />
+                <h3 className="text-xl font-cabin text-d-text mb-2">
+                  {unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`}
+                </h3>
+                <p className="text-base font-raleway text-d-white">
+                  {unpublishConfirmation.count === 1 
+                    ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
+                    : `Are you sure you want to unpublish these ${unpublishConfirmation.count} images? They will no longer be visible to other users.`}
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={cancelBulkUnpublish}
+                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBulkUnpublish}
+                  className={buttons.primary}
+                >
+                  Unpublish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add to folder dialog */}
       {addToFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
@@ -2308,7 +2575,7 @@ const Create: React.FC = () => {
                 <FolderPlus className="default-orange-icon mx-auto mb-4" />
                 <h3 className="text-xl font-cabin text-d-text mb-2">Manage Folders</h3>
                 <p className="text-base font-raleway text-d-white mb-4">
-                  Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these images' : 'this image'} from.
+                  Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
               
@@ -2679,6 +2946,7 @@ const Create: React.FC = () => {
                         <button
                           onClick={() => setGalleryFilters({
                             liked: false,
+                            public: false,
                             models: [],
                             type: 'all',
                             folder: 'all'
@@ -2690,25 +2958,38 @@ const Create: React.FC = () => {
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        {/* Liked Filter */}
+                        {/* Liked/Public Filter */}
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-d-white/70 font-raleway">Liked</label>
-                          <button
-                            onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
-                              galleryFilters.liked 
-                                ? 'text-d-orange-1 border-d-orange-1' 
-                                : 'text-d-white border-d-dark hover:border-d-orange-1'
-                            }`}
-                          >
-                            <Heart className={`w-4 h-4 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
-                            <span>{galleryFilters.liked ? 'Liked only' : 'All images'}</span>
-                          </button>
+                          <label className="text-xs text-d-white/70 font-raleway">Liked/Public</label>
+                          <div className="flex gap-1 flex-wrap">
+                            <button
+                              onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                                galleryFilters.liked 
+                                  ? 'text-d-orange-1 border-d-orange-1' 
+                                  : 'text-d-white border-d-dark hover:border-d-orange-1'
+                              }`}
+                            >
+                              <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
+                              <span>Liked</span>
+                            </button>
+                            <button
+                              onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                                galleryFilters.public 
+                                  ? 'text-d-orange-1 border-d-orange-1' 
+                                  : 'text-d-white border-d-dark hover:border-d-orange-1'
+                              }`}
+                            >
+                              <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? 'text-d-orange-1' : 'text-current'}`} />
+                              <span>Public</span>
+                            </button>
+                          </div>
                         </div>
                         
-                        {/* Type Filter */}
+                        {/* Modality Filter */}
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-d-white/70 font-raleway">Type</label>
+                          <label className="text-xs text-d-white/70 font-raleway">Modality</label>
                           <select
                             value={galleryFilters.type}
                             onChange={(e) => {
@@ -2721,7 +3002,7 @@ const Create: React.FC = () => {
                             }}
                             className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
                           >
-                            <option value="all">All types</option>
+                            <option value="all">All modalities</option>
                             <option value="image">Image</option>
                             <option value="video">Video</option>
                           </select>
@@ -2843,7 +3124,7 @@ const Create: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-cabin text-d-white">{selectedImages.size}</span>
                           <span className="text-xs font-raleway text-d-white">
-                            {selectedImages.size === 1 ? 'image selected' : 'images selected'}
+                            {selectedImages.size === 1 ? 'item selected' : 'items selected'}
                           </span>
                           {selectedImages.size !== visibleSelectedCount && (
                             <span className="text-xs font-raleway text-d-white">
@@ -2879,54 +3160,114 @@ const Create: React.FC = () => {
                       </div>
                       {hasSelection && (
                         <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleBulkLike}
-                            className={`${buttons.subtle} !h-8 gap-1.5 text-d-white`}
-                          >
-                            <Heart className="h-3.5 w-3.5" />
-                            <span>Like</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleBulkUnlike}
-                            className={`${buttons.subtle} !h-8 gap-1.5 text-d-white`}
-                          >
-                            <HeartOff className="h-3.5 w-3.5" />
-                            <span>Unlike</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleBulkAddToFolder}
-                            className={`${buttons.subtle} !h-8 gap-1.5 text-d-white`}
-                          >
-                            <FolderPlus className="h-3.5 w-3.5" />
-                            <span>Manage folders</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleBulkDelete}
-                            className={`${buttons.subtle} !h-8 gap-1.5 text-red-300 hover:text-red-200`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span>Delete</span>
-                          </button>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(e) => toggleBulkActionsMenu(e.currentTarget)}
+                              className={`${buttons.subtle} !h-8 gap-1.5 text-d-white`}
+                            >
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                              <span>Actions</span>
+                              <ChevronDown className="h-3 w-3" />
+                            </button>
+                            
+                            <BulkActionsMenuPortal
+                              anchorEl={bulkActionsMenu?.anchor ?? null}
+                              open={Boolean(bulkActionsMenu)}
+                              onClose={closeBulkActionsMenu}
+                            >
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkLike();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-orange-1/10 hover:text-d-orange-1 flex items-center gap-3"
+                              >
+                                <Heart className="h-4 w-4" />
+                                <span>Like</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkUnlike();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-orange-1/10 hover:text-d-orange-1 flex items-center gap-3"
+                              >
+                                <HeartOff className="h-4 w-4" />
+                                <span>Unlike</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkPublish();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-orange-1/10 hover:text-d-orange-1 flex items-center gap-3"
+                              >
+                                <Globe className="h-4 w-4" />
+                                <span>Publish</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkUnpublish();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-orange-1/10 hover:text-d-orange-1 flex items-center gap-3"
+                              >
+                                <Lock className="h-4 w-4" />
+                                <span>Unpublish</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkAddToFolder();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-orange-1/10 hover:text-d-orange-1 flex items-center gap-3"
+                              >
+                                <FolderPlus className="h-4 w-4" />
+                                <span>Manage folders</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkDelete();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-orange-1/10 hover:text-d-orange-1 flex items-center gap-3"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span>Delete</span>
+                              </button>
+                            </BulkActionsMenuPortal>
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-6 gap-2 w-full">
+                    <div className="grid grid-cols-5 gap-2 w-full">
                     {filteredGallery.map((img, idx) => {
                       const isSelected = selectedImages.has(img.url);
                       return (
                         <div
                           key={`hist-${img.url}-${idx}`}
-                          className={`group relative rounded-[24px] overflow-hidden border transition-colors duration-100 parallax-large ${
+                          className={`group relative rounded-[24px] overflow-hidden border transition-all duration-200 parallax-large ${
                             isSelected 
                               ? 'border-[var(--d-orange-1)] bg-d-black hover:bg-d-dark' 
                               : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
                           } ${
                             imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
+                          } ${
+                            (isSelectMode || hasSelection) && !isSelected ? 'opacity-50' : ''
                           }`}
                         >
                           <img
@@ -3010,9 +3351,17 @@ const Create: React.FC = () => {
                                     </button>
                                   </div>
                                 )}
-                                {/* Model Badge */}
-                                <div className="flex justify-start mt-2">
-                                  <ModelBadge model={img.model} size="md" />
+                                {/* Model Badge and Public Indicator */}
+                                <div className="flex justify-between items-center mt-2">
+                                  <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                  {img.isPublic && (
+                                    <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                      <div className="flex items-center gap-1">
+                                        <Globe className="w-3 h-3 text-d-orange-1" />
+                                        <span className="leading-none">Public</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -3295,9 +3644,15 @@ const Create: React.FC = () => {
                                       <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                       </p>
-                                      {/* Model Badge */}
-                                      <div className="flex justify-start mt-2">
-                                        <ModelBadge model={img.model} size="md" />
+                                      {/* Model Badge and Public Indicator */}
+                                      <div className="flex justify-between items-center mt-2">
+                                        <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                        {img.isPublic && (
+                                          <div className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 border border-d-orange-1/30 rounded-full">
+                                            <Globe className="w-3 h-3 text-d-orange-1" />
+                                            <span className="text-xs text-d-orange-1 font-cabin">Public</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -3857,7 +4212,7 @@ const Create: React.FC = () => {
                     }
 
                     if (!isPlaceholder) {
-                      const img = item as GeneratedImage;
+                      const img = item as GalleryImageLike;
                       return (
                         <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
@@ -3935,9 +4290,17 @@ const Create: React.FC = () => {
                                     </button>
                                   </div>
                                 )}
-                                {/* Model Badge */}
-                                <div className="flex justify-start mt-2">
-                                  <ModelBadge model={img.model} size="md" />
+                                {/* Model Badge and Public Indicator */}
+                                <div className="flex justify-between items-center mt-2">
+                                  <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                  {img.isPublic && (
+                                    <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                      <div className="flex items-center gap-1">
+                                        <Globe className="w-3 h-3 text-d-orange-1" />
+                                        <span className="leading-none">Public</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -4597,11 +4960,19 @@ const Create: React.FC = () => {
                             </button>
                           )}
                         </div>
-                        <div className="mt-2 flex justify-center">
+                        <div className="mt-2 flex justify-center items-center gap-2">
                           <ModelBadge 
                             model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
                             size="md" 
                           />
+                          {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
+                            <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                              <div className="flex items-center gap-1">
+                                <Globe className="w-3 h-3 text-d-orange-1" />
+                                <span className="leading-none">Public</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
