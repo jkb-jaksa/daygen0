@@ -574,7 +574,7 @@ export default function Edit() {
     
     // Apply the mask color to all non-erased areas
     ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = 'rgba(250, 170, 22, 0.75)';
+    ctx.fillStyle = 'rgba(255, 140, 0, 0.75)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, [allPaths, currentPath, brushSize, isEraseMode]);
 
@@ -669,7 +669,7 @@ export default function Edit() {
         
         // Apply the mask color
         ctx.globalCompositeOperation = 'source-in';
-        ctx.fillStyle = 'rgba(250, 170, 22, 0.75)';
+        ctx.fillStyle = 'rgba(255, 140, 0, 0.75)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         const maskDataUrl = canvas.toDataURL();
@@ -725,7 +725,7 @@ export default function Edit() {
         
         // Apply the mask color
         ctx.globalCompositeOperation = 'source-in';
-        ctx.fillStyle = 'rgba(250, 170, 22, 0.75)';
+        ctx.fillStyle = 'rgba(255, 140, 0, 0.75)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         const maskDataUrl = canvas.toDataURL();
