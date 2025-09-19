@@ -75,7 +75,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
         <button
           onClick={onClick}
-          className="self-start btn btn-ghost btn-ghost-compact parallax-large"
+          className="self-start btn btn-ghost btn-ghost-compact parallax-mid"
         >
           {buttonText}
         </button>

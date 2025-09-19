@@ -165,7 +165,7 @@ export default function Navbar() {
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-mid h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-large h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-cabin">
               {items.map((item) => {

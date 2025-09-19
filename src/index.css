@@ -125,7 +125,7 @@ html, body {
   font-family: inherit;
   font-weight: 500;
   gap: 0.5rem;
-  height: 48px;
+  height: 40px;
   justify-content: center;
   line-height: 1;
   min-width: 120px;
@@ -539,8 +539,8 @@ html, body {
 /* Keep Tailwind translate/rotate/skew while scaling on hover */
 .parallax-mid:hover,
 .parallax-mid.parallax-active {
-  --tw-scale-x: 1.01;
-  --tw-scale-y: 1.01;
+  transform: scale(1.008);
+  transition: transform 0.2s;
 }
 
 .parallax-large {
@@ -551,7 +551,7 @@ html, body {
 /* More pronounced effect for large elements */
 .parallax-large:hover,
 .parallax-large.parallax-active {
-  transform: translateZ(150px) scale(1.015);
+  transform: translateZ(150px) scale(1.012);
   transition: transform 0.2s;
 }
 
@@ -562,7 +562,7 @@ html, body {
 
 .parallax-small:hover,
 .parallax-small.parallax-active {
-  transform: translateZ(100px) scale(1.005);
+  transform: translateZ(100px) scale(1.004);
   transition: transform 0.2s;
 }
 

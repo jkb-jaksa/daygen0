@@ -831,7 +831,7 @@ export default function Subpage() {
 
         {conf.cta && (
           <div className="mt-10">
-            <button className="btn btn-ghost parallax-large">
+            <button className="btn btn-ghost parallax-mid">
               {conf.cta.text}
             </button>
           </div>
@@ -863,7 +863,7 @@ export default function Subpage() {
                 <h3 className="text-lg font-cabin">{t.title}</h3>
               </div>
               <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>
-              <button className="mt-4 btn btn-ghost parallax-large">
+              <button className="mt-4 btn btn-ghost parallax-mid">
                 learn more
               </button>
             </div>
@@ -883,7 +883,7 @@ export default function Subpage() {
               <li key={i}>{b}</li>
             ))}
           </ul>
-              <button className="mt-8 btn btn-ghost parallax-large">
+              <button className="mt-8 btn btn-ghost parallax-mid">
                 {conf.ctaLabel}
               </button>
         </div>
