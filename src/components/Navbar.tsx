@@ -439,10 +439,10 @@ export default function Navbar() {
               onClick={() => {
                 setMenuOpen(false);
                 navigate("/create");
-                // Dispatch custom event to switch to history view
+                // Dispatch custom event to switch to gallery view
                 setTimeout(() => {
                   const event = new CustomEvent('navigateToCategory', { 
-                    detail: { category: "history" } 
+                    detail: { category: "gallery" } 
                   });
                   window.dispatchEvent(event);
                 }, 100);

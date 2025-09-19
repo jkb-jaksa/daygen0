@@ -22,7 +22,7 @@ export default function Footer() {
                 <span className="text-white-gradient">day</span>
                 <span className="text-d-orange">gen</span>
               </div>
-              <p className="text-base text-b-white mb-2 font-raleway">your hub for creative AI mastery.</p>
+              <p className="text-base text-b-white mb-2 font-raleway">next-gen ideas. every day.</p>
             </div>
 
             {/* Right block: social + links */}

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, History, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw, Grid3X3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -390,7 +390,7 @@ const Create: React.FC = () => {
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [moreActionMenu, setMoreActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
-  const [historyFilters, setHistoryFilters] = useState<{
+  const [galleryFilters, setGalleryFilters] = useState<{
     liked: boolean;
     models: string[];
     type: 'all' | 'image' | 'video';
@@ -404,29 +404,29 @@ const Create: React.FC = () => {
   const maxGalleryTiles = 18; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
   
-  // Filter function for history
+  // Filter function for gallery
   const filterGalleryItems = (items: typeof gallery) => {
     return items.filter(item => {
       // Liked filter
-      if (historyFilters.liked && !favorites.has(item.url)) {
+      if (galleryFilters.liked && !favorites.has(item.url)) {
         return false;
       }
       
       // Model filter
-      if (historyFilters.models.length > 0 && !historyFilters.models.includes(item.model)) {
+      if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.model)) {
         return false;
       }
       
       // Folder filter
-      if (historyFilters.folder !== 'all') {
-        const selectedFolder = folders.find(f => f.id === historyFilters.folder);
+      if (galleryFilters.folder !== 'all') {
+        const selectedFolder = folders.find(f => f.id === galleryFilters.folder);
         if (!selectedFolder || !selectedFolder.imageIds.includes(item.url)) {
           return false;
         }
       }
       
       // Type filter (for now, we'll assume all items are images)
-      if (historyFilters.type !== 'all' && historyFilters.type !== 'image') {
+      if (galleryFilters.type !== 'all' && galleryFilters.type !== 'image') {
         return false;
       }
       
@@ -434,7 +434,7 @@ const Create: React.FC = () => {
     });
   };
   
-  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, historyFilters, favorites, folders]);
+  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders]);
   const allVisibleSelected = useMemo(() => (
     filteredGallery.length > 0 && filteredGallery.every(item => selectedImages.has(item.url))
   ), [filteredGallery, selectedImages]);
@@ -450,9 +450,9 @@ const Create: React.FC = () => {
   // Helper functions for filters
   const getAvailableModels = () => {
     // For now, all models are image models, video models list is empty
-    if (historyFilters.type === 'video') {
+    if (galleryFilters.type === 'video') {
       return []; // No video models available yet
-    } else if (historyFilters.type === 'image') {
+    } else if (galleryFilters.type === 'image') {
       return AI_MODELS.map(model => model.id).sort();
     } else {
       // 'all' type - show all models
@@ -476,7 +476,7 @@ const Create: React.FC = () => {
   useEffect(() => {
     const handleCategoryNavigation = (event: CustomEvent) => {
       const category = event.detail?.category;
-      if (category && ['text', 'image', 'video', 'avatars', 'audio', 'history'].includes(category)) {
+      if (category && ['text', 'image', 'video', 'avatars', 'audio', 'gallery'].includes(category)) {
         setActiveCategory(category);
       }
     };
@@ -794,7 +794,7 @@ const Create: React.FC = () => {
   }, [gallery, selectedImages.size]);
 
   useEffect(() => {
-    if (activeCategory !== 'history' && selectedImages.size > 0) {
+    if (activeCategory !== 'gallery' && selectedImages.size > 0) {
       setSelectedImages(new Set());
     }
   }, [activeCategory, selectedImages.size]);
@@ -2608,9 +2608,9 @@ const Create: React.FC = () => {
                     My creations
                   </div>
                   
-                  {/* Library sections in order: history, uploads, folders */}
+                  {/* Library sections in order: gallery, uploads, folders */}
                   {[
-                    { key: "history", label: "history", Icon: History },
+                    { key: "gallery", label: "gallery", Icon: Grid3X3 },
                     { key: "uploads", label: "uploads", Icon: Upload },
                   ].map((cat) => {
                     const isActive = activeCategory === cat.key;
@@ -2666,8 +2666,8 @@ const Create: React.FC = () => {
             <div className="w-full mb-4" ref={galleryRef}>
 
                 
-                {/* History View */}
-                {activeCategory === "history" && (
+                {/* Gallery View */}
+                {activeCategory === "gallery" && (
                   <div className="w-full">
                     {/* Filters Section */}
                     <div className={`mb-4 p-3 ${glass.surface}`}>
@@ -2677,7 +2677,7 @@ const Create: React.FC = () => {
                           <h3 className="text-sm font-cabin text-d-white">Filters</h3>
                         </div>
                         <button
-                          onClick={() => setHistoryFilters({
+                          onClick={() => setGalleryFilters({
                             liked: false,
                             models: [],
                             type: 'all',
@@ -2694,15 +2694,15 @@ const Create: React.FC = () => {
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Liked</label>
                           <button
-                            onClick={() => setHistoryFilters(prev => ({ ...prev, liked: !prev.liked }))}
+                            onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
                             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
-                              historyFilters.liked 
+                              galleryFilters.liked 
                                 ? 'text-d-orange-1 border-d-orange-1' 
                                 : 'text-d-white border-d-dark hover:border-d-orange-1'
                             }`}
                           >
-                            <Heart className={`w-4 h-4 ${historyFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
-                            <span>{historyFilters.liked ? 'Liked only' : 'All images'}</span>
+                            <Heart className={`w-4 h-4 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
+                            <span>{galleryFilters.liked ? 'Liked only' : 'All images'}</span>
                           </button>
                         </div>
                         
@@ -2710,10 +2710,10 @@ const Create: React.FC = () => {
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Type</label>
                           <select
-                            value={historyFilters.type}
+                            value={galleryFilters.type}
                             onChange={(e) => {
                               const newType = e.target.value as 'all' | 'image' | 'video';
-                              setHistoryFilters(prev => ({ 
+                              setGalleryFilters(prev => ({ 
                                 ...prev, 
                                 type: newType,
                                 models: [] // Reset model filter when type changes
@@ -2732,10 +2732,10 @@ const Create: React.FC = () => {
                           <label className="text-xs text-d-white/70 font-raleway">Model</label>
                           <div className="relative">
                             <div className="flex flex-wrap gap-1.5 min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus-within:border-d-orange-1 transition-colors duration-200">
-                              {historyFilters.models.length === 0 ? (
+                              {galleryFilters.models.length === 0 ? (
                                 <span className="text-d-white/50">All models</span>
                               ) : (
-                                historyFilters.models.map(modelId => {
+                                galleryFilters.models.map(modelId => {
                                   const model = AI_MODELS.find(m => m.id === modelId);
                                   return (
                                     <div key={modelId} className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 text-d-white rounded-md text-xs">
@@ -2743,7 +2743,7 @@ const Create: React.FC = () => {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setHistoryFilters(prev => ({
+                                          setGalleryFilters(prev => ({
                                             ...prev,
                                             models: prev.models.filter(id => id !== modelId)
                                           }));
@@ -2756,13 +2756,13 @@ const Create: React.FC = () => {
                                   );
                                 })
                               )}
-                              {historyFilters.models.length > 0 && (
+                              {galleryFilters.models.length > 0 && (
                                 <select
                                   value=""
                                   onChange={(e) => {
                                     const modelId = e.target.value;
-                                    if (modelId && !historyFilters.models.includes(modelId)) {
-                                      setHistoryFilters(prev => ({
+                                    if (modelId && !galleryFilters.models.includes(modelId)) {
+                                      setGalleryFilters(prev => ({
                                         ...prev,
                                         models: [...prev.models, modelId]
                                       }));
@@ -2775,7 +2775,7 @@ const Create: React.FC = () => {
                                   {getAvailableModels().map(modelId => {
                                     const model = AI_MODELS.find(m => m.id === modelId);
                                     return (
-                                      <option key={modelId} value={modelId} disabled={historyFilters.models.includes(modelId)}>
+                                      <option key={modelId} value={modelId} disabled={galleryFilters.models.includes(modelId)}>
                                         {model?.name || modelId}
                                       </option>
                                     );
@@ -2783,13 +2783,13 @@ const Create: React.FC = () => {
                                 </select>
                               )}
                             </div>
-                            {historyFilters.models.length === 0 && (
+                            {galleryFilters.models.length === 0 && (
                               <select
                                 value=""
                                 onChange={(e) => {
                                   const modelId = e.target.value;
-                                  if (modelId && !historyFilters.models.includes(modelId)) {
-                                    setHistoryFilters(prev => ({
+                                  if (modelId && !galleryFilters.models.includes(modelId)) {
+                                    setGalleryFilters(prev => ({
                                       ...prev,
                                       models: [...prev.models, modelId]
                                     }));
@@ -2803,7 +2803,7 @@ const Create: React.FC = () => {
                               {getAvailableModels().map(modelId => {
                                 const model = AI_MODELS.find(m => m.id === modelId);
                                 return (
-                                  <option key={modelId} value={modelId} disabled={historyFilters.models.includes(modelId)}>
+                                  <option key={modelId} value={modelId} disabled={galleryFilters.models.includes(modelId)}>
                                     {model?.name || modelId}
                                   </option>
                                 );
@@ -2817,8 +2817,8 @@ const Create: React.FC = () => {
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-d-white/70 font-raleway">Folder</label>
                           <select
-                            value={historyFilters.folder}
-                            onChange={(e) => setHistoryFilters(prev => ({ ...prev, folder: e.target.value }))}
+                            value={galleryFilters.folder}
+                            onChange={(e) => setGalleryFilters(prev => ({ ...prev, folder: e.target.value }))}
                             className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
                             disabled={getAvailableFolders().length === 0}
                           >
@@ -2926,7 +2926,7 @@ const Create: React.FC = () => {
                               ? 'border-[var(--d-orange-1)] bg-d-black hover:bg-d-dark' 
                               : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
                           } ${
-                            imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}` ? 'parallax-active' : ''
+                            imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                           }`}
                         >
                           <img
@@ -2943,7 +2943,7 @@ const Create: React.FC = () => {
                           {img.prompt && !isSelectMode && (
                             <div
                               className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
-                                imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               style={{
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
@@ -3043,7 +3043,7 @@ const Create: React.FC = () => {
                                   ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                                   : isSelectMode
                                     ? 'opacity-100 pointer-events-auto'
-                                    : imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                    : imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                       ? 'opacity-100 pointer-events-auto'
                                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                               }`}
@@ -3055,14 +3055,14 @@ const Create: React.FC = () => {
                             {!isSelectMode && (
                               <div
                                 className={`ml-auto flex items-center gap-0.5 ${
-                                  imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                  imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                     ? 'opacity-100 pointer-events-auto'
                                     : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
                                 }`}
                               >
-                              {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
+                              {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
                               <div className="flex items-center gap-0.5">
-                                {renderEditButton(`history-actions-${idx}-${img.url}`, img)}
+                                {renderEditButton(`gallery-actions-${idx}-${img.url}`, img)}
                                 <button
                                   type="button"
                                   onClick={(event) => {
@@ -3070,7 +3070,7 @@ const Create: React.FC = () => {
                                     confirmDeleteImage(img.url);
                                   }}
                                   className={`image-action-btn transition-opacity duration-100 ${
-                                    imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                    imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                       ? 'opacity-100 pointer-events-auto'
                                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                                   }`}
@@ -3086,7 +3086,7 @@ const Create: React.FC = () => {
                                     toggleFavorite(img.url);
                                   }}
                                   className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
-                                    imageActionMenu?.id === `history-actions-${idx}-${img.url}` || moreActionMenu?.id === `history-actions-${idx}-${img.url}`
+                                    imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                       ? 'opacity-100 pointer-events-auto'
                                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                                   }`}
@@ -3099,7 +3099,7 @@ const Create: React.FC = () => {
                                     }`}
                                   />
                                 </button>
-                                {renderMoreButton(`history-actions-${idx}-${img.url}`, img)}
+                                {renderMoreButton(`gallery-actions-${idx}-${img.url}`, img)}
                               </div>
                             </div>
                             )}
@@ -3108,13 +3108,13 @@ const Create: React.FC = () => {
                       );
                     })}
                     
-                    {/* Empty state for history */}
+                    {/* Empty state for gallery */}
                     {gallery.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <History className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-cabin text-d-text mb-2">No history yet</h3>
+                        <Grid3X3 className="default-orange-icon mb-4" />
+                        <h3 className="text-xl font-cabin text-d-text mb-2">No gallery yet</h3>
                         <p className="text-base font-raleway text-d-white max-w-md">
-                          Your generation history will appear here once you start creating images.
+                          Your generation gallery will appear here once you start creating images.
                         </p>
                       </div>
                     )}
@@ -4099,7 +4099,7 @@ const Create: React.FC = () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          {activeCategory !== "history" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
+          {activeCategory !== "gallery" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}

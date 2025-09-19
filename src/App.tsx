@@ -22,16 +22,22 @@ function Home() {
       <div className="relative z-10">
         {/* Welcome Section */}
         <section className={`${layout.container} pt-20 pb-16`}>
-          <div className="text-center">
-            <h1 className={`${text.heroHeading} mb-4`}>
-            </h1>
-            <div className={`${text.subHeading} mb-8`}> 
+          {/* Logo section */}
+          <div className="text-left mb-12">
+            <div className={`${text.subHeading}`}> 
               <span className="text-white-gradient">day</span>
               <span className="text-brand">gen</span>
             </div>
-            <p className="mx-auto mb-8 max-w-2xl text-lg text-d-white/75 font-raleway">
-              Your gateway to mastering creative AI tools. Explore our use cases to discover the best tools for your creative projects.
-            </p>
+          </div>
+          
+          {/* Main content */}
+          <div className="text-center">
+            <h1 className={`${text.heroHeading} mb-4`}>
+            </h1>
+            <div className="mx-auto mb-6 max-w-2xl">
+              <div className="text-3xl text-d-text font-raleway mb-6">Generate. <span className="text-d-orange">Daydream</span>.</div>
+              <div className="text-xl text-d-white font-raleway mb-6">Master all the best Creative AI tools. In one place.</div>
+            </div>
             <div className="flex justify-center gap-4">
               <Link 
                 to="/use-cases" 

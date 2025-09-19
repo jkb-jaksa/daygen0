@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Settings, Download, Copy, Heart, History as HistoryIcon, Trash2, FolderPlus, X } from "lucide-react";
+import { Settings, Download, Copy, Heart, Grid3X3, Trash2, FolderPlus, X } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import ModelBadge from './ModelBadge';
 import { ShareButton } from './ShareButton';
@@ -32,7 +32,7 @@ type SerializedFolder = {
   imageIds: string[];
 };
 
-type HistoryFilters = {
+type GalleryFilters = {
   liked: boolean;
   model: string;
   type: 'all' | 'image' | 'video';
@@ -52,12 +52,12 @@ const AI_MODELS = [
   { name: "Runway Gen-4", id: "runway-gen4" },
 ];
 
-export default function History() {
+export default function Gallery() {
   const { user } = useAuth();
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [folders, setFolders] = useState<Folder[]>([]);
-  const [historyFilters, setHistoryFilters] = useState<HistoryFilters>({
+  const [galleryFilters, setGalleryFilters] = useState<GalleryFilters>({
     liked: false,
     model: 'all',
     type: 'all',
@@ -101,9 +101,9 @@ export default function History() {
 
   // Helper functions for filters
   const getAvailableModels = () => {
-    if (historyFilters.type === 'video') {
+    if (galleryFilters.type === 'video') {
       return [];
-    } else if (historyFilters.type === 'image') {
+    } else if (galleryFilters.type === 'image') {
       return AI_MODELS.map(model => model.id).sort();
     } else {
       return AI_MODELS.map(model => model.id).sort();
@@ -114,29 +114,29 @@ export default function History() {
     return folders.map(f => f.id);
   };
 
-  // Filter function for history
+  // Filter function for gallery
   const filterGalleryItems = (items: typeof gallery) => {
     return items.filter(item => {
       // Liked filter
-      if (historyFilters.liked && !favorites.has(item.url)) {
+      if (galleryFilters.liked && !favorites.has(item.url)) {
         return false;
       }
       
       // Model filter
-      if (historyFilters.model !== 'all' && item.model !== historyFilters.model) {
+      if (galleryFilters.model !== 'all' && item.model !== galleryFilters.model) {
         return false;
       }
       
       // Folder filter
-      if (historyFilters.folder !== 'all') {
-        const selectedFolder = folders.find(f => f.id === historyFilters.folder);
+      if (galleryFilters.folder !== 'all') {
+        const selectedFolder = folders.find(f => f.id === galleryFilters.folder);
         if (!selectedFolder || !selectedFolder.imageIds.includes(item.url)) {
           return false;
         }
       }
       
       // Type filter (for now, we'll assume all items are images)
-      if (historyFilters.type !== 'all' && historyFilters.type !== 'image') {
+      if (galleryFilters.type !== 'all' && galleryFilters.type !== 'image') {
         return false;
       }
       
@@ -228,8 +228,8 @@ export default function History() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-raleway text-d-white/60 mb-2">Please log in to view your history</h2>
-          <p className="text-base font-raleway text-d-white/40">Your generation history will appear here once you're logged in.</p>
+          <h2 className="text-2xl font-raleway text-d-white/60 mb-2">Please log in to view your gallery</h2>
+          <p className="text-base font-raleway text-d-white/40">Your generation gallery will appear here once you're logged in.</p>
         </div>
       </div>
     );
@@ -241,7 +241,7 @@ export default function History() {
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-raleway text-d-white mb-2">History</h1>
+            <h1 className="text-4xl font-raleway text-d-white mb-2">Gallery</h1>
             <p className="text-base font-raleway text-d-white/60">View and manage your generated images</p>
           </div>
 
@@ -253,7 +253,7 @@ export default function History() {
                 <h3 className="text-sm font-cabin text-d-white">Filters</h3>
               </div>
               <button
-                onClick={() => setHistoryFilters({
+                onClick={() => setGalleryFilters({
                   liked: false,
                   model: 'all',
                   type: 'all',
@@ -270,15 +270,15 @@ export default function History() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-d-white/70 font-raleway">Liked</label>
                 <button
-                  onClick={() => setHistoryFilters(prev => ({ ...prev, liked: !prev.liked }))}
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
                   className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
-                    historyFilters.liked 
+                    galleryFilters.liked 
                       ? 'text-d-orange-1 border-d-orange-1' 
                       : 'text-d-white border-d-dark hover:border-d-orange-1'
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${historyFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
-                  <span>{historyFilters.liked ? 'Liked only' : 'All images'}</span>
+                  <Heart className={`w-4 h-4 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
+                  <span>{galleryFilters.liked ? 'Liked only' : 'All images'}</span>
                 </button>
               </div>
               
@@ -286,10 +286,10 @@ export default function History() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-d-white/70 font-raleway">Type</label>
                 <select
-                  value={historyFilters.type}
+                  value={galleryFilters.type}
                   onChange={(e) => {
                     const newType = e.target.value as 'all' | 'image' | 'video';
-                    setHistoryFilters(prev => ({ 
+                    setGalleryFilters(prev => ({ 
                       ...prev, 
                       type: newType,
                       model: 'all' // Reset model filter when type changes
@@ -307,8 +307,8 @@ export default function History() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-d-white/70 font-raleway">Model</label>
                 <select
-                  value={historyFilters.model}
-                  onChange={(e) => setHistoryFilters(prev => ({ ...prev, model: e.target.value }))}
+                  value={galleryFilters.model}
+                  onChange={(e) => setGalleryFilters(prev => ({ ...prev, model: e.target.value }))}
                   className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
                   disabled={getAvailableModels().length === 0}
                 >
@@ -329,8 +329,8 @@ export default function History() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-d-white/70 font-raleway">Folder</label>
                 <select
-                  value={historyFilters.folder}
-                  onChange={(e) => setHistoryFilters(prev => ({ ...prev, folder: e.target.value }))}
+                  value={galleryFilters.folder}
+                  onChange={(e) => setGalleryFilters(prev => ({ ...prev, folder: e.target.value }))}
                   className="px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200"
                   disabled={getAvailableFolders().length === 0}
                 >
@@ -352,7 +352,7 @@ export default function History() {
           {/* Gallery Grid */}
           <div className="grid grid-cols-4 gap-3 w-full">
             {filterGalleryItems(gallery).map((img, idx) => (
-              <div key={`hist-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
+              <div key={`gallery-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                 <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                 
                 {/* Hover prompt overlay */}
@@ -378,10 +378,10 @@ export default function History() {
                               }}
                               className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
                               onMouseEnter={(e) => {
-                                showHoverTooltip(e.currentTarget, `hist-${img.url}-${idx}`);
+                                showHoverTooltip(e.currentTarget, `gallery-${img.url}-${idx}`);
                               }}
                               onMouseLeave={() => {
-                                hideHoverTooltip(`hist-${img.url}-${idx}`);
+                                hideHoverTooltip(`gallery-${img.url}-${idx}`);
                               }}
                             >
                               <Copy className="w-3.5 h-3.5" />
@@ -434,7 +434,7 @@ export default function History() {
                 
                 {/* Tooltip positioned outside the hover overlay container */}
                 <div 
-                  data-tooltip-for={`hist-${img.url}-${idx}`}
+                  data-tooltip-for={`gallery-${img.url}-${idx}`}
                   className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
                   style={{ 
                     left: '50%', 
@@ -446,7 +446,7 @@ export default function History() {
                 </div>
                 
                 <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                  {renderHoverPrimaryActions(`history-actions-${idx}-${img.url}`, img)}
+                  {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
                   <div className="flex items-center gap-0.5">
                     <button 
                       type="button" 
@@ -493,13 +493,13 @@ export default function History() {
               </div>
             ))}
             
-            {/* Empty state for history */}
+            {/* Empty state for gallery */}
             {gallery.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                <HistoryIcon className="w-16 h-16 text-d-white/30 mb-4" />
-                <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No history yet</h3>
+                <Grid3X3 className="w-16 h-16 text-d-white/30 mb-4" />
+                <h3 className="text-2xl font-raleway text-d-white/60 mb-2">No gallery yet</h3>
                 <p className="text-base font-raleway text-d-white/40 max-w-md">
-                  Your generation history will appear here once you start creating images.
+                  Your generation gallery will appear here once you start creating images.
                 </p>
               </div>
             )}
