@@ -76,7 +76,7 @@ html, body {
 
 .herogradient {
   background-blend-mode: screen;
-  background-color: #000;
+  background-color: rgba(0,0,0,0.3);
   background-image:
     radial-gradient(60% 36% at -5% -15%,
       rgba(255,216,77,0.46) 0%,
@@ -108,6 +108,15 @@ html, body {
       rgba(32,212,217,0.27) 0%,
       rgba(32,212,217,0.11) 28%,
       rgba(32,212,217,0.00) 50%
+    ),
+
+    linear-gradient(180deg,
+      rgba(0,0,0,0) 0%,
+      rgba(0,0,0,0) 20%,
+      rgba(0,0,0,0.1) 40%,
+      rgba(0,0,0,0.2) 60%,
+      rgba(0,0,0,0.3) 80%,
+      rgba(0,0,0,0.4) 100%
     );
 
   background-repeat: no-repeat;
@@ -487,6 +496,22 @@ html, body {
 
 @media (prefers-reduced-motion: reduce) {
   .tag-gradient::after { transition: opacity 200ms ease; }
+  
+  /* Disable gallery blur transitions for users who prefer reduced motion */
+  .group-hover\:opacity-100 {
+    transition: none !important;
+  }
+  
+  /* Disable parallax effects for reduced motion */
+  .parallax-small:hover,
+  .parallax-small.parallax-active,
+  .parallax-mid:hover,
+  .parallax-mid.parallax-active,
+  .parallax-large:hover,
+  .parallax-large.parallax-active {
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 
@@ -719,6 +744,7 @@ select option:not(:disabled):checked:focus-visible {
   background-image: none !important;
 }
 
+
 /* Additional WebKit specific styles */
 select option::-webkit-scrollbar {
   width: 8px;
@@ -754,4 +780,13 @@ select option::-webkit-scrollbar-thumb:hover {
   background-color: var(--d-orange-1) !important;
   color: var(--d-black) !important;
   background-image: none !important;
+}
+
+/* Prompt Description Bar Effect */
+.PromptDescriptionBar {
+  background: linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  height: fit-content;
+  contain: paint;
 }

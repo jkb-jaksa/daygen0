@@ -2110,21 +2110,14 @@ const Create: React.FC = () => {
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
-            style={{
-              background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              height: 'fit-content',
-              contain: 'paint'
-            }}
           >
             <div className="w-full p-4">
               <div className="mb-2">
                 <div className="relative">
-                  <p className="text-d-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                  <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                     {img.prompt}
                     <button
                       onClick={(e) => {
@@ -3695,26 +3688,19 @@ const Create: React.FC = () => {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full">
+                      <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
                             
                             {/* Upload info overlay */}
                             <div
-                              className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
-                              style={{
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                                backdropFilter: 'blur(12px)',
-                                WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content',
-                                contain: 'paint'
-                              }}
+                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10"
                             >
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
+                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
                                       {upload.file.name}
                                     </p>
                                     <p className="text-d-white/60 text-xs font-raleway mt-1">
@@ -3809,7 +3795,7 @@ const Create: React.FC = () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-4 gap-3 w-full">
+                        <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -3818,30 +3804,25 @@ const Create: React.FC = () => {
                               
                               {/* Image info overlay */}
                               <div
-                                className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                   imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
-                                style={{
-                                  background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                                  backdropFilter: 'blur(12px)',
-                                  WebkitBackdropFilter: 'blur(12px)',
-                                  height: 'fit-content',
-                                  contain: 'paint'
-                                }}
                               >
                                 <div className="w-full p-4">
                                   <div className="mb-2">
                                     <div className="relative">
-                                      <p className="text-d-white text-base font-raleway leading-relaxed line-clamp-2 pl-1">
+                                      <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                       </p>
                                       {/* Model Badge and Public Indicator */}
                                       <div className="flex justify-between items-center mt-2">
                                         <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                         {img.isPublic && (
-                                          <div className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 border border-d-orange-1/30 rounded-full">
-                                            <Globe className="w-3 h-3 text-d-orange-1" />
-                                            <span className="text-xs text-d-orange-1 font-cabin">Public</span>
+                                          <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                            <div className="flex items-center gap-1">
+                                              <Globe className="w-3 h-3 text-d-orange-1" />
+                                              <span className="leading-none">Public</span>
+                                            </div>
                                           </div>
                                         )}
                                       </div>
@@ -4142,7 +4123,7 @@ const Create: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -4152,27 +4133,21 @@ const Create: React.FC = () => {
                       return folderImages.map((img, idx) => (
                         <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
                           imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'parallax-active' : ''
-                        }`}>
+                        }`} style={{ willChange: 'opacity' }}>
                           <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
-                              style={{
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                                backdropFilter: 'blur(12px)',
-                                WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content',
-                                contain: 'paint'
-                              }}
                             >
-                              <div className="w-full p-4">
+                              {/* Content layer */}
+                              <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-base font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         onClick={(e) => {
@@ -4366,7 +4341,7 @@ const Create: React.FC = () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-4 gap-3 w-full">
+                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -4400,27 +4375,21 @@ const Create: React.FC = () => {
                       return (
                         <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
-                        }`}>
+                        }`} style={{ willChange: 'opacity' }}>
                           <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { openImageAtIndex(galleryIndex); }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
-                              style={{
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                                backdropFilter: 'blur(12px)',
-                                WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content',
-                                contain: 'paint'
-                              }}
                             >
-                              <div className="w-full p-4">
+                              {/* Content layer */}
+                              <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         onClick={(e) => {
@@ -4650,7 +4619,14 @@ const Create: React.FC = () => {
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
-              style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
+              style={{ 
+                left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
+                right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
+                bottom: '0.75rem',
+                transform: 'translateZ(0)',
+                willChange: 'transform',
+                backfaceVisibility: 'hidden'
+              }}
               onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
