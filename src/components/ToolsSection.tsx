@@ -353,14 +353,14 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
         )}
         <div className="text-d-text text-xl font-light font-cabin">{name}</div>
       </div>
-      <p className="relative z-10 mt-0.5 text-d-white text-base font-normal font-raleway">{desc}</p>
+      <p className="relative z-10 mt-3 text-d-white text-base font-normal font-raleway">{desc}</p>
       <div className="flex-1" />
       {href ? (
-        <Link to={href} className={`${buttons.secondary} parallax-small mt-4 self-start`}>
+        <Link to={href} className={`${buttons.ghostCompact} mt-4 self-start`}>
           learn more
         </Link>
       ) : (
-        <button type="button" className={`${buttons.secondary} parallax-small mt-4 self-start`}>
+        <button type="button" className={`${buttons.ghostCompact} mt-4 self-start`}>
           learn more
         </button>
       )}
@@ -377,7 +377,7 @@ export default function ToolsSection() {
       <div className="relative z-10">
 
         {/* Main Content */}
-        <section className={`${layout.container} py-8`}>
+        <section className={`${layout.container} pt-16 pb-8`}>
         <div className="mt-4 grid grid-cols-[150px,1fr] gap-4 mb-20">
           {/* Heading aligned with cards */}
           <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">
@@ -417,49 +417,49 @@ export default function ToolsSection() {
 
           {/* Cards Grid */}
           {activeCategory === "image" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "video" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {VIDEO_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "avatars" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {AVATAR_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "voice" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {VOICE_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "music" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {MUSIC_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "text" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {TEXT_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "3d" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {THREE_D_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}

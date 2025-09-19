@@ -13,7 +13,7 @@ export default function Navbar() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
-  const { user, signOut } = useAuth();
+  const { user, logOut } = useAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
@@ -173,7 +173,7 @@ export default function Navbar() {
                   item === "create" ? "/create" : 
                   item === "edit" ? "/edit" : 
                   item === "explore" ? "/explore" : 
-                  item === "knowledge base" ? "#" : 
+                  item === "knowledge base" ? "/use-cases" : 
                   item === "services" ? "/services" : 
                   item === "about us" ? "/about-us" : 
                   "#";
@@ -200,10 +200,10 @@ export default function Navbar() {
                 >
                   Pricing
                 </button>
-                <button className={`${buttons.secondary} btn-compact parallax-small`} onClick={()=>setShowAuth("login")}>
+                <button className={`${buttons.ghostCompact}`} onClick={()=>setShowAuth("login")}>
                   Log In
                 </button>
-                <button className={`${buttons.primary} btn-compact parallax-small`} onClick={()=>setShowAuth("signup")}>
+                <button className={`${buttons.primary} btn-compact`} onClick={()=>setShowAuth("signup")}>
                   Sign Up
                 </button>
                 <button 
@@ -231,7 +231,7 @@ export default function Navbar() {
                 
                 {/* Upgrade Button */}
                 <button 
-                  className={`${buttons.primary} btn-compact parallax-small flex items-center gap-1.5`}
+                  className={`${buttons.primary} btn-compact flex items-center gap-1.5`}
                   onClick={() => setShowPricing(true)}
                 >
                   <Zap className="size-4" />
@@ -266,7 +266,7 @@ export default function Navbar() {
                 </div>
               </>
             )}
-            <button aria-label="Search" className="parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
+            <button aria-label="Search" className="parallax-large size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
               <Search className="size-5" />
             </button>
           </div>
@@ -458,13 +458,13 @@ export default function Navbar() {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                signOut();
+                logOut();
                 navigate("/");
               }}
               className="block w-full text-left px-4 py-1 hover:bg-d-dark/50 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
-              Sign out
+              Log out
             </button>
           </div>,
           document.body

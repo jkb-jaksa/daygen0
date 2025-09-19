@@ -60,7 +60,7 @@ const ContactSection: React.FC = () => {
               </ul>
 
               <div className="flex justify-center">
-                <button className="btn btn-black parallax-small text-d-text">
+                <button className="btn btn-black parallax-large text-d-text">
                   Book a Call
                 </button>
               </div>

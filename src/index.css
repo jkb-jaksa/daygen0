@@ -145,6 +145,27 @@ html, body {
   padding: 0 16px;
 }
 
+/* Ghost button extends base btn class */
+.btn-ghost {
+  background-color: rgba(8, 11, 11, 0.4);
+  border-color: var(--d-mid);
+  color: var(--d-white);
+  font-family: 'Cabin', sans-serif;
+  font-weight: 400;
+}
+
+.btn-ghost:hover {
+  border-color: var(--d-light);
+  color: var(--d-orange-1);
+}
+
+/* Compact ghost button variant */
+.btn-ghost-compact {
+  height: 32px;
+  min-width: 0;
+  padding: 0 16px;
+}
+
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -604,6 +625,21 @@ html, body {
 
 .image-select-toggle {
   z-index: 60;
+}
+
+/* Isolate button transforms from parent parallax effects */
+.parallax-isolate {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Override parallax effects for buttons inside parallax containers */
+.parallax-small .parallax-isolate .parallax-large {
+  transform: none !important;
+}
+
+.parallax-small:hover .parallax-isolate .parallax-large:hover {
+  transform: translateZ(150px) scale(1.015) !important;
 }
 
 .image-select-toggle--active {

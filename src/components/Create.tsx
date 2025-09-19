@@ -724,6 +724,18 @@ const Create: React.FC = () => {
   };
   
   const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders]);
+  const publicGallery = useMemo(() => {
+    return gallery
+      .filter(item => item.isPublic)
+      .sort((a, b) => {
+        const aTime = new Date(a.timestamp).getTime();
+        const bTime = new Date(b.timestamp).getTime();
+        if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
+        if (Number.isNaN(aTime)) return 1;
+        if (Number.isNaN(bTime)) return -1;
+        return bTime - aTime;
+      });
+  }, [gallery]);
   const allVisibleSelected = useMemo(() => (
     filteredGallery.length > 0 && filteredGallery.every(item => selectedImages.has(item.url))
   ), [filteredGallery, selectedImages]);
@@ -1083,7 +1095,7 @@ const Create: React.FC = () => {
   }, [gallery, selectedImages.size]);
 
   useEffect(() => {
-    if (activeCategory !== 'gallery' && selectedImages.size > 0) {
+    if (activeCategory !== 'gallery' && activeCategory !== 'public' && selectedImages.size > 0) {
       setSelectedImages(new Set());
     }
   }, [activeCategory, selectedImages.size]);
@@ -2045,6 +2057,213 @@ const Create: React.FC = () => {
   };
 
 
+  const renderLibraryGalleryItem = (
+    img: GalleryImageLike,
+    idx: number,
+    context: 'gallery' | 'public'
+  ): React.JSX.Element => {
+    const isSelected = selectedImages.has(img.url);
+    const menuId = `${context}-actions-${idx}-${img.url}`;
+    const tooltipId = `${context}-hist-${idx}-${img.url}`;
+    const isMenuActive = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
+    const shouldDim = (isSelectMode || hasSelection) && !isSelected;
+
+    return (
+      <div
+        key={`${context}-${img.url}-${idx}`}
+        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-200 parallax-large ${
+          isSelected
+            ? 'border-[var(--d-orange-1)] bg-d-black hover:bg-d-dark'
+            : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
+        } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
+      >
+        <img
+          src={img.url}
+          alt={img.prompt || `Generated ${idx + 1}`}
+          className="w-full aspect-square object-cover"
+          onClick={() => {
+            setSelectedFullImage(img);
+            setIsFullSizeOpen(true);
+          }}
+        />
+
+        {img.prompt && !isSelectMode && (
+          <div
+            className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+              isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              height: 'fit-content'
+            }}
+          >
+            <div className="w-full p-4">
+              <div className="mb-2">
+                <div className="relative">
+                  <p className="text-d-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                    {img.prompt}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyPromptToClipboard(img.prompt);
+                      }}
+                      className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(e.currentTarget, tooltipId);
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip(tooltipId);
+                      }}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </p>
+                </div>
+              </div>
+              {img.references && img.references.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-1">
+                    {img.references.map((ref, refIdx) => (
+                      <div key={refIdx} className="relative">
+                        <img
+                          src={ref}
+                          alt={`Reference ${refIdx + 1}`}
+                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedReferenceImage(ref);
+                            setIsFullSizeOpen(true);
+                          }}
+                        />
+                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
+                          {refIdx + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const link = document.createElement('a');
+                      link.href = img.references![0];
+                      link.target = '_blank';
+                      link.click();
+                    }}
+                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
+                  >
+                    View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
+                  </button>
+                </div>
+              )}
+              {/* Model Badge and Public Indicator */}
+              <div className="flex justify-between items-center mt-2">
+                <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                {img.isPublic && (
+                  <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                    <div className="flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-d-orange-1" />
+                      <span className="leading-none">Public</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tooltip positioned outside the hover overlay container */}
+        <div
+          data-tooltip-for={tooltipId}
+          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+          style={{
+            left: '50%',
+            transform: 'translateX(-50%) translateY(-100%)',
+            top: '-8px'
+          }}
+        >
+          Copy prompt
+        </div>
+
+        <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleImageSelection(img.url);
+            }}
+            className={`image-action-btn image-select-toggle transition-opacity duration-100 ${
+              isSelected
+                ? 'image-select-toggle--active opacity-100 pointer-events-auto'
+                : isSelectMode
+                  ? 'opacity-100 pointer-events-auto'
+                  : isMenuActive
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            }`}
+            aria-pressed={isSelected}
+            aria-label={isSelected ? 'Unselect image' : 'Select image'}
+          >
+            {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+          </button>
+          {!isSelectMode && (
+            <div
+              className={`ml-auto flex items-center gap-0.5 ${
+                isMenuActive
+                  ? 'opacity-100 pointer-events-auto'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
+              }`}
+            >
+              {renderHoverPrimaryActions(menuId, img)}
+              <div className="flex items-center gap-0.5">
+                {renderEditButton(menuId, img)}
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    confirmDeleteImage(img.url);
+                  }}
+                  className={`image-action-btn transition-opacity duration-100 ${
+                    isMenuActive
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  title="Delete image"
+                  aria-label="Delete image"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleFavorite(img.url);
+                  }}
+                  className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                    isMenuActive
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                  aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
+                >
+                  <Heart
+                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                      favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                    }`}
+                  />
+                </button>
+                {renderMoreButton(menuId, img)}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -2607,7 +2826,7 @@ const Create: React.FC = () => {
               <div className="flex justify-center gap-3">
                 <button
                   onClick={handleDeleteCancelled}
-                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                  className={`${buttons.ghost}`}
                 >
                   Cancel
                 </button>
@@ -2680,7 +2899,7 @@ const Create: React.FC = () => {
                       setAddToFolderDialog(true);
                     }
                   }}
-                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                  className={`${buttons.ghost}`}
                 >
                   Cancel
                 </button>
@@ -2718,7 +2937,7 @@ const Create: React.FC = () => {
               <div className="flex justify-center gap-3">
                 <button
                   onClick={cancelBulkPublish}
-                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                  className={`${buttons.ghost}`}
                 >
                   Cancel
                 </button>
@@ -2753,7 +2972,7 @@ const Create: React.FC = () => {
               <div className="flex justify-center gap-3">
                 <button
                   onClick={cancelBulkUnpublish}
-                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                  className={`${buttons.ghost}`}
                 >
                   Cancel
                 </button>
@@ -2890,7 +3109,7 @@ const Create: React.FC = () => {
                     setAddToFolderDialog(false);
                     setSelectedImagesForFolder([]);
                   }}
-                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                  className={`${buttons.ghost}`}
                 >
                   Cancel
                 </button>
@@ -2998,7 +3217,7 @@ const Create: React.FC = () => {
                     setFolderThumbnailDialog({show: false, folderId: null});
                     setFolderThumbnailFile(null);
                   }}
-                  className={`${buttons.ghost} h-12 min-w-[120px]`}
+                  className={`${buttons.ghost}`}
                 >
                   Cancel
                 </button>
@@ -3081,6 +3300,7 @@ const Create: React.FC = () => {
                   {/* Library sections in order: gallery, uploads, folders */}
                   {[
                     { key: "gallery", label: "gallery", Icon: Grid3X3 },
+                    { key: "public", label: "public", Icon: Globe },
                     { key: "uploads", label: "uploads", Icon: Upload },
                   ].map((cat) => {
                     const isActive = activeCategory === cat.key;
@@ -3380,207 +3600,7 @@ const Create: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-5 gap-2 w-full">
-                    {filteredGallery.map((img, idx) => {
-                      const isSelected = selectedImages.has(img.url);
-                      return (
-                        <div
-                          key={`hist-${img.url}-${idx}`}
-                          className={`group relative rounded-[24px] overflow-hidden border transition-all duration-200 parallax-large ${
-                            isSelected 
-                              ? 'border-[var(--d-orange-1)] bg-d-black hover:bg-d-dark' 
-                              : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
-                          } ${
-                            imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
-                          } ${
-                            (isSelectMode || hasSelection) && !isSelected ? 'opacity-50' : ''
-                          }`}
-                        >
-                          <img
-                            src={img.url}
-                            alt={img.prompt || `Generated ${idx + 1}`}
-                            className="w-full aspect-square object-cover"
-                            onClick={() => {
-                              setSelectedFullImage(img);
-                              setIsFullSizeOpen(true);
-                            }}
-                          />
-
-                          {/* Hover prompt overlay - only show when not in select mode */}
-                          {img.prompt && !isSelectMode && (
-                            <div
-                              className={`absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
-                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                              }`}
-                              style={{
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.15) 95%, transparent 100%)',
-                                backdropFilter: 'blur(12px)',
-                                WebkitBackdropFilter: 'blur(12px)',
-                                height: 'fit-content'
-                              }}
-                            >
-                              <div className="w-full p-4">
-                                <div className="mb-2">
-                                  <div className="relative">
-                                    <p className="text-d-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                                      {img.prompt}
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyPromptToClipboard(img.prompt);
-                                        }}
-                                        className="ml-3 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20"
-                                        onMouseEnter={(e) => {
-                                          showHoverTooltip(e.currentTarget, `hist-${img.url}-${idx}`);
-                                        }}
-                                        onMouseLeave={() => {
-                                          hideHoverTooltip(`hist-${img.url}-${idx}`);
-                                        }}
-                                      >
-                                        <Copy className="w-3.5 h-3.5" />
-                                      </button>
-                                    </p>
-                                  </div>
-                                </div>
-                                {img.references && img.references.length > 0 && (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="flex gap-1">
-                                      {img.references.map((ref, refIdx) => (
-                                        <div key={refIdx} className="relative">
-                                          <img
-                                            src={ref}
-                                            alt={`Reference ${refIdx + 1}`}
-                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedReferenceImage(ref);
-                                              setIsFullSizeOpen(true);
-                                            }}
-                                          />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
-                                            {refIdx + 1}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const link = document.createElement('a');
-                                        link.href = img.references![0];
-                                        link.target = '_blank';
-                                        link.click();
-                                      }}
-                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
-                                    >
-                                      View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
-                                    </button>
-                                  </div>
-                                )}
-                                {/* Model Badge and Public Indicator */}
-                                <div className="flex justify-between items-center mt-2">
-                                  <ModelBadge model={img.model ?? 'unknown'} size="md" />
-                                  {img.isPublic && (
-                                    <div className="glass-liquid willchange-backdrop isolate bg-black/20 backdrop-blur-[72px] backdrop-brightness-[.7] backdrop-contrast-[1.05] backdrop-saturate-[.85] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
-                                      <div className="flex items-center gap-1">
-                                        <Globe className="w-3 h-3 text-d-orange-1" />
-                                        <span className="leading-none">Public</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Tooltip positioned outside the hover overlay container */}
-                          <div
-                            data-tooltip-for={`hist-${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                            style={{
-                              left: '50%',
-                              transform: 'translateX(-50%) translateY(-100%)',
-                              top: '-8px'
-                            }}
-                          >
-                            Copy prompt
-                          </div>
-
-                          <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleImageSelection(img.url);
-                              }}
-                              className={`image-action-btn image-select-toggle transition-opacity duration-100 ${
-                                isSelected
-                                  ? 'image-select-toggle--active opacity-100 pointer-events-auto'
-                                  : isSelectMode
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
-                                      ? 'opacity-100 pointer-events-auto'
-                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                              }`}
-                              aria-pressed={isSelected}
-                              aria-label={isSelected ? 'Unselect image' : 'Select image'}
-                            >
-                              {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                            </button>
-                            {!isSelectMode && (
-                              <div
-                                className={`ml-auto flex items-center gap-0.5 ${
-                                  imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
-                                }`}
-                              >
-                              {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
-                              <div className="flex items-center gap-0.5">
-                                {renderEditButton(`gallery-actions-${idx}-${img.url}`, img)}
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    confirmDeleteImage(img.url);
-                                  }}
-                                  className={`image-action-btn transition-opacity duration-100 ${
-                                    imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
-                                      ? 'opacity-100 pointer-events-auto'
-                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                  }`}
-                                  title="Delete image"
-                                  aria-label="Delete image"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    toggleFavorite(img.url);
-                                  }}
-                                  className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
-                                    imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
-                                      ? 'opacity-100 pointer-events-auto'
-                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                  }`}
-                                  title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                                  aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                                >
-                                  <Heart
-                                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                                      favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                                    }`}
-                                  />
-                                </button>
-                                {renderMoreButton(`gallery-actions-${idx}-${img.url}`, img)}
-                              </div>
-                            </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {filteredGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'gallery'))}
                     
                     {/* Empty state for gallery */}
                     {gallery.length === 0 && (
@@ -3606,20 +3626,42 @@ const Create: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
+                {activeCategory === "public" && (
+                  <div className="w-full">
+                    {/* Share Gallery button */}
+                    <div className="mb-6 flex justify-end">
+                      <button
+                        onClick={() => {
+                          const galleryUrl = `${window.location.origin}${window.location.pathname}#public`;
+                          navigator.clipboard.writeText(galleryUrl);
+                          alert('Link copied!');
+                        }}
+                        className={buttons.primary}
+                      >
+                        <Share2 className="w-4 h-4" />
+                        Share Gallery
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-2 w-full">
+                      {publicGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'public'))}
+                      {publicGallery.length === 0 && (
+                        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                          <Globe className="default-orange-icon mb-4" />
+                          <h3 className="text-xl font-cabin text-d-text mb-2">No public creations yet</h3>
+                          <p className="text-base font-raleway text-d-white max-w-md">
+                            Publish your creations to see them here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
                   <div className="w-full">
-                    {/* Back navigation */}
-                    <div className="mb-6 flex items-center justify-between">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                    </div>
                     
                     {uploadedImages.length === 0 ? (
                       /* Empty state for uploads */
@@ -3867,16 +3909,8 @@ const Create: React.FC = () => {
                 {/* My Folders View */}
                 {activeCategory === "my-folders" && (
                   <div className="w-full">
-                    {/* Back navigation and New Folder button */}
-                    <div className="mb-6 flex items-center justify-between">
-                      <button
-                        onClick={() => setActiveCategory("image")}
-                        className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                      >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                        Go back
-                      </button>
-                      
+                    {/* New Folder button */}
+                    <div className="mb-6 flex justify-end">
                       <button
                         onClick={() => setNewFolderDialog(true)}
                         className={buttons.primary}
@@ -4587,7 +4621,7 @@ const Create: React.FC = () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          {activeCategory !== "gallery" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
+          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}

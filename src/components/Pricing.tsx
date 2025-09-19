@@ -174,7 +174,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200`}
+      className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small`}
     >
       {/* Popular badge */}
       {tier.popular && (
@@ -248,14 +248,14 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         </div>
 
         {/* CTA Button */}
-        <div className="mt-auto">
+        <div className="mt-auto parallax-isolate">
           <button
             onClick={() => {
               if (tier.id === 'free') {
                 window.location.href = '/';
               }
             }}
-            className={`w-full btn font-cabin text-base transition-colors duration-200 ${
+            className={`w-full btn font-cabin text-base transition-colors duration-200 parallax-large ${
               tier.id === 'free' 
                 ? 'btn-orange' 
                 : tier.id === 'pro'
@@ -286,7 +286,7 @@ export default function Pricing() {
         <section className={`${layout.container} pt-8 pb-16`}>
           <div className="text-center mb-8">
             <h1 className="text-5xl font-light tracking-tight leading-[1.1] font-cabin mb-6 text-d-text">
-              Choose your <span className="text-d-orange-1">plan</span>
+              Choose your <span className="text-d-orange-1">plan</span><span className="text-d-text">.</span>
             </h1>
             <p className="mx-auto mb-6 max-w-2xl text-lg text-d-white font-raleway">
               Unlock the full potential of daily generations.
@@ -299,7 +299,7 @@ export default function Pricing() {
               </span>
               <button
                 onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-                className="relative w-14 h-7 bg-d-dark rounded-full border border-d-mid transition-colors duration-200 hover:border-d-orange-1"
+                className="relative w-14 h-7 bg-d-dark rounded-full border border-d-mid transition-colors duration-200 hover:border-d-orange-1 parallax-large"
               >
                 <div
                   className={`absolute top-0.5 left-0.5 w-6 h-6 bg-d-orange-1 rounded-full transition-transform duration-200 ${

@@ -4,12 +4,12 @@ import { Upload, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
-import { buttons } from "../styles/designSystem";
+import { buttons, glass } from "../styles/designSystem";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
 export default function Account() {
-  const { user, updateProfile, signOut, storagePrefix } = useAuth();
+  const { user, updateProfile, logOut, storagePrefix } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
@@ -198,7 +198,7 @@ export default function Account() {
       </header>
 
       <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
-        <div className="rounded-2xl bg-d-dark border border-d-dark p-5">
+        <div className={`${glass.surface} p-5`}>
           <h3 className="text-lg font-cabin mb-3 text-d-text">Profile</h3>
           
           <div className="mb-4">
@@ -243,22 +243,25 @@ export default function Account() {
           <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
           <input className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
+            <button 
+              className={buttons.ghost}
+              onClick={() => {
+                logOut();
+                navigate("/");
+              }}
+            >
+              Log out
+            </button>
             <button
-              className={buttons.secondary}
+              className={buttons.primary}
               onClick={handleSaveProfile}
             >
               Save
             </button>
-            <button 
-              className={buttons.primary}
-              onClick={signOut}
-            >
-              Log out
-            </button>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-d-dark border border-d-dark p-5">
+        <div className={`${glass.surface} p-5`}>
           <h3 className="text-lg font-cabin mb-3 text-d-text">At a glance</h3>
           <ul className="text-sm font-raleway text-d-white space-y-1">
             <li>Generated images: <strong>{gallery.length}</strong></li>

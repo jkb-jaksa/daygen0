@@ -47,7 +47,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   return (
     <div
-      className="tag-gradient parallax-small relative w-full h-56 rounded-[32px] overflow-hidden group cursor-pointer border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-200"
+      className="tag-gradient parallax-small relative w-full h-56 rounded-[32px] overflow-hidden group cursor-pointer border border-d-dark bg-black hover:border-d-mid transition-colors duration-200"
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
@@ -75,7 +75,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
         <button
           onClick={onClick}
-          className="self-start btn btn-white parallax-small text-black"
+          className="self-start btn btn-ghost btn-ghost-compact parallax-large"
         >
           {buttonText}
         </button>

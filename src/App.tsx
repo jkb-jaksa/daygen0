@@ -36,21 +36,21 @@ function Home() {
             <h1 className={`${text.heroHeading} mb-4`}>
             </h1>
             <div className="mx-auto mb-6 max-w-2xl">
-              <div className="text-3xl text-d-text font-raleway mb-6">Generate. <span className="text-d-orange">Daydream</span>.</div>
+              <div className="text-3xl text-d-text font-raleway mb-6"><span className="text-d-orange">Generate</span>. Daydream.</div>
               <div className="text-xl text-d-white font-raleway mb-6">Master all the best Creative AI tools. In one place.</div>
             </div>
-            <div className="flex justify-center gap-4">
-              <Link 
-                to="/use-cases" 
-                className={`${buttons.primary} parallax-small`}
-              >
-                Use Cases
-              </Link>
+            <div className="flex justify-center gap-2">
               <Link 
                 to="/create" 
-                className={`${buttons.secondary} parallax-small`}
+                className={`${buttons.ghost}`}
               >
                 Create
+              </Link>
+              <Link 
+                to="/use-cases" 
+                className={`${buttons.primary}`}
+              >
+                Learn
               </Link>
             </div>
           </div>

@@ -14,7 +14,7 @@ type AuthContextValue = {
   storagePrefix: string;                       // e.g. "daygen:u_xxx:"
   signIn: (email: string) => Promise<User>;
   signUp: (email: string, name?: string) => Promise<User>;
-  signOut: () => void;
+  logOut: () => void;
   updateProfile: (patch: Partial<User>) => void;
 };
 
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return found!;
   }, [persistCurrent]);
 
-  const signOut = useCallback(() => {
+  const logOut = useCallback(() => {
     // grab current before clearing
     const current = user;
     try {
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const storagePrefix = useMemo(() => `daygen:${user?.id ?? "guest"}:`, [user]);
 
-  const value: AuthContextValue = { user, users, storagePrefix, signIn, signUp, signOut, updateProfile };
+  const value: AuthContextValue = { user, users, storagePrefix, signIn, signUp, logOut, updateProfile };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
