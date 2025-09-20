@@ -104,7 +104,7 @@ export default function Navbar() {
       if (!menuOpen || !accountBtnRef.current) return;
       const rect = accountBtnRef.current.getBoundingClientRect();
       const gutter = 8;
-      const top = Math.round(rect.bottom + 8);
+      const top = Math.round(rect.bottom + 7);
       let left = Math.round(rect.right - MENU_WIDTH);
       // clamp to viewport with a small gutter
       left = Math.max(gutter, Math.min(left, window.innerWidth - MENU_WIDTH - gutter));
@@ -198,7 +198,7 @@ export default function Navbar() {
       {/* Top navbar */}
       <nav
         ref={navRef}
-        className={`relative ${glass.promptDark}`}
+        className={`relative ${glass.promptDark} border-t-0`}
       >
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base min-h-[3.5rem]">
           <div className="flex items-center gap-6 md:gap-8">
@@ -250,12 +250,12 @@ export default function Navbar() {
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
-                  className={`parallax-small group flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
+                  className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="size-4" />
                   <span className="hidden sm:inline font-cabin text-sm">
-                    <span className="text-d-white group-hover:text-brand">Credits:</span> 1,247
+                    Credits: 1,247
                   </span>
                   <span className="sm:hidden font-cabin text-sm">1,247</span>
                 </button>
@@ -307,10 +307,10 @@ export default function Navbar() {
       {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
       <div
         className={`fixed left-0 right-0 z-[49] ${activeMenu ? "pointer-events-auto" : "pointer-events-none"}`}
-        style={{ top: navH }}
+        style={{ top: navH - 1 }}
       >
         <div
-          className={`${glass.promptDark} border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
+          className={`${glass.promptDark} border-t-0 border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
@@ -415,7 +415,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className={`rounded-xl ${glass.promptDark} text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
+            className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
           >
             <button
               onClick={() => {

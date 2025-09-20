@@ -1146,11 +1146,11 @@ export default function Edit() {
               width: 'auto',
               bottom: '12rem'
             }}>
-              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.promptDark}`} style={{ minWidth: '320px' }}>
+              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.prompt}`} style={{ minWidth: '320px' }}>
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.promptDark} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
                   title="Decrease size"
                 >
                   <Minus className="w-4 h-4" />
@@ -1192,7 +1192,7 @@ export default function Edit() {
                 <button
                   onClick={increaseImageSize}
                   disabled={imageSize >= 2000}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.promptDark} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
                   title="Increase size"
                 >
                   <Plus className="w-4 h-4" />
@@ -1211,7 +1211,7 @@ export default function Edit() {
             }}>
               <button
                 onClick={toggleMoveMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isMoveMode 
                     ? 'text-d-orange-1 border-d-orange-1' 
                     : 'text-d-white border-d-dark hover:border-d-orange-1'
@@ -1223,7 +1223,7 @@ export default function Edit() {
               
               <button
                 onClick={togglePreciseEditMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isPreciseEditMode 
                     ? 'text-d-orange-1 border-d-orange-1' 
                     : 'text-d-white border-d-dark hover:border-d-orange-1'
@@ -1238,7 +1238,7 @@ export default function Edit() {
               {isPreciseEditMode && (
                 <>
                   {/* Brush size control */}
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark ${glass.promptDark}`}>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark ${glass.prompt}`}>
                     <span className="text-d-white text-xs font-raleway">Size:</span>
                     <input
                       type="range"
@@ -1268,7 +1268,7 @@ export default function Edit() {
               <button
                 onClick={undoStroke}
                 disabled={allPaths.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Undo last stroke"
               >
                 <Undo2 className="w-4 h-4" />
@@ -1278,7 +1278,7 @@ export default function Edit() {
               <button
                 onClick={redoStroke}
                 disabled={redoStack.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Redo last stroke"
               >
                 <Redo2 className="w-4 h-4" />
@@ -1287,7 +1287,7 @@ export default function Edit() {
               {/* Erase toggle */}
               <button
                 onClick={toggleEraseMode}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} ${
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${
                   isEraseMode 
                     ? 'text-d-orange-1 border-d-orange-1 bg-d-orange-1/20' 
                     : 'text-d-white border-d-dark hover:text-d-orange-1'
@@ -1301,7 +1301,7 @@ export default function Edit() {
               {maskData && (
                 <button
                   onClick={clearMask}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} text-d-white border-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1`}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1`}
                   title="Clear mask"
                 >
                   <X className="w-4 h-4" />

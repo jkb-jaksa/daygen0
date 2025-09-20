@@ -3402,10 +3402,10 @@ const Create: React.FC = () => {
                           <div className="flex gap-1 flex-wrap">
                             <button
                               onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
-                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                                 galleryFilters.liked 
                                   ? 'text-d-orange-1 border-d-orange-1' 
-                                  : 'text-d-white border-d-dark hover:border-d-orange-1'
+                                  : 'text-d-white border-d-dark hover:border-d-orange-1 hover:text-d-orange-1'
                               }`}
                             >
                               <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
@@ -3413,10 +3413,10 @@ const Create: React.FC = () => {
                             </button>
                             <button
                               onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
-                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                                 galleryFilters.public 
                                   ? 'text-d-orange-1 border-d-orange-1' 
-                                  : 'text-d-white border-d-dark hover:border-d-orange-1'
+                                  : 'text-d-white border-d-dark hover:border-d-orange-1 hover:text-d-orange-1'
                               }`}
                             >
                               <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? 'text-d-orange-1' : 'text-current'}`} />
