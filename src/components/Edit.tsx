@@ -95,7 +95,7 @@ const ModelMenuPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
+      className={`${glass.prompt} rounded-lg p-2 max-h-96 overflow-y-auto`}
     >
       {children}
     </div>,
@@ -1146,7 +1146,7 @@ export default function Edit() {
               width: 'auto',
               bottom: '12rem'
             }}>
-              <div className="flex justify-between items-center rounded-lg px-8 py-2 willchange-backdrop isolate backdrop-blur-[40px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark" style={{ minWidth: '320px' }}>
+              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.prompt}`} style={{ minWidth: '320px' }}>
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}
@@ -1356,7 +1356,7 @@ export default function Edit() {
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
         <div 
-          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
           style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -1410,7 +1410,7 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : `${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand`} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm font-raleway">Add more references</span>
@@ -1422,7 +1422,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group"
+                className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1503,7 +1503,7 @@ export default function Edit() {
                 onClick={toggleSettings}
                 title="Settings"
                 aria-label="Settings"
-                className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200"
+                className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
               >
                 <Settings className="w-4 h-4" />
               </button>

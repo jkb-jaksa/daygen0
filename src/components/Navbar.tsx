@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
 import Pricing from "./Pricing";
-import { buttons } from "../styles/designSystem";
+import { buttons, glass } from "../styles/designSystem";
 
 type MenuId = "create" | "edit" | "explore" | "knowledge base" | "services" | "about us";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
@@ -198,7 +198,7 @@ export default function Navbar() {
       {/* Top navbar */}
       <nav
         ref={navRef}
-        className="relative glass-liquid bg-transparent border-b border-d-black backdrop-blur-[40px] backdrop-brightness-[.5] backdrop-contrast-[1.1] backdrop-saturate-[.7] backdrop-hue-rotate-[0deg]"
+        className={`relative ${glass.prompt}`}
       >
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base min-h-[3.5rem]">
           <div className="flex items-center gap-6 md:gap-8">
@@ -250,7 +250,7 @@ export default function Navbar() {
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
-                  className="parallax-small flex items-center gap-1.5 rounded-full border glass-liquid bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border-d-dark text-d-white px-3 py-1.5 hover:bg-d-dark hover:text-brand transition-colors"
+                  className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.prompt} text-d-white px-3 py-1.5 hover:bg-d-dark hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="size-4" />
@@ -273,7 +273,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className="parallax-mid flex items-center gap-1.5 rounded-full border glass-liquid bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border-d-dark text-d-white px-2.5 py-1 hover:bg-d-dark hover:text-brand transition-colors"
+                    className={`parallax-mid flex items-center gap-1.5 rounded-full border ${glass.prompt} text-d-white px-2.5 py-1 hover:bg-d-dark hover:text-brand transition-colors`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -310,7 +310,7 @@ export default function Navbar() {
         style={{ top: navH }}
       >
         <div
-          className="glass-liquid willchange-backdrop isolate border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200"
+          className={`${glass.prompt} border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
@@ -415,7 +415,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className="rounded-xl glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark text-base text-d-text shadow-xl transition-colors duration-200 py-2"
+            className={`rounded-xl ${glass.prompt} text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
           >
             <button
               onClick={() => {

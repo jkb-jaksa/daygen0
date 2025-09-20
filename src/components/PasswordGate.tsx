@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { buttons } from "../styles/designSystem";
+import { buttons, glass } from "../styles/designSystem";
 
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
@@ -57,7 +57,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
 
   return (
     <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4">
-      <div className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark rounded-[20px] p-6 max-w-md w-full mx-4">
+      <div className={`${glass.prompt} rounded-[20px] p-6 max-w-md w-full mx-4`}>
         <div className="text-center">
           <div className="mb-4">
             <h1 className="text-lg font-cabin text-d-text mb-2">Enter Password</h1>

@@ -1,47 +1,49 @@
 // tailwind.config.js
+const withOpacityValue = (variable) => {
+  return ({ opacityValue } = {}) => {
+    if (opacityValue !== undefined) {
+      return `rgb(var(${variable}) / ${opacityValue})`;
+    }
+    return `rgb(var(${variable}))`;
+  };
+};
+
+const daygenPalette = {
+  text: withOpacityValue('--d-text-rgb'),
+  white: withOpacityValue('--d-white-rgb'),
+  light: withOpacityValue('--d-light-rgb'),
+  mid: withOpacityValue('--d-mid-rgb'),
+  dark: withOpacityValue('--d-dark-rgb'),
+  black: withOpacityValue('--d-black-rgb'),
+  orange: withOpacityValue('--d-orange-1-rgb'),
+  'orange-1': withOpacityValue('--d-orange-1-rgb'),
+};
+
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
         // Daygen palette
-        d: {
-          text: 'var(--d-text)',
-          white: 'var(--d-white)',
-          light: 'var(--d-light)',
-          mid: 'var(--d-mid)',
-          dark: 'var(--d-dark)',
-          black: 'var(--d-black)',
-          orange: 'var(--d-orange-1)',
-          'orange-1': 'var(--d-orange-1)'
-        },
+        d: daygenPalette,
         // Brand color
         brand: '#FF8C00',
         'brand-cyan': 'var(--brand-cyan)',
         'brand-red': 'var(--brand-red)',
         // Alias palette for testing (maps to d- tokens)
-        b: {
-          text: 'var(--d-text)',
-          white: 'var(--d-white)',
-          light: 'var(--d-light)',
-          mid: 'var(--d-mid)',
-          dark: 'var(--d-dark)',
-          black: 'var(--d-black)',
-          orange: 'var(--d-orange-1)',
-          'orange-1': 'var(--d-orange-1)'
-        },
+        b: { ...daygenPalette },
         // Back-compat aliases (optional)
-        text: { DEFAULT: 'var(--d-text)' },
+        text: { DEFAULT: daygenPalette.text },
         border: {
-          white: 'var(--d-white)',
-          light: 'var(--d-light)',
-          mid: 'var(--d-mid)',
-          dark: 'var(--d-dark)',
-          black: 'var(--d-black)'
+          white: daygenPalette.white,
+          light: daygenPalette.light,
+          mid: daygenPalette.mid,
+          dark: daygenPalette.dark,
+          black: daygenPalette.black,
         }
       },
       borderColor: {
-        DEFAULT: 'var(--d-dark)'
+        DEFAULT: 'rgb(var(--d-dark-rgb))'
       },
       fontFamily: {
         cabin: ['"Cabin"', "sans-serif"], // Quotes due to space in name, 'sans-serif' as fallback

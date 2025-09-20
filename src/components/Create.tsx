@@ -174,7 +174,7 @@ const ModelMenuPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark rounded-lg p-2 max-h-96 overflow-y-auto"
+      className={`${glass.prompt} rounded-lg p-2 max-h-96 overflow-y-auto`}
     >
       {children}
     </div>,
@@ -445,7 +445,7 @@ const SettingsPortal: React.FC<{
         zIndex: 1000,
         transform: 'translateY(-100%)' // Position above the trigger
       }}
-      className="willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark rounded-lg p-4"
+      className={`${glass.prompt} rounded-lg p-4`}
     >
       {children}
     </div>,
@@ -2176,7 +2176,7 @@ const Create: React.FC = () => {
               <div className="flex justify-between items-center mt-2">
                 <ModelBadge model={img.model ?? 'unknown'} size="md" />
                 {img.isPublic && (
-                  <div className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                  <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                     <div className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-d-orange-1" />
                       <span className="leading-none">Public</span>
@@ -3818,7 +3818,7 @@ const Create: React.FC = () => {
                                       <div className="flex justify-between items-center mt-2">
                                         <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                         {img.isPublic && (
-                                          <div className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                          <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-orange-1" />
                                               <span className="leading-none">Public</span>
@@ -3968,7 +3968,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.base} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.prompt} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4014,7 +4014,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.base} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.prompt} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4051,7 +4051,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.base} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.prompt} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4448,7 +4448,7 @@ const Create: React.FC = () => {
                                 <div className="flex justify-between items-center mt-2">
                                   <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                   {img.isPublic && (
-                                    <div className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                                    <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                       <div className="flex items-center gap-1">
                                         <Globe className="w-3 h-3 text-d-orange-1" />
                                         <span className="leading-none">Public</span>
@@ -4618,7 +4618,7 @@ const Create: React.FC = () => {
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.base} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ 
                 left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
                 right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
@@ -4675,7 +4675,7 @@ const Create: React.FC = () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? 'glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? `${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand` : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
@@ -4689,7 +4689,7 @@ const Create: React.FC = () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       isGemini 
-                        ? "glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand" 
+                        ? `${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand` 
                         : "bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed"
                     }`}
                   >
@@ -4849,7 +4849,7 @@ const Create: React.FC = () => {
                   disabled={!prompt.trim() || isEnhancing}
                   title="Enhance prompt"
                   aria-label="Enhance prompt"
-                  className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isEnhancing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -4864,7 +4864,7 @@ const Create: React.FC = () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-orange-1 text-d-white hover:text-brand flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group"
+                    className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -4907,10 +4907,10 @@ const Create: React.FC = () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
-                              ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
+                              ? `${glass.prompt} border-d-orange-1/30 shadow-lg shadow-d-orange-1/10` 
                               : isComingSoon
                               ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
-                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-orange-1"
+                              : `${glass.prompt} hover:border-d-orange-1`
                           }`}
                         >
                           {hasToolLogo(model.name) ? (
@@ -5027,7 +5027,7 @@ const Create: React.FC = () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className="glass-liquid isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
+                      className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -5035,7 +5035,7 @@ const Create: React.FC = () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className="glass-liquid isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1"
+                      className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >
@@ -5127,7 +5127,7 @@ const Create: React.FC = () => {
                             size="md" 
                           />
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
-                            <div className="glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin border border-d-dark">
+                            <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                               <div className="flex items-center gap-1">
                                 <Globe className="w-3 h-3 text-d-orange-1" />
                                 <span className="leading-none">Public</span>

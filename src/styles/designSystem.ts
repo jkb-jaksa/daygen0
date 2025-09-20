@@ -38,10 +38,12 @@ export const panels = {
   ring: "absolute inset-0 rounded-[64px] ring-1 ring-white/40",
 };
 
-const glassBase = "glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark";
+const glassCore = "glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-d-dark";
+const glassBase = `${glassCore} bg-d-light/15`;
 
 export const glass = {
   base: glassBase,
   surface: `${glassBase} rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
+  prompt: `${glassCore} bg-b-dark/60`,
 };

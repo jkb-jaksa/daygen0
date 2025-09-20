@@ -24,18 +24,26 @@
   --nav-h: 64px; /* Navbar height used for hero offset */
   /* Daygen dark palette */
   --d-text: #FAFAFA;
+  --d-text-rgb: 250 250 250;
   /* Slightly darken d-white globally (very subtle) */
   --d-white: #C1C9C9;
+  --d-white-rgb: 193 201 201;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
   --d-light: #8E9393;
+  --d-light-rgb: 142 147 147;
   /* Mid tone: made a bit lighter for hover/border contrast */
   --d-mid: #2F3434;
+  --d-mid-rgb: 47 52 52;
   --d-dark: #141616;
+  --d-dark-rgb: 20 22 22;
   --d-black: #080B0B;
+  --d-black-rgb: 8 11 11;
 
   /* Brand warm gradient stops */
   --d-orange-1: #ff8c00;
+  --d-orange-1-rgb: 255 140 0;
   --d-orange-2: #e43a63;
+  --d-orange-2-rgb: 228 58 99;
   
   /* Brand cyan color */
   --brand-cyan: rgb(3,188,189);
@@ -607,8 +615,8 @@ html, body {
 /* Action buttons overlayed on generated image */
 .image-action-btn {
   align-items: center;
-  background-color: rgba(14, 18, 18, 0.55);
-  border: 1px solid var(--d-mid);
+  background-color: rgba(14, 18, 18, 0.6); /* Updated to match glass.prompt opacity */
+  border: 1px solid var(--d-dark); /* Updated to match glass.prompt border */
   border-radius: 9999px;
   color: var(--d-white);
   display: inline-grid;
@@ -618,13 +626,13 @@ html, body {
   place-items: center;
   transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s;
   width: 32px; /* match footer size-8 */
-  -webkit-backdrop-filter: blur(96px) brightness(.6) contrast(1.1) saturate(.8);
-  backdrop-filter: blur(96px) brightness(.6) contrast(1.1) saturate(.8);
+  -webkit-backdrop-filter: blur(16px); /* Updated to match glass.prompt blur */
+  backdrop-filter: blur(16px); /* Updated to match glass.prompt blur */
   perspective: 1000px;
 }
 .image-action-btn:hover {
-  background-color: rgba(14, 18, 18, 0.55); /* keep same bg */
-  border-color: var(--d-mid); /* keep same border */
+  background-color: rgba(14, 18, 18, 0.6); /* Updated to match glass.prompt opacity */
+  border-color: var(--d-orange-1); /* Updated to match glass.prompt hover border */
   color: var(--d-orange-1);
   transform: scale(1.01);
 }
