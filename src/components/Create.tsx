@@ -1075,7 +1075,6 @@ const Create: React.FC = () => {
   const {
     status: runwayVideoStatus,
     error: runwayVideoError,
-    videoUrl,
     generate: generateVideo,
   } = useRunwayVideoGeneration();
   
