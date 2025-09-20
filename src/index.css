@@ -626,8 +626,8 @@ html, body {
   place-items: center;
   transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s;
   width: 32px; /* match footer size-8 */
-  -webkit-backdrop-filter: blur(24px); /* Updated to match glass.prompt blur */
-  backdrop-filter: blur(24px); /* Updated to match glass.prompt blur */
+  -webkit-backdrop-filter: blur(40px); /* Updated to match glass.prompt blur */
+  backdrop-filter: blur(40px); /* Updated to match glass.prompt blur */
   perspective: 1000px;
 }
 .image-action-btn:hover {
