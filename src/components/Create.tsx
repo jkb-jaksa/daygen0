@@ -3267,7 +3267,7 @@ const Create: React.FC = () => {
               <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
-                  <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
+                  <div className="text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
                     create
                   </div>
                   
@@ -3308,7 +3308,7 @@ const Create: React.FC = () => {
                   <div className="border-t border-d-dark my-2"></div>
                   
                   {/* Library section */}
-                  <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
+                  <div className="text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
                     My creations
                   </div>
                   
