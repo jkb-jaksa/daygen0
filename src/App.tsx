@@ -1,19 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Navbar from "./components/Navbar";
 import FAQSection from "./components/Faq";
-import Subpage from "./components/subpage/Subpage";
-import Create from "./components/Create";
-import Edit from "./components/Edit";
 import Footer from "./components/Footer";
-import Account from "./components/Account";
-import UseCases from "./components/UseCases";
-import ToolsSection from "./components/ToolsSection";
-import Services from "./components/Services";
-import AboutUs from "./components/AboutUs";
-import Prompts from "./components/Prompts";
-import Explore from "./components/Explore";
 import { useAuth } from "./auth/AuthContext";
 import { layout, text, buttons } from "./styles/designSystem";
+
+const UseCases = lazy(() => import("./components/UseCases"));
+const ToolsSection = lazy(() => import("./components/ToolsSection"));
+const Services = lazy(() => import("./components/Services"));
+const AboutUs = lazy(() => import("./components/AboutUs"));
+const Prompts = lazy(() => import("./components/Prompts"));
+const Explore = lazy(() => import("./components/Explore"));
+const Subpage = lazy(() => import("./components/subpage/Subpage"));
+const Create = lazy(() => import("./components/Create"));
+const Edit = lazy(() => import("./components/Edit"));
+const Account = lazy(() => import("./components/Account"));
 
 function Home() {
   return (
@@ -81,26 +83,40 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return children;
 }
 
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-d-white/40 border-t-d-white"
+        aria-hidden="true"
+      />
+      <span className="sr-only">Loading page…</span>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <div className="overflow-y-hidden">
         <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/use-cases" element={<UseCases />} />
-          <Route path="/tools" element={<ToolsSection />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/about-us" element={<AboutUs />} />
-          <Route path="/prompts" element={<Prompts />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/ai-tools" element={<ToolsSection />} />
-          <Route path="/ai-tools/:id" element={<Subpage />} />
-          <Route path="/create" element={<Create />} />
-          <Route path="/edit" element={<Edit />} />
-          <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/use-cases" element={<UseCases />} />
+            <Route path="/tools" element={<ToolsSection />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/prompts" element={<Prompts />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/ai-tools" element={<ToolsSection />} />
+            <Route path="/ai-tools/:id" element={<Subpage />} />
+            <Route path="/create" element={<Create />} />
+            <Route path="/edit" element={<Edit />} />
+            <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
         <Footer />
       </div>
     </BrowserRouter>
