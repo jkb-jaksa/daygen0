@@ -55,7 +55,6 @@ export const TOOL_LOGOS: Record<string, string> = {
   // Model-specific variations for ModelBadge
   'Runway Gen-4': '/runway logo.jpg',
   'Runway Gen-4 Turbo': '/runway logo.jpg',
-  'Runway Gen-4 (Video)': '/runway logo.jpg',
   'Ideogram 3.0': '/ideogram logo.jpeg',
   
   // Video Tools

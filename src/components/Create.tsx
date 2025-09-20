@@ -882,8 +882,17 @@ const Create: React.FC = () => {
     }
     
     if (generatedVideo) {
+      // Map internal model names to user-facing model names
+      let displayModel = generatedVideo.model;
+      if (generatedVideo.model === 'veo-3.0-generate-001' || generatedVideo.model === 'veo-3.0-fast-generate-001') {
+        displayModel = 'veo-3';
+      } else if (generatedVideo.model === 'runway-video-gen4' || generatedVideo.model === 'gen4_turbo' || generatedVideo.model === 'gen4_aleph') {
+        displayModel = 'runway-video-gen4';
+      }
+
       const videoWithOperation = {
         ...generatedVideo,
+        model: displayModel,
         operationName: videoOperationName || generatedVideo.jobId,
       };
       debugLog('[Create] Adding video to gallery:', videoWithOperation);
@@ -905,6 +914,15 @@ const Create: React.FC = () => {
       window.removeEventListener('navigateToCategory', handleCategoryNavigation as EventListener);
     };
   }, []);
+
+  // Auto-select default model when switching categories
+  useEffect(() => {
+    if (activeCategory === "video" && selectedModel !== "veo-3" && selectedModel !== "runway-video-gen4") {
+      setSelectedModel("veo-3");
+    } else if (activeCategory === "image" && (selectedModel === "veo-3" || selectedModel === "runway-video-gen4")) {
+      setSelectedModel("gemini-2.5-flash-image-preview");
+    }
+  }, [activeCategory, selectedModel]);
 
   // Keyboard navigation for gallery
   useEffect(() => {
@@ -3068,10 +3086,10 @@ const Create: React.FC = () => {
   const getCurrentModel = () => {
     if (activeCategory === "video") {
       if (selectedModel === "veo-3") {
-        return { name: "Veo 3", Icon: VideoIcon, desc: "Google's advanced video generation model", id: "veo-3" };
+        return { name: "Veo 3", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
       }
       if (selectedModel === "runway-video-gen4") {
-        return { name: "Runway Gen-4 (Video)", Icon: VideoIcon, desc: "Text → Video using Gen-4 Turbo", id: "runway-video-gen4" };
+        return { name: "Runway Gen-4", Icon: VideoIcon, desc: "Good video model. Great editing with Runway Aleph.", id: "runway-video-gen4" };
       }
       return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
     }
@@ -5098,11 +5116,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isVeo) ? toggleSettings : () => alert('Settings are only available for Gemini and Veo models.')}
-                    title={(isGemini || isVeo) ? "Settings" : "Settings only available for Gemini and Veo models"}
+                    onClick={(isGemini || isVeo || isRunway) ? toggleSettings : () => alert('Settings are only available for Gemini, Veo, and Runway models.')}
+                    title={(isGemini || isVeo || isRunway) ? "Settings" : "Settings only available for Gemini, Veo, and Runway models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isVeo)
+                      (isGemini || isVeo || isRunway)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -5314,6 +5332,51 @@ const Create: React.FC = () => {
                       </div>
                     </SettingsPortal>
                   )}
+
+                  {isRunway && (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Runway Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+                            <select
+                              value={selectedModel}
+                              onChange={(e) => setSelectedModel(e.target.value)}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="runway-gen4">Runway Gen-4 (Standard)</option>
+                              <option value="runway-gen4-turbo">Runway Gen-4 Turbo (Fast)</option>
+                            </select>
+                            <div className="text-xs text-d-white/60 mt-1">
+                              {selectedModel === "runway-gen4" 
+                                ? "Higher quality, slower generation" 
+                                : "Faster generation, good quality"}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+                            <select
+                              value="16:9"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                              disabled
+                            >
+                              <option value="16:9">16:9 (Landscape)</option>
+                            </select>
+                            <div className="text-xs text-d-white/60 mt-1">
+                              Currently fixed at 16:9 ratio
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -5363,46 +5426,86 @@ const Create: React.FC = () => {
                     onClose={() => setIsModelSelectorOpen(false)}
                   >
                     {activeCategory === "video" ? (
-                      <div className="px-3 py-4">
-                        <div className="space-y-2">
-                          <button
-                            onClick={() => {
-                              setSelectedModel("veo-3");
-                              setIsModelSelectorOpen(false);
-                            }}
-                            className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                              selectedModel === "veo-3"
-                                ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                                : 'bg-transparent hover:bg-d-orange-1/20 border-0'
-                            }`}
-                          >
-                            <Film className="w-4 h-4 text-d-orange-1" />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-d-white">Veo 3</div>
-                              <div className="text-xs text-d-white/60">Google's advanced video generation</div>
+                      <>
+                        <button
+                          onClick={() => {
+                            setSelectedModel("veo-3");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "veo-3"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Veo 3") ? (
+                            <img 
+                              src={getToolLogo("Veo 3")!} 
+                              alt="Veo 3 logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "veo-3" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "veo-3" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Veo 3
                             </div>
-                          </button>
-                          <button
-                            onClick={() => {
-                              debugLog('[Create] Selecting Runway video model');
-                              setSelectedModel("runway-video-gen4");
-                              debugLog('[Create] Selected model set to:', "runway-video-gen4");
-                              setIsModelSelectorOpen(false);
-                            }}
-                            className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                              selectedModel === "runway-video-gen4"
-                                ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                                : 'bg-transparent hover:bg-d-orange-1/20 border-0'
-                            }`}
-                          >
-                            <VideoIcon className="w-4 h-4 text-d-orange-1" />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-d-white">Runway Gen-4 (Video)</div>
-                              <div className="text-xs text-d-white/60">Text → Video using Gen-4 Turbo</div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "veo-3" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              Best video model. Great cinematic quality with sound output.
                             </div>
-                          </button>
-                        </div>
-                      </div>
+                          </div>
+                          {selectedModel === "veo-3" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            debugLog('[Create] Selecting Runway video model');
+                            setSelectedModel("runway-video-gen4");
+                            debugLog('[Create] Selected model set to:', "runway-video-gen4");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "runway-video-gen4"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Runway Gen-4") ? (
+                            <img 
+                              src={getToolLogo("Runway Gen-4")!} 
+                              alt="Runway logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "runway-video-gen4" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "runway-video-gen4" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Runway Gen-4
+                            </div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "runway-video-gen4" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              Good video model. Great editing with Runway Aleph.
+                            </div>
+                          </div>
+                          {selectedModel === "runway-video-gen4" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
+                      </>
                     ) : (
                       AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
