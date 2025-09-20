@@ -1146,11 +1146,11 @@ export default function Edit() {
               width: 'auto',
               bottom: '12rem'
             }}>
-              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.prompt}`} style={{ minWidth: '320px' }}>
+              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.promptDark}`} style={{ minWidth: '320px' }}>
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.base} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.promptDark} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
                   title="Decrease size"
                 >
                   <Minus className="w-4 h-4" />
@@ -1192,7 +1192,7 @@ export default function Edit() {
                 <button
                   onClick={increaseImageSize}
                   disabled={imageSize >= 2000}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.base} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.promptDark} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
                   title="Increase size"
                 >
                   <Plus className="w-4 h-4" />
@@ -1211,7 +1211,7 @@ export default function Edit() {
             }}>
               <button
                 onClick={toggleMoveMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
                   isMoveMode 
                     ? 'text-d-orange-1 border-d-orange-1' 
                     : 'text-d-white border-d-dark hover:border-d-orange-1'
@@ -1223,7 +1223,7 @@ export default function Edit() {
               
               <button
                 onClick={togglePreciseEditMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
                   isPreciseEditMode 
                     ? 'text-d-orange-1 border-d-orange-1' 
                     : 'text-d-white border-d-dark hover:border-d-orange-1'
@@ -1238,7 +1238,7 @@ export default function Edit() {
               {isPreciseEditMode && (
                 <>
                   {/* Brush size control */}
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark ${glass.base}`}>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark ${glass.promptDark}`}>
                     <span className="text-d-white text-xs font-raleway">Size:</span>
                     <input
                       type="range"
@@ -1268,7 +1268,7 @@ export default function Edit() {
               <button
                 onClick={undoStroke}
                 disabled={allPaths.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Undo last stroke"
               >
                 <Undo2 className="w-4 h-4" />
@@ -1278,7 +1278,7 @@ export default function Edit() {
               <button
                 onClick={redoStroke}
                 disabled={redoStack.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Redo last stroke"
               >
                 <Redo2 className="w-4 h-4" />
@@ -1287,7 +1287,7 @@ export default function Edit() {
               {/* Erase toggle */}
               <button
                 onClick={toggleEraseMode}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} ${
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} ${
                   isEraseMode 
                     ? 'text-d-orange-1 border-d-orange-1 bg-d-orange-1/20' 
                     : 'text-d-white border-d-dark hover:text-d-orange-1'
@@ -1301,7 +1301,7 @@ export default function Edit() {
               {maskData && (
                 <button
                   onClick={clearMask}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.base} text-d-white border-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1`}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.promptDark} text-d-white border-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1`}
                   title="Clear mask"
                 >
                   <X className="w-4 h-4" />
@@ -1410,7 +1410,7 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : `${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand`} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm font-raleway">Add more references</span>
@@ -1422,7 +1422,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1503,7 +1503,7 @@ export default function Edit() {
                 onClick={toggleSettings}
                 title="Settings"
                 aria-label="Settings"
-                className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+                className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
               >
                 <Settings className="w-4 h-4" />
               </button>

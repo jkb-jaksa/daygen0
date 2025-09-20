@@ -513,7 +513,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1100,
       }}
-      className={`${glass.tight} py-2`}
+      className={`${glass.promptDark} rounded-lg py-2`}
     >
       {children}
     </div>,
@@ -581,7 +581,7 @@ const BulkActionsMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1100,
       }}
-      className={`${glass.tight} py-2`}
+      className={`${glass.promptDark} rounded-lg py-2`}
     >
       {children}
     </div>,
@@ -2807,7 +2807,7 @@ const Create: React.FC = () => {
     <div className={layout.page}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-300 ${glass.surface}`}>
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-300 ${glass.promptDark} rounded-[20px]`}>
           {copyNotification}
         </div>
       )}
@@ -2815,7 +2815,7 @@ const Create: React.FC = () => {
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <Trash2 className="default-orange-icon mx-auto mb-4" />
@@ -2860,7 +2860,7 @@ const Create: React.FC = () => {
       {/* New folder dialog */}
       {newFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="default-orange-icon mx-auto mb-4" />
@@ -2936,7 +2936,7 @@ const Create: React.FC = () => {
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <Globe className="default-orange-icon mx-auto mb-4" />
@@ -2971,7 +2971,7 @@ const Create: React.FC = () => {
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <Lock className="default-orange-icon mx-auto mb-4" />
@@ -3006,7 +3006,7 @@ const Create: React.FC = () => {
       {/* Add to folder dialog */}
       {addToFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="default-orange-icon mx-auto mb-4" />
@@ -3146,7 +3146,7 @@ const Create: React.FC = () => {
       {/* Folder thumbnail selection dialog */}
       {folderThumbnailDialog.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
             <div className="text-center">
               <div className="mb-4 relative">
                 <Folder className="default-orange-icon mx-auto mb-4" />
@@ -3375,7 +3375,7 @@ const Create: React.FC = () => {
                 {activeCategory === "gallery" && (
                   <div className="w-full">
                     {/* Filters Section */}
-                    <div className={`mb-4 p-3 ${glass.surface}`}>
+                    <div className={`mb-4 p-3 ${glass.promptDark} rounded-[20px]`}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Settings className="w-4 h-4 text-d-orange-1" />
@@ -3402,7 +3402,7 @@ const Create: React.FC = () => {
                           <div className="flex gap-1 flex-wrap">
                             <button
                               onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
-                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
                                 galleryFilters.liked 
                                   ? 'text-d-orange-1 border-d-orange-1' 
                                   : 'text-d-white border-d-dark hover:border-d-orange-1'
@@ -3413,7 +3413,7 @@ const Create: React.FC = () => {
                             </button>
                             <button
                               onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
-                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.base} font-raleway text-sm ${
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
                                 galleryFilters.public 
                                   ? 'text-d-orange-1 border-d-orange-1' 
                                   : 'text-d-white border-d-dark hover:border-d-orange-1'
@@ -3479,7 +3479,7 @@ const Create: React.FC = () => {
                     </div>
 
                     {/* Selection Toolbar */}
-                    <div className={`${glass.surface} mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
+                    <div className={`${glass.promptDark} rounded-[20px] mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-raleway text-d-white">{selectedImages.size}</span>
@@ -3968,7 +3968,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.prompt} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4014,7 +4014,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.prompt} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4051,7 +4051,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.prompt} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4602,7 +4602,7 @@ const Create: React.FC = () => {
                 <div className="mb-4">
                   <button 
                     onClick={() => setIsCacheBarVisible(true)}
-                    className={`${glass.tight} text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1`}
+                    className={`${glass.promptDark} rounded-lg text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-orange-1/20 hover:text-d-orange-1`}
                   >
                     Show cache usage
                   </button>
@@ -4675,7 +4675,7 @@ const Create: React.FC = () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? `${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand` : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
@@ -4689,7 +4689,7 @@ const Create: React.FC = () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       isGemini 
-                        ? `${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand` 
+                        ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0' 
                         : "bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed"
                     }`}
                   >
@@ -4849,7 +4849,7 @@ const Create: React.FC = () => {
                   disabled={!prompt.trim() || isEnhancing}
                   title="Enhance prompt"
                   aria-label="Enhance prompt"
-                  className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isEnhancing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -4864,7 +4864,7 @@ const Create: React.FC = () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.prompt} hover:border-d-orange-1 text-d-white hover:text-brand flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                    className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -4907,10 +4907,10 @@ const Create: React.FC = () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
-                              ? `${glass.prompt} border-d-orange-1/30 shadow-lg shadow-d-orange-1/10` 
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
                               : isComingSoon
                               ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
-                              : `${glass.prompt} hover:border-d-orange-1`
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
                           }`}
                         >
                           {hasToolLogo(model.name) ? (

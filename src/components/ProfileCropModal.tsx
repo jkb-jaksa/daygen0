@@ -119,7 +119,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4">
-      <div className={`${glass.prompt} rounded-[20px] p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden`}>
+      <div className={`${glass.promptDark} rounded-[20px] p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-cabin text-d-text">Crop Profile Picture</h3>
           <button

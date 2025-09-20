@@ -26,7 +26,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4" aria-modal="true" role="dialog">
-      <div className={`${glass.surface} mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
+      <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
         <div className="text-center mb-6">
           <h3 className="text-d-text font-cabin text-xl mb-2">{mode === "login" ? "Log in" : "Sign up"}</h3>
           <p className="text-d-light text-sm font-raleway">Welcome to DayGen</p>
