@@ -615,7 +615,7 @@ html, body {
 /* Action buttons overlayed on generated image */
 .image-action-btn {
   align-items: center;
-  background-color: rgba(14, 18, 18, 0.6); /* Updated to match glass.prompt opacity */
+  background-color: rgba(14, 18, 18, 0.8); /* Updated to match glass.prompt opacity */
   border: 1px solid var(--d-dark); /* Updated to match glass.prompt border */
   border-radius: 9999px;
   color: var(--d-white);
@@ -631,7 +631,7 @@ html, body {
   perspective: 1000px;
 }
 .image-action-btn:hover {
-  background-color: rgba(14, 18, 18, 0.6); /* Updated to match glass.prompt opacity */
+  background-color: rgba(14, 18, 18, 0.8); /* Updated to match glass.prompt opacity */
   border-color: var(--d-orange-1); /* Updated to match glass.prompt hover border */
   color: var(--d-orange-1);
   transform: scale(1.01);

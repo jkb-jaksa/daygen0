@@ -45,5 +45,5 @@ export const glass = {
   base: glassBase,
   surface: `${glassBase} rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
-  prompt: `${glassCore} bg-b-dark/60`,
+  prompt: `${glassCore} bg-b-dark/80`,
 };
