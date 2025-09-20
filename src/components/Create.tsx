@@ -14,6 +14,7 @@ import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
+import { useRunwayVideoGeneration } from "../hooks/useRunwayVideoGeneration";
 import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
@@ -126,6 +127,7 @@ const AI_MODELS = [
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
+  { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, accent: "violet" as Accent, id: "runway-video-gen4" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
@@ -642,11 +644,12 @@ const Create: React.FC = () => {
   const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
+  const isRunwayVideo = selectedModel === "runway-video-gen4";
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
   const isVeo = selectedModel === "veo-3";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft && !isVeo;
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -665,6 +668,8 @@ const Create: React.FC = () => {
   const [videoSeed, setVideoSeed] = useState<number | undefined>(undefined);
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
+  const [isRunwayVideoGenerating, setIsRunwayVideoGenerating] = useState<boolean>(false);
+  const [runwayVideoPrompt, setRunwayVideoPrompt] = useState<string>('');
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
@@ -819,13 +824,20 @@ const Create: React.FC = () => {
   
   // Helper functions for filters
   const getAvailableModels = () => {
-    // For now, all models are image models, video models list is empty
     if (galleryFilters.type === 'video') {
-      return []; // No video models available yet
+      // Return video models
+      return AI_MODELS.filter(model => 
+        model.id === 'veo-3' || 
+        model.id === 'runway-video-gen4'
+      ).map(model => model.id).sort();
     } else if (galleryFilters.type === 'image') {
-      return AI_MODELS.map(model => model.id).sort();
+      // Return image models (exclude video models)
+      return AI_MODELS.filter(model => 
+        model.id !== 'veo-3' && 
+        model.id !== 'runway-video-gen4'
+      ).map(model => model.id).sort();
     } else {
-      // 'all' type - show all models (images only for now)
+      // 'all' type - show all models
       return AI_MODELS.map(model => model.id).sort();
     }
   };
@@ -1061,6 +1073,16 @@ const Create: React.FC = () => {
   } = useRunwayImageGeneration();
 
   const {
+    status: runwayVideoStatus,
+    error: runwayVideoError,
+    videoUrl,
+    generate: generateVideo,
+  } = useRunwayVideoGeneration();
+  
+  // Debug: Check if runwayVideoStatus is defined
+  console.log('runwayVideoStatus:', runwayVideoStatus);
+
+  const {
     error: seedreamError,
     generatedImage: seedreamImage,
     generateImage: generateSeeDreamImage,
@@ -1074,7 +1096,7 @@ const Create: React.FC = () => {
   } = useReveImageGeneration();
 
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
@@ -2514,6 +2536,28 @@ const Create: React.FC = () => {
     setReferencePreviews([]);
   };
 
+  const handleGenerate = async () => {
+    debugLog('[Create] handleGenerate called', { activeCategory, selectedModel });
+    debugLog('[Create] Current selectedModel value:', selectedModel);
+    if (activeCategory === "video") {
+      // For video generation, check if it's Veo or Runway
+      if (selectedModel === "veo-3") {
+        debugLog('[Create] Using Veo video generation');
+        await handleGenerateVideo();
+      } else if (selectedModel === "runway-video-gen4") {
+        debugLog('[Create] Using Runway video generation');
+        await handleGenerateImage();
+      } else {
+        debugLog('[Create] Unknown video model, using default generation');
+        await handleGenerateImage();
+      }
+    } else {
+      // For image generation
+      debugLog('[Create] Using image generation');
+      await handleGenerateImage();
+    }
+  };
+
   const handleGenerateVideo = async () => {
     if (!prompt.trim()) return;
     
@@ -2574,7 +2618,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, and Recraft models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, and Recraft models are available.');
       return;
     }
 
@@ -2586,6 +2630,7 @@ const Create: React.FC = () => {
 
     const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const modelForGeneration = selectedModel;
+    debugLog('[Create] handleGenerateImage called with model:', modelForGeneration);
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
     const temperatureForGeneration = temperature;
@@ -2596,7 +2641,12 @@ const Create: React.FC = () => {
     const qwenWatermarkForGeneration = qwenWatermark;
 
     const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration };
-    setActiveGenerationQueue(prev => [...prev, jobMeta]);
+    
+    // Only add to activeGenerationQueue if we're not doing Runway video generation
+    // Runway video generation handles its own loading state
+    if (!(activeCategory === "video" && selectedModel === "runway-video-gen4")) {
+      setActiveGenerationQueue(prev => [...prev, jobMeta]);
+    }
     if (spinnerTimeoutRef.current) {
       clearTimeout(spinnerTimeoutRef.current);
     }
@@ -2625,8 +2675,17 @@ const Create: React.FC = () => {
       const isIdeogramModel = modelForGeneration === "ideogram";
       const isQwenModel = modelForGeneration === "qwen-image";
       const isRunwayModel = modelForGeneration === "runway-gen4" || modelForGeneration === "runway-gen4-turbo";
+      const isRunwayVideoModel = modelForGeneration === "runway-video-gen4";
       const isSeeDreamModel = modelForGeneration === "seedream-3.0";
       const isReveModel = modelForGeneration === "reve-image";
+      
+      debugLog('[Create] Model checks:', { 
+        modelForGeneration, 
+        isRunwayVideoModel, 
+        isGeminiModel, 
+        isFluxModel, 
+        isChatGPTModel 
+      });
       const isRecraftModel = modelForGeneration === "recraft-v3" || modelForGeneration === "recraft-v2";
 
       if (isGeminiModel) {
@@ -2698,6 +2757,96 @@ const Create: React.FC = () => {
           ratio: "1920:1080", // Default ratio, could be made configurable
         });
         img = runwayResult;
+      } else if (isRunwayVideoModel) {
+        // Use Runway video generation (text-to-video)
+        debugLog('[Create] Starting Runway video generation');
+        
+        // Set video generation loading state
+        setIsRunwayVideoGenerating(true);
+        setRunwayVideoPrompt(trimmedPrompt);
+        
+        // Set button spinning state for video generation
+        if (spinnerTimeoutRef.current) {
+          clearTimeout(spinnerTimeoutRef.current);
+        }
+        setIsButtonSpinning(true);
+        spinnerTimeoutRef.current = setTimeout(() => {
+          debugLog('[Create] Spinner timeout reached, setting isButtonSpinning to false');
+          setIsButtonSpinning(false);
+          spinnerTimeoutRef.current = null;
+        }, 1000);
+        
+        const imageDataUrl = selectedReferenceImage || previewUrl;
+        debugLog('[Create] Image data URL:', imageDataUrl ? 'provided' : 'not provided');
+        
+        debugLog('[Create] Calling generateVideo with:', {
+          promptText: trimmedPrompt,
+          promptImage: imageDataUrl ? 'provided' : 'not provided',
+          options: {
+            model: 'gen4_turbo',
+            ratio: '1280:720',
+            duration: 5,
+          }
+        });
+        
+        let result;
+        try {
+          const videoParams: any = {
+            promptText: trimmedPrompt,
+            options: {
+              model: 'gen4_turbo',
+              ratio: '1280:720',
+              duration: 5,
+            },
+          };
+          
+          if (imageDataUrl) {
+            videoParams.promptImage = imageDataUrl;
+          }
+          
+          result = await generateVideo(videoParams);
+          
+          debugLog('[Create] Runway video generation result:', result);
+        } catch (error) {
+          debugLog('[Create] Runway video generation error:', error);
+          
+          // Clear video generation loading state on error
+          setIsRunwayVideoGenerating(false);
+          setRunwayVideoPrompt('');
+          
+          // Clear button spinning state on error
+          if (spinnerTimeoutRef.current) {
+            clearTimeout(spinnerTimeoutRef.current);
+            spinnerTimeoutRef.current = null;
+          }
+          setIsButtonSpinning(false);
+          
+          throw error; // Re-throw to be caught by outer try-catch
+        }
+
+        // Push into video gallery list
+        const newVideo: GalleryVideoLike = { 
+          url: result.url, 
+          prompt: trimmedPrompt, 
+          model: 'runway-video-gen4', 
+          timestamp: new Date().toISOString(),
+          type: 'video' as const
+        };
+        setVideoGallery((g) => [newVideo, ...g]);
+        
+        // Clear video generation loading state
+        setIsRunwayVideoGenerating(false);
+        setRunwayVideoPrompt('');
+        
+        // Clear button spinning state for video generation
+        if (spinnerTimeoutRef.current) {
+          clearTimeout(spinnerTimeoutRef.current);
+          spinnerTimeoutRef.current = null;
+        }
+        setIsButtonSpinning(false);
+        
+        // For video, we don't set img since it's handled in videoGallery
+        return; // Exit early since video is handled differently
       } else if (isSeeDreamModel) {
         // Use Seedream generation
         const seedreamResult = await generateSeeDreamImage({
@@ -2867,7 +3016,10 @@ const Create: React.FC = () => {
         spinnerTimeoutRef.current = null;
       }
       setIsButtonSpinning(false);
-      setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
+      // Only remove from activeGenerationQueue if we added it in the first place
+      if (!(activeCategory === "video" && selectedModel === "runway-video-gen4")) {
+        setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
+      }
     }
   };
 
@@ -2918,6 +3070,9 @@ const Create: React.FC = () => {
     if (activeCategory === "video") {
       if (selectedModel === "veo-3") {
         return { name: "Veo 3", Icon: VideoIcon, desc: "Google's advanced video generation model", id: "veo-3" };
+      }
+      if (selectedModel === "runway-video-gen4") {
+        return { name: "Runway Gen-4 (Video)", Icon: VideoIcon, desc: "Text → Video using Gen-4 Turbo", id: "runway-video-gen4" };
       }
       return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
     }
@@ -4472,6 +4627,28 @@ const Create: React.FC = () => {
                     <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
+                        const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
+
+                        if (isRunwayGenerating) {
+                          return (
+                            <div key="runway-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                              <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-orange-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                              <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                                <div className="text-center">
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="text-d-white text-xs font-raleway animate-pulse">
+                                    Generating...
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
+                                <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                                  {runwayVideoPrompt}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
 
                         if (!isPlaceholder) {
                           const video = filteredVideoGallery[idx] as GalleryVideoLike;
@@ -4873,18 +5050,22 @@ const Create: React.FC = () => {
                     ? "This model is coming soon!"
                     : ""}>
                 <button 
-                  onClick={activeCategory === "video" ? handleGenerateVideo : handleGenerateImage}
+                  onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling;
+                    const isRunwayVideoGenerating = selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running';
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating;
                     debugLog('[Create] Button state:', { 
                       isButtonSpinning: isButtonSpinning, 
                       isVideoGenerating: isVideoGenerating, 
                       isVideoPolling: isVideoPolling, 
+                      isRunwayVideoGenerating: isRunwayVideoGenerating,
+                      runwayVideoStatus: runwayVideoStatus || 'undefined',
                       showSpinner: showSpinner,
-                      activeCategory: activeCategory 
+                      activeCategory: activeCategory,
+                      selectedModel: selectedModel
                     });
                     return showSpinner ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -4893,7 +5074,7 @@ const Create: React.FC = () => {
                     );
                   })()}
                   {activeCategory === "video" ? 
-                    (isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate Video") : 
+                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running' ? "Generating..." : isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate Video") : 
                     "Generate"
                   }
                 </button>
@@ -5202,19 +5383,38 @@ const Create: React.FC = () => {
                               <div className="text-xs text-d-white/60">Google's advanced video generation</div>
                             </div>
                           </button>
+                          <button
+                            onClick={() => {
+                              debugLog('[Create] Selecting Runway video model');
+                              setSelectedModel("runway-video-gen4");
+                              debugLog('[Create] Selected model set to:', "runway-video-gen4");
+                              setIsModelSelectorOpen(false);
+                            }}
+                            className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                              selectedModel === "runway-video-gen4"
+                                ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                                : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                            }`}
+                          >
+                            <VideoIcon className="w-4 h-4 text-d-orange-1" />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-d-white">Runway Gen-4 (Video)</div>
+                              <div className="text-xs text-d-white/60">Text → Video using Gen-4 Turbo</div>
+                            </div>
+                          </button>
                         </div>
                       </div>
                     ) : (
                       AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "veo-3";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "runway-video-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "veo-3";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, and Recraft models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, and Recraft models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

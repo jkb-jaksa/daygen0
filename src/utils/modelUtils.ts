@@ -38,6 +38,13 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     description: 'Runway Gen-4 Turbo (requires reference images)',
     isAvailable: true
   },
+  'runway-video-gen4': {
+    id: 'runway-video-gen4',
+    name: 'Runway Gen-4 (Video)',
+    shortName: 'Runway Video',
+    description: 'Text → Video using Gen-4 Turbo',
+    isAvailable: true
+  },
   'dalle-3': {
     id: 'dalle-3',
     name: 'DALL-E 3',

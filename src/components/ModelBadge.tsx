@@ -59,6 +59,12 @@ const MODEL_CONFIG = {
     icon: '🎬',
     description: 'Runway Gen-4 Turbo - Fast generation with reference images'
   },
+  'runway-video-gen4': {
+    name: 'Runway Gen-4 (Video)',
+    shortName: 'RWV',
+    icon: '🎥',
+    description: 'Runway Gen-4 Video - Text → Video using Gen-4 Turbo'
+  },
   'ideogram': {
     name: 'Ideogram 3.0',
     shortName: 'ID3.0',
@@ -118,6 +124,18 @@ const MODEL_CONFIG = {
     shortName: 'R2',
     icon: '🎨',
     description: 'Recraft v2 - High-quality image generation and editing'
+  },
+  'veo-3.0-generate-001': {
+    name: 'Veo 3',
+    shortName: 'V3',
+    icon: '🎬',
+    description: 'Google Veo 3 - Advanced video generation model'
+  },
+  'veo-3.0-fast-generate-001': {
+    name: 'Veo 3 Fast',
+    shortName: 'V3F',
+    icon: '⚡',
+    description: 'Google Veo 3 Fast - Quick video generation'
   }
 } as const;
 

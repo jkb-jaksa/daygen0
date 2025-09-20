@@ -33,7 +33,7 @@ const isVercel = process.env.VERCEL === '1';
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // Test endpoint
 app.get('/test', (req, res) => {
@@ -830,6 +830,70 @@ app.post('/api/runway/image', async (req, res) => {
       });
     }
     
+    res.status(500).json({
+      error: 'Generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Runway Video (image -> video)
+app.post('/api/runway/video', async (req, res) => {
+  try {
+    const {
+      model = 'gen4_turbo',          // also supports 'gen4_aleph', 'act_two' etc.
+      promptText,                    // text guidance
+      promptImage,                   // URL or data URI (see note below)
+      ratio = '1280:720',            // see allowed values below
+      duration = 5,                  // 5 or 10 for Gen-4 Turbo
+      seed,                          // optional
+      contentModeration              // optional per Runway docs
+    } = req.body ?? {};
+
+    if (!promptText) {
+      return res.status(400).json({ error: 'Provide promptText.' });
+    }
+    if (!RUNWAY_API_KEY) {
+      return res.status(500).json({ error: 'RUNWAY_API_KEY is not configured' });
+    }
+
+    // Reuse the same Runway client pattern as your image endpoint
+    const client = new RunwayML({ apiKey: RUNWAY_API_KEY });
+
+    // Create the task & wait for completion (server-side)
+    // Use a default image if none provided for text-to-video
+    const imageToUse = promptImage || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200'; // Neutral landscape image
+    
+    const task = await client.imageToVideo
+      .create({
+        model,
+        promptText,
+        promptImage: imageToUse,  // URL string or data URI are both accepted by the API
+        ratio,
+        duration,
+        ...(seed != null ? { seed } : {}),
+        ...(contentModeration ? { contentModeration } : {})
+      })
+      .waitForTaskOutput({ timeout: 5 * 60 * 1000 });
+
+    const outputUrl = task.output?.[0];
+    if (!outputUrl) throw new Error('No output URL returned from Runway');
+
+    // Return the video URL (don't base64 large videos)
+    res.json({
+      url: outputUrl,
+      taskId: task.id,
+      meta: { model, ratio, duration, seed: seed ?? null }
+    });
+  } catch (error) {
+    console.error('Runway Video generation error:', error);
+    if (error instanceof TaskFailedError) {
+      return res.status(422).json({
+        error: 'Runway task failed',
+        code: 'RUNWAY_TASK_FAILED',
+        details: error.taskDetails
+      });
+    }
     res.status(500).json({
       error: 'Generation failed',
       details: error instanceof Error ? error.message : 'Unknown error'
