@@ -39,6 +39,7 @@ type Folder = {
   name: string;
   createdAt: Date;
   imageIds: string[]; // Array of image URLs in this folder
+  videoIds: string[]; // Array of video URLs in this folder
   customThumbnail?: string; // Optional custom thumbnail URL
 };
 
@@ -53,12 +54,24 @@ type GalleryImageLike = {
   isPublic?: boolean;
 };
 
+type GalleryVideoLike = {
+  url: string;
+  prompt: string;
+  model?: string;
+  timestamp: string;
+  ownerId?: string;
+  jobId?: string;
+  references?: string[];
+  isPublic?: boolean;
+  type: 'video';
+};
+
 type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string; isPublic?: boolean };
 type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };
 
 type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
 
-type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[]; customThumbnail?: string };
+type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[]; videoIds: string[]; customThumbnail?: string };
 
 const isJobBackedImage = (item: GalleryImageLike): item is FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage =>
   'jobId' in item && typeof item.jobId === 'string';
@@ -640,6 +653,7 @@ const Create: React.FC = () => {
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
+  const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
@@ -723,8 +737,43 @@ const Create: React.FC = () => {
       return true;
     });
   };
+
+  const filterVideoGalleryItems = (items: typeof videoGallery) => {
+    return items.filter(item => {
+      // Liked filter
+      if (galleryFilters.liked && !favorites.has(item.url)) {
+        return false;
+      }
+      
+      // Public filter
+      if (galleryFilters.public && !item.isPublic) {
+        return false;
+      }
+      
+      // Model filter
+      if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.model ?? 'unknown')) {
+        return false;
+      }
+      
+      // Folder filter
+      if (galleryFilters.folder !== 'all') {
+        const selectedFolder = folders.find(f => f.id === galleryFilters.folder);
+        if (!selectedFolder || !selectedFolder.videoIds.includes(item.url)) {
+          return false;
+        }
+      }
+      
+      // Type filter - only show videos
+      if (galleryFilters.type !== 'all' && galleryFilters.type !== 'video') {
+        return false;
+      }
+      
+      return true;
+    });
+  };
   
   const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders]);
+  const filteredVideoGallery = useMemo(() => filterVideoGalleryItems(videoGallery), [videoGallery, galleryFilters, favorites, folders]);
   const publicGallery = useMemo(() => {
     return gallery
       .filter(item => item.isPublic)
@@ -757,7 +806,7 @@ const Create: React.FC = () => {
     } else if (galleryFilters.type === 'image') {
       return AI_MODELS.map(model => model.id).sort();
     } else {
-      // 'all' type - show all models
+      // 'all' type - show all models (images only for now)
       return AI_MODELS.map(model => model.id).sort();
     }
   };
@@ -1029,7 +1078,8 @@ const Create: React.FC = () => {
         if (Array.isArray(storedFolders)) {
           const restoredFolders = storedFolders.map(folder => ({
             ...folder,
-            createdAt: new Date(folder.createdAt)
+            createdAt: new Date(folder.createdAt),
+            videoIds: folder.videoIds || []
           }));
           setFolders(restoredFolders);
         }
@@ -1445,6 +1495,7 @@ const Create: React.FC = () => {
         name: folder.name,
         createdAt: folder.createdAt.toISOString(),
         imageIds: folder.imageIds,
+        videoIds: folder.videoIds || [],
         customThumbnail: folder.customThumbnail,
       }));
       await setPersistedValue(storagePrefix, 'folders', serialised);
@@ -2756,6 +2807,9 @@ const Create: React.FC = () => {
 
   // Get current model info
   const getCurrentModel = () => {
+    if (activeCategory === "video") {
+      return { name: "Video Models", Icon: VideoIcon, desc: "Video models coming soon", id: "video-models" };
+    }
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
 
@@ -4302,13 +4356,57 @@ const Create: React.FC = () => {
                 )}
 
                 {activeCategory === "video" && (
-                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="video">
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <VideoIcon className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-cabin text-d-text mb-2">Video Generation Coming Soon</h3>
-                      <p className="text-base font-raleway text-d-white max-w-md">
-                        We're working on bringing you amazing video generation features. Stay tuned!
-                      </p>
+                  <div className="relative" data-category="video">
+                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
+                      {[...Array(Math.max(0, maxGalleryTiles - filteredVideoGallery.length)).fill(null)].map((item, idx) => {
+                        const isPlaceholder = item === null;
+
+                        if (!isPlaceholder) {
+                          const video = filteredVideoGallery[idx] as GalleryVideoLike;
+                          return (
+                            <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
+                              <video src={video.url} className="w-full aspect-square object-cover" controls />
+                              
+                              {/* Hover prompt overlay */}
+                              {video.prompt && (
+                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 opacity-0 group-hover:opacity-100`}>
+                                  <div className="relative z-10 w-full p-4">
+                                    <div className="mb-2">
+                                      <div className="relative">
+                                        <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                          {video.prompt}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {/* Model Badge and Public Indicator */}
+                                    <div className="flex justify-between items-center mt-2">
+                                      <ModelBadge model={video.model ?? 'unknown'} size="md" />
+                                      {video.isPublic && (
+                                        <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                          <div className="flex items-center gap-1">
+                                            <Globe className="w-3 h-3 text-d-orange-1" />
+                                            <span className="leading-none">Public</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        // Placeholder tile for videos
+                        return (
+                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square cursor-pointer hover:bg-[#222427] hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                            <div className="flex flex-col items-center gap-2 text-center px-2">
+                              <VideoIcon className="w-8 h-8 text-d-light" />
+                              <div className="text-d-light font-raleway text-base">Create something amazing.</div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -4616,7 +4714,7 @@ const Create: React.FC = () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
+          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ 
@@ -4890,7 +4988,13 @@ const Create: React.FC = () => {
                     open={isModelSelectorOpen}
                     onClose={() => setIsModelSelectorOpen(false)}
                   >
-                    {AI_MODELS.map((model) => {
+                    {activeCategory === "video" ? (
+                      <div className="px-3 py-4 text-center">
+                        <VideoIcon className="w-8 h-8 text-d-white/50 mx-auto mb-2" />
+                        <p className="text-sm text-d-white/70 font-raleway">Video models coming soon</p>
+                      </div>
+                    ) : (
+                      AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
                       const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2";
                       
@@ -4941,7 +5045,8 @@ const Create: React.FC = () => {
                           )}
                         </button>
                       );
-                    })}
+                    })
+                    )}
                   </ModelMenuPortal>
                 </div>
               </div>
