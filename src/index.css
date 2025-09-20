@@ -632,7 +632,7 @@ html, body {
 }
 .image-action-btn:hover {
   background-color: rgba(14, 18, 18, 0.8); /* Updated to match glass.prompt opacity */
-  border-color: var(--d-orange-1); /* Updated to match glass.prompt hover border */
+  border-color: var(--d-mid); /* Updated to match glass.prompt hover border */
   color: var(--d-orange-1);
   transform: scale(1.01);
 }
