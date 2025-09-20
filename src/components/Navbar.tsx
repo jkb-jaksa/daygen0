@@ -250,12 +250,12 @@ export default function Navbar() {
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
-                  className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:bg-d-dark hover:text-brand transition-colors`}
+                  className={`parallax-small group flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="size-4" />
                   <span className="hidden sm:inline font-cabin text-sm">
-                    <span className="text-d-white/70">Credits:</span> 1,247
+                    <span className="text-d-white group-hover:text-brand">Credits:</span> 1,247
                   </span>
                   <span className="sm:hidden font-cabin text-sm">1,247</span>
                 </button>
@@ -273,7 +273,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`parallax-mid flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:bg-d-dark hover:text-brand transition-colors`}
+                    className={`parallax-mid flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-brand transition-colors`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -422,7 +422,7 @@ export default function Navbar() {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               My account
@@ -433,7 +433,7 @@ export default function Navbar() {
                 navigate("/create");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               My creations
@@ -444,7 +444,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 hover:bg-d-dark hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
               Log out

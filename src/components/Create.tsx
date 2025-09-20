@@ -1893,7 +1893,7 @@ const Create: React.FC = () => {
       <div className="relative">
         <button
           type="button"
-          className={`image-action-btn transition-opacity duration-100 ${
+          className={`image-action-btn parallax-large transition-opacity duration-100 ${
             anyMenuOpen 
               ? 'opacity-100 pointer-events-auto' 
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -1982,7 +1982,7 @@ const Create: React.FC = () => {
       <div className="relative">
         <button
           type="button"
-          className={`image-action-btn transition-opacity duration-100 ${
+          className={`image-action-btn parallax-large transition-opacity duration-100 ${
             anyMenuOpen 
               ? 'opacity-100 pointer-events-auto' 
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2176,7 +2176,7 @@ const Create: React.FC = () => {
               <div className="flex justify-between items-center mt-2">
                 <ModelBadge model={img.model ?? 'unknown'} size="md" />
                 {img.isPublic && (
-                  <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                  <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                     <div className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-d-orange-1" />
                       <span className="leading-none">Public</span>
@@ -2208,7 +2208,7 @@ const Create: React.FC = () => {
               event.stopPropagation();
               toggleImageSelection(img.url);
             }}
-            className={`image-action-btn image-select-toggle transition-opacity duration-100 ${
+            className={`image-action-btn parallax-large image-select-toggle transition-opacity duration-100 ${
               isSelected
                 ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                 : isSelectMode
@@ -2239,7 +2239,7 @@ const Create: React.FC = () => {
                     event.stopPropagation();
                     confirmDeleteImage(img.url);
                   }}
-                  className={`image-action-btn transition-opacity duration-100 ${
+                  className={`image-action-btn parallax-large transition-opacity duration-100 ${
                     isMenuActive
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2255,7 +2255,7 @@ const Create: React.FC = () => {
                     event.stopPropagation();
                     toggleFavorite(img.url);
                   }}
-                  className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                  className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
                     isMenuActive
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -3496,7 +3496,7 @@ const Create: React.FC = () => {
                           <button
                             type="button"
                             onClick={toggleSelectMode}
-                            className={`${buttons.subtle} !h-8 text-d-white ${isSelectMode ? 'bg-d-orange-1/20 text-d-orange-1 border-d-orange-1/30' : ''}`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand ${isSelectMode ? '!bg-d-orange-1/20 !text-d-orange-1 !border-d-orange-1/40' : ''}`}
                           >
                             {isSelectMode ? 'Done' : 'Select'}
                           </button>
@@ -3504,7 +3504,7 @@ const Create: React.FC = () => {
                             type="button"
                             onClick={toggleSelectAllVisible}
                             disabled={filteredGallery.length === 0}
-                            className={`${buttons.subtle} !h-8 text-d-white disabled:cursor-not-allowed disabled:opacity-50`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             {allVisibleSelected ? 'Unselect all' : 'Select all'}
                           </button>
@@ -3512,7 +3512,7 @@ const Create: React.FC = () => {
                             type="button"
                             onClick={clearImageSelection}
                             disabled={!hasSelection}
-                            className={`${buttons.subtle} !h-8 text-d-white disabled:cursor-not-allowed disabled:opacity-50`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             Clear selection
                           </button>
@@ -3718,7 +3718,7 @@ const Create: React.FC = () => {
                                   e.stopPropagation();
                                   confirmDeleteUpload(upload.id);
                                 }}
-                                className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                 title="Delete upload" 
                                 aria-label="Delete upload"
                               >
@@ -3727,7 +3727,7 @@ const Create: React.FC = () => {
                               <a 
                                 href={upload.previewUrl} 
                                 download={upload.file.name} 
-                                className="image-action-btn transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
+                                className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100" 
                                 title="Download image" 
                                 aria-label="Download image"
                               >
@@ -3818,7 +3818,7 @@ const Create: React.FC = () => {
                                       <div className="flex justify-between items-center mt-2">
                                         <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                         {img.isPublic && (
-                                          <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-orange-1" />
                                               <span className="leading-none">Public</span>
@@ -3838,7 +3838,7 @@ const Create: React.FC = () => {
                                     event.stopPropagation();
                                     toggleImageSelection(img.url);
                                   }}
-                                  className={`image-action-btn image-select-toggle transition-opacity duration-100 ${
+                                  className={`image-action-btn parallax-large image-select-toggle transition-opacity duration-100 ${
                                     isSelected
                                       ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                                       : isSelectMode
@@ -3867,7 +3867,7 @@ const Create: React.FC = () => {
                                       event.stopPropagation();
                                       confirmDeleteImage(img.url);
                                     }} 
-                                    className={`image-action-btn transition-opacity duration-100 ${
+                                    className={`image-action-btn parallax-large transition-opacity duration-100 ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
                                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -3883,7 +3883,7 @@ const Create: React.FC = () => {
                                       event.stopPropagation();
                                       toggleFavorite(img.url);
                                     }} 
-                                    className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                                    className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
                                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4231,7 +4231,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   confirmDeleteImage(img.url);
                                 }} 
-                                className={`image-action-btn transition-opacity duration-100 ${
+                                className={`image-action-btn parallax-large transition-opacity duration-100 ${
                                   imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
                                     ? 'opacity-100 pointer-events-auto'
                                     : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4247,7 +4247,7 @@ const Create: React.FC = () => {
                                   event.stopPropagation();
                                   toggleFavorite(img.url);
                                 }} 
-                                className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                                className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
                                   imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
                                     ? 'opacity-100 pointer-events-auto'
                                     : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4448,7 +4448,7 @@ const Create: React.FC = () => {
                                 <div className="flex justify-between items-center mt-2">
                                   <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                   {img.isPublic && (
-                                    <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                    <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                       <div className="flex items-center gap-1">
                                         <Globe className="w-3 h-3 text-d-orange-1" />
                                         <span className="leading-none">Public</span>
@@ -4485,7 +4485,7 @@ const Create: React.FC = () => {
                                 event.stopPropagation();
                                 confirmDeleteImage(img.url);
                               }} 
-                              className={`image-action-btn transition-opacity duration-100 ${
+                              className={`image-action-btn parallax-large transition-opacity duration-100 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                   ? 'opacity-100 pointer-events-auto'
                                   : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4501,7 +4501,7 @@ const Create: React.FC = () => {
                                 event.stopPropagation();
                                 toggleFavorite(img.url);
                               }} 
-                              className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                              className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                   ? 'opacity-100 pointer-events-auto'
                                   : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4640,7 +4640,7 @@ const Create: React.FC = () => {
                 onKeyDown={onKeyDown}
                 onPaste={handlePaste}
                 rows={2}
-                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
+                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
             <div className="absolute right-4 bottom-4 flex items-center gap-2">
@@ -4675,7 +4675,7 @@ const Create: React.FC = () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0' : 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' : 'bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
@@ -4689,8 +4689,8 @@ const Create: React.FC = () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       isGemini 
-                        ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0' 
-                        : "bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed"
+                        ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
+                        : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
                   >
                     <Settings className="w-4 h-4" />
@@ -4864,7 +4864,7 @@ const Create: React.FC = () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                    className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -5066,7 +5066,7 @@ const Create: React.FC = () => {
                       <button 
                         type="button" 
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
-                        className={`image-action-btn transition-opacity duration-100 ${
+                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -5079,7 +5079,7 @@ const Create: React.FC = () => {
                       <button 
                         type="button" 
                         onClick={() => toggleFavorite(activeFullSizeImage.url)} 
-                        className={`image-action-btn favorite-toggle transition-opacity duration-100 ${
+                        className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -5127,7 +5127,7 @@ const Create: React.FC = () => {
                             size="md" 
                           />
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
-                            <div className={`${glass.prompt} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                            <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                               <div className="flex items-center gap-1">
                                 <Globe className="w-3 h-3 text-d-orange-1" />
                                 <span className="leading-none">Public</span>

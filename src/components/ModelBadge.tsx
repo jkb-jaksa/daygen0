@@ -1,5 +1,6 @@
 import React from 'react';
 import { getToolLogo, hasToolLogo } from '../utils/toolLogos';
+import { glass } from '../styles/designSystem';
 
 interface ModelBadgeProps {
   model: string;
@@ -142,19 +143,11 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   return (
     <div 
       className={`
-        glass-liquid 
-        willchange-backdrop 
-        isolate 
-        bg-d-dark/90 
-        backdrop-blur-[60px] 
-        backdrop-brightness-[.85] 
-        backdrop-contrast-[1.05] 
-        backdrop-saturate-[.85] 
+        ${glass.promptDark} 
         text-d-white 
         ${sizeClasses[size]} 
         rounded-full 
         font-medium font-cabin 
-        border border-d-dark
         ${className}
       `}
       title={config.description}
