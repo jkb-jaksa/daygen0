@@ -59,7 +59,7 @@ export const useVeoVideoGeneration = () => {
     try {
       const { prompt, model = 'veo-3.0-generate-001', aspectRatio = '16:9', negativePrompt, seed, imageBase64, imageMimeType } = options;
 
-      const apiUrl = getApiUrl('/api/video/veo/create');
+      const apiUrl = getApiUrl('/api/video-veo');
       debugLog('[video] POST', apiUrl);
       
       const res = await fetch(apiUrl, {
@@ -112,7 +112,7 @@ export const useVeoVideoGeneration = () => {
 
     const poll = async () => {
       try {
-        const apiUrl = getApiUrl(`/api/video/veo/status/${encodeURIComponent(operationName)}`);
+        const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=status`);
         debugLog('[video] Polling status:', apiUrl);
         
         const res = await fetch(apiUrl);
@@ -167,7 +167,7 @@ export const useVeoVideoGeneration = () => {
 
   const downloadVideo = useCallback(async (operationName: string) => {
     try {
-      const apiUrl = getApiUrl(`/api/video/veo/download/${encodeURIComponent(operationName)}`);
+      const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=download`);
       debugLog('[video] Downloading video:', apiUrl);
       
       const res = await fetch(apiUrl);

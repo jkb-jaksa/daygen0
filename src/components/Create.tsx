@@ -2551,7 +2551,7 @@ const Create: React.FC = () => {
 
   const handleDownloadVideo = async (operationName: string) => {
     try {
-      const apiUrl = getApiUrl(`/api/video/veo/download/${encodeURIComponent(operationName)}`);
+      const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=download`);
       
       // Trigger download by creating a temporary anchor tag
       const a = document.createElement('a');
