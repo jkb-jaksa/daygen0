@@ -4470,7 +4470,7 @@ const Create: React.FC = () => {
                   <div className="relative" data-category="video">
                     
                     <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
-                      {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((item, idx) => {
+                      {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
 
                         if (!isPlaceholder) {
