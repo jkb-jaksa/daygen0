@@ -7,14 +7,29 @@ import { dirname, join } from 'path';
 import { existsSync } from 'fs';
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: '.env' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Import genai after environment variables are loaded
+// Using dynamic import to avoid module resolution issues
+let ai;
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isVercel = process.env.VERCEL === '1';
+
+// Initialize ai client
+(async () => {
+  try {
+    const genaiModule = await import('./src/lib/genai.js');
+    ai = genaiModule.ai;
+  } catch (error) {
+    console.error('Failed to load genai module:', error);
+    process.exit(1);
+  }
+})();
 
 // Middleware
 app.use(cors());
@@ -79,8 +94,7 @@ import {
 import { persistIdeogramUrl } from './src/lib/storage.js';
 import RunwayML, { TaskFailedError } from '@runwayml/sdk';
 
-// Gemini API setup
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Gemini API setup - using shared client from lib/genai.js
 
 // OpenAI API setup for ChatGPT Image Generation
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -1908,6 +1922,136 @@ app.get('/api/reve/jobs/:id', async (req, res) => {
     res.status(500).json({
       error: error?.message || 'Reve status check failed'
     });
+  }
+});
+
+// Veo 3 Video Generation API endpoints
+// Start a video generation job
+app.post('/api/video/veo/create', async (req, res) => {
+  try {
+    const {
+      prompt,
+      aspectRatio = '16:9',
+      negativePrompt,
+      seed,
+      model = 'veo-3.0-generate-001',
+      imageBase64,
+      imageMimeType,
+    } = req.body ?? {};
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
+    }
+
+    // Build config (mirrors Google docs)
+    const config = {};
+    if (aspectRatio) config.aspectRatio = aspectRatio;      // '16:9' | '9:16'
+    if (negativePrompt) config.negativePrompt = negativePrompt;
+    if (typeof seed === 'number') config.seed = seed;       // non-deterministic but steadies results
+
+    const hasImage = !!imageBase64 && !!imageMimeType;
+
+    // Kick off the long-running generation op
+    const operation = await ai.models.generateVideos({
+      model,                     // 'veo-3.0-generate-001' or 'veo-3.0-fast-generate-001'
+      prompt,                    // can include dialogue + audio cues
+      ...(hasImage && {
+        image: {
+          imageBytes: Buffer.from(imageBase64, 'base64'),
+          mimeType: imageMimeType,
+        },
+      }),
+      ...(Object.keys(config).length ? { config } : {}),
+    });
+
+    // Return the operation name so the UI can poll
+    return res.json({ name: operation.name });
+  } catch (err) {
+    console.error('Veo create error', err);
+    return res.status(400).json({ error: err?.message ?? 'unknown' });
+  }
+});
+
+// Poll video generation status
+app.get('/api/video/veo/status/:name', async (req, res) => {
+  try {
+    const name = decodeURIComponent(req.params.name);
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
+    }
+
+    // You can pass either the whole operation or just {name}
+    const operation = await ai.operations.getVideosOperation({ operation: { name } });
+
+    if (!operation) return res.status(404).json({ error: 'Operation not found' });
+
+    // If done, we won't send the URI from here (to avoid exposing key in the client).
+    // The UI should call /download/:name next.
+    return res.json({
+      done: Boolean(operation.done),
+      error: operation.error ?? null,
+    });
+  } catch (err) {
+    console.error('Veo status error', err);
+    return res.status(400).json({ error: err?.message ?? 'unknown' });
+  }
+});
+
+// Download the MP4 (server-side proxy)
+app.get('/api/video/veo/download/:name', async (req, res) => {
+  try {
+    const name = decodeURIComponent(req.params.name);
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
+    }
+
+    const operation = await ai.operations.getVideosOperation({ operation: { name } });
+
+    if (!operation.done) {
+      return res.status(409).json({ error: 'Operation not finished' });
+    }
+
+    // Extract the video file reference from the final response
+    const video = operation.response?.generatedVideos?.[0]?.video;
+    if (!video) {
+      return res.status(500).json({ error: 'No video in response' });
+    }
+
+    // Option A: Use the SDK to download to memory is not currently exposed;
+    // the JS guide shows writing to disk. We'll fetch the URI server-side.
+    // This keeps your API key secret and streams bytes to the browser.
+    // (Google docs demonstrate downloading by URI with the 'x-goog-api-key' header.)
+    // See their REST example. We replicate that here server-side.
+    const uri = video.uri;
+    const videoRes = await fetch(uri, {
+      headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY },
+      redirect: 'follow',
+    });
+    if (!videoRes.ok) {
+      const text = await videoRes.text();
+      throw new Error(`Download failed: ${videoRes.status} ${text}`);
+    }
+    const arrayBuf = await videoRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuf);
+
+    const filename = `veo3_${name.split('/').pop() ?? 'video'}.mp4`;
+    return res.status(200)
+      .set({
+        'Content-Type': 'video/mp4',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': String(buffer.length),
+        'Cache-Control': 'no-store',
+      })
+      .send(buffer);
+  } catch (err) {
+    console.error('Veo download error', err);
+    return res.status(400).json({ error: err?.message ?? 'unknown' });
   }
 });
 

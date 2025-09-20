@@ -29,6 +29,8 @@ import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from ".
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
+import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
+import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -64,6 +66,7 @@ type GalleryVideoLike = {
   references?: string[];
   isPublic?: boolean;
   type: 'video';
+  operationName?: string;
 };
 
 type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string; isPublic?: boolean };
@@ -125,6 +128,7 @@ const AI_MODELS = [
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
+  { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -641,7 +645,8 @@ const Create: React.FC = () => {
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft;
+  const isVeo = selectedModel === "veo-3";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft && !isVeo;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -652,6 +657,12 @@ const Create: React.FC = () => {
   const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  
+  // Video generation state
+  const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
+  const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
+  const [videoNegativePrompt, setVideoNegativePrompt] = useState<string>('');
+  const [videoSeed, setVideoSeed] = useState<number | undefined>(undefined);
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
@@ -773,7 +784,15 @@ const Create: React.FC = () => {
   };
   
   const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders]);
-  const filteredVideoGallery = useMemo(() => filterVideoGalleryItems(videoGallery), [videoGallery, galleryFilters, favorites, folders]);
+  const filteredVideoGallery = useMemo(() => {
+    const filtered = filterVideoGalleryItems(videoGallery);
+    debugLog('[Create] Video gallery state:', { 
+      total: videoGallery.length, 
+      filtered: filtered.length,
+      videos: videoGallery.map(v => ({ url: v.url, prompt: v.prompt }))
+    });
+    return filtered;
+  }, [videoGallery, galleryFilters, favorites, folders]);
   const publicGallery = useMemo(() => {
     return gallery
       .filter(item => item.isPublic)
@@ -822,6 +841,43 @@ const Create: React.FC = () => {
   const [isCacheBarVisible, setIsCacheBarVisible] = useState(true);
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
+  
+  // Video generation hook
+  const {
+    isLoading: isVideoGenerating,
+    isPolling: isVideoPolling,
+    error: videoError,
+    generatedVideo,
+    operationName: videoOperationName,
+    startGeneration: startVideoGeneration,
+  } = useVeoVideoGeneration();
+
+  // Handle video generation completion
+  useEffect(() => {
+    debugLog('[Create] Video generation state:', { 
+      generatedVideo: !!generatedVideo, 
+      videoOperationName, 
+      isVideoGenerating, 
+      isVideoPolling 
+    });
+    
+    // Clear button spinning when video generation hook takes over
+    if (isVideoGenerating && spinnerTimeoutRef.current) {
+      debugLog('[Create] Video generation hook took over, clearing button spinner');
+      clearTimeout(spinnerTimeoutRef.current);
+      spinnerTimeoutRef.current = null;
+      setIsButtonSpinning(false);
+    }
+    
+    if (generatedVideo) {
+      const videoWithOperation = {
+        ...generatedVideo,
+        operationName: videoOperationName || generatedVideo.jobId,
+      };
+      debugLog('[Create] Adding video to gallery:', videoWithOperation);
+      setVideoGallery(prev => [videoWithOperation, ...prev]);
+    }
+  }, [generatedVideo, videoOperationName]);
 
   // Handle category switching from external navigation (e.g., navbar)
   useEffect(() => {
@@ -1675,7 +1731,8 @@ const Create: React.FC = () => {
       id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: trimmedName,
       createdAt: new Date(),
-      imageIds: []
+      imageIds: [],
+      videoIds: []
     };
     
     void persistFolders([...folders, newFolder]);
@@ -2457,6 +2514,57 @@ const Create: React.FC = () => {
     setReferencePreviews([]);
   };
 
+  const handleGenerateVideo = async () => {
+    if (!prompt.trim()) return;
+    
+    debugLog('[Create] Starting video generation, setting isButtonSpinning to true');
+    
+    // Set button spinning state for immediate visual feedback
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      debugLog('[Create] Spinner timeout reached, setting isButtonSpinning to false');
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 1000);
+    
+    try {
+      await startVideoGeneration({
+        prompt: prompt.trim(),
+        model: videoModel,
+        aspectRatio: videoAspectRatio,
+        negativePrompt: videoNegativePrompt.trim() || undefined,
+        seed: videoSeed,
+      });
+    } catch (error) {
+      console.error('Video generation error:', error);
+      // Clear spinner on error
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+  };
+
+  const handleDownloadVideo = async (operationName: string) => {
+    try {
+      const apiUrl = getApiUrl(`/api/video/veo/download/${encodeURIComponent(operationName)}`);
+      
+      // Trigger download by creating a temporary anchor tag
+      const a = document.createElement('a');
+      a.href = apiUrl;
+      a.download = `veo3_${operationName.split('/').pop() || 'video'}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Video download error:', error);
+    }
+  };
+
   const handleGenerateImage = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
@@ -2808,7 +2916,10 @@ const Create: React.FC = () => {
   // Get current model info
   const getCurrentModel = () => {
     if (activeCategory === "video") {
-      return { name: "Video Models", Icon: VideoIcon, desc: "Video models coming soon", id: "video-models" };
+      if (selectedModel === "veo-3") {
+        return { name: "Veo 3", Icon: VideoIcon, desc: "Google's advanced video generation model", id: "veo-3" };
+      }
+      return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
     }
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
@@ -4357,9 +4468,10 @@ const Create: React.FC = () => {
 
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
+                    
                     <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
-                      {[...Array(Math.max(0, maxGalleryTiles - filteredVideoGallery.length)).fill(null)].map((item, idx) => {
-                        const isPlaceholder = item === null;
+                      {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((item, idx) => {
+                        const isPlaceholder = idx >= filteredVideoGallery.length;
 
                         if (!isPlaceholder) {
                           const video = filteredVideoGallery[idx] as GalleryVideoLike;
@@ -4381,14 +4493,25 @@ const Create: React.FC = () => {
                                     {/* Model Badge and Public Indicator */}
                                     <div className="flex justify-between items-center mt-2">
                                       <ModelBadge model={video.model ?? 'unknown'} size="md" />
-                                      {video.isPublic && (
-                                        <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
-                                          <div className="flex items-center gap-1">
-                                            <Globe className="w-3 h-3 text-d-orange-1" />
-                                            <span className="leading-none">Public</span>
+                                      <div className="flex items-center gap-2">
+                                        {video.isPublic && (
+                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                            <div className="flex items-center gap-1">
+                                              <Globe className="w-3 h-3 text-d-orange-1" />
+                                              <span className="leading-none">Public</span>
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
+                                        )}
+                                        {video.operationName && (
+                                          <button
+                                            onClick={() => handleDownloadVideo(video.operationName!)}
+                                            className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors duration-200`}
+                                            title="Download video"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -4750,16 +4873,29 @@ const Create: React.FC = () => {
                     ? "This model is coming soon!"
                     : ""}>
                 <button 
-                  onClick={handleGenerateImage}
-                  disabled={!hasGenerationCapacity || !prompt.trim()}
+                  onClick={activeCategory === "video" ? handleGenerateVideo : handleGenerateImage}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
-                  {isButtonSpinning ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-4 h-4" />
-                  )}
-                  Generate
+                  {(() => {
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling;
+                    debugLog('[Create] Button state:', { 
+                      isButtonSpinning: isButtonSpinning, 
+                      isVideoGenerating: isVideoGenerating, 
+                      isVideoPolling: isVideoPolling, 
+                      showSpinner: showSpinner,
+                      activeCategory: activeCategory 
+                    });
+                    return showSpinner ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-4 h-4" />
+                    );
+                  })()}
+                  {activeCategory === "video" ? 
+                    (isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate Video") : 
+                    "Generate"
+                  }
                 </button>
               </Tooltip>
             </div>
@@ -4782,11 +4918,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={isGemini ? toggleSettings : () => alert('Settings are only available for Gemini models.')}
-                    title={isGemini ? "Settings" : "Settings only available for Gemini models"}
+                    onClick={(isGemini || isVeo) ? toggleSettings : () => alert('Settings are only available for Gemini and Veo models.')}
+                    title={(isGemini || isVeo) ? "Settings" : "Settings only available for Gemini and Veo models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      isGemini 
+                      (isGemini || isVeo)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -4795,7 +4931,65 @@ const Create: React.FC = () => {
                   </button>
                   
                   {/* Settings Dropdown Portal */}
-                  {isGemini && (
+                  {isVeo ? (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Veo 3 Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+                            <select
+                              value={videoAspectRatio}
+                              onChange={(e) => setVideoAspectRatio(e.target.value as '16:9' | '9:16')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="16:9">16:9 (Landscape)</option>
+                              <option value="9:16">9:16 (Portrait)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
+                            <select
+                              value={videoModel}
+                              onChange={(e) => setVideoModel(e.target.value as 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="veo-3.0-generate-001">Veo 3.0 (Standard)</option>
+                              <option value="veo-3.0-fast-generate-001">Veo 3.0 Fast</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
+                            <input
+                              type="text"
+                              value={videoNegativePrompt}
+                              onChange={(e) => setVideoNegativePrompt(e.target.value)}
+                              placeholder="e.g., blurry, low quality"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
+                            <input
+                              type="number"
+                              value={videoSeed || ''}
+                              onChange={(e) => setVideoSeed(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                              placeholder="e.g., 12345"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isGemini && (
                     <SettingsPortal 
                       anchorRef={settingsRef}
                       open={isSettingsOpen}
@@ -4989,14 +5183,31 @@ const Create: React.FC = () => {
                     onClose={() => setIsModelSelectorOpen(false)}
                   >
                     {activeCategory === "video" ? (
-                      <div className="px-3 py-4 text-center">
-                        <VideoIcon className="w-8 h-8 text-d-white/50 mx-auto mb-2" />
-                        <p className="text-sm text-d-white/70 font-raleway">Video models coming soon</p>
+                      <div className="px-3 py-4">
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => {
+                              setSelectedModel("veo-3");
+                              setIsModelSelectorOpen(false);
+                            }}
+                            className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                              selectedModel === "veo-3"
+                                ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                                : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                            }`}
+                          >
+                            <Film className="w-4 h-4 text-d-orange-1" />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-d-white">Veo 3</div>
+                              <div className="text-xs text-d-white/60">Google's advanced video generation</div>
+                            </div>
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "veo-3";
                       
                       return (
                         <button
@@ -5105,10 +5316,10 @@ const Create: React.FC = () => {
           </div>
           
           {/* Error Display */}
-          {error && (
+          {(error || videoError) && (
             <div className="w-full max-w-xl mx-auto mb-6">
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
-                <p className="font-raleway text-sm">{error}</p>
+                <p className="font-raleway text-sm">{error || videoError}</p>
                 <button
                   onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearSeeDreamError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
