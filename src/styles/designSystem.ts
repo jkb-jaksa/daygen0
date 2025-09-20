@@ -38,7 +38,7 @@ export const panels = {
   ring: "absolute inset-0 rounded-[64px] ring-1 ring-white/40",
 };
 
-const glassBase = "glass-liquid willchange-backdrop isolate bg-d-dark/90 backdrop-blur-[60px] backdrop-brightness-[.85] backdrop-contrast-[1.05] backdrop-saturate-[.85] border border-d-dark";
+const glassBase = "glass-liquid willchange-backdrop isolate bg-d-light/15 backdrop-blur-[40px] backdrop-brightness-[1.2] backdrop-contrast-[1] backdrop-saturate-[1] border border-d-dark";
 
 export const glass = {
   base: glassBase,
