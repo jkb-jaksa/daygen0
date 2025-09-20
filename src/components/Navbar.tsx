@@ -198,7 +198,7 @@ export default function Navbar() {
       {/* Top navbar */}
       <nav
         ref={navRef}
-        className={`relative ${glass.prompt}`}
+        className={`relative ${glass.promptDark}`}
       >
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base min-h-[3.5rem]">
           <div className="flex items-center gap-6 md:gap-8">
@@ -310,7 +310,7 @@ export default function Navbar() {
         style={{ top: navH }}
       >
         <div
-          className={`${glass.prompt} border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
+          className={`${glass.promptDark} border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
@@ -415,7 +415,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className={`rounded-xl ${glass.prompt} text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
+            className={`rounded-xl ${glass.promptDark} text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
           >
             <button
               onClick={() => {

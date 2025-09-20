@@ -34,8 +34,8 @@
   /* Mid tone: made a bit lighter for hover/border contrast */
   --d-mid: #2F3434;
   --d-mid-rgb: 47 52 52;
-  --d-dark: #1a1c1c;
-  --d-dark-rgb: 26 28 28;
+  --d-dark: #1d1f1f;
+  --d-dark-rgb: 29 31 31;
   --d-black: #080B0B;
   --d-black-rgb: 8 11 11;
 
@@ -626,8 +626,8 @@ html, body {
   place-items: center;
   transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s;
   width: 32px; /* match footer size-8 */
-  -webkit-backdrop-filter: blur(40px); /* Updated to match glass.prompt blur */
-  backdrop-filter: blur(40px); /* Updated to match glass.prompt blur */
+  -webkit-backdrop-filter: blur(32px); /* Updated to match glass.prompt blur */
+  backdrop-filter: blur(32px); /* Updated to match glass.prompt blur */
   perspective: 1000px;
 }
 .image-action-btn:hover {

@@ -3264,7 +3264,7 @@ const Create: React.FC = () => {
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
             <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
-              <div className={`${glass.surface} flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
+              <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
                   <div className="text-xs text-d-white/60 font-cabin font-medium uppercase tracking-wider mb-1">
