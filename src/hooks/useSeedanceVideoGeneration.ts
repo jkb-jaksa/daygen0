@@ -152,7 +152,7 @@ export const useSeedanceVideoGeneration = () => {
           }
         } catch (e: any) {
           stopPolling();
-          setState({ isLoading: false, error: String(e?.message || e), video: null, taskId });
+          setState({ isLoading: false, error: String(e?.message || e), video: null, taskId, status: 'failed' });
         }
       }, 3000);
     } catch (error) {

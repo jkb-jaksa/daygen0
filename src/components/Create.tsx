@@ -1132,7 +1132,6 @@ const Create: React.FC = () => {
     error: seedanceError,
     video: seedanceVideo,
     generateVideo: generateSeedanceVideo,
-    reset: resetSeedance,
   } = useSeedanceVideoGeneration();
 
   // Handle Seedance video generation
