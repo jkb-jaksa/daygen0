@@ -61,6 +61,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'recraft-v2':
         return await handleRecraft(req, res, { prompt: promptText, model, ...otherParams });
       
+      case 'luma-photon-1':
+      case 'luma-photon-flash-1':
+        return await handleLumaImage(req, res, { prompt: promptText, model, ...otherParams });
+      
+      case 'luma-ray-2':
+      case 'luma-ray-flash-2':
+      case 'luma-ray-1-6':
+        return await handleLumaVideo(req, res, { prompt: promptText, model, ...otherParams });
+      
       default:
         return res.status(400).json({ error: `Unsupported model: ${model}` });
     }
@@ -367,6 +376,92 @@ async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, 
     console.error('Recraft API error:', err);
     res.status(500).json({ 
       error: 'Recraft generation failed', 
+      details: String(err?.message || err) 
+    });
+  }
+}
+
+// Luma Image handler (Photon)
+async function handleLumaImage(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+  if (!process.env.LUMAAI_API_KEY) {
+    return res.status(500).json({ error: 'Luma API key not configured' });
+  }
+
+  try {
+    const response = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/luma/image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        model: model.replace('luma-', ''), // Remove 'luma-' prefix
+        aspect_ratio: params.aspect_ratio || '16:9',
+        image_ref: params.image_ref,
+        style_ref: params.style_ref,
+        character_ref: params.character_ref,
+        modify_image_ref: params.modify_image_ref,
+        callback_url: params.callback_url
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ 
+        error: `Luma Image API error: ${response.status}`, 
+        details: errorText 
+      });
+    }
+
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    console.error('Luma Image API error:', err);
+    res.status(500).json({ 
+      error: 'Luma image generation failed', 
+      details: String(err?.message || err) 
+    });
+  }
+}
+
+// Luma Video handler (Ray)
+async function handleLumaVideo(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+  if (!process.env.LUMAAI_API_KEY) {
+    return res.status(500).json({ error: 'Luma API key not configured' });
+  }
+
+  try {
+    const response = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/luma/video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        model: model.replace('luma-', ''), // Remove 'luma-' prefix
+        resolution: params.resolution || '720p',
+        duration: params.duration || '5s',
+        keyframes: params.keyframes,
+        loop: params.loop || false,
+        concepts: params.concepts,
+        callback_url: params.callback_url
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ 
+        error: `Luma Video API error: ${response.status}`, 
+        details: errorText 
+      });
+    }
+
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    console.error('Luma Video API error:', err);
+    res.status(500).json({ 
+      error: 'Luma video generation failed', 
       details: String(err?.message || err) 
     });
   }

@@ -113,6 +113,12 @@ const MODEL_CONFIG = {
     icon: '✨',
     description: 'Reve - Great text-to-image and image editing'
   },
+  'recraft': {
+    name: 'Recraft',
+    shortName: 'Recraft',
+    icon: '🎨',
+    description: 'Recraft - Great for text, icons and mockups'
+  },
   'recraft-v3': {
     name: 'Recraft v3',
     shortName: 'R3',

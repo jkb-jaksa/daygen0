@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw, Grid3X3, Globe, Lock, ChevronDown } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, RefreshCw, Grid3X3, Globe, Lock, ChevronDown, Shapes } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -117,22 +117,22 @@ const hydrateStoredGallery = (items: StoredGalleryImage[]): GalleryImageLike[] =
 // AI Model data with icons and accent colors
 const AI_MODELS = [
   { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
-  { name: "FLUX Pro 1.1", desc: "High-quality text-to-image generation.", Icon: Wand2, accent: "blue" as Accent, id: "flux-pro-1.1" },
-  { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as Accent, id: "flux-pro-1.1-ultra" },
-  { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: Edit, accent: "violet" as Accent, id: "flux-kontext-pro" },
-  { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
+  { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue" as Accent, id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
-  { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3" },
-  { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2" },
+  { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink" as Accent, id: "recraft" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
-  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, accent: "violet" as Accent, id: "runway-video-gen4" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
-  { name: "Seedance 1.0 Pro (Video)", desc: "Text/Image → Video (5–10s, 1080p)", Icon: Film, accent: "emerald" as Accent, id: "seedance-1.0-pro" },
+  { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, accent: "emerald" as Accent, id: "seedance-1.0-pro" },
+  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan" as Accent, id: "luma-photon-1" },
+  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan" as Accent, id: "luma-photon-flash-1" },
+  { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-2" },
+  { name: "Luma Ray Flash 2", desc: "Fast video generation with Ray Flash 2.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-flash-2" },
+  { name: "Luma Ray 1.6", desc: "Legacy video generation with Ray 1.6.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-1-6" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -141,20 +141,42 @@ const ModelMenuPortal: React.FC<{
   open: boolean; 
   onClose: () => void; 
   children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
+  activeCategory: string;
+}> = ({ anchorRef, open, onClose, children, activeCategory }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
 
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    // Position above the trigger button with some offset
+    const viewportHeight = window.innerHeight;
+    
+    // Dynamic height based on category - video has fewer models
+    const dropdownHeight = activeCategory === "video" ? 200 : 384;
+    
+    // Calculate if we should position above or below
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    let top, transform;
+    if (spaceBelow >= dropdownHeight || spaceBelow > spaceAbove) {
+      // Position below
+      top = rect.bottom + 8;
+      transform = 'translateY(0)';
+    } else {
+      // Position above with better spacing - compensate for padding differences
+      const paddingCompensation = activeCategory === "video" ? 8 : 12;
+      top = Math.max(8, rect.top - dropdownHeight - paddingCompensation);
+      transform = 'translateY(0)';
+    }
+    
     setPos({ 
-      top: rect.top - 8, // 8px offset above
-      left: rect.left, 
-      width: Math.max(384, rect.width) // Minimum 384px width (w-96 equivalent)
+      top, 
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - 400)), // Keep within viewport
+      width: Math.max(384, rect.width), // Minimum 384px width (w-96 equivalent)
+      transform
     });
-  }, [open, anchorRef]);
+  }, [open, anchorRef, activeCategory]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -187,15 +209,26 @@ const ModelMenuPortal: React.FC<{
   return createPortal(
     <div
       ref={menuRef}
+      tabIndex={-1}
       style={{ 
         position: "fixed", 
         top: pos.top, 
         left: pos.left, 
         width: pos.width, 
         zIndex: 1000,
-        transform: 'translateY(-100%)' // Position above the trigger
+        transform: pos.transform,
+        maxHeight: activeCategory === "video" ? '200px' : '384px', // Dynamic max height
+        minHeight: activeCategory === "video" ? 'auto' : '200px', // Dynamic min height
+        overflowY: 'auto', // Ensure scrolling is enabled
+        overflowX: 'hidden' // Prevent horizontal scrolling
       }}
-      className={`${glass.prompt} rounded-lg p-2 max-h-96 overflow-y-auto`}
+      className={`bg-d-dark/90 backdrop-blur-sm border border-d-dark rounded-lg focus:outline-none shadow-lg ${
+        activeCategory === "video" ? "p-1" : "p-2"
+      }`}
+      onWheel={(e) => {
+        // Prevent the wheel event from bubbling up to prevent page scroll
+        e.stopPropagation();
+      }}
     >
       {children}
     </div>,
@@ -641,18 +674,20 @@ const Create: React.FC = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
   const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
-  const isFlux = selectedModel.startsWith("flux-");
+  const isFlux = selectedModel === "flux-1.1";
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
-  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
+  const isRunway = selectedModel === "runway-gen4";
   const isRunwayVideo = selectedModel === "runway-video-gen4";
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
-  const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
+  const isRecraft = selectedModel === "recraft";
   const isVeo = selectedModel === "veo-3";
   const isSeedance = selectedModel === "seedance-1.0-pro";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance;
+  const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
+  const isLumaRay = selectedModel === "luma-ray-2" || selectedModel === "luma-ray-flash-2" || selectedModel === "luma-ray-1-6";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -669,6 +704,18 @@ const Create: React.FC = () => {
   const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
   const [videoNegativePrompt, setVideoNegativePrompt] = useState<string>('');
   const [videoSeed, setVideoSeed] = useState<number | undefined>(undefined);
+  
+  // Recraft-specific state
+  const [recraftModel, setRecraftModel] = useState<'recraft-v3' | 'recraft-v2'>('recraft-v3');
+  
+  // Runway-specific state
+  const [runwayModel, setRunwayModel] = useState<'runway-gen4' | 'runway-gen4-turbo'>('runway-gen4');
+  
+  // Flux-specific state
+  const [fluxModel, setFluxModel] = useState<'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max'>('flux-pro-1.1');
+  
+  // Luma Photon-specific state
+  const [lumaPhotonModel, setLumaPhotonModel] = useState<'luma-photon-1' | 'luma-photon-flash-1'>('luma-photon-1');
   
   // Seedance-specific state
   const [seedanceMode, setSeedanceMode] = useState<'t2v' | 'i2v-first' | 'i2v-first-last'>('t2v');
@@ -842,13 +889,22 @@ const Create: React.FC = () => {
       // Return video models
       return AI_MODELS.filter(model => 
         model.id === 'veo-3' || 
-        model.id === 'runway-video-gen4'
+        model.id === 'runway-video-gen4' ||
+        model.id === 'seedance-1.0-pro' ||
+        model.id === 'luma-ray-2' ||
+        model.id === 'luma-ray-flash-2' ||
+        model.id === 'luma-ray-1-6'
       ).map(model => model.id).sort();
     } else if (galleryFilters.type === 'image') {
-      // Return image models (exclude video models)
+      // Return image models (exclude video models and Photon Flash variant)
       return AI_MODELS.filter(model => 
         model.id !== 'veo-3' && 
-        model.id !== 'runway-video-gen4'
+        model.id !== 'runway-video-gen4' &&
+        model.id !== 'seedance-1.0-pro' &&
+        model.id !== 'luma-ray-2' &&
+        model.id !== 'luma-ray-flash-2' &&
+        model.id !== 'luma-ray-1-6' &&
+        model.id !== 'luma-photon-flash-1'
       ).map(model => model.id).sort();
     } else {
       // 'all' type - show all models
@@ -932,9 +988,10 @@ const Create: React.FC = () => {
 
   // Auto-select default model when switching categories
   useEffect(() => {
-    if (activeCategory === "video" && selectedModel !== "veo-3" && selectedModel !== "runway-video-gen4" && selectedModel !== "seedance-1.0-pro") {
+    const videoModels = ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-ray-flash-2", "luma-ray-1-6"];
+    if (activeCategory === "video" && !videoModels.includes(selectedModel)) {
       setSelectedModel("veo-3");
-    } else if (activeCategory === "image" && (selectedModel === "veo-3" || selectedModel === "runway-video-gen4" || selectedModel === "seedance-1.0-pro")) {
+    } else if (activeCategory === "image" && videoModels.includes(selectedModel)) {
       setSelectedModel("gemini-2.5-flash-image-preview");
     }
   }, [activeCategory, selectedModel]);
@@ -2596,7 +2653,7 @@ const Create: React.FC = () => {
     debugLog('[Create] handleGenerate called', { activeCategory, selectedModel });
     debugLog('[Create] Current selectedModel value:', selectedModel);
     if (activeCategory === "video") {
-      // For video generation, check if it's Veo, Runway, or Seedance
+      // For video generation, check if it's Veo, Runway, Seedance, or Luma Ray
       if (selectedModel === "veo-3") {
         debugLog('[Create] Using Veo video generation');
         await handleGenerateVideo();
@@ -2606,6 +2663,9 @@ const Create: React.FC = () => {
       } else if (selectedModel === "seedance-1.0-pro") {
         debugLog('[Create] Using Seedance video generation');
         await handleGenerateSeedanceVideo();
+      } else if (selectedModel === "luma-ray-2" || selectedModel === "luma-ray-flash-2" || selectedModel === "luma-ray-1-6") {
+        debugLog('[Create] Using Luma Ray video generation');
+        await handleGenerateImage();
       } else {
         debugLog('[Create] Unknown video model, using default generation');
         await handleGenerateImage();
@@ -2717,7 +2777,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
+      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
       return;
     }
 
@@ -2766,14 +2826,14 @@ const Create: React.FC = () => {
         });
       }
 
-      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage;
+      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
       const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image-preview";
-      const isFluxModel = modelForGeneration.startsWith("flux-");
+      const isFluxModel = modelForGeneration === "flux-1.1";
       const isChatGPTModel = modelForGeneration === "chatgpt-image";
       const isIdeogramModel = modelForGeneration === "ideogram";
       const isQwenModel = modelForGeneration === "qwen-image";
-      const isRunwayModel = modelForGeneration === "runway-gen4" || modelForGeneration === "runway-gen4-turbo";
+      const isRunwayModel = modelForGeneration === "runway-gen4";
       const isRunwayVideoModel = modelForGeneration === "runway-video-gen4";
       const isSeeDreamModel = modelForGeneration === "seedream-3.0";
       const isReveModel = modelForGeneration === "reve-image";
@@ -2785,7 +2845,7 @@ const Create: React.FC = () => {
         isFluxModel, 
         isChatGPTModel 
       });
-      const isRecraftModel = modelForGeneration === "recraft-v3" || modelForGeneration === "recraft-v2";
+      const isRecraftModel = modelForGeneration === "recraft";
 
       if (isGeminiModel) {
         // Use Gemini generation
@@ -2839,11 +2899,11 @@ const Create: React.FC = () => {
         }
         img = qwenResult[0]; // Take the first generated image
       } else if (isRunwayModel) {
-        // Use Runway generation
+        // Use Runway generation with selected model variant
         const runwayResult = await generateRunwayImage({
           prompt: trimmedPrompt,
-          model: modelForGeneration === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
-          uiModel: modelForGeneration, // Pass the UI model ID for display
+          model: runwayModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
+          uiModel: runwayModel, // Pass the UI model ID for display
           references: await (async () => {
             if (referencesForGeneration.length === 0) return undefined;
             const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
@@ -2973,14 +3033,14 @@ const Create: React.FC = () => {
         });
         img = reveResult;
       } else if (isRecraftModel) {
-        // Use Recraft generation via unified API
+        // Use Recraft generation via unified API with selected model variant
         const response = await fetch('/api/unified-generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: modelForGeneration,
+            model: recraftModel,
             prompt: trimmedPrompt,
             style: 'realistic_image',
             size: '1024x1024',
@@ -3003,27 +3063,27 @@ const Create: React.FC = () => {
         img = {
           url: result.data[0].url,
           prompt: trimmedPrompt,
-          model: modelForGeneration,
+          model: recraftModel,
           timestamp: new Date().toISOString(),
           ownerId: user?.id
         };
       } else if (isFluxModel) {
-        // Use Flux generation
+        // Use Flux generation with selected model from settings
         const fluxParams: FluxImageGenerationOptions = {
           prompt: trimmedPrompt,
-          model: modelForGeneration as FluxModel,
+          model: fluxModel as FluxModel,
           width: 1024,
           height: 1024,
           useWebhook: false, // Use polling for local development
         };
 
         // Add input image for Kontext models
-        if ((modelForGeneration === 'flux-kontext-pro' || modelForGeneration === 'flux-kontext-max') && imageData) {
+        if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && imageData) {
           fluxParams.input_image = imageData;
         }
 
         // Add reference images as additional input images for Kontext
-        if ((modelForGeneration === 'flux-kontext-pro' || modelForGeneration === 'flux-kontext-max') && referencesForGeneration.length > 0) {
+        if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && referencesForGeneration.length > 0) {
           const referenceImages = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
             const r = new FileReader();
             r.onload = () => resolve(r.result as string);
@@ -3040,6 +3100,64 @@ const Create: React.FC = () => {
           throw new Error('Flux generation failed');
         }
         img = fluxResult;
+      } else if (isLumaPhoton) {
+        // Use Luma Photon generation via unified API
+        debugLog('[Create] Using Luma Photon generation');
+        const response = await fetch('/api/unified-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: lumaPhotonModel, // Use the selected model from settings
+            prompt: trimmedPrompt,
+            aspect_ratio: '16:9' // Default aspect ratio for Luma Photon
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Luma Photon API error: ${errorData.error || response.statusText}`);
+        }
+
+        const result = await response.json();
+        if (!result.id) {
+          throw new Error('No generation ID returned from Luma Photon');
+        }
+
+        // Poll for completion
+        let attempts = 0;
+        const maxAttempts = 60; // 5 minutes max
+        let lumaImg: GeneratedImage | undefined;
+        
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+          
+          const statusResponse = await fetch(`/api/luma/image?id=${result.id}`);
+          if (!statusResponse.ok) {
+            throw new Error('Failed to check Luma Photon status');
+          }
+          
+          const statusResult = await statusResponse.json();
+          if (statusResult.state === 'completed' && statusResult.dataUrl) {
+            lumaImg = {
+              url: statusResult.dataUrl,
+              prompt: trimmedPrompt,
+              model: modelForGeneration,
+              timestamp: new Date().toISOString(),
+              ownerId: user?.id
+            };
+            break;
+          } else if (statusResult.state === 'failed') {
+            throw new Error(`Luma Photon generation failed: ${statusResult.failure_reason || 'Unknown error'}`);
+          }
+          
+          attempts++;
+        }
+
+        if (!lumaImg) {
+          throw new Error('Luma Photon generation timed out');
+        }
+        
+        img = lumaImg;
       } else {
         throw new Error('Unsupported model');
       }
@@ -3174,7 +3292,16 @@ const Create: React.FC = () => {
         return { name: "Runway Gen-4", Icon: VideoIcon, desc: "Good video model. Great editing with Runway Aleph.", id: "runway-video-gen4" };
       }
       if (selectedModel === "seedance-1.0-pro") {
-        return { name: "Seedance 1.0 Pro", Icon: Film, desc: "Text/Image → Video (5–10s, 1080p)", id: "seedance-1.0-pro" };
+        return { name: "Seedance 1.0 Pro", Icon: Film, desc: "Great quality text-to-image.", id: "seedance-1.0-pro" };
+      }
+      if (selectedModel === "luma-ray-2") {
+        return { name: "Luma Ray 2", Icon: VideoIcon, desc: "High-quality video generation with Ray 2.", id: "luma-ray-2" };
+      }
+      if (selectedModel === "luma-ray-flash-2") {
+        return { name: "Luma Ray Flash 2", Icon: VideoIcon, desc: "Fast video generation with Ray Flash 2.", id: "luma-ray-flash-2" };
+      }
+      if (selectedModel === "luma-ray-1-6") {
+        return { name: "Luma Ray 1.6", Icon: VideoIcon, desc: "Legacy video generation with Ray 1.6.", id: "luma-ray-1-6" };
       }
       return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
     }
@@ -5211,7 +5338,7 @@ const Create: React.FC = () => {
                     );
                   })()}
                   {activeCategory === "video" ? 
-                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running' ? "Generating..." : selectedModel === "seedance-1.0-pro" && seedanceLoading ? "Generating..." : isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate Video") : 
+                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running' ? "Generating..." : selectedModel === "seedance-1.0-pro" && seedanceLoading ? "Generating..." : isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate") : 
                     "Generate"
                   }
                 </button>
@@ -5236,11 +5363,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isVeo || isRunway || isSeedance) ? toggleSettings : () => alert('Settings are only available for Gemini, Veo, Runway, and Seedance models.')}
-                    title={(isGemini || isVeo || isRunway || isSeedance) ? "Settings" : "Settings only available for Gemini, Veo, Runway, and Seedance models"}
+                    onClick={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models.')}
+                    title={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isVeo || isRunway || isSeedance)
+                      (isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -5249,7 +5376,33 @@ const Create: React.FC = () => {
                   </button>
                   
                   {/* Settings Dropdown Portal */}
-                  {isVeo ? (
+                  {isFlux ? (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Flux 1.1 Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
+                            <select
+                              value={fluxModel}
+                              onChange={(e) => setFluxModel(e.target.value as 'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="flux-pro-1.1">Flux Pro 1.1 (Standard)</option>
+                              <option value="flux-pro-1.1-ultra">Flux Pro 1.1 Ultra (4MP+)</option>
+                              <option value="flux-kontext-pro">Flux Kontext Pro (Image Editing)</option>
+                              <option value="flux-kontext-max">Flux Kontext Max (Highest Quality)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isVeo ? (
                     <SettingsPortal 
                       anchorRef={settingsRef}
                       open={isSettingsOpen}
@@ -5428,6 +5581,64 @@ const Create: React.FC = () => {
                         </div>
                       </div>
                     </SettingsPortal>
+                  ) : isRecraft ? (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Recraft Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+                            <select
+                              value={recraftModel}
+                              onChange={(e) => setRecraftModel(e.target.value as 'recraft-v3' | 'recraft-v2')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="recraft-v3">Recraft 3</option>
+                              <option value="recraft-v2">Recraft 2</option>
+                            </select>
+                            <div className="text-xs text-d-white/60 mt-1">
+                              {recraftModel === "recraft-v3" 
+                                ? "Advanced image generation with text layout and brand controls" 
+                                : "High-quality image generation and editing"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isRunway ? (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Runway Gen-4 Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+                            <select
+                              value={runwayModel}
+                              onChange={(e) => setRunwayModel(e.target.value as 'runway-gen4' | 'runway-gen4-turbo')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="runway-gen4">Runway Gen-4</option>
+                              <option value="runway-gen4-turbo">Runway Gen-4 Turbo</option>
+                            </select>
+                            <div className="text-xs text-d-white/60 mt-1">
+                              {runwayModel === "runway-gen4" 
+                                ? "Great image model. Great control & editing features" 
+                                : "Fast Runway generation with reference images"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
                   ) : isGemini && (
                     <SettingsPortal 
                       anchorRef={settingsRef}
@@ -5515,6 +5726,32 @@ const Create: React.FC = () => {
                     </SettingsPortal>
                   )}
 
+                  {isLumaPhoton && (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Luma Photon Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
+                            <select
+                              value={lumaPhotonModel}
+                              onChange={(e) => setLumaPhotonModel(e.target.value as 'luma-photon-1' | 'luma-photon-flash-1')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="luma-photon-1">Luma Photon 1 (High Quality)</option>
+                              <option value="luma-photon-flash-1">Luma Photon Flash 1 (Fast)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  )}
+
                   {isQwen && (
                     <SettingsPortal 
                       anchorRef={settingsRef}
@@ -5574,50 +5811,6 @@ const Create: React.FC = () => {
                     </SettingsPortal>
                   )}
 
-                  {isRunway && (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Runway Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
-                            <select
-                              value={selectedModel}
-                              onChange={(e) => setSelectedModel(e.target.value)}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="runway-gen4">Runway Gen-4 (Standard)</option>
-                              <option value="runway-gen4-turbo">Runway Gen-4 Turbo (Fast)</option>
-                            </select>
-                            <div className="text-xs text-d-white/60 mt-1">
-                              {selectedModel === "runway-gen4" 
-                                ? "Higher quality, slower generation" 
-                                : "Faster generation, good quality"}
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
-                            <select
-                              value="16:9"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                              disabled
-                            >
-                              <option value="16:9">16:9 (Landscape)</option>
-                            </select>
-                            <div className="text-xs text-d-white/60 mt-1">
-                              Currently fixed at 16:9 ratio
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  )}
                 </div>
                 <button
                   type="button"
@@ -5665,6 +5858,7 @@ const Create: React.FC = () => {
                     anchorRef={modelSelectorRef}
                     open={isModelSelectorOpen}
                     onClose={() => setIsModelSelectorOpen(false)}
+                    activeCategory={activeCategory}
                   >
                     {activeCategory === "video" ? (
                       <>
@@ -5779,7 +5973,7 @@ const Create: React.FC = () => {
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "seedance-1.0-pro" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
                             }`}>
-                              Text/Image → Video (5–10s, 1080p)
+                              Great quality text-to-image.
                             </div>
                           </div>
                           {selectedModel === "seedance-1.0-pro" && (
@@ -5788,16 +5982,23 @@ const Create: React.FC = () => {
                         </button>
                       </>
                     ) : (
-                      AI_MODELS.map((model) => {
+                      AI_MODELS.filter(model => 
+                        // Filter models based on category
+                        activeCategory === "image" ? 
+                          !["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-ray-flash-2", "luma-ray-1-6", "luma-photon-flash-1"].includes(model.id) : 
+                          activeCategory === "video" ?
+                            ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-ray-flash-2", "luma-ray-1-6"].includes(model.id) :
+                            true
+                      ).map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "runway-video-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "veo-3" && model.id !== "seedance-1.0-pro";
+                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "luma-ray-flash-2" && model.id !== "luma-ray-1-6";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, and Recraft models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, Recraft, and Luma models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

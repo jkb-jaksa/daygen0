@@ -408,6 +408,229 @@ app.post(
   }
 );
 
+// Luma AI API endpoints
+// Import Luma helper
+import { getLuma, downloadImageToBase64, downloadVideoToBase64 } from './src/lib/luma.js';
+
+// Luma Image Generation (Photon) endpoint
+app.post('/api/luma/image', async (req, res) => {
+  try {
+    const {
+      prompt,
+      model = 'photon-1',
+      aspect_ratio = '16:9',
+      image_ref,
+      style_ref,
+      character_ref,
+      modify_image_ref,
+      callback_url
+    } = req.body ?? {};
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.LUMAAI_API_KEY) {
+      return res.status(500).json({ error: 'LUMAAI_API_KEY is not configured' });
+    }
+
+    const luma = getLuma();
+    
+    // Create image generation request
+    const generation = await luma.generations.image.create({
+      prompt,
+      model,
+      aspect_ratio,
+      image_ref,
+      style_ref,
+      character_ref,
+      modify_image_ref,
+      callback_url: callback_url || `${resolvePublicBaseUrl(req)}/api/luma/webhook`
+    });
+
+    res.json({
+      id: generation.id,
+      state: generation.state,
+      status: 'queued'
+    });
+
+  } catch (err) {
+    console.error('Luma Image generation error:', err);
+    res.status(500).json({
+      error: 'Luma image generation failed',
+      details: err?.message || 'Unknown error'
+    });
+  }
+});
+
+// Luma Image Status/Polling endpoint
+app.get('/api/luma/image', async (req, res) => {
+  try {
+    const { id } = req.query;
+    
+    if (!id) {
+      return res.status(400).json({ error: 'Missing id parameter' });
+    }
+
+    if (!process.env.LUMAAI_API_KEY) {
+      return res.status(500).json({ error: 'LUMAAI_API_KEY is not configured' });
+    }
+
+    const luma = getLuma();
+    const generation = await luma.generations.get(id);
+
+    // If completed, download and convert to base64
+    if (generation.state === 'completed' && generation.assets?.image) {
+      try {
+        const { dataUrl, contentType } = await downloadImageToBase64(generation.assets.image);
+        res.json({
+          ...generation,
+          dataUrl,
+          contentType
+        });
+      } catch (downloadError) {
+        console.error('Error downloading Luma image:', downloadError);
+        res.json(generation);
+      }
+    } else {
+      res.json(generation);
+    }
+
+  } catch (err) {
+    console.error('Luma Image status error:', err);
+    res.status(500).json({
+      error: 'Failed to check image status',
+      details: err?.message || 'Unknown error'
+    });
+  }
+});
+
+// Luma Video Generation (Ray 2) endpoint
+app.post('/api/luma/video', async (req, res) => {
+  try {
+    const {
+      prompt,
+      model = 'ray-2',
+      resolution = '720p',
+      duration = '5s',
+      keyframes,
+      loop = false,
+      concepts,
+      callback_url
+    } = req.body ?? {};
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.LUMAAI_API_KEY) {
+      return res.status(500).json({ error: 'LUMAAI_API_KEY is not configured' });
+    }
+
+    const luma = getLuma();
+    
+    // Create video generation request
+    const generation = await luma.generations.create({
+      prompt,
+      model,
+      resolution,
+      duration,
+      keyframes,
+      loop,
+      concepts,
+      callback_url: callback_url || `${resolvePublicBaseUrl(req)}/api/luma/webhook`
+    });
+
+    res.json({
+      id: generation.id,
+      state: generation.state,
+      status: 'queued'
+    });
+
+  } catch (err) {
+    console.error('Luma Video generation error:', err);
+    res.status(500).json({
+      error: 'Luma video generation failed',
+      details: err?.message || 'Unknown error'
+    });
+  }
+});
+
+// Luma Video Status/Polling endpoint
+app.get('/api/luma/video', async (req, res) => {
+  try {
+    const { id } = req.query;
+    
+    if (!id) {
+      return res.status(400).json({ error: 'Missing id parameter' });
+    }
+
+    if (!process.env.LUMAAI_API_KEY) {
+      return res.status(500).json({ error: 'LUMAAI_API_KEY is not configured' });
+    }
+
+    const luma = getLuma();
+    const generation = await luma.generations.get(id);
+
+    // If completed, download and convert to base64
+    if (generation.state === 'completed' && generation.assets?.video) {
+      try {
+        const { dataUrl, contentType } = await downloadVideoToBase64(generation.assets.video);
+        res.json({
+          ...generation,
+          dataUrl,
+          contentType
+        });
+      } catch (downloadError) {
+        console.error('Error downloading Luma video:', downloadError);
+        res.json(generation);
+      }
+    } else {
+      res.json(generation);
+    }
+
+  } catch (err) {
+    console.error('Luma Video status error:', err);
+    res.status(500).json({
+      error: 'Failed to check video status',
+      details: err?.message || 'Unknown error'
+    });
+  }
+});
+
+// Luma Webhook endpoint for status updates
+app.post('/api/luma/webhook', async (req, res) => {
+  try {
+    // Optional: Verify webhook signature if secret is configured
+    const signature = req.headers['x-luma-signature'];
+    const secret = process.env.LUMA_WEBHOOK_SECRET;
+    
+    if (secret && signature !== secret) {
+      return res.status(401).json({ error: 'Invalid webhook signature' });
+    }
+
+    const payload = req.body;
+    console.log('Received Luma webhook:', payload.id, 'status:', payload.state);
+
+    // Handle different generation statuses
+    if (payload.state === 'completed') {
+      console.log('Luma generation completed:', payload.id);
+      // You can add additional processing here, like storing results in a database
+    } else if (payload.state === 'failed') {
+      console.error('Luma generation failed:', payload.id, 'reason:', payload.failure_reason);
+    }
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error('Luma webhook error:', err);
+    res.status(500).json({
+      error: 'Webhook processing failed',
+      details: err?.message || 'Unknown error'
+    });
+  }
+});
+
 // Ideogram API endpoints
 // Ideogram Generate (text-to-image)
 app.post('/api/ideogram/generate', async (req, res) => {
@@ -761,28 +984,6 @@ app.post('/api/ideogram/describe', upload.single('image'), async (req, res) => {
 // Runway API endpoints
 const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY;
 
-// Helper function to download image from URL and convert to base64
-async function downloadImageToBase64(url) {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.status}`);
-    }
-    
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
-    const contentType = response.headers.get('content-type') || 'image/png';
-    
-    return {
-      dataUrl: `data:${contentType};base64,${base64}`,
-      contentType
-    };
-  } catch (error) {
-    console.error('Error downloading image:', error);
-    throw error;
-  }
-}
 
 // Runway Image Generation endpoint
 app.post('/api/runway/image', async (req, res) => {
@@ -2347,6 +2548,15 @@ app.post('/api/unified-generate', async (req, res) => {
       case 'recraft-v2':
         return await handleUnifiedRecraft(req, res, { prompt: promptText, model, ...otherParams });
       
+      case 'luma-photon-1':
+      case 'luma-photon-flash-1':
+        return await handleUnifiedLumaImage(req, res, { prompt: promptText, model, ...otherParams });
+      
+      case 'luma-ray-2':
+      case 'luma-ray-flash-2':
+      case 'luma-ray-1-6':
+        return await handleUnifiedLumaVideo(req, res, { prompt: promptText, model, ...otherParams });
+      
       default:
         return res.status(400).json({ error: `Unsupported model: ${model}` });
     }
@@ -2651,6 +2861,92 @@ async function handleUnifiedRecraft(req, res, { prompt, model, ...params }) {
     console.error('Recraft API error:', err);
     res.status(500).json({ 
       error: 'Recraft generation failed', 
+      details: String(err?.message || err) 
+    });
+  }
+}
+
+// Unified Luma Image handler (Photon)
+async function handleUnifiedLumaImage(req, res, { prompt, model, ...params }) {
+  if (!process.env.LUMAAI_API_KEY) {
+    return res.status(500).json({ error: 'Luma API key not configured' });
+  }
+
+  try {
+    const response = await fetch(`${resolvePublicBaseUrl(req)}/api/luma/image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        model: model.replace('luma-', ''), // Remove 'luma-' prefix
+        aspect_ratio: params.aspect_ratio || '16:9',
+        image_ref: params.image_ref,
+        style_ref: params.style_ref,
+        character_ref: params.character_ref,
+        modify_image_ref: params.modify_image_ref,
+        callback_url: params.callback_url
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ 
+        error: `Luma Image API error: ${response.status}`, 
+        details: errorText 
+      });
+    }
+
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    console.error('Luma Image API error:', err);
+    res.status(500).json({ 
+      error: 'Luma image generation failed', 
+      details: String(err?.message || err) 
+    });
+  }
+}
+
+// Unified Luma Video handler (Ray)
+async function handleUnifiedLumaVideo(req, res, { prompt, model, ...params }) {
+  if (!process.env.LUMAAI_API_KEY) {
+    return res.status(500).json({ error: 'Luma API key not configured' });
+  }
+
+  try {
+    const response = await fetch(`${resolvePublicBaseUrl(req)}/api/luma/video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        model: model.replace('luma-', ''), // Remove 'luma-' prefix
+        resolution: params.resolution || '720p',
+        duration: params.duration || '5s',
+        keyframes: params.keyframes,
+        loop: params.loop || false,
+        concepts: params.concepts,
+        callback_url: params.callback_url
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ 
+        error: `Luma Video API error: ${response.status}`, 
+        details: errorText 
+      });
+    }
+
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    console.error('Luma Video API error:', err);
+    res.status(500).json({ 
+      error: 'Luma video generation failed', 
       details: String(err?.message || err) 
     });
   }
