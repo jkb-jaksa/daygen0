@@ -33,6 +33,8 @@ import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
 import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
+import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
+import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
@@ -125,6 +127,8 @@ const AI_MODELS = [
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, accent: "violet" as Accent, id: "runway-video-gen4" },
+  { name: "Wan 2.2 Video", desc: "Alibaba's Wan 2.2 text-to-video model.", Icon: VideoIcon, accent: "blue" as Accent, id: "wan-video-2.2" },
+  { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, accent: "cyan" as Accent, id: "hailuo-02" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
@@ -148,13 +152,21 @@ const ModelMenuPortal: React.FC<{
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const dropdownHeight = 384; // max-h-96 = 384px
     
-    // Simple positioning - always position above the trigger button like in Edit component
+    // Check if there's enough space above the trigger
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+    
+    // Position above if there's more space above, otherwise position below
+    const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
+    
     setPos({ 
-      top: rect.top - 8, // 8px offset above
+      top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
       left: rect.left, 
       width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
-      transform: 'translateY(-100%)' // Position above the trigger
+      transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
     });
   }, [open, anchorRef, activeCategory]);
 
@@ -176,6 +188,10 @@ const ModelMenuPortal: React.FC<{
     if (open) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleKeyDown);
+      // Focus the dropdown when it opens for better keyboard navigation
+      if (menuRef.current) {
+        menuRef.current.focus();
+      }
     }
 
     return () => {
@@ -195,15 +211,25 @@ const ModelMenuPortal: React.FC<{
         top: pos.top, 
         left: pos.left, 
         width: pos.width, 
-        zIndex: 1000,
-        transform: pos.transform
+        zIndex: 9999,
+        transform: pos.transform,
+        maxHeight: '384px',
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}
-      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto ${
+      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-d-orange-1/30 scrollbar-track-transparent hover:scrollbar-thumb-d-orange-1/50 ${
         activeCategory === "video" ? "p-1" : "p-2"
       }`}
       onWheel={(e) => {
-        // Prevent the wheel event from bubbling up to prevent page scroll
+        // Allow scrolling within the dropdown but prevent page scroll
         e.stopPropagation();
+        // Don't prevent default to allow normal scrolling behavior
+      }}
+      onFocus={() => {
+        // Ensure the dropdown can receive focus for keyboard navigation
+        if (menuRef.current) {
+          menuRef.current.focus();
+        }
       }}
     >
       {children}
@@ -656,6 +682,8 @@ const Create: React.FC = () => {
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4";
   const isRunwayVideo = selectedModel === "runway-video-gen4";
+  const isWanVideo = selectedModel === "wan-video-2.2";
+  const isHailuoVideo = selectedModel === "hailuo-02";
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft";
@@ -663,7 +691,7 @@ const Create: React.FC = () => {
   const isSeedance = selectedModel === "seedance-1.0-pro";
   const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
   const isLumaRay = selectedModel === "luma-ray-2";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isWanVideo && !isHailuoVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -687,6 +715,28 @@ const Create: React.FC = () => {
   // Runway-specific state
   const [runwayModel, setRunwayModel] = useState<'runway-gen4' | 'runway-gen4-turbo'>('runway-gen4');
   
+  // Wan-specific state
+  const [wanSize, setWanSize] = useState<string>('1920*1080');
+  const [wanNegativePrompt, setWanNegativePrompt] = useState<string>('');
+  const [wanPromptExtend, setWanPromptExtend] = useState<boolean>(true);
+  const [wanWatermark, setWanWatermark] = useState<boolean>(false);
+  const [wanSeed, setWanSeed] = useState<string>('');
+
+  // Hailuo-specific state
+  const [hailuoDuration, setHailuoDuration] = useState<number>(6);
+  const [hailuoResolution, setHailuoResolution] = useState<'512P' | '768P' | '1080P'>('768P');
+  const [hailuoPromptOptimizer, setHailuoPromptOptimizer] = useState<boolean>(true);
+  const [hailuoFastPretreatment, setHailuoFastPretreatment] = useState<boolean>(false);
+  const [hailuoWatermark, setHailuoWatermark] = useState<boolean>(false);
+  const [hailuoFirstFrame, setHailuoFirstFrame] = useState<File | null>(null);
+  const [hailuoLastFrame, setHailuoLastFrame] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (hailuoDuration === 10 && hailuoResolution === '1080P') {
+      setHailuoResolution('768P');
+    }
+  }, [hailuoDuration, hailuoResolution]);
+
   // Flux-specific state
   const [fluxModel, setFluxModel] = useState<'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max'>('flux-pro-1.1');
   
@@ -708,6 +758,7 @@ const Create: React.FC = () => {
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [isRunwayVideoGenerating, setIsRunwayVideoGenerating] = useState<boolean>(false);
   const [runwayVideoPrompt, setRunwayVideoPrompt] = useState<string>('');
+  const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
@@ -867,6 +918,8 @@ const Create: React.FC = () => {
       return AI_MODELS.filter(model => 
         model.id === 'veo-3' || 
         model.id === 'runway-video-gen4' ||
+        model.id === 'wan-video-2.2' ||
+        model.id === 'hailuo-02' ||
         model.id === 'seedance-1.0-pro' ||
         model.id === 'luma-ray-2'
       ).map(model => model.id).sort();
@@ -875,6 +928,8 @@ const Create: React.FC = () => {
       return AI_MODELS.filter(model => 
         model.id !== 'veo-3' && 
         model.id !== 'runway-video-gen4' &&
+        model.id !== 'wan-video-2.2' &&
+        model.id !== 'hailuo-02' &&
         model.id !== 'seedance-1.0-pro' &&
         model.id !== 'luma-ray-2' &&
         model.id !== 'luma-photon-flash-1'
@@ -961,7 +1016,7 @@ const Create: React.FC = () => {
 
   // Auto-select default model when switching categories
   useEffect(() => {
-    const videoModels = ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2"];
+    const videoModels = ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "luma-ray-2"];
     if (activeCategory === "video" && !videoModels.includes(selectedModel)) {
       setSelectedModel("veo-3");
     } else if (activeCategory === "image" && videoModels.includes(selectedModel)) {
@@ -1162,6 +1217,24 @@ const Create: React.FC = () => {
   } = useSeedanceVideoGeneration();
 
   const {
+    status: wanStatus,
+    error: wanError,
+    video: wanGeneratedVideo,
+    isPolling: wanIsPolling,
+    generateVideo: generateWanVideo,
+    reset: resetWanVideo,
+  } = useWanVideoGeneration();
+
+  const {
+    status: hailuoStatus,
+    error: hailuoError,
+    video: hailuoGeneratedVideo,
+    isPolling: hailuoIsPolling,
+    generateVideo: generateHailuoVideo,
+    reset: resetHailuoVideo,
+  } = useHailuoVideoGeneration();
+
+  const {
     isLoading: lumaVideoLoading,
     isPolling: lumaVideoPolling,
     error: lumaVideoError,
@@ -1188,6 +1261,64 @@ const Create: React.FC = () => {
   }, [seedanceVideo]);
 
   useEffect(() => {
+    if (wanGeneratedVideo) {
+      const videoWithOperation: GalleryVideoLike = {
+        url: wanGeneratedVideo.url,
+        prompt: wanGeneratedVideo.prompt,
+        model: 'wan-video-2.2',
+        timestamp: wanGeneratedVideo.timestamp,
+        type: 'video',
+        operationName: wanGeneratedVideo.taskId,
+      };
+
+      debugLog('[Create] Adding Wan video to gallery:', videoWithOperation);
+      setVideoGallery(prev => [videoWithOperation, ...prev]);
+      setWanVideoPrompt('');
+    }
+  }, [wanGeneratedVideo]);
+
+  useEffect(() => {
+    if (hailuoGeneratedVideo) {
+      const videoWithOperation: GalleryVideoLike = {
+        url: hailuoGeneratedVideo.url,
+        prompt: hailuoGeneratedVideo.prompt,
+        model: 'hailuo-02',
+        timestamp: hailuoGeneratedVideo.timestamp,
+        type: 'video',
+        operationName: hailuoGeneratedVideo.fileId,
+      };
+
+      debugLog('[Create] Adding Hailuo video to gallery:', videoWithOperation);
+      setVideoGallery(prev => [videoWithOperation, ...prev]);
+      setHailuoFirstFrame(null);
+      setHailuoLastFrame(null);
+    }
+  }, [hailuoGeneratedVideo]);
+
+  useEffect(() => {
+    if (isWanVideo && (wanStatus === 'queued' || wanStatus === 'polling')) {
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+    if (wanStatus === 'failed') {
+      setWanVideoPrompt('');
+    }
+  }, [isWanVideo, wanStatus]);
+
+  useEffect(() => {
+    if (isHailuoVideo && (hailuoStatus === 'queued' || hailuoStatus === 'polling')) {
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+  }, [isHailuoVideo, hailuoStatus]);
+
+  useEffect(() => {
     if (lumaGeneratedVideo) {
       const videoWithOperation: GalleryVideoLike = {
         url: lumaGeneratedVideo.url,
@@ -1204,7 +1335,7 @@ const Create: React.FC = () => {
   }, [lumaGeneratedVideo]);
 
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || lumaVideoError;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || wanError || hailuoError || lumaVideoError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
@@ -2644,7 +2775,7 @@ const Create: React.FC = () => {
     setReferencePreviews([]);
   };
 
-  const handleGenerate = async () => {
+const handleGenerate = async () => {
     debugLog('[Create] handleGenerate called', { activeCategory, selectedModel });
     debugLog('[Create] Current selectedModel value:', selectedModel);
     if (activeCategory === "video") {
@@ -2655,6 +2786,12 @@ const Create: React.FC = () => {
       } else if (selectedModel === "runway-video-gen4") {
         debugLog('[Create] Using Runway video generation');
         await handleGenerateImage();
+      } else if (selectedModel === "hailuo-02") {
+        debugLog('[Create] Using Hailuo 02 video generation');
+        await handleGenerateHailuoVideo();
+      } else if (selectedModel === "wan-video-2.2") {
+        debugLog('[Create] Using Wan 2.2 video generation');
+        await handleGenerateWanVideo();
       } else if (selectedModel === "seedance-1.0-pro") {
         debugLog('[Create] Using Seedance video generation');
         await handleGenerateSeedanceVideo();
@@ -2699,6 +2836,93 @@ const Create: React.FC = () => {
     } catch (error) {
       console.error('Video generation error:', error);
       // Clear spinner on error
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+};
+
+  const handleGenerateWanVideo = async () => {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) return;
+
+    debugLog('[Create] Starting Wan video generation, setting isButtonSpinning to true');
+
+    setWanVideoPrompt(trimmedPrompt);
+
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 1000);
+
+    try {
+      resetWanVideo();
+
+      let parsedSeed: number | undefined;
+      if (wanSeed.trim()) {
+        const seedNumber = Number.parseInt(wanSeed.trim(), 10);
+        if (Number.isFinite(seedNumber)) {
+          parsedSeed = seedNumber;
+        }
+      }
+
+      await generateWanVideo({
+        prompt: trimmedPrompt,
+        model: 'wan2.2-t2v-plus',
+        size: wanSize,
+        negativePrompt: wanNegativePrompt.trim() || undefined,
+        promptExtend: wanPromptExtend,
+        watermark: wanWatermark,
+        seed: parsedSeed,
+      });
+    } catch (error) {
+      console.error('Wan 2.2 video generation error:', error);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+      setWanVideoPrompt('');
+    }
+  };
+
+  const handleGenerateHailuoVideo = async () => {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt && !hailuoFirstFrame && !hailuoLastFrame) {
+      alert('Provide a prompt or start/end frame for Hailuo 02 video generation.');
+      return;
+    }
+
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 1000);
+
+    try {
+      resetHailuoVideo();
+      await generateHailuoVideo({
+        prompt: trimmedPrompt || undefined,
+        model: 'MiniMax-Hailuo-02',
+        duration: hailuoDuration,
+        resolution: hailuoResolution,
+        promptOptimizer: hailuoPromptOptimizer,
+        fastPretreatment: hailuoFastPretreatment,
+        watermark: hailuoWatermark,
+        firstFrameFile: hailuoFirstFrame || undefined,
+        lastFrameFile: hailuoLastFrame || undefined,
+      });
+    } catch (error) {
+      console.error('Hailuo 02 video generation error:', error);
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
         spinnerTimeoutRef.current = null;
@@ -2811,7 +3035,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
+      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Wan 2.2 Video, Hailuo 02, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
       return;
     }
 
@@ -2835,9 +3059,8 @@ const Create: React.FC = () => {
 
     const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration };
     
-    // Only add to activeGenerationQueue if we're not doing Runway video generation
-    // Runway video generation handles its own loading state
-    if (!(activeCategory === "video" && selectedModel === "runway-video-gen4")) {
+    // Only add to activeGenerationQueue if we're not handling video models that manage their own state
+    if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02"))) {
       setActiveGenerationQueue(prev => [...prev, jobMeta]);
     }
     if (spinnerTimeoutRef.current) {
@@ -2869,12 +3092,16 @@ const Create: React.FC = () => {
       const isQwenModel = modelForGeneration === "qwen-image";
       const isRunwayModel = modelForGeneration === "runway-gen4";
       const isRunwayVideoModel = modelForGeneration === "runway-video-gen4";
+      const isWanVideoModel = modelForGeneration === "wan-video-2.2";
+      const isHailuoVideoModel = modelForGeneration === "hailuo-02";
       const isSeeDreamModel = modelForGeneration === "seedream-3.0";
       const isReveModel = modelForGeneration === "reve-image";
       
       debugLog('[Create] Model checks:', { 
         modelForGeneration, 
         isRunwayVideoModel, 
+        isWanVideoModel, 
+        isHailuoVideoModel,
         isGeminiModel, 
         isFluxModel, 
         isChatGPTModel 
@@ -3277,7 +3504,7 @@ const Create: React.FC = () => {
       }
       setIsButtonSpinning(false);
       // Only remove from activeGenerationQueue if we added it in the first place
-      if (!(activeCategory === "video" && selectedModel === "runway-video-gen4")) {
+      if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02"))) {
         setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
       }
     }
@@ -3334,13 +3561,20 @@ const Create: React.FC = () => {
       if (selectedModel === "runway-video-gen4") {
         return { name: "Runway Gen-4", Icon: VideoIcon, desc: "Good video model. Great editing with Runway Aleph.", id: "runway-video-gen4" };
       }
+      if (selectedModel === "wan-video-2.2") {
+        return { name: "Wan 2.2 Video", Icon: VideoIcon, desc: "Alibaba's Wan 2.2 text-to-video model.", id: "wan-video-2.2" };
+      }
+      if (selectedModel === "hailuo-02") {
+        return { name: "Hailuo 02", Icon: VideoIcon, desc: "MiniMax video with start & end frame control.", id: "hailuo-02" };
+      }
       if (selectedModel === "seedance-1.0-pro") {
         return { name: "Seedance 1.0 Pro", Icon: Film, desc: "Great quality text-to-image.", id: "seedance-1.0-pro" };
       }
       if (selectedModel === "luma-ray-2") {
         return { name: "Luma Ray 2", Icon: VideoIcon, desc: "High-quality video generation with Ray 2.", id: "luma-ray-2" };
       }
-      return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
+      // Default to Veo 3 instead of generic "Video Models" placeholder
+      return { name: "Veo 3", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
     }
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
@@ -4894,6 +5128,8 @@ const Create: React.FC = () => {
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
+                        const isWanGeneratingGrid = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling) && idx === 0;
+                        const isHailuoGeneratingGrid = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling) && idx === 0;
 
                         if (isRunwayGenerating) {
                           return (
@@ -4910,6 +5146,48 @@ const Create: React.FC = () => {
                               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
                                 <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
                                   {runwayVideoPrompt}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (isWanGeneratingGrid) {
+                          return (
+                            <div key="wan-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                              <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-sky-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                              <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                                <div className="text-center">
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="text-d-white text-xs font-raleway animate-pulse">
+                                    Generating...
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
+                                <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                                  {wanVideoPrompt}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (isHailuoGeneratingGrid) {
+                          return (
+                            <div key="hailuo-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                              <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-cyan-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                              <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                                <div className="text-center">
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="text-d-white text-xs font-raleway animate-pulse">
+                                    Generating...
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
+                                <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                                  {prompt}
                                 </p>
                               </div>
                             </div>
@@ -5352,19 +5630,25 @@ const Create: React.FC = () => {
                     : ""}>
                 <button 
                   onClick={handleGenerate}
-                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling))}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isRunwayVideoGenerating = selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running';
+                    const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
+                    const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
                     const isLumaGenerating = isLumaRay && (lumaVideoLoading || lumaVideoPolling);
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || seedanceLoading || isLumaGenerating;
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || seedanceLoading || isLumaGenerating;
                     debugLog('[Create] Button state:', { 
                       isButtonSpinning: isButtonSpinning, 
                       isVideoGenerating: isVideoGenerating, 
                       isVideoPolling: isVideoPolling, 
                       isRunwayVideoGenerating: isRunwayVideoGenerating,
+                      isWanGenerating,
+                      isHailuoGenerating,
                       runwayVideoStatus: runwayVideoStatus || 'undefined',
+                      wanStatus,
+                      hailuoStatus,
                       lumaVideoLoading,
                       lumaVideoPolling,
                       showSpinner: showSpinner,
@@ -5382,7 +5666,11 @@ const Create: React.FC = () => {
                       ? "Generating..."
                       : selectedModel === "seedance-1.0-pro" && seedanceLoading
                         ? "Generating..."
-                        : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
+                        : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
+                          ? "Generating..."
+                        : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
+                          ? "Generating..."
+                          : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
                           ? "Generating..."
                           : isVideoGenerating
                             ? "Starting..."
@@ -5413,11 +5701,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models.')}
-                    title={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models"}
+                    onClick={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Hailuo 02, Seedance, Recraft, and Luma models.')}
+                    title={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Hailuo 02, Seedance, Recraft, and Luma models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
+                      (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -5506,6 +5794,215 @@ const Create: React.FC = () => {
                               placeholder="e.g., 12345"
                               className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
                             />
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isHailuoVideo ? (
+                    <SettingsPortal
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Hailuo 02 Settings</div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
+                            <select
+                              value={hailuoDuration}
+                              onChange={(e) => setHailuoDuration(parseInt(e.target.value, 10))}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value={6}>6 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
+                            <select
+                              value={hailuoResolution}
+                              onChange={(e) => setHailuoResolution(e.target.value as '512P' | '768P' | '1080P')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="512P">512P</option>
+                              <option value="768P">768P</option>
+                              <option value="1080P" disabled={hailuoDuration === 10}>1080P (6s only)</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="hailuoPromptOptimizer"
+                              checked={hailuoPromptOptimizer}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setHailuoPromptOptimizer(checked);
+                                if (!checked) {
+                                  setHailuoFastPretreatment(false);
+                                }
+                              }}
+                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                            <label htmlFor="hailuoPromptOptimizer" className="text-xs font-raleway text-d-white/80">
+                              Enable prompt optimizer
+                            </label>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="hailuoFastPretreatment"
+                              checked={hailuoFastPretreatment}
+                              onChange={(e) => setHailuoFastPretreatment(e.target.checked)}
+                              disabled={!hailuoPromptOptimizer}
+                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2 disabled:opacity-50"
+                            />
+                            <label htmlFor="hailuoFastPretreatment" className={`text-xs font-raleway ${hailuoPromptOptimizer ? 'text-d-white/80' : 'text-d-white/30'}`}>
+                              Fast pretreatment (works with optimizer only)
+                            </label>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="hailuoWatermark"
+                              checked={hailuoWatermark}
+                              onChange={(e) => setHailuoWatermark(e.target.checked)}
+                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                            <label htmlFor="hailuoWatermark" className="text-xs font-raleway text-d-white/80">
+                              Add AI watermark
+                            </label>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">First Frame (Optional)</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setHailuoFirstFrame(e.target.files?.[0] || null)}
+                                className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-orange-1/20"
+                              />
+                              {hailuoFirstFrame && (
+                                <button
+                                  type="button"
+                                  onClick={() => setHailuoFirstFrame(null)}
+                                  className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                            {hailuoFirstFrame && (
+                              <div className="mt-1 text-[11px] font-raleway text-d-white/60 truncate">{hailuoFirstFrame.name}</div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Last Frame (Optional)</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setHailuoLastFrame(e.target.files?.[0] || null)}
+                                className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-orange-1/20"
+                              />
+                              {hailuoLastFrame && (
+                                <button
+                                  type="button"
+                                  onClick={() => setHailuoLastFrame(null)}
+                                  className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                            {hailuoLastFrame && (
+                              <div className="mt-1 text-[11px] font-raleway text-d-white/60 truncate">{hailuoLastFrame.name}</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isWanVideo ? (
+                    <SettingsPortal
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Wan 2.2 Video Settings</div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
+                            <select
+                              value={wanSize}
+                              onChange={(e) => setWanSize(e.target.value)}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="1920*1080">1920 × 1080 (1080p Landscape)</option>
+                              <option value="1080*1920">1080 × 1920 (1080p Portrait)</option>
+                              <option value="1440*1440">1440 × 1440 (Square)</option>
+                              <option value="1632*1248">1632 × 1248 (4:3)</option>
+                              <option value="1248*1632">1248 × 1632 (3:4)</option>
+                              <option value="832*480">832 × 480 (480p Landscape)</option>
+                              <option value="480*832">480 × 832 (480p Portrait)</option>
+                              <option value="624*624">624 × 624 (480p Square)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
+                            <input
+                              type="text"
+                              value={wanNegativePrompt}
+                              onChange={(e) => setWanNegativePrompt(e.target.value)}
+                              placeholder="e.g., blurry, low quality"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="wanPromptExtend"
+                              checked={wanPromptExtend}
+                              onChange={(e) => setWanPromptExtend(e.target.checked)}
+                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                            <label htmlFor="wanPromptExtend" className="text-xs font-raleway text-d-white/80">
+                              Enable prompt enhancement
+                            </label>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
+                            <input
+                              type="text"
+                              value={wanSeed}
+                              onChange={(e) => setWanSeed(e.target.value.replace(/[^0-9]/g, ''))}
+                              placeholder="e.g., 12345"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="wanWatermark"
+                              checked={wanWatermark}
+                              onChange={(e) => setWanWatermark(e.target.checked)}
+                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                            <label htmlFor="wanWatermark" className="text-xs font-raleway text-d-white/80">
+                              Add AI watermark
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -6020,6 +6517,82 @@ const Create: React.FC = () => {
                         </button>
                         <button
                           onClick={() => {
+                            setSelectedModel("hailuo-02");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "hailuo-02"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Hailuo 02") ? (
+                            <img 
+                              src={getToolLogo("Hailuo 02")!} 
+                              alt="Hailuo 02 logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "hailuo-02" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "hailuo-02" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Hailuo 02
+                            </div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "hailuo-02" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              MiniMax video with 1080p output and frame control.
+                            </div>
+                          </div>
+                          {selectedModel === "hailuo-02" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedModel("wan-video-2.2");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "wan-video-2.2"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Wan 2.2 Video") ? (
+                            <img 
+                              src={getToolLogo("Wan 2.2 Video")!} 
+                              alt="Wan logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "wan-video-2.2" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "wan-video-2.2" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Wan 2.2 Video
+                            </div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "wan-video-2.2" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              Alibaba Wan 2.2 text-to-video. 5s high-quality clips.
+                            </div>
+                          </div>
+                          {selectedModel === "wan-video-2.2" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
                             debugLog('[Create] Selecting Seedance video model');
                             setSelectedModel("seedance-1.0-pro");
                             debugLog('[Create] Selected model set to:', "seedance-1.0-pro");
@@ -6102,20 +6675,20 @@ const Create: React.FC = () => {
                       AI_MODELS.filter(model => 
                         // Filter models based on category
                           activeCategory === "image" ? 
-                          !["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
+                          !["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
                           activeCategory === "video" ?
-                            ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
+                            ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
                             true
                       ).map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2";
+                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, Recraft, and Luma models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Wan 2.2 Video, Hailuo 02, Seedream, Reve, Recraft, and Luma models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

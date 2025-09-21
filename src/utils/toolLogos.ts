@@ -51,7 +51,10 @@ export const TOOL_LOGOS: Record<string, string> = {
   
   // Qwen/Wan variations (same logo)
   'Wan': '/qwen logo.png',
-  
+  'Wan 2.2 Video': '/qwen logo.png',
+  'Hailuo 02': '/minimax logo.jpg',
+  'MiniMax-Hailuo-02': '/minimax logo.jpg',
+
   // Deepmind/Veo variations
   'Veo 3': '/deepmind logo.jpeg',
   

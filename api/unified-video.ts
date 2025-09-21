@@ -5,6 +5,8 @@ import { downloadVideoToBase64 } from '../src/lib/luma.js';
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/';
 const ARK_BASE = process.env.ARK_BASE || 'https://ark.ap-southeast.bytepluses.com/api/v3';
+const DASHSCOPE_BASE = (process.env.DASHSCOPE_BASE || 'https://dashscope-intl.aliyuncs.com/api/v1').replace(/\/$/, '');
+const MINIMAX_BASE_URL = (process.env.MINIMAX_BASE_URL || 'https://api.minimax.io').replace(/\/$/, '');
 const DEFAULT_PROMPT_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200';
 
 let cachedLumaClient: LumaAI | null = null;
@@ -55,6 +57,36 @@ function normalizeBoolean(value: unknown, fallback = false): boolean {
     if (['false', '0', 'no', 'n'].includes(normalized)) return false;
   }
   return fallback;
+}
+
+function toOptionalString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : undefined;
+  }
+  if (Array.isArray(value)) {
+    return toOptionalString(value[0]);
+  }
+  if (value === null || value === undefined) return undefined;
+  return String(value).trim() || undefined;
+}
+
+function toInteger(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number.parseInt(trimmed, 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function buildMinimaxUrl(path: string): string {
+  const normalized = (path || '').trim().replace(/^\/+/g, '');
+  return `${MINIMAX_BASE_URL}/${normalized}`;
 }
 
 // Helper functions
@@ -145,6 +177,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleRunway(req, res, params);
       case 'luma':
         return await handleLuma(req, res, action ?? 'create', params);
+      case 'wan':
+        return await handleWan(req, res, action ?? 'create', params);
+      case 'hailuo':
+      case 'minimax':
+        return await handleHailuo(req, res, action ?? 'create', params);
       default:
         return res.status(400).json({ error: `Unsupported video provider: ${provider}` });
     }
@@ -376,6 +413,328 @@ async function handleSeedance(req: VercelRequest, res: VercelResponse, action: s
     }
 
     return res.status(200).json({ status, videoUrl, raw: data });
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
+
+// Minimax Hailuo video handler
+async function handleHailuo(req: VercelRequest, res: VercelResponse, action: string, params: Record<string, unknown>) {
+  const apiKey = process.env.MINIMAX_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'MINIMAX_API_KEY not configured' });
+  }
+
+  const normalizedAction = typeof action === 'string' ? action.toLowerCase() : (req.method === 'GET' ? 'status' : 'create');
+  const modelRaw = params.model ?? params.minimaxModel;
+  const model = toOptionalString(modelRaw) || 'MiniMax-Hailuo-02';
+
+  if (normalizedAction === 'retrieve') {
+    const fileId = toOptionalString(params.fileId ?? params.file_id ?? req.query.fileId ?? req.query.file_id);
+    if (!fileId) {
+      return res.status(400).json({ error: 'Hailuo fileId is required' });
+    }
+
+    const providedGroupId = toOptionalString(params.groupId ?? params.GroupId ?? req.query.groupId ?? req.query.GroupId);
+    const envGroupId =
+      toOptionalString(process.env.MINIMAX_GROUP_ID) ||
+      toOptionalString(process.env.MINIMAX_GROUPID) ||
+      toOptionalString(process.env.MINIMAX_ACCOUNT_GROUP_ID);
+
+    const groupId = providedGroupId || envGroupId;
+    if (!groupId) {
+      return res.status(500).json({ error: 'MINIMAX_GROUP_ID not configured' });
+    }
+
+    try {
+      const fileData = await retrieveMinimaxFile(apiKey, groupId, fileId);
+      return res.status(200).json(fileData);
+    } catch (err) {
+      console.error('Hailuo retrieve error:', err);
+      return res.status(502).json({
+        error: err instanceof Error ? err.message : 'Failed to retrieve Hailuo video file',
+      });
+    }
+  }
+
+  if (normalizedAction === 'create' || req.method === 'POST') {
+    const prompt = toOptionalString(params.prompt);
+    const firstFrameImage = toOptionalString(
+      params.firstFrameImage ?? params.first_frame_image ?? params.firstFrameBase64 ?? params.first_frame_base64,
+    );
+    const lastFrameImage = toOptionalString(
+      params.lastFrameImage ?? params.last_frame_image ?? params.lastFrameBase64 ?? params.last_frame_base64,
+    );
+
+    if (!prompt && !firstFrameImage && !lastFrameImage) {
+      return res.status(400).json({ error: 'Prompt or frame image is required for Hailuo video generation' });
+    }
+
+    const duration = toInteger(params.duration);
+    const resolution = toOptionalString(params.resolution);
+    const promptOptimizerRaw = params.promptOptimizer ?? params.prompt_optimizer;
+    const fastPretreatmentRaw = params.fastPretreatment ?? params.fast_pretreatment;
+    const aigcWatermarkRaw = params.aigcWatermark ?? params.aigc_watermark;
+    const callbackUrl = toOptionalString(params.callbackUrl ?? params.callback_url);
+
+    const payload: Record<string, unknown> = { model };
+
+    if (prompt) payload.prompt = prompt;
+    if (firstFrameImage) payload.first_frame_image = firstFrameImage;
+    if (lastFrameImage) payload.last_frame_image = lastFrameImage;
+    if (typeof duration === 'number') payload.duration = duration;
+    if (resolution) payload.resolution = resolution;
+    if (promptOptimizerRaw !== undefined) {
+      payload.prompt_optimizer = normalizeBoolean(promptOptimizerRaw, true);
+    }
+    if (fastPretreatmentRaw !== undefined) {
+      payload.fast_pretreatment = normalizeBoolean(fastPretreatmentRaw, false);
+    }
+    if (aigcWatermarkRaw !== undefined) {
+      payload.aigc_watermark = normalizeBoolean(aigcWatermarkRaw, false);
+    }
+    if (callbackUrl) payload.callback_url = callbackUrl;
+
+    const response = await fetch(buildMinimaxUrl('v1/video_generation'), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body = await response.json().catch(async () => ({
+      error: await response.text().catch(() => 'Hailuo API request failed'),
+    }));
+
+    const baseResp = body?.base_resp ?? {};
+    const statusCode = typeof baseResp?.status_code === 'number' ? baseResp.status_code : (response.ok ? 0 : response.status);
+
+    if (!response.ok || statusCode !== 0) {
+      const message = baseResp?.status_msg || body?.error || `Hailuo API error: ${response.status}`;
+      return res.status(response.ok ? 502 : response.status).json({ error: message, details: body });
+    }
+
+    const taskId = toOptionalString(body?.task_id ?? body?.taskId);
+    if (!taskId) {
+      return res.status(502).json({ error: 'Hailuo API did not return a task id', details: body });
+    }
+
+    return res.status(200).json({ taskId, output: body, model });
+  }
+
+  if (normalizedAction === 'status' || req.method === 'GET') {
+    const taskId = toOptionalString(
+      params.taskId ?? params.task_id ?? params.id ?? req.query.taskId ?? req.query.task_id ?? req.query.id,
+    );
+    if (!taskId) {
+      return res.status(400).json({ error: 'Hailuo taskId is required' });
+    }
+
+    const statusUrl = new URL(buildMinimaxUrl('v1/query/video_generation'));
+    statusUrl.searchParams.set('task_id', taskId);
+
+    const response = await fetch(statusUrl.toString(), {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    const body = await response.json().catch(async () => ({
+      error: await response.text().catch(() => 'Hailuo status request failed'),
+    }));
+
+    const baseResp = body?.base_resp ?? {};
+    const statusCode = typeof baseResp?.status_code === 'number' ? baseResp.status_code : (response.ok ? 0 : response.status);
+
+    if (!response.ok || statusCode !== 0) {
+      const message = baseResp?.status_msg || body?.error || `Hailuo status error: ${response.status}`;
+      return res.status(response.ok ? 502 : response.status).json({ error: message, details: body });
+    }
+
+    const status = toOptionalString(body?.status) || 'unknown';
+    const normalizedStatus = status.toLowerCase();
+    const fileId = toOptionalString(body?.file_id ?? body?.fileId);
+
+    const groupId =
+      toOptionalString(process.env.MINIMAX_GROUP_ID) ||
+      toOptionalString(process.env.MINIMAX_GROUPID) ||
+      toOptionalString(process.env.MINIMAX_ACCOUNT_GROUP_ID);
+
+    let fileData: any = null;
+    let retrieveError: string | undefined;
+
+    if (normalizedStatus === 'success' && fileId && groupId) {
+      try {
+        fileData = await retrieveMinimaxFile(apiKey, groupId, fileId);
+      } catch (err) {
+        console.warn('Failed to retrieve Hailuo video file:', err);
+        retrieveError = err instanceof Error ? err.message : 'Failed to retrieve Hailuo video file';
+      }
+    }
+
+    return res.status(200).json({
+      taskId,
+      status,
+      fileId,
+      output: body,
+      downloadUrl: fileData?.file?.download_url ?? null,
+      backupDownloadUrl: fileData?.file?.backup_download_url ?? null,
+      file: fileData?.file ?? null,
+      retrieveError,
+    });
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function retrieveMinimaxFile(apiKey: string, groupId: string, fileId: string) {
+  const retrieveUrl = new URL(buildMinimaxUrl('v1/files/retrieve'));
+  retrieveUrl.searchParams.set('GroupId', groupId);
+  retrieveUrl.searchParams.set('file_id', fileId);
+
+  const response = await fetch(retrieveUrl.toString(), {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Accept': 'application/json',
+    },
+  });
+
+  const body = await response.json().catch(async () => ({
+    error: await response.text().catch(() => 'Hailuo file retrieve failed'),
+  }));
+
+  const baseResp = body?.base_resp ?? {};
+  const statusCode = typeof baseResp?.status_code === 'number' ? baseResp.status_code : (response.ok ? 0 : response.status);
+
+  if (!response.ok || statusCode !== 0) {
+    const message = baseResp?.status_msg || body?.error || `Hailuo retrieve error: ${response.status}`;
+    throw new Error(message);
+  }
+
+  return body;
+}
+
+// Wan 2.2 video handler (DashScope)
+async function handleWan(req: VercelRequest, res: VercelResponse, action: string, params: Record<string, unknown>) {
+  const apiKey = process.env.DASHSCOPE_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'DASHSCOPE_API_KEY not configured' });
+  }
+
+  const createUrl = `${DASHSCOPE_BASE}/services/aigc/video-generation/video-synthesis`;
+
+  if (action === 'create' || req.method === 'POST') {
+    const promptRaw = params.prompt;
+    const prompt = typeof promptRaw === 'string' ? promptRaw.trim() : '';
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required for Wan video generation' });
+    }
+
+    const modelRaw = params.model;
+    const model = typeof modelRaw === 'string' && modelRaw.trim() ? modelRaw.trim() : 'wan2.2-t2v-plus';
+
+    const sizeRaw = params.size;
+    const size = typeof sizeRaw === 'string' && sizeRaw.trim() ? sizeRaw.trim() : undefined;
+
+    const negativePromptRaw = params.negativePrompt ?? params.negative_prompt;
+    const negativePrompt = typeof negativePromptRaw === 'string' ? negativePromptRaw.trim() : '';
+
+    const promptExtendRaw = params.promptExtend ?? params.prompt_extend;
+    const promptExtendDefined = promptExtendRaw !== undefined;
+    const promptExtend = promptExtendDefined ? normalizeBoolean(promptExtendRaw, true) : undefined;
+
+    const watermarkRaw = params.watermark;
+    const watermarkDefined = watermarkRaw !== undefined;
+    const watermark = watermarkDefined ? normalizeBoolean(watermarkRaw, false) : undefined;
+
+    let seed: number | undefined;
+    if (params.seed !== undefined && params.seed !== null && `${params.seed}`.trim() !== '') {
+      const parsedSeed = Number.parseInt(`${params.seed}`, 10);
+      if (Number.isFinite(parsedSeed)) {
+        seed = parsedSeed;
+      }
+    }
+
+    let duration: number | undefined;
+    if (params.duration !== undefined && params.duration !== null && `${params.duration}`.trim() !== '') {
+      const parsedDuration = Number.parseInt(`${params.duration}`, 10);
+      if (Number.isFinite(parsedDuration)) {
+        duration = parsedDuration;
+      }
+    }
+
+    const input: Record<string, unknown> = { prompt };
+    if (negativePrompt) {
+      input.negative_prompt = negativePrompt;
+    }
+
+    const parameters: Record<string, unknown> = {};
+    if (size) parameters.size = size;
+    if (promptExtendDefined) parameters.prompt_extend = promptExtend;
+    if (typeof seed === 'number') parameters.seed = seed;
+    if (watermarkDefined) parameters.watermark = watermark;
+    if (typeof duration === 'number') parameters.duration = duration;
+
+    const payload: Record<string, unknown> = { model, input };
+    if (Object.keys(parameters).length > 0) {
+      payload.parameters = parameters;
+    }
+
+    const response = await fetch(createUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': 'enable',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body = await response.json().catch(async () => ({ error: await response.text().catch(() => 'Wan API request failed') }));
+
+    if (!response.ok) {
+      const message = body?.error || `Wan API error: ${response.status}`;
+      return res.status(response.status).json({ error: message, details: body });
+    }
+
+    const output = body?.output ?? body ?? {};
+    const taskId = output.task_id || output.taskId || null;
+    const taskStatus = output.task_status || output.taskStatus || null;
+
+    if (!taskId) {
+      return res.status(502).json({ error: 'Wan API did not return a task id', details: output });
+    }
+
+    return res.status(200).json({ taskId, taskStatus, output });
+  }
+
+  if (action === 'status' || req.method === 'GET') {
+    const taskIdRaw = params.taskId ?? params.task_id ?? params.id ?? req.query.taskId ?? req.query.task_id ?? req.query.id;
+    const taskId = Array.isArray(taskIdRaw) ? taskIdRaw[0] : typeof taskIdRaw === 'string' ? taskIdRaw : '';
+    if (!taskId) {
+      return res.status(400).json({ error: 'Wan taskId is required' });
+    }
+
+    const statusUrl = `${DASHSCOPE_BASE}/tasks/${encodeURIComponent(taskId)}`;
+    const response = await fetch(statusUrl, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    const body = await response.json().catch(async () => ({ error: await response.text().catch(() => 'Wan status request failed') }));
+
+    if (!response.ok) {
+      const message = body?.error || `Wan status error: ${response.status}`;
+      return res.status(response.status).json({ error: message, details: body });
+    }
+
+    const output = body?.output ?? body ?? {};
+    return res.status(200).json({ taskId, output });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

@@ -178,6 +178,12 @@ function firstString(value) {
   return String(value);
 }
 
+function optionalString(value) {
+  const str = firstString(value);
+  const trimmed = str.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 async function unifiedHandleVeo(req, res, action, params) {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
@@ -603,6 +609,205 @@ async function unifiedHandleLuma(req, res, action, params) {
   });
 }
 
+async function unifiedHandleHailuo(req, res, action, params) {
+  const apiKey = process.env.MINIMAX_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'MINIMAX_API_KEY not configured' });
+  }
+
+  const normalizedAction = typeof action === 'string' ? action.toLowerCase() : (req.method === 'GET' ? 'status' : 'create');
+  const model = optionalString(params.model) || 'MiniMax-Hailuo-02';
+
+  if (normalizedAction === 'retrieve') {
+    const fileId = optionalString(params.fileId ?? params.file_id ?? req.query?.fileId ?? req.query?.file_id);
+    if (!fileId) {
+      return res.status(400).json({ error: 'Hailuo fileId is required' });
+    }
+
+    const providedGroupId = optionalString(params.groupId ?? params.GroupId ?? req.query?.groupId ?? req.query?.GroupId);
+    const envGroupId =
+      optionalString(process.env.MINIMAX_GROUP_ID) ||
+      optionalString(process.env.MINIMAX_GROUPID) ||
+      optionalString(process.env.MINIMAX_ACCOUNT_GROUP_ID);
+
+    const groupId = providedGroupId || envGroupId;
+    if (!groupId) {
+      return res.status(500).json({ error: 'MINIMAX_GROUP_ID not configured' });
+    }
+
+    try {
+      const fileData = await minimaxRetrieveFile(apiKey, groupId, fileId);
+      return res.json(fileData);
+    } catch (err) {
+      console.error('Unified Hailuo retrieve error', err);
+      return res.status(502).json({
+        error: err instanceof Error ? err.message : 'Failed to retrieve Hailuo video file',
+      });
+    }
+  }
+
+  if (normalizedAction === 'create') {
+    const prompt = optionalString(params.prompt);
+    const firstFrameImage = optionalString(
+      params.firstFrameImage ?? params.first_frame_image ?? params.firstFrameBase64 ?? params.first_frame_base64,
+    );
+    const lastFrameImage = optionalString(
+      params.lastFrameImage ?? params.last_frame_image ?? params.lastFrameBase64 ?? params.last_frame_base64,
+    );
+
+    if (!prompt && !firstFrameImage && !lastFrameImage) {
+      return res.status(400).json({ error: 'Prompt or frame image is required for Hailuo video generation' });
+    }
+
+    const durationValue = parseNumeric(params.duration);
+    const duration = Number.isFinite(durationValue) ? Math.trunc(durationValue) : undefined;
+    const resolution = optionalString(params.resolution);
+    const promptOptimizerRaw = params.promptOptimizer ?? params.prompt_optimizer;
+    const fastPretreatmentRaw = params.fastPretreatment ?? params.fast_pretreatment;
+    const aigcWatermarkRaw = params.aigcWatermark ?? params.aigc_watermark;
+    const callbackUrl = optionalString(params.callbackUrl ?? params.callback_url);
+
+    const payload = { model };
+
+    if (prompt) payload.prompt = prompt;
+    if (firstFrameImage) payload.first_frame_image = firstFrameImage;
+    if (lastFrameImage) payload.last_frame_image = lastFrameImage;
+    if (typeof duration === 'number') payload.duration = duration;
+    if (resolution) payload.resolution = resolution;
+    if (promptOptimizerRaw !== undefined) {
+      payload.prompt_optimizer = normalizeBooleanInput(promptOptimizerRaw, true);
+    }
+    if (fastPretreatmentRaw !== undefined) {
+      payload.fast_pretreatment = normalizeBooleanInput(fastPretreatmentRaw, false);
+    }
+    if (aigcWatermarkRaw !== undefined) {
+      payload.aigc_watermark = normalizeBooleanInput(aigcWatermarkRaw, false);
+    }
+    if (callbackUrl) payload.callback_url = callbackUrl;
+
+    const response = await fetch(buildMinimaxUrl('v1/video_generation'), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body = await response.json().catch(async () => ({
+      error: await response.text().catch(() => 'Hailuo API request failed'),
+    }));
+
+    const baseResp = body?.base_resp ?? {};
+    const statusCode = typeof baseResp?.status_code === 'number' ? baseResp.status_code : (response.ok ? 0 : response.status);
+
+    if (!response.ok || statusCode !== 0) {
+      const message = baseResp?.status_msg || body?.error || `Hailuo API error: ${response.status}`;
+      return res.status(response.ok ? 502 : response.status).json({ error: message, details: body });
+    }
+
+    const taskId = optionalString(body?.task_id ?? body?.taskId);
+    if (!taskId) {
+      return res.status(502).json({ error: 'Hailuo API did not return a task id', details: body });
+    }
+
+    return res.json({ taskId, output: body, model });
+  }
+
+  if (normalizedAction === 'status') {
+    const taskId = optionalString(
+      params.taskId ?? params.task_id ?? params.id ?? req.query?.taskId ?? req.query?.task_id ?? req.query?.id,
+    );
+    if (!taskId) {
+      return res.status(400).json({ error: 'Hailuo taskId is required' });
+    }
+
+    const statusUrl = new URL(buildMinimaxUrl('v1/query/video_generation'));
+    statusUrl.searchParams.set('task_id', taskId);
+
+    const response = await fetch(statusUrl.toString(), {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    const body = await response.json().catch(async () => ({
+      error: await response.text().catch(() => 'Hailuo status request failed'),
+    }));
+
+    const baseResp = body?.base_resp ?? {};
+    const statusCode = typeof baseResp?.status_code === 'number' ? baseResp.status_code : (response.ok ? 0 : response.status);
+
+    if (!response.ok || statusCode !== 0) {
+      const message = baseResp?.status_msg || body?.error || `Hailuo status error: ${response.status}`;
+      return res.status(response.ok ? 502 : response.status).json({ error: message, details: body });
+    }
+
+    const status = optionalString(body?.status) || 'unknown';
+    const normalizedStatus = status.toLowerCase();
+    const fileId = optionalString(body?.file_id ?? body?.fileId);
+
+    const groupId =
+      optionalString(process.env.MINIMAX_GROUP_ID) ||
+      optionalString(process.env.MINIMAX_GROUPID) ||
+      optionalString(process.env.MINIMAX_ACCOUNT_GROUP_ID);
+
+    let fileData = null;
+    let retrieveError;
+
+    if (normalizedStatus === 'success' && fileId && groupId) {
+      try {
+        fileData = await minimaxRetrieveFile(apiKey, groupId, fileId);
+      } catch (err) {
+        console.warn('Unified Hailuo retrieve status error', err);
+        retrieveError = err instanceof Error ? err.message : 'Failed to retrieve Hailuo video file';
+      }
+    }
+
+    return res.json({
+      taskId,
+      status,
+      fileId,
+      output: body,
+      downloadUrl: fileData?.file?.download_url ?? null,
+      backupDownloadUrl: fileData?.file?.backup_download_url ?? null,
+      file: fileData?.file ?? null,
+      retrieveError,
+    });
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function minimaxRetrieveFile(apiKey, groupId, fileId) {
+  const url = new URL(buildMinimaxUrl('v1/files/retrieve'));
+  url.searchParams.set('GroupId', groupId);
+  url.searchParams.set('file_id', fileId);
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Accept': 'application/json',
+    },
+  });
+
+  const body = await response.json().catch(async () => ({
+    error: await response.text().catch(() => 'Hailuo file retrieve failed'),
+  }));
+
+  const baseResp = body?.base_resp ?? {};
+  const statusCode = typeof baseResp?.status_code === 'number' ? baseResp.status_code : (response.ok ? 0 : response.status);
+
+  if (!response.ok || statusCode !== 0) {
+    const message = baseResp?.status_msg || body?.error || `Hailuo retrieve error: ${response.status}`;
+    throw new Error(message);
+  }
+
+  return body;
+}
+
 app.all('/api/unified-video', async (req, res) => {
   try {
     const rawProvider = req.method === 'GET' ? req.query.provider : req.body?.provider;
@@ -629,6 +834,9 @@ app.all('/api/unified-video', async (req, res) => {
         return await unifiedHandleRunway(req, res, rawParams);
       case 'luma':
         return await unifiedHandleLuma(req, res, action, rawParams);
+      case 'hailuo':
+      case 'minimax':
+        return await unifiedHandleHailuo(req, res, action, rawParams);
       default:
         return res.status(400).json({ error: `Unsupported video provider: ${provider}` });
     }
@@ -642,6 +850,7 @@ app.all('/api/unified-video', async (req, res) => {
 });
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/';
+const MINIMAX_BASE_URL = (process.env.MINIMAX_BASE_URL || 'https://api.minimax.io').replace(/\/$/, '');
 
 function getGeminiApiKey() {
   return process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
@@ -651,6 +860,11 @@ function buildGeminiUrl(path) {
   const base = new URL(GEMINI_API_BASE);
   const normalized = (path || '').trim().replace(/^\//, '');
   return new URL(normalized, base).toString();
+}
+
+function buildMinimaxUrl(path) {
+  const normalized = (path || '').trim().replace(/^\/+/g, '');
+  return `${MINIMAX_BASE_URL}/${normalized}`;
 }
 
 function extractVeoVideoUri(operation) {

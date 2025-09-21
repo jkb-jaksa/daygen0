@@ -26,6 +26,11 @@ DASHSCOPE_BASE=https://dashscope-intl.aliyuncs.com/api/v1
 # Runway API Key for Gen-4 and Gen-4 Turbo models
 RUNWAY_API_KEY=your_runway_api_key_here
 
+# MiniMax Hailuo 02 Video Generation
+MINIMAX_API_KEY=your_minimax_api_key_here
+MINIMAX_GROUP_ID=your_minimax_group_id_here
+# MINIMAX_BASE_URL=https://api.minimax.io
+
 # Seedream 3.0 API Key for high-quality image generation
 ARK_API_KEY=your_ark_api_key_here
 ARK_BASE=https://ark.ap-southeast.bytepluses.com/api/v3

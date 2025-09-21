@@ -65,6 +65,24 @@ const MODEL_CONFIG = {
     icon: '🎥',
     description: 'Runway Gen-4 Video - Text → Video using Gen-4 Turbo'
   },
+  'wan-video-2.2': {
+    name: 'Wan 2.2 Video',
+    shortName: 'Wan',
+    icon: '🎥',
+    description: 'Wan 2.2 Video - Alibaba DashScope text-to-video model'
+  },
+  'hailuo-02': {
+    name: 'Hailuo 02',
+    shortName: 'H02',
+    icon: '🎥',
+    description: 'MiniMax Hailuo 02 - Text-to-video with frame control'
+  },
+  'MiniMax-Hailuo-02': {
+    name: 'Hailuo 02',
+    shortName: 'H02',
+    icon: '🎥',
+    description: 'MiniMax Hailuo 02 - Text-to-video with frame control'
+  },
   'ideogram': {
     name: 'Ideogram 3.0',
     shortName: 'ID3.0',
@@ -142,6 +160,12 @@ const MODEL_CONFIG = {
     shortName: 'V3F',
     icon: '⚡',
     description: 'Google Veo 3 Fast - Quick video generation'
+  },
+  'wan2.2-t2v-plus': {
+    name: 'Wan 2.2 Video',
+    shortName: 'Wan',
+    icon: '🎥',
+    description: 'Wan 2.2 Video - Alibaba DashScope text-to-video model'
   }
 } as const;
 

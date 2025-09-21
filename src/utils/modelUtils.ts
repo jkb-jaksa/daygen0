@@ -45,6 +45,13 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     description: 'Text → Video using Gen-4 Turbo',
     isAvailable: true
   },
+  'wan-video-2.2': {
+    id: 'wan-video-2.2',
+    name: 'Wan 2.2 Video',
+    shortName: 'Wan 2.2',
+    description: 'Wan 2.2 text-to-video generation',
+    isAvailable: true
+  },
   'dalle-3': {
     id: 'dalle-3',
     name: 'DALL-E 3',
