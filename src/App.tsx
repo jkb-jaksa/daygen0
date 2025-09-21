@@ -8,7 +8,6 @@ import { layout, text, buttons } from "./styles/designSystem";
 
 const UseCases = lazy(() => import("./components/UseCases"));
 const ToolsSection = lazy(() => import("./components/ToolsSection"));
-const Services = lazy(() => import("./components/Services"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
 const Prompts = lazy(() => import("./components/Prompts"));
 const Explore = lazy(() => import("./components/Explore"));
@@ -36,7 +35,7 @@ function Home() {
           {/* Main content */}
           <div className="text-center">
             <h1 className={`${text.heroHeading} mb-4`}>
-              Your all-in-one creative AI studio.
+              Your Daily AI Generations
             </h1>
             <div className="mx-auto mb-6 max-w-2xl">
               <div className="text-3xl text-d-text font-raleway mb-6"><span className="text-d-orange">Generate</span>. Daydream.</div>
@@ -105,7 +104,6 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/use-cases" element={<UseCases />} />
             <Route path="/tools" element={<ToolsSection />} />
-            <Route path="/services" element={<Services />} />
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/prompts" element={<Prompts />} />
             <Route path="/explore" element={<Explore />} />

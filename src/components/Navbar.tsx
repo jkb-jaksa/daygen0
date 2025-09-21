@@ -8,7 +8,7 @@ import AuthModal from "./AuthModal";
 import Pricing from "./Pricing";
 import { buttons, glass } from "../styles/designSystem";
 
-type MenuId = "create" | "edit" | "explore" | "knowledge base" | "services" | "about us";
+type MenuId = "create" | "edit" | "explore" | "knowledge base" | "about us";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 
 const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
@@ -16,7 +16,6 @@ const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
   { label: "edit", path: "/edit" },
   { label: "explore", path: "/explore" },
   { label: "knowledge base", path: "/use-cases" },
-  { label: "services", path: "/services" },
   { label: "about us", path: "/about-us" },
 ];
 

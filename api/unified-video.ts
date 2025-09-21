@@ -820,7 +820,7 @@ async function handleKling(
       return res.status(400).json({ error: 'Prompt is required for Kling video generation' });
     }
 
-    const model = toOptionalString(params.model ?? params.model_name) || 'kling-v2-master';
+    const model = toOptionalString(params.model ?? params.model_name) || 'kling-v2.1-master';
 
     const aspectCandidate = toOptionalString(params.aspectRatio ?? params.aspect_ratio);
     const aspectRatio = aspectCandidate && ['16:9', '9:16', '1:1'].includes(aspectCandidate) ? aspectCandidate : '16:9';

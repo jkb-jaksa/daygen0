@@ -735,7 +735,7 @@ const Create: React.FC = () => {
   const [hailuoLastFrame, setHailuoLastFrame] = useState<File | null>(null);
 
   // Kling-specific state
-  const [klingModel, setKlingModel] = useState<'kling-v2-master' | 'kling-v1.6' | 'kling-v1.5' | 'kling-v1'>('kling-v2-master');
+  const [klingModel, setKlingModel] = useState<'kling-v2.1-master' | 'kling-v2-master'>('kling-v2.1-master');
   const [klingAspectRatio, setKlingAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [klingDuration, setKlingDuration] = useState<5 | 10>(5);
   const [klingNegativePrompt, setKlingNegativePrompt] = useState<string>('');
@@ -3679,6 +3679,9 @@ const handleGenerate = async () => {
       if (selectedModel === "seedance-1.0-pro") {
         return { name: "Seedance 1.0 Pro", Icon: Film, desc: "Great quality text-to-image.", id: "seedance-1.0-pro" };
       }
+      if (selectedModel === "kling-video") {
+        return { name: "Kling", Icon: VideoIcon, desc: "ByteDance's Kling V2.1 Master with hyper-realistic motion and advanced physics.", id: "kling-video" };
+      }
       if (selectedModel === "luma-ray-2") {
         return { name: "Luma Ray 2", Icon: VideoIcon, desc: "High-quality video generation with Ray 2.", id: "luma-ray-2" };
       }
@@ -6138,10 +6141,8 @@ const handleGenerate = async () => {
                               onChange={(e) => setKlingModel(e.target.value as typeof klingModel)}
                               className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
                             >
-                              <option value="kling-v2-master">Kling V2 Master (default)</option>
-                              <option value="kling-v1.6">Kling V1.6</option>
-                              <option value="kling-v1.5">Kling V1.5</option>
-                              <option value="kling-v1">Kling V1</option>
+                              <option value="kling-v2.1-master">Kling V2.1 Master (latest)</option>
+                              <option value="kling-v2-master">Kling V2 Master</option>
                             </select>
                           </div>
 
@@ -6810,7 +6811,7 @@ const handleGenerate = async () => {
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "hailuo-02" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
                             }`}>
-                              MiniMax video with 1080p output and frame control.
+                              Great text-to-image.
                             </div>
                           </div>
                           {selectedModel === "hailuo-02" && (
@@ -6848,13 +6849,13 @@ const handleGenerate = async () => {
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "wan-video-2.2" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
                             }`}>
-                              Alibaba Wan 2.2 text-to-video. 5s high-quality clips.
+                              Great text-to-image.
                             </div>
                           </div>
-                        {selectedModel === "wan-video-2.2" && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
-                        )}
-                      </button>
+                          {selectedModel === "wan-video-2.2" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
                         <button
                           onClick={() => {
                             setSelectedModel("kling-video");
@@ -6881,12 +6882,12 @@ const handleGenerate = async () => {
                             <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
                               selectedModel === "kling-video" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
-                              Kling Video
+                              Kling
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "kling-video" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
                             }`}>
-                              ByteDance's Kling video model with cinematic motion control.
+                              Great text-to-image.
                             </div>
                           </div>
                           {selectedModel === "kling-video" && (

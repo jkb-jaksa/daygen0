@@ -23,7 +23,7 @@ export interface KlingCameraControl {
 export interface KlingVideoOptions {
   prompt: string;
   negativePrompt?: string;
-  model?: 'kling-v2-master' | 'kling-v1.6' | 'kling-v1.5' | 'kling-v1';
+  model?: 'kling-v2.1-master' | 'kling-v2-master';
   aspectRatio?: '16:9' | '9:16' | '1:1';
   duration?: 5 | 10;
   cfgScale?: number;
@@ -126,7 +126,7 @@ export function useKlingVideoGeneration() {
           video: {
             url: videoUrl,
             prompt: options?.prompt ?? '',
-            model: options?.model ?? 'kling-v2-master',
+            model: options?.model ?? 'kling-v2.1-master',
             taskId,
             timestamp: new Date().toISOString(),
             aspectRatio,

@@ -64,11 +64,11 @@ NODE_ENV=development
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
-## 🎨 AI Image Generation Features
+## 🎨 AI Generation Features
 
-DayGen supports multiple AI models for image generation and editing:
+DayGen supports multiple AI models for both image and video generation:
 
-### Supported Models
+### 🖼️ Image Generation Models
 - **Gemini 2.5 Flash Image** - Best for image editing and manipulation
 - **FLUX Pro 1.1** - High-quality text-to-image generation
 - **FLUX Pro 1.1 Ultra** - Ultra-high quality 4MP+ generation
@@ -82,6 +82,17 @@ DayGen supports multiple AI models for image generation and editing:
 - **Reve Image** - Great text-to-image and image editing
 - **Recraft v3** - Advanced image generation with text layout and brand controls
 - **Recraft v2** - High-quality image generation and editing
+- **Luma Photon 1** - High-quality image generation with Photon
+- **Luma Photon Flash 1** - Fast image generation with Photon Flash
+
+### 🎬 Video Generation Models
+- **Veo 3** - Google's advanced video generation model with cinematic quality
+- **Runway Gen-4 (Video)** - Text-to-video using Gen-4 Turbo
+- **Wan 2.2 Video** - Alibaba's Wan 2.2 text-to-video model
+- **Hailuo 02** - MiniMax video with start & end frame control
+- **Kling** - ByteDance's cinematic video model with hyper-realistic motion
+- **Seedance 1.0 Pro (Video)** - Great quality text-to-video generation
+- **Luma Ray 2** - High-quality video generation with Ray 2
 
 ### Gemini 2.5 Flash Image Features
 - **Generate**: Text-to-image generation from descriptions
@@ -147,6 +158,58 @@ DayGen supports multiple AI models for image generation and editing:
 - **Background Removal**: Automatic subject detection and background removal
 - **Upscaling**: High-quality image enhancement and upscaling
 - **Multiple Styles**: Realistic, digital illustration, vector, and icon styles
+
+## 🎬 Video Generation Features
+
+### Veo 3 Features
+- **Text-to-Video**: Generate cinematic videos from text descriptions
+- **High Quality**: Professional-grade video generation up to 1080p
+- **Cinematic Motion**: Natural physics and realistic human motion
+- **Sound Integration**: Videos include synchronized audio
+- **Multiple Aspect Ratios**: Support for 16:9, 9:16, and 1:1 formats
+- **Negative Prompts**: Exclude unwanted elements from generation
+
+### Kling Features
+- **Text-to-Video**: Generate videos from text prompts
+- **Model Options**: Kling V2.1 Master (latest) and V2 Master
+- **Aspect Ratios**: 16:9, 9:16, and 1:1 support
+- **Duration Control**: 5 or 10 second videos
+- **Generation Modes**: Standard (720p/24fps) and Professional (1080p/48fps)
+- **Camera Movement**: Advanced camera control with preset movements
+- **CFG Scale**: Creativity control from 0-1
+- **Negative Prompts**: Fine-tune generation with exclusion prompts
+
+### Runway Gen-4 Video Features
+- **Text-to-Video**: Generate videos using Gen-4 Turbo
+- **High Quality**: Professional video generation
+- **Multiple Formats**: Support for various aspect ratios
+- **Fast Generation**: Optimized for speed and quality
+- **Style Control**: Apply artistic styles to generated videos
+
+### Wan 2.2 Video Features
+- **Text-to-Video**: Alibaba's advanced text-to-video generation
+- **High Quality**: 5-second high-quality clips
+- **Multiple Aspect Ratios**: Flexible format support
+- **Fast Processing**: Optimized generation pipeline
+
+### Hailuo 02 Features
+- **Text-to-Video**: MiniMax video generation with frame control
+- **Start/End Frame Control**: Specify first and last frames
+- **Resolution Options**: Multiple quality settings
+- **Duration Control**: Customizable video length
+- **Watermark Options**: Optional branding control
+
+### Seedance 1.0 Pro Video Features
+- **Text-to-Video**: High-quality text-to-video generation
+- **Multiple Formats**: Support for various aspect ratios
+- **Professional Quality**: High-resolution output
+- **Fast Generation**: Optimized processing
+
+### Luma Ray 2 Features
+- **Text-to-Video**: High-quality video generation with Ray 2
+- **Multiple Resolutions**: Support for various quality settings
+- **Duration Control**: Customizable video length
+- **Style Options**: Multiple generation presets
 
 For detailed integration documentation, see:
 - [GEMINI_INTEGRATION.md](./GEMINI_INTEGRATION.md)

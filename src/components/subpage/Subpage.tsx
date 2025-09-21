@@ -21,13 +21,6 @@ type ToolsPage = {
   items: ToolItem[];
 };
 
-type ServicesPage = {
-  type: "services";
-  title: string;
-  subtitle?: string;
-  bullets: string[];
-  ctaLabel: string;
-};
 
 type FaqItem = { q: string; a: string };
 type FaqPage = {
@@ -36,7 +29,7 @@ type FaqPage = {
   items: FaqItem[];
 };
 
-type PageConfig = DetailPage | ToolsPage | ServicesPage | FaqPage;
+type PageConfig = DetailPage | ToolsPage | FaqPage;
 
 // ----- content map (edit freely) -----
 const PAGES: Record<string, PageConfig> = {
@@ -692,18 +685,6 @@ const PAGES: Record<string, PageConfig> = {
     ],
   },
 
-  // SERVICES CTA
-  services: {
-    type: "services",
-    title: "creative AI for your project",
-    subtitle: "Get our support.",
-    bullets: [
-      "use Creative AI for your project.",
-      "train your team to use Creative AI Tools.",
-      "help you choose the right tools.",
-    ],
-    ctaLabel: "Book a Call",
-  },
 
   // FAQ accordion
   faq: {
@@ -873,23 +854,6 @@ export default function Subpage() {
     );
   }
 
-  if (conf.type === "services") {
-    return (
-      <PageChrome title={conf.title} subtitle={conf.subtitle}>
-        <div className="rounded-[28px] p-10 bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-d-black shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-          <p className="text-d-text/80 mb-6">Get our support.</p>
-          <ul className="list-disc pl-6 space-y-2 text-d-text/85">
-            {conf.bullets.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-              <button className="mt-8 btn btn-ghost parallax-mid">
-                {conf.ctaLabel}
-              </button>
-        </div>
-      </PageChrome>
-    );
-  }
 
   // FAQ
   if (conf.type === "faq") {
