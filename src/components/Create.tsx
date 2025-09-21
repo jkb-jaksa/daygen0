@@ -1271,7 +1271,6 @@ const Create: React.FC = () => {
     video: klingGeneratedVideo,
     isPolling: klingIsPolling,
     statusMessage: klingStatusMessage,
-    taskId: klingTaskId,
     generateVideo: generateKlingVideo,
     reset: resetKlingVideo,
   } = useKlingVideoGeneration();
