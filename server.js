@@ -135,6 +135,512 @@ function normalizeInlineImage(rawValue, fallbackMime = 'image/png') {
   };
 }
 
+function normalizeLumaVideoModel(model) {
+  if (typeof model !== 'string') return 'ray-2';
+  const trimmed = model.trim().toLowerCase();
+  if (!trimmed) return 'ray-2';
+  const withoutPrefix = trimmed.startsWith('luma-') ? trimmed.replace('luma-', '') : trimmed;
+  if (['ray-2', 'ray-flash-2', 'ray-1-6'].includes(withoutPrefix)) {
+    return withoutPrefix;
+  }
+  return 'ray-2';
+}
+
+function normalizeLumaDuration(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `${Math.max(1, Math.round(value))}s`;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return '5s';
+    if (trimmed.endsWith('s')) return trimmed;
+    if (/^\d+$/.test(trimmed)) return `${trimmed}s`;
+  }
+  return '5s';
+}
+
+function normalizeBooleanInput(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+function firstString(value) {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value.length ? String(value[0]) : '';
+  }
+  if (value === undefined || value === null) return '';
+  return String(value);
+}
+
+async function unifiedHandleVeo(req, res, action, params) {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
+  }
+
+  const normalizedAction = typeof action === 'string' ? action.toLowerCase() : 'create';
+
+  if (normalizedAction === 'status') {
+    const operationName = firstString(params.operationName || params.name || params.id || params.taskId);
+    if (!operationName) {
+      return res.status(400).json({ error: 'Operation name is required' });
+    }
+
+    const operationUrl = buildGeminiUrl(operationName);
+    const opResponse = await fetch(operationUrl, {
+      headers: { 'X-Goog-Api-Key': apiKey },
+    });
+    const opData = await opResponse.json().catch(async () => ({ error: await opResponse.text().catch(() => 'Unknown error') }));
+
+    if (!opResponse.ok) {
+      console.error('Unified Veo status error', opData);
+      return res.status(opResponse.status).json({ error: 'Failed to check operation status', details: opData });
+    }
+
+    return res.json(opData);
+  }
+
+  if (normalizedAction === 'download') {
+    const operationName = firstString(params.operationName || params.name || params.id || params.taskId);
+    if (!operationName) {
+      return res.status(400).json({ error: 'Operation name is required' });
+    }
+
+    const statusUrl = buildGeminiUrl(operationName);
+    const operationRes = await fetch(statusUrl, {
+      headers: { 'X-Goog-Api-Key': apiKey },
+    });
+    const operation = await operationRes.json().catch(async () => ({ error: await operationRes.text().catch(() => 'Unknown error') }));
+
+    if (!operationRes.ok) {
+      console.error('Unified Veo download status error', operation);
+      return res.status(operationRes.status).json({ error: 'Failed to retrieve operation', details: operation });
+    }
+
+    if (!operation?.done) {
+      return res.status(409).json({ error: 'Operation not completed yet' });
+    }
+
+    if (operation?.error) {
+      const errMessage = operation.error.message || JSON.stringify(operation.error);
+      return res.status(400).json({ error: errMessage, details: operation.error });
+    }
+
+    const videoUrl = extractVeoVideoUri(operation);
+    if (!videoUrl) {
+      return res.status(404).json({ error: 'No video URL found in response', details: operation });
+    }
+
+    const videoResponse = await fetch(videoUrl, {
+      headers: { 'x-goog-api-key': apiKey },
+      redirect: 'follow',
+    });
+
+    if (!videoResponse.ok) {
+      const text = await videoResponse.text().catch(() => 'Failed to download video');
+      return res.status(videoResponse.status).json({ error: 'Failed to download video', details: text });
+    }
+
+    const buffer = Buffer.from(await videoResponse.arrayBuffer());
+    const filename = `veo3_${operationName.split('/').pop() || 'video'}.mp4`;
+
+    res.set({
+      'Content-Type': videoResponse.headers.get('content-type') || 'video/mp4',
+      'Content-Length': String(buffer.length),
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    });
+    return res.send(buffer);
+  }
+
+  const prompt = firstString(params.prompt).trim();
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
+
+  const model = firstString(params.model) || 'veo-3.0-generate-001';
+  const aspectRatio = firstString(params.aspectRatio);
+  const negativePrompt = firstString(params.negativePrompt);
+  const imageBase64 = params.imageBase64;
+  const imageMimeType = firstString(params.imageMimeType) || 'image/png';
+
+  let seed;
+  if (typeof params.seed === 'number' && Number.isFinite(params.seed)) {
+    seed = params.seed;
+  } else if (typeof params.seed === 'string' && params.seed.trim()) {
+    const parsedSeed = Number(params.seed.trim());
+    if (Number.isFinite(parsedSeed)) {
+      seed = parsedSeed;
+    }
+  }
+
+  const instance = { prompt };
+  const inlineImage = normalizeInlineImage(imageBase64, imageMimeType);
+  if (inlineImage) {
+    instance.image = {
+      bytesBase64Encoded: inlineImage.data,
+      mimeType: inlineImage.mimeType,
+    };
+  }
+
+  const parameters = {};
+  if (aspectRatio) parameters.aspectRatio = aspectRatio;
+  if (negativePrompt) parameters.negativePrompt = negativePrompt;
+  if (seed !== undefined) parameters.seed = seed;
+
+  const payload = { instances: [instance] };
+  if (Object.keys(parameters).length > 0) {
+    payload.parameters = parameters;
+  }
+
+  const endpoint = buildGeminiUrl(`models/${model}:predictLongRunning`);
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(async () => ({ error: await response.text().catch(() => 'Unknown error') }));
+  if (!response.ok) {
+    console.error('Unified Veo create error', data);
+    return res.status(response.status).json({ error: 'Failed to create video generation request', details: data });
+  }
+
+  if (!data?.name) {
+    return res.status(502).json({ error: 'Missing operation name in response', details: data });
+  }
+
+  return res.json({ name: data.name, done: Boolean(data.done) });
+}
+
+async function unifiedHandleSeedance(req, res, action, params) {
+  if (!SEEDANCE_ARK_API_KEY) {
+    return res.status(500).json({ error: 'ARK_API_KEY not configured' });
+  }
+
+  const normalizedAction = typeof action === 'string' ? action.toLowerCase() : 'create';
+
+  if (normalizedAction === 'status') {
+    const idRaw = params.id ?? params.taskId;
+    const taskId = firstString(idRaw).trim();
+    if (!taskId) {
+      return res.status(400).json({ error: 'Missing task id' });
+    }
+
+    try {
+      const response = await fetch(`${SEEDANCE_ARK_BASE}/contents/generations/tasks/${encodeURIComponent(taskId)}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${SEEDANCE_ARK_API_KEY}` },
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'Seedance task query failed', details: data });
+      }
+
+      const status = (data && (data.status || data.task_status || data.state)) ?? 'unknown';
+      const outputs = (data && (data.result?.output || data.output || data.data)) ?? null;
+      let videoUrl = null;
+
+      if (Array.isArray(outputs) && outputs.length) {
+        videoUrl = outputs[0]?.url || outputs[0]?.video_url || null;
+      } else if (outputs && typeof outputs === 'object') {
+        videoUrl = outputs.url || outputs.video_url || null;
+      } else if (data?.result?.video_url) {
+        videoUrl = data.result.video_url;
+      }
+
+      return res.json({ status, videoUrl, raw: data });
+    } catch (err) {
+      console.error('Unified Seedance status error', err);
+      return res.status(500).json({ error: err?.message ?? 'Internal error' });
+    }
+  }
+
+  const prompt = firstString(params.prompt).trim();
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
+
+  const mode = firstString(params.mode) || 't2v';
+  const ratio = firstString(params.ratio) || '16:9';
+  const duration = Number(params.duration ?? 5) || 5;
+  const resolution = firstString(params.resolution) || '1080p';
+  const fps = Number(params.fps ?? 24) || 24;
+  const camerafixed = normalizeBooleanInput(params.camerafixed, true);
+  const seed = firstString(params.seed).trim();
+
+  const flags = [
+    `--ratio ${ratio}`,
+    `--duration ${duration}`,
+    `--resolution ${resolution}`,
+    `--fps ${fps}`,
+    `--camerafixed ${String(!!camerafixed)}`,
+  ];
+
+  if (seed) {
+    flags.push(`--seed ${seed}`);
+  }
+
+  const content = [
+    { type: 'text', text: `${prompt}  ${flags.join(' ')}` },
+  ];
+
+  if (mode.startsWith('i2v') && params.imageBase64) {
+    content.push({ type: 'image_url', image_url: { url: params.imageBase64 } });
+  }
+  if (mode === 'i2v-first-last' && params.lastFrameBase64) {
+    content.push({ type: 'image_url', image_url: { url: params.lastFrameBase64 } });
+  }
+
+  const createResp = await fetch(`${SEEDANCE_ARK_BASE}/contents/generations/tasks`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SEEDANCE_ARK_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ model: 'seedance-1-0-pro-250528', content }),
+  });
+
+  const created = await createResp.json().catch(() => null);
+  if (!createResp.ok) {
+    return res.status(createResp.status).json({ error: 'Seedance task create failed', details: created });
+  }
+
+  const taskId = (created && (created.id || created.task_id || created.taskId)) ?? null;
+  if (!taskId) {
+    return res.status(502).json({ error: 'No task id in Seedance response', details: created });
+  }
+
+  return res.json({ taskId, raw: created });
+}
+
+async function unifiedHandleRunway(req, res, params) {
+  const apiKey = process.env.RUNWAY_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'RUNWAY_API_KEY is not configured' });
+  }
+
+  const promptText = firstString(params.promptText || params.prompt).trim();
+  if (!promptText) {
+    return res.status(400).json({ error: 'Provide promptText.' });
+  }
+
+  const model = firstString(params.model) || 'gen4_turbo';
+  const ratio = firstString(params.ratio) || '1280:720';
+  const durationRaw = params.duration ?? 5;
+  const duration = typeof durationRaw === 'number' ? durationRaw : Number.parseInt(String(durationRaw), 10) || 5;
+  const seedRaw = params.seed;
+  const promptImage = firstString(params.promptImage) || DEFAULT_PROMPT_IMAGE;
+  const contentModeration = params.contentModeration;
+
+  try {
+    const client = new RunwayML({ apiKey });
+    const payload = {
+      model,
+      promptText,
+      promptImage,
+      ratio,
+      duration,
+    };
+
+    if (seedRaw !== undefined && seedRaw !== null && String(seedRaw).trim() !== '') {
+      payload.seed = seedRaw;
+    }
+
+    if (contentModeration && typeof contentModeration === 'object') {
+      payload.contentModeration = contentModeration;
+    }
+
+    const task = await client.imageToVideo
+      .create(payload)
+      .waitForTaskOutput({ timeout: 5 * 60 * 1000 });
+
+    const outputUrl = task.output?.[0];
+    if (!outputUrl) {
+      throw new Error('No output URL returned from Runway');
+    }
+
+    return res.json({
+      url: outputUrl,
+      taskId: task.id,
+      meta: {
+        model,
+        ratio,
+        duration,
+        seed: seedRaw ?? null,
+      },
+    });
+  } catch (error) {
+    console.error('Unified Runway error', error);
+    if (error instanceof TaskFailedError) {
+      return res.status(422).json({
+        error: 'Runway task failed',
+        code: 'RUNWAY_TASK_FAILED',
+        details: error.taskDetails,
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+async function unifiedHandleLuma(req, res, action, params) {
+  if (!process.env.LUMAAI_API_KEY) {
+    return res.status(500).json({ error: 'LUMAAI_API_KEY is not configured' });
+  }
+
+  const client = getLuma();
+  const normalizedAction = typeof action === 'string' ? action.toLowerCase() : 'create';
+
+  if (normalizedAction === 'status') {
+    const id = firstString(params.id || params.taskId || params.requestId).trim();
+    if (!id) {
+      return res.status(400).json({ error: 'Missing Luma generation id' });
+    }
+
+    const generation = await client.generations.get(id);
+    if (generation?.state === 'completed' && generation?.assets?.video) {
+      try {
+        const { dataUrl, contentType } = await downloadVideoToBase64(generation.assets.video);
+        return res.json({ ...generation, dataUrl, contentType });
+      } catch (downloadError) {
+        console.warn('Unified Luma status download error', downloadError);
+        return res.json(generation);
+      }
+    }
+
+    return res.json(generation);
+  }
+
+  if (normalizedAction === 'download') {
+    const id = firstString(params.id || params.taskId || params.requestId).trim();
+    if (!id) {
+      return res.status(400).json({ error: 'Missing Luma generation id' });
+    }
+
+    const generation = await client.generations.get(id);
+    if (!generation?.assets?.video) {
+      return res.status(404).json({ error: 'No video asset available for download', state: generation?.state });
+    }
+
+    const assetResponse = await fetch(generation.assets.video);
+    if (!assetResponse.ok) {
+      const message = await assetResponse.text().catch(() => 'Failed to download Luma video');
+      return res.status(assetResponse.status).json({ error: message });
+    }
+
+    const buffer = Buffer.from(await assetResponse.arrayBuffer());
+    const contentType = assetResponse.headers.get('content-type') || 'video/mp4';
+    const filename = `luma_${id}.mp4`;
+
+    res.set({
+      'Content-Type': contentType,
+      'Content-Length': String(buffer.length),
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    });
+    return res.send(buffer);
+  }
+
+  const prompt = firstString(params.prompt).trim();
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required for Luma video generation' });
+  }
+
+  const model = normalizeLumaVideoModel(params.model ? String(params.model) : undefined);
+  const resolution = firstString(params.resolution).trim() || '720p';
+  const duration = normalizeLumaDuration(params.duration);
+  const loop = normalizeBooleanInput(params.loop, false);
+
+  const payload = {
+    prompt,
+    model,
+    resolution,
+    duration,
+  };
+
+  if (params.keyframes && typeof params.keyframes === 'object') {
+    payload.keyframes = params.keyframes;
+  }
+
+  if (Array.isArray(params.concepts)) {
+    payload.concepts = params.concepts;
+  }
+
+  if (loop) {
+    payload.loop = true;
+  }
+
+  const callback = firstString(params.callback_url).trim();
+  if (callback) {
+    payload.callback_url = callback;
+  } else {
+    const fallbackBase = resolvePublicBaseUrl(req);
+    if (fallbackBase) {
+      payload.callback_url = `${fallbackBase}/api/luma/webhook`;
+    }
+  }
+
+  const generation = await client.generations.create(payload);
+
+  return res.json({
+    id: generation.id,
+    state: generation.state,
+    status: generation.state,
+  });
+}
+
+app.all('/api/unified-video', async (req, res) => {
+  try {
+    const rawProvider = req.method === 'GET' ? req.query.provider : req.body?.provider;
+    const provider = firstString(rawProvider).toLowerCase();
+    if (!provider) {
+      return res.status(400).json({ error: 'Video provider is required' });
+    }
+
+    const rawAction = req.method === 'GET' ? req.query.action : req.body?.action;
+    const action = firstString(rawAction) || (req.method === 'GET' ? 'status' : 'create');
+
+    const rawParams = req.method === 'GET'
+      ? { ...req.query }
+      : (typeof req.body === 'object' && req.body !== null ? { ...req.body } : {});
+    delete rawParams.provider;
+    delete rawParams.action;
+
+    switch (provider) {
+      case 'veo':
+        return await unifiedHandleVeo(req, res, action, rawParams);
+      case 'seedance':
+        return await unifiedHandleSeedance(req, res, action, rawParams);
+      case 'runway':
+        return await unifiedHandleRunway(req, res, rawParams);
+      case 'luma':
+        return await unifiedHandleLuma(req, res, action, rawParams);
+      default:
+        return res.status(400).json({ error: `Unsupported video provider: ${provider}` });
+    }
+  } catch (err) {
+    console.error('Unified video API error', err);
+    return res.status(500).json({
+      error: 'Video generation failed',
+      details: err?.message || 'Unknown error',
+    });
+  }
+});
+
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/';
 
 function getGeminiApiKey() {
@@ -2554,7 +3060,6 @@ app.post('/api/unified-generate', async (req, res) => {
       
       case 'luma-ray-2':
       case 'luma-ray-flash-2':
-      case 'luma-ray-1-6':
         return await handleUnifiedLumaVideo(req, res, { prompt: promptText, model, ...otherParams });
       
       default:

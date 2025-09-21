@@ -142,13 +142,6 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     shortName: 'Ray Flash',
     description: 'Luma Ray Flash 2 - Fast video generation',
     isAvailable: true
-  },
-  'luma-ray-1-6': {
-    id: 'luma-ray-1-6',
-    name: 'Luma Ray 1.6',
-    shortName: 'Ray 1.6',
-    description: 'Luma Ray 1.6 - Legacy video generation',
-    isAvailable: true
   }
 };
 

@@ -1,9 +1,61 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import RunwayML, { TaskFailedError } from '@runwayml/sdk';
+import { LumaAI } from 'lumaai';
+import { downloadVideoToBase64 } from '../src/lib/luma.js';
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/';
 const ARK_BASE = process.env.ARK_BASE || 'https://ark.ap-southeast.bytepluses.com/api/v3';
 const DEFAULT_PROMPT_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200';
+
+let cachedLumaClient: LumaAI | null = null;
+
+function getLumaClient(): LumaAI {
+  if (cachedLumaClient) return cachedLumaClient;
+  const key = process.env.LUMAAI_API_KEY;
+  if (!key) {
+    throw new Error('LUMAAI_API_KEY is not configured');
+  }
+  cachedLumaClient = new LumaAI({ authToken: key });
+  return cachedLumaClient;
+}
+
+function normalizeLumaVideoModel(model?: string | null): string {
+  if (!model || typeof model !== 'string') return 'ray-2';
+  const trimmed = model.trim().toLowerCase();
+  if (!trimmed) return 'ray-2';
+  const withoutPrefix = trimmed.startsWith('luma-') ? trimmed.replace('luma-', '') : trimmed;
+  switch (withoutPrefix) {
+    case 'ray-2':
+    case 'ray-flash-2':
+    case 'ray-1-6':
+      return withoutPrefix;
+    default:
+      return 'ray-2';
+  }
+}
+
+function normalizeLumaDuration(duration?: string | number | null): string {
+  if (typeof duration === 'string') {
+    const trimmed = duration.trim();
+    if (!trimmed) return '5s';
+    if (trimmed.endsWith('s')) return trimmed;
+    if (/^\d+$/.test(trimmed)) return `${trimmed}s`;
+  }
+  if (typeof duration === 'number' && Number.isFinite(duration)) {
+    return `${Math.max(1, Math.round(duration))}s`;
+  }
+  return '5s';
+}
+
+function normalizeBoolean(value: unknown, fallback = false): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  }
+  return fallback;
+}
 
 // Helper functions
 function getGeminiApiKey(): string | null {
@@ -70,16 +122,29 @@ function extractVideoUri(operation: VeoOperation | null | undefined): string | n
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { action, provider, ...params } = req.body ?? {};
+    const bodyParams = (typeof req.body === 'object' && req.body !== null) ? req.body as Record<string, unknown> : {};
+    const queryParams = req.query as Record<string, unknown>;
 
-    // Route based on provider and action
+    const provider = (bodyParams.provider ?? queryParams.provider) as string | undefined;
+    const action = (bodyParams.action ?? queryParams.action ?? (req.method === 'GET' ? 'status' : 'create')) as string | undefined;
+
+    if (!provider || typeof provider !== 'string') {
+      return res.status(400).json({ error: 'Video provider is required' });
+    }
+
+    const params: Record<string, unknown> = { ...queryParams, ...bodyParams };
+    delete params.provider;
+    delete params.action;
+
     switch (provider) {
       case 'veo':
-        return await handleVeo(req, res, action, params);
+        return await handleVeo(req, res, action ?? 'create', params);
       case 'seedance':
-        return await handleSeedance(req, res, action, params);
+        return await handleSeedance(req, res, action ?? 'create', params);
       case 'runway':
         return await handleRunway(req, res, params);
+      case 'luma':
+        return await handleLuma(req, res, action ?? 'create', params);
       default:
         return res.status(400).json({ error: `Unsupported video provider: ${provider}` });
     }
@@ -397,5 +462,114 @@ async function handleRunway(req: VercelRequest, res: VercelResponse, params: any
       error: 'Generation failed',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
+  }
+}
+
+// Luma Ray video handler
+async function handleLuma(req: VercelRequest, res: VercelResponse, action: string, params: Record<string, unknown>) {
+  if (!process.env.LUMAAI_API_KEY) {
+    return res.status(500).json({ error: 'LUMAAI_API_KEY is not configured' });
+  }
+
+  try {
+    const client = getLumaClient();
+
+    if (action === 'status' || (req.method === 'GET' && action !== 'download')) {
+      const idRaw = params.id ?? params.taskId ?? params.requestId;
+      const id = typeof idRaw === 'string' ? idRaw : Array.isArray(idRaw) ? idRaw[0] : '';
+      if (!id) {
+        return res.status(400).json({ error: 'Missing Luma generation id' });
+      }
+
+      const generation = await client.generations.get(id);
+
+      if (generation?.state === 'completed' && generation?.assets?.video) {
+        try {
+          const { dataUrl, contentType } = await downloadVideoToBase64(generation.assets.video);
+          return res.status(200).json({ ...generation, dataUrl, contentType });
+        } catch (downloadError) {
+          console.warn('Failed to download Luma video asset:', downloadError);
+          return res.status(200).json(generation);
+        }
+      }
+
+      return res.status(200).json(generation);
+    }
+
+    if (action === 'download') {
+      const idRaw = params.id ?? params.taskId ?? params.requestId;
+      const id = typeof idRaw === 'string' ? idRaw : Array.isArray(idRaw) ? idRaw[0] : '';
+      if (!id) {
+        return res.status(400).json({ error: 'Missing Luma generation id' });
+      }
+
+      const generation = await client.generations.get(id);
+      if (!generation?.assets?.video) {
+        return res.status(404).json({ error: 'No video asset available for download', state: generation?.state });
+      }
+
+      const assetResponse = await fetch(generation.assets.video);
+      if (!assetResponse.ok) {
+        const message = await assetResponse.text().catch(() => 'Failed to download Luma video');
+        return res.status(assetResponse.status).json({ error: message });
+      }
+
+      const buffer = Buffer.from(await assetResponse.arrayBuffer());
+      const contentType = assetResponse.headers.get('content-type') || 'video/mp4';
+      const filename = `luma_${id}.mp4`;
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', String(buffer.length));
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Cache-Control', 'no-store');
+      return res.send(buffer);
+    }
+
+    // default to create action
+    const prompt = typeof params.prompt === 'string' ? params.prompt.trim() : '';
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required for Luma video generation' });
+    }
+
+    const normalizedModel = normalizeLumaVideoModel(params.model as string | undefined);
+    const resolution = typeof params.resolution === 'string' && params.resolution.trim() ? params.resolution.trim() : '720p';
+    const duration = normalizeLumaDuration(params.duration as string | number | undefined);
+    const loop = normalizeBoolean(params.loop, false);
+
+    const payload: Record<string, unknown> = {
+      prompt,
+      model: normalizedModel,
+      resolution,
+      duration,
+    };
+
+    if (params.keyframes && typeof params.keyframes === 'object') {
+      payload.keyframes = params.keyframes;
+    }
+
+    if (Array.isArray(params.concepts)) {
+      payload.concepts = params.concepts;
+    }
+
+    if (loop) {
+      payload.loop = true;
+    }
+
+    const callback = params.callback_url;
+    if (typeof callback === 'string' && callback.trim()) {
+      payload.callback_url = callback.trim();
+    }
+
+    const generation = await client.generations.create(payload as any);
+
+    return res.status(200).json({
+      id: generation.id,
+      state: generation.state,
+      status: generation.state,
+    });
+  } catch (error) {
+    console.error('Luma video handler error:', error);
+    const message = error instanceof Error ? error.message : 'Luma video generation failed';
+    return res.status(500).json({ error: message });
   }
 }

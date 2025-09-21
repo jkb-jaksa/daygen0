@@ -1,4 +1,26 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { getLuma, downloadImageToBase64, downloadVideoToBase64 } from '../src/lib/luma.js';
+
+type LumaGenerationState = 'queued' | 'dreaming' | 'completed' | 'failed';
+
+function normalizeLumaImageModel(model?: string): 'photon-1' | 'photon-flash-1' {
+  const normalized = (model || '').trim().toLowerCase();
+  const withoutPrefix = normalized.startsWith('luma-') ? normalized.replace('luma-', '') : normalized;
+  return withoutPrefix === 'photon-flash-1' ? 'photon-flash-1' : 'photon-1';
+}
+
+function ensureLumaDuration(value?: string | number): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `${Math.max(1, Math.round(value))}s`;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return '5s';
+    if (trimmed.endsWith('s')) return trimmed;
+    if (/^\d+$/.test(trimmed)) return `${trimmed}s`;
+  }
+  return '5s';
+}
 
 // Helper function to normalize inline image data
 function normalizeInlineImage(dataUrl: string | undefined, mimeType?: string): { data: string; mimeType: string } | null {
@@ -20,18 +42,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { model, prompt, imageBase64, mimeType, references, ...otherParams } = req.body ?? {};
+    const { model, prompt, imageBase64, mimeType, references, action = 'create', ...otherParams } = req.body ?? {};
 
-    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
-    if (!promptText) {
-      return res.status(400).json({ error: 'Prompt is required' });
-    }
-
-    if (!model) {
+    if (!model || typeof model !== 'string') {
       return res.status(400).json({ error: 'Model is required' });
     }
 
-    console.log('Unified API - Received model:', model, 'Type:', typeof model);
+    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    if (action === 'create' && !promptText) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    console.log('Unified API - Received model:', model, 'Action:', action);
 
     // Route to appropriate handler based on model
     switch (model) {
@@ -63,12 +85,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       case 'luma-photon-1':
       case 'luma-photon-flash-1':
-        return await handleLumaImage(req, res, { prompt: promptText, model, ...otherParams });
+        return await handleLumaImage(req, res, { prompt: promptText, model, action, ...otherParams });
       
       case 'luma-ray-2':
       case 'luma-ray-flash-2':
-      case 'luma-ray-1-6':
-        return await handleLumaVideo(req, res, { prompt: promptText, model, ...otherParams });
+        return await handleLumaVideo(req, res, { prompt: promptText, model, action, ...otherParams });
       
       default:
         return res.status(400).json({ error: `Unsupported model: ${model}` });
@@ -382,39 +403,67 @@ async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, 
 }
 
 // Luma Image handler (Photon)
-async function handleLumaImage(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+async function handleLumaImage(
+  req: VercelRequest,
+  res: VercelResponse,
+  { prompt, model, action = 'create', ...params }: { prompt: string; model: string; action?: string; [key: string]: unknown }
+) {
   if (!process.env.LUMAAI_API_KEY) {
     return res.status(500).json({ error: 'Luma API key not configured' });
   }
 
   try {
-    const response = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/luma/image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt,
-        model: model.replace('luma-', ''), // Remove 'luma-' prefix
-        aspect_ratio: params.aspect_ratio || '16:9',
-        image_ref: params.image_ref,
-        style_ref: params.style_ref,
-        character_ref: params.character_ref,
-        modify_image_ref: params.modify_image_ref,
-        callback_url: params.callback_url
-      })
-    });
+    const luma = getLuma();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).json({ 
-        error: `Luma Image API error: ${response.status}`, 
-        details: errorText 
-      });
+    if (action !== 'create') {
+      const idRaw = params.id ?? params.taskId ?? params.requestId;
+      const id = typeof idRaw === 'string' ? idRaw : Array.isArray(idRaw) ? idRaw[0] : '';
+      if (!id) {
+        return res.status(400).json({ error: 'Missing Luma image generation id' });
+      }
+
+      const generation = await luma.generations.get(id);
+      if ((generation?.state as LumaGenerationState) === 'completed' && generation?.assets?.image) {
+        try {
+          const { dataUrl, contentType } = await downloadImageToBase64(generation.assets.image);
+          return res.json({ ...generation, dataUrl, contentType });
+        } catch (downloadError) {
+          console.warn('Failed to download Luma image asset:', downloadError);
+          return res.json(generation);
+        }
+      }
+
+      return res.json(generation);
     }
 
-    const result = await response.json();
-    res.json(result);
+    const normalizedModel = normalizeLumaImageModel(model);
+    const aspectRatio = typeof params.aspect_ratio === 'string' && params.aspect_ratio.trim()
+      ? params.aspect_ratio.trim()
+      : '16:9';
+
+    const payload: Record<string, unknown> = {
+      prompt,
+      model: normalizedModel,
+      aspect_ratio: aspectRatio,
+    };
+
+    if (params.image_ref) payload.image_ref = params.image_ref;
+    if (params.style_ref) payload.style_ref = params.style_ref;
+    if (params.character_ref) payload.character_ref = params.character_ref;
+    if (params.modify_image_ref) payload.modify_image_ref = params.modify_image_ref;
+
+    const callback = params.callback_url;
+    if (typeof callback === 'string' && callback.trim()) {
+      payload.callback_url = callback.trim();
+    }
+
+    const generation = await luma.generations.image.create(payload as any);
+
+    return res.json({
+      id: generation.id,
+      state: generation.state,
+      status: generation.state,
+    });
   } catch (err) {
     console.error('Luma Image API error:', err);
     res.status(500).json({ 
@@ -424,40 +473,69 @@ async function handleLumaImage(req: VercelRequest, res: VercelResponse, { prompt
   }
 }
 
-// Luma Video handler (Ray)
-async function handleLumaVideo(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+// Luma Video handler (Ray) - kept for backward compatibility while frontend migrates to unified-video
+async function handleLumaVideo(
+  req: VercelRequest,
+  res: VercelResponse,
+  { prompt, model, action = 'create', ...params }: { prompt: string; model: string; action?: string; [key: string]: unknown }
+) {
   if (!process.env.LUMAAI_API_KEY) {
     return res.status(500).json({ error: 'Luma API key not configured' });
   }
 
   try {
-    const response = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/luma/video`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt,
-        model: model.replace('luma-', ''), // Remove 'luma-' prefix
-        resolution: params.resolution || '720p',
-        duration: params.duration || '5s',
-        keyframes: params.keyframes,
-        loop: params.loop || false,
-        concepts: params.concepts,
-        callback_url: params.callback_url
-      })
-    });
+    const luma = getLuma();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).json({ 
-        error: `Luma Video API error: ${response.status}`, 
-        details: errorText 
-      });
+    if (action !== 'create') {
+      const idRaw = params.id ?? params.taskId ?? params.requestId;
+      const id = typeof idRaw === 'string' ? idRaw : Array.isArray(idRaw) ? idRaw[0] : '';
+      if (!id) {
+        return res.status(400).json({ error: 'Missing Luma video generation id' });
+      }
+
+      const generation = await luma.generations.get(id);
+      if ((generation?.state as LumaGenerationState) === 'completed' && generation?.assets?.video) {
+        try {
+          const { dataUrl, contentType } = await downloadVideoToBase64(generation.assets.video);
+          return res.json({ ...generation, dataUrl, contentType });
+        } catch (downloadError) {
+          console.warn('Failed to download Luma video asset:', downloadError);
+          return res.json(generation);
+        }
+      }
+
+      return res.json(generation);
     }
 
-    const result = await response.json();
-    res.json(result);
+    const normalizedModel = model.startsWith('luma-') ? model.replace('luma-', '') : model;
+    const resolution = typeof params.resolution === 'string' && params.resolution.trim()
+      ? params.resolution.trim()
+      : '720p';
+    const duration = ensureLumaDuration(params.duration as string | number | undefined);
+
+    const payload: Record<string, unknown> = {
+      prompt,
+      model: normalizedModel,
+      resolution,
+      duration,
+    };
+
+    if (params.keyframes) payload.keyframes = params.keyframes;
+    if (params.concepts) payload.concepts = params.concepts;
+    if (params.loop) payload.loop = params.loop;
+
+    const callback = params.callback_url;
+    if (typeof callback === 'string' && callback.trim()) {
+      payload.callback_url = callback.trim();
+    }
+
+    const generation = await luma.generations.create(payload as any);
+
+    return res.json({
+      id: generation.id,
+      state: generation.state,
+      status: generation.state,
+    });
   } catch (err) {
     console.error('Luma Video API error:', err);
     res.status(500).json({ 

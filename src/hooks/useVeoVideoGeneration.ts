@@ -59,13 +59,15 @@ export const useVeoVideoGeneration = () => {
     try {
       const { prompt, model = 'veo-3.0-generate-001', aspectRatio = '16:9', negativePrompt, seed, imageBase64, imageMimeType } = options;
 
-      const apiUrl = getApiUrl('/api/video-veo');
+      const apiUrl = getApiUrl('/api/unified-video');
       debugLog('[video] POST', apiUrl);
-      
+
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
+          provider: 'veo',
+          action: 'create',
           prompt, 
           model,
           aspectRatio,
@@ -77,8 +79,8 @@ export const useVeoVideoGeneration = () => {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP ${res.status}`);
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || `HTTP ${res.status}`);
       }
 
       const data = await res.json();
@@ -112,14 +114,19 @@ export const useVeoVideoGeneration = () => {
 
     const poll = async () => {
       try {
-        const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=status`);
+        const search = new URLSearchParams({
+          provider: 'veo',
+          action: 'status',
+          operationName,
+        });
+        const apiUrl = getApiUrl(`/api/unified-video?${search.toString()}`);
         debugLog('[video] Polling status:', apiUrl);
         
         const res = await fetch(apiUrl);
         
         if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || `HTTP ${res.status}`);
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error || `HTTP ${res.status}`);
         }
 
         const data = await res.json();
@@ -167,14 +174,19 @@ export const useVeoVideoGeneration = () => {
 
   const downloadVideo = useCallback(async (operationName: string) => {
     try {
-      const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=download`);
+      const search = new URLSearchParams({
+        provider: 'veo',
+        action: 'download',
+        operationName,
+      });
+      const apiUrl = getApiUrl(`/api/unified-video?${search.toString()}`);
       debugLog('[video] Downloading video:', apiUrl);
       
       const res = await fetch(apiUrl);
       
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP ${res.status}`);
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || `HTTP ${res.status}`);
       }
 
       // Convert response to blob and create object URL

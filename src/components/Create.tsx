@@ -32,6 +32,7 @@ import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
+import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
 import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
@@ -131,8 +132,6 @@ const AI_MODELS = [
   { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan" as Accent, id: "luma-photon-1" },
   { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan" as Accent, id: "luma-photon-flash-1" },
   { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-2" },
-  { name: "Luma Ray Flash 2", desc: "Fast video generation with Ray Flash 2.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-flash-2" },
-  { name: "Luma Ray 1.6", desc: "Legacy video generation with Ray 1.6.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-1-6" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -149,32 +148,13 @@ const ModelMenuPortal: React.FC<{
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
     
-    // Dynamic height based on category - video has fewer models
-    const dropdownHeight = activeCategory === "video" ? 200 : 384;
-    
-    // Calculate if we should position above or below
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    
-    let top, transform;
-    if (spaceBelow >= dropdownHeight || spaceBelow > spaceAbove) {
-      // Position below
-      top = rect.bottom + 8;
-      transform = 'translateY(0)';
-    } else {
-      // Position above with better spacing - compensate for padding differences
-      const paddingCompensation = activeCategory === "video" ? 8 : 12;
-      top = Math.max(8, rect.top - dropdownHeight - paddingCompensation);
-      transform = 'translateY(0)';
-    }
-    
+    // Simple positioning - always position above the trigger button like in Edit component
     setPos({ 
-      top, 
-      left: Math.max(8, Math.min(rect.left, window.innerWidth - 400)), // Keep within viewport
-      width: Math.max(384, rect.width), // Minimum 384px width (w-96 equivalent)
-      transform
+      top: rect.top - 8, // 8px offset above
+      left: rect.left, 
+      width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
+      transform: 'translateY(-100%)' // Position above the trigger
     });
   }, [open, anchorRef, activeCategory]);
 
@@ -216,13 +196,9 @@ const ModelMenuPortal: React.FC<{
         left: pos.left, 
         width: pos.width, 
         zIndex: 1000,
-        transform: pos.transform,
-        maxHeight: activeCategory === "video" ? '200px' : '384px', // Dynamic max height
-        minHeight: activeCategory === "video" ? 'auto' : '200px', // Dynamic min height
-        overflowY: 'auto', // Ensure scrolling is enabled
-        overflowX: 'hidden' // Prevent horizontal scrolling
+        transform: pos.transform
       }}
-      className={`bg-d-dark/90 backdrop-blur-sm border border-d-dark rounded-lg focus:outline-none shadow-lg ${
+      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto ${
         activeCategory === "video" ? "p-1" : "p-2"
       }`}
       onWheel={(e) => {
@@ -686,7 +662,7 @@ const Create: React.FC = () => {
   const isVeo = selectedModel === "veo-3";
   const isSeedance = selectedModel === "seedance-1.0-pro";
   const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
-  const isLumaRay = selectedModel === "luma-ray-2" || selectedModel === "luma-ray-flash-2" || selectedModel === "luma-ray-1-6";
+  const isLumaRay = selectedModel === "luma-ray-2";
   const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
@@ -716,6 +692,7 @@ const Create: React.FC = () => {
   
   // Luma Photon-specific state
   const [lumaPhotonModel, setLumaPhotonModel] = useState<'luma-photon-1' | 'luma-photon-flash-1'>('luma-photon-1');
+  const [lumaRayVariant, setLumaRayVariant] = useState<'luma-ray-2' | 'luma-ray-flash-2'>('luma-ray-2');
   
   // Seedance-specific state
   const [seedanceMode, setSeedanceMode] = useState<'t2v' | 'i2v-first' | 'i2v-first-last'>('t2v');
@@ -891,9 +868,7 @@ const Create: React.FC = () => {
         model.id === 'veo-3' || 
         model.id === 'runway-video-gen4' ||
         model.id === 'seedance-1.0-pro' ||
-        model.id === 'luma-ray-2' ||
-        model.id === 'luma-ray-flash-2' ||
-        model.id === 'luma-ray-1-6'
+        model.id === 'luma-ray-2'
       ).map(model => model.id).sort();
     } else if (galleryFilters.type === 'image') {
       // Return image models (exclude video models and Photon Flash variant)
@@ -902,8 +877,6 @@ const Create: React.FC = () => {
         model.id !== 'runway-video-gen4' &&
         model.id !== 'seedance-1.0-pro' &&
         model.id !== 'luma-ray-2' &&
-        model.id !== 'luma-ray-flash-2' &&
-        model.id !== 'luma-ray-1-6' &&
         model.id !== 'luma-photon-flash-1'
       ).map(model => model.id).sort();
     } else {
@@ -988,7 +961,7 @@ const Create: React.FC = () => {
 
   // Auto-select default model when switching categories
   useEffect(() => {
-    const videoModels = ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-ray-flash-2", "luma-ray-1-6"];
+    const videoModels = ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2"];
     if (activeCategory === "video" && !videoModels.includes(selectedModel)) {
       setSelectedModel("veo-3");
     } else if (activeCategory === "image" && videoModels.includes(selectedModel)) {
@@ -1167,9 +1140,6 @@ const Create: React.FC = () => {
     error: runwayVideoError,
     generate: generateVideo,
   } = useRunwayVideoGeneration();
-  
-  // Debug: Check if runwayVideoStatus is defined
-  console.log('runwayVideoStatus:', runwayVideoStatus);
 
   const {
     error: seedreamError,
@@ -1191,6 +1161,15 @@ const Create: React.FC = () => {
     generateVideo: generateSeedanceVideo,
   } = useSeedanceVideoGeneration();
 
+  const {
+    isLoading: lumaVideoLoading,
+    isPolling: lumaVideoPolling,
+    error: lumaVideoError,
+    video: lumaGeneratedVideo,
+    generate: generateLumaVideo,
+    reset: resetLumaVideo,
+  } = useLumaVideoGeneration();
+
   // Handle Seedance video generation
   useEffect(() => {
     if (seedanceVideo) {
@@ -1208,8 +1187,24 @@ const Create: React.FC = () => {
     }
   }, [seedanceVideo]);
 
+  useEffect(() => {
+    if (lumaGeneratedVideo) {
+      const videoWithOperation: GalleryVideoLike = {
+        url: lumaGeneratedVideo.url,
+        prompt: lumaGeneratedVideo.prompt,
+        model: lumaGeneratedVideo.model,
+        timestamp: lumaGeneratedVideo.timestamp,
+        type: 'video',
+        operationName: lumaGeneratedVideo.id,
+      };
+
+      debugLog('[Create] Adding Luma video to gallery:', videoWithOperation);
+      setVideoGallery(prev => [videoWithOperation, ...prev]);
+    }
+  }, [lumaGeneratedVideo]);
+
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || lumaVideoError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
@@ -2663,9 +2658,9 @@ const Create: React.FC = () => {
       } else if (selectedModel === "seedance-1.0-pro") {
         debugLog('[Create] Using Seedance video generation');
         await handleGenerateSeedanceVideo();
-      } else if (selectedModel === "luma-ray-2" || selectedModel === "luma-ray-flash-2" || selectedModel === "luma-ray-1-6") {
+      } else if (selectedModel === "luma-ray-2") {
         debugLog('[Create] Using Luma Ray video generation');
-        await handleGenerateImage();
+        await handleGenerateLumaVideo();
       } else {
         debugLog('[Create] Unknown video model, using default generation');
         await handleGenerateImage();
@@ -2752,9 +2747,48 @@ const Create: React.FC = () => {
     }
   };
 
+  const handleGenerateLumaVideo = async () => {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) return;
+
+    debugLog('[Create] Starting Luma video generation, setting isButtonSpinning to true');
+
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 1000);
+
+    try {
+      resetLumaVideo();
+      await generateLumaVideo({
+        prompt: trimmedPrompt,
+        model: lumaRayVariant,
+        resolution: '720p',
+        durationSeconds: 5,
+        loop: false,
+      });
+    } catch (error) {
+      console.error('Luma video generation error:', error);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+  };
+
   const handleDownloadVideo = async (operationName: string) => {
     try {
-      const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=download`);
+      const search = new URLSearchParams({
+        provider: 'veo',
+        action: 'download',
+        operationName,
+      });
+      const apiUrl = getApiUrl(`/api/unified-video?${search.toString()}`);
       
       // Trigger download by creating a temporary anchor tag
       const a = document.createElement('a');
@@ -3103,10 +3137,11 @@ const Create: React.FC = () => {
       } else if (isLumaPhoton) {
         // Use Luma Photon generation via unified API
         debugLog('[Create] Using Luma Photon generation');
-        const response = await fetch('/api/unified-generate', {
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            action: 'create',
             model: lumaPhotonModel, // Use the selected model from settings
             prompt: trimmedPrompt,
             aspect_ratio: '16:9' // Default aspect ratio for Luma Photon
@@ -3131,7 +3166,15 @@ const Create: React.FC = () => {
         while (attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
           
-          const statusResponse = await fetch(`/api/luma/image?id=${result.id}`);
+          const statusResponse = await fetch(getApiUrl('/api/unified-generate'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'status',
+              model: lumaPhotonModel,
+              id: result.id
+            })
+          });
           if (!statusResponse.ok) {
             throw new Error('Failed to check Luma Photon status');
           }
@@ -3296,12 +3339,6 @@ const Create: React.FC = () => {
       }
       if (selectedModel === "luma-ray-2") {
         return { name: "Luma Ray 2", Icon: VideoIcon, desc: "High-quality video generation with Ray 2.", id: "luma-ray-2" };
-      }
-      if (selectedModel === "luma-ray-flash-2") {
-        return { name: "Luma Ray Flash 2", Icon: VideoIcon, desc: "Fast video generation with Ray Flash 2.", id: "luma-ray-flash-2" };
-      }
-      if (selectedModel === "luma-ray-1-6") {
-        return { name: "Luma Ray 1.6", Icon: VideoIcon, desc: "Legacy video generation with Ray 1.6.", id: "luma-ray-1-6" };
       }
       return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
     }
@@ -5315,18 +5352,21 @@ const Create: React.FC = () => {
                     : ""}>
                 <button 
                   onClick={handleGenerate}
-                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isRunwayVideoGenerating = selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running';
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || seedanceLoading;
+                    const isLumaGenerating = isLumaRay && (lumaVideoLoading || lumaVideoPolling);
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || seedanceLoading || isLumaGenerating;
                     debugLog('[Create] Button state:', { 
                       isButtonSpinning: isButtonSpinning, 
                       isVideoGenerating: isVideoGenerating, 
                       isVideoPolling: isVideoPolling, 
                       isRunwayVideoGenerating: isRunwayVideoGenerating,
                       runwayVideoStatus: runwayVideoStatus || 'undefined',
+                      lumaVideoLoading,
+                      lumaVideoPolling,
                       showSpinner: showSpinner,
                       activeCategory: activeCategory,
                       selectedModel: selectedModel
@@ -5338,7 +5378,17 @@ const Create: React.FC = () => {
                     );
                   })()}
                   {activeCategory === "video" ? 
-                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running' ? "Generating..." : selectedModel === "seedance-1.0-pro" && seedanceLoading ? "Generating..." : isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate") : 
+                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
+                      ? "Generating..."
+                      : selectedModel === "seedance-1.0-pro" && seedanceLoading
+                        ? "Generating..."
+                        : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
+                          ? "Generating..."
+                          : isVideoGenerating
+                            ? "Starting..."
+                            : isVideoPolling
+                              ? "Generating..."
+                              : "Generate") : 
                     "Generate"
                   }
                 </button>
@@ -5363,11 +5413,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models.')}
-                    title={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models"}
+                    onClick={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models.')}
+                    title={(isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Seedance, Recraft, and Luma models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton)
+                      (isGemini || isFlux || isVeo || isRunway || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -5752,6 +5802,34 @@ const Create: React.FC = () => {
                     </SettingsPortal>
                   )}
 
+                  {isLumaRay && (
+                    <SettingsPortal
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Luma Ray Settings</div>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Variant</label>
+                            <select
+                              value={lumaRayVariant}
+                              onChange={(e) => setLumaRayVariant(e.target.value as 'luma-ray-2' | 'luma-ray-flash-2')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="luma-ray-2">Ray 2 (Quality)</option>
+                              <option value="luma-ray-flash-2">Ray Flash 2 (Fast)</option>
+                            </select>
+                            <div className="text-xs text-d-white/60 mt-1">
+                              {lumaRayVariant === 'luma-ray-2' ? 'Best quality for cinematic shots' : 'Faster generations for exploration'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  )}
+
                   {isQwen && (
                     <SettingsPortal 
                       anchorRef={settingsRef}
@@ -5976,7 +6054,46 @@ const Create: React.FC = () => {
                               Great quality text-to-image.
                             </div>
                           </div>
-                          {selectedModel === "seedance-1.0-pro" && (
+                        {selectedModel === "seedance-1.0-pro" && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                        )}
+                      </button>
+                        <button
+                          onClick={() => {
+                            debugLog('[Create] Selecting Luma Ray 2 video model');
+                            setSelectedModel("luma-ray-2");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "luma-ray-2"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10'
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Luma Ray 2") ? (
+                            <img
+                              src={getToolLogo("Luma Ray 2")!}
+                              alt="Luma Ray 2 logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "luma-ray-2" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "luma-ray-2" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Luma Ray 2
+                            </div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "luma-ray-2" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              Cinematic 4K video with detailed camera control.
+                            </div>
+                          </div>
+                          {selectedModel === "luma-ray-2" && (
                             <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
@@ -5984,14 +6101,14 @@ const Create: React.FC = () => {
                     ) : (
                       AI_MODELS.filter(model => 
                         // Filter models based on category
-                        activeCategory === "image" ? 
-                          !["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-ray-flash-2", "luma-ray-1-6", "luma-photon-flash-1"].includes(model.id) : 
+                          activeCategory === "image" ? 
+                          !["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
                           activeCategory === "video" ?
-                            ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2", "luma-ray-flash-2", "luma-ray-1-6"].includes(model.id) :
+                            ["veo-3", "runway-video-gen4", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
                             true
                       ).map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "luma-ray-flash-2" && model.id !== "luma-ray-1-6";
+                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2";
                       
                       return (
                         <button

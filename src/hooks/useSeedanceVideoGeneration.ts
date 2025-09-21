@@ -88,10 +88,12 @@ export const useSeedanceVideoGeneration = () => {
         lastFrameBase64 = await fileToDataUrl(lastFrameFile);
       }
 
-      const res = await fetch(getApiUrl('/api/seedance-video'), {
+      const res = await fetch(getApiUrl('/api/unified-video'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          provider: 'seedance',
+          action: 'create',
           prompt,
           mode,
           ratio,
@@ -120,7 +122,12 @@ export const useSeedanceVideoGeneration = () => {
       const started = Date.now();
       pollTimer.current = setInterval(async () => {
         try {
-          const r = await fetch(getApiUrl(`/api/seedance-task?id=${encodeURIComponent(taskId)}`));
+          const pollSearch = new URLSearchParams({
+            provider: 'seedance',
+            action: 'status',
+            id: taskId,
+          });
+          const r = await fetch(getApiUrl(`/api/unified-video?${pollSearch.toString()}`));
           const j = await safeJson(r);
           const status = j?.status || 'unknown';
           setState(s => ({ ...s, status }));

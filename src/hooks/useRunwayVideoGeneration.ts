@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export type RunwayVideoOptions = {
   model?: 'gen4_turbo' | 'gen4_aleph' | 'act_two';
@@ -29,10 +30,12 @@ export function useRunwayVideoGeneration() {
     setTaskId(null);
     
     try {
-      const res = await fetch('/api/runway/video', {
+      const res = await fetch(getApiUrl('/api/unified-video'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          provider: 'runway',
+          action: 'create',
           promptText,
           promptImage,
           ...options,
