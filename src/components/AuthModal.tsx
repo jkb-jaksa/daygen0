@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
-import GoogleLogin from "./GoogleLogin";
 import { buttons, glass } from "../styles/designSystem";
 
 interface AuthModalProps {
@@ -14,14 +13,38 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   const [mode, setMode] = useState<"login"|"signup">(defaultMode);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === "login") await signIn(email.trim());
-    else await signUp(email.trim(), name.trim() || undefined);
-    onClose();
+    setError(null);
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      if (mode === "login") {
+        await signIn(email.trim(), password);
+      } else {
+        await signUp(email.trim(), password, name.trim() || undefined);
+      }
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Authentication failed.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -38,27 +61,33 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
           <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-brand"}`}>Sign up</button>
         </div>
 
-        <div className="space-y-3">
-          <GoogleLogin onSuccess={onClose} />
-          <div className="text-center text-xs text-d-light mb-4 font-raleway">or continue with email</div>
-          
-          <form onSubmit={submit} className="space-y-3">
-            {mode === "signup" && (
-              <div>
-                <label className="block text-sm text-d-text mb-2 font-cabin">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your name" />
-              </div>
-            )}
+        <form onSubmit={submit} className="space-y-3">
+          {mode === "signup" && (
             <div>
-              <label className="block text-sm text-d-text mb-2 font-cabin">Email</label>
-              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
+              <label className="block text-sm text-d-text mb-2 font-cabin">Name</label>
+              <input value={name} onChange={e=>setName(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Display name" />
             </div>
-            <button type="submit" className={`${buttons.blockPrimary} mt-4 font-cabin`}>
-              Continue
-            </button>
-          </form>
-        </div>
-        <p className="text-xs text-d-light mt-4 text-center font-raleway">No password — this is a demo-only login to test flows.</p>
+          )}
+          <div>
+            <label className="block text-sm text-d-text mb-2 font-cabin">Email</label>
+            <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
+          </div>
+          <div>
+            <label className="block text-sm text-d-text mb-2 font-cabin">Password</label>
+            <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="At least 8 characters" />
+          </div>
+          {mode === "signup" && (
+            <div>
+              <label className="block text-sm text-d-text mb-2 font-cabin">Confirm password</label>
+              <input type="password" required value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} className="w-full py-2 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Repeat password" />
+            </div>
+          )}
+          {error && <p className="text-xs text-red-400 font-raleway">{error}</p>}
+          <button type="submit" disabled={submitting} className={`${buttons.blockPrimary} mt-2 font-cabin disabled:opacity-50 disabled:cursor-not-allowed`}>
+            {submitting ? "Working..." : mode === "login" ? "Log in" : "Create account"}
+          </button>
+        </form>
+        <p className="text-xs text-d-light mt-4 text-center font-raleway">Use a unique password; credentials are stored securely in your DayGen account.</p>
       </div>
     </div>
   );

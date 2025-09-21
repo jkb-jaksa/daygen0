@@ -14,6 +14,7 @@ import Prompts from "./components/Prompts";
 import Explore from "./components/Explore";
 import { useAuth } from "./auth/AuthContext";
 import { layout, text, buttons } from "./styles/designSystem";
+import TemplatesDebug from "./components/TemplatesDebug";
 
 function Home() {
   return (
@@ -65,9 +66,13 @@ function Home() {
 }
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   
+  if (loading) {
+    return <div className="min-h-screen bg-black text-d-white flex items-center justify-center">Loading...</div>;
+  }
+
   if (!user) {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/account?next=${next}`} replace />;
@@ -99,6 +104,7 @@ export default function App() {
           <Route path="/create" element={<Create />} />
           <Route path="/edit" element={<Edit />} />
           <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+          <Route path="/debug/templates" element={<TemplatesDebug />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />

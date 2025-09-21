@@ -3,14 +3,15 @@ import { useAuth } from "../auth/AuthContext";
 import { Upload, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
-import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
+import { getPersistedValue, migrateKeyToIndexedDb, setPersistedValue } from "../lib/clientStorage";
 import { buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
+import { fetchGallery } from "../lib/galleryApi";
 
-type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
+type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string; remoteId?: string; isPublic?: boolean };
 
 export default function Account() {
-  const { user, updateProfile, logOut, storagePrefix } = useAuth();
+  const { user, token, updateProfile, logOut, storagePrefix } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
@@ -49,6 +50,57 @@ export default function Account() {
       cancelled = true;
     };
   }, [storagePrefix]);
+
+  useEffect(() => {
+    if (!token || !user?.id) return;
+    let cancelled = false;
+
+    const syncGalleryFromServer = async () => {
+      try {
+        const aggregated: GalleryItem[] = [];
+        let cursor: string | undefined;
+
+        while (!cancelled) {
+          const { items, nextCursor } = await fetchGallery(token, cursor, 50);
+          for (const entry of items) {
+            const metadata = entry.metadata ?? {};
+            aggregated.push({
+              url: entry.assetUrl,
+              prompt: typeof metadata.prompt === 'string' ? metadata.prompt : '',
+              model: typeof metadata.model === 'string' ? metadata.model : 'unknown',
+              timestamp: entry.createdAt ?? new Date().toISOString(),
+              ownerId: user.id,
+              remoteId: entry.id,
+              isPublic: metadata.isPublic === true,
+            });
+          }
+
+          if (!nextCursor) break;
+          cursor = nextCursor;
+        }
+
+        if (cancelled) return;
+        setGallery(aggregated);
+        const stored = aggregated.map(item => ({
+          url: item.url,
+          prompt: item.prompt,
+          model: item.model,
+          timestamp: item.timestamp,
+          ownerId: item.ownerId,
+          isPublic: item.isPublic,
+          remoteId: item.remoteId,
+        }));
+        await setPersistedValue(storagePrefix, 'gallery', stored);
+      } catch (error) {
+        debugError('Account - failed to sync gallery from server', error);
+      }
+    };
+
+    void syncGalleryFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user?.id, storagePrefix]);
 
 
   const handleProfilePicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,8 +141,16 @@ export default function Account() {
     reader.onload = (e) => {
       const result = e.target?.result as string;
       if (result) {
-        updateProfile({ profilePic: result });
-        setIsUploadingPic(false);
+        void (async () => {
+          try {
+            await updateProfile({ profilePic: result });
+          } catch (error) {
+            debugError('Failed to update profile picture', error);
+            alert('Could not update profile picture. Please try again.');
+          } finally {
+            setIsUploadingPic(false);
+          }
+        })();
       }
     };
     reader.onerror = () => {
@@ -101,10 +161,17 @@ export default function Account() {
   };
 
   const handleRemoveProfilePic = () => {
-    updateProfile({ profilePic: undefined });
+    void (async () => {
+      try {
+        await updateProfile({ profilePic: null });
+      } catch (error) {
+        debugError('Failed to remove profile picture', error);
+        alert('Could not remove profile picture. Please try again.');
+      }
+    })();
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     const trimmed = (name ?? "").trim();
     
     if (!trimmed) {
@@ -115,8 +182,13 @@ export default function Account() {
     // Compare with the current user name (also trimmed for consistency)
     const currentUserName = (user?.name ?? "").trim();
     if (trimmed !== currentUserName) {
-      // Only update if there are changes
-      updateProfile({ name: trimmed });
+      try {
+        await updateProfile({ name: trimmed });
+      } catch (error) {
+        debugError('Failed to update profile name', error);
+        alert('Could not update profile name. Please try again.');
+        return;
+      }
     }
     
     // Always navigate to close the section, regardless of whether changes were made
@@ -197,6 +269,23 @@ export default function Account() {
           className="hidden"
         />
       </header>
+
+      <section className="max-w-5xl mx-auto mb-8 grid gap-4 sm:grid-cols-3">
+        <div className={`${glass.surface} p-4`} aria-label="Available credits">
+          <div className="text-xs uppercase tracking-wide text-d-light font-raleway">Credits</div>
+          <div className="text-2xl font-cabin text-d-white">
+            {user.credits.toLocaleString()}
+          </div>
+        </div>
+        <div className={`${glass.surface} p-4`} aria-label="Account email">
+          <div className="text-xs uppercase tracking-wide text-d-light font-raleway">Email</div>
+          <div className="text-sm font-raleway text-d-white break-words">{user.email}</div>
+        </div>
+        <div className={`${glass.surface} p-4`} aria-label="Member since">
+          <div className="text-xs uppercase tracking-wide text-d-light font-raleway">Member since</div>
+          <div className="text-sm font-raleway text-d-white">{new Date(user.createdAt).toLocaleDateString()}</div>
+        </div>
+      </section>
 
       <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
         <div className={`${glass.surface} p-5`}>

@@ -1,128 +1,187 @@
-import React, { createContext, useContext, useMemo, useCallback, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { apiRequest } from "../lib/apiClient";
+
+const TOKEN_KEY = "daygen:authToken";
+
+const avatarPalette = ["#f59e0b", "#84cc16", "#10b981", "#06b6d4", "#60a5fa", "#a78bfa", "#f472b6"] as const;
+
+type ApiUser = {
+  id: string;
+  authUserId: string;
+  email: string;
+  displayName: string | null;
+  credits: number;
+  profileImage: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 type User = {
-  id: string;           // stable per email
+  id: string;
+  authUserId: string;
   email: string;
-  name?: string;
-  color?: string;       // for avatar chip
-  profilePic?: string;  // base64 data URL for profile picture
+  name: string | null;
+  credits: number;
+  profilePic: string | null;
+  createdAt: string;
+  updatedAt: string;
+  color: string;
 };
 
 type AuthContextValue = {
   user: User | null;
-  users: User[];
-  storagePrefix: string;                       // e.g. "daygen:u_xxx:"
-  signIn: (email: string) => Promise<User>;
-  signUp: (email: string, name?: string) => Promise<User>;
+  token: string | null;
+  loading: boolean;
+  storagePrefix: string;
+  signIn: (email: string, password: string) => Promise<User>;
+  signUp: (email: string, password: string, name?: string) => Promise<User>;
   logOut: () => void;
-  updateProfile: (patch: Partial<User>) => void;
+  refreshProfile: () => Promise<User | null>;
+  updateProfile: (patch: { name?: string; profilePic?: string | null }) => Promise<User | null>;
 };
 
-const LS_USERS = "daygen:users";
-const LS_CURRENT = "daygen:currentUserEmail";
-
-function loadUsers(): User[] {
-  try { return JSON.parse(localStorage.getItem(LS_USERS) || "[]"); } catch { return []; }
-}
-function saveUsers(users: User[]) {
-  localStorage.setItem(LS_USERS, JSON.stringify(users));
-}
-function emailToId(email: string) {
-  const e = email.trim().toLowerCase();
-  // base64 without padding is fine for a local id
-  return "u_" + btoa(e).replace(/=+$/,"");
-}
-function randomColor() {
-  const colors = ["#f59e0b","#84cc16","#10b981","#06b6d4","#60a5fa","#a78bfa","#f472b6"];
-  return colors[Math.floor(Math.random()*colors.length)];
-}
+type AuthResponse = {
+  accessToken: string;
+  user: ApiUser;
+};
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function colourFromEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) % avatarPalette.length;
+  }
+  return avatarPalette[Math.abs(hash) % avatarPalette.length];
+}
+
+function mapUser(apiUser: ApiUser): User {
+  return {
+    id: apiUser.id,
+    authUserId: apiUser.authUserId,
+    email: apiUser.email,
+    name: apiUser.displayName,
+    credits: apiUser.credits,
+    profilePic: apiUser.profileImage,
+    createdAt: apiUser.createdAt,
+    updatedAt: apiUser.updatedAt,
+    color: colourFromEmail(apiUser.email),
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([]);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const persistToken = useCallback((nextToken: string | null) => {
+    if (nextToken) {
+      localStorage.setItem(TOKEN_KEY, nextToken);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+    setToken(nextToken);
+  }, []);
+
+  const bootstrap = useCallback(async (activeToken: string | null) => {
+    if (!activeToken) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const profile = await apiRequest<ApiUser>("/auth/me", { method: "GET" }, activeToken);
+      setUser(mapUser(profile));
+    } catch (error) {
+      console.warn("Failed to refresh profile", error);
+      persistToken(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [persistToken]);
 
   useEffect(() => {
-    const u = loadUsers();
-    setUsers(u);
-    const current = localStorage.getItem(LS_CURRENT);
-    if (current) {
-      const found = u.find(x => x.email.toLowerCase() === current.toLowerCase()) || null;
-      setUser(found);
-    }
-  }, []);
+    void bootstrap(token);
+  }, [bootstrap, token]);
 
-  const persistCurrent = useCallback((u: User | null) => {
-    if (u) localStorage.setItem(LS_CURRENT, u.email);
-    else localStorage.removeItem(LS_CURRENT);
-  }, []);
+  const signIn = useCallback(async (email: string, password: string) => {
+    const result = await apiRequest<AuthResponse>(
+      "/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      },
+    );
+    persistToken(result.accessToken);
+    const mapped = mapUser(result.user);
+    setUser(mapped);
+    return mapped;
+  }, [persistToken]);
 
-  const signIn = useCallback(async (email: string) => {
-    const id = emailToId(email);
-    let u = loadUsers();
-    let found = u.find(x => x.id === id);
-    if (!found) {
-      // dev convenience: auto-create on first sign-in if not found
-      found = { id, email, name: email.split("@")[0], color: randomColor() };
-      u = [...u, found];
-      saveUsers(u);
-    }
-    setUsers(u);
-    setUser(found);
-    persistCurrent(found);
-    return found!;
-  }, [persistCurrent]);
-
-  const signUp = useCallback(async (email: string, name?: string) => {
-    const id = emailToId(email);
-    let u = loadUsers();
-    let found = u.find(x => x.id === id);
-    if (!found) {
-      found = { id, email, name, color: randomColor() };
-      u = [...u, found];
-      saveUsers(u);
-    } else {
-      // update name on re-signup
-      if (name && !found.name) {
-        found = { ...found, name };
-        u = u.map(x => x.id === id ? found! : x);
-        saveUsers(u);
-      }
-    }
-    setUsers(u);
-    setUser(found);
-    persistCurrent(found);
-    return found!;
-  }, [persistCurrent]);
+  const signUp = useCallback(async (email: string, password: string, name?: string) => {
+    const result = await apiRequest<AuthResponse>(
+      "/auth/signup",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password, displayName: name }),
+      },
+    );
+    persistToken(result.accessToken);
+    const mapped = mapUser(result.user);
+    setUser(mapped);
+    return mapped;
+  }, [persistToken]);
 
   const logOut = useCallback(() => {
-    // grab current before clearing
-    const current = user;
-    try {
-      // Revoke Google consent if available
-      const g = (window as any)?.google?.accounts?.id;
-      if (g) {
-        g.disableAutoSelect();
-        if (current?.email) g.revoke(current.email, () => {});
-      }
-    } catch {}
+    persistToken(null);
     setUser(null);
-    persistCurrent(null);
-  }, [persistCurrent, user]);
+  }, [persistToken]);
 
-  const updateProfile = useCallback((patch: Partial<User>) => {
-    if (!user) return;
-    const next = { ...user, ...patch };
-    setUser(next);
-    const all = loadUsers().map(x => x.id === user.id ? next : x);
-    saveUsers(all);
-    setUsers(all);
-  }, [user]);
+  const refreshProfile = useCallback(async () => {
+    if (!token) return null;
+    const profile = await apiRequest<ApiUser>("/auth/me", { method: "GET" }, token);
+    const mapped = mapUser(profile);
+    setUser(mapped);
+    return mapped;
+  }, [token]);
+
+  const updateProfile = useCallback(async (patch: { name?: string; profilePic?: string | null }) => {
+    if (!token) return null;
+    const payload: { displayName?: string | null; profileImage?: string | null } = {};
+    if (patch.name !== undefined) payload.displayName = patch.name || null;
+    if (patch.profilePic !== undefined) payload.profileImage = patch.profilePic ?? null;
+
+    const updated = await apiRequest<ApiUser>(
+      "/users/me",
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      },
+      token,
+    );
+    const mapped = mapUser(updated);
+    setUser(mapped);
+    return mapped;
+  }, [token]);
 
   const storagePrefix = useMemo(() => `daygen:${user?.id ?? "guest"}:`, [user]);
 
-  const value: AuthContextValue = { user, users, storagePrefix, signIn, signUp, logOut, updateProfile };
+  const value = useMemo<AuthContextValue>(() => ({
+    user,
+    token,
+    loading,
+    storagePrefix,
+    signIn,
+    signUp,
+    logOut,
+    refreshProfile,
+    updateProfile,
+  }), [user, token, loading, storagePrefix, signIn, signUp, logOut, refreshProfile, updateProfile]);
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

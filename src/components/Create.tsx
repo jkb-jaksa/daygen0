@@ -24,6 +24,7 @@ import { PromptHistoryChips } from './PromptHistoryChips';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import { compressDataUrl } from "../lib/imageCompression";
+import { fetchGallery, createGalleryEntry, deleteGalleryEntry } from "../lib/galleryApi";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
@@ -51,9 +52,10 @@ type GalleryImageLike = {
   jobId?: string;
   references?: string[];
   isPublic?: boolean;
+  remoteId?: string;
 };
 
-type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string; isPublic?: boolean };
+type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string; isPublic?: boolean; remoteId?: string };
 type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };
 
 type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
@@ -71,6 +73,7 @@ const toStorable = (items: GalleryImageLike[]): StoredGalleryImage[] =>
     timestamp: item.timestamp,
     ownerId: item.ownerId,
     isPublic: item.isPublic,
+    remoteId: item.remoteId,
     ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
   }));
 
@@ -83,6 +86,7 @@ const hydrateStoredGallery = (items: StoredGalleryImage[]): GalleryImageLike[] =
       timestamp: item.timestamp,
       ownerId: item.ownerId,
       isPublic: item.isPublic ?? false,
+      remoteId: item.remoteId,
     };
 
     if (item.model?.startsWith('flux') || item.model?.startsWith('reve')) {
@@ -601,7 +605,7 @@ const Create: React.FC = () => {
     </div>
   );
   
-  const { user, storagePrefix } = useAuth();
+  const { user, token, storagePrefix } = useAuth();
   const navigate = useNavigate();
   
   // Prompt history
@@ -1052,6 +1056,48 @@ const Create: React.FC = () => {
     };
   }, [storagePrefix]);
 
+  useEffect(() => {
+    if (!token || !user?.id) return;
+    let cancelled = false;
+
+    const syncGalleryFromServer = async () => {
+      try {
+        const aggregated: GalleryImageLike[] = [];
+        let cursor: string | undefined;
+
+        while (!cancelled) {
+          const { items, nextCursor } = await fetchGallery(token, cursor, 50);
+          for (const entry of items) {
+            const metadata = entry.metadata ?? {};
+            aggregated.push({
+              url: entry.assetUrl,
+              prompt: typeof metadata.prompt === 'string' ? metadata.prompt : '',
+              model: typeof metadata.model === 'string' ? metadata.model : undefined,
+              timestamp: entry.createdAt ?? new Date().toISOString(),
+              ownerId: user.id,
+              remoteId: entry.id,
+              isPublic: metadata.isPublic === true,
+            });
+          }
+
+          if (!nextCursor) break;
+          cursor = nextCursor;
+        }
+
+        if (cancelled) return;
+        setGallery(aggregated);
+        await setPersistedValue(storagePrefix, 'gallery', toStorable(aggregated));
+      } catch (error) {
+        debugError('Failed to sync gallery from server', error);
+      }
+    };
+
+    void syncGalleryFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user?.id, storagePrefix]);
+
   // Backup gallery state periodically to prevent data loss
   useEffect(() => {
     if (gallery.length > 0) {
@@ -1139,16 +1185,15 @@ const Create: React.FC = () => {
 
   // Backup function to persist gallery state
   const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
-    // Don't persist empty galleries - this prevents race conditions
-    if (galleryData.length === 0) {
-      debugWarn('Skipping persistence of empty gallery to prevent data loss');
-      return galleryData;
-    }
-
     const persistLean = async (data: GalleryImageLike[]) => {
       await setPersistedValue(storagePrefix, 'gallery', toStorable(data));
       await refreshStorageEstimate();
     };
+
+    if (galleryData.length === 0) {
+      await persistLean([]);
+      return galleryData;
+    }
     try {
       await persistLean(galleryData);
       debugLog('Gallery backup persisted with', galleryData.length, 'images');
@@ -1381,7 +1426,13 @@ const Create: React.FC = () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
       let nextGallery: GalleryImageLike[] = [];
+      const remoteIdsToDelete: string[] = [];
       setGallery(currentGallery => {
+        currentGallery.forEach(img => {
+          if (urlsToDelete.has(img.url) && img.remoteId) {
+            remoteIdsToDelete.push(img.remoteId);
+          }
+        });
         const updated = currentGallery.filter(img => img && !urlsToDelete.has(img.url));
         nextGallery = updated;
         return updated;
@@ -1393,6 +1444,14 @@ const Create: React.FC = () => {
           setGallery(persisted);
         }
       })();
+
+      if (token && remoteIdsToDelete.length > 0) {
+        void Promise.all(
+          remoteIdsToDelete.map(id => 
+            deleteGalleryEntry(token, id).catch(error => debugWarn('Failed to delete gallery entry on server', error))
+          ),
+        );
+      }
 
       const nextFavorites = new Set(favorites);
       let favoritesChanged = false;
@@ -2639,22 +2698,24 @@ const Create: React.FC = () => {
 
       // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
-        // Compress the image to reduce storage size
         const compressedUrl = await compressDataUrl(img.url);
-        
-        // Add ownerId to the image and strip heavy references field
-        const imgWithOwner: GeneratedImage = { 
-          ...img, 
+        const timestamp = new Date().toISOString();
+        const derivedModel = typeof (img as any)?.model === 'string' ? (img as any).model : modelForGeneration ?? 'unknown';
+
+        const galleryItem: GalleryImageLike = {
           url: compressedUrl,
+          prompt: trimmedPrompt,
+          model: derivedModel,
+          timestamp,
           ownerId: user?.id,
-          references: undefined // strip heavy field
+          jobId: 'jobId' in (img as any) ? (img as any).jobId : undefined,
+          isPublic: false,
         };
-        // Use functional update to ensure we get the latest gallery state
+
         let computedNext: GalleryImageLike[] = [];
         setGallery(currentGallery => {
           debugLog('Adding new image to gallery. Current gallery size:', currentGallery.length);
-          
-          // Keep all existing gallery items, don't filter them out
+
           const dedup = (list: GalleryImageLike[]) => {
             const seen = new Set<string>();
             const out: GalleryImageLike[] = [];
@@ -2668,9 +2729,7 @@ const Create: React.FC = () => {
             return out;
           };
 
-          // Create new gallery with new image first, then existing images
-          const newGallery = dedup([imgWithOwner, ...currentGallery]);
-          // Keep reasonable number of images to avoid exhausting client storage quota
+          const newGallery = dedup([galleryItem, ...currentGallery]);
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           debugLog('Final gallery size after dedup and slice:', next.length);
 
@@ -2681,16 +2740,38 @@ const Create: React.FC = () => {
         void (async () => {
           const persisted = await persistGallery(computedNext);
           if (persisted.length !== computedNext.length) {
-            // Only update if there's a significant difference
             debugWarn(`Gallery persistence mismatch: expected ${computedNext.length}, got ${persisted.length}`);
           }
-          // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
           setTimeout(() => {
             refreshStorageEstimate();
           }, 100);
         })();
-        
-        // Save prompt to history on successful generation
+
+        if (token) {
+          const metadataPayload = {
+            prompt: trimmedPrompt,
+            model: derivedModel,
+            isPublic: false,
+            createdAt: timestamp,
+          } as Record<string, unknown>;
+
+          void createGalleryEntry(token, { assetUrl: compressedUrl, metadata: metadataPayload })
+            .then(entry => {
+              setGallery(current => {
+                const updated = current.map(item =>
+                  item.url === galleryItem.url
+                    ? { ...item, remoteId: entry.id, timestamp: entry.createdAt ?? item.timestamp }
+                    : item,
+                );
+                void setPersistedValue(storagePrefix, 'gallery', toStorable(updated));
+                return updated;
+              });
+            })
+            .catch(error => {
+              debugError('Failed to persist gallery entry to server', error);
+            });
+        }
+
         addPrompt(trimmedPrompt);
       }
     } catch (error) {

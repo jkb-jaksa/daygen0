@@ -255,9 +255,9 @@ export default function Navbar() {
                 >
                   <CreditCard className="size-4" />
                   <span className="hidden sm:inline font-cabin text-sm">
-                    Credits: 1,247
+                    Credits: {user.credits.toLocaleString()}
                   </span>
-                  <span className="sm:hidden font-cabin text-sm">1,247</span>
+                  <span className="sm:hidden font-cabin text-sm">{user.credits.toLocaleString()}</span>
                 </button>
                 
                 {/* Upgrade Button */}
