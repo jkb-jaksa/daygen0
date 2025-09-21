@@ -1,22 +1,13 @@
 {
   "functions": {
-    "api/generate-image.ts": {
-      "maxDuration": 30
-    },
     "api/unified-generate.ts": {
       "maxDuration": 30
     },
-    "api/video-veo.ts": {
+    "api/unified-video.ts": {
       "maxDuration": 60
     },
-    "api/seedance-video.ts": {
+    "api/unified-flux.ts": {
       "maxDuration": 30
-    },
-    "api/seedance-task.ts": {
-      "maxDuration": 30
-    },
-    "api/runway/video.ts": {
-      "maxDuration": 60
     }
   },
   "rewrites": [
