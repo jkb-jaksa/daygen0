@@ -135,6 +135,38 @@ function normalizeInlineImage(rawValue, fallbackMime = 'image/png') {
   };
 }
 
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/';
+
+function getGeminiApiKey() {
+  return process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
+}
+
+function buildGeminiUrl(path) {
+  const base = new URL(GEMINI_API_BASE);
+  const normalized = (path || '').trim().replace(/^\//, '');
+  return new URL(normalized, base).toString();
+}
+
+function extractVeoVideoUri(operation) {
+  if (!operation) return null;
+  const direct = operation?.response?.generatedVideos?.[0]?.video?.uri;
+  if (direct) return direct;
+
+  const generatedSample = operation?.response?.generateVideoResponse?.generatedSamples?.[0];
+  if (generatedSample?.video?.uri) return generatedSample.video.uri;
+
+  const fallback = operation?.response?.generateVideoResponse?.generatedVideos?.[0]?.video?.uri;
+  if (fallback) return fallback;
+
+  const alt = operation?.response?.generatedVideos?.[0]?.videoUri;
+  if (typeof alt === 'string' && alt) return alt;
+
+  return null;
+}
+
+const SEEDANCE_ARK_BASE = process.env.ARK_BASE || 'https://ark.ap-southeast.bytepluses.com/api/v3';
+const SEEDANCE_ARK_API_KEY = process.env.ARK_API_KEY;
+
 // Gemini image generation endpoint
 app.post('/api/generate-image', async (req, res) => {
   try {
@@ -898,6 +930,121 @@ app.post('/api/runway/video', async (req, res) => {
       error: 'Generation failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+app.post('/api/seedance-video', async (req, res) => {
+  try {
+    const {
+      prompt,
+      mode = 't2v',
+      ratio = '16:9',
+      duration = 5,
+      resolution = '1080p',
+      fps = 24,
+      camerafixed = true,
+      seed,
+      imageBase64,
+      lastFrameBase64,
+    } = req.body ?? {};
+
+    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    if (!promptText) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!SEEDANCE_ARK_API_KEY) {
+      return res.status(500).json({ error: 'ARK_API_KEY not configured' });
+    }
+
+    const flags = [
+      `--ratio ${ratio}`,
+      `--duration ${duration}`,
+      `--resolution ${resolution}`,
+      `--fps ${fps}`,
+      `--camerafixed ${String(!!camerafixed)}`,
+    ];
+
+    if (seed !== undefined && seed !== null && String(seed).trim() !== '') {
+      flags.push(`--seed ${seed}`);
+    }
+
+    const content = [
+      { type: 'text', text: `${promptText}  ${flags.join(' ')}` },
+    ];
+
+    if (mode.startsWith('i2v') && imageBase64) {
+      content.push({ type: 'image_url', image_url: { url: imageBase64 } });
+    }
+    if (mode === 'i2v-first-last' && lastFrameBase64) {
+      content.push({ type: 'image_url', image_url: { url: lastFrameBase64 } });
+    }
+
+    const modelId = 'seedance-1-0-pro-250528';
+    const createResp = await fetch(`${SEEDANCE_ARK_BASE}/contents/generations/tasks`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SEEDANCE_ARK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: modelId, content }),
+    });
+
+    const created = await createResp.json().catch(() => null);
+    if (!createResp.ok) {
+      return res.status(createResp.status).json({ error: 'Seedance task create failed', details: created });
+    }
+
+    const taskId = (created && (created.id || created.task_id || created.taskId)) ?? null;
+    if (!taskId) {
+      return res.status(502).json({ error: 'No task id in Seedance response', details: created });
+    }
+
+    return res.status(200).json({ taskId, raw: created });
+  } catch (err) {
+    console.error('Seedance video create error', err);
+    return res.status(500).json({ error: err?.message ?? 'Internal error' });
+  }
+});
+
+app.get('/api/seedance-task', async (req, res) => {
+  if (!SEEDANCE_ARK_API_KEY) {
+    return res.status(500).json({ error: 'ARK_API_KEY not configured' });
+  }
+
+  const id = req.query?.id ?? req.query?.taskId;
+  const taskId = Array.isArray(id) ? id[0] : id;
+  if (typeof taskId !== 'string' || !taskId.trim()) {
+    return res.status(400).json({ error: 'Missing task id' });
+  }
+
+  try {
+    const response = await fetch(`${SEEDANCE_ARK_BASE}/contents/generations/tasks/${encodeURIComponent(taskId)}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${SEEDANCE_ARK_API_KEY}` },
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Seedance task query failed', details: data });
+    }
+
+    const status = (data && (data.status || data.task_status || data.state)) ?? 'unknown';
+    const outputs = (data && (data.result?.output || data.output || data.data)) ?? null;
+    let videoUrl = null;
+
+    if (Array.isArray(outputs) && outputs.length) {
+      videoUrl = outputs[0]?.url || outputs[0]?.video_url || null;
+    } else if (outputs && typeof outputs === 'object') {
+      videoUrl = outputs.url || outputs.video_url || null;
+    } else if (data?.result?.video_url) {
+      videoUrl = data.result.video_url;
+    }
+
+    return res.status(200).json({ status, videoUrl, raw: data });
+  } catch (err) {
+    console.error('Seedance task query error', err);
+    return res.status(500).json({ error: err?.message ?? 'Internal error' });
   }
 });
 
@@ -2003,111 +2150,150 @@ app.post('/api/video/veo/create', async (req, res) => {
       imageMimeType,
     } = req.body ?? {};
 
-    if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({ error: 'Prompt is required' });
-    }
-
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
     }
 
-    // Build config (mirrors Google docs)
-    const config = {};
-    if (aspectRatio) config.aspectRatio = aspectRatio;      // '16:9' | '9:16'
-    if (negativePrompt) config.negativePrompt = negativePrompt;
-    if (typeof seed === 'number') config.seed = seed;       // non-deterministic but steadies results
+    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    if (!promptText) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
 
-    const hasImage = !!imageBase64 && !!imageMimeType;
+    const instance = { prompt: promptText };
+    const inlineImage = normalizeInlineImage(imageBase64, imageMimeType || 'image/png');
+    if (inlineImage) {
+      instance.image = {
+        bytesBase64Encoded: inlineImage.data,
+        mimeType: inlineImage.mimeType,
+      };
+    }
 
-    // Kick off the long-running generation op
-    const operation = await ai.models.generateVideos({
-      model,                     // 'veo-3.0-generate-001' or 'veo-3.0-fast-generate-001'
-      prompt,                    // can include dialogue + audio cues
-      ...(hasImage && {
-        image: {
-          imageBytes: Buffer.from(imageBase64, 'base64'),
-          mimeType: imageMimeType,
-        },
-      }),
-      ...(Object.keys(config).length ? { config } : {}),
+    const parameters = {};
+    if (aspectRatio) parameters.aspectRatio = aspectRatio;
+    if (negativePrompt) parameters.negativePrompt = negativePrompt;
+    if (typeof seed === 'number' && Number.isFinite(seed)) parameters.seed = seed;
+
+    const payload = { instances: [instance] };
+    if (Object.keys(parameters).length > 0) {
+      payload.parameters = parameters;
+    }
+
+    const modelId = typeof model === 'string' && model.trim() ? model.trim() : 'veo-3.0-generate-001';
+    const endpoint = buildGeminiUrl(`models/${modelId}:predictLongRunning`);
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+      },
+      body: JSON.stringify(payload),
     });
 
-    // Return the operation name so the UI can poll
-    return res.json({ name: operation.name });
+    const data = await response.json().catch(async () => ({ error: await response.text().catch(() => 'Unknown error') }));
+    if (!response.ok) {
+      console.error('Veo create error', data);
+      return res.status(response.status).json({ error: 'Generation request failed', details: data });
+    }
+
+    if (!data?.name) {
+      return res.status(502).json({ error: 'Missing operation name in response', details: data });
+    }
+
+    return res.json({ name: data.name, done: Boolean(data.done) });
   } catch (err) {
     console.error('Veo create error', err);
-    return res.status(400).json({ error: err?.message ?? 'unknown' });
+    return res.status(500).json({ error: err?.message ?? 'unknown' });
   }
 });
 
 // Poll video generation status
 app.get('/api/video/veo/status/:name', async (req, res) => {
   try {
-    const name = decodeURIComponent(req.params.name);
-    
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
     }
 
-    // You can pass either the whole operation or just {name}
-    const operation = await ai.operations.getVideosOperation({ operation: { name } });
+    const rawName = decodeURIComponent(req.params.name || '');
+    if (!rawName) {
+      return res.status(400).json({ error: 'Operation name is required' });
+    }
 
-    if (!operation) return res.status(404).json({ error: 'Operation not found' });
-
-    // If done, we won't send the URI from here (to avoid exposing key in the client).
-    // The UI should call /download/:name next.
-    return res.json({
-      done: Boolean(operation.done),
-      error: operation.error ?? null,
+    const statusUrl = buildGeminiUrl(rawName);
+    const response = await fetch(statusUrl, {
+      headers: { 'X-Goog-Api-Key': apiKey },
     });
+    const data = await response.json().catch(async () => ({ error: await response.text().catch(() => 'Unknown error') }));
+
+    if (!response.ok) {
+      console.error('Veo status error', data);
+      return res.status(response.status).json({ error: 'Failed to check operation status', details: data });
+    }
+
+    return res.json(data);
   } catch (err) {
     console.error('Veo status error', err);
-    return res.status(400).json({ error: err?.message ?? 'unknown' });
+    return res.status(500).json({ error: err?.message ?? 'unknown' });
   }
 });
 
 // Download the MP4 (server-side proxy)
 app.get('/api/video/veo/download/:name', async (req, res) => {
   try {
-    const name = decodeURIComponent(req.params.name);
-    
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' });
     }
 
-    const operation = await ai.operations.getVideosOperation({ operation: { name } });
+    const rawName = decodeURIComponent(req.params.name || '');
+    if (!rawName) {
+      return res.status(400).json({ error: 'Operation name is required' });
+    }
 
-    if (!operation.done) {
+    const statusUrl = buildGeminiUrl(rawName);
+    const operationRes = await fetch(statusUrl, {
+      headers: { 'X-Goog-Api-Key': apiKey },
+    });
+    const operation = await operationRes.json().catch(async () => ({ error: await operationRes.text().catch(() => 'Unknown error') }));
+
+    if (!operationRes.ok) {
+      console.error('Veo download status error', operation);
+      return res.status(operationRes.status).json({ error: 'Failed to retrieve operation', details: operation });
+    }
+
+    if (!operation?.done) {
       return res.status(409).json({ error: 'Operation not finished' });
     }
 
-    // Extract the video file reference from the final response
-    const video = operation.response?.generatedVideos?.[0]?.video;
-    if (!video) {
-      return res.status(500).json({ error: 'No video in response' });
+    if (operation?.error) {
+      const message = operation.error.message || JSON.stringify(operation.error);
+      return res.status(400).json({ error: message, details: operation.error });
     }
 
-    // Option A: Use the SDK to download to memory is not currently exposed;
-    // the JS guide shows writing to disk. We'll fetch the URI server-side.
-    // This keeps your API key secret and streams bytes to the browser.
-    // (Google docs demonstrate downloading by URI with the 'x-goog-api-key' header.)
-    // See their REST example. We replicate that here server-side.
-    const uri = video.uri;
-    const videoRes = await fetch(uri, {
-      headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY },
+    const videoUri = extractVeoVideoUri(operation);
+    if (!videoUri) {
+      return res.status(500).json({ error: 'No video in response', details: operation });
+    }
+
+    const videoRes = await fetch(videoUri, {
+      headers: { 'x-goog-api-key': apiKey },
       redirect: 'follow',
     });
+
     if (!videoRes.ok) {
-      const text = await videoRes.text();
+      const text = await videoRes.text().catch(() => '');
       throw new Error(`Download failed: ${videoRes.status} ${text}`);
     }
+
     const arrayBuf = await videoRes.arrayBuffer();
     const buffer = Buffer.from(arrayBuf);
 
-    const filename = `veo3_${name.split('/').pop() ?? 'video'}.mp4`;
+    const filename = `veo3_${rawName.split('/').pop() ?? 'video'}.mp4`;
     return res.status(200)
       .set({
-        'Content-Type': 'video/mp4',
+        'Content-Type': videoRes.headers.get('content-type') || 'video/mp4',
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Content-Length': String(buffer.length),
         'Cache-Control': 'no-store',
@@ -2115,7 +2301,7 @@ app.get('/api/video/veo/download/:name', async (req, res) => {
       .send(buffer);
   } catch (err) {
     console.error('Veo download error', err);
-    return res.status(400).json({ error: err?.message ?? 'unknown' });
+    return res.status(500).json({ error: err?.message ?? 'unknown' });
   }
 });
 
