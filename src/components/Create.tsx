@@ -31,6 +31,7 @@ import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
+import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
 import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
@@ -131,6 +132,7 @@ const AI_MODELS = [
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
+  { name: "Seedance 1.0 Pro (Video)", desc: "Text/Image → Video (5–10s, 1080p)", Icon: Film, accent: "emerald" as Accent, id: "seedance-1.0-pro" },
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -649,7 +651,8 @@ const Create: React.FC = () => {
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
   const isVeo = selectedModel === "veo-3";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo;
+  const isSeedance = selectedModel === "seedance-1.0-pro";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -666,6 +669,17 @@ const Create: React.FC = () => {
   const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
   const [videoNegativePrompt, setVideoNegativePrompt] = useState<string>('');
   const [videoSeed, setVideoSeed] = useState<number | undefined>(undefined);
+  
+  // Seedance-specific state
+  const [seedanceMode, setSeedanceMode] = useState<'t2v' | 'i2v-first' | 'i2v-first-last'>('t2v');
+  const [seedanceRatio, setSeedanceRatio] = useState<string>('16:9');
+  const [seedanceDuration, setSeedanceDuration] = useState<number>(5);
+  const [seedanceResolution, setSeedanceResolution] = useState<string>('1080p');
+  const [seedanceFps, setSeedanceFps] = useState<number>(24);
+  const [seedanceCamerafixed, setSeedanceCamerafixed] = useState<boolean>(true);
+  const [seedanceSeed, setSeedanceSeed] = useState<string>('');
+  const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<File | null>(null);
+  const [seedanceLastFrame, setSeedanceLastFrame] = useState<File | null>(null);
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [isRunwayVideoGenerating, setIsRunwayVideoGenerating] = useState<boolean>(false);
@@ -900,6 +914,7 @@ const Create: React.FC = () => {
     }
   }, [generatedVideo, videoOperationName]);
 
+
   // Handle category switching from external navigation (e.g., navbar)
   useEffect(() => {
     const handleCategoryNavigation = (event: CustomEvent) => {
@@ -917,9 +932,9 @@ const Create: React.FC = () => {
 
   // Auto-select default model when switching categories
   useEffect(() => {
-    if (activeCategory === "video" && selectedModel !== "veo-3" && selectedModel !== "runway-video-gen4") {
+    if (activeCategory === "video" && selectedModel !== "veo-3" && selectedModel !== "runway-video-gen4" && selectedModel !== "seedance-1.0-pro") {
       setSelectedModel("veo-3");
-    } else if (activeCategory === "image" && (selectedModel === "veo-3" || selectedModel === "runway-video-gen4")) {
+    } else if (activeCategory === "image" && (selectedModel === "veo-3" || selectedModel === "runway-video-gen4" || selectedModel === "seedance-1.0-pro")) {
       setSelectedModel("gemini-2.5-flash-image-preview");
     }
   }, [activeCategory, selectedModel]);
@@ -1112,8 +1127,33 @@ const Create: React.FC = () => {
     generateImage: generateReveImage,
   } = useReveImageGeneration();
 
+  const {
+    isLoading: seedanceLoading,
+    error: seedanceError,
+    video: seedanceVideo,
+    generateVideo: generateSeedanceVideo,
+    reset: resetSeedance,
+  } = useSeedanceVideoGeneration();
+
+  // Handle Seedance video generation
+  useEffect(() => {
+    if (seedanceVideo) {
+      const videoWithOperation: GalleryVideoLike = {
+        url: seedanceVideo.url,
+        prompt: seedanceVideo.prompt,
+        model: seedanceVideo.model,
+        timestamp: seedanceVideo.timestamp,
+        type: 'video',
+        operationName: `seedance-${Date.now()}`,
+      };
+      
+      debugLog('[Create] Adding Seedance video to gallery:', videoWithOperation);
+      setVideoGallery(prev => [videoWithOperation, ...prev]);
+    }
+  }, [seedanceVideo]);
+
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
@@ -2557,13 +2597,16 @@ const Create: React.FC = () => {
     debugLog('[Create] handleGenerate called', { activeCategory, selectedModel });
     debugLog('[Create] Current selectedModel value:', selectedModel);
     if (activeCategory === "video") {
-      // For video generation, check if it's Veo or Runway
+      // For video generation, check if it's Veo, Runway, or Seedance
       if (selectedModel === "veo-3") {
         debugLog('[Create] Using Veo video generation');
         await handleGenerateVideo();
       } else if (selectedModel === "runway-video-gen4") {
         debugLog('[Create] Using Runway video generation');
         await handleGenerateImage();
+      } else if (selectedModel === "seedance-1.0-pro") {
+        debugLog('[Create] Using Seedance video generation');
+        await handleGenerateSeedanceVideo();
       } else {
         debugLog('[Create] Unknown video model, using default generation');
         await handleGenerateImage();
@@ -2610,6 +2653,46 @@ const Create: React.FC = () => {
     }
   };
 
+  const handleGenerateSeedanceVideo = async () => {
+    if (!prompt.trim()) return;
+    
+    debugLog('[Create] Starting Seedance video generation, setting isButtonSpinning to true');
+    
+    // Set button spinning state for immediate visual feedback
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      debugLog('[Create] Spinner timeout reached, setting isButtonSpinning to false');
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 1000);
+    
+    try {
+      await generateSeedanceVideo({
+        prompt: prompt.trim(),
+        mode: seedanceMode,
+        ratio: seedanceRatio,
+        duration: seedanceDuration,
+        resolution: seedanceResolution,
+        fps: seedanceFps,
+        camerafixed: seedanceCamerafixed,
+        seed: seedanceSeed || undefined,
+        firstFrameFile: seedanceFirstFrame || undefined,
+        lastFrameFile: seedanceLastFrame || undefined,
+      });
+    } catch (error) {
+      console.error('Seedance video generation error:', error);
+      // Clear spinner on error
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+  };
+
   const handleDownloadVideo = async (operationName: string) => {
     try {
       const apiUrl = getApiUrl(`/api/video-veo?operationName=${encodeURIComponent(operationName)}&action=download`);
@@ -2635,7 +2718,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, and Recraft models are available.');
+      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
       return;
     }
 
@@ -3043,7 +3126,7 @@ const Create: React.FC = () => {
   // Keyboard shortcuts
   const { onKeyDown } = useGenerateShortcuts({
     enabled: hasGenerationCapacity,
-    onGenerate: handleGenerateImage,
+    onGenerate: handleGenerate,
   });
 
   // Auto-fill prompt from shared links
@@ -3090,6 +3173,9 @@ const Create: React.FC = () => {
       }
       if (selectedModel === "runway-video-gen4") {
         return { name: "Runway Gen-4", Icon: VideoIcon, desc: "Good video model. Great editing with Runway Aleph.", id: "runway-video-gen4" };
+      }
+      if (selectedModel === "seedance-1.0-pro") {
+        return { name: "Seedance 1.0 Pro", Icon: Film, desc: "Text/Image → Video (5–10s, 1080p)", id: "seedance-1.0-pro" };
       }
       return { name: "Video Models", Icon: VideoIcon, desc: "Select a video generation model", id: "video-models" };
     }
@@ -4667,6 +4753,41 @@ const Create: React.FC = () => {
                           );
                         }
 
+                        // Show Seedance video if it exists
+                        if (isSeedance && seedanceVideo && idx === 0) {
+                          return (
+                            <div key="seedance-video" className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
+                              <video src={seedanceVideo.url} className="w-full aspect-square object-cover" controls />
+                              
+                              {/* Hover prompt overlay */}
+                              {seedanceVideo.prompt && (
+                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 opacity-0 group-hover:opacity-100`}>
+                                  <div className="relative z-10 w-full p-4">
+                                    <div className="mb-2">
+                                      <div className="relative">
+                                        <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                          {seedanceVideo.prompt}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {/* Model Badge */}
+                                    <div className="flex justify-between items-center mt-2">
+                                      <ModelBadge model={seedanceVideo.model} size="md" />
+                                      <div className="flex items-center gap-2">
+                                        <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                          <div className="flex items-center gap-1">
+                                            <span className="leading-none">{seedanceVideo.duration}s</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
                         if (!isPlaceholder) {
                           const video = filteredVideoGallery[idx] as GalleryVideoLike;
                           return (
@@ -5068,12 +5189,12 @@ const Create: React.FC = () => {
                     : ""}>
                 <button 
                   onClick={handleGenerate}
-                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isRunwayVideoGenerating = selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running';
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating;
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || seedanceLoading;
                     debugLog('[Create] Button state:', { 
                       isButtonSpinning: isButtonSpinning, 
                       isVideoGenerating: isVideoGenerating, 
@@ -5091,7 +5212,7 @@ const Create: React.FC = () => {
                     );
                   })()}
                   {activeCategory === "video" ? 
-                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running' ? "Generating..." : isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate Video") : 
+                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running' ? "Generating..." : selectedModel === "seedance-1.0-pro" && seedanceLoading ? "Generating..." : isVideoGenerating ? "Starting..." : isVideoPolling ? "Generating..." : "Generate Video") : 
                     "Generate"
                   }
                 </button>
@@ -5116,11 +5237,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isVeo || isRunway) ? toggleSettings : () => alert('Settings are only available for Gemini, Veo, and Runway models.')}
-                    title={(isGemini || isVeo || isRunway) ? "Settings" : "Settings only available for Gemini, Veo, and Runway models"}
+                    onClick={(isGemini || isVeo || isRunway || isSeedance) ? toggleSettings : () => alert('Settings are only available for Gemini, Veo, Runway, and Seedance models.')}
+                    title={(isGemini || isVeo || isRunway || isSeedance) ? "Settings" : "Settings only available for Gemini, Veo, Runway, and Seedance models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isVeo || isRunway)
+                      (isGemini || isVeo || isRunway || isSeedance)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -5184,6 +5305,127 @@ const Create: React.FC = () => {
                               className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
                             />
                           </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isSeedance ? (
+                    <SettingsPortal 
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Seedance 1.0 Pro Settings</div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Mode</label>
+                            <select
+                              value={seedanceMode}
+                              onChange={(e) => setSeedanceMode(e.target.value as 't2v' | 'i2v-first' | 'i2v-first-last')}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="t2v">Text to Video</option>
+                              <option value="i2v-first">Image to Video (First Frame)</option>
+                              <option value="i2v-first-last">Image to Video (First & Last Frame)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+                            <select
+                              value={seedanceRatio}
+                              onChange={(e) => setSeedanceRatio(e.target.value)}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="16:9">16:9 (Landscape)</option>
+                              <option value="9:16">9:16 (Portrait)</option>
+                              <option value="1:1">1:1 (Square)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration (seconds)</label>
+                            <select
+                              value={seedanceDuration}
+                              onChange={(e) => setSeedanceDuration(parseInt(e.target.value))}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
+                            <select
+                              value={seedanceResolution}
+                              onChange={(e) => setSeedanceResolution(e.target.value)}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="1080p">1080p</option>
+                              <option value="720p">720p</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">FPS</label>
+                            <select
+                              value={seedanceFps}
+                              onChange={(e) => setSeedanceFps(parseInt(e.target.value))}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value={24}>24 FPS</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="camerafixed"
+                              checked={seedanceCamerafixed}
+                              onChange={(e) => setSeedanceCamerafixed(e.target.checked)}
+                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                            />
+                            <label htmlFor="camerafixed" className="text-xs font-raleway text-d-white/80">
+                              Lock Camera Position
+                            </label>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
+                            <input
+                              type="text"
+                              value={seedanceSeed}
+                              onChange={(e) => setSeedanceSeed(e.target.value)}
+                              placeholder="e.g., 12345"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            />
+                          </div>
+
+                          {(seedanceMode === 'i2v-first' || seedanceMode === 'i2v-first-last') && (
+                            <div>
+                              <label className="block text-xs font-raleway text-d-white/80 mb-1">First Frame Image</label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setSeedanceFirstFrame(e.target.files?.[0] || null)}
+                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-d-orange-1 file:text-d-black"
+                              />
+                            </div>
+                          )}
+
+                          {seedanceMode === 'i2v-first-last' && (
+                            <div>
+                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Last Frame Image</label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setSeedanceLastFrame(e.target.files?.[0] || null)}
+                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-d-orange-1 file:text-d-black"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </SettingsPortal>
@@ -5505,11 +5747,51 @@ const Create: React.FC = () => {
                             <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
+                        <button
+                          onClick={() => {
+                            debugLog('[Create] Selecting Seedance video model');
+                            setSelectedModel("seedance-1.0-pro");
+                            debugLog('[Create] Selected model set to:', "seedance-1.0-pro");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "seedance-1.0-pro"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Seedance 1.0 Pro (Video)") ? (
+                            <img
+                              src={getToolLogo("Seedance 1.0 Pro (Video)")!}
+                              alt="ByteDance logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "seedance-1.0-pro" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "seedance-1.0-pro" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Seedance 1.0 Pro
+                            </div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "seedance-1.0-pro" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              Text/Image → Video (5–10s, 1080p)
+                            </div>
+                          </div>
+                          {selectedModel === "seedance-1.0-pro" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                          )}
+                        </button>
                       </>
                     ) : (
                       AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "runway-video-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "veo-3";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "runway-video-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "veo-3" && model.id !== "seedance-1.0-pro";
                       
                       return (
                         <button

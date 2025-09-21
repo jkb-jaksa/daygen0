@@ -45,6 +45,8 @@ export const TOOL_LOGOS: Record<string, string> = {
   'Seedream 3.0': '/bytedance logo.png',
   'Seedream 4.0': '/bytedance logo.png',
   'Seedance': '/bytedance logo.png',
+  'Seedance 1.0 Pro (Video)': '/bytedance logo.png',
+  'Seedance 1.0 Pro': '/bytedance logo.png',
   
   // Qwen/Wan variations (same logo)
   'Wan': '/qwen logo.png',

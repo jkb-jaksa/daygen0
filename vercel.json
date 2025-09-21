@@ -5,6 +5,12 @@
     },
     "api/unified-generate.ts": {
       "maxDuration": 30
+    },
+    "api/seedance-video.ts": {
+      "maxDuration": 30
+    },
+    "api/seedance-task.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
