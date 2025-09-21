@@ -35,6 +35,7 @@ import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration"
 import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
 import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
+import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
 import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
@@ -129,6 +130,7 @@ const AI_MODELS = [
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, accent: "violet" as Accent, id: "runway-video-gen4" },
   { name: "Wan 2.2 Video", desc: "Alibaba's Wan 2.2 text-to-video model.", Icon: VideoIcon, accent: "blue" as Accent, id: "wan-video-2.2" },
   { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, accent: "cyan" as Accent, id: "hailuo-02" },
+  { name: "Kling", desc: "ByteDance's cinematic video model.", Icon: VideoIcon, accent: "cyan" as Accent, id: "kling-video" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
@@ -684,6 +686,7 @@ const Create: React.FC = () => {
   const isRunwayVideo = selectedModel === "runway-video-gen4";
   const isWanVideo = selectedModel === "wan-video-2.2";
   const isHailuoVideo = selectedModel === "hailuo-02";
+  const isKlingVideo = selectedModel === "kling-video";
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft";
@@ -691,7 +694,7 @@ const Create: React.FC = () => {
   const isSeedance = selectedModel === "seedance-1.0-pro";
   const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
   const isLumaRay = selectedModel === "luma-ray-2";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isWanVideo && !isHailuoVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isWanVideo && !isHailuoVideo && !isKlingVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -730,6 +733,23 @@ const Create: React.FC = () => {
   const [hailuoWatermark, setHailuoWatermark] = useState<boolean>(false);
   const [hailuoFirstFrame, setHailuoFirstFrame] = useState<File | null>(null);
   const [hailuoLastFrame, setHailuoLastFrame] = useState<File | null>(null);
+
+  // Kling-specific state
+  const [klingModel, setKlingModel] = useState<'kling-v2-master' | 'kling-v1.6' | 'kling-v1.5' | 'kling-v1'>('kling-v2-master');
+  const [klingAspectRatio, setKlingAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [klingDuration, setKlingDuration] = useState<5 | 10>(5);
+  const [klingNegativePrompt, setKlingNegativePrompt] = useState<string>('');
+  const [klingCfgScale, setKlingCfgScale] = useState<number>(0.8);
+  const [klingMode, setKlingMode] = useState<'standard' | 'professional'>('standard');
+  const [klingCameraType, setKlingCameraType] = useState<'none' | 'simple' | 'down_back' | 'forward_up' | 'right_turn_forward' | 'left_turn_forward'>('none');
+  const [klingCameraConfig, setKlingCameraConfig] = useState<{ horizontal: number; vertical: number; pan: number; tilt: number; roll: number; zoom: number }>({
+    horizontal: 0,
+    vertical: 0,
+    pan: 0,
+    tilt: 0,
+    roll: 0,
+    zoom: 0,
+  });
 
   useEffect(() => {
     if (hailuoDuration === 10 && hailuoResolution === '1080P') {
@@ -920,6 +940,7 @@ const Create: React.FC = () => {
         model.id === 'runway-video-gen4' ||
         model.id === 'wan-video-2.2' ||
         model.id === 'hailuo-02' ||
+        model.id === 'kling-video' ||
         model.id === 'seedance-1.0-pro' ||
         model.id === 'luma-ray-2'
       ).map(model => model.id).sort();
@@ -930,6 +951,7 @@ const Create: React.FC = () => {
         model.id !== 'runway-video-gen4' &&
         model.id !== 'wan-video-2.2' &&
         model.id !== 'hailuo-02' &&
+        model.id !== 'kling-video' &&
         model.id !== 'seedance-1.0-pro' &&
         model.id !== 'luma-ray-2' &&
         model.id !== 'luma-photon-flash-1'
@@ -1016,7 +1038,7 @@ const Create: React.FC = () => {
 
   // Auto-select default model when switching categories
   useEffect(() => {
-    const videoModels = ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "luma-ray-2"];
+    const videoModels = ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2"];
     if (activeCategory === "video" && !videoModels.includes(selectedModel)) {
       setSelectedModel("veo-3");
     } else if (activeCategory === "image" && videoModels.includes(selectedModel)) {
@@ -1243,6 +1265,17 @@ const Create: React.FC = () => {
     reset: resetLumaVideo,
   } = useLumaVideoGeneration();
 
+  const {
+    status: klingStatus,
+    error: klingError,
+    video: klingGeneratedVideo,
+    isPolling: klingIsPolling,
+    statusMessage: klingStatusMessage,
+    taskId: klingTaskId,
+    generateVideo: generateKlingVideo,
+    reset: resetKlingVideo,
+  } = useKlingVideoGeneration();
+
   // Handle Seedance video generation
   useEffect(() => {
     if (seedanceVideo) {
@@ -1319,6 +1352,19 @@ const Create: React.FC = () => {
   }, [isHailuoVideo, hailuoStatus]);
 
   useEffect(() => {
+    if (isKlingVideo && (klingStatus === 'polling' || klingStatus === 'succeeded')) {
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+    if (klingStatus === 'failed') {
+      setIsButtonSpinning(false);
+    }
+  }, [isKlingVideo, klingStatus]);
+
+  useEffect(() => {
     if (lumaGeneratedVideo) {
       const videoWithOperation: GalleryVideoLike = {
         url: lumaGeneratedVideo.url,
@@ -1334,8 +1380,27 @@ const Create: React.FC = () => {
     }
   }, [lumaGeneratedVideo]);
 
+  useEffect(() => {
+    if (klingGeneratedVideo) {
+      const videoWithOperation: GalleryVideoLike = {
+        url: klingGeneratedVideo.url,
+        prompt: klingGeneratedVideo.prompt,
+        model: 'kling-video',
+        timestamp: klingGeneratedVideo.timestamp,
+        type: 'video',
+        operationName: klingGeneratedVideo.taskId,
+      };
+
+      debugLog('[Create] Adding Kling video to gallery:', videoWithOperation);
+      setVideoGallery(prev => [videoWithOperation, ...prev]);
+      if (klingStatus === 'succeeded') {
+        resetKlingVideo();
+      }
+    }
+  }, [klingGeneratedVideo, klingStatus, resetKlingVideo]);
+
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || wanError || hailuoError || lumaVideoError;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || wanError || hailuoError || lumaVideoError || klingError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
@@ -2789,6 +2854,9 @@ const handleGenerate = async () => {
       } else if (selectedModel === "hailuo-02") {
         debugLog('[Create] Using Hailuo 02 video generation');
         await handleGenerateHailuoVideo();
+      } else if (selectedModel === "kling-video") {
+        debugLog('[Create] Using Kling video generation');
+        await handleGenerateKlingVideo();
       } else if (selectedModel === "wan-video-2.2") {
         debugLog('[Create] Using Wan 2.2 video generation');
         await handleGenerateWanVideo();
@@ -2931,6 +2999,47 @@ const handleGenerate = async () => {
     }
   };
 
+  const handleGenerateKlingVideo = async () => {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) return;
+
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+    }
+    setIsButtonSpinning(true);
+    spinnerTimeoutRef.current = setTimeout(() => {
+      setIsButtonSpinning(false);
+      spinnerTimeoutRef.current = null;
+    }, 1000);
+
+    try {
+      resetKlingVideo();
+
+      await generateKlingVideo({
+        prompt: trimmedPrompt,
+        negativePrompt: klingNegativePrompt.trim() || undefined,
+        model: klingModel,
+        aspectRatio: klingAspectRatio,
+        duration: klingDuration,
+        cfgScale: klingCfgScale,
+        mode: klingMode,
+        cameraControl: klingCameraType === 'none'
+          ? null
+          : {
+              type: klingCameraType === 'simple' ? 'simple' : klingCameraType,
+              config: klingCameraType === 'simple' ? klingCameraConfig : undefined,
+            },
+      });
+    } catch (error) {
+      console.error('Kling video generation error:', error);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setIsButtonSpinning(false);
+    }
+  };
+
   const handleGenerateSeedanceVideo = async () => {
     if (!prompt.trim()) return;
     
@@ -3035,7 +3144,7 @@ const handleGenerate = async () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Wan 2.2 Video, Hailuo 02, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
+      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
       return;
     }
 
@@ -3060,7 +3169,7 @@ const handleGenerate = async () => {
     const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration };
     
     // Only add to activeGenerationQueue if we're not handling video models that manage their own state
-    if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02"))) {
+    if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"))) {
       setActiveGenerationQueue(prev => [...prev, jobMeta]);
     }
     if (spinnerTimeoutRef.current) {
@@ -3504,7 +3613,7 @@ const handleGenerate = async () => {
       }
       setIsButtonSpinning(false);
       // Only remove from activeGenerationQueue if we added it in the first place
-      if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02"))) {
+      if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"))) {
         setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
       }
     }
@@ -5630,7 +5739,7 @@ const handleGenerate = async () => {
                     : ""}>
                 <button 
                   onClick={handleGenerate}
-                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling))}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
@@ -5638,7 +5747,8 @@ const handleGenerate = async () => {
                     const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
                     const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
                     const isLumaGenerating = isLumaRay && (lumaVideoLoading || lumaVideoPolling);
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || seedanceLoading || isLumaGenerating;
+                    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
                     debugLog('[Create] Button state:', { 
                       isButtonSpinning: isButtonSpinning, 
                       isVideoGenerating: isVideoGenerating, 
@@ -5646,9 +5756,11 @@ const handleGenerate = async () => {
                       isRunwayVideoGenerating: isRunwayVideoGenerating,
                       isWanGenerating,
                       isHailuoGenerating,
+                      isKlingGenerating,
                       runwayVideoStatus: runwayVideoStatus || 'undefined',
                       wanStatus,
                       hailuoStatus,
+                      klingStatus,
                       lumaVideoLoading,
                       lumaVideoPolling,
                       showSpinner: showSpinner,
@@ -5669,6 +5781,8 @@ const handleGenerate = async () => {
                         : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
                           ? "Generating..."
                         : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
+                          ? "Generating..."
+                        : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
                           ? "Generating..."
                           : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
                           ? "Generating..."
@@ -5701,11 +5815,11 @@ const handleGenerate = async () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Hailuo 02, Seedance, Recraft, and Luma models.')}
-                    title={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Hailuo 02, Seedance, Recraft, and Luma models"}
+                    onClick={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Kling, Hailuo 02, Seedance, Recraft, and Luma models.')}
+                    title={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Kling, Hailuo 02, Seedance, Recraft, and Luma models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
+                      (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -6004,6 +6118,156 @@ const handleGenerate = async () => {
                               Add AI watermark
                             </label>
                           </div>
+                        </div>
+                      </div>
+                    </SettingsPortal>
+                  ) : isKlingVideo ? (
+                    <SettingsPortal
+                      anchorRef={settingsRef}
+                      open={isSettingsOpen}
+                      onClose={() => setIsSettingsOpen(false)}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-sm font-cabin text-d-text mb-3">Kling Settings</div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+                            <select
+                              value={klingModel}
+                              onChange={(e) => setKlingModel(e.target.value as typeof klingModel)}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="kling-v2-master">Kling V2 Master (default)</option>
+                              <option value="kling-v1.6">Kling V1.6</option>
+                              <option value="kling-v1.5">Kling V1.5</option>
+                              <option value="kling-v1">Kling V1</option>
+                            </select>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+                              <select
+                                value={klingAspectRatio}
+                                onChange={(e) => setKlingAspectRatio(e.target.value as '16:9' | '9:16' | '1:1')}
+                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                              >
+                                <option value="16:9">16:9 Landscape</option>
+                                <option value="9:16">9:16 Portrait</option>
+                                <option value="1:1">1:1 Square</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
+                              <select
+                                value={klingDuration}
+                                onChange={(e) => setKlingDuration(Number(e.target.value) === 10 ? 10 : 5)}
+                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                              >
+                                <option value={5}>5 seconds</option>
+                                <option value={10}>10 seconds</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Generation Mode</label>
+                              <select
+                                value={klingMode}
+                                onChange={(e) => setKlingMode(e.target.value as 'standard' | 'professional')}
+                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                              >
+                                <option value="standard">Standard (720p / 24 FPS)</option>
+                                <option value="professional">Professional (1080p / 48 FPS)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-raleway text-d-white/80 mb-1">CFG Scale</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={1}
+                                  step={0.05}
+                                  value={klingCfgScale}
+                                  onChange={(e) => setKlingCfgScale(Number(e.target.value))}
+                                  className="w-full"
+                                />
+                                <span className="text-xs font-raleway text-d-white/70 w-10 text-right">{klingCfgScale.toFixed(2)}</span>
+                              </div>
+                              <div className="text-[11px] text-d-white/50 mt-1">Lower values add more creativity, higher values adhere closely to your prompt.</div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
+                            <input
+                              type="text"
+                              value={klingNegativePrompt}
+                              onChange={(e) => setKlingNegativePrompt(e.target.value)}
+                              placeholder="e.g., low quality, noisy"
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Camera Movement</label>
+                            <select
+                              value={klingCameraType}
+                              onChange={(e) => setKlingCameraType(e.target.value as typeof klingCameraType)}
+                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                            >
+                              <option value="none">No camera movement</option>
+                              <option value="simple">Simple custom movement</option>
+                              <option value="forward_up">Forward & Up</option>
+                              <option value="down_back">Down & Back</option>
+                              <option value="right_turn_forward">Right turn forward</option>
+                              <option value="left_turn_forward">Left turn forward</option>
+                            </select>
+                          </div>
+
+                          {klingCameraType === 'simple' && (
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {([
+                                  ['horizontal', 'Horizontal'],
+                                  ['vertical', 'Vertical'],
+                                  ['pan', 'Pan'],
+                                  ['tilt', 'Tilt'],
+                                  ['roll', 'Roll'],
+                                  ['zoom', 'Zoom'],
+                                ] as const).map(([key, label]) => (
+                                  <div key={key}>
+                                    <label className="block text-xs font-raleway text-d-white/70 mb-1">{label}</label>
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="range"
+                                        min={-10}
+                                        max={10}
+                                        step={1}
+                                        value={klingCameraConfig[key] ?? 0}
+                                        onChange={(e) => {
+                                          const value = Number(e.target.value);
+                                          setKlingCameraConfig(prev => ({ ...prev, [key]: value }));
+                                        }}
+                                        className="w-full"
+                                      />
+                                      <span className="text-xs font-raleway text-d-white/60 w-8 text-right">{klingCameraConfig[key] ?? 0}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="text-[11px] text-d-white/45">Adjust camera offsets between -10 and 10 to add motion.</div>
+                            </div>
+                          )}
+
+                          {klingStatusMessage && (
+                            <div className="text-[11px] font-raleway text-d-white/60 bg-d-black/60 border border-d-mid rounded-lg px-3 py-2">
+                              {klingStatusMessage}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </SettingsPortal>
@@ -6587,7 +6851,45 @@ const handleGenerate = async () => {
                               Alibaba Wan 2.2 text-to-video. 5s high-quality clips.
                             </div>
                           </div>
-                          {selectedModel === "wan-video-2.2" && (
+                        {selectedModel === "wan-video-2.2" && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                        )}
+                      </button>
+                        <button
+                          onClick={() => {
+                            setSelectedModel("kling-video");
+                            setIsModelSelectorOpen(false);
+                          }}
+                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                            selectedModel === "kling-video"
+                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              : 'bg-transparent hover:bg-d-orange-1/20 border-0'
+                          }`}
+                        >
+                          {hasToolLogo("Kling") ? (
+                            <img
+                              src={getToolLogo("Kling")!}
+                              alt="Kling logo"
+                              className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                            />
+                          ) : (
+                            <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                              selectedModel === "kling-video" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                              selectedModel === "kling-video" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                            }`}>
+                              Kling Video
+                            </div>
+                            <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                              selectedModel === "kling-video" ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                            }`}>
+                              ByteDance's Kling video model with cinematic motion control.
+                            </div>
+                          </div>
+                          {selectedModel === "kling-video" && (
                             <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
@@ -6675,13 +6977,13 @@ const handleGenerate = async () => {
                       AI_MODELS.filter(model => 
                         // Filter models based on category
                           activeCategory === "image" ? 
-                          !["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
+                          !["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
                           activeCategory === "video" ?
-                            ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
+                            ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
                             true
                       ).map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02";
+                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
                       
                       return (
                         <button

@@ -31,6 +31,11 @@ MINIMAX_API_KEY=your_minimax_api_key_here
 MINIMAX_GROUP_ID=your_minimax_group_id_here
 # MINIMAX_BASE_URL=https://api.minimax.io
 
+# Kling Video Generation (Text-to-Video)
+KLING_ACCESS_KEY=your_kling_access_key_here
+KLING_SECRET_KEY=your_kling_secret_key_here
+# KLING_API_BASE_URL=https://api-singapore.klingai.com
+
 # Seedream 3.0 API Key for high-quality image generation
 ARK_API_KEY=your_ark_api_key_here
 ARK_BASE=https://ark.ap-southeast.bytepluses.com/api/v3

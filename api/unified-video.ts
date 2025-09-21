@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import RunwayML, { TaskFailedError } from '@runwayml/sdk';
 import { LumaAI } from 'lumaai';
+import crypto from 'crypto';
 import { downloadVideoToBase64 } from '../src/lib/luma.js';
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/';
@@ -120,6 +121,59 @@ function buildOperationUrl(operationName: string): string {
   return new URL(relative, base).toString();
 }
 
+const KLING_DEFAULT_BASE_URL = 'https://api-singapore.klingai.com';
+const KLING_CAMERA_CONFIG_KEYS = ['horizontal', 'vertical', 'pan', 'tilt', 'roll', 'zoom'] as const;
+
+function getKlingBaseUrl(): string {
+  const base = toOptionalString(process.env.KLING_API_BASE_URL);
+  const value = base && base.length > 0 ? base : KLING_DEFAULT_BASE_URL;
+  return value.replace(/\/$/, '');
+}
+
+function createKlingJwt(accessKey: string, secretKey: string): string {
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({
+    iss: accessKey,
+    exp: now + 30 * 60,
+    nbf: now - 5,
+    iat: now,
+  })).toString('base64url');
+  const signingInput = `${header}.${payload}`;
+  const signature = crypto.createHmac('sha256', secretKey).update(signingInput).digest('base64url');
+  return `${signingInput}.${signature}`;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) return min;
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+function parseNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number.parseFloat(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function parseKlingCameraConfig(raw: unknown): Record<string, number> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const result: Record<string, number> = {};
+  for (const key of KLING_CAMERA_CONFIG_KEYS) {
+    const value = parseNumber((raw as Record<string, unknown>)[key]);
+    if (typeof value === 'number') {
+      result[key] = clampNumber(value, -10, 10);
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
 type VeoGeneratedVideo = {
   video?: { uri?: string | null } | null;
   videoUri?: string | null;
@@ -182,6 +236,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'hailuo':
       case 'minimax':
         return await handleHailuo(req, res, action ?? 'create', params);
+      case 'kling':
+        return await handleKling(req, res, action ?? 'create', params);
       default:
         return res.status(400).json({ error: `Unsupported video provider: ${provider}` });
     }
@@ -738,6 +794,164 @@ async function handleWan(req: VercelRequest, res: VercelResponse, action: string
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function handleKling(
+  req: VercelRequest,
+  res: VercelResponse,
+  action: string,
+  params: Record<string, unknown>,
+) {
+  const accessKey = toOptionalString(process.env.KLING_ACCESS_KEY);
+  const secretKey = toOptionalString(process.env.KLING_SECRET_KEY);
+
+  if (!accessKey || !secretKey) {
+    return res.status(500).json({ error: 'KLING_ACCESS_KEY and KLING_SECRET_KEY must be configured' });
+  }
+
+  const normalizedAction = typeof action === 'string' ? action.toLowerCase() : (req.method === 'GET' ? 'status' : 'create');
+  const baseUrl = getKlingBaseUrl();
+
+  const createJwt = () => createKlingJwt(accessKey, secretKey);
+
+  if (normalizedAction === 'create' || req.method === 'POST') {
+    const prompt = toOptionalString(params.prompt);
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required for Kling video generation' });
+    }
+
+    const model = toOptionalString(params.model ?? params.model_name) || 'kling-v2-master';
+
+    const aspectCandidate = toOptionalString(params.aspectRatio ?? params.aspect_ratio);
+    const aspectRatio = aspectCandidate && ['16:9', '9:16', '1:1'].includes(aspectCandidate) ? aspectCandidate : '16:9';
+
+    const durationNumber = parseNumber(params.duration ?? params.videoDuration);
+    const durationCandidate = toOptionalString(params.duration ?? params.videoDuration);
+    let duration = '5';
+    if (durationCandidate && ['5', '10'].includes(durationCandidate)) {
+      duration = durationCandidate;
+    } else if (typeof durationNumber === 'number') {
+      duration = durationNumber >= 10 ? '10' : '5';
+    }
+
+    const negativePrompt = toOptionalString(params.negativePrompt ?? params.negative_prompt) ?? '';
+    const cfgScaleRaw = parseNumber(params.cfgScale ?? params.cfg_scale);
+    const cfgScale = typeof cfgScaleRaw === 'number' ? clampNumber(cfgScaleRaw, 0, 1) : 0.8;
+    const modeCandidate = toOptionalString(params.mode ?? params.videoMode);
+    const mode = modeCandidate && ['standard', 'professional'].includes(modeCandidate) ? modeCandidate : undefined;
+
+    const cameraType = toOptionalString(
+      params.cameraType ?? params.camera_type ?? params.camera_control_type,
+    );
+    const cameraConfig = parseKlingCameraConfig(params.cameraConfig ?? params.camera_config);
+    const cameraTypes = new Set(['simple', 'down_back', 'forward_up', 'right_turn_forward', 'left_turn_forward']);
+
+    const refImageUrl = toOptionalString(params.refImageUrl ?? params.ref_image_url);
+    const refImageWeightRaw = parseNumber(params.refImageWeight ?? params.ref_image_weight);
+    const refImageWeight = typeof refImageWeightRaw === 'number' ? clampNumber(refImageWeightRaw, 0, 1) : undefined;
+    const imageUrl = toOptionalString(params.imageUrl ?? params.image_url);
+    const tailImageUrl = toOptionalString(params.tailImageUrl ?? params.image_tail_url ?? params.lastFrameUrl);
+    const callbackUrl = toOptionalString(params.callbackUrl ?? params.callback_url);
+    const externalTaskId = toOptionalString(params.externalTaskId ?? params.external_task_id ?? params.taskId);
+
+    const body: Record<string, unknown> = {
+      prompt,
+      negative_prompt: negativePrompt,
+      cfg_scale: Number(cfgScale.toFixed(3)),
+      aspect_ratio: aspectRatio,
+      duration,
+      model_name: model,
+    };
+
+    if (mode) body.mode = mode;
+    if (imageUrl) body.image_url = imageUrl;
+    if (tailImageUrl) body.image_tail_url = tailImageUrl;
+    if (refImageUrl) body.ref_image_url = refImageUrl;
+    if (typeof refImageWeight === 'number') body.ref_image_weight = Number(refImageWeight.toFixed(3));
+    if (callbackUrl) body.callback_url = callbackUrl;
+    if (externalTaskId) body.external_task_id = externalTaskId;
+
+    if (cameraType && cameraTypes.has(cameraType)) {
+      const cameraPayload: Record<string, unknown> = { type: cameraType };
+      if (cameraType === 'simple' && cameraConfig) {
+        cameraPayload.config = cameraConfig;
+      }
+      body.camera_control = cameraPayload;
+    }
+
+    const jwt = createJwt();
+    const response = await fetch(`${baseUrl}/v1/videos/text2video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const json = await response.json().catch(async () => ({
+      error: await response.text().catch(() => 'Failed to parse Kling response'),
+    }));
+
+    if (!response.ok || (typeof json?.code === 'number' && json.code !== 0)) {
+      const message = json?.message || json?.error || `Kling API error (${response.status})`;
+      return res.status(response.ok ? 502 : response.status).json({ error: message, details: json });
+    }
+
+    const data = (json && typeof json === 'object' && 'data' in json) ? (json as any).data : json;
+    const taskId = toOptionalString(data?.task_id ?? data?.taskId);
+
+    if (!taskId) {
+      return res.status(502).json({ error: 'Kling API did not return a task id', details: data });
+    }
+
+    return res.status(200).json({ taskId, model, raw: data });
+  }
+
+  if (normalizedAction === 'status' || normalizedAction === 'download' || req.method === 'GET') {
+    const taskId = toOptionalString(
+      params.taskId ?? params.task_id ?? req.query.taskId ?? req.query.task_id ?? req.query.id,
+    );
+
+    if (!taskId) {
+      return res.status(400).json({ error: 'Kling taskId is required' });
+    }
+
+    const jwt = createJwt();
+    const response = await fetch(`${baseUrl}/v1/videos/text2video/${encodeURIComponent(taskId)}`, {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        Accept: 'application/json',
+      },
+    });
+
+    const json = await response.json().catch(async () => ({
+      error: await response.text().catch(() => 'Failed to parse Kling status response'),
+    }));
+
+    if (!response.ok || (typeof json?.code === 'number' && json.code !== 0)) {
+      const message = json?.message || json?.error || `Kling status error (${response.status})`;
+      return res.status(response.ok ? 502 : response.status).json({ error: message, details: json });
+    }
+
+    const data = (json && typeof json === 'object' && 'data' in json) ? (json as any).data : json;
+    const status = toOptionalString(data?.task_status ?? data?.status) || 'unknown';
+    const message = toOptionalString(data?.task_status_msg ?? data?.task_msg ?? data?.message);
+
+    const videos = Array.isArray(data?.task_result?.videos) ? data.task_result.videos : [];
+    const firstVideo = videos.length > 0 ? videos[0] : null;
+    const videoUrl = toOptionalString(firstVideo?.url ?? data?.video_url ?? data?.task_result?.video_url ?? data?.output_url);
+
+    return res.status(200).json({
+      taskId,
+      status,
+      statusMessage: message,
+      videoUrl,
+      raw: data,
+    });
+  }
+
+  return res.status(405).json({ error: `Unsupported action for Kling provider: ${action}` });
 }
 
 // Runway video handler
