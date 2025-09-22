@@ -14,6 +14,7 @@ import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 import { debugError } from "../utils/debug";
+import OrbBackdrop from "./OrbBackdrop";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -988,6 +989,9 @@ export default function Edit() {
       
       {/* PLATFORM HERO - Always centered */}
       <header className={`relative z-10 min-h-screen flex items-center justify-center ${layout.container}`}>
+        {/* Homepage orb backdrop reused for Edit */}
+        <OrbBackdrop className="edit-page__backdrop" />
+        
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
 

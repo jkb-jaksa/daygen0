@@ -87,6 +87,22 @@ html, body {
   overflow: hidden;
 }
 
+/* Allow Tailwind position utilities to work alongside orb-background */
+.orb-background.absolute,
+.absolute.orb-background {
+  position: absolute;
+}
+
+.orb-background.fixed,
+.fixed.orb-background {
+  position: fixed;
+}
+
+.orb-background.sticky,
+.sticky.orb-background {
+  position: sticky;
+}
+
 .orb-background::before {
   content: "";
   position: absolute;
@@ -110,40 +126,94 @@ html, body {
 
 .create-page__backdrop {
   z-index: -1 !important;
+  position: fixed !important;
+  inset: 0 !important;
 }
 
 .create-page__backdrop .bg-orb {
-  opacity: calc(var(--orb-opacity, 0.68) + 0.08);
+  opacity: 0.2;
+}
+
+.edit-page__backdrop {
+  z-index: -1 !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+.edit-page__backdrop .bg-orb {
+  opacity: 0.2;
+}
+
+.edit-page__backdrop .bg-orb--cyan {
+  top: -35%;
+  right: -14%;
+  --orb-blur: 100px;
+}
+
+.edit-page__backdrop .bg-orb--yellow {
+  top: 10%;
+  left: -22%;
+  --orb-blur: 100px;
+}
+
+.edit-page__backdrop .bg-orb--orange {
+  top: -45%;
+  left: 42%;
+  --orb-blur: 100px;
+}
+
+.edit-page__backdrop .bg-orb--red {
+  bottom: -26%;
+  left: -16%;
+  --orb-blur: 100px;
+}
+
+.edit-page__backdrop .bg-orb--blue {
+  bottom: -38%;
+  right: -16%;
+  --orb-blur: 100px;
+}
+
+.edit-page__backdrop .bg-orb--violet {
+  bottom: -59%;
+  left: 50%;
+  --orb-blur: 100px;
 }
 
 .create-page__backdrop .bg-orb--cyan {
-  top: -18%;
-  right: -12%;
+  top: -35%;
+  right: -14%;
+  --orb-blur: 100px;
 }
 
 .create-page__backdrop .bg-orb--yellow {
-  top: 6%;
-  left: -14%;
+  top: 10%;
+  left: -22%;
+  --orb-blur: 100px;
 }
 
 .create-page__backdrop .bg-orb--orange {
-  bottom: -12%;
-  left: -6%;
+  top: -45%;
+  left: 42%;
+  --orb-blur: 100px;
 }
 
 .create-page__backdrop .bg-orb--red {
-  bottom: -18%;
-  left: 12%;
+  bottom: -26%;
+  left: -16%;
+  --orb-blur: 100px;
 }
 
 .create-page__backdrop .bg-orb--blue {
-  bottom: -26%;
+  bottom: -38%;
   right: -16%;
+  --orb-blur: 100px;
 }
 
 .create-page__backdrop .bg-orb--violet {
-  top: 26%;
-  right: 10%;
+  bottom: -59%;
+  left: 50%;
+  --orb-blur: 100px;
 }
 
 
@@ -1195,6 +1265,76 @@ section .bg-orb::after,
   .bg-orb--orange {
     top: -56%;
     left: 34%;
+  }
+
+  /* Create page mobile orb positioning - match homepage mobile positioning */
+  .create-page__backdrop .bg-orb--cyan {
+    top: -41%;
+    right: -36%;
+    --orb-ribbon-right: -32%;
+    --orb-ribbon-bottom: 30%;
+  }
+
+  .create-page__backdrop .bg-orb--yellow {
+    top: 12%;
+    left: -42%;
+    --orb-ribbon-left: 44%;
+  }
+
+  .create-page__backdrop .bg-orb--orange {
+    top: -56%;
+    left: 34%;
+  }
+
+  .create-page__backdrop .bg-orb--red {
+    bottom: -38%;
+    left: -28%;
+    --orb-ribbon-right: -28%;
+  }
+
+  .create-page__backdrop .bg-orb--blue {
+    bottom: -44%;
+    right: -42%;
+    --orb-ribbon-right: -32%;
+  }
+
+  .create-page__backdrop .bg-orb--violet {
+    bottom: -68%;
+  }
+
+  /* Edit page mobile orb positioning - match Create page mobile positioning */
+  .edit-page__backdrop .bg-orb--cyan {
+    top: -41%;
+    right: -36%;
+    --orb-ribbon-right: -32%;
+    --orb-ribbon-bottom: 30%;
+  }
+
+  .edit-page__backdrop .bg-orb--yellow {
+    top: 12%;
+    left: -42%;
+    --orb-ribbon-left: 44%;
+  }
+
+  .edit-page__backdrop .bg-orb--orange {
+    top: -56%;
+    left: 34%;
+  }
+
+  .edit-page__backdrop .bg-orb--red {
+    bottom: -38%;
+    left: -28%;
+    --orb-ribbon-right: -28%;
+  }
+
+  .edit-page__backdrop .bg-orb--blue {
+    bottom: -44%;
+    right: -42%;
+    --orb-ribbon-right: -32%;
+  }
+
+  .edit-page__backdrop .bg-orb--violet {
+    bottom: -68%;
   }
 }
 
