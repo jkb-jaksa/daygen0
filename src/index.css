@@ -882,138 +882,228 @@ select option::-webkit-scrollbar-thumb:hover {
 
 .home-hero-card__orb {
   position: absolute;
-  filter: blur(80px) url(#blobDistort);
-  opacity: 0.5;
-  mix-blend-mode: screen;
   pointer-events: none;
-  transform: rotate(15deg);
+  isolation: isolate;
+  z-index: 0;
+  --orb-base: #ffffff;
+  --orb-secondary: #ffffff;
+  --orb-ambient: var(--orb-base);
+  --orb-ring: var(--orb-secondary);
+  --orb-translate-x: 0;
+  --orb-translate-y: 0;
+  --orb-rotate: 0deg;
+  --orb-scale: 1;
+  --orb-wobble: 6deg;
+  --orb-scale-amp: 0.05;
+  --orb-duration: 20s;
+  --orb-glow-duration: 18s;
+  --orb-ring-duration: 32s;
+  --orb-delay: 0s;
+  background:
+    radial-gradient(130% 140% at 20% 25%, color-mix(in srgb, var(--orb-base) 20%, white 80%) 0%, transparent 60%),
+    radial-gradient(120% 120% at 72% 80%, color-mix(in srgb, var(--orb-secondary) 50%, transparent) 0%, transparent 75%),
+    linear-gradient(135deg, color-mix(in srgb, var(--orb-base) 30%, transparent), color-mix(in srgb, var(--orb-secondary) 30%, transparent));
+  background-blend-mode: screen;
+  opacity: 0.65;
+  filter: url(#blobDistort) blur(28px) saturate(130%);
+  mix-blend-mode: screen;
+  box-shadow:
+    0 0 120px color-mix(in srgb, var(--orb-ambient) 25%, transparent),
+    0 0 60px color-mix(in srgb, var(--orb-base) 20%, transparent);
+  border-radius: 48% 52% 52% 48% / 45% 55% 45% 55%;
+  transform: translate3d(var(--orb-translate-x), var(--orb-translate-y), 0) rotate(var(--orb-rotate)) scale(var(--orb-scale));
+  animation: orbFloat var(--orb-duration) ease-in-out infinite;
+  animation-delay: var(--orb-delay);
+  will-change: transform, opacity;
 }
-
 
 .home-hero-card__orb::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -35%;
   border-radius: inherit;
-  background-image: 
-    radial-gradient(circle at 6% 6%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 94% 94%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.10) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 80% 12%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 2% 88%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 98% 18%, rgba(255,255,255,0.04) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 12% 30%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 88% 70%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 30% 3%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 70% 97%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 9% 40%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 91% 60%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 40% 9%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 60% 91%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 15% 15%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 85% 85%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 3% 45%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 97% 55%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 3%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 97%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 14% 55%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 86% 45%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 14%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 86%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 5% 25%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 95% 75%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 25% 5%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 75% 95%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 10% 65%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 90% 35%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 10%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 90%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 65%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 4% 35%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 96% 65%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 4%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 96%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 16% 70%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 84% 30%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 70% 16%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 30% 84%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 22% 45%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 78% 55%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 22%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 78%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 8% 50%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 92% 50%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 50% 8%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 50% 92%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px);
-  background-size: 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px;
-  opacity: 0.3;
-  mix-blend-mode: overlay;
+  background: radial-gradient(circle, color-mix(in srgb, var(--orb-ambient) 35%, transparent) 0%, transparent 70%);
+  filter: blur(70px);
+  opacity: 0.5;
+  animation: orbGlow var(--orb-glow-duration) ease-in-out infinite;
+  animation-delay: var(--orb-delay);
+  z-index: -2;
+}
+
+.home-hero-card__orb::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: inherit;
+  background:
+    radial-gradient(70% 70% at 30% 30%, rgba(255, 255, 255, 0.25) 0%, transparent 70%),
+    conic-gradient(
+      from 120deg at 50% 50%,
+      color-mix(in srgb, var(--orb-ring) 80%, transparent) 0deg,
+      transparent 140deg,
+      color-mix(in srgb, var(--orb-base) 60%, transparent) 240deg,
+      transparent 360deg
+    );
+  background-blend-mode: screen;
+  -webkit-mask: radial-gradient(farthest-side, transparent 40%, rgba(0, 0, 0, 0.95) 60%, transparent 82%);
+  mask: radial-gradient(farthest-side, transparent 40%, rgba(0, 0, 0, 0.95) 60%, transparent 82%);
+  mix-blend-mode: screen;
+  filter: blur(6px);
+  transform-origin: 50% 50%;
+  opacity: 0.6;
+  animation: orbSweep var(--orb-ring-duration) linear infinite;
+  animation-delay: var(--orb-delay);
+}
+
+@keyframes orbFloat {
+  0%,
+  100% {
+    transform: translate3d(var(--orb-translate-x), var(--orb-translate-y), 0)
+      rotate(var(--orb-rotate))
+      scale(var(--orb-scale));
+  }
+
+  50% {
+    transform: translate3d(var(--orb-translate-x), var(--orb-translate-y), 0)
+      rotate(calc(var(--orb-rotate) + var(--orb-wobble)))
+      scale(calc(var(--orb-scale) + var(--orb-scale-amp)));
+  }
+}
+
+@keyframes orbGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.95);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes orbSweep {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .home-hero-card__orb--cyan {
-  width: clamp(12rem, 22vw, 18rem);
-  height: clamp(12rem, 22vw, 18rem);
-  top: -12%;
-  right: -8%;
-  background: rgba(3, 188, 189, 0.5);
-  border-radius: 5% 95% 2% 98% / 95% 5% 85% 15%;
-  transform: rotate(-8deg) scale(1.05);
+  width: clamp(13rem, 25vw, 19rem);
+  height: clamp(11rem, 20vw, 16rem);
+  top: -14%;
+  right: -10%;
+  border-radius: 32% 68% 58% 42% / 38% 42% 58% 62%;
+  --orb-base: #03bcbd;
+  --orb-secondary: #2a5dff;
+  --orb-ambient: #03bcbd;
+  --orb-ring: color-mix(in srgb, #2a5dff 65%, #03bcbd 35%);
+  --orb-rotate: -12deg;
+  --orb-scale: 1.08;
+  --orb-wobble: 8deg;
+  --orb-scale-amp: 0.04;
+  --orb-duration: 22s;
+  --orb-ring-duration: 30s;
+  --orb-delay: -6s;
 }
-
 
 .home-hero-card__orb--orange {
-  width: clamp(10rem, 20vw, 16rem);
-  height: clamp(10rem, 20vw, 16rem);
+  width: clamp(11rem, 23vw, 18rem);
+  height: clamp(13rem, 25vw, 21rem);
   top: 18%;
   left: -12%;
-  background: rgba(234, 179, 8, 0.5);
-  border-radius: 95% 5% 98% 2% / 10% 90% 5% 95%;
-  transform: rotate(25deg) scale(0.95);
+  border-radius: 74% 26% 88% 12% / 24% 76% 32% 68%;
+  --orb-base: var(--d-orange-1);
+  --orb-secondary: #f32436;
+  --orb-ambient: var(--d-orange-1);
+  --orb-ring: color-mix(in srgb, #f32436 55%, var(--d-orange-1) 45%);
+  --orb-rotate: 22deg;
+  --orb-scale: 0.98;
+  --orb-wobble: 10deg;
+  --orb-scale-amp: 0.06;
+  --orb-duration: 24s;
+  --orb-glow-duration: 20s;
+  --orb-ring-duration: 34s;
+  --orb-delay: -12s;
 }
-
 
 .home-hero-card__orb--red {
-  width: clamp(11rem, 21vw, 17rem);
-  height: clamp(11rem, 21vw, 17rem);
-  bottom: -15%;
-  left: 8%;
-  background: rgba(243, 36, 54, 0.5);
-  border-radius: 2% 98% 5% 95% / 85% 15% 90% 10%;
-  transform: rotate(-20deg) scale(1.1);
+  width: clamp(14rem, 26vw, 21rem);
+  height: clamp(11rem, 22vw, 18rem);
+  bottom: -14%;
+  left: 6%;
+  border-radius: 38% 62% 30% 70% / 68% 32% 62% 38%;
+  --orb-base: #f32436;
+  --orb-secondary: var(--d-orange-1);
+  --orb-ambient: #f32436;
+  --orb-ring: color-mix(in srgb, #f32436 65%, var(--d-orange-1) 35%);
+  --orb-rotate: -18deg;
+  --orb-scale: 1.06;
+  --orb-wobble: 7deg;
+  --orb-scale-amp: 0.05;
+  --orb-duration: 26s;
+  --orb-ring-duration: 36s;
+  --orb-delay: -16s;
 }
 
-
 .home-hero-card__orb--blue {
-  width: clamp(14rem, 26vw, 22rem);
-  height: clamp(14rem, 26vw, 22rem);
-  bottom: -18%;
-  right: -12%;
-  background: rgba(42, 93, 255, 0.5);
-  border-radius: 8% 92% 3% 97% / 75% 25% 60% 40%;
-  transform: rotate(12deg) scale(0.9);
+  width: clamp(17rem, 30vw, 25rem);
+  height: clamp(13rem, 24vw, 21rem);
+  bottom: -22%;
+  right: -14%;
+  border-radius: 40% 60% 28% 72% / 62% 38% 70% 30%;
+  --orb-base: #2a5dff;
+  --orb-secondary: #03bcbd;
+  --orb-ambient: #2a5dff;
+  --orb-ring: color-mix(in srgb, #2a5dff 60%, #03bcbd 40%);
+  --orb-rotate: 14deg;
+  --orb-scale: 0.94;
+  --orb-wobble: 8deg;
+  --orb-scale-amp: 0.06;
+  --orb-duration: 24s;
+  --orb-ring-duration: 38s;
+  --orb-delay: -8s;
 }
 
 .home-hero-card__orb--violet {
-  width: clamp(12rem, 24vw, 20rem);
-  height: clamp(12rem, 24vw, 20rem);
-  bottom: -47%;
+  width: clamp(15rem, 28vw, 23rem);
+  height: clamp(13rem, 24vw, 21rem);
+  bottom: -46%;
   left: 50%;
-  transform: translateX(-50%) rotate(15deg) scale(1.05);
-  background: rgba(195, 105, 255, 0.5);
-  border-radius: 23% 77% 45% 55% / 67% 33% 78% 22%;
+  --orb-translate-x: -50%;
+  border-radius: 46% 54% 66% 34% / 58% 42% 68% 32%;
+  --orb-base: #c369ff;
+  --orb-secondary: #2a5dff;
+  --orb-ambient: #c369ff;
+  --orb-ring: color-mix(in srgb, #c369ff 60%, #2a5dff 40%);
+  --orb-rotate: 18deg;
+  --orb-scale: 1.05;
+  --orb-wobble: 6deg;
+  --orb-scale-amp: 0.05;
+  --orb-duration: 28s;
+  --orb-ring-duration: 40s;
+  --orb-delay: -20s;
 }
 
 .home-hero-card__orb--orange-center {
-  width: clamp(11rem, 22vw, 18rem);
-  height: clamp(11rem, 22vw, 18rem);
-  top: -37%;
-  left: 30%;
-  transform: rotate(-10deg) scale(1.1);
-  background: color-mix(in srgb, var(--d-orange-1) 50%, transparent);
-  border-radius: 85% 15% 92% 8% / 25% 75% 30% 70%;
+  width: clamp(12rem, 23vw, 19rem);
+  height: clamp(12rem, 23vw, 19rem);
+  top: -38%;
+  left: 28%;
+  border-radius: 64% 36% 70% 30% / 32% 68% 36% 64%;
+  --orb-base: var(--d-orange-1);
+  --orb-secondary: #f32436;
+  --orb-ambient: var(--d-orange-1);
+  --orb-ring: color-mix(in srgb, var(--d-orange-1) 60%, #f32436 40%);
+  --orb-rotate: -8deg;
+  --orb-scale: 1.12;
+  --orb-wobble: 7deg;
+  --orb-scale-amp: 0.05;
+  --orb-duration: 26s;
+  --orb-glow-duration: 22s;
+  --orb-ring-duration: 38s;
+  --orb-delay: -18s;
 }
 
 
@@ -1023,38 +1113,60 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb {
-    filter: blur(80px);
-    opacity: 0.4;
+    filter: url(#blobDistort) blur(60px) saturate(120%);
+    opacity: 0.45;
+    --orb-scale-amp: 0.04;
+    animation-duration: calc(var(--orb-duration) * 1.1);
+  }
+
+  .home-hero-card__orb::before {
+    animation-duration: calc(var(--orb-glow-duration) * 1.1);
+  }
+
+  .home-hero-card__orb::after {
+    animation-duration: calc(var(--orb-ring-duration) * 1.05);
   }
 
   .home-hero-card__orb--cyan {
-    top: -15%;
-    right: -20%;
+    top: -18%;
+    right: -22%;
+    --orb-scale: 1.04;
   }
 
   .home-hero-card__orb--orange {
-    left: -20%;
+    left: -18%;
+    --orb-scale: 0.96;
   }
 
   .home-hero-card__orb--red {
-    left: -8%;
+    left: -6%;
+    --orb-scale: 1.04;
   }
 
   .home-hero-card__orb--blue {
     bottom: -20%;
-    right: -30%;
+    right: -28%;
   }
 
   .home-hero-card__orb--violet {
-    bottom: -51%;
-    left: 50%;
-    transform: translateX(-50%) rotate(15deg) scale(1.05);
+    bottom: -54%;
+    left: 52%;
+    --orb-translate-x: -52%;
+    --orb-scale: 1.02;
   }
 
   .home-hero-card__orb--orange-center {
-    top: -42%;
-    left: 25%;
-    transform: rotate(-10deg) scale(1.1);
+    top: -44%;
+    left: 24%;
+    --orb-scale: 1.06;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-card__orb,
+  .home-hero-card__orb::before,
+  .home-hero-card__orb::after {
+    animation: none !important;
   }
 }
 
