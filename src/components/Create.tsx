@@ -788,7 +788,6 @@ const Create: React.FC = () => {
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [activeGenerationQueue, setActiveGenerationQueue] = useState<Array<{ id: string; prompt: string; model: string }>>([]);
   const hasGenerationCapacity = activeGenerationQueue.length < MAX_PARALLEL_GENERATIONS;
-  const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [shouldAutoGenerateAfterModelSelect, setShouldAutoGenerateAfterModelSelect] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -2123,39 +2122,6 @@ const Create: React.FC = () => {
     setSelectedFullImage(gallery[newIndex]);
   };
 
-  const enhancePrompt = async () => {
-    if (!prompt.trim() || isEnhancing) return;
-    
-    debugLog('Enhancing prompt:', prompt);
-    setIsEnhancing(true);
-    
-    try {
-      const response = await fetch('/api/enhance-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      debugLog('Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        debugError('API Error:', errorText);
-        throw new Error(`Failed to enhance prompt: ${response.status}`);
-      }
-
-      const data = await response.json();
-      debugLog('Enhanced prompt received:', data.enhancedPrompt);
-      setPrompt(data.enhancedPrompt);
-    } catch (err) {
-      debugError('Failed to enhance prompt:', err);
-      alert('Failed to enhance prompt. Please check the console for details.');
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
 
   // Helper function to convert image URL to File object
   const urlToFile = async (url: string, filename: string): Promise<File> => {
@@ -6651,20 +6617,6 @@ const handleGenerate = async () => {
                   )}
 
                 </div>
-                <button
-                  type="button"
-                  onClick={enhancePrompt}
-                  disabled={!prompt.trim() || isEnhancing}
-                  title="Enhance prompt"
-                  aria-label="Enhance prompt"
-                  className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isEnhancing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-4 h-4" />
-                  )}
-                </button>
                 
                 {/* Model Selector */}
                 <div className="relative model-selector">
