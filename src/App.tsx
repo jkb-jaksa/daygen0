@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import Navbar from "./components/Navbar";
 import FAQSection from "./components/Faq";
 import Footer from "./components/Footer";
+import GlobalSvgDefs from "./components/GlobalSvgDefs";
 import { useAuth } from "./auth/AuthContext";
 import { layout, text, buttons } from "./styles/designSystem";
 
@@ -19,14 +20,6 @@ const Account = lazy(() => import("./components/Account"));
 function Home() {
   return (
     <div className={`${layout.page} home-page`}>
-      {/* Distortion filter defs */}
-      <svg style={{position:'absolute', width:0, height:0}}>
-        <filter id="blobDistort">
-          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="3" result="noise"/>
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="25" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-      </svg>
-
       <div className="home-page__backdrop" aria-hidden="true">
         <div className="home-page__halo home-page__halo--cyan" />
         <div className="home-page__halo home-page__halo--orange" />
@@ -128,6 +121,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div>
+        <GlobalSvgDefs />
         <Navbar />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
