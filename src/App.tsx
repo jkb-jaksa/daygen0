@@ -38,11 +38,13 @@ function Home() {
           <div className="home-hero-card__spark" aria-hidden="true" />
 
           {/* Logo section - positioned better */}
-          <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-12 lg:left-16 z-20">
-            <div className="home-hero-logo text-left">
-              <div className={text.subHeading}>
-                <span className="text-white-gradient">day</span>
-                <span className="text-brand">gen</span>
+          <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-0 right-0 z-20">
+            <div className="mx-auto max-w-[85rem] px-6 lg:px-8">
+              <div className="home-hero-logo text-left">
+                <div className={text.subHeading}>
+                  <span className="text-white-gradient">day</span>
+                  <span className="text-brand">gen</span>
+                </div>
               </div>
             </div>
           </div>
@@ -50,7 +52,7 @@ function Home() {
           {/* Content */}
           <div className={`${layout.container} relative z-10 flex flex-col gap-4 items-center justify-center`}>
             {/* Main content */}
-            <div className="home-hero-copy text-center flex flex-col gap-2">
+            <div className="home-hero-copy text-center flex flex-col gap-4">
               <h1 className={`${text.heroHeading} home-hero-title`}>
                 Your Daily AI Generations
               </h1>

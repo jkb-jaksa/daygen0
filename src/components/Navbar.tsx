@@ -272,7 +272,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`parallax-mid flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-brand transition-colors`}
+                    className={`parallax-mid flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-text px-2.5 py-1 hover:text-brand transition-colors`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
