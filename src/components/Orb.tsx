@@ -49,7 +49,7 @@ export const HomepageHeroOrbs: React.FC<{
   className?: string;
 }> = ({ className = '' }) => {
   return (
-    <>
+    <div className={className}>
       {/* Background effects */}
       <div className="home-hero-card__frame" aria-hidden="true" />
       <Orb color="cyan" />
@@ -59,7 +59,7 @@ export const HomepageHeroOrbs: React.FC<{
       <Orb color="blue" />
       <Orb color="violet" />
       <div className="home-hero-card__spark" aria-hidden="true" />
-    </>
+    </div>
   );
 };
 
