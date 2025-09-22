@@ -968,8 +968,8 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-opacity: 0.72;
   width: clamp(12rem, 22vw, 19rem);
   height: clamp(13rem, 24vw, 21rem);
-  top: -18%;
-  right: -12%;
+  top: -30%;
+  right: -18%;
 }
 
 
@@ -995,8 +995,8 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-opacity: 0.75;
   width: clamp(11rem, 21vw, 18rem);
   height: clamp(12rem, 22vw, 20rem);
-  top: 20%;
-  left: -14%;
+  top: 10%;
+  left: -18%;
 }
 
 
@@ -1022,8 +1022,8 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-opacity: 0.68;
   width: clamp(12rem, 24vw, 20rem);
   height: clamp(12rem, 24vw, 20rem);
-  bottom: -18%;
-  left: 6%;
+  bottom: -22%;
+  left: -12%;
 }
 
 
@@ -1049,8 +1049,8 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-opacity: 0.66;
   width: clamp(15rem, 28vw, 23rem);
   height: clamp(15rem, 28vw, 23rem);
-  bottom: -22%;
-  right: -16%;
+  bottom: -34%;
+  right: -22%;
 }
 
 .home-hero-card__orb--violet {
@@ -1075,7 +1075,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-opacity: 0.68;
   width: clamp(13rem, 26vw, 22rem);
   height: clamp(14rem, 26vw, 22rem);
-  bottom: -50%;
+  bottom: -59%;
   left: 50%;
 }
 
@@ -1101,8 +1101,8 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-opacity: 0.7;
   width: clamp(11rem, 22vw, 19rem);
   height: clamp(12rem, 23vw, 20rem);
-  top: -36%;
-  left: 30%;
+  top: -45%;
+  left: 42%;
 }
 
 @media (max-width: 640px) {
@@ -1116,37 +1116,37 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb--cyan {
-    top: -24%;
-    right: -28%;
+    top: -36%;
+    right: -40%;
     --orb-ribbon-right: -32%;
     --orb-ribbon-bottom: 30%;
   }
 
   .home-hero-card__orb--orange {
-    top: 24%;
-    left: -26%;
+    top: 12%;
+    left: -38%;
     --orb-ribbon-left: 44%;
   }
 
   .home-hero-card__orb--red {
-    bottom: -26%;
-    left: -12%;
+    bottom: -38%;
+    left: -24%;
     --orb-ribbon-right: -28%;
   }
 
   .home-hero-card__orb--blue {
-    bottom: -28%;
-    right: -36%;
+    bottom: -40%;
+    right: -48%;
     --orb-ribbon-right: -32%;
   }
 
   .home-hero-card__orb--violet {
-    bottom: -56%;
+    bottom: -68%;
   }
 
   .home-hero-card__orb--orange-center {
-    top: -44%;
-    left: 22%;
+    top: -56%;
+    left: 34%;
   }
 }
 
