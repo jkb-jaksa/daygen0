@@ -18,42 +18,66 @@ const Account = lazy(() => import("./components/Account"));
 
 function Home() {
   return (
-    <div className={layout.page}>
-      <div className={layout.backdrop} aria-hidden="true" />
+    <div className={`${layout.page} home-page`}>
+      <div className="home-page__backdrop" aria-hidden="true">
+        <div className="home-page__halo home-page__halo--cyan" />
+        <div className="home-page__halo home-page__halo--orange" />
+        <div className="home-page__halo home-page__halo--red" />
+        <div className="home-page__grid" />
+      </div>
 
       <div className="relative z-10">
         {/* Welcome Section */}
-        <section className={`${layout.container} pt-20 pb-16`}>
-          {/* Logo section */}
-          <div className="text-left mb-12">
-            <div className={`${text.subHeading}`}> 
-              <span className="text-white-gradient">day</span>
-              <span className="text-brand">gen</span>
+        <section className="relative min-h-screen flex items-center justify-center pt-[calc(var(--nav-h)+0.5rem)]">
+          {/* Background effects */}
+          <div className="home-hero-card__frame" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
+          <div className="home-hero-card__spark" aria-hidden="true" />
+
+          {/* Logo section - positioned better */}
+          <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-12 lg:left-16 z-20">
+            <div className="home-hero-logo text-left">
+              <div className={text.subHeading}>
+                <span className="text-white-gradient">day</span>
+                <span className="text-brand">gen</span>
+              </div>
             </div>
           </div>
-          
-          {/* Main content */}
-          <div className="text-center">
-            <h1 className={`${text.heroHeading} mb-4`}>
-              Your Daily AI Generations
-            </h1>
-            <div className="mx-auto mb-6 max-w-2xl">
-              <div className="text-3xl text-d-text font-raleway mb-6"><span className="text-d-orange">Generate</span>. Daydream.</div>
-              <div className="text-xl text-d-white font-raleway mb-6">Master all the best Creative AI tools. In one place.</div>
-            </div>
-            <div className="flex justify-center gap-2">
-              <Link 
-                to="/create" 
-                className={`${buttons.ghost}`}
-              >
-                Create
-              </Link>
-              <Link 
-                to="/use-cases" 
-                className={`${buttons.primary}`}
-              >
-                Learn
-              </Link>
+
+          {/* Content */}
+          <div className={`${layout.container} relative z-10 flex flex-col gap-12 items-center -mt-8`}>
+            {/* Main content */}
+            <div className="home-hero-copy text-center flex flex-col gap-12">
+              <div className="home-hero-title-wrapper">
+                <h1 className={`${text.heroHeading} home-hero-title`}>
+                  Your Daily AI Generations
+                </h1>
+              </div>
+              <div className="mx-auto max-w-2xl flex flex-col gap-8">
+                <div className="home-hero-subheading text-3xl text-d-text font-raleway font-medium">
+                  <span className="text-d-orange">Generate</span>. <span className="text-d-text">Daydream</span>.
+                </div>
+                <div className="home-hero-description text-xl text-d-white font-raleway leading-relaxed">
+                  Master all the best Creative AI tools. In one place.
+                </div>
+              </div>
+              <div className="home-hero-actions">
+                <Link
+                  to="/create"
+                  className={buttons.secondary}
+                >
+                  Create
+                </Link>
+                <Link
+                  to="/use-cases"
+                  className={buttons.primary}
+                >
+                  Learn
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -97,7 +121,7 @@ function RouteFallback() {
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="overflow-y-hidden">
+      <div>
         <Navbar />
         <Suspense fallback={<RouteFallback />}>
           <Routes>

@@ -75,22 +75,23 @@ const FAQSection: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative bg-black">
+    <div className="relative" style={{backgroundColor: '#000000'}}>
       {/* Gray header strip with heading */}
       <section className={layout.sectionDivider}>
-        <div className={`${layout.container} py-16 justify-items-center`}>
-          <h2 className={`${text.sectionHeading} text-center`}>
-            FAQ
+        <div className={`${layout.container} py-12 justify-items-center`}>
+          <h2 className={`${text.sectionHeading} text-center relative`}>
+            <span className="relative z-10">FAQ</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50"></div>
           </h2>
         </div>
         {/* Subtle gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/3 to-transparent" />
       </section>
 
       {/* FAQ content section */}
       <section className={`${layout.container} ${layout.sectionPaddingTight}`}>
         {/* FAQ Items */}
-        <div className="mx-auto max-w-4xl space-y-4">
+        <div className="mx-auto max-w-4xl space-y-3">
           {FAQ_DATA.map((item, index) => (
             <div
               key={index}
@@ -101,7 +102,7 @@ const FAQSection: React.FC = () => {
             >
               <button
                 onClick={() => toggleQuestion(index)}
-                className="flex w-full items-center justify-between px-8 py-3 text-left appearance-none bg-transparent border-0 focus:outline-none focus:ring-0"
+                className="flex w-full items-center justify-between px-6 py-2 text-left appearance-none bg-transparent border-0 focus:outline-none focus:ring-0"
               >
                 <span className="pr-4 text-base font-normal font-raleway text-d-text">
                   {item.question}
@@ -121,8 +122,8 @@ const FAQSection: React.FC = () => {
                   openIndex === index ? "max-h-48" : "max-h-0"
                 }`}
               >
-                <div className="px-8 pb-4">
-                  <p className="text-base font-raleway leading-relaxed text-d-white">
+                <div className="px-6 pb-3">
+                  <p className="text-sm font-raleway leading-relaxed text-d-white">
                     {item.answer}
                   </p>
                 </div>

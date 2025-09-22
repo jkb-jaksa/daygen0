@@ -212,7 +212,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
+                  className="parallax-small text-d-text hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
                   onMouseEnter={() => setActiveMenu(item.label)}
                   onFocus={() => setActiveMenu(item.label)}
                 >
@@ -249,7 +249,7 @@ export default function Navbar() {
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
-                  className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
+                  className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-text px-3 py-1.5 hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="size-4" />
