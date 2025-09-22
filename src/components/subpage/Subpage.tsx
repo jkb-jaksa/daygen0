@@ -783,8 +783,38 @@ function Card({
   title: string;
   children: React.ReactNode;
 }) {
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--x", `${x.toFixed(2)}%`);
+    el.style.setProperty("--y", `${y.toFixed(2)}%`);
+    const tx = (x - 50) / 10;
+    const ty = (y - 50) / 10;
+    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  };
+
+  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "200ms");
+    el.style.setProperty("--l", "1");
+  };
+
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "400ms");
+    el.style.setProperty("--l", "0");
+  };
+
   return (
-    <div className="rounded-2xl bg-white/5 border border-d-black p-6 hover:border-d-mid transition-colors duration-200">
+    <div 
+      className="tag-gradient rounded-2xl bg-white/5 border border-d-black p-6 hover:border-d-mid transition-colors duration-200"
+      onMouseMove={onMove}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
       <h3 className="text-xl font-cabin mb-2">{title}</h3>
       <div className="text-d-text/80 font-raleway">{children}</div>
     </div>
@@ -825,30 +855,60 @@ export default function Subpage() {
     return (
       <PageChrome title={conf.title} subtitle={conf.subtitle}>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {conf.items.map((t) => (
-            <div
-              key={t.title}
-              className="rounded-2xl bg-white/5 border border-d-black p-5 hover:border-d-mid transition-colors duration-200"
-            >
-              <div className="flex items-center gap-3">
-                {/* tool logo or placeholder */}
-                {hasToolLogo(t.title) ? (
-                  <img 
-                    src={getToolLogo(t.title)!} 
-                    alt={`${t.title} logo`}
-                    className="h-7 w-7 object-contain rounded-lg"
-                  />
-                ) : (
-                  <div className="h-7 w-7 rounded-lg bg-white/10" />
-                )}
-                <h3 className="text-lg font-cabin">{t.title}</h3>
+          {conf.items.map((t) => {
+            const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+              const el = e.currentTarget;
+              const rect = el.getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              el.style.setProperty("--x", `${x.toFixed(2)}%`);
+              el.style.setProperty("--y", `${y.toFixed(2)}%`);
+              const tx = (x - 50) / 10;
+              const ty = (y - 50) / 10;
+              el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+              el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+            };
+
+            const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+              const el = e.currentTarget;
+              el.style.setProperty("--fade-ms", "200ms");
+              el.style.setProperty("--l", "1");
+            };
+
+            const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+              const el = e.currentTarget;
+              el.style.setProperty("--fade-ms", "400ms");
+              el.style.setProperty("--l", "0");
+            };
+
+            return (
+              <div
+                key={t.title}
+                className="tag-gradient rounded-2xl bg-white/5 border border-d-black p-5 hover:border-d-mid transition-colors duration-200"
+                onMouseMove={onMove}
+                onMouseEnter={onEnter}
+                onMouseLeave={onLeave}
+              >
+                <div className="flex items-center gap-3">
+                  {/* tool logo or placeholder */}
+                  {hasToolLogo(t.title) ? (
+                    <img 
+                      src={getToolLogo(t.title)!} 
+                      alt={`${t.title} logo`}
+                      className="h-7 w-7 object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="h-7 w-7 rounded-lg bg-white/10" />
+                  )}
+                  <h3 className="text-lg font-cabin">{t.title}</h3>
+                </div>
+                <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>
+                <button className="mt-4 btn btn-ghost parallax-mid">
+                  learn more
+                </button>
               </div>
-              <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>
-              <button className="mt-4 btn btn-ghost parallax-mid">
-                learn more
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </PageChrome>
     );
@@ -873,8 +933,39 @@ export default function Subpage() {
 
 function FaqRow({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
+  
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--x", `${x.toFixed(2)}%`);
+    el.style.setProperty("--y", `${y.toFixed(2)}%`);
+    const tx = (x - 50) / 10;
+    const ty = (y - 50) / 10;
+    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
+    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  };
+
+  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "200ms");
+    el.style.setProperty("--l", "1");
+  };
+
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--fade-ms", "400ms");
+    el.style.setProperty("--l", "0");
+  };
+
   return (
-    <div className="rounded-2xl overflow-hidden border border-d-black bg-white/5">
+    <div 
+      className="tag-gradient rounded-2xl overflow-hidden border border-d-black bg-white/5"
+      onMouseMove={onMove}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
         className={

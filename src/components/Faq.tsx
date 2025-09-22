@@ -75,64 +75,83 @@ const FAQSection: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative" style={{backgroundColor: '#000000'}}>
-      {/* Gray header strip with heading */}
-      <section className={layout.sectionDivider}>
-        <div className={`${layout.container} py-12 justify-items-center`}>
-          <h2 className={`${text.sectionHeading} text-center relative`}>
-            <span className="relative z-10">FAQ</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50"></div>
+    <section className="faq-section relative overflow-hidden">
+      <div className="faq-section__halo faq-section__halo--cyan" aria-hidden="true" />
+      <div className="faq-section__halo faq-section__halo--orange" aria-hidden="true" />
+      <div className="faq-section__halo faq-section__halo--violet" aria-hidden="true" />
+      <div className="faq-section__grid" aria-hidden="true" />
+
+      <div className={`${layout.container} relative z-10 ${layout.sectionPaddingTight}`}>
+        <div className="faq-section__header">
+          <span className="faq-section__spark" aria-hidden="true" />
+          <h2 className={`${text.sectionHeading} faq-section__title`}>
+            <span>FAQ</span>
           </h2>
+          <span className="faq-section__divider" aria-hidden="true" />
         </div>
-        {/* Subtle gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/3 to-transparent" />
-      </section>
 
-      {/* FAQ content section */}
-      <section className={`${layout.container} ${layout.sectionPaddingTight}`}>
-        {/* FAQ Items */}
-        <div className="mx-auto max-w-4xl space-y-3">
-          {FAQ_DATA.map((item, index) => (
-            <div
-              key={index}
-              className={`${cards.shell} cursor-pointer overflow-hidden`}
-              onMouseMove={onMove}
-              onMouseEnter={onEnter}
-              onMouseLeave={onLeave}
-            >
-              <button
-                onClick={() => toggleQuestion(index)}
-                className="flex w-full items-center justify-between px-6 py-2 text-left appearance-none bg-transparent border-0 focus:outline-none focus:ring-0"
-              >
-                <span className="pr-4 text-base font-normal font-raleway text-d-text">
-                  {item.question}
-                </span>
-                <div className="flex size-8 flex-shrink-0 items-center justify-center">
-                  {openIndex === index ? (
-                    <Minus className="size-4 text-d-white" />
-                  ) : (
-                    <Plus className="size-4 text-d-white" />
-                  )}
-                </div>
-              </button>
+        <div className="faq-section__content">
+          {FAQ_DATA.map((item, index) => {
+            const isOpen = openIndex === index;
+            const contentId = `faq-panel-${index}`;
+            const triggerId = `faq-trigger-${index}`;
 
-              {/* Answer */}
+            return (
               <div
-                className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                  openIndex === index ? "max-h-48" : "max-h-0"
-                }`}
+                key={item.question}
+                className={`${cards.shell} faq-card ${isOpen ? "faq-card--active" : ""}`}
+                onMouseMove={onMove}
+                onMouseEnter={onEnter}
+                onMouseLeave={onLeave}
               >
-                <div className="px-6 pb-3">
-                  <p className="text-sm font-raleway leading-relaxed text-d-white">
-                    {item.answer}
-                  </p>
+                <span className="faq-card__halo" aria-hidden="true" />
+
+                <button
+                  id={triggerId}
+                  aria-controls={contentId}
+                  aria-expanded={isOpen}
+                  onClick={() => toggleQuestion(index)}
+                  className="faq-card__trigger"
+                >
+                  <span className="faq-card__label">
+                    {item.question}
+                  </span>
+                  <span className="faq-card__icon" aria-hidden="true">
+                    {isOpen ? (
+                      <Minus className="size-4" />
+                    ) : (
+                      <Plus className="size-4" />
+                    )}
+                  </span>
+                </button>
+
+                <div
+                  id={contentId}
+                  role="region"
+                  aria-labelledby={triggerId}
+                  className={`faq-card__answer ${isOpen ? "faq-card__answer--open" : ""}`}
+                >
+                  <div className="faq-card__answer-inner">
+                    <p className="faq-card__copy">
+                      {item.answer}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      </section>
-    </div>
+
+        {/* Daygen Logo */}
+        <div className="faq-section__logo">
+          <img
+            src="/daygen-color-nobg.png"
+            alt="Daygen logo"
+            className="faq-section__logo-img"
+          />
+        </div>
+      </div>
+    </section>
   );
 };
 
