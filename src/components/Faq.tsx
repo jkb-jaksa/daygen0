@@ -110,7 +110,7 @@ const FAQSection: React.FC = () => {
             return (
               <div
                 key={item.question}
-                ref={(el) => (faqCardsRef.current[index] = el)}
+                ref={(el) => { faqCardsRef.current[index] = el; }}
                 className={`${cards.shell} faq-card ${isOpen ? "faq-card--active" : ""}`}
                 onMouseMove={onMove}
                 onMouseEnter={onEnter}
