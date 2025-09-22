@@ -140,8 +140,100 @@ html, body {
   inset: 0 !important;
 }
 
+.tools-page__backdrop {
+  z-index: -1 !important;
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+.tools-page__backdrop::before,
+.tools-page__backdrop::after {
+  display: none !important;
+}
+
 .edit-page__backdrop .bg-orb {
   opacity: 0.2;
+}
+
+.tools-page__backdrop .bg-orb {
+  opacity: 0.2;
+}
+
+.tools-page__backdrop .bg-orb--cyan {
+  top: -35%;
+  right: -14%;
+  --orb-blur: 100px;
+}
+
+.tools-page__backdrop .bg-orb--yellow {
+  top: 10%;
+  left: -22%;
+  --orb-blur: 100px;
+}
+
+.tools-page__backdrop .bg-orb--orange {
+  top: -45%;
+  left: 42%;
+  --orb-blur: 100px;
+}
+
+.tools-page__backdrop .bg-orb--red {
+  bottom: -26%;
+  left: -16%;
+  --orb-blur: 100px;
+}
+
+.tools-page__backdrop .bg-orb--blue {
+  bottom: -38%;
+  right: -20%;
+  --orb-blur: 100px;
+}
+
+.tools-page__backdrop .bg-orb--violet {
+  bottom: -59%;
+  left: 50%;
+  --orb-blur: 100px;
+}
+
+/* Tools section orb positioning - special 72px blur settings */
+div[class*="fixed inset-0"] .bg-orb {
+  opacity: 0.2;
+}
+
+div[class*="fixed inset-0"] .bg-orb--cyan {
+  top: -35%;
+  right: -14%;
+  --orb-blur: 72px;
+}
+
+div[class*="fixed inset-0"] .bg-orb--yellow {
+  top: 10%;
+  left: -22%;
+  --orb-blur: 72px;
+}
+
+div[class*="fixed inset-0"] .bg-orb--orange {
+  top: -45%;
+  left: 42%;
+  --orb-blur: 72px;
+}
+
+div[class*="fixed inset-0"] .bg-orb--red {
+  bottom: -26%;
+  left: -16%;
+  --orb-blur: 72px;
+}
+
+div[class*="fixed inset-0"] .bg-orb--blue {
+  bottom: -38%;
+  right: -20%;
+  --orb-blur: 72px;
+}
+
+div[class*="fixed inset-0"] .bg-orb--violet {
+  bottom: -59%;
+  left: 50%;
+  --orb-blur: 72px;
 }
 
 .edit-page__backdrop .bg-orb--cyan {
@@ -170,7 +262,7 @@ html, body {
 
 .edit-page__backdrop .bg-orb--blue {
   bottom: -38%;
-  right: -16%;
+  right: -20%;
   --orb-blur: 100px;
 }
 
@@ -206,7 +298,7 @@ html, body {
 
 .create-page__backdrop .bg-orb--blue {
   bottom: -38%;
-  right: -16%;
+  right: -20%;
   --orb-blur: 100px;
 }
 
@@ -1294,7 +1386,7 @@ section .bg-orb::after,
 
   .create-page__backdrop .bg-orb--blue {
     bottom: -44%;
-    right: -42%;
+    right: -38%;
     --orb-ribbon-right: -32%;
   }
 
@@ -1329,7 +1421,7 @@ section .bg-orb::after,
 
   .edit-page__backdrop .bg-orb--blue {
     bottom: -44%;
-    right: -42%;
+    right: -38%;
     --orb-ribbon-right: -32%;
   }
 

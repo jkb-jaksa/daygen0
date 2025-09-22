@@ -4160,7 +4160,7 @@ const handleGenerate = async () => {
           {/* Categories + Gallery row */}
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
-            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
+            <div className="hidden md:block fixed z-50" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
               <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
@@ -5672,7 +5672,7 @@ const handleGenerate = async () => {
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              className={`promptbar fixed z-50 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ 
                 left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
                 right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 

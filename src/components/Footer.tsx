@@ -12,7 +12,7 @@ export default function Footer() {
   };
 
   return (
-    <footer>
+    <footer className="relative z-20">
       {/* Footer panel */}
       <section className="relative bg-black overflow-hidden">
         {/* Background effects - same as homepage */}

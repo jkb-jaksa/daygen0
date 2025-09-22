@@ -379,12 +379,22 @@ export default function ToolsSection() {
   const [activeCategory, setActiveCategory] = useState<string>("image");
   return (
     <div className={layout.page}>
-      <div className={layout.backdrop} aria-hidden="true" />
-
       <div className="relative z-10">
 
+        {/* Background effects - fixed position like Edit section */}
+        <div className="fixed inset-0 pointer-events-none z-[-1]" aria-hidden="true">
+          <div className="home-hero-card__frame" />
+          <div className="bg-orb bg-orb--cyan" />
+          <div className="bg-orb bg-orb--yellow" />
+          <div className="bg-orb bg-orb--orange" />
+          <div className="bg-orb bg-orb--red" />
+          <div className="bg-orb bg-orb--blue" />
+          <div className="bg-orb bg-orb--violet" />
+          <div className="home-hero-card__spark" />
+        </div>
+
         {/* Main Content */}
-        <section className={`${layout.container} pt-16 pb-8`}>
+        <section className={`${layout.container} pt-16 pb-8 relative z-10`}>
         <div className="mt-4 grid grid-cols-[150px,1fr] gap-4 mb-20">
           {/* Heading aligned with cards */}
           <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">
