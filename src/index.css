@@ -902,12 +902,13 @@ select option::-webkit-scrollbar-thumb:hover {
 
 .home-hero-card__orb {
   position: absolute;
-  border-radius: 999px;
-  filter: blur(80px);
-  opacity: 0.40;
+  filter: blur(75px) url(#blobDistort);
+  opacity: 0.5;
   mix-blend-mode: screen;
   pointer-events: none;
+  transform: rotate(15deg);
 }
+
 
 .home-hero-card__orb::before {
   content: "";
@@ -979,15 +980,21 @@ select option::-webkit-scrollbar-thumb:hover {
   top: -12%;
   right: -8%;
   background: rgba(3, 188, 189, 0.5);
+  border-radius: 5% 95% 2% 98% / 95% 5% 85% 15%;
+  transform: rotate(-8deg) scale(1.05);
 }
+
 
 .home-hero-card__orb--orange {
   width: clamp(10rem, 20vw, 16rem);
   height: clamp(10rem, 20vw, 16rem);
   top: 18%;
   left: -12%;
-  background: rgba(255, 140, 0, 0.5);
+  background: rgba(234, 179, 8, 0.5);
+  border-radius: 95% 5% 98% 2% / 10% 90% 5% 95%;
+  transform: rotate(25deg) scale(0.95);
 }
+
 
 .home-hero-card__orb--red {
   width: clamp(11rem, 21vw, 17rem);
@@ -995,15 +1002,41 @@ select option::-webkit-scrollbar-thumb:hover {
   bottom: -15%;
   left: 8%;
   background: rgba(243, 36, 54, 0.5);
+  border-radius: 2% 98% 5% 95% / 85% 15% 90% 10%;
+  transform: rotate(-20deg) scale(1.1);
 }
+
 
 .home-hero-card__orb--blue {
   width: clamp(14rem, 26vw, 22rem);
   height: clamp(14rem, 26vw, 22rem);
-  bottom: -15%;
-  right: -20%;
+  bottom: -18%;
+  right: -12%;
   background: rgba(42, 93, 255, 0.5);
+  border-radius: 8% 92% 3% 97% / 75% 25% 60% 40%;
+  transform: rotate(12deg) scale(0.9);
 }
+
+.home-hero-card__orb--violet {
+  width: clamp(12rem, 24vw, 20rem);
+  height: clamp(12rem, 24vw, 20rem);
+  bottom: -47%;
+  left: 50%;
+  transform: translateX(-50%) rotate(15deg) scale(1.05);
+  background: rgba(195, 105, 255, 0.5);
+  border-radius: 23% 77% 45% 55% / 67% 33% 78% 22%;
+}
+
+.home-hero-card__orb--orange-center {
+  width: clamp(11rem, 22vw, 18rem);
+  height: clamp(11rem, 22vw, 18rem);
+  top: -37%;
+  left: 30%;
+  transform: rotate(-10deg) scale(1.1);
+  background: color-mix(in srgb, var(--d-orange-1) 50%, transparent);
+  border-radius: 85% 15% 92% 8% / 25% 75% 30% 70%;
+}
+
 
 @media (max-width: 640px) {
   .home-hero-card {
@@ -1031,6 +1064,18 @@ select option::-webkit-scrollbar-thumb:hover {
   .home-hero-card__orb--blue {
     bottom: -20%;
     right: -30%;
+  }
+
+  .home-hero-card__orb--violet {
+    bottom: -51%;
+    left: 50%;
+    transform: translateX(-50%) rotate(15deg) scale(1.05);
+  }
+
+  .home-hero-card__orb--orange-center {
+    top: -42%;
+    left: 25%;
+    transform: rotate(-10deg) scale(1.1);
   }
 }
 

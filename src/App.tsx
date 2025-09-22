@@ -19,6 +19,14 @@ const Account = lazy(() => import("./components/Account"));
 function Home() {
   return (
     <div className={`${layout.page} home-page`}>
+      {/* Distortion filter defs */}
+      <svg style={{position:'absolute', width:0, height:0}}>
+        <filter id="blobDistort">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="3" result="noise"/>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="25" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </svg>
+
       <div className="home-page__backdrop" aria-hidden="true">
         <div className="home-page__halo home-page__halo--cyan" />
         <div className="home-page__halo home-page__halo--orange" />
@@ -33,8 +41,10 @@ function Home() {
           <div className="home-hero-card__frame" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--orange-center" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--violet" aria-hidden="true" />
           <div className="home-hero-card__spark" aria-hidden="true" />
 
           {/* Logo section - positioned better */}
@@ -54,11 +64,11 @@ function Home() {
             {/* Main content */}
             <div className="home-hero-copy text-center flex flex-col gap-4">
               <h1 className={`${text.heroHeading} home-hero-title`}>
-                Your Daily AI Generations
+                Your <span className="text-d-orange">Daily</span> AI Generations.
               </h1>
               <div className="home-hero-line"></div>
               <div className="home-hero-description text-xl text-d-white font-raleway leading-relaxed">
-                Master all the best Creative AI tools. In one place.
+                Master all the best Creative AI Tools in one place.
               </div>
               <div className="home-hero-actions">
                 <Link
