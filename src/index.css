@@ -880,142 +880,230 @@ select option::-webkit-scrollbar-thumb:hover {
   pointer-events: none;
 }
 
+
 .home-hero-card__orb {
   position: absolute;
-  filter: blur(80px) url(#blobDistort);
-  opacity: 0.5;
-  mix-blend-mode: screen;
   pointer-events: none;
-  transform: rotate(15deg);
+  isolation: isolate;
+  --orb-primary: 255, 255, 255;
+  --orb-secondary: var(--orb-primary);
+  --orb-tertiary: var(--orb-primary);
+  --orb-radius: 42% 58% 60% 40% / 34% 48% 52% 66%;
+  --orb-transform: rotate(0deg);
+  --orb-conic-start: 120deg;
+  --orb-highlight-rotate: -12deg;
+  --orb-ribbon-rotate: -18deg;
+  --orb-ribbon-scale: 1;
+  --orb-ribbon-top: 24%;
+  --orb-ribbon-right: -12%;
+  --orb-ribbon-bottom: 38%;
+  --orb-ribbon-left: 30%;
+  --orb-glow-top: -18%;
+  --orb-glow-right: -14%;
+  --orb-glow-bottom: -26%;
+  --orb-glow-left: -14%;
+  --orb-blur: 78px;
+  --orb-opacity: 0.55;
+  border-radius: var(--orb-radius);
+  background:
+    radial-gradient(120% 140% at 18% 22%, rgba(var(--orb-primary), 0.92), rgba(var(--orb-primary), 0) 62%),
+    radial-gradient(115% 135% at 74% 68%, rgba(var(--orb-secondary), 0.65), rgba(var(--orb-secondary), 0) 72%),
+    conic-gradient(from var(--orb-conic-start) at 50% 50%, rgba(var(--orb-tertiary), 0.65) 0deg, rgba(var(--orb-tertiary), 0) 250deg);
+  filter: url(#blobDistort) blur(var(--orb-blur)) saturate(118%);
+  mix-blend-mode: screen;
+  opacity: var(--orb-opacity);
+  transform: var(--orb-transform);
 }
 
 
 .home-hero-card__orb::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: var(--orb-glow-top);
+  right: var(--orb-glow-right);
+  bottom: var(--orb-glow-bottom);
+  left: var(--orb-glow-left);
   border-radius: inherit;
-  background-image: 
-    radial-gradient(circle at 6% 6%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 94% 94%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.10) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 80% 12%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 2% 88%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 98% 18%, rgba(255,255,255,0.04) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 12% 30%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 88% 70%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 30% 3%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 70% 97%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 9% 40%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 91% 60%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 40% 9%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 60% 91%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 15% 15%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 85% 85%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 3% 45%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 97% 55%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 3%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 97%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 14% 55%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 86% 45%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 14%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 86%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 5% 25%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 95% 75%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 25% 5%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 75% 95%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 10% 65%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 90% 35%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 10%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 90%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 65%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 4% 35%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 96% 65%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 4%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 96%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 16% 70%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 84% 30%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 70% 16%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 30% 84%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 22% 45%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 78% 55%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 22%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 78%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 8% 50%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 92% 50%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 50% 8%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 50% 92%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px);
-  background-size: 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px;
-  opacity: 0.3;
-  mix-blend-mode: overlay;
+  background:
+    radial-gradient(120% 120% at 28% 22%, rgba(255, 255, 255, 0.25), transparent 68%),
+    radial-gradient(120% 120% at 74% 78%, rgba(255, 255, 255, 0.15), transparent 72%);
+  filter: blur(36px);
+  mix-blend-mode: soft-light;
+  opacity: 0.6;
+  transform: rotate(var(--orb-highlight-rotate));
+}
+
+.home-hero-card__orb::after {
+  content: "";
+  position: absolute;
+  top: var(--orb-ribbon-top);
+  right: var(--orb-ribbon-right);
+  bottom: var(--orb-ribbon-bottom);
+  left: var(--orb-ribbon-left);
+  border-radius: 999px;
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+  filter: blur(24px);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+  transform: rotate(var(--orb-ribbon-rotate)) scaleX(var(--orb-ribbon-scale));
 }
 
 .home-hero-card__orb--cyan {
-  width: clamp(12rem, 22vw, 18rem);
-  height: clamp(12rem, 22vw, 18rem);
-  top: -12%;
-  right: -8%;
-  background: rgba(3, 188, 189, 0.5);
-  border-radius: 5% 95% 2% 98% / 95% 5% 85% 15%;
-  transform: rotate(-8deg) scale(1.05);
+  --orb-primary: 3, 188, 189;
+  --orb-secondary: 122, 247, 255;
+  --orb-tertiary: 16, 210, 214;
+  --orb-radius: 36% 64% 70% 30% / 30% 44% 56% 70%;
+  --orb-transform: rotate(-24deg) skewY(-6deg) scale(1.08);
+  --orb-conic-start: 170deg;
+  --orb-highlight-rotate: -28deg;
+  --orb-ribbon-rotate: -34deg;
+  --orb-ribbon-scale: 1.22;
+  --orb-ribbon-right: -20%;
+  --orb-ribbon-bottom: 26%;
+  --orb-glow-top: -22%;
+  --orb-glow-right: -20%;
+  --orb-glow-bottom: -32%;
+  --orb-glow-left: -18%;
+  --orb-blur: 82px;
+  --orb-opacity: 0.58;
+  width: clamp(12rem, 22vw, 19rem);
+  height: clamp(13rem, 24vw, 21rem);
+  top: -18%;
+  right: -12%;
 }
 
 
 .home-hero-card__orb--orange {
-  width: clamp(10rem, 20vw, 16rem);
-  height: clamp(10rem, 20vw, 16rem);
-  top: 18%;
-  left: -12%;
-  background: rgba(234, 179, 8, 0.5);
-  border-radius: 95% 5% 98% 2% / 10% 90% 5% 95%;
-  transform: rotate(25deg) scale(0.95);
+  --orb-primary: 234, 179, 8;
+  --orb-secondary: 255, 207, 94;
+  --orb-tertiary: 255, 156, 38;
+  --orb-radius: 70% 30% 58% 42% / 28% 78% 22% 74%;
+  --orb-transform: rotate(18deg) skewX(-10deg) scale(0.94);
+  --orb-conic-start: 40deg;
+  --orb-highlight-rotate: -6deg;
+  --orb-ribbon-rotate: -14deg;
+  --orb-ribbon-scale: 1.08;
+  --orb-ribbon-top: 18%;
+  --orb-ribbon-right: -10%;
+  --orb-ribbon-bottom: 44%;
+  --orb-ribbon-left: 40%;
+  --orb-glow-top: -16%;
+  --orb-glow-right: -12%;
+  --orb-glow-bottom: -24%;
+  --orb-glow-left: -28%;
+  --orb-blur: 74px;
+  --orb-opacity: 0.62;
+  width: clamp(11rem, 21vw, 18rem);
+  height: clamp(12rem, 22vw, 20rem);
+  top: 20%;
+  left: -14%;
 }
 
 
 .home-hero-card__orb--red {
-  width: clamp(11rem, 21vw, 17rem);
-  height: clamp(11rem, 21vw, 17rem);
-  bottom: -15%;
-  left: 8%;
-  background: rgba(243, 36, 54, 0.5);
-  border-radius: 2% 98% 5% 95% / 85% 15% 90% 10%;
-  transform: rotate(-20deg) scale(1.1);
+  --orb-primary: 243, 36, 54;
+  --orb-secondary: 255, 117, 129;
+  --orb-tertiary: 255, 72, 96;
+  --orb-radius: 30% 70% 66% 34% / 68% 26% 74% 32%;
+  --orb-transform: rotate(-16deg) skewY(8deg) scale(1.12);
+  --orb-conic-start: 210deg;
+  --orb-highlight-rotate: -34deg;
+  --orb-ribbon-rotate: -26deg;
+  --orb-ribbon-scale: 1.26;
+  --orb-ribbon-top: 32%;
+  --orb-ribbon-right: -22%;
+  --orb-ribbon-bottom: 28%;
+  --orb-ribbon-left: 26%;
+  --orb-glow-top: -20%;
+  --orb-glow-right: -16%;
+  --orb-glow-bottom: -30%;
+  --orb-glow-left: -10%;
+  --orb-blur: 86px;
+  --orb-opacity: 0.55;
+  width: clamp(12rem, 24vw, 20rem);
+  height: clamp(12rem, 24vw, 20rem);
+  bottom: -18%;
+  left: 6%;
 }
 
 
 .home-hero-card__orb--blue {
-  width: clamp(14rem, 26vw, 22rem);
-  height: clamp(14rem, 26vw, 22rem);
-  bottom: -18%;
-  right: -12%;
-  background: rgba(42, 93, 255, 0.5);
-  border-radius: 8% 92% 3% 97% / 75% 25% 60% 40%;
-  transform: rotate(12deg) scale(0.9);
+  --orb-primary: 42, 93, 255;
+  --orb-secondary: 106, 155, 255;
+  --orb-tertiary: 83, 177, 255;
+  --orb-radius: 64% 36% 34% 66% / 54% 46% 60% 40%;
+  --orb-transform: rotate(14deg) skewX(6deg) scale(0.92);
+  --orb-conic-start: 300deg;
+  --orb-highlight-rotate: -8deg;
+  --orb-ribbon-rotate: -14deg;
+  --orb-ribbon-scale: 1.32;
+  --orb-ribbon-top: 26%;
+  --orb-ribbon-right: -24%;
+  --orb-ribbon-bottom: 32%;
+  --orb-ribbon-left: 22%;
+  --orb-glow-top: -24%;
+  --orb-glow-right: -24%;
+  --orb-glow-bottom: -30%;
+  --orb-glow-left: -12%;
+  --orb-blur: 90px;
+  --orb-opacity: 0.53;
+  width: clamp(15rem, 28vw, 23rem);
+  height: clamp(15rem, 28vw, 23rem);
+  bottom: -22%;
+  right: -16%;
 }
 
 .home-hero-card__orb--violet {
-  width: clamp(12rem, 24vw, 20rem);
-  height: clamp(12rem, 24vw, 20rem);
-  bottom: -47%;
+  --orb-primary: 195, 105, 255;
+  --orb-secondary: 222, 152, 255;
+  --orb-tertiary: 162, 96, 255;
+  --orb-radius: 58% 42% 64% 36% / 68% 42% 58% 32%;
+  --orb-transform: translateX(-50%) rotate(18deg) skewY(-6deg) scale(1.04);
+  --orb-conic-start: 260deg;
+  --orb-highlight-rotate: -16deg;
+  --orb-ribbon-rotate: -20deg;
+  --orb-ribbon-scale: 1.22;
+  --orb-ribbon-top: 24%;
+  --orb-ribbon-right: -18%;
+  --orb-ribbon-bottom: 28%;
+  --orb-ribbon-left: 34%;
+  --orb-glow-top: -26%;
+  --orb-glow-right: -18%;
+  --orb-glow-bottom: -32%;
+  --orb-glow-left: -18%;
+  --orb-blur: 84px;
+  --orb-opacity: 0.55;
+  width: clamp(13rem, 26vw, 22rem);
+  height: clamp(14rem, 26vw, 22rem);
+  bottom: -50%;
   left: 50%;
-  transform: translateX(-50%) rotate(15deg) scale(1.05);
-  background: rgba(195, 105, 255, 0.5);
-  border-radius: 23% 77% 45% 55% / 67% 33% 78% 22%;
 }
 
 .home-hero-card__orb--orange-center {
-  width: clamp(11rem, 22vw, 18rem);
-  height: clamp(11rem, 22vw, 18rem);
-  top: -37%;
+  --orb-primary: 255, 140, 0;
+  --orb-secondary: 255, 198, 120;
+  --orb-tertiary: 255, 160, 72;
+  --orb-radius: 48% 52% 62% 38% / 36% 68% 32% 64%;
+  --orb-transform: translate(-6%, -2%) rotate(-10deg) scale(1.05);
+  --orb-conic-start: 90deg;
+  --orb-highlight-rotate: -12deg;
+  --orb-ribbon-rotate: -18deg;
+  --orb-ribbon-scale: 1.15;
+  --orb-ribbon-top: 22%;
+  --orb-ribbon-right: -8%;
+  --orb-ribbon-bottom: 38%;
+  --orb-ribbon-left: 42%;
+  --orb-glow-top: -18%;
+  --orb-glow-right: -12%;
+  --orb-glow-bottom: -28%;
+  --orb-glow-left: -12%;
+  --orb-blur: 76px;
+  --orb-opacity: 0.57;
+  width: clamp(11rem, 22vw, 19rem);
+  height: clamp(12rem, 23vw, 20rem);
+  top: -36%;
   left: 30%;
-  transform: rotate(-10deg) scale(1.1);
-  background: color-mix(in srgb, var(--d-orange-1) 50%, transparent);
-  border-radius: 85% 15% 92% 8% / 25% 75% 30% 70%;
 }
-
 
 @media (max-width: 640px) {
   .home-hero-card {
@@ -1023,38 +1111,42 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb {
-    filter: blur(80px);
-    opacity: 0.4;
+    --orb-blur: 66px;
+    opacity: 0.45;
   }
 
   .home-hero-card__orb--cyan {
-    top: -15%;
-    right: -20%;
+    top: -24%;
+    right: -28%;
+    --orb-ribbon-right: -32%;
+    --orb-ribbon-bottom: 30%;
   }
 
   .home-hero-card__orb--orange {
-    left: -20%;
+    top: 24%;
+    left: -26%;
+    --orb-ribbon-left: 44%;
   }
 
   .home-hero-card__orb--red {
-    left: -8%;
+    bottom: -26%;
+    left: -12%;
+    --orb-ribbon-right: -28%;
   }
 
   .home-hero-card__orb--blue {
-    bottom: -20%;
-    right: -30%;
+    bottom: -28%;
+    right: -36%;
+    --orb-ribbon-right: -32%;
   }
 
   .home-hero-card__orb--violet {
-    bottom: -51%;
-    left: 50%;
-    transform: translateX(-50%) rotate(15deg) scale(1.05);
+    bottom: -56%;
   }
 
   .home-hero-card__orb--orange-center {
-    top: -42%;
-    left: 25%;
-    transform: rotate(-10deg) scale(1.1);
+    top: -44%;
+    left: 22%;
   }
 }
 
