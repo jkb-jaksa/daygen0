@@ -65,16 +65,16 @@ function Home() {
               </div>
               <div className="home-hero-actions">
                 <Link
-                  to="/create"
+                  to="/use-cases"
                   className={buttons.secondary}
                 >
-                  Create
+                  Learn
                 </Link>
                 <Link
-                  to="/use-cases"
+                  to="/create"
                   className={buttons.primary}
                 >
-                  Learn
+                  Create
                 </Link>
               </div>
             </div>

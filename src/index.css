@@ -26,8 +26,8 @@
   --d-text: #FAFAFA;
   --d-text-rgb: 250 250 250;
   /* Slightly darken d-white globally (very subtle) */
-  --d-white: #C1C9C9;
-  --d-white-rgb: 193 201 201;
+  --d-white: #B8C0C0;
+  --d-white-rgb: 184 192 192;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
   --d-light: #8E9393;
   --d-light-rgb: 142 147 147;
