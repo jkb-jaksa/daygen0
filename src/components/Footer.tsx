@@ -1,5 +1,6 @@
 import { Instagram, X as XIcon, Youtube, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { glass } from "../styles/designSystem";
 
 export default function Footer() {
   const scrollToTop = () => {
@@ -39,7 +40,7 @@ export default function Footer() {
                   href="https://x.com"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
+                  className={`group parallax-force size-8 grid place-items-center rounded-lg ${glass.promptDark} text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors duration-200`}
                   aria-label="X"
                 >
                   <XIcon className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
@@ -48,7 +49,7 @@ export default function Footer() {
                   href="https://instagram.com"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
+                  className={`group parallax-force size-8 grid place-items-center rounded-lg ${glass.promptDark} text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors duration-200`}
                   aria-label="Instagram"
                 >
                   <Instagram className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
@@ -57,7 +58,7 @@ export default function Footer() {
                   href="https://youtube.com"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group parallax-small size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-b-text/90 hover:text-b-text hover:border-b-dark transition-colors duration-200"
+                  className={`group parallax-force size-8 grid place-items-center rounded-lg ${glass.promptDark} text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors duration-200`}
                   aria-label="YouTube"
                 >
                   <Youtube className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
@@ -84,7 +85,7 @@ export default function Footer() {
         <button
           onClick={scrollToTop}
           aria-label="Back to top"
-          className="parallax-mid absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg border bg-[#222427] border-d-dark text-d-text hover:text-brand hover:border-b-dark transition-colors duration-200"
+          className={`parallax-force-positioned absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg ${glass.promptDark} text-d-text hover:text-brand hover:border-d-mid transition-colors duration-200`}
         >
           <ChevronUp className="size-4" />
         </button>
