@@ -18,8 +18,8 @@ export default function Footer() {
         {/* Background effects - same as homepage */}
         <div className="home-hero-card__frame" aria-hidden="true" />
         <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
+        <div className="home-hero-card__orb home-hero-card__orb--yellow" aria-hidden="true" />
         <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--orange-center" aria-hidden="true" />
         <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
         <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
         <div className="home-hero-card__orb home-hero-card__orb--violet" aria-hidden="true" />

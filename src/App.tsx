@@ -20,12 +20,6 @@ const Account = lazy(() => import("./components/Account"));
 function Home() {
   return (
     <div className={`${layout.page} home-page`}>
-      <div className="home-page__backdrop" aria-hidden="true">
-        <div className="home-page__halo home-page__halo--cyan" />
-        <div className="home-page__halo home-page__halo--orange" />
-        <div className="home-page__halo home-page__halo--red" />
-        <div className="home-page__grid" />
-      </div>
 
       <div className="relative z-10">
         {/* Welcome Section */}
@@ -33,8 +27,8 @@ function Home() {
           {/* Background effects */}
           <div className="home-hero-card__frame" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
+          <div className="home-hero-card__orb home-hero-card__orb--yellow" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--orange-center" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--violet" aria-hidden="true" />

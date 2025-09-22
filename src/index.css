@@ -804,50 +804,6 @@ select option::-webkit-scrollbar-thumb:hover {
   background-color: #000000;
 }
 
-.home-page__backdrop {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: #000000;
-  pointer-events: none;
-}
-
-.home-page__backdrop::after {
-  display: none;
-}
-
-.home-page__grid {
-  display: none;
-}
-
-.home-page__halo {
-  display: none;
-}
-
-.home-page__halo--cyan {
-  display: none;
-}
-
-.home-page__halo--orange {
-  display: none;
-}
-
-.home-page__halo--red {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .home-page__halo {
-    width: clamp(10rem, 40vw, 16rem);
-    filter: blur(80px);
-    opacity: 0.4;
-  }
-
-  .home-page__grid {
-    opacity: 0.2;
-    transform: rotate(1deg) translateY(-2%);
-  }
-}
 
 
 .home-hero-card::before {
@@ -882,8 +838,8 @@ select option::-webkit-scrollbar-thumb:hover {
 
 .home-hero-card__orb {
   position: absolute;
-  filter: blur(80px) url(#blobDistort);
-  opacity: 0.5;
+  filter: blur(100px) url(#blobDistort);
+  opacity: 1.0;
   mix-blend-mode: screen;
   pointer-events: none;
   transform: rotate(15deg);
@@ -964,12 +920,12 @@ select option::-webkit-scrollbar-thumb:hover {
 }
 
 
-.home-hero-card__orb--orange {
+.home-hero-card__orb--yellow {
   width: clamp(10rem, 20vw, 16rem);
   height: clamp(10rem, 20vw, 16rem);
   top: 18%;
   left: -12%;
-  background: rgba(234, 179, 8, 0.5);
+  background: rgba(255, 215, 0, 0.5);
   border-radius: 95% 5% 98% 2% / 10% 90% 5% 95%;
   transform: rotate(25deg) scale(0.95);
 }
@@ -1006,7 +962,7 @@ select option::-webkit-scrollbar-thumb:hover {
   border-radius: 23% 77% 45% 55% / 67% 33% 78% 22%;
 }
 
-.home-hero-card__orb--orange-center {
+.home-hero-card__orb--orange {
   width: clamp(11rem, 22vw, 18rem);
   height: clamp(11rem, 22vw, 18rem);
   top: -37%;
@@ -1023,8 +979,8 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb {
-    filter: blur(80px);
-    opacity: 0.4;
+    filter: blur(100px);
+    opacity: 1.0;
   }
 
   .home-hero-card__orb--cyan {
@@ -1032,7 +988,7 @@ select option::-webkit-scrollbar-thumb:hover {
     right: -20%;
   }
 
-  .home-hero-card__orb--orange {
+  .home-hero-card__orb--yellow {
     left: -20%;
   }
 
@@ -1051,7 +1007,7 @@ select option::-webkit-scrollbar-thumb:hover {
     transform: translateX(-50%) rotate(15deg) scale(1.05);
   }
 
-  .home-hero-card__orb--orange-center {
+  .home-hero-card__orb--orange {
     top: -42%;
     left: 25%;
     transform: rotate(-10deg) scale(1.1);
