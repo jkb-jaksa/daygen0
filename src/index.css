@@ -92,7 +92,7 @@ html, body {
   position: absolute;
   inset: 0;
   background-color: #000000;
-  z-index: 0;
+  z-index: -1;
 }
 
 .orb-background::after {
@@ -100,8 +100,50 @@ html, body {
   position: absolute;
   inset: 0;
   background-color: #000000;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
+}
+
+.orb-background > * {
+  z-index: 1;
+}
+
+.create-page__backdrop {
+  z-index: -1 !important;
+}
+
+.create-page__backdrop .bg-orb {
+  opacity: calc(var(--orb-opacity, 0.68) + 0.08);
+}
+
+.create-page__backdrop .bg-orb--cyan {
+  top: -18%;
+  right: -12%;
+}
+
+.create-page__backdrop .bg-orb--yellow {
+  top: 6%;
+  left: -14%;
+}
+
+.create-page__backdrop .bg-orb--orange {
+  bottom: -12%;
+  left: -6%;
+}
+
+.create-page__backdrop .bg-orb--red {
+  bottom: -18%;
+  left: 12%;
+}
+
+.create-page__backdrop .bg-orb--blue {
+  bottom: -26%;
+  right: -16%;
+}
+
+.create-page__backdrop .bg-orb--violet {
+  top: 26%;
+  right: 10%;
 }
 
 
@@ -948,8 +990,9 @@ select option::-webkit-scrollbar-thumb:hover {
   transform: rotate(var(--orb-ribbon-rotate)) scaleX(var(--orb-ribbon-scale));
 }
 
-/* Modify ::after pseudo-element for homepage orbs - remove screen blend mode */
-section .bg-orb::after {
+/* Modify ::after pseudo-element for orb backgrounds - remove screen blend mode */
+section .bg-orb::after,
+.orb-background .bg-orb::after {
   mix-blend-mode: normal;
 }
 

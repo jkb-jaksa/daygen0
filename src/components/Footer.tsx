@@ -17,12 +17,12 @@ export default function Footer() {
       <section className="relative bg-black overflow-hidden">
         {/* Background effects - same as homepage */}
         <div className="home-hero-card__frame" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--orange-center" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
-        <div className="home-hero-card__orb home-hero-card__orb--violet" aria-hidden="true" />
+        <div className="bg-orb bg-orb--cyan" aria-hidden="true" />
+        <div className="bg-orb bg-orb--yellow" aria-hidden="true" />
+        <div className="bg-orb bg-orb--orange" aria-hidden="true" />
+        <div className="bg-orb bg-orb--red" aria-hidden="true" />
+        <div className="bg-orb bg-orb--blue" aria-hidden="true" />
+        <div className="bg-orb bg-orb--violet" aria-hidden="true" />
         <div className="home-hero-card__spark" aria-hidden="true" />
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-8 pb-40 relative z-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">

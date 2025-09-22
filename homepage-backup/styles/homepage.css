@@ -375,7 +375,7 @@ html, body {
   pointer-events: none;
 }
 
-.home-hero-card__orb {
+.bg-orb {
   position: absolute;
   border-radius: 999px;
   filter: blur(75px);
@@ -384,7 +384,7 @@ html, body {
   pointer-events: none;
 }
 
-.home-hero-card__orb::before {
+.bg-orb::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -401,7 +401,7 @@ html, body {
   mix-blend-mode: overlay;
 }
 
-.home-hero-card__orb--cyan {
+.bg-orb--cyan {
   width: clamp(12rem, 22vw, 18rem);
   height: clamp(12rem, 22vw, 18rem);
   top: -12%;
@@ -409,7 +409,7 @@ html, body {
   background: rgba(3, 188, 189, 0.5);
 }
 
-.home-hero-card__orb--orange {
+.bg-orb--orange {
   width: clamp(10rem, 20vw, 16rem);
   height: clamp(10rem, 20vw, 16rem);
   top: 18%;
@@ -417,7 +417,7 @@ html, body {
   background: rgba(255, 140, 0, 0.5);
 }
 
-.home-hero-card__orb--red {
+.bg-orb--red {
   width: clamp(11rem, 21vw, 17rem);
   height: clamp(11rem, 21vw, 17rem);
   bottom: -15%;
@@ -425,7 +425,7 @@ html, body {
   background: rgba(243, 36, 54, 0.5);
 }
 
-.home-hero-card__orb--blue {
+.bg-orb--blue {
   width: clamp(14rem, 26vw, 22rem);
   height: clamp(14rem, 26vw, 22rem);
   bottom: -15%;
@@ -438,25 +438,25 @@ html, body {
     padding: clamp(2.25rem, 8vw, 3.25rem) clamp(1.5rem, 6vw, 2.75rem);
   }
 
-  .home-hero-card__orb {
+  .bg-orb {
     filter: blur(60px);
     opacity: 0.4;
   }
 
-  .home-hero-card__orb--cyan {
+  .bg-orb--cyan {
     top: -15%;
     right: -20%;
   }
 
-  .home-hero-card__orb--orange {
+  .bg-orb--orange {
     left: -20%;
   }
 
-  .home-hero-card__orb--red {
+  .bg-orb--red {
     left: -8%;
   }
 
-  .home-hero-card__orb--blue {
+  .bg-orb--blue {
     bottom: -20%;
     right: -30%;
   }

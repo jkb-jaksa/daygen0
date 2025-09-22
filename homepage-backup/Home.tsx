@@ -17,10 +17,10 @@ function Home() {
         <section className="relative min-h-screen flex items-center justify-center pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
           {/* Background effects */}
           <div className="home-hero-card__frame" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
+          <div className="bg-orb bg-orb--cyan" aria-hidden="true" />
+          <div className="bg-orb bg-orb--orange" aria-hidden="true" />
+          <div className="bg-orb bg-orb--red" aria-hidden="true" />
+          <div className="bg-orb bg-orb--blue" aria-hidden="true" />
           <div className="home-hero-card__spark" aria-hidden="true" />
 
           {/* Logo section - positioned better */}

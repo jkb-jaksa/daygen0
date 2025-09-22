@@ -37,6 +37,7 @@ import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
 import { getApiUrl } from "../utils/api";
+import OrbBackdrop from "./OrbBackdrop";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -4147,14 +4148,13 @@ const handleGenerate = async () => {
         </div>
       )}
 
-      
-      {/* Background overlay to show gradient behind navbar */}
-      <div className={layout.backdrop} aria-hidden="true" />
-      
       {/* PLATFORM HERO */}
-      <header className={`relative z-10 ${layout.container} pt-[calc(var(--nav-h)+0.25rem)] pb-48`}>
+      <header className="relative z-10 pt-[calc(var(--nav-h)+0.25rem)] pb-48">
+        {/* Homepage orb backdrop reused for Create */}
+        <OrbBackdrop className="create-page__backdrop" />
+
         {/* Centered content */}
-        <div className="flex flex-col items-center justify-center text-center">
+        <div className={`${layout.container} relative z-10 flex flex-col items-center justify-center text-center`}>
           {/* Removed "Create now" heading per request */}
           
           {/* Categories + Gallery row */}
