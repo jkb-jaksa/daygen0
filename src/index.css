@@ -903,7 +903,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -26%;
   --orb-glow-left: -14%;
   --orb-blur: 78px;
-  --orb-opacity: 0.55;
+  --orb-opacity: 0.68;
   border-radius: var(--orb-radius);
   background:
     radial-gradient(120% 140% at 18% 22%, rgba(var(--orb-primary), 0.92), rgba(var(--orb-primary), 0) 62%),
@@ -925,11 +925,11 @@ select option::-webkit-scrollbar-thumb:hover {
   left: var(--orb-glow-left);
   border-radius: inherit;
   background:
-    radial-gradient(120% 120% at 28% 22%, rgba(255, 255, 255, 0.25), transparent 68%),
-    radial-gradient(120% 120% at 74% 78%, rgba(255, 255, 255, 0.15), transparent 72%);
+    radial-gradient(120% 120% at 28% 22%, rgba(255, 255, 255, 0.38), transparent 68%),
+    radial-gradient(120% 120% at 74% 78%, rgba(255, 255, 255, 0.22), transparent 72%);
   filter: blur(36px);
   mix-blend-mode: soft-light;
-  opacity: 0.6;
+  opacity: 0.8;
   transform: rotate(var(--orb-highlight-rotate));
 }
 
@@ -941,10 +941,10 @@ select option::-webkit-scrollbar-thumb:hover {
   bottom: var(--orb-ribbon-bottom);
   left: var(--orb-ribbon-left);
   border-radius: 999px;
-  background: linear-gradient(130deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
   filter: blur(24px);
   mix-blend-mode: screen;
-  opacity: 0.65;
+  opacity: 0.85;
   transform: rotate(var(--orb-ribbon-rotate)) scaleX(var(--orb-ribbon-scale));
 }
 
@@ -965,7 +965,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -32%;
   --orb-glow-left: -18%;
   --orb-blur: 82px;
-  --orb-opacity: 0.58;
+  --orb-opacity: 0.72;
   width: clamp(12rem, 22vw, 19rem);
   height: clamp(13rem, 24vw, 21rem);
   top: -18%;
@@ -992,7 +992,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -24%;
   --orb-glow-left: -28%;
   --orb-blur: 74px;
-  --orb-opacity: 0.62;
+  --orb-opacity: 0.75;
   width: clamp(11rem, 21vw, 18rem);
   height: clamp(12rem, 22vw, 20rem);
   top: 20%;
@@ -1019,7 +1019,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -30%;
   --orb-glow-left: -10%;
   --orb-blur: 86px;
-  --orb-opacity: 0.55;
+  --orb-opacity: 0.68;
   width: clamp(12rem, 24vw, 20rem);
   height: clamp(12rem, 24vw, 20rem);
   bottom: -18%;
@@ -1046,7 +1046,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -30%;
   --orb-glow-left: -12%;
   --orb-blur: 90px;
-  --orb-opacity: 0.53;
+  --orb-opacity: 0.66;
   width: clamp(15rem, 28vw, 23rem);
   height: clamp(15rem, 28vw, 23rem);
   bottom: -22%;
@@ -1072,7 +1072,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -32%;
   --orb-glow-left: -18%;
   --orb-blur: 84px;
-  --orb-opacity: 0.55;
+  --orb-opacity: 0.68;
   width: clamp(13rem, 26vw, 22rem);
   height: clamp(14rem, 26vw, 22rem);
   bottom: -50%;
@@ -1098,7 +1098,7 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow-bottom: -28%;
   --orb-glow-left: -12%;
   --orb-blur: 76px;
-  --orb-opacity: 0.57;
+  --orb-opacity: 0.7;
   width: clamp(11rem, 22vw, 19rem);
   height: clamp(12rem, 23vw, 20rem);
   top: -36%;
