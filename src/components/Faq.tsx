@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { Plus, Minus } from "lucide-react";
 import { layout, text, cards } from "../styles/designSystem";
 
@@ -42,7 +42,8 @@ const FAQ_DATA: FAQItem[] = [
 ];
 
 const FAQSection: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const faqCardsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   const toggleQuestion = useCallback((index: number) => {
     setOpenIndex(prev => (prev === index ? null : index));
@@ -71,7 +72,17 @@ const FAQSection: React.FC = () => {
   const onLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     el.style.setProperty("--fade-ms", "400ms");
-    el.style.setProperty("--l", "0");
+    el.style.setProperty("--l", "0.5");
+  }, []);
+
+  // Initialize cards with default glow state
+  useEffect(() => {
+    faqCardsRef.current.forEach((card) => {
+      if (card) {
+        card.style.setProperty("--l", "0.5");
+        card.style.setProperty("--fade-ms", "200ms");
+      }
+    });
   }, []);
 
   return (
@@ -99,6 +110,7 @@ const FAQSection: React.FC = () => {
             return (
               <div
                 key={item.question}
+                ref={(el) => (faqCardsRef.current[index] = el)}
                 className={`${cards.shell} faq-card ${isOpen ? "faq-card--active" : ""}`}
                 onMouseMove={onMove}
                 onMouseEnter={onEnter}

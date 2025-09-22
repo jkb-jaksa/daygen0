@@ -839,7 +839,7 @@ select option::-webkit-scrollbar-thumb:hover {
 @media (max-width: 768px) {
   .home-page__halo {
     width: clamp(10rem, 40vw, 16rem);
-    filter: blur(70px);
+    filter: blur(80px);
     opacity: 0.4;
   }
 
@@ -882,7 +882,7 @@ select option::-webkit-scrollbar-thumb:hover {
 
 .home-hero-card__orb {
   position: absolute;
-  filter: blur(72px) url(#blobDistort);
+  filter: blur(80px) url(#blobDistort);
   opacity: 0.5;
   mix-blend-mode: screen;
   pointer-events: none;
@@ -1023,7 +1023,7 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb {
-    filter: blur(72px);
+    filter: blur(80px);
     opacity: 0.4;
   }
 
