@@ -28,7 +28,7 @@ function Home() {
 
       <div className="relative z-10">
         {/* Welcome Section */}
-        <section className="relative min-h-screen flex items-center justify-center pt-[calc(var(--nav-h)+0.5rem)]">
+        <section className="relative min-h-screen flex items-center justify-center pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
           {/* Background effects */}
           <div className="home-hero-card__frame" aria-hidden="true" />
           <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
@@ -48,21 +48,15 @@ function Home() {
           </div>
 
           {/* Content */}
-          <div className={`${layout.container} relative z-10 flex flex-col gap-12 items-center -mt-8`}>
+          <div className={`${layout.container} relative z-10 flex flex-col gap-4 items-center justify-center`}>
             {/* Main content */}
-            <div className="home-hero-copy text-center flex flex-col gap-12">
-              <div className="home-hero-title-wrapper">
-                <h1 className={`${text.heroHeading} home-hero-title`}>
-                  Your Daily AI Generations
-                </h1>
-              </div>
-              <div className="mx-auto max-w-2xl flex flex-col gap-8">
-                <div className="home-hero-subheading text-3xl text-d-text font-raleway font-medium">
-                  <span className="text-d-orange">Generate</span>. <span className="text-d-text">Daydream</span>.
-                </div>
-                <div className="home-hero-description text-xl text-d-white font-raleway leading-relaxed">
-                  Master all the best Creative AI tools. In one place.
-                </div>
+            <div className="home-hero-copy text-center flex flex-col gap-2">
+              <h1 className={`${text.heroHeading} home-hero-title`}>
+                Your Daily AI Generations
+              </h1>
+              <div className="home-hero-line"></div>
+              <div className="home-hero-description text-xl text-d-white font-raleway leading-relaxed">
+                Master all the best Creative AI tools. In one place.
               </div>
               <div className="home-hero-actions">
                 <Link
