@@ -185,6 +185,21 @@
             color: var(--d-light);
         }
 
+        /* Prevent background color changes when input is filled */
+        .form-group input:-webkit-autofill,
+        .form-group input:-webkit-autofill:hover,
+        .form-group input:-webkit-autofill:focus,
+        .form-group input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px rgba(6, 8, 6, 0.6) inset !important;
+            -webkit-text-fill-color: var(--d-text) !important;
+            background-color: rgba(6, 8, 6, 0.6) !important;
+        }
+
+        .form-group input:not(:placeholder-shown) {
+            background: rgba(6, 8, 6, 0.6) !important;
+            color: var(--d-text) !important;
+        }
+
         .submit-btn {
             background: linear-gradient(135deg, 
                 rgba(255, 255, 255, 0.25) 0%,
