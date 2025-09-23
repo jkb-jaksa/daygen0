@@ -10,15 +10,15 @@ import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass } from "../styles/designSystem";
 
-type MenuId = "create" | "edit" | "explore" | "learn" | "about us";
+type MenuId = "create" | "edit" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 
 const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
   { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
-  { label: "explore", path: "/explore" },
   { label: "learn", path: "/learn/use-cases" },
-  { label: "about us", path: "/about-us" },
+  { label: "explore", path: "/explore" },
+  { label: "my works", path: "/gallery" },
 ];
 
 const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
@@ -194,13 +194,13 @@ export default function Navbar() {
               className="parallax-large h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-cabin">
-              {NAV_ITEMS.map((item) => (
+              {NAV_ITEMS.filter(item => item.label !== "my works" || user).map((item) => (
                 <Link
                   key={item.label}
                   to={item.path}
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
-                  onMouseEnter={() => setActiveMenu(item.label)}
-                  onFocus={() => setActiveMenu(item.label)}
+                  onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
+                  onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                 >
                   {item.label}
                 </Link>

@@ -19,9 +19,11 @@ import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration"
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
-const ModelBadge = lazy(() => import('./ModelBadge'));
-import { usePromptHistory } from '../hooks/usePromptHistory';
-const PromptHistoryChips = lazy(() => import('./PromptHistoryChips').then(mod => ({ default: mod.PromptHistoryChips })));
+const ModelBadge = lazy(() => import("./ModelBadge"));
+import { usePromptHistory } from "../hooks/usePromptHistory";
+const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
+const PromptHistoryPanel = lazy(() => import("./create/PromptHistoryPanel"));
+const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import { compressDataUrl } from "../lib/imageCompression";
@@ -489,74 +491,6 @@ const CustomMultiSelect: React.FC<{
   );
 };
 
-// Portal component for settings menu to avoid clipping by parent containers
-const SettingsPortal: React.FC<{ 
-  anchorRef: React.RefObject<HTMLElement | null>; 
-  open: boolean; 
-  onClose: () => void; 
-  children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    if (!open || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    // Position above the trigger button with some offset
-    setPos({ 
-      top: rect.top - 8, // 8px offset above
-      left: rect.left, 
-      width: Math.max(320, rect.width) // Minimum 320px width (w-80 equivalent)
-    });
-  }, [open, anchorRef]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && 
-          !menuRef.current.contains(event.target as Node) && 
-          !anchorRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={menuRef}
-      style={{ 
-        position: "fixed", 
-        top: pos.top, 
-        left: pos.left, 
-        width: pos.width, 
-        zIndex: 1000,
-        transform: 'translateY(-100%)' // Position above the trigger
-      }}
-      className={`${glass.prompt} rounded-lg p-4`}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
-
 const ImageActionMenuPortal: React.FC<{
   anchorEl: HTMLElement | null;
   open: boolean;
@@ -814,9 +748,9 @@ const Create: React.FC = () => {
   
   // Seedance-specific state
   const [seedanceMode, setSeedanceMode] = useState<'t2v' | 'i2v-first' | 'i2v-first-last'>('t2v');
-  const [seedanceRatio, setSeedanceRatio] = useState<string>('16:9');
+  const [seedanceRatio, setSeedanceRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [seedanceDuration, setSeedanceDuration] = useState<number>(5);
-  const [seedanceResolution, setSeedanceResolution] = useState<string>('1080p');
+  const [seedanceResolution, setSeedanceResolution] = useState<'1080p' | '720p'>('1080p');
   const [seedanceFps, setSeedanceFps] = useState<number>(24);
   const [seedanceCamerafixed, setSeedanceCamerafixed] = useState<boolean>(true);
   const [seedanceSeed, setSeedanceSeed] = useState<string>('');
@@ -3758,7 +3692,7 @@ const handleGenerate = async () => {
 
   // Model selector click outside handling is now handled by ModelMenuPortal component
 
-  // Settings dropdown click outside handling is now handled by SettingsPortal component
+  // Settings dropdown click outside handling is now handled by the lazy SettingsMenu component
 
   // Handle keyboard events for confirmation modals
   useEffect(() => {
@@ -3793,7 +3727,7 @@ const handleGenerate = async () => {
     <div className={layout.page}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-300 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
           {copyNotification}
         </div>
       )}
@@ -4249,97 +4183,13 @@ const handleGenerate = async () => {
           {/* Categories + Gallery row */}
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
-            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
-              <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
-                <aside className="flex flex-col gap-2 w-full mt-2">
-                  {/* Generate section */}
-                  <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
-                    create
-                  </div>
-                  
-                  {/* Main categories */}
-                  {[
-                    { key: "text", label: "text", Icon: Edit },
-                    { key: "image", label: "image", Icon: ImageIcon },
-                    { key: "video", label: "video", Icon: VideoIcon },
-                    { key: "avatars", label: "avatars", Icon: Users },
-                    { key: "audio", label: "audio", Icon: Volume2 },
-                  ].map((cat) => {
-                    const isActive = activeCategory === cat.key;
-                    return (
-                      <button
-                        key={cat.key}
-                        type="button"
-                        onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                          isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
-                        }`}
-                        aria-pressed={isActive}
-                      >
-                        <div
-                          className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
-                        >
-                          <cat.Icon className="size-4" />
-                        </div>
-                        <span>{cat.label}</span>
-                      </button>
-                    );
-                  })}
-                  
-                  {/* Divider */}
-                  <div className="border-t border-d-dark my-2"></div>
-                  
-                  {/* Library section */}
-                  <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
-                    My works
-                  </div>
-                  
-                  {/* Library sections in order: gallery, uploads, folders */}
-                  {[
-                    { key: "gallery", label: "gallery", Icon: Grid3X3 },
-                    { key: "public", label: "public", Icon: Globe },
-                    { key: "uploads", label: "uploads", Icon: Upload },
-                  ].map((cat) => {
-                    const isActive = activeCategory === cat.key;
-                    return (
-                      <button
-                        key={cat.key}
-                        type="button"
-                        onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                          isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
-                        }`}
-                        aria-pressed={isActive}
-                      >
-                        <div
-                          className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
-                        >
-                          <cat.Icon className="size-4" />
-                        </div>
-                        <span>{cat.label}</span>
-                      </button>
-                    );
-                  })}
-                  
-                  {/* My folders button */}
-                  <button
-                    type="button"
-                    onClick={handleMyFoldersClick}
-                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                      activeCategory === "my-folders" ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
-                    }`}
-                    aria-pressed={activeCategory === "my-folders"}
-                  >
-                    <div
-                      className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
-                    >
-                      <Folder className="size-4" />
-                    </div>
-                    <span>folders</span>
-                  </button>
-                </aside>
-            </div>
-          </div>
+            <Suspense fallback={null}>
+              <CreateSidebar
+                activeCategory={activeCategory}
+                onSelectCategory={(category) => setActiveCategory(category)}
+                onOpenMyFolders={handleMyFoldersClick}
+              />
+            </Suspense>
           {/* Gallery - compressed to avoid overlap with left menu */}
           <div className="w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
             <div className="w-full mb-4" ref={galleryRef}>
@@ -4588,7 +4438,7 @@ const handleGenerate = async () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-5 gap-2 w-full">
+                    <div className="grid grid-cols-5 gap-2 w-full p-1">
                     {filteredGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'gallery'))}
                     
                     {/* Empty state for gallery */}
@@ -4633,7 +4483,7 @@ const handleGenerate = async () => {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-2 w-full">
+                    <div className="grid grid-cols-5 gap-2 w-full p-1">
                       {publicGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'public'))}
                       {publicGallery.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
@@ -4662,7 +4512,7 @@ const handleGenerate = async () => {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
+                      <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -4769,7 +4619,7 @@ const handleGenerate = async () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -4917,7 +4767,7 @@ const handleGenerate = async () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full">
+                      <div className="grid grid-cols-4 gap-3 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -5099,7 +4949,7 @@ const handleGenerate = async () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -5280,7 +5130,7 @@ const handleGenerate = async () => {
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
                     
-                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
@@ -5478,7 +5328,7 @@ const handleGenerate = async () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
+                    <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -5679,22 +5529,19 @@ const handleGenerate = async () => {
 
           {/* Prompt History Chips - Below Gallery */}
           {activeCategory === "image" && !selectedFolder && (
-            <div className="w-full pl-3">
-              <Suspense fallback={null}>
-                <PromptHistoryChips
-                  history={history}
-                  onSelect={(text) => setPrompt(text)}
-                  onRun={(text) => {
-                    setPrompt(text);
-                    // Fire and record
-                    handleGenerateImage().then(() => {
-                      // The addPrompt is already called in handleGenerateImage on success
-                    });
-                  }}
-                  onClear={clear}
-                />
-              </Suspense>
-            </div>
+            <Suspense fallback={<div className="w-full pl-3 h-9" />}>
+              <PromptHistoryPanel
+                history={history}
+                onSelect={(text) => setPrompt(text)}
+                onRun={(text) => {
+                  setPrompt(text);
+                  handleGenerateImage().then(() => {
+                    // The addPrompt is already called in handleGenerateImage on success
+                  });
+                }}
+                onClear={clear}
+              />
+            </Suspense>
           )}
 
           {/* Cache Usage - Below Recent Prompts */}
@@ -5883,828 +5730,143 @@ const handleGenerate = async () => {
                   </button>
                   
                   {/* Settings Dropdown Portal */}
-                  {isFlux ? (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Flux 1.1 Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
-                            <select
-                              value={fluxModel}
-                              onChange={(e) => setFluxModel(e.target.value as 'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="flux-pro-1.1">Flux Pro 1.1 (Standard)</option>
-                              <option value="flux-pro-1.1-ultra">Flux Pro 1.1 Ultra (4MP+)</option>
-                              <option value="flux-kontext-pro">Flux Kontext Pro (Image Editing)</option>
-                              <option value="flux-kontext-max">Flux Kontext Max (Highest Quality)</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isVeo ? (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Veo 3 Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
-                            <select
-                              value={videoAspectRatio}
-                              onChange={(e) => setVideoAspectRatio(e.target.value as '16:9' | '9:16')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="16:9">16:9 (Landscape)</option>
-                              <option value="9:16">9:16 (Portrait)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
-                            <select
-                              value={videoModel}
-                              onChange={(e) => setVideoModel(e.target.value as 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="veo-3.0-generate-001">Veo 3.0 (Standard)</option>
-                              <option value="veo-3.0-fast-generate-001">Veo 3.0 Fast</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
-                            <input
-                              type="text"
-                              value={videoNegativePrompt}
-                              onChange={(e) => setVideoNegativePrompt(e.target.value)}
-                              placeholder="e.g., blurry, low quality"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
-                            <input
-                              type="number"
-                              value={videoSeed || ''}
-                              onChange={(e) => setVideoSeed(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                              placeholder="e.g., 12345"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isHailuoVideo ? (
-                    <SettingsPortal
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Hailuo 02 Settings</div>
-
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
-                            <select
-                              value={hailuoDuration}
-                              onChange={(e) => setHailuoDuration(parseInt(e.target.value, 10))}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value={6}>6 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
-                            <select
-                              value={hailuoResolution}
-                              onChange={(e) => setHailuoResolution(e.target.value as '512P' | '768P' | '1080P')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="512P">512P</option>
-                              <option value="768P">768P</option>
-                              <option value="1080P" disabled={hailuoDuration === 10}>1080P (6s only)</option>
-                            </select>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="hailuoPromptOptimizer"
-                              checked={hailuoPromptOptimizer}
-                              onChange={(e) => {
-                                const checked = e.target.checked;
-                                setHailuoPromptOptimizer(checked);
-                                if (!checked) {
-                                  setHailuoFastPretreatment(false);
-                                }
-                              }}
-                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                            <label htmlFor="hailuoPromptOptimizer" className="text-xs font-raleway text-d-white/80">
-                              Enable prompt optimizer
-                            </label>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="hailuoFastPretreatment"
-                              checked={hailuoFastPretreatment}
-                              onChange={(e) => setHailuoFastPretreatment(e.target.checked)}
-                              disabled={!hailuoPromptOptimizer}
-                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2 disabled:opacity-50"
-                            />
-                            <label htmlFor="hailuoFastPretreatment" className={`text-xs font-raleway ${hailuoPromptOptimizer ? 'text-d-white/80' : 'text-d-white/30'}`}>
-                              Fast pretreatment (works with optimizer only)
-                            </label>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="hailuoWatermark"
-                              checked={hailuoWatermark}
-                              onChange={(e) => setHailuoWatermark(e.target.checked)}
-                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                            <label htmlFor="hailuoWatermark" className="text-xs font-raleway text-d-white/80">
-                              Add AI watermark
-                            </label>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">First Frame (Optional)</label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setHailuoFirstFrame(e.target.files?.[0] || null)}
-                                className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-orange-1/20"
-                              />
-                              {hailuoFirstFrame && (
-                                <button
-                                  type="button"
-                                  onClick={() => setHailuoFirstFrame(null)}
-                                  className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-                            {hailuoFirstFrame && (
-                              <div className="mt-1 text-[11px] font-raleway text-d-white/60 truncate">{hailuoFirstFrame.name}</div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Last Frame (Optional)</label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setHailuoLastFrame(e.target.files?.[0] || null)}
-                                className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-orange-1/20"
-                              />
-                              {hailuoLastFrame && (
-                                <button
-                                  type="button"
-                                  onClick={() => setHailuoLastFrame(null)}
-                                  className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-                            {hailuoLastFrame && (
-                              <div className="mt-1 text-[11px] font-raleway text-d-white/60 truncate">{hailuoLastFrame.name}</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isWanVideo ? (
-                    <SettingsPortal
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Wan 2.2 Video Settings</div>
-
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
-                            <select
-                              value={wanSize}
-                              onChange={(e) => setWanSize(e.target.value)}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="1920*1080">1920 × 1080 (1080p Landscape)</option>
-                              <option value="1080*1920">1080 × 1920 (1080p Portrait)</option>
-                              <option value="1440*1440">1440 × 1440 (Square)</option>
-                              <option value="1632*1248">1632 × 1248 (4:3)</option>
-                              <option value="1248*1632">1248 × 1632 (3:4)</option>
-                              <option value="832*480">832 × 480 (480p Landscape)</option>
-                              <option value="480*832">480 × 832 (480p Portrait)</option>
-                              <option value="624*624">624 × 624 (480p Square)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
-                            <input
-                              type="text"
-                              value={wanNegativePrompt}
-                              onChange={(e) => setWanNegativePrompt(e.target.value)}
-                              placeholder="e.g., blurry, low quality"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            />
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="wanPromptExtend"
-                              checked={wanPromptExtend}
-                              onChange={(e) => setWanPromptExtend(e.target.checked)}
-                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                            <label htmlFor="wanPromptExtend" className="text-xs font-raleway text-d-white/80">
-                              Enable prompt enhancement
-                            </label>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
-                            <input
-                              type="text"
-                              value={wanSeed}
-                              onChange={(e) => setWanSeed(e.target.value.replace(/[^0-9]/g, ''))}
-                              placeholder="e.g., 12345"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            />
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="wanWatermark"
-                              checked={wanWatermark}
-                              onChange={(e) => setWanWatermark(e.target.checked)}
-                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                            <label htmlFor="wanWatermark" className="text-xs font-raleway text-d-white/80">
-                              Add AI watermark
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isKlingVideo ? (
-                    <SettingsPortal
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Kling Settings</div>
-
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
-                            <select
-                              value={klingModel}
-                              onChange={(e) => setKlingModel(e.target.value as typeof klingModel)}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="kling-v2.1-master">Kling V2.1 Master (latest)</option>
-                              <option value="kling-v2-master">Kling V2 Master</option>
-                            </select>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
-                              <select
-                                value={klingAspectRatio}
-                                onChange={(e) => setKlingAspectRatio(e.target.value as '16:9' | '9:16' | '1:1')}
-                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                              >
-                                <option value="16:9">16:9 Landscape</option>
-                                <option value="9:16">9:16 Portrait</option>
-                                <option value="1:1">1:1 Square</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
-                              <select
-                                value={klingDuration}
-                                onChange={(e) => setKlingDuration(Number(e.target.value) === 10 ? 10 : 5)}
-                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                              >
-                                <option value={5}>5 seconds</option>
-                                <option value={10}>10 seconds</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Generation Mode</label>
-                              <select
-                                value={klingMode}
-                                onChange={(e) => setKlingMode(e.target.value as 'standard' | 'professional')}
-                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                              >
-                                <option value="standard">Standard (720p / 24 FPS)</option>
-                                <option value="professional">Professional (1080p / 48 FPS)</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-raleway text-d-white/80 mb-1">CFG Scale</label>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="range"
-                                  min={0}
-                                  max={1}
-                                  step={0.05}
-                                  value={klingCfgScale}
-                                  onChange={(e) => setKlingCfgScale(Number(e.target.value))}
-                                  className="w-full"
-                                />
-                                <span className="text-xs font-raleway text-d-white/70 w-10 text-right">{klingCfgScale.toFixed(2)}</span>
-                              </div>
-                              <div className="text-[11px] text-d-white/50 mt-1">Lower values add more creativity, higher values adhere closely to your prompt.</div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
-                            <input
-                              type="text"
-                              value={klingNegativePrompt}
-                              onChange={(e) => setKlingNegativePrompt(e.target.value)}
-                              placeholder="e.g., low quality, noisy"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Camera Movement</label>
-                            <select
-                              value={klingCameraType}
-                              onChange={(e) => setKlingCameraType(e.target.value as typeof klingCameraType)}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="none">No camera movement</option>
-                              <option value="simple">Simple custom movement</option>
-                              <option value="forward_up">Forward & Up</option>
-                              <option value="down_back">Down & Back</option>
-                              <option value="right_turn_forward">Right turn forward</option>
-                              <option value="left_turn_forward">Left turn forward</option>
-                            </select>
-                          </div>
-
-                          {klingCameraType === 'simple' && (
-                            <div className="space-y-2">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {([
-                                  ['horizontal', 'Horizontal'],
-                                  ['vertical', 'Vertical'],
-                                  ['pan', 'Pan'],
-                                  ['tilt', 'Tilt'],
-                                  ['roll', 'Roll'],
-                                  ['zoom', 'Zoom'],
-                                ] as const).map(([key, label]) => (
-                                  <div key={key}>
-                                    <label className="block text-xs font-raleway text-d-white/70 mb-1">{label}</label>
-                                    <div className="flex items-center gap-2">
-                                      <input
-                                        type="range"
-                                        min={-10}
-                                        max={10}
-                                        step={1}
-                                        value={klingCameraConfig[key] ?? 0}
-                                        onChange={(e) => {
-                                          const value = Number(e.target.value);
-                                          setKlingCameraConfig(prev => ({ ...prev, [key]: value }));
-                                        }}
-                                        className="w-full"
-                                      />
-                                      <span className="text-xs font-raleway text-d-white/60 w-8 text-right">{klingCameraConfig[key] ?? 0}</span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="text-[11px] text-d-white/45">Adjust camera offsets between -10 and 10 to add motion.</div>
-                            </div>
-                          )}
-
-                          {klingStatusMessage && (
-                            <div className="text-[11px] font-raleway text-d-white/60 bg-d-black/60 border border-d-mid rounded-lg px-3 py-2">
-                              {klingStatusMessage}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isSeedance ? (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Seedance 1.0 Pro Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Mode</label>
-                            <select
-                              value={seedanceMode}
-                              onChange={(e) => setSeedanceMode(e.target.value as 't2v' | 'i2v-first' | 'i2v-first-last')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="t2v">Text to Video</option>
-                              <option value="i2v-first">Image to Video (First Frame)</option>
-                              <option value="i2v-first-last">Image to Video (First & Last Frame)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
-                            <select
-                              value={seedanceRatio}
-                              onChange={(e) => setSeedanceRatio(e.target.value)}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="16:9">16:9 (Landscape)</option>
-                              <option value="9:16">9:16 (Portrait)</option>
-                              <option value="1:1">1:1 (Square)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration (seconds)</label>
-                            <select
-                              value={seedanceDuration}
-                              onChange={(e) => setSeedanceDuration(parseInt(e.target.value))}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value={5}>5 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
-                            <select
-                              value={seedanceResolution}
-                              onChange={(e) => setSeedanceResolution(e.target.value)}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="1080p">1080p</option>
-                              <option value="720p">720p</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">FPS</label>
-                            <select
-                              value={seedanceFps}
-                              onChange={(e) => setSeedanceFps(parseInt(e.target.value))}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value={24}>24 FPS</option>
-                            </select>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="camerafixed"
-                              checked={seedanceCamerafixed}
-                              onChange={(e) => setSeedanceCamerafixed(e.target.checked)}
-                              className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                            <label htmlFor="camerafixed" className="text-xs font-raleway text-d-white/80">
-                              Lock Camera Position
-                            </label>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
-                            <input
-                              type="text"
-                              value={seedanceSeed}
-                              onChange={(e) => setSeedanceSeed(e.target.value)}
-                              placeholder="e.g., 12345"
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            />
-                          </div>
-
-                          {(seedanceMode === 'i2v-first' || seedanceMode === 'i2v-first-last') && (
-                            <div>
-                              <label className="block text-xs font-raleway text-d-white/80 mb-1">First Frame Image</label>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setSeedanceFirstFrame(e.target.files?.[0] || null)}
-                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-d-orange-1 file:text-d-black"
-                              />
-                            </div>
-                          )}
-
-                          {seedanceMode === 'i2v-first-last' && (
-                            <div>
-                              <label className="block text-xs font-raleway text-d-white/80 mb-1">Last Frame Image</label>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setSeedanceLastFrame(e.target.files?.[0] || null)}
-                                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-d-orange-1 file:text-d-black"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isRecraft ? (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Recraft Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
-                            <select
-                              value={recraftModel}
-                              onChange={(e) => setRecraftModel(e.target.value as 'recraft-v3' | 'recraft-v2')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="recraft-v3">Recraft 3</option>
-                              <option value="recraft-v2">Recraft 2</option>
-                            </select>
-                            <div className="text-xs text-d-white/60 mt-1">
-                              {recraftModel === "recraft-v3" 
-                                ? "Advanced image generation with text layout and brand controls" 
-                                : "High-quality image generation and editing"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isRunway ? (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Runway Gen-4 Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
-                            <select
-                              value={runwayModel}
-                              onChange={(e) => setRunwayModel(e.target.value as 'runway-gen4' | 'runway-gen4-turbo')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="runway-gen4">Runway Gen-4</option>
-                              <option value="runway-gen4-turbo">Runway Gen-4 Turbo</option>
-                            </select>
-                            <div className="text-xs text-d-white/60 mt-1">
-                              {runwayModel === "runway-gen4" 
-                                ? "Great image model. Great control & editing features" 
-                                : "Fast Runway generation with reference images"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  ) : isGemini && (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Gemini Settings</div>
-                        
-                        {/* Temperature */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white font-raleway">Temperature</label>
-                            <span className="text-xs text-d-orange-1 font-mono">{temperature}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="range" 
-                              min={0} 
-                              max={2} 
-                              step={0.1} 
-                              value={temperature} 
-                              onChange={(e) => setTemperature(parseFloat(e.target.value))} 
-                              className="flex-1 range-brand" 
-                            />
-                            <input 
-                              type="number" 
-                              min={0} 
-                              max={2} 
-                              step={0.1} 
-                              value={temperature} 
-                              onChange={(e) => setTemperature(parseFloat(e.target.value))} 
-                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs font-raleway" 
-                            />
-                          </div>
-                          <div className="text-xs text-d-white font-raleway">Creativity level (0 = focused, 2 = creative)</div>
-                        </div>
-                        
-                        {/* Output Length */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white font-raleway">Output Length</label>
-                            <span className="text-xs text-d-orange-1 font-mono">{outputLength}</span>
-                          </div>
-                          <input 
-                            type="number" 
-                            min={1} 
-                            step={1} 
-                            value={outputLength} 
-                            onChange={(e) => setOutputLength(parseInt(e.target.value || '0', 10))} 
-                            className="w-full bg-d-mid border border-d-mid rounded px-3 py-2 text-d-white text-sm font-raleway" 
-                          />
-                          <div className="text-xs text-d-white font-raleway">Maximum tokens in response</div>
-                        </div>
-                        
-                        {/* Top P */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white font-raleway">Top P</label>
-                            <span className="text-xs text-d-orange-1 font-mono">{topP}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="range" 
-                              min={0} 
-                              max={1} 
-                              step={0.05} 
-                              value={topP} 
-                              onChange={(e) => setTopP(parseFloat(e.target.value))} 
-                              className="flex-1 range-brand" 
-                            />
-                            <input 
-                              type="number" 
-                              min={0} 
-                              max={1} 
-                              step={0.05} 
-                              value={topP} 
-                              onChange={(e) => setTopP(parseFloat(e.target.value))} 
-                              className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs font-raleway" 
-                            />
-                          </div>
-                          <div className="text-xs text-d-white font-raleway">Token selection diversity (0 = focused, 1 = diverse)</div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  )}
-
-                  {isLumaPhoton && (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Luma Photon Settings</div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
-                            <select
-                              value={lumaPhotonModel}
-                              onChange={(e) => setLumaPhotonModel(e.target.value as 'luma-photon-1' | 'luma-photon-flash-1')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="luma-photon-1">Luma Photon 1 (High Quality)</option>
-                              <option value="luma-photon-flash-1">Luma Photon Flash 1 (Fast)</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  )}
-
-                  {isLumaRay && (
-                    <SettingsPortal
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Luma Ray Settings</div>
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Variant</label>
-                            <select
-                              value={lumaRayVariant}
-                              onChange={(e) => setLumaRayVariant(e.target.value as 'luma-ray-2' | 'luma-ray-flash-2')}
-                              className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
-                            >
-                              <option value="luma-ray-2">Ray 2 (Quality)</option>
-                              <option value="luma-ray-flash-2">Ray Flash 2 (Fast)</option>
-                            </select>
-                            <div className="text-xs text-d-white/60 mt-1">
-                              {lumaRayVariant === 'luma-ray-2' ? 'Best quality for cinematic shots' : 'Faster generations for exploration'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
-                  )}
-
-                  {isQwen && (
-                    <SettingsPortal 
-                      anchorRef={settingsRef}
-                      open={isSettingsOpen}
-                      onClose={() => setIsSettingsOpen(false)}
-                    >
-                      <div className="space-y-4">
-                        <div className="text-sm font-cabin text-d-text mb-3">Qwen Image Settings</div>
-                        
-                        {/* Size */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white font-raleway">Image Size</label>
-                          </div>
-                          <select 
-                            value={qwenSize} 
-                            onChange={(e) => setQwenSize(e.target.value)}
-                            className="w-full px-3 py-2 bg-d-dark border border-d-mid rounded-lg text-d-white text-sm focus:outline-none focus:border-d-orange-1"
-                          >
-                            <option value="1328*1328">1328×1328 (1:1)</option>
-                            <option value="1664*928">1664×928 (16:9)</option>
-                            <option value="1472*1140">1472×1140 (4:3)</option>
-                            <option value="1140*1472">1140×1472 (3:4)</option>
-                            <option value="928*1664">928×1664 (9:16)</option>
-                          </select>
-                          <div className="text-xs text-d-white font-raleway">Choose the aspect ratio for your generated image</div>
-                        </div>
-                        
-                        {/* Prompt Extend */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white font-raleway">Prompt Extend</label>
-                            <input 
-                              type="checkbox" 
-                              checked={qwenPromptExtend} 
-                              onChange={(e) => setQwenPromptExtend(e.target.checked)}
-                              className="w-4 h-4 text-d-orange-1 bg-d-dark border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                          </div>
-                          <div className="text-xs text-d-white font-raleway">Automatically enhance short prompts (adds ~3-4s latency)</div>
-                        </div>
-                        
-                        {/* Watermark */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs text-d-white font-raleway">Watermark</label>
-                            <input 
-                              type="checkbox" 
-                              checked={qwenWatermark} 
-                              onChange={(e) => setQwenWatermark(e.target.checked)}
-                              className="w-4 h-4 text-d-orange-1 bg-d-dark border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
-                            />
-                          </div>
-                          <div className="text-xs text-d-white font-raleway">Add watermark to generated images</div>
-                        </div>
-                      </div>
-                    </SettingsPortal>
+                  {isSettingsOpen && (
+                    <Suspense fallback={null}>
+                      <SettingsMenu
+                        anchorRef={settingsRef}
+                        open={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
+                        flux={{
+                          enabled: isFlux,
+                          model: fluxModel,
+                          onModelChange: setFluxModel,
+                        }}
+                        veo={{
+                          enabled: isVeo,
+                          aspectRatio: videoAspectRatio,
+                          onAspectRatioChange: setVideoAspectRatio,
+                          model: videoModel,
+                          onModelChange: setVideoModel,
+                          negativePrompt: videoNegativePrompt,
+                          onNegativePromptChange: setVideoNegativePrompt,
+                          seed: videoSeed,
+                          onSeedChange: setVideoSeed,
+                        }}
+                        hailuo={{
+                          enabled: isHailuoVideo,
+                          duration: hailuoDuration,
+                          onDurationChange: setHailuoDuration,
+                          resolution: hailuoResolution,
+                          onResolutionChange: setHailuoResolution,
+                          promptOptimizer: hailuoPromptOptimizer,
+                          onPromptOptimizerChange: setHailuoPromptOptimizer,
+                          fastPretreatment: hailuoFastPretreatment,
+                          onFastPretreatmentChange: setHailuoFastPretreatment,
+                          watermark: hailuoWatermark,
+                          onWatermarkChange: setHailuoWatermark,
+                          firstFrame: hailuoFirstFrame,
+                          onFirstFrameChange: setHailuoFirstFrame,
+                          lastFrame: hailuoLastFrame,
+                          onLastFrameChange: setHailuoLastFrame,
+                        }}
+                        wan={{
+                          enabled: isWanVideo,
+                          size: wanSize,
+                          onSizeChange: setWanSize,
+                          negativePrompt: wanNegativePrompt,
+                          onNegativePromptChange: setWanNegativePrompt,
+                          promptExtend: wanPromptExtend,
+                          onPromptExtendChange: setWanPromptExtend,
+                          watermark: wanWatermark,
+                          onWatermarkChange: setWanWatermark,
+                          seed: wanSeed,
+                          onSeedChange: setWanSeed,
+                        }}
+                        kling={{
+                          enabled: isKlingVideo,
+                          model: klingModel,
+                          onModelChange: setKlingModel,
+                          aspectRatio: klingAspectRatio,
+                          onAspectRatioChange: setKlingAspectRatio,
+                          duration: klingDuration,
+                          onDurationChange: setKlingDuration,
+                          mode: klingMode,
+                          onModeChange: setKlingMode,
+                          cfgScale: klingCfgScale,
+                          onCfgScaleChange: setKlingCfgScale,
+                          negativePrompt: klingNegativePrompt,
+                          onNegativePromptChange: setKlingNegativePrompt,
+                          cameraType: klingCameraType,
+                          onCameraTypeChange: setKlingCameraType,
+                          cameraConfig: klingCameraConfig,
+                          onCameraConfigChange: (updates) => setKlingCameraConfig((prev) => ({ ...prev, ...updates })),
+                          statusMessage: klingStatusMessage,
+                        }}
+                        seedance={{
+                          enabled: isSeedance,
+                          mode: seedanceMode,
+                          onModeChange: setSeedanceMode,
+                          ratio: seedanceRatio,
+                          onRatioChange: setSeedanceRatio,
+                          duration: seedanceDuration,
+                          onDurationChange: setSeedanceDuration,
+                          resolution: seedanceResolution,
+                          onResolutionChange: setSeedanceResolution,
+                          fps: seedanceFps,
+                          onFpsChange: setSeedanceFps,
+                          cameraFixed: seedanceCamerafixed,
+                          onCameraFixedChange: setSeedanceCamerafixed,
+                          seed: seedanceSeed,
+                          onSeedChange: setSeedanceSeed,
+                          firstFrame: seedanceFirstFrame,
+                          onFirstFrameChange: setSeedanceFirstFrame,
+                          lastFrame: seedanceLastFrame,
+                          onLastFrameChange: setSeedanceLastFrame,
+                        }}
+                        recraft={{
+                          enabled: isRecraft,
+                          model: recraftModel,
+                          onModelChange: setRecraftModel,
+                        }}
+                        runway={{
+                          enabled: isRunway,
+                          model: runwayModel,
+                          onModelChange: setRunwayModel,
+                        }}
+                        gemini={{
+                          enabled: isGemini,
+                          temperature,
+                          onTemperatureChange: setTemperature,
+                          outputLength,
+                          onOutputLengthChange: setOutputLength,
+                          topP,
+                          onTopPChange: setTopP,
+                        }}
+                        qwen={{
+                          enabled: isQwen,
+                          size: qwenSize,
+                          onSizeChange: setQwenSize,
+                          promptExtend: qwenPromptExtend,
+                          onPromptExtendChange: setQwenPromptExtend,
+                          watermark: qwenWatermark,
+                          onWatermarkChange: setQwenWatermark,
+                        }}
+                        lumaPhoton={{
+                          enabled: isLumaPhoton,
+                          model: lumaPhotonModel,
+                          onModelChange: setLumaPhotonModel,
+                        }}
+                        lumaRay={{
+                          enabled: isLumaRay,
+                          variant: lumaRayVariant,
+                          onVariantChange: setLumaRayVariant,
+                        }}
+                      />
+                    </Suspense>
                   )}
 
                 </div>
-                
+
                 {/* Model Selector */}
                 <div className="relative model-selector">
                   <button

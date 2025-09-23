@@ -2,7 +2,15 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
-export default defineConfig({
+type ViteConfigWithTest = import('vite').UserConfig & {
+  test?: {
+    environment?: string
+    globals?: boolean
+    setupFiles?: string | string[]
+  }
+}
+
+const config: ViteConfigWithTest = {
   plugins: [react()],
   // Vite automatically exposes VITE_* environment variables
   // No need for manual define configuration
@@ -16,4 +24,11 @@ export default defineConfig({
       },
     },
   },
-})
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
+  },
+}
+
+export default defineConfig(config)

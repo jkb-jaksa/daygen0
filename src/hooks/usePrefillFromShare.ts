@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { decodeSharePrompt } from "../lib/shareUtils";
+
+const shareUtilsPromise = import("../lib/shareUtils");
 
 /**
  * Hook to auto-fill prompt from shared links
@@ -12,15 +13,17 @@ export function usePrefillFromShare(setPrompt: (prompt: string) => void) {
     const encodedPrompt = urlParams.get("prompt");
     
     if (from === "share" && encodedPrompt) {
-      const decodedPrompt = decodeSharePrompt(encodedPrompt);
-      if (decodedPrompt) {
-        setPrompt(decodedPrompt);
-        // Clean up the URL to remove the share parameters
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete("from");
-        newUrl.searchParams.delete("prompt");
-        window.history.replaceState({}, "", newUrl.toString());
-      }
+      void shareUtilsPromise.then(({ decodeSharePrompt }) => {
+        const decodedPrompt = decodeSharePrompt(encodedPrompt);
+        if (decodedPrompt) {
+          setPrompt(decodedPrompt);
+          // Clean up the URL to remove the share parameters
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete("from");
+          newUrl.searchParams.delete("prompt");
+          window.history.replaceState({}, "", newUrl.toString());
+        }
+      });
     }
   }, [setPrompt]);
 }

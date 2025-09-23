@@ -1,6 +1,7 @@
 import React from "react";
 import { Share2 } from "lucide-react";
-import { makeRemixUrl, withUtm, copyLink } from "../lib/shareUtils";
+
+const shareUtilsPromise = import("../lib/shareUtils");
 
 type ShareMenuProps = {
   prompt: string;
@@ -17,14 +18,14 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({
   size = "sm",
   onCopy,
 }) => {
-  const remixUrl = makeRemixUrl(baseUrl, prompt);
-  const trackedUrl = withUtm(remixUrl, "copy");
-
-  const sizeClasses = size === "sm" 
-    ? "px-2 py-1 text-xs" 
+  const sizeClasses = size === "sm"
+    ? "px-2 py-1 text-xs"
     : "px-3 py-1.5 text-sm";
 
   const handleCopyLink = async () => {
+    const { makeRemixUrl, withUtm, copyLink } = await shareUtilsPromise;
+    const remixUrl = makeRemixUrl(baseUrl, prompt);
+    const trackedUrl = withUtm(remixUrl, "copy");
     await copyLink(trackedUrl);
     // Trigger the copy notification
     if (onCopy) {
