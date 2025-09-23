@@ -75,23 +75,23 @@ export default function Footer() {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Bottom black stripe with copyright & back-to-top */}
-      <div className="relative bg-black border-t border-d-black">
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-4 text-center">
-          <span className="text-b-white font-raleway">
-            © 2025 — <span className="text-b-text">daygen</span>
-          </span>
+        {/* Bottom copyright bar - moved inside footer */}
+        <div className={`relative w-full border-t border-d-black ${glass.promptDark}`}>
+          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-4 text-center">
+            <span className="text-b-white font-raleway">
+              © 2025 — <span className="text-b-text">daygen</span>
+            </span>
+          </div>
+          <button
+            onClick={scrollToTop}
+            aria-label="Back to top"
+            className={`parallax-force-positioned absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg ${glass.promptDark} text-d-text hover:text-brand hover:border-d-mid transition-colors duration-200`}
+          >
+            <ChevronUp className="size-4" />
+          </button>
         </div>
-        <button
-          onClick={scrollToTop}
-          aria-label="Back to top"
-          className={`parallax-force-positioned absolute right-6 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-lg ${glass.promptDark} text-d-text hover:text-brand hover:border-d-mid transition-colors duration-200`}
-        >
-          <ChevronUp className="size-4" />
-        </button>
-      </div>
+      </section>
     </footer>
   );
 }
