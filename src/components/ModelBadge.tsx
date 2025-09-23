@@ -41,6 +41,30 @@ const MODEL_CONFIG = {
     icon: '🎨',
     description: 'FLUX Kontext Max - Highest quality image editing'
   },
+  'luma-photon-1': {
+    name: 'Luma Photon 1',
+    shortName: 'Photon',
+    icon: '✨',
+    description: 'Luma Photon 1 - High-quality image generation in Photon'
+  },
+  'luma-photon-flash-1': {
+    name: 'Luma Photon Flash 1',
+    shortName: 'Photon ⚡',
+    icon: '⚡',
+    description: 'Luma Photon Flash 1 - Fast Photon image generation'
+  },
+  'luma-ray-2': {
+    name: 'Luma Ray 2',
+    shortName: 'Ray 2',
+    icon: '🎥',
+    description: 'Luma Ray 2 - High-quality cinematic video generation'
+  },
+  'luma-ray-flash-2': {
+    name: 'Luma Ray Flash 2',
+    shortName: 'Ray ⚡',
+    icon: '⚡',
+    description: 'Luma Ray Flash 2 - Fast Ray 2 video generation'
+  },
   'flux-pro': {
     name: 'FLUX.1 Kontext Pro / Max',
     shortName: 'FLUX',

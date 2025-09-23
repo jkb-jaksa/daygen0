@@ -1,9 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
-import Navbar from "./components/Navbar";
-import FAQSection from "./components/Faq";
-import Footer from "./components/Footer";
-import GlobalSvgDefs from "./components/GlobalSvgDefs";
 import { useAuth } from "./auth/AuthContext";
 import { useFooter } from "./contexts/FooterContext";
 import { layout, text, buttons } from "./styles/designSystem";
@@ -22,6 +18,37 @@ const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 const Courses = lazy(() => import("./components/Courses"));
 const GalleryRoutes = lazy(() => import("./routes/GalleryRoutes"));
 const LearnLayout = lazy(() => import("./routes/LearnLayout"));
+const Navbar = lazy(() => import("./components/Navbar"));
+const FAQSection = lazy(() => import("./components/Faq"));
+const Footer = lazy(() => import("./components/Footer"));
+const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
+
+function NavbarFallback() {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-d-black/40 backdrop-blur">
+      <div className={`${layout.container} flex h-[var(--nav-h,4rem)] items-center justify-between py-3`}>
+        <div className="h-6 w-24 animate-pulse rounded bg-d-white/10" />
+        <div className="hidden items-center gap-3 md:flex">
+          <div className="h-4 w-16 animate-pulse rounded bg-d-white/10" />
+          <div className="h-4 w-16 animate-pulse rounded bg-d-white/10" />
+          <div className="h-4 w-16 animate-pulse rounded bg-d-white/10" />
+        </div>
+        <div className="h-9 w-24 animate-pulse rounded-full bg-d-white/10" />
+      </div>
+    </div>
+  );
+}
+
+function SectionFallback({ label }: { label: string }) {
+  return (
+    <div className="flex justify-center py-20">
+      <div className="flex flex-col items-center gap-3 text-d-white/70">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-d-white/30 border-t-d-white" aria-hidden="true" />
+        <p className="font-cabin text-sm uppercase tracking-[0.3em]">Loading {label}…</p>
+      </div>
+    </div>
+  );
+}
 
 function Home() {
   const location = useLocation();
@@ -96,7 +123,9 @@ function Home() {
         </section>
 
         {/* Main content */}
-        <FAQSection />
+        <Suspense fallback={<SectionFallback label="FAQ" />}>
+          <FAQSection />
+        </Suspense>
       </div>
     </div>
   );
@@ -137,8 +166,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <div>
-        <GlobalSvgDefs />
-        <Navbar />
+        <Suspense fallback={null}>
+          <GlobalSvgDefs />
+        </Suspense>
+        <Suspense fallback={<NavbarFallback />}>
+          <Navbar />
+        </Suspense>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -166,7 +199,11 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-        {isFooterVisible && <Footer />}
+        {isFooterVisible && (
+          <Suspense fallback={null}>
+            <Footer />
+          </Suspense>
+        )}
       </div>
     </BrowserRouter>
   );
