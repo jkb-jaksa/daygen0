@@ -5615,7 +5615,7 @@ const handleGenerate = async () => {
           {activeCategory === "image" && !selectedFolder && (
             <div className="mt-4 w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
               {isCacheBarVisible && (
-                <div className="mb-4 rounded-2xl border border-d-mid bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
+                <div className="mb-4 rounded-2xl border border-d-dark bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
                     <span>Cache usage</span>
                     <div className="flex items-center gap-2">

@@ -41,7 +41,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
 
       <div className="flex flex-col gap-2">
         {visible.map((e, idx) => (
-          <div key={idx} className="group flex items-center overflow-hidden rounded-lg border border-d-mid bg-d-black/40 hover:bg-d-black/60 transition-all duration-200">
+          <div key={idx} className="group flex items-center overflow-hidden rounded-lg border border-d-dark bg-d-black/40 hover:bg-d-black/60 transition-all duration-200">
             <button
               type="button"
               className="flex-1 px-3 py-2 text-sm text-d-white hover:text-brand transition-colors duration-200 font-raleway text-left break-words"
