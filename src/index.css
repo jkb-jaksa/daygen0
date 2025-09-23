@@ -838,140 +838,102 @@ select option::-webkit-scrollbar-thumb:hover {
 
 .home-hero-card__orb {
   position: absolute;
-  filter: blur(80px) url(#blobDistort);
-  opacity: 1.0;
+  --orb-primary: 3, 188, 189;
+  --orb-glow: 160, 248, 255;
+  --orb-shadow: 1, 108, 144;
+  border-radius: 999px;
+  filter: blur(62px);
+  opacity: 0.8;
   mix-blend-mode: screen;
   pointer-events: none;
   transform: rotate(15deg);
+  overflow: hidden;
+  background: radial-gradient(circle at 28% 28%, rgba(var(--orb-glow), 0.9) 0%, rgba(var(--orb-primary), 0.85) 45%, rgba(var(--orb-shadow), 0.75) 100%);
+  box-shadow:
+    inset -42px -58px 140px rgba(var(--orb-shadow), 0.45),
+    inset 26px 34px 90px rgba(255, 255, 255, 0.55),
+    0 0 140px rgba(var(--orb-primary), 0.35);
 }
 
 
 .home-hero-card__orb::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-image: 
-    radial-gradient(circle at 6% 6%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 94% 94%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.10) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 80% 12%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 2% 88%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 98% 18%, rgba(255,255,255,0.04) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 12% 30%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 88% 70%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 30% 3%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 70% 97%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 9% 40%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 91% 60%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 40% 9%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 60% 91%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 15% 15%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 85% 85%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 3% 45%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 97% 55%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 3%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 97%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 14% 55%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 86% 45%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 14%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 86%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 5% 25%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 95% 75%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 25% 5%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 75% 95%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 10% 65%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 90% 35%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 10%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 90%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.09) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 65%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 4% 35%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 96% 65%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 35% 4%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 65% 96%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 16% 70%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 84% 30%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 70% 16%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 30% 84%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 22% 45%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 78% 55%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 45% 22%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 55% 78%, rgba(255,255,255,0.05) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 8% 50%, rgba(255,255,255,0.08) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 92% 50%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 50% 8%, rgba(255,255,255,0.07) 0.4px, transparent 0.4px),
-    radial-gradient(circle at 50% 92%, rgba(255,255,255,0.06) 0.4px, transparent 0.4px);
-  background-size: 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px, 0.6px 0.6px, 1.0px 1.0px, 0.4px 0.4px, 0.8px 0.8px, 0.5px 0.5px, 1.2px 1.2px, 0.7px 0.7px, 0.9px 0.9px;
-  opacity: 0.3;
-  mix-blend-mode: overlay;
+  inset: 16% 22% 52% 26%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.05) 65%, transparent 75%);
+  opacity: 0.8;
+  filter: blur(8px);
 }
 
 .home-hero-card__orb--cyan {
-  width: clamp(12rem, 22vw, 18rem);
+  width: clamp(16rem, 30vw, 26rem);
   height: clamp(12rem, 22vw, 18rem);
-  top: -12%;
-  right: -8%;
-  background: rgba(3, 188, 189, 0.6);
-  border-radius: 5% 95% 2% 98% / 95% 5% 85% 15%;
-  transform: rotate(-8deg) scale(1.05);
+  top: -35%;
+  right: 1%;
+  --orb-primary: 3, 188, 189;
+  --orb-glow: 164, 255, 255;
+  --orb-shadow: 0, 118, 140;
+  transform: rotate(20deg) scale(1.05);
 }
 
 
 .home-hero-card__orb--yellow {
   width: clamp(10rem, 20vw, 16rem);
-  height: clamp(10rem, 20vw, 16rem);
-  top: 18%;
+  height: clamp(12rem, 24vw, 20rem);
+  top: 44%;
   left: -12%;
-  background: rgba(255, 215, 0, 0.6);
-  border-radius: 95% 5% 98% 2% / 10% 90% 5% 95%;
+  --orb-primary: 255, 200, 0;
+  --orb-glow: 255, 230, 160;
+  --orb-shadow: 204, 140, 0;
   transform: rotate(25deg) scale(0.95);
 }
 
 
 .home-hero-card__orb--red {
-  width: clamp(11rem, 21vw, 17rem);
+  width: clamp(19rem, 37vw, 33rem);
   height: clamp(11rem, 21vw, 17rem);
-  bottom: -15%;
-  left: 8%;
-  background: rgba(243, 36, 54, 0.6);
-  border-radius: 2% 98% 5% 95% / 85% 15% 90% 10%;
+  bottom: -41%;
+  left: 4%;
+  --orb-primary: 243, 36, 54;
+  --orb-glow: 255, 150, 164;
+  --orb-shadow: 168, 12, 45;
   transform: rotate(-20deg) scale(1.1);
 }
 
 
 .home-hero-card__orb--blue {
-  width: clamp(14rem, 26vw, 22rem);
+  width: clamp(16rem, 30vw, 26rem);
   height: clamp(14rem, 26vw, 22rem);
-  bottom: -18%;
-  right: -12%;
-  background: rgba(42, 93, 255, 0.6);
-  border-radius: 8% 92% 3% 97% / 75% 25% 60% 40%;
+  bottom: -25%;
+  right: -15%;
+  --orb-primary: 42, 93, 255;
+  --orb-glow: 160, 190, 255;
+  --orb-shadow: 14, 40, 160;
   transform: rotate(12deg) scale(0.9);
 }
 
 .home-hero-card__orb--violet {
-  width: clamp(12rem, 24vw, 20rem);
+  width: clamp(20rem, 40vw, 36rem);
   height: clamp(12rem, 24vw, 20rem);
-  bottom: -47%;
-  left: 50%;
+  bottom: -55%;
+  left: 65%;
   transform: translateX(-50%) rotate(15deg) scale(1.05);
-  background: rgba(195, 105, 255, 0.6);
-  border-radius: 23% 77% 45% 55% / 67% 33% 78% 22%;
+  --orb-primary: 195, 105, 255;
+  --orb-glow: 234, 190, 255;
+  --orb-shadow: 120, 55, 200;
 }
 
 .home-hero-card__orb--orange {
-  width: clamp(11rem, 22vw, 18rem);
-  height: clamp(11rem, 22vw, 18rem);
-  top: -37%;
-  left: 30%;
-  transform: rotate(-10deg) scale(1.1);
-  background: rgba(255, 140, 0, 0.6);
-  border-radius: 85% 15% 92% 8% / 25% 75% 30% 70%;
+  width: clamp(20rem, 42vw, 38rem);
+  height: clamp(10rem, 22vw, 18rem);
+  top: -39%;
+  left: 25%;
+  transform: translate(-10%, 0) rotate(-4deg) scale(0.9);
+  --orb-primary: 255, 170, 60;
+  --orb-glow: 255, 236, 208;
+  --orb-shadow: 210, 110, 22;
 }
-
 
 @media (max-width: 640px) {
   .home-hero-card {
@@ -979,39 +941,46 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb {
-    filter: blur(80px);
-    opacity: 1.0;
+    filter: blur(58px);
+    opacity: 0.8;
   }
 
   .home-hero-card__orb--cyan {
-    top: -15%;
-    right: -20%;
+    top: -31%;
+    right: -5%;
   }
 
   .home-hero-card__orb--yellow {
-    left: -20%;
+    top: 50%;
+    left: -16%;
   }
 
   .home-hero-card__orb--red {
-    left: -8%;
+    bottom: -25%;
+    left: -12%;
   }
 
   .home-hero-card__orb--blue {
-    bottom: -20%;
-    right: -30%;
+    bottom: 0%;
+    right: -26%;
   }
 
   .home-hero-card__orb--violet {
-    bottom: -51%;
-    left: 50%;
+    bottom: -56%;
+    left: 52%;
     transform: translateX(-50%) rotate(15deg) scale(1.05);
   }
 
   .home-hero-card__orb--orange {
-    top: -42%;
-    left: 25%;
-    transform: rotate(-10deg) scale(1.1);
+    top: -65%;
+    left: 10%;
+    transform: translate(-10%, 0) rotate(-4deg) scale(0.9);
   }
+}
+
+/* Footer orbs - reduced opacity */
+footer .home-hero-card__orb {
+  opacity: 0.6;
 }
 
 .home-hero-logo {

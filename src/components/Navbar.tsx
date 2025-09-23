@@ -309,7 +309,7 @@ export default function Navbar() {
         style={{ top: navH - 1 }}
       >
         <div
-          className={`${glass.promptDark} border-t-0 border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
+          className={`${glass.promptDark} border-t-0 transition-opacity duration-200`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
