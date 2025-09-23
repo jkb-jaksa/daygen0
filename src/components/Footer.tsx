@@ -1,4 +1,4 @@
-import { Instagram, X as XIcon, Youtube, ChevronUp } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { glass } from "../styles/designSystem";
 
@@ -35,42 +35,11 @@ export default function Footer() {
               <p className="text-base text-b-white mb-2 font-raleway">next-gen ideas. every day.</p>
             </div>
 
-            {/* Right block: social + links */}
+            {/* Right block: links */}
             <div className="md:justify-self-end pt-4">
-              <div className="flex items-center gap-3 mb-3">
-                <a
-                  href="https://x.com"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className={`group parallax-force size-8 grid place-items-center rounded-lg ${glass.promptDark} text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors duration-200`}
-                  aria-label="X"
-                >
-                  <XIcon className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
-                </a>
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className={`group parallax-force size-8 grid place-items-center rounded-lg ${glass.promptDark} text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors duration-200`}
-                  aria-label="Instagram"
-                >
-                  <Instagram className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
-                </a>
-                <a
-                  href="https://youtube.com"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className={`group parallax-force size-8 grid place-items-center rounded-lg ${glass.promptDark} text-b-text/90 hover:text-b-text hover:border-d-mid transition-colors duration-200`}
-                  aria-label="YouTube"
-                >
-                  <Youtube className="size-4 text-b-text transition-colors duration-200 group-hover:text-brand" />
-                </a>
-              </div>
-
               <nav className="flex flex-col gap-3 text-base font-raleway">
                 <a href="#" className="parallax-small text-b-white hover:text-brand transition-colors">privacy policy</a>
                 <Link to="/" className="parallax-small text-b-white hover:text-brand transition-colors">FAQ</Link>
-                <a href="#" className="parallax-small text-b-white hover:text-brand transition-colors">hire us</a>
               </nav>
             </div>
           </div>

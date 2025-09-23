@@ -208,7 +208,7 @@ export default function Navbar() {
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-large h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-large h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-cabin">
               {NAV_ITEMS.map((item) => (
@@ -363,7 +363,7 @@ export default function Navbar() {
         style={{ top: navH - 1 }}
       >
         <div
-          className={`${glass.promptDark} border-t-0 transition-opacity duration-200`}
+          className={`${glass.promptDark} border-t-0 transition-opacity duration-100`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">

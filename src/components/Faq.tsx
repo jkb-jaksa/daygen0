@@ -94,7 +94,6 @@ const FAQSection: React.FC = () => {
 
       <div className={`${layout.container} relative z-10 ${layout.sectionPaddingTight}`}>
         <div className="faq-section__header">
-          <span className="faq-section__spark" aria-hidden="true" />
           <h2 className={`${text.sectionHeading} faq-section__title`}>
             <span>FAQ</span>
           </h2>
@@ -154,14 +153,6 @@ const FAQSection: React.FC = () => {
           })}
         </div>
 
-        {/* Daygen Logo */}
-        <div className="faq-section__logo">
-          <img
-            src="/daygen-color-nobg.png"
-            alt="Daygen logo"
-            className="faq-section__logo-img"
-          />
-        </div>
       </div>
     </section>
   );
