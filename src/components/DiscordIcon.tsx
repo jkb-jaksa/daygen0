@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface DiscordIconProps {
   className?: string;
   size?: number;

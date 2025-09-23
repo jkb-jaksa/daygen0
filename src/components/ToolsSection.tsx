@@ -18,6 +18,7 @@ import {
   Package,
   Mic,
   Leaf,
+  Search,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, cards, buttons } from "../styles/designSystem";
@@ -378,20 +379,28 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
 export default function ToolsSection() {
   const [activeCategory, setActiveCategory] = useState<string>("image");
   return (
-    <div className={layout.page}>
-      <div className={layout.backdrop} aria-hidden="true" />
+    <section className={`${layout.container} ${layout.heroPadding}`}>
+      <div>
+        <div className="grid grid-cols-[150px,1fr] gap-6 mb-2">
+          <div className="col-span-2">
+            <div className="relative">
+              <Search
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white size-5"
+              />
+              <input
+                type="text"
+                placeholder="what do you want to do?"
+                className="w-full py-3 rounded-full bg-b-mid text-d-white placeholder-d-white/60 px-12 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
+              />
+            </div>
+          </div>
+        </div>
 
-      <div className="relative z-10">
-
-        {/* Main Content */}
-        <section className={`${layout.container} pt-16 pb-8`}>
-        <div className="mt-4 grid grid-cols-[150px,1fr] gap-4 mb-20">
-          {/* Heading aligned with cards */}
+        <section className="grid grid-cols-[150px,1fr] gap-x-6">
           <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">
             notable tools
           </h3>
 
-          {/* Sidebar - need to put into a separate file later to optimize*/}
           <aside className="row-start-2 hidden md:flex flex-col gap-4">
             {CATEGORIES.map(({ label, Icon }) => {
               const isActive = activeCategory === label;
@@ -422,59 +431,57 @@ export default function ToolsSection() {
             })}
           </aside>
 
-          {/* Cards Grid */}
           {activeCategory === "image" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "video" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {VIDEO_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "avatars" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {AVATAR_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "voice" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {VOICE_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "music" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {MUSIC_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "text" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {TEXT_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "3d" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {THREE_D_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
-        </div>
         </section>
       </div>
-    </div>
+    </section>
   );
 }

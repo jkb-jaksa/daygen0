@@ -1,24 +1,23 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, X, FileText, GraduationCap } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
-import Pricing from "./Pricing";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass } from "../styles/designSystem";
 
-type MenuId = "create" | "edit" | "explore" | "knowledge base" | "about us";
+type MenuId = "create" | "edit" | "explore" | "learn" | "about us";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 
 const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
-  { label: "create", path: "/create" },
+  { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
   { label: "explore", path: "/explore" },
-  { label: "knowledge base", path: "/use-cases" },
+  { label: "learn", path: "/learn/use-cases" },
   { label: "about us", path: "/about-us" },
 ];
 
@@ -38,11 +37,11 @@ const EDIT_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
   { key: "upscale", label: "upscale", Icon: Volume2 },
 ];
 
-const KNOWLEDGE_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
-  { to: "/use-cases", label: "use cases", Icon: Users },
-  { to: "/tools", label: "tools", Icon: Edit },
-  { to: "/prompts", label: "prompts", Icon: FileText },
-  { to: "/courses", label: "courses", Icon: GraduationCap },
+const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
+  { to: "/learn/use-cases", label: "use cases", Icon: Users },
+  { to: "/learn/tools", label: "tools", Icon: Edit },
+  { to: "/learn/prompts", label: "prompts", Icon: FileText },
+  { to: "/learn/courses", label: "courses", Icon: GraduationCap },
 ];
 
 export default function Navbar() {
@@ -54,31 +53,7 @@ export default function Navbar() {
   const { user, logOut } = useAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
 
-  // Prevent body scroll when pricing modal is open and handle escape key
-  useEffect(() => {
-    if (!showPricing) return;
-
-    const { body } = document;
-    if (!body) return;
-
-    const previousOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowPricing(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [showPricing]);
   const accountBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -190,7 +165,15 @@ export default function Navbar() {
   }, []);
 
   const handleCategoryClick = useCallback((category: string) => {
-    navigate("/create");
+    const targetMap: Record<string, string> = {
+      text: "/create/text",
+      image: "/create/image",
+      video: "/create/video",
+      avatars: "/create/avatars",
+      audio: "/create/audio",
+    };
+    const target = targetMap[category] ?? "/create";
+    navigate(target);
     closeMenu();
     emitNavigateToCategory(category);
   }, [navigate, closeMenu, emitNavigateToCategory]);
@@ -251,7 +234,7 @@ export default function Navbar() {
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
-                  onClick={() => setShowPricing(true)}
+                  onClick={() => navigate('/upgrade')}
                 >
                   Pricing
                 </button>
@@ -266,7 +249,7 @@ export default function Navbar() {
                   className="md:hidden parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white"
                   aria-label="Account"
                 >
-                  <User className="size-4" />
+                  <User className="w-4 h-4" />
                 </button>
               </>
             ) : (
@@ -302,11 +285,11 @@ export default function Navbar() {
                 
                 {/* Credit Usage Button */}
                 <button 
-                  onClick={() => setShowPricing(true)}
+                  onClick={() => navigate('/upgrade')}
                   className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
-                  <CreditCard className="size-4" />
+                  <CreditCard className="w-4 h-4" />
                   <span className="hidden sm:inline font-cabin text-sm">
                     Credits: 1,247
                   </span>
@@ -316,9 +299,9 @@ export default function Navbar() {
                 {/* Upgrade Button */}
                 <button 
                   className={`${buttons.primary} btn-compact flex items-center gap-1.5`}
-                  onClick={() => setShowPricing(true)}
+                  onClick={() => navigate('/upgrade')}
                 >
-                  <Zap className="size-4" />
+                  <Zap className="w-4 h-4" />
                   <span className="hidden sm:inline">Upgrade</span>
                 </button>
                 
@@ -351,7 +334,7 @@ export default function Navbar() {
               </>
             )}
             <button aria-label="Search" className="parallax-large size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
-              <Search className="size-4" />
+              <Search className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -381,7 +364,7 @@ export default function Navbar() {
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <category.Icon className="size-4" />
+                          <category.Icon className="w-4 h-4" />
                         </div>
                         <span>{category.label}</span>
                       </button>
@@ -397,7 +380,7 @@ export default function Navbar() {
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <category.Icon className="size-4" />
+                          <category.Icon className="w-4 h-4" />
                         </div>
                         <span>{category.label}</span>
                       </Link>
@@ -405,9 +388,9 @@ export default function Navbar() {
                   </div>
                 ) : activeMenu === "explore" ? (
                   <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
-                ) : activeMenu === "knowledge base" ? (
+                ) : activeMenu === "learn" ? (
                   <div className="flex flex-col gap-1.5">
-                    {KNOWLEDGE_MENU_LINKS.map((item) => (
+                    {LEARN_MENU_LINKS.map((item) => (
                       <Link
                         key={item.to}
                         to={item.to}
@@ -415,7 +398,7 @@ export default function Navbar() {
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <item.Icon className="size-4" />
+                          <item.Icon className="w-4 h-4" />
                         </div>
                         <span>{item.label}</span>
                       </Link>
@@ -432,29 +415,6 @@ export default function Navbar() {
 
       {/* Auth modal */}
       <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />
-      
-      {/* Pricing modal */}
-      {showPricing && createPortal(
-        <div 
-          className="fixed inset-0 bg-black z-[100] overflow-y-auto"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowPricing(false);
-            }
-          }}
-        >
-          <button
-            onClick={() => setShowPricing(false)}
-            className="fixed top-6 right-6 z-[110] bg-d-black/50 text-d-white p-2 rounded-full hover:bg-d-black/70 hover:text-d-orange-1 transition-colors duration-200 cursor-pointer"
-            aria-label="Close pricing modal"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <Pricing />
-        </div>,
-        document.body
-      )}
-      
       {/* User dropdown - anchored to trigger via portal */}
       {menuOpen &&
         createPortal(
@@ -483,13 +443,13 @@ export default function Navbar() {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                navigate("/create");
+                navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
               className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
               role="menuitem"
             >
-              My creations
+              My works
             </button>
             <button
               onClick={() => {

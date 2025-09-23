@@ -86,7 +86,7 @@ const FAQSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="faq-section relative overflow-hidden">
+    <section id="faq" className="faq-section relative overflow-hidden">
       <div className="faq-section__halo faq-section__halo--cyan" aria-hidden="true" />
       <div className="faq-section__halo faq-section__halo--orange" aria-hidden="true" />
       <div className="faq-section__halo faq-section__halo--violet" aria-hidden="true" />

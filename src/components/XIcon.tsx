@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface XIconProps {
   className?: string;
   size?: number;

@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, RefreshCw, Grid3X3, Globe, Lock, ChevronDown, Shapes } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
@@ -19,9 +19,9 @@ import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration"
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/AuthContext";
-import ModelBadge from './ModelBadge';
+const ModelBadge = lazy(() => import('./ModelBadge'));
 import { usePromptHistory } from '../hooks/usePromptHistory';
-import { PromptHistoryChips } from './PromptHistoryChips';
+const PromptHistoryChips = lazy(() => import('./PromptHistoryChips').then(mod => ({ default: mod.PromptHistoryChips })));
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import { compressDataUrl } from "../lib/imageCompression";
@@ -82,6 +82,51 @@ type PendingGalleryItem = { pending: true; id: string; prompt: string; model: st
 type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
 
 type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[]; videoIds: string[]; customThumbnail?: string };
+
+const CATEGORY_TO_PATH: Record<string, string> = {
+  text: "/create/text",
+  image: "/create/image",
+  video: "/create/video",
+  avatars: "/create/avatars",
+  audio: "/create/audio",
+  gallery: "/gallery",
+  public: "/gallery/public",
+  uploads: "/gallery/uploads",
+  "my-folders": "/gallery/folders",
+};
+
+const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "avatars", "audio"]);
+
+const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
+  public: "public",
+  uploads: "uploads",
+  folders: "my-folders",
+};
+
+const deriveCategoryFromPath = (pathname: string): string => {
+  const normalized = pathname.toLowerCase();
+  if (normalized.startsWith("/gallery")) {
+    const parts = normalized.split("/").filter(Boolean);
+    const segment = parts[1];
+    if (segment) {
+      return GALLERY_SEGMENT_TO_CATEGORY[segment] ?? "gallery";
+    }
+    return "gallery";
+  }
+
+  if (normalized.startsWith("/create")) {
+    const parts = normalized.split("/").filter(Boolean);
+    const segment = parts[1];
+    if (segment && CREATE_CATEGORY_SEGMENTS.has(segment)) {
+      return segment;
+    }
+    return "image";
+  }
+
+  return "image";
+};
+
+const pathForCategory = (category: string): string | null => CATEGORY_TO_PATH[category] ?? null;
 
 const isJobBackedImage = (item: GalleryImageLike): item is FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage =>
   'jobId' in item && typeof item.jobId === 'string';
@@ -663,6 +708,7 @@ const Create: React.FC = () => {
   const { user, storagePrefix } = useAuth();
   const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
@@ -784,7 +830,22 @@ const Create: React.FC = () => {
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string>("image");
+  const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
+
+  const setActiveCategory = useCallback((category: string, options?: { skipRoute?: boolean }) => {
+    setActiveCategoryState(category);
+    if (options?.skipRoute) return;
+
+    const nextPath = pathForCategory(category);
+    if (nextPath && nextPath !== location.pathname) {
+      navigate(nextPath);
+    }
+  }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    const derived = deriveCategoryFromPath(location.pathname);
+    setActiveCategoryState((current) => (current === derived ? current : derived));
+  }, [location.pathname]);
   
   // Control footer visibility based on activeCategory
   useEffect(() => {
@@ -1035,10 +1096,23 @@ const Create: React.FC = () => {
 
   // Handle category switching from external navigation (e.g., navbar)
   useEffect(() => {
-    const handleCategoryNavigation = (event: CustomEvent) => {
+    const handleCategoryNavigation = (event: CustomEvent<{ category?: string }>) => {
       const category = event.detail?.category;
-      if (category && ['text', 'image', 'video', 'avatars', 'audio', 'gallery'].includes(category)) {
-        setActiveCategory(category);
+      if (!category) return;
+
+      const normalized = category === 'folders' ? 'my-folders' : category;
+      if ([
+        'text',
+        'image',
+        'video',
+        'avatars',
+        'audio',
+        'gallery',
+        'public',
+        'uploads',
+        'my-folders'
+      ].includes(normalized)) {
+        setActiveCategory(normalized);
       }
     };
 
@@ -1046,7 +1120,7 @@ const Create: React.FC = () => {
     return () => {
       window.removeEventListener('navigateToCategory', handleCategoryNavigation as EventListener);
     };
-  }, []);
+  }, [setActiveCategory]);
 
   // Auto-select default model when switching categories
   useEffect(() => {
@@ -2586,7 +2660,9 @@ const Create: React.FC = () => {
               )}
               {/* Model Badge and Public Indicator */}
               <div className="flex justify-between items-center mt-2">
-                <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                <Suspense fallback={null}>
+                  <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                </Suspense>
                 {img.isPublic && (
                   <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                     <div className="flex items-center gap-1">
@@ -4215,7 +4291,7 @@ const handleGenerate = async () => {
                   
                   {/* Library section */}
                   <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
-                    My creations
+                    My works
                   </div>
                   
                   {/* Library sections in order: gallery, uploads, folders */}
@@ -4714,7 +4790,9 @@ const handleGenerate = async () => {
                                       </p>
                                       {/* Model Badge and Public Indicator */}
                                       <div className="flex justify-between items-center mt-2">
-                                        <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                        <Suspense fallback={null}>
+                                          <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                        </Suspense>
                                         {img.isPublic && (
                                           <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                             <div className="flex items-center gap-1">
@@ -5291,7 +5369,9 @@ const handleGenerate = async () => {
                                     </div>
                                     {/* Model Badge */}
                                     <div className="flex justify-between items-center mt-2">
-                                      <ModelBadge model={seedanceVideo.model} size="md" />
+                                      <Suspense fallback={null}>
+                                        <ModelBadge model={seedanceVideo.model} size="md" />
+                                      </Suspense>
                                       <div className="flex items-center gap-2">
                                         <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                           <div className="flex items-center gap-1">
@@ -5326,7 +5406,9 @@ const handleGenerate = async () => {
                                     </div>
                                     {/* Model Badge and Public Indicator */}
                                     <div className="flex justify-between items-center mt-2">
-                                      <ModelBadge model={video.model ?? 'unknown'} size="md" />
+                                      <Suspense fallback={null}>
+                                        <ModelBadge model={video.model ?? 'unknown'} size="md" />
+                                      </Suspense>
                                       <div className="flex items-center gap-2">
                                         {video.isPublic && (
                                           <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
@@ -5501,7 +5583,9 @@ const handleGenerate = async () => {
                                 )}
                                 {/* Model Badge and Public Indicator */}
                                 <div className="flex justify-between items-center mt-2">
-                                  <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                  <Suspense fallback={null}>
+                                    <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                  </Suspense>
                                   {img.isPublic && (
                                     <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                                       <div className="flex items-center gap-1">
@@ -5596,18 +5680,20 @@ const handleGenerate = async () => {
           {/* Prompt History Chips - Below Gallery */}
           {activeCategory === "image" && !selectedFolder && (
             <div className="w-full pl-3">
-              <PromptHistoryChips
-                history={history}
-                onSelect={(text) => setPrompt(text)}
-                onRun={(text) => {
-                  setPrompt(text);
-                  // Fire and record
-                  handleGenerateImage().then(() => {
-                    // The addPrompt is already called in handleGenerateImage on success
-                  });
-                }}
-                onClear={clear}
-              />
+              <Suspense fallback={null}>
+                <PromptHistoryChips
+                  history={history}
+                  onSelect={(text) => setPrompt(text)}
+                  onRun={(text) => {
+                    setPrompt(text);
+                    // Fire and record
+                    handleGenerateImage().then(() => {
+                      // The addPrompt is already called in handleGenerateImage on success
+                    });
+                  }}
+                  onClear={clear}
+                />
+              </Suspense>
             </div>
           )}
 
@@ -7167,10 +7253,12 @@ const handleGenerate = async () => {
                           )}
                         </div>
                         <div className="mt-2 flex justify-center items-center gap-2">
-                          <ModelBadge 
-                            model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
-                            size="md" 
-                          />
+                          <Suspense fallback={null}>
+                            <ModelBadge 
+                              model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
+                              size="md" 
+                            />
+                          </Suspense>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
                             <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
                               <div className="flex items-center gap-1">

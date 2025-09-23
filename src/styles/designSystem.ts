@@ -2,7 +2,7 @@ export const layout = {
   page: "relative min-h-screen text-d-text overflow-hidden bg-black",
   backdrop: "orb-background absolute inset-0 z-0",
   container: "mx-auto max-w-[85rem] px-6 lg:px-8",
-  heroPadding: "pt-[calc(var(--nav-h)+0.25rem)] pb-16",
+  heroPadding: "pt-0 pb-0",
   sectionPadding: "py-16",
   sectionPaddingTight: "py-12",
   sectionDivider: "relative w-full overflow-hidden bg-black border-b border-d-black",

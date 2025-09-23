@@ -38,8 +38,8 @@ export default function Footer() {
             {/* Right block: links */}
             <div className="md:justify-self-end pt-4">
               <nav className="flex flex-col gap-3 text-base font-raleway">
-                <a href="#" className="parallax-small text-b-white hover:text-brand transition-colors">privacy policy</a>
-                <Link to="/" className="parallax-small text-b-white hover:text-brand transition-colors">FAQ</Link>
+                <Link to="/privacy-policy" className="parallax-small text-b-white hover:text-brand transition-colors">Privacy Policy</Link>
+                <Link to="/#faq" className="parallax-small text-b-white hover:text-brand transition-colors">FAQ</Link>
               </nav>
             </div>
           </div>

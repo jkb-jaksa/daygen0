@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import FAQSection from "./components/Faq";
 import Footer from "./components/Footer";
@@ -14,11 +14,30 @@ const AboutUs = lazy(() => import("./components/AboutUs"));
 const Prompts = lazy(() => import("./components/Prompts"));
 const Explore = lazy(() => import("./components/Explore"));
 const Subpage = lazy(() => import("./components/subpage/Subpage"));
-const Create = lazy(() => import("./components/Create"));
+const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
+const Upgrade = lazy(() => import("./components/Upgrade"));
+const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
+const Courses = lazy(() => import("./components/Courses"));
+const GalleryRoutes = lazy(() => import("./routes/GalleryRoutes"));
+const LearnLayout = lazy(() => import("./routes/LearnLayout"));
 
 function Home() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === "#faq" && typeof window !== "undefined") {
+      const timeout = window.setTimeout(() => {
+        const faqSection = document.getElementById("faq");
+        faqSection?.scrollIntoView({ behavior: "smooth" });
+      }, 0);
+
+      return () => window.clearTimeout(timeout);
+    }
+    return undefined;
+  }, [location.hash]);
+
   return (
     <div className={`${layout.page} home-page`}>
 
@@ -60,13 +79,13 @@ function Home() {
               </div>
               <div className="home-hero-actions">
                 <Link
-                  to="/use-cases"
+                  to="/learn/use-cases"
                   className={buttons.secondary}
                 >
                   Learn
                 </Link>
                 <Link
-                  to="/create"
+                  to="/create/image"
                   className={buttons.primary}
                 >
                   Create
@@ -123,14 +142,25 @@ export default function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/use-cases" element={<UseCases />} />
-            <Route path="/tools" element={<ToolsSection />} />
+            <Route path="/learn" element={<LearnLayout />}>
+              <Route index element={<Navigate to="use-cases" replace />} />
+              <Route path="use-cases" element={<UseCases />} />
+              <Route path="tools" element={<ToolsSection />} />
+              <Route path="prompts" element={<Prompts />} />
+              <Route path="courses" element={<Courses />} />
+            </Route>
+            <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+            <Route path="/tools" element={<Navigate to="/learn/tools" replace />} />
+            <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
+            <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
             <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/prompts" element={<Prompts />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/ai-tools" element={<ToolsSection />} />
             <Route path="/ai-tools/:id" element={<Subpage />} />
-            <Route path="/create" element={<Create />} />
+            <Route path="/create/*" element={<CreateRoutes />} />
+            <Route path="/gallery/*" element={<GalleryRoutes />} />
+            <Route path="/upgrade" element={<Upgrade />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/edit" element={<Edit />} />
             <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
             <Route path="*" element={<Navigate to="/" replace />} />
