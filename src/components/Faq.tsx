@@ -1,30 +1,14 @@
 import type React from "react";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState } from "react";
 import { Plus, Minus } from "lucide-react";
-import { layout, text, cards } from "../styles/designSystem";
+import { layout, text } from "../styles/designSystem";
 
 interface FAQItem {
   question: string;
   answer: string;
 }
 
-type PointerState = {
-  x: number;
-  y: number;
-  tx: number;
-  ty: number;
-};
-
-const DEFAULT_POINTER_STATE: PointerState = {
-  x: 50,
-  y: 50,
-  tx: 0,
-  ty: 0,
-};
-
 const isFinePointer = (pointerType: string) => pointerType === "mouse" || pointerType === "pen";
-
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const FAQ_DATA: FAQItem[] = [
   {
@@ -61,217 +45,93 @@ const FAQ_DATA: FAQItem[] = [
 
 const FAQSection: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [clickedIndex, setClickedIndex] = useState<number | null>(null);
-  const faqCardsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const pointerStateRef = useRef<PointerState[]>([]);
-  const animationFrameRef = useRef<(number | null)[]>([]);
-  const prefersReducedMotionRef = useRef(false);
 
   const toggleQuestion = useCallback((index: number) => {
-    // Immediate visual feedback
-    setClickedIndex(index);
-    
-    // Clear the clicked state after a short delay
-    setTimeout(() => setClickedIndex(null), 150);
-    
-    // Toggle the open state
     setOpenIndex(prev => (prev === index ? null : index));
   }, []);
 
-  const applyPointerState = useCallback((index: number) => {
-    const card = faqCardsRef.current[index];
-    const state = pointerStateRef.current[index];
-
-    animationFrameRef.current[index] = null;
-
-    if (!card || !state) {
-      return;
-    }
-
-    card.style.setProperty("--x", `${state.x}%`);
-    card.style.setProperty("--y", `${state.y}%`);
-    card.style.setProperty("--tx", `${state.tx}px`);
-    card.style.setProperty("--ty", `${state.ty}px`);
+  const updatePointerVariables = useCallback((element: HTMLDivElement, x: number, y: number) => {
+    element.style.setProperty("--x", `${x.toFixed(2)}%`);
+    element.style.setProperty("--y", `${y.toFixed(2)}%`);
+    element.style.setProperty("--tx", `${((x - 50) / 10).toFixed(2)}px`);
+    element.style.setProperty("--ty", `${((y - 50) / 10).toFixed(2)}px`);
   }, []);
 
-  const cancelScheduledAnimation = useCallback((index: number) => {
-    const frameId = animationFrameRef.current[index];
-    if (frameId != null) {
-      cancelAnimationFrame(frameId);
-      animationFrameRef.current[index] = null;
-    }
+  const resetPointerVariables = useCallback((element: HTMLDivElement) => {
+    element.style.setProperty("--fade-ms", "200ms");
+    element.style.setProperty("--l", "0");
+    element.style.setProperty("--x", "50%");
+    element.style.setProperty("--y", "50%");
+    element.style.setProperty("--tx", "0px");
+    element.style.setProperty("--ty", "0px");
   }, []);
-
-  const schedulePointerUpdate = useCallback(
-    (index: number) => {
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      if (animationFrameRef.current[index] != null) {
-        return;
-      }
-
-      animationFrameRef.current[index] = window.requestAnimationFrame(() => {
-        applyPointerState(index);
-      });
-    },
-    [applyPointerState],
-  );
 
   const handlePointerMove = useCallback(
-    (index: number, event: React.PointerEvent<HTMLDivElement>) => {
-      if (prefersReducedMotionRef.current || !isFinePointer(event.pointerType)) {
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!isFinePointer(event.pointerType)) {
         return;
       }
 
-      const card = faqCardsRef.current[index];
-      if (!card) {
-        return;
-      }
-
+      const card = event.currentTarget;
       const rect = card.getBoundingClientRect();
+
       if (rect.width === 0 || rect.height === 0) {
         return;
       }
 
       const relativeX = ((event.clientX - rect.left) / rect.width) * 100;
       const relativeY = ((event.clientY - rect.top) / rect.height) * 100;
-      const clampedX = clamp(relativeX, 0, 100);
-      const clampedY = clamp(relativeY, 0, 100);
 
-      pointerStateRef.current[index] = {
-        x: clampedX,
-        y: clampedY,
-        tx: (clampedX - 50) / 10,
-        ty: (clampedY - 50) / 10,
-      };
-
-      schedulePointerUpdate(index);
+      updatePointerVariables(card, relativeX, relativeY);
     },
-    [schedulePointerUpdate],
+    [updatePointerVariables],
   );
 
-  const handlePointerEnter = useCallback(
-    (index: number, event: React.PointerEvent<HTMLDivElement>) => {
-      if (prefersReducedMotionRef.current || !isFinePointer(event.pointerType)) {
-        return;
-      }
-
-      const card = faqCardsRef.current[index];
-      if (!card) {
-        return;
-      }
-
-      card.style.setProperty("--fade-ms", "200ms");
-      card.style.setProperty("--l", "1");
-    },
-    [],
-  );
-
-  const handlePointerLeave = useCallback(
-    (index: number, event: React.PointerEvent<HTMLDivElement>) => {
-      if (prefersReducedMotionRef.current || !isFinePointer(event.pointerType)) {
-        return;
-      }
-
-      const card = faqCardsRef.current[index];
-      if (!card) {
-        return;
-      }
-
-      card.style.setProperty("--fade-ms", "400ms");
-      card.style.setProperty("--l", "0.5");
-
-      pointerStateRef.current[index] = { ...DEFAULT_POINTER_STATE };
-
-      cancelScheduledAnimation(index);
-      schedulePointerUpdate(index);
-    },
-    [cancelScheduledAnimation, schedulePointerUpdate],
-  );
-
-  // Initialize cards with default glow state
-  useEffect(() => {
-    faqCardsRef.current.forEach((card, index) => {
-      if (card) {
-        card.style.setProperty("--l", "0.5");
-        card.style.setProperty("--fade-ms", "200ms");
-      }
-
-      pointerStateRef.current[index] = { ...DEFAULT_POINTER_STATE };
-    });
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+  const handlePointerEnter = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isFinePointer(event.pointerType)) {
       return;
     }
 
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    prefersReducedMotionRef.current = mediaQuery.matches;
-
-    const handleChange = (event: MediaQueryListEvent) => {
-      prefersReducedMotionRef.current = event.matches;
-    };
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => {
-        mediaQuery.removeEventListener("change", handleChange);
-      };
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => {
-      mediaQuery.removeListener(handleChange);
-    };
+    const card = event.currentTarget;
+    card.style.setProperty("--fade-ms", "200ms");
+    card.style.setProperty("--l", "0.9");
   }, []);
 
-  useEffect(() => {
-    const frameIds = animationFrameRef.current;
-    return () => {
-      frameIds.forEach((frameId) => {
-        if (frameId != null) {
-          cancelAnimationFrame(frameId);
-        }
-      });
-    };
-  }, []);
+  const handlePointerLeave = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!isFinePointer(event.pointerType)) {
+        return;
+      }
+
+      resetPointerVariables(event.currentTarget);
+    },
+    [resetPointerVariables],
+  );
 
   return (
-    <section id="faq" className="faq-section relative overflow-hidden">
-      <div className="faq-section__halo faq-section__halo--cyan" aria-hidden="true" />
-      <div className="faq-section__halo faq-section__halo--orange" aria-hidden="true" />
-      <div className="faq-section__halo faq-section__halo--violet" aria-hidden="true" />
-      <div className="faq-section__grid" aria-hidden="true" />
-
-      <div className={`${layout.container} relative z-10 ${layout.sectionPaddingTight}`}>
+    <section id="faq" className="faq-section">
+      <div className={`${layout.container} ${layout.sectionPaddingTight}`}>
         <div className="faq-section__header">
-          <h2 className={`${text.sectionHeading} faq-section__title`}>
+          <h2 className={`${text.sectionHeading} faq-section__title pb-6`}>
             <span>FAQ</span>
           </h2>
-          <span className="faq-section__divider" aria-hidden="true" />
+          <div className="home-hero-line"></div>
         </div>
 
         <div className="faq-section__content">
           {FAQ_DATA.map((item, index) => {
             const isOpen = openIndex === index;
-            const isClicked = clickedIndex === index;
             const contentId = `faq-panel-${index}`;
             const triggerId = `faq-trigger-${index}`;
 
             return (
               <div
                 key={item.question}
-                ref={(el) => { faqCardsRef.current[index] = el; }}
-                className={`${cards.shell} faq-card ${isOpen ? "faq-card--active" : ""} ${isClicked ? "faq-card--clicked" : ""}`}
-                onPointerMove={(event) => handlePointerMove(index, event)}
-                onPointerEnter={(event) => handlePointerEnter(index, event)}
-                onPointerLeave={(event) => handlePointerLeave(index, event)}
+                className={`faq-card tag-gradient parallax-small ${isOpen ? "faq-card--active" : ""}`}
+                onPointerMove={handlePointerMove}
+                onPointerEnter={handlePointerEnter}
+                onPointerLeave={handlePointerLeave}
               >
-                <span className="faq-card__halo" aria-hidden="true" />
-
                 <button
                   id={triggerId}
                   aria-controls={contentId}
@@ -307,7 +167,6 @@ const FAQSection: React.FC = () => {
             );
           })}
         </div>
-
       </div>
     </section>
   );
