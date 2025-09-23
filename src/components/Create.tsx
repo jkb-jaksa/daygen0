@@ -632,7 +632,7 @@ const Create: React.FC = () => {
     <div className="relative inline-flex items-center group">
       {children}
       {text && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
           {text}
         </div>
       )}
@@ -2613,7 +2613,7 @@ const Create: React.FC = () => {
         {/* Tooltip positioned outside the hover overlay container */}
         <div
           data-tooltip-for={tooltipId}
-          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
           style={{
             left: '50%',
             transform: 'translateX(-50%) translateY(-100%)',
@@ -3734,12 +3734,12 @@ const handleGenerate = async () => {
 
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
-            <div className="text-center">
-              <div className="mb-4">
-                <Trash2 className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-raleway text-d-text mb-2">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Trash2 className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -3779,13 +3779,13 @@ const handleGenerate = async () => {
 
       {/* New folder dialog */}
       {newFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
-            <div className="text-center">
-              <div className="mb-4">
-                <FolderPlus className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-raleway text-d-text mb-2">Create New Folder</h3>
-                <p className="text-base font-raleway text-d-white mb-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <FolderPlus className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">Create New Folder</h3>
+                <p className="text-base font-raleway text-d-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -3818,7 +3818,7 @@ const handleGenerate = async () => {
                 {folders.some(folder => 
                   folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                 ) && newFolderName.trim() && (
-                  <p className="text-d-orange-1 text-sm font-raleway mt-2">
+                  <p className="text-d-orange-1 text-sm font-raleway">
                     A folder with this name already exists
                   </p>
                 )}
@@ -3855,12 +3855,12 @@ const handleGenerate = async () => {
 
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
-            <div className="text-center">
-              <div className="mb-4">
-                <Globe className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-raleway text-d-text mb-2">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Globe className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">
                   {publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`}
                 </h3>
                 <p className="text-base font-raleway text-d-white">
@@ -3890,12 +3890,12 @@ const handleGenerate = async () => {
 
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
-            <div className="text-center">
-              <div className="mb-4">
-                <Lock className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-raleway text-d-text mb-2">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Lock className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">
                   {unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`}
                 </h3>
                 <p className="text-base font-raleway text-d-white">
@@ -3925,18 +3925,18 @@ const handleGenerate = async () => {
 
       {/* Add to folder dialog */}
       {addToFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
-            <div className="text-center">
-              <div className="mb-4">
-                <FolderPlus className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-raleway text-d-text mb-2">Manage Folders</h3>
-                <p className="text-base font-raleway text-d-white mb-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <FolderPlus className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">Manage Folders</h3>
+                <p className="text-base font-raleway text-d-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
               
-              <div className="mb-6 max-h-64 overflow-y-auto">
+              <div className="max-h-64 overflow-y-auto space-y-4">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
                     <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
@@ -4065,13 +4065,13 @@ const handleGenerate = async () => {
 
       {/* Folder thumbnail selection dialog */}
       {folderThumbnailDialog.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
-          <div className={`${glass.promptDark} rounded-[20px] mx-4 w-full max-w-md p-6 transition-colors duration-200`}>
-            <div className="text-center">
-              <div className="mb-4 relative">
-                <Folder className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-raleway text-d-text mb-2">Set Folder Thumbnail</h3>
-                <p className="text-base font-raleway text-d-white mb-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3 relative">
+                <Folder className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">Set Folder Thumbnail</h3>
+                <p className="text-base font-raleway text-d-white">
                   Choose a custom thumbnail for this folder
                 </p>
                 {(() => {
@@ -4105,7 +4105,7 @@ const handleGenerate = async () => {
                     type="file"
                     accept="image/*"
                     onChange={handleFolderThumbnailUpload}
-                    className="w-full p-2 border border-d-dark rounded-lg bg-d-black text-d-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-raleway file:bg-d-orange-1 file:text-d-black file:cursor-pointer hover:file:bg-d-orange-1/90"
+                    className="w-full py-3 px-4 border border-d-dark rounded-lg bg-d-black text-d-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-raleway file:bg-d-orange-1 file:text-d-black file:cursor-pointer hover:file:bg-d-orange-1/90"
                   />
                   {folderThumbnailFile && (
                     <div className="mt-2">
@@ -4320,7 +4320,7 @@ const handleGenerate = async () => {
                           <button
                             type="button"
                             onClick={toggleSelectMode}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand ${isSelectMode ? '!bg-d-orange-1/20 !text-d-orange-1 !border-d-orange-1/40' : ''}`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand !font-normal ${isSelectMode ? '!bg-d-orange-1/20 !text-d-orange-1 !border-d-orange-1/40' : ''}`}
                           >
                             {isSelectMode ? 'Done' : 'Select'}
                           </button>
@@ -4328,7 +4328,7 @@ const handleGenerate = async () => {
                             type="button"
                             onClick={toggleSelectAllVisible}
                             disabled={filteredGallery.length === 0}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand disabled:cursor-not-allowed disabled:opacity-50`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             {allVisibleSelected ? 'Unselect all' : 'Select all'}
                           </button>
@@ -4336,7 +4336,7 @@ const handleGenerate = async () => {
                             type="button"
                             onClick={clearImageSelection}
                             disabled={!hasSelection}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand disabled:cursor-not-allowed disabled:opacity-50`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-brand !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             Clear selection
                           </button>
@@ -4348,7 +4348,7 @@ const handleGenerate = async () => {
                             <button
                               type="button"
                               onClick={(e) => toggleBulkActionsMenu(e.currentTarget)}
-                              className={`${buttons.subtle} !h-8 gap-1.5 text-d-white`}
+                              className={`${buttons.subtle} !h-8 gap-1.5 text-d-white !font-normal`}
                             >
                               <MoreHorizontal className="h-3.5 w-3.5" />
                               <span>Actions</span>
@@ -5035,7 +5035,7 @@ const handleGenerate = async () => {
                           {/* Tooltip positioned outside the hover overlay container */}
                           <div 
                             data-tooltip-for={`folder-${folder?.id}-${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
                               transform: 'translateX(-50%) translateY(-100%)',
@@ -5452,7 +5452,7 @@ const handleGenerate = async () => {
                           {/* Tooltip positioned outside the hover overlay container */}
                           <div 
                             data-tooltip-for={`${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
                               transform: 'translateX(-50%) translateY(-100%)',
@@ -5549,7 +5549,7 @@ const handleGenerate = async () => {
             <div className="mt-4 w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
               {isCacheBarVisible && (
                 <div className="mb-4 rounded-2xl border border-d-dark bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
-                  <div className="flex items-center justify-between text-[11px] font-raleway uppercase tracking-wide text-d-white/70">
+                  <div className="flex items-center justify-between text-xs font-raleway uppercase tracking-wide text-d-white/70">
                     <span>Cache usage</span>
                     <div className="flex items-center gap-2">
                       <span className="text-d-white/80 normal-case">
@@ -5577,7 +5577,7 @@ const handleGenerate = async () => {
                   />
                 </div>
                   {persistentStorageStatus === 'denied' && (
-                    <div className="mt-3 flex items-center gap-2 text-[11px] font-raleway text-red-300">
+                    <div className="mt-3 flex items-center gap-2 text-xs font-raleway text-red-300">
                       <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
                       Browser may clear cached images sooner because persistent storage is disabled.
                     </div>

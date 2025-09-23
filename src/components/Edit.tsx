@@ -974,7 +974,7 @@ export default function Edit() {
     <div className="relative inline-flex items-center group">
       {children}
       {text && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
           {text}
         </div>
       )}
@@ -1528,7 +1528,7 @@ export default function Edit() {
                     />
                     {item.isPrimary ? (
                       <>
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-[10px] font-raleway uppercase tracking-wide text-d-orange-1">Base</span>
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-xs font-raleway uppercase tracking-wide text-d-orange-1">Base</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

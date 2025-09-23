@@ -28,7 +28,7 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}
             <div className="pt-4">
-              <div className="text-[20px] font-normal tracking-tight font-raleway leading-[1.05] mb-2">
+              <div className="text-xl font-normal tracking-tight font-raleway leading-[1.05] mb-2">
                 <span className="text-white-gradient">day</span>
                 <span className="text-d-orange">gen</span>
               </div>

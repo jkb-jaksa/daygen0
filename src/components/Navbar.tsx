@@ -208,7 +208,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
+                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-medium"
                   onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onClick={() => {
@@ -225,21 +225,21 @@ export default function Navbar() {
             {!user ? (
               <>
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
                   <DiscordIcon className="size-4" />
                 </button>
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
                   <XIcon className="size-4" />
                 </button>
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
@@ -247,7 +247,7 @@ export default function Navbar() {
                 </button>
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -274,7 +274,7 @@ export default function Navbar() {
               <>
                 {/* Discord Button */}
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
@@ -283,7 +283,7 @@ export default function Navbar() {
                 
                 {/* X Button */}
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
@@ -292,7 +292,7 @@ export default function Navbar() {
                 
                 {/* Instagram Button */}
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
@@ -312,10 +312,10 @@ export default function Navbar() {
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="hidden sm:inline font-raleway text-sm">
+                  <span className="hidden sm:inline font-raleway text-sm font-medium">
                     Credits: 1,247
                   </span>
-                  <span className="sm:hidden font-raleway text-sm">1,247</span>
+                  <span className="sm:hidden font-raleway text-sm font-medium">1,247</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -354,7 +354,7 @@ export default function Navbar() {
                         {(user.name || user.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden sm:inline font-raleway text-base py-0.5">{user.name || user.email}</span>
+                    <span className="hidden sm:inline font-raleway text-base py-0.5 font-medium">{user.name || user.email}</span>
                   </button>
                 </div>
               </>
@@ -378,7 +378,7 @@ export default function Navbar() {
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
-                <div className="text-base font-light font-raleway mb-4">
+                <div className="text-base font-medium font-raleway mb-4">
                   {activeMenu}
                 </div>
                 {activeMenu === "create" ? (
@@ -456,13 +456,16 @@ export default function Navbar() {
             }}
             className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
           >
+            <div className="px-4 py-2 text-base font-medium font-raleway text-d-white border-b border-d-white/10 mb-1">
+              Account
+            </div>
             <button
               onClick={() => {
                 setActiveMenu(null);
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-brand transition-colors font-raleway font-normal"
               role="menuitem"
             >
               My account
@@ -474,7 +477,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-brand transition-colors font-raleway font-normal"
               role="menuitem"
             >
               My works
@@ -486,7 +489,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-raleway"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-brand transition-colors font-raleway font-normal"
               role="menuitem"
             >
               Log out

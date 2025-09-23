@@ -57,16 +57,16 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
   if (isUnlocked) return <>{children}</>;
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4">
-      <div className={`${glass.promptDark} rounded-[20px] p-6 max-w-md w-full mx-4`}>
-        <div className="text-center">
-          <div className="mb-4">
-            <h1 className="text-lg font-raleway text-d-text mb-2">Enter Password</h1>
+    <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center py-8">
+      <div className={`${glass.promptDark} rounded-[20px] py-8 px-6 max-w-sm min-w-[28rem] w-full`}>
+        <div className="text-center space-y-6">
+          <div className="space-y-6">
+            <h1 className="text-lg font-raleway text-d-text">Enter Password</h1>
             <p className="text-sm text-d-white font-raleway">
               Enter the password to access this site.
             </p>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <input
               type="password"
               value={input}
@@ -76,7 +76,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
               className="w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
             />
             {error && <p className="text-sm text-red-400 font-raleway">{error}</p>}
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-4 justify-center">
               <button
                 type="submit"
                 className={`${buttons.primary} font-semibold`}
@@ -84,7 +84,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
                 Unlock
               </button>
             </div>
-            <p className="mt-2 text-xs text-d-white/60 font-raleway">
+            <p className="text-xs text-d-white/60 font-raleway">
               Dev-only: set VITE_SITE_PASSWORD locally. Disabled in production.
             </p>
           </form>

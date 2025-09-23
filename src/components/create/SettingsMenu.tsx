@@ -427,7 +427,7 @@ export function SettingsMenu({
                 )}
               </div>
               {hailuo.firstFrame && (
-                <div className="mt-1 text-[11px] font-raleway text-d-white/60 truncate">{hailuo.firstFrame.name}</div>
+                <div className="mt-1 text-xs font-raleway text-d-white/60 truncate">{hailuo.firstFrame.name}</div>
               )}
             </div>
             <div>
@@ -450,7 +450,7 @@ export function SettingsMenu({
                 )}
               </div>
               {hailuo.lastFrame && (
-                <div className="mt-1 text-[11px] font-raleway text-d-white/60 truncate">{hailuo.lastFrame.name}</div>
+                <div className="mt-1 text-xs font-raleway text-d-white/60 truncate">{hailuo.lastFrame.name}</div>
               )}
             </div>
           </div>
@@ -600,7 +600,7 @@ export function SettingsMenu({
                   />
                   <span className="text-xs font-raleway text-d-white/70 w-10 text-right">{kling.cfgScale.toFixed(2)}</span>
                 </div>
-                <div className="text-[11px] text-d-white/50 mt-1">
+                <div className="text-xs text-d-white/50 mt-1">
                   Lower values add more creativity, higher values adhere closely to your prompt.
                 </div>
               </div>
@@ -660,11 +660,11 @@ export function SettingsMenu({
                     </div>
                   ))}
                 </div>
-                <div className="text-[11px] text-d-white/45">Adjust camera offsets between -10 and 10 to add motion.</div>
+                <div className="text-xs text-d-white/45">Adjust camera offsets between -10 and 10 to add motion.</div>
               </div>
             )}
             {kling.statusMessage && (
-              <div className="text-[11px] font-raleway text-d-white/60 bg-d-black/60 border border-d-mid rounded-lg px-3 py-2">
+              <div className="text-xs font-raleway text-d-white/60 bg-d-black/60 border border-d-mid rounded-lg px-3 py-2">
                 {kling.statusMessage}
               </div>
             )}

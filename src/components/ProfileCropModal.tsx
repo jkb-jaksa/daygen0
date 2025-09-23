@@ -118,9 +118,9 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4">
-      <div className={`${glass.promptDark} rounded-[20px] p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden`}>
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center py-8">
+      <div className={`${glass.promptDark} rounded-[20px] py-8 px-6 max-w-2xl w-full min-w-[28rem] max-h-[90vh] overflow-hidden`}>
+        <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-raleway text-d-text">Crop Profile Picture</h3>
           <button
             onClick={onClose}
@@ -130,7 +130,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Controls */}
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-d-dark">
+          <div className="flex justify-end gap-4 pt-6 border-t border-d-dark">
             <button
               onClick={onClose}
               className={`${buttons.subtle} h-9 px-4`}

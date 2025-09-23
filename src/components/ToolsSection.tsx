@@ -361,7 +361,7 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
             <Icon className="size-5" />
           </div>
         )}
-        <div className="text-d-text text-xl font-light font-raleway">{name}</div>
+        <div className="text-d-text text-xl font-normal font-raleway">{name}</div>
       </div>
       <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{desc}</p>
       <div className="flex-1" />
@@ -399,7 +399,7 @@ export default function ToolsSection() {
         </div>
 
         <section className="grid grid-cols-[150px,1fr]">
-          <h3 className="col-start-2 text-xl font-light font-raleway text-d-text">
+          <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">
             notable tools
           </h3>
 

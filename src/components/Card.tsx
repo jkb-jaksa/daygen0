@@ -47,7 +47,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
     >
       {/* No overlay; tag-gradient provides subtle glow only */}
       <div className="relative z-10 flex items-center gap-2">
-        <div className="text-d-text text-xl font-light font-raleway">{title}</div>
+        <div className="text-d-text text-xl font-normal font-raleway">{title}</div>
       </div>
       <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{subtitle}</p>
       <div className="flex-1" />

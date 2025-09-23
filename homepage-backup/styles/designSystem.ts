@@ -9,7 +9,7 @@ export const layout = {
 };
 
 export const text = {
-  heroHeading: "text-6xl font-light tracking-tight leading-[1.1] font-raleway",
+  heroHeading: "text-6xl font-normal tracking-tight leading-[1.1] font-raleway",
   subHeading: "text-5xl font-normal text-d-text font-raleway",
   sectionHeading: "text-4xl font-normal text-d-text font-raleway",
   eyebrow: "text-xs text-d-white/60 font-raleway font-medium uppercase tracking-[0.2em]",

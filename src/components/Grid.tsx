@@ -276,7 +276,7 @@ export function Grid() {
 
       {/* create */}
       <section className="grid grid-cols-[150px,1fr]">
-        <h3 className="col-start-2 text-xl font-light font-raleway text-d-text">create</h3>
+        <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">create</h3>
 
         <aside className="row-start-2 hidden md:flex flex-col gap-3">
           {sidebarItems.map((item, index) => {
@@ -325,7 +325,7 @@ export function Grid() {
 
       {/* edit */}
       <section className="grid grid-cols-[150px,1fr]">
-        <h3 className="col-start-2 text-xl font-light font-raleway text-d-text">edit</h3>
+        <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">edit</h3>
 
         <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {sets.edit.map((card) => (
@@ -348,7 +348,7 @@ export function Grid() {
 
       {/* personalize */}
       <section className="grid grid-cols-[150px,1fr]">
-        <h3 className="col-start-2 text-xl font-light font-raleway text-d-text">personalize</h3>
+        <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">personalize</h3>
 
         <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {sets.personalize.map((card) => (
