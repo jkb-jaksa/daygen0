@@ -893,8 +893,8 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--red {
   width: clamp(19rem, 37vw, 33rem);
   height: clamp(11rem, 21vw, 17rem);
-  bottom: -52%;
-  left: 4%;
+  bottom: -54%;
+  left: 6%;
   --orb-primary: 243, 36, 54;
   --orb-glow: 255, 170, 180;
   --orb-shadow: 190, 20, 60;
@@ -980,7 +980,7 @@ select option::-webkit-scrollbar-thumb:hover {
 
 /* Footer orbs - reduced opacity */
 footer .home-hero-card__orb {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .home-hero-logo {
