@@ -10,10 +10,15 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
+  "headers": [
     {
-      "source": "/((?!api/).*)",
-      "destination": "/api/auth"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
     }
   ]
 }

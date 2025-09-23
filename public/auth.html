@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Required - DayGen</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon16px.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon32px.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon48px.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon180px.png">
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --d-text: #FAFAFA;
+            --d-white: #B8C0C0;
+            --d-light: #8E9393;
+            --d-mid: #2F3434;
+            --d-dark: #1E2020;
+            --d-black: #060806;
+            --d-orange-1: #ff8c00;
+            --d-orange-2: #e43a63;
+            --brand-cyan: rgb(3,188,189);
+            --brand-red: rgb(243,36,54);
+            --font-raleway: "Raleway", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-raleway);
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background orbs */
+        .orb-background {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .orb-background::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-color: #000000;
+            z-index: 0;
+        }
+
+        .auth-orb {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.6;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        .auth-orb--cyan {
+            width: 300px;
+            height: 300px;
+            top: -10%;
+            right: -10%;
+            background: rgba(3, 188, 189, 0.6);
+            transform: rotate(-8deg) scale(1.05);
+        }
+
+        .auth-orb--orange {
+            width: 250px;
+            height: 250px;
+            bottom: -15%;
+            left: -10%;
+            background: rgba(255, 140, 0, 0.6);
+            transform: rotate(25deg) scale(0.95);
+        }
+
+        .auth-orb--red {
+            width: 200px;
+            height: 200px;
+            top: 20%;
+            left: 20%;
+            background: rgba(243, 36, 54, 0.6);
+            transform: rotate(-20deg) scale(1.1);
+        }
+
+        .auth-container {
+            position: relative;
+            z-index: 10;
+            background: rgba(30, 32, 32, 0.8);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid var(--d-dark);
+            border-radius: 28px;
+            padding: 3rem;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-logo {
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-logo .day {
+            background: linear-gradient(
+                150deg,
+                rgba(255,255,255,0.95) 0%,
+                rgba(255,255,255,0.88) 40%,
+                rgba(255,255,255,0.78) 100%
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .auth-logo .gen {
+            color: var(--d-orange-1);
+            text-shadow: 
+                0 1px 2px rgba(255, 255, 255, 0.3),
+                0 -1px 2px rgba(0, 0, 0, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-subtitle {
+            color: var(--d-white);
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--d-white);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: rgba(6, 8, 6, 0.6);
+            border: 1px solid var(--d-dark);
+            border-radius: 12px;
+            color: var(--d-text);
+            font-size: 1rem;
+            font-family: var(--font-raleway);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--d-orange-1);
+            box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--d-light);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.25) 0%,
+                rgba(255, 255, 255, 0.1) 25%,
+                transparent 50%,
+                rgba(0, 0, 0, 0.1) 75%,
+                rgba(0, 0, 0, 0.2) 100%
+            ),
+            var(--d-orange-1);
+            border: none;
+            border-radius: 999px;
+            color: var(--d-black);
+            cursor: pointer;
+            font-family: var(--font-raleway);
+            font-size: 1rem;
+            font-weight: 500;
+            height: 48px;
+            padding: 0 2rem;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.3),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+                0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.15) 25%,
+                transparent 50%,
+                rgba(0, 0, 0, 0.15) 75%,
+                rgba(0, 0, 0, 0.25) 100%
+            ),
+            color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.4),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+                0 6px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.2),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .error {
+            color: var(--brand-red);
+            margin-top: 1rem;
+            display: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .auth-logo h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background orbs -->
+    <div class="orb-background">
+        <div class="auth-orb auth-orb--cyan"></div>
+        <div class="auth-orb auth-orb--orange"></div>
+        <div class="auth-orb auth-orb--red"></div>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-logo">
+            <h1>
+                <span class="day">day</span><span class="gen">gen</span>
+            </h1>
+        </div>
+        
+        <p class="auth-subtitle">Please enter your credentials to access this application.</p>
+        
+        <form id="authForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="submit-btn">Authenticate</button>
+        </form>
+        
+        <div id="error" class="error">
+            Invalid credentials. Please try again.
+        </div>
+    </div>
+
+    <script>
+        // Check if already authenticated
+        if (sessionStorage.getItem('authenticated') === 'true') {
+            window.location.href = '/';
+        }
+
+        document.getElementById('authForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            
+            // Hide error initially
+            errorDiv.classList.remove('show');
+            
+            // Check credentials (in a real app, this would be server-side)
+            if (username === 'jaksa' && password === 'warsaw') {
+                sessionStorage.setItem('authenticated', 'true');
+                window.location.href = '/';
+            } else {
+                errorDiv.classList.add('show');
+            }
+        });
+
+        // Add some subtle animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.auth-container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.6s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

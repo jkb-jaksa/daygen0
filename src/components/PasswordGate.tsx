@@ -3,7 +3,6 @@ import { buttons, glass } from "../styles/designSystem";
 
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
-  const isProd = (import.meta as any).env?.PROD as boolean;
   const configuredPassword = (import.meta as any).env?.VITE_SITE_PASSWORD as string | undefined;
 
   // Read from sessionStorage to persist for the tab session.
@@ -13,7 +12,9 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const saved = sessionStorage.getItem("site:auth");
+    const authenticated = sessionStorage.getItem("authenticated");
     if (saved) setEntered(saved);
+    if (authenticated === 'true') setEntered('authenticated');
   }, []);
 
   // Allow quick unlock via query param (?pw=...)
@@ -30,12 +31,12 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
   }, []);
 
   const isUnlocked = useMemo(() => {
-    // In production, always bypass client-side gating; use server-side auth instead
-    if (isProd) return true;
+    // Check if authenticated via the auth page
+    if (sessionStorage.getItem("authenticated") === 'true') return true;
     // If no password configured, do not block
     if (!configuredPassword) return true;
     return entered === configuredPassword;
-  }, [entered, configuredPassword, isProd]);
+  }, [entered, configuredPassword]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

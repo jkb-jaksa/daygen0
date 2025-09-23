@@ -16,6 +16,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Check authentication before loading the app
+      if (sessionStorage.getItem('authenticated') !== 'true') {
+        window.location.href = '/auth.html';
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
