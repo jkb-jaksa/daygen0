@@ -254,7 +254,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Flux 1.1 Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Flux 1.1 Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
@@ -279,7 +279,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Veo 3 Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Veo 3 Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
@@ -336,7 +336,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Hailuo 02 Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Hailuo 02 Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
@@ -463,7 +463,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Wan 2.2 Video Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Wan 2.2 Video Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
@@ -536,7 +536,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Kling Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Kling Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
@@ -678,7 +678,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Seedance 1.0 Pro Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Seedance 1.0 Pro Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Mode</label>
@@ -790,7 +790,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Recraft Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Recraft Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
@@ -818,7 +818,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Runway Gen-4 Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Runway Gen-4 Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
@@ -846,7 +846,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Luma Photon Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Luma Photon Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
@@ -869,7 +869,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Luma Ray Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Luma Ray Settings</div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
@@ -892,7 +892,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Gemini Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Gemini Settings</div>
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -973,7 +973,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-cabin text-d-text mb-3">Qwen Image Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Qwen Image Settings</div>
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">

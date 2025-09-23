@@ -23,7 +23,7 @@ export default function LearnLayout() {
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `${glass.promptDark} px-4 py-2 rounded-full text-sm font-cabin transition-colors lowercase ${
+                `${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
                   isActive ? "text-brand border border-d-mid" : "text-d-white/80 hover:text-brand"
                 }`
               }

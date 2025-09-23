@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
               key={section.id}
               className={`${cards.shell} ${glass.promptDark} flex flex-col gap-4 p-6 rounded-[24px] text-left`}
             >
-              <h2 className="font-cabin text-2xl font-medium text-d-white">{section.title}</h2>
+              <h2 className="font-raleway text-2xl font-medium text-d-white">{section.title}</h2>
               <p className="text-sm text-d-white/70 font-raleway leading-relaxed">{section.copy}</p>
             </article>
           ))}

@@ -1016,7 +1016,7 @@ export default function Edit() {
                 onPaste={handleUploadPaste}
               >
                 <Upload className="default-orange-icon mx-auto mb-4" />
-                <p className="text-xl font-cabin text-d-text mb-2">Upload your image</p>
+                <p className="text-xl font-raleway text-d-text mb-2">Upload your image</p>
                 <p className="text-base font-raleway text-d-white mb-6">
                   Click anywhere, drag and drop, or paste your image to get started
                 </p>
@@ -1439,7 +1439,7 @@ export default function Edit() {
                     return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
                   }
                 })()}
-                <span className="text-sm font-cabin hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}
@@ -1476,7 +1476,7 @@ export default function Edit() {
                         }`} />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                        <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                           isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                         }`}>
                           {model.name}
@@ -1528,7 +1528,7 @@ export default function Edit() {
                     />
                     {item.isPrimary ? (
                       <>
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-[10px] font-cabin uppercase tracking-wide text-d-orange-1">Base</span>
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-[10px] font-raleway uppercase tracking-wide text-d-orange-1">Base</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1565,7 +1565,7 @@ export default function Edit() {
         {isSettingsOpen && (
           <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50 p-4">
             <div className="space-y-4">
-              <div className="text-sm font-cabin text-d-text mb-3">Settings</div>
+              <div className="text-sm font-raleway text-d-text mb-3">Settings</div>
               
               {/* Temperature */}
               <div className="space-y-2">

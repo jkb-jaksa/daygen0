@@ -180,7 +180,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       {/* Popular badge */}
       {tier.popular && (
         <div className="absolute top-4 right-6 z-10">
-          <div className="flex items-center gap-1.5 bg-brand-cyan text-d-black px-4 py-1.5 rounded-full text-sm font-cabin font-medium shadow-lg">
+          <div className="flex items-center gap-1.5 bg-brand-cyan text-d-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
             <Star className="w-4 h-4 fill-current" />
             Most Popular
           </div>
@@ -190,7 +190,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       {/* Best Value badge */}
       {tier.bestValue && (
         <div className="absolute top-4 right-6 z-10">
-          <div className="flex items-center gap-1.5 bg-brand-red text-d-black px-4 py-1.5 rounded-full text-sm font-cabin font-medium shadow-lg">
+          <div className="flex items-center gap-1.5 bg-brand-red text-d-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
             <Crown className="w-4 h-4 fill-current" />
             Best Value
           </div>
@@ -200,7 +200,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="mb-3">
-          <h3 className={`text-3xl font-cabin font-light mb-1 ${
+          <h3 className={`text-3xl font-raleway font-light mb-1 ${
             tier.id === 'free' ? 'text-orange-lighter' : 
             tier.id === 'pro' ? 'text-cyan-lighter' : 
             'text-red-lighter'
@@ -211,7 +211,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         {/* Pricing */}
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
-            <span className={`text-4xl font-cabin font-light ${
+            <span className={`text-4xl font-raleway font-light ${
               tier.id === 'free' ? 'text-orange-lighter' : 
               tier.id === 'pro' ? 'text-cyan-lighter' : 
               'text-red-lighter'
@@ -256,7 +256,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
                 window.location.href = '/';
               }
             }}
-            className={`w-full btn font-cabin text-base transition-colors duration-200 parallax-mid ${
+            className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-mid ${
               tier.id === 'free' 
                 ? 'btn-orange' 
                 : tier.id === 'pro'
@@ -286,7 +286,7 @@ export default function Pricing() {
         {/* Header Section */}
         <section className={`${layout.container} pt-8 pb-16`}>
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-light tracking-tight leading-[1.1] font-cabin mb-6 text-d-text">
+            <h1 className="text-5xl font-light tracking-tight leading-[1.1] font-raleway mb-6 text-d-text">
               Choose your <span className="text-d-orange-1">plan</span><span className="text-d-text">.</span>
             </h1>
             <p className="mx-auto mb-6 max-w-2xl text-lg text-d-white font-raleway">
@@ -310,7 +310,7 @@ export default function Pricing() {
               </button>
               <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-d-text' : 'text-d-white'}`}>
                 Yearly
-                <span className="ml-1 text-xs text-d-orange-1 font-cabin">(Save 20%)</span>
+                <span className="ml-1 text-xs text-d-orange-1 font-raleway">(Save 20%)</span>
               </span>
             </div>
           </div>
@@ -330,7 +330,7 @@ export default function Pricing() {
           {/* Additional Info */}
           <div className="mt-16 text-center">
             <div className={`${glass.surface} p-8 max-w-4xl mx-auto`}>
-              <h3 className="text-2xl font-cabin font-light text-d-text mb-4">
+              <h3 className="text-2xl font-raleway font-light text-d-text mb-4">
                 All plans include
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

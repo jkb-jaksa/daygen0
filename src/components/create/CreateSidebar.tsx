@@ -44,7 +44,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
     <div className="hidden md:block fixed z-30" style={sidebarPosition}>
       <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
         <aside className="flex flex-col gap-2 w-full mt-2">
-          <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
+          <div className="flex items-center px-2 text-xs text-d-text font-raleway font-medium uppercase tracking-wider mb-1">
             create
           </div>
 
@@ -55,7 +55,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+                className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                   isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                 }`}
                 aria-pressed={isActive}
@@ -72,7 +72,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
 
           <div className="border-t border-d-dark my-2" />
 
-          <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
+          <div className="flex items-center px-2 text-xs text-d-text font-raleway font-medium uppercase tracking-wider mb-1">
             My works
           </div>
 
@@ -83,7 +83,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+                className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                   isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                 }`}
                 aria-pressed={isActive}
@@ -101,7 +101,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
           <button
             type="button"
             onClick={onOpenMyFolders}
-            className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+            className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
               activeCategory === "my-folders" ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
             }`}
             aria-pressed={activeCategory === "my-folders"}

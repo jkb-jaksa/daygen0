@@ -44,7 +44,7 @@ function SectionFallback({ label }: { label: string }) {
     <div className="flex justify-center py-20">
       <div className="flex flex-col items-center gap-3 text-d-white/70">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-d-white/30 border-t-d-white" aria-hidden="true" />
-        <p className="font-cabin text-sm uppercase tracking-[0.3em]">Loading {label}…</p>
+        <p className="font-raleway text-sm uppercase tracking-[0.3em]">Loading {label}…</p>
       </div>
     </div>
   );

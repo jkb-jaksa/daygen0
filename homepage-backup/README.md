@@ -101,7 +101,7 @@ The components require:
 - All file paths in imports are relative to the backup folder structure
 - You may need to adjust import paths when integrating back into your main project
 - The CSS includes Tailwind directives - ensure your build process handles them
-- Some styles reference external fonts (Cabin, Raleway) - ensure they're loaded
+- Some styles reference external fonts (Raleway) - ensure they're loaded
 
 ## 🔄 Version Info
 

@@ -203,7 +203,7 @@ export default function Navbar() {
               onClick={handleLogoClick}
               className="parallax-large h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-cabin">
+            <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-raleway">
               {NAV_ITEMS.filter(item => item.label !== "my works" || user).map((item) => (
                 <Link
                   key={item.label}
@@ -225,21 +225,21 @@ export default function Navbar() {
             {!user ? (
               <>
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
                   <DiscordIcon className="size-4" />
                 </button>
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
                   <XIcon className="size-4" />
                 </button>
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
@@ -247,7 +247,7 @@ export default function Navbar() {
                 </button>
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -274,7 +274,7 @@ export default function Navbar() {
               <>
                 {/* Discord Button */}
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
@@ -283,7 +283,7 @@ export default function Navbar() {
                 
                 {/* X Button */}
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
@@ -292,7 +292,7 @@ export default function Navbar() {
                 
                 {/* Instagram Button */}
                 <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway"
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
@@ -312,10 +312,10 @@ export default function Navbar() {
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="hidden sm:inline font-cabin text-sm">
+                  <span className="hidden sm:inline font-raleway text-sm">
                     Credits: 1,247
                   </span>
-                  <span className="sm:hidden font-cabin text-sm">1,247</span>
+                  <span className="sm:hidden font-raleway text-sm">1,247</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -348,13 +348,13 @@ export default function Navbar() {
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-cabin"
+                        className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-raleway"
                         style={{ background: user.color || "#FF8C00" }}
                       >
                         {(user.name || user.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden sm:inline font-cabin text-base py-0.5">{user.name || user.email}</span>
+                    <span className="hidden sm:inline font-raleway text-base py-0.5">{user.name || user.email}</span>
                   </button>
                 </div>
               </>
@@ -378,7 +378,7 @@ export default function Navbar() {
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
-                <div className="text-base font-light font-cabin mb-4">
+                <div className="text-base font-light font-raleway mb-4">
                   {activeMenu}
                 </div>
                 {activeMenu === "create" ? (
@@ -387,7 +387,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -403,7 +403,7 @@ export default function Navbar() {
                         key={category.key}
                         to="/edit"
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -413,7 +413,7 @@ export default function Navbar() {
                     ))}
                   </div>
                 ) : activeMenu === "explore" ? (
-                  <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
+                  <div className="text-base font-raleway text-d-white/85">Coming soon.</div>
                 ) : activeMenu === "learn" ? (
                   <div className="flex flex-col gap-1.5">
                     {LEARN_MENU_LINKS.map((item) => (
@@ -421,7 +421,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <item.Icon className="w-4 h-4" />
@@ -431,7 +431,7 @@ export default function Navbar() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-base font-cabin text-d-white/85">Coming soon.</div>
+                  <div className="text-base font-raleway text-d-white/85">Coming soon.</div>
                 )}
               </div>
             )}
@@ -462,7 +462,7 @@ export default function Navbar() {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-raleway"
               role="menuitem"
             >
               My account
@@ -474,7 +474,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-raleway"
               role="menuitem"
             >
               My works
@@ -486,7 +486,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-cabin"
+              className="block w-full text-left px-4 py-1 hover:text-brand transition-colors font-raleway"
               role="menuitem"
             >
               Log out

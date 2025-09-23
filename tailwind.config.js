@@ -46,7 +46,7 @@ module.exports = {
         DEFAULT: 'rgb(var(--d-dark-rgb))'
       },
       fontFamily: {
-        cabin: ['"Cabin"', "sans-serif"], // Quotes due to space in name, 'sans-serif' as fallback
+        sans: ['"Raleway"', "sans-serif"],
         raleway: ['"Raleway"', "sans-serif"], // Quotes due to space in name, 'sans-serif' as fallback
       },
       transitionDuration: {

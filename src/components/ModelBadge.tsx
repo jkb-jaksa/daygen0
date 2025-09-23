@@ -219,7 +219,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
         text-d-white 
         ${sizeClasses[size]} 
         rounded-full 
-        font-medium font-cabin 
+        font-medium font-raleway 
         ${className}
       `}
       title={config.description}

@@ -22,93 +22,89 @@ function parseBasicAuth(header: string | null): { username: string; password: st
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  // Only enforce on production
-  const isProd = (process.env.VERCEL_ENV || process.env.NODE_ENV) === 'production';
+  // Only enforce authentication in production
+  const isProd = process.env.VERCEL_ENV === 'production';
   if (!isProd) {
-    // In development, serve the static files directly
-    const url = new URL(req.url);
-    if (url.pathname === '/' || url.pathname === '/index.html') {
-      return new Response(await fetch(new URL('/index.html', req.url)).then(r => r.text()), {
-        headers: { 'Content-Type': 'text/html' }
-      });
-    }
-    // For other files, try to serve them directly
-    try {
-      const response = await fetch(req.url);
-      if (response.ok) {
-        return response;
-      }
-    } catch {}
-    return new Response('Not found', { status: 404 });
-  }
-
-  // Allow health checks or internal loop prevention via header
-  const bypass = req.headers.get('x-auth-checked') === '1';
-  if (bypass) {
-    // Serve the actual static files after authentication
-    const url = new URL(req.url);
-    try {
-      const response = await fetch(req.url);
-      if (response.ok) {
-        return response;
-      }
-    } catch {}
-    return new Response('Not found', { status: 404 });
-  }
-
-  // Expected credentials from environment
-  const combo = (process.env.BASIC_AUTH || process.env.SITE_BASIC_AUTH || '').trim();
-  let expectedUser = process.env.BASIC_AUTH_USER || process.env.SITE_BASIC_AUTH_USER || '';
-  let expectedPass = process.env.BASIC_AUTH_PASS || process.env.SITE_BASIC_AUTH_PASS || '';
-  if (combo && (!expectedUser || !expectedPass)) {
-    const idx = combo.indexOf(':');
-    if (idx !== -1) {
-      expectedUser = combo.slice(0, idx);
-      expectedPass = combo.slice(idx + 1);
-    }
-  }
-
-  // If not configured, allow through (no-op)
-  if (!expectedUser && !expectedPass) {
-    const headers = new Headers(req.headers);
-    headers.set('x-auth-checked', '1');
-    const fwd = new Request(req.url, {
-      method: req.method,
-      headers,
-      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : (req as any).body,
-      redirect: 'manual',
+    // In development, serve the static files directly without auth
+    return new Response('Development mode - no auth required', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' }
     });
-    return fetch(fwd);
   }
 
-  const creds = parseBasicAuth(req.headers.get('authorization'));
-  if (!creds) return unauthorizedResponse();
-
-  const ok = creds.username === expectedUser && creds.password === expectedPass;
-  if (!ok) return unauthorizedResponse();
-
-  // Authentication successful - serve the requested resource
+  // Get the original path from the request
   const url = new URL(req.url);
-  
-  // Try to serve the requested file directly
+  const pathname = url.pathname;
+
+  // Skip authentication for API routes and static assets
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.') // Skip files with extensions (static assets)
+  ) {
+    // For API routes, let them pass through
+    if (pathname.startsWith('/api/') && pathname !== '/api/auth') {
+      return new Response('API route', { status: 200 });
+    }
+    // For static assets, try to serve them
+    try {
+      const response = await fetch(req.url);
+      if (response.ok) {
+        return response;
+      }
+    } catch {}
+    return new Response('Not found', { status: 404 });
+  }
+
+  // Get credentials from environment variables
+  const basicAuth = process.env.BASIC_AUTH || '';
+  const [username, password] = basicAuth.split(':');
+
+  // If no credentials are set, allow access
+  if (!username || !password) {
+    // Serve the React app
+    try {
+      const response = await fetch(new URL('/index.html', req.url));
+      if (response.ok) {
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        });
+      }
+    } catch {}
+    return new Response('Not found', { status: 404 });
+  }
+
+  // Check for authorization header
+  const authorization = req.headers.get('authorization');
+  if (!authorization) {
+    return unauthorizedResponse();
+  }
+
+  // Parse basic auth
+  const creds = parseBasicAuth(authorization);
+  if (!creds) {
+    return unauthorizedResponse();
+  }
+
+  // Validate credentials
+  if (creds.username !== username || creds.password !== password) {
+    return unauthorizedResponse();
+  }
+
+  // Authentication successful - serve the React app
   try {
-    const response = await fetch(req.url);
+    const response = await fetch(new URL('/index.html', req.url));
     if (response.ok) {
-      return response;
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      });
     }
   } catch {}
-  
-  // If direct fetch fails, try serving index.html for SPA routes
-  if (url.pathname === '/' || url.pathname === '/index.html') {
-    try {
-      const indexResponse = await fetch(new URL('/index.html', req.url));
-      return new Response(indexResponse.body, {
-        status: indexResponse.status,
-        statusText: indexResponse.statusText,
-        headers: indexResponse.headers
-      });
-    } catch {}
-  }
-  
+
   return new Response('Not found', { status: 404 });
 }

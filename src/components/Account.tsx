@@ -163,7 +163,7 @@ export default function Account() {
     return (
       <main className="min-h-screen bg-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-2xl font-cabin mb-4 text-d-text">Redirecting...</h1>
+          <h1 className="text-2xl font-raleway mb-4 text-d-text">Redirecting...</h1>
           <p className="text-d-white font-raleway">Taking you to your destination.</p>
         </div>
       </main>
@@ -200,7 +200,7 @@ export default function Account() {
 
       <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
         <div className={`${glass.surface} p-5`}>
-          <h3 className="text-lg font-cabin mb-3 text-d-text">Profile</h3>
+          <h3 className="text-lg font-raleway mb-3 text-d-text">Profile</h3>
           
           <div className="mb-4">
             <label className="block text-sm text-d-white mb-2 font-raleway">Picture</label>
@@ -214,7 +214,7 @@ export default function Account() {
                   />
                 ) : (
                   <div 
-                    className="size-12 rounded-full flex items-center justify-center text-white text-lg font-bold font-cabin border-2 border-d-dark group-hover:opacity-80 transition-opacity"
+                    className="size-12 rounded-full flex items-center justify-center text-white text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity"
                     style={{ background: user.color || "#FF8C00" }}
                   >
                     {(user.name || user.email)[0]?.toUpperCase()}
@@ -263,7 +263,7 @@ export default function Account() {
         </div>
 
         <div className={`${glass.surface} p-5`}>
-          <h3 className="text-lg font-cabin mb-3 text-d-text">At a glance</h3>
+          <h3 className="text-lg font-raleway mb-3 text-d-text">At a glance</h3>
           <ul className="text-sm font-raleway text-d-white space-y-1">
             <li>Generated images: <strong>{gallery.length}</strong></li>
           </ul>

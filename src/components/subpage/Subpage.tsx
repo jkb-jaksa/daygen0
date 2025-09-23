@@ -763,7 +763,7 @@ function PageChrome({
             <span>•</span>
             <span>subpage</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-cabin tracking-tight text-d-text">
+          <h1 className="text-4xl md:text-5xl font-raleway tracking-tight text-d-text">
             {title}
           </h1>
           {subtitle && (
@@ -815,7 +815,7 @@ function Card({
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      <h3 className="text-xl font-cabin mb-2">{title}</h3>
+      <h3 className="text-xl font-raleway mb-2">{title}</h3>
       <div className="text-d-text/80 font-raleway">{children}</div>
     </div>
   );
@@ -900,7 +900,7 @@ export default function Subpage() {
                   ) : (
                     <div className="h-7 w-7 rounded-lg bg-white/10" />
                   )}
-                  <h3 className="text-lg font-cabin">{t.title}</h3>
+                  <h3 className="text-lg font-raleway">{t.title}</h3>
                 </div>
                 <p className="text-d-text/75 mt-2 font-raleway">{t.blurb}</p>
                 <button className="mt-4 btn btn-ghost parallax-mid">

@@ -9,7 +9,7 @@ export const layout = {
 };
 
 export const text = {
-  heroHeading: "text-5xl font-light tracking-tight leading-[1.1] font-cabin",
+  heroHeading: "text-5xl font-light tracking-tight leading-[1.1] font-raleway",
   subHeading: "text-4xl font-normal text-d-text font-raleway",
   sectionHeading: "text-4xl font-normal text-d-text font-raleway",
   eyebrow: "text-xs text-d-white/60 font-raleway font-medium uppercase tracking-[0.2em]",
@@ -23,13 +23,13 @@ export const cards = {
 };
 
 export const buttons = {
-  primary: "btn btn-orange font-cabin text-base gap-2 parallax-mid",
-  secondary: "btn btn-white font-cabin text-base gap-2 parallax-large",
-  ghost: "btn btn-ghost font-cabin text-base gap-2 parallax-mid",
-  ghostCompact: "btn btn-ghost btn-ghost-compact font-cabin text-base gap-2 parallax-mid",
+  primary: "btn btn-orange font-raleway text-base gap-2 parallax-mid",
+  secondary: "btn btn-white font-raleway text-base gap-2 parallax-large",
+  ghost: "btn btn-ghost font-raleway text-base gap-2 parallax-mid",
+  ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base gap-2 parallax-mid",
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-brand parallax-large",
   pillWarm: "btn btn-orange btn-compact font-raleway text-xs font-medium gap-2 parallax-large",
-  blockPrimary: "btn btn-orange w-full font-cabin text-sm font-medium gap-2 parallax-large",
+  blockPrimary: "btn btn-orange w-full font-raleway text-sm font-medium gap-2 parallax-large",
 };
 
 export const panels = {

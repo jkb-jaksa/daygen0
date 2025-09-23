@@ -51,6 +51,9 @@
   /* Brand red color */
   --brand-red: rgb(243,36,54);
 
+  /* Primary font family */
+  --font-raleway: "Raleway", sans-serif;
+
   /* Back-compat mapping (can be removed once classes switched) */
   --color-text: var(--d-text);
   --color-border-white: var(--d-white);
@@ -143,7 +146,7 @@ html, body {
   background-color: rgba(8, 11, 11, 0.4);
   border-color: var(--d-mid);
   color: var(--d-white);
-  font-family: 'Cabin', sans-serif;
+  font-family: 'Raleway', sans-serif;
   font-weight: 400;
 }
 
@@ -744,7 +747,7 @@ html, body {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
   width: auto;
-  font-family: var(--font-cabin, "Cabin", sans-serif);
+  font-family: var(--font-raleway, "Raleway", sans-serif);
   font-size: 0.75rem;
   line-height: 1.25rem;
   font-weight: 500;

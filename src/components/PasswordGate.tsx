@@ -60,7 +60,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
       <div className={`${glass.promptDark} rounded-[20px] p-6 max-w-md w-full mx-4`}>
         <div className="text-center">
           <div className="mb-4">
-            <h1 className="text-lg font-cabin text-d-text mb-2">Enter Password</h1>
+            <h1 className="text-lg font-raleway text-d-text mb-2">Enter Password</h1>
             <p className="text-sm text-d-white font-raleway">
               Enter the password to access this site.
             </p>

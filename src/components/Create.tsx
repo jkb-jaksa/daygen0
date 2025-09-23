@@ -2335,7 +2335,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -2346,7 +2346,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -2357,7 +2357,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               handleRerun();
@@ -2368,7 +2368,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               handleRerunWithDifferentModel();
@@ -2379,7 +2379,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -2424,7 +2424,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -2450,7 +2450,7 @@ const Create: React.FC = () => {
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -2461,7 +2461,7 @@ const Create: React.FC = () => {
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -2473,7 +2473,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-cabin text-d-white transition-colors duration-200 hover:text-d-orange-1"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-orange-1"
             onClick={(event) => {
               event.stopPropagation();
               toggleImagePublicStatus(image.url);
@@ -2572,7 +2572,7 @@ const Create: React.FC = () => {
                             setIsFullSizeOpen(true);
                           }}
                         />
-                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
+                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                           {refIdx + 1}
                         </div>
                       </div>
@@ -2598,7 +2598,7 @@ const Create: React.FC = () => {
                   <ModelBadge model={img.model ?? 'unknown'} size="md" />
                 </Suspense>
                 {img.isPublic && (
-                  <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                  <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-d-orange-1" />
                       <span className="leading-none">Public</span>
@@ -3739,7 +3739,7 @@ const handleGenerate = async () => {
             <div className="text-center">
               <div className="mb-4">
                 <Trash2 className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-cabin text-d-text mb-2">
+                <h3 className="text-xl font-raleway text-d-text mb-2">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -3784,7 +3784,7 @@ const handleGenerate = async () => {
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-cabin text-d-text mb-2">Create New Folder</h3>
+                <h3 className="text-xl font-raleway text-d-text mb-2">Create New Folder</h3>
                 <p className="text-base font-raleway text-d-white mb-4">
                   Give your folder a name to organize your images.
                 </p>
@@ -3860,7 +3860,7 @@ const handleGenerate = async () => {
             <div className="text-center">
               <div className="mb-4">
                 <Globe className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-cabin text-d-text mb-2">
+                <h3 className="text-xl font-raleway text-d-text mb-2">
                   {publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`}
                 </h3>
                 <p className="text-base font-raleway text-d-white">
@@ -3895,7 +3895,7 @@ const handleGenerate = async () => {
             <div className="text-center">
               <div className="mb-4">
                 <Lock className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-cabin text-d-text mb-2">
+                <h3 className="text-xl font-raleway text-d-text mb-2">
                   {unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`}
                 </h3>
                 <p className="text-base font-raleway text-d-white">
@@ -3930,7 +3930,7 @@ const handleGenerate = async () => {
             <div className="text-center">
               <div className="mb-4">
                 <FolderPlus className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-cabin text-d-text mb-2">Manage Folders</h3>
+                <h3 className="text-xl font-raleway text-d-text mb-2">Manage Folders</h3>
                 <p className="text-base font-raleway text-d-white mb-4">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
@@ -4009,7 +4009,7 @@ const handleGenerate = async () => {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate ${
+                            <div className={`text-sm font-raleway truncate ${
                               isFullyInFolder ? 'text-d-orange-1' : 'text-d-text/80'
                             }`}>
                               {folder.name}
@@ -4070,7 +4070,7 @@ const handleGenerate = async () => {
             <div className="text-center">
               <div className="mb-4 relative">
                 <Folder className="default-orange-icon mx-auto mb-4" />
-                <h3 className="text-xl font-cabin text-d-text mb-2">Set Folder Thumbnail</h3>
+                <h3 className="text-xl font-raleway text-d-text mb-2">Set Folder Thumbnail</h3>
                 <p className="text-base font-raleway text-d-white mb-4">
                   Choose a custom thumbnail for this folder
                 </p>
@@ -4098,14 +4098,14 @@ const handleGenerate = async () => {
               <div className="mb-6">
                 {/* Upload new image */}
                 <div className="mb-4">
-                  <label className="block text-sm font-cabin text-d-text mb-2">
+                  <label className="block text-sm font-raleway text-d-text mb-2">
                     Upload New Image
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFolderThumbnailUpload}
-                    className="w-full p-2 border border-d-dark rounded-lg bg-d-black text-d-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-cabin file:bg-d-orange-1 file:text-d-black file:cursor-pointer hover:file:bg-d-orange-1/90"
+                    className="w-full p-2 border border-d-dark rounded-lg bg-d-black text-d-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-raleway file:bg-d-orange-1 file:text-d-black file:cursor-pointer hover:file:bg-d-orange-1/90"
                   />
                   {folderThumbnailFile && (
                     <div className="mt-2">
@@ -4120,7 +4120,7 @@ const handleGenerate = async () => {
 
                 {/* Select from existing images */}
                 <div>
-                  <label className="block text-sm font-cabin text-d-text mb-2">
+                  <label className="block text-sm font-raleway text-d-text mb-2">
                     Or Select from Folder Images
                   </label>
                   <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
@@ -4203,7 +4203,7 @@ const handleGenerate = async () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Settings className="w-4 h-4 text-d-orange-1" />
-                          <h3 className="text-sm font-cabin text-d-white">Filters</h3>
+                          <h3 className="text-sm font-raleway text-d-white">Filters</h3>
                         </div>
                         <button
                           onClick={() => setGalleryFilters({
@@ -4445,7 +4445,7 @@ const handleGenerate = async () => {
                     {gallery.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Grid3X3 className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-cabin text-d-text mb-2">No gallery yet</h3>
+                        <h3 className="text-xl font-raleway text-d-text mb-2">No gallery yet</h3>
                         <p className="text-base font-raleway text-d-white max-w-md">
                           Your generation gallery will appear here once you start creating images.
                         </p>
@@ -4456,7 +4456,7 @@ const handleGenerate = async () => {
                     {gallery.length > 0 && filteredGallery.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Settings className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-cabin text-d-text mb-2">No results found</h3>
+                        <h3 className="text-xl font-raleway text-d-text mb-2">No results found</h3>
                         <p className="text-base font-raleway text-d-white max-w-md">
                           Try adjusting your filters to see more results.
                         </p>
@@ -4488,7 +4488,7 @@ const handleGenerate = async () => {
                       {publicGallery.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                           <Globe className="default-orange-icon mb-4" />
-                          <h3 className="text-xl font-cabin text-d-text mb-2">No public creations yet</h3>
+                          <h3 className="text-xl font-raleway text-d-text mb-2">No public creations yet</h3>
                           <p className="text-base font-raleway text-d-white max-w-md">
                             Publish your creations to see them here.
                           </p>
@@ -4506,7 +4506,7 @@ const handleGenerate = async () => {
                       /* Empty state for uploads */
                       <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
                         <Upload className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-cabin text-d-text mb-2">No uploads yet</h3>
+                        <h3 className="text-xl font-raleway text-d-text mb-2">No uploads yet</h3>
                         <p className="text-base font-raleway text-d-white max-w-md">
                           Here you will see all your uploaded reference images that were used to create a new image or video.
                         </p>
@@ -4583,7 +4583,7 @@ const handleGenerate = async () => {
                     <div className="text-center mb-6">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <Folder className="w-6 h-6 text-d-orange-1" />
-                        <h2 className="text-2xl font-cabin text-d-text">
+                        <h2 className="text-2xl font-raleway text-d-text">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             return folder ? folder.name : 'Unknown folder';
@@ -4610,7 +4610,7 @@ const handleGenerate = async () => {
                         return (
                           <div className="flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
                             <Folder className="default-orange-icon mb-4" />
-                            <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
+                            <h3 className="text-xl font-raleway text-d-text mb-2">Folder is empty</h3>
                             <p className="text-base font-raleway text-d-white max-w-md">
                               Add images to this folder to see them here.
                             </p>
@@ -4644,7 +4644,7 @@ const handleGenerate = async () => {
                                           <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                         </Suspense>
                                         {img.isPublic && (
-                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-orange-1" />
                                               <span className="leading-none">Public</span>
@@ -4754,7 +4754,7 @@ const handleGenerate = async () => {
                     {folders.length === 0 ? (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <Folder className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-cabin text-d-text mb-2">No folders yet</h3>
+                        <h3 className="text-xl font-raleway text-d-text mb-2">No folders yet</h3>
                         <p className="text-base font-raleway text-d-white max-w-md mb-4">
                           Create your first folder to organize your images.
                         </p>
@@ -4782,7 +4782,7 @@ const handleGenerate = async () => {
                               {/* Overlay with folder info */}
                               <div className="absolute inset-0 bg-black/60 group-hover:bg-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
                                 <Folder className="default-orange-icon mb-2" />
-                                <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
+                                <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                                 </p>
@@ -4794,7 +4794,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4811,7 +4811,7 @@ const handleGenerate = async () => {
                                   ))}
                                   {folder.imageIds.length > 4 && (
                                     <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
-                                      <span className="text-xs text-d-orange-1 font-bold font-cabin">+{folder.imageIds.length - 4}</span>
+                                      <span className="text-xs text-d-orange-1 font-bold font-raleway">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
                                 </div>
@@ -4828,7 +4828,7 @@ const handleGenerate = async () => {
                               {/* Overlay with folder info */}
                               <div className="absolute inset-0 bg-black/60 group-hover:bg-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
                                 <Folder className="default-orange-icon mb-2" />
-                                <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
+                                <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                                 </p>
@@ -4840,7 +4840,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4857,7 +4857,7 @@ const handleGenerate = async () => {
                                   ))}
                                   {folder.imageIds.length > 4 && (
                                     <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
-                                      <span className="text-xs text-d-orange-1 font-bold font-cabin">+{folder.imageIds.length - 4}</span>
+                                      <span className="text-xs text-d-orange-1 font-bold font-raleway">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
                                 </div>
@@ -4866,7 +4866,7 @@ const handleGenerate = async () => {
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
                               <Folder className="default-orange-icon mb-3" />
-                              <h3 className="text-xl font-cabin text-d-text mb-2 text-center">{folder.name}</h3>
+                              <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
                               <p className="text-sm text-d-white font-raleway text-center">
                                 No images yet
                               </p>
@@ -4877,7 +4877,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-cabin rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4932,7 +4932,7 @@ const handleGenerate = async () => {
                       </div>
                       
                       <div className="text-center">
-                        <h2 className="text-2xl font-cabin text-d-text mb-2">
+                        <h2 className="text-2xl font-raleway text-d-text mb-2">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             return folder?.name || 'Unknown folder';
@@ -5008,7 +5008,7 @@ const handleGenerate = async () => {
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -5101,7 +5101,7 @@ const handleGenerate = async () => {
                         return (
                           <div className="col-span-full flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
                             <Folder className="default-orange-icon mb-4" />
-                            <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
+                            <h3 className="text-xl font-raleway text-d-text mb-2">Folder is empty</h3>
                             <p className="text-base font-raleway text-d-white max-w-md">
                               This folder doesn't contain any images yet.
                             </p>
@@ -5119,7 +5119,7 @@ const handleGenerate = async () => {
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="text">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Edit className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-cabin text-d-text mb-2">Text Generation Coming Soon</h3>
+                      <h3 className="text-xl font-raleway text-d-text mb-2">Text Generation Coming Soon</h3>
                       <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you powerful text generation capabilities. Stay tuned!
                       </p>
@@ -5223,7 +5223,7 @@ const handleGenerate = async () => {
                                         <ModelBadge model={seedanceVideo.model} size="md" />
                                       </Suspense>
                                       <div className="flex items-center gap-2">
-                                        <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                        <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                                           <div className="flex items-center gap-1">
                                             <span className="leading-none">{seedanceVideo.duration}s</span>
                                           </div>
@@ -5261,7 +5261,7 @@ const handleGenerate = async () => {
                                       </Suspense>
                                       <div className="flex items-center gap-2">
                                         {video.isPublic && (
-                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-orange-1" />
                                               <span className="leading-none">Public</span>
@@ -5271,7 +5271,7 @@ const handleGenerate = async () => {
                                         {video.operationName && (
                                           <button
                                             onClick={() => handleDownloadVideo(video.operationName!)}
-                                            className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors duration-200`}
+                                            className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors duration-200`}
                                             title="Download video"
                                           >
                                             <Download className="w-3 h-3" />
@@ -5304,7 +5304,7 @@ const handleGenerate = async () => {
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="avatars">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Users className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-cabin text-d-text mb-2">Avatar Generation Coming Soon</h3>
+                      <h3 className="text-xl font-raleway text-d-text mb-2">Avatar Generation Coming Soon</h3>
                       <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you custom avatar generation. Stay tuned!
                       </p>
@@ -5316,7 +5316,7 @@ const handleGenerate = async () => {
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="audio">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Volume2 className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-cabin text-d-text mb-2">Audio Generation Coming Soon</h3>
+                      <h3 className="text-xl font-raleway text-d-text mb-2">Audio Generation Coming Soon</h3>
                       <p className="text-base font-raleway text-d-white max-w-md">
                         We're working on bringing you audio generation capabilities. Stay tuned!
                       </p>
@@ -5411,7 +5411,7 @@ const handleGenerate = async () => {
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
+                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -5437,7 +5437,7 @@ const handleGenerate = async () => {
                                     <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                   </Suspense>
                                   {img.isPublic && (
-                                    <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                                    <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                                       <div className="flex items-center gap-1">
                                         <Globe className="w-3 h-3 text-d-orange-1" />
                                         <span className="leading-none">Public</span>
@@ -5890,7 +5890,7 @@ const handleGenerate = async () => {
                         return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="text-sm font-cabin hidden sm:block text-d-white group-hover:text-brand transition-colors duration-100">{getCurrentModel().name}</span>
+                    <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-100">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -5925,7 +5925,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "veo-3" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Veo 3
@@ -5965,7 +5965,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "runway-video-gen4" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Runway Gen-4
@@ -6003,7 +6003,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "hailuo-02" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Hailuo 02
@@ -6041,7 +6041,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "wan-video-2.2" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Wan 2.2 Video
@@ -6079,7 +6079,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "kling-video" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Kling
@@ -6119,7 +6119,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "seedance-1.0-pro" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Seedance 1.0 Pro
@@ -6158,7 +6158,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               selectedModel === "luma-ray-2" ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
                             }`}>
                               Luma Ray 2
@@ -6217,7 +6217,7 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-cabin truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-orange-1' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-brand'
                             }`}>
                               {model.name}
@@ -6422,7 +6422,7 @@ const handleGenerate = async () => {
                             />
                           </Suspense>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
-                            <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-cabin`}>
+                            <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                               <div className="flex items-center gap-1">
                                 <Globe className="w-3 h-3 text-d-orange-1" />
                                 <span className="leading-none">Public</span>
