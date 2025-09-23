@@ -57,8 +57,8 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
   if (isUnlocked) return <>{children}</>;
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center py-8">
-      <div className={`${glass.promptDark} rounded-[20px] py-8 px-6 max-w-sm min-w-[28rem] w-full`}>
+    <div className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center py-12">
+      <div className={`${glass.promptDark} rounded-[20px] py-12 px-6 max-w-sm min-w-[28rem] w-full`}>
         <div className="text-center space-y-6">
           <div className="space-y-6">
             <h1 className="text-lg font-raleway text-d-text">Enter Password</h1>

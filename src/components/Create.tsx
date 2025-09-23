@@ -3734,8 +3734,8 @@ const handleGenerate = async () => {
 
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
@@ -3779,8 +3779,8 @@ const handleGenerate = async () => {
 
       {/* New folder dialog */}
       {newFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -3855,8 +3855,8 @@ const handleGenerate = async () => {
 
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
@@ -3890,8 +3890,8 @@ const handleGenerate = async () => {
 
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
@@ -3925,8 +3925,8 @@ const handleGenerate = async () => {
 
       {/* Add to folder dialog */}
       {addToFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -4065,8 +4065,8 @@ const handleGenerate = async () => {
 
       {/* Folder thumbnail selection dialog */}
       {folderThumbnailDialog.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-8">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-8 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
                 <Folder className="default-orange-icon mx-auto" />
