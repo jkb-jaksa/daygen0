@@ -77,11 +77,7 @@ export const setPersistedValue = async <T>(prefix: string, key: StorageKey, valu
   }
 
   if (hasLocalStorage()) {
-    try {
-      window.localStorage.setItem(storageKey, serialiseForLocalStorage(value));
-    } catch (error) {
-      throw error;
-    }
+    window.localStorage.setItem(storageKey, serialiseForLocalStorage(value));
   }
 };
 

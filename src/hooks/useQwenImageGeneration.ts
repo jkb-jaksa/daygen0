@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface QwenGeneratedImage {
   url: string;
@@ -46,6 +47,7 @@ export const useQwenImageGeneration = () => {
     generatedImages: [],
     progress: undefined,
   });
+  const { token } = useAuth();
 
   const generateImage = useCallback(async (options: QwenGenerateOptions) => {
     setState(prev => ({
@@ -56,13 +58,17 @@ export const useQwenImageGeneration = () => {
     }));
 
     try {
-      const apiUrl = getApiUrl('/api/unified-generate');
+      const apiUrl = getApiUrl('/unified-generate');
       
       debugLog('[qwen] POST', apiUrl);
-      
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ ...options, model: 'qwen-image' }),
       });
 
@@ -108,73 +114,20 @@ export const useQwenImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
-  const editImage = useCallback(async (options: QwenEditOptions) => {
+  const editImage = useCallback<
+    (_options: QwenEditOptions) => Promise<QwenGeneratedImage[]>
+  >(async (_options) => {
+    void _options;
+    const message = 'Qwen image editing is no longer supported in this client.';
     setState(prev => ({
       ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Editing image with Qwen...',
+      isLoading: false,
+      error: message,
+      progress: undefined,
     }));
-
-    try {
-      const apiUrl = getApiUrl('/api/qwen/image-edit');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      formData.append('prompt', options.prompt);
-      if (options.negative_prompt) formData.append('negative_prompt', options.negative_prompt);
-      if (options.seed !== undefined) formData.append('seed', String(options.seed));
-      formData.append('watermark', String(options.watermark || false));
-      
-      debugLog('[qwen] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { dataUrl } = await res.json();
-
-      const generatedImage: QwenGeneratedImage = {
-        url: dataUrl,
-        prompt: options.prompt,
-        timestamp: new Date().toISOString(),
-        model: 'qwen-image-edit',
-        seed: options.seed,
-        negativePrompt: options.negative_prompt,
-        watermark: options.watermark,
-      };
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, generatedImage],
-        progress: 'Edit complete!',
-        error: null,
-      }));
-
-      return [generatedImage];
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
+    throw new Error(message);
   }, []);
 
   const clearError = useCallback(() => {

@@ -14,6 +14,7 @@ import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 import { debugError } from "../utils/debug";
+import type { FluxModel } from "../lib/bfl";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -33,6 +34,12 @@ const AI_MODELS = [
 
 const MAX_REFERENCE_IMAGES = 3;
 const ADDITIONAL_REFERENCE_LIMIT = MAX_REFERENCE_IMAGES - 1;
+
+type ImageEditLocationState = {
+  imageToEdit?: {
+    url: string;
+  };
+};
 
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -361,7 +368,7 @@ export default function Edit() {
       } else if (isFlux) {
         await generateFluxImage({
           prompt,
-          model: selectedModel as any,
+          model: selectedModel as FluxModel,
           input_image: imageData,
           input_image_2: additionalReferences[0],
           input_image_3: additionalReferences[1],
@@ -952,9 +959,9 @@ export default function Edit() {
 
   // Handle navigation state to automatically load image from Create section
   useEffect(() => {
-    const state = location.state as { imageToEdit?: any } | null;
-    if (state?.imageToEdit) {
-      const imageData = state.imageToEdit;
+    const state = location.state as ImageEditLocationState | null;
+    const imageData = state?.imageToEdit;
+    if (imageData) {
       // Create a mock File object from the image URL
       fetch(imageData.url)
         .then(response => response.blob())

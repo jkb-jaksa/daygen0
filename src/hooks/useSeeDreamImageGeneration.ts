@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface SeedreamGeneratedImage {
   url: string;
@@ -37,6 +38,7 @@ export const useSeeDreamImageGeneration = () => {
     error: null,
     generatedImage: null,
   });
+  const { token } = useAuth();
 
   const generateImage = useCallback(async (options: SeedreamImageGenerationOptions) => {
     setState(prev => ({
@@ -50,9 +52,14 @@ export const useSeeDreamImageGeneration = () => {
 
       debugLog('[seedream] Generating image with prompt:', `${prompt.substring(0, 100)}...`);
       
-      const res = await fetch(getApiUrl('/api/unified-generate'), {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(getApiUrl('/unified-generate'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ prompt, size, n, model: 'seedream-3.0' }),
       });
 
@@ -96,7 +103,7 @@ export const useSeeDreamImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
   const editImage = useCallback(async (options: SeedreamImageEditOptions) => {
     setState(prev => ({
@@ -118,9 +125,14 @@ export const useSeeDreamImageGeneration = () => {
       if (mask) {
         formData.append('mask', mask);
       }
-      
-      const res = await fetch(getApiUrl('/api/unified-generate'), {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(getApiUrl('/unified-generate'), {
         method: 'POST',
+        headers,
         body: formData,
       });
 
@@ -164,7 +176,7 @@ export const useSeeDreamImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

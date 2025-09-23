@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugError, debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface ReveGeneratedImage {
   url: string;
@@ -56,6 +57,7 @@ export const useReveImageGeneration = () => {
     jobStatus: null,
     progress: undefined,
   });
+  const { token } = useAuth();
 
   const generateImage = useCallback(async (options: ReveImageGenerationOptions) => {
     setState(prev => ({
@@ -70,13 +72,18 @@ export const useReveImageGeneration = () => {
       const { prompt, model = "reve-image-1.0", references, ...params } = options;
 
       // Submit the job
-      const apiUrl = getApiUrl('/api/unified-generate');
+      const apiUrl = getApiUrl('/unified-generate');
 
       debugLog('[reve] POST', apiUrl);
-      
+
+      const authHeaders: Record<string, string> = {};
+      if (token) {
+        authHeaders.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt, 
           model: 'reve-image',
@@ -159,7 +166,8 @@ export const useReveImageGeneration = () => {
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
       debugLog('[reve] Starting polling for job:', submissionJobId);
-      
+      const pollUrl = getApiUrl(`/reve/jobs/${submissionJobId}`);
+
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
         attempts++;
@@ -167,7 +175,9 @@ export const useReveImageGeneration = () => {
         debugLog(`[reve] Polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
+          const pollRes = await fetch(pollUrl, {
+            headers: authHeaders,
+          });
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);
@@ -255,7 +265,7 @@ export const useReveImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
   const editImage = useCallback(async (options: ReveImageEditOptions) => {
     setState(prev => ({
@@ -284,12 +294,18 @@ export const useReveImageGeneration = () => {
       });
 
       // Submit the edit job
-      const apiUrl = '/api/reve/edit';
+      const apiUrl = getApiUrl('/reve/edit');
 
       debugLog('[reve] POST edit', apiUrl);
-      
+
+      const authHeaders: Record<string, string> = {};
+      if (token) {
+        authHeaders.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(apiUrl, {
         method: 'POST',
+        headers: authHeaders,
         body: formData,
       });
 
@@ -365,7 +381,8 @@ export const useReveImageGeneration = () => {
       const maxAttempts = 60; // 5 minutes max (5s intervals)
       
       debugLog('[reve] Starting polling for edit job:', submissionJobId);
-      
+      const pollUrl = getApiUrl(`/reve/jobs/${submissionJobId}`);
+
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
         attempts++;
@@ -373,7 +390,9 @@ export const useReveImageGeneration = () => {
         debugLog(`[reve] Edit polling attempt ${attempts}/${maxAttempts}`);
         
         try {
-          const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
+          const pollRes = await fetch(pollUrl, {
+            headers: authHeaders,
+          });
           
           if (!pollRes.ok) {
             throw new Error(`Polling failed: ${pollRes.status}`);
@@ -459,7 +478,7 @@ export const useReveImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

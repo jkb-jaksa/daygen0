@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface GeneratedImage {
   url: string;
@@ -33,6 +34,7 @@ export const useGeminiImageGeneration = () => {
     error: null,
     generatedImage: null,
   });
+  const { token } = useAuth();
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     setState(prev => ({
@@ -45,13 +47,19 @@ export const useGeminiImageGeneration = () => {
       const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
       // Use the new API endpoint structure
-      const apiUrl = getApiUrl('/api/unified-generate');
+      const apiUrl = getApiUrl('/unified-generate');
 
       debugLog('[image] POST', apiUrl);
-      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ 
           prompt, 
           imageBase64: imageData, 
@@ -109,7 +117,7 @@ export const useGeminiImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import AuthModal from "./AuthModal";
 import Pricing from "./Pricing";
 import { buttons, glass } from "../styles/designSystem";

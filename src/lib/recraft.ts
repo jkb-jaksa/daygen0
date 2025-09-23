@@ -1,8 +1,8 @@
 // Recraft API utility library for image generation and editing
 // Based on Recraft documentation: https://www.recraft.ai/docs/api-reference/usage
 
-const BASE = (import.meta as any).env?.VITE_RECRAFT_API_BASE || 'https://external.api.recraft.ai/v1';
-const KEY = (import.meta as any).env?.VITE_RECRAFT_API_KEY;
+const BASE = import.meta.env.VITE_RECRAFT_API_BASE || 'https://external.api.recraft.ai/v1';
+const KEY = import.meta.env.VITE_RECRAFT_API_KEY;
 
 export type RecraftStyle = 
   | 'realistic_image' 

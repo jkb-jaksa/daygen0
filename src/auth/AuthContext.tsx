@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../lib/apiClient";
+import { AuthContext, type AuthContextValue, type User } from "./context";
 
 const TOKEN_KEY = "daygen:authToken";
 
@@ -16,36 +17,12 @@ type ApiUser = {
   updatedAt: string;
 };
 
-type User = {
-  id: string;
-  authUserId: string;
-  email: string;
-  name: string | null;
-  credits: number;
-  profilePic: string | null;
-  createdAt: string;
-  updatedAt: string;
-  color: string;
-};
-
-type AuthContextValue = {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  storagePrefix: string;
-  signIn: (email: string, password: string) => Promise<User>;
-  signUp: (email: string, password: string, name?: string) => Promise<User>;
-  logOut: () => void;
-  refreshProfile: () => Promise<User | null>;
-  updateProfile: (patch: { name?: string; profilePic?: string | null }) => Promise<User | null>;
-};
-
 type AuthResponse = {
   accessToken: string;
   user: ApiUser;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 function colourFromEmail(email: string) {
   const normalized = email.trim().toLowerCase();
@@ -183,10 +160,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }), [user, token, loading, storagePrefix, signIn, signUp, logOut, refreshProfile, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
-  return ctx;
 }

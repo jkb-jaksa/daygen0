@@ -1,10 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { useIdeogramImageGeneration } from '../hooks/useIdeogramImageGeneration';
+import type { IdeogramGeneratedImage } from '../hooks/useIdeogramImageGeneration';
 import { debugError } from '../utils/debug';
 
 interface IdeogramToolsProps {
-  onImageGenerated?: (images: any[]) => void;
+  onImageGenerated?: (images: IdeogramGeneratedImage[]) => void;
 }
+
+type TabId = 'generate' | 'edit' | 'reframe' | 'replace' | 'upscale' | 'describe';
+type RenderSpeed = 'TURBO' | 'DEFAULT' | 'QUALITY';
+type StyleType = 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION';
 
 export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }) => {
   const {
@@ -22,14 +27,14 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
     clearGeneratedImages
   } = useIdeogramImageGeneration();
 
-  const [activeTab, setActiveTab] = useState<'generate' | 'edit' | 'reframe' | 'replace' | 'upscale' | 'describe'>('generate');
+  const [activeTab, setActiveTab] = useState<TabId>('generate');
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [resolution, setResolution] = useState('1024x1024');
-  const [renderingSpeed, setRenderingSpeed] = useState<'TURBO' | 'DEFAULT' | 'QUALITY'>('DEFAULT');
+  const [renderingSpeed, setRenderingSpeed] = useState<RenderSpeed>('DEFAULT');
   const [numImages, setNumImages] = useState(1);
   const [stylePreset, setStylePreset] = useState('');
-  const [styleType, setStyleType] = useState<'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION'>('AUTO');
+  const [styleType, setStyleType] = useState<StyleType>('AUTO');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [targetResolution, setTargetResolution] = useState('1536x512');
   const [resemblance, setResemblance] = useState(60);
@@ -167,13 +172,13 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
         image: selectedImage,
         model_version: 'V_3',
       });
-      setDescriptions(result.map((d: any) => d.text));
+      setDescriptions(result);
     } catch (err) {
       debugError('Describe failed:', err);
     }
   };
 
-  const tabs = [
+  const tabs: Array<{ id: TabId; label: string; icon: string }> = [
     { id: 'generate', label: 'Generate', icon: '🎨' },
     { id: 'edit', label: 'Edit', icon: '✏️' },
     { id: 'reframe', label: 'Reframe', icon: '🖼️' },
@@ -194,7 +199,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-orange-500 text-black'
@@ -284,7 +289,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               </label>
               <select
                 value={renderingSpeed}
-                onChange={(e) => setRenderingSpeed(e.target.value as any)}
+                onChange={(e) => setRenderingSpeed(e.target.value as RenderSpeed)}
                 className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white"
               >
                 <option value="TURBO">Turbo (Fastest)</option>
@@ -316,7 +321,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               </label>
               <select
                 value={styleType}
-                onChange={(e) => setStyleType(e.target.value as any)}
+                onChange={(e) => setStyleType(e.target.value as StyleType)}
                 className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white"
               >
                 <option value="AUTO">Auto</option>

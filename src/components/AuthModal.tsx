@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import { buttons, glass } from "../styles/designSystem";
 
 interface AuthModalProps {

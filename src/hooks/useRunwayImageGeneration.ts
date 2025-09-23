@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface GeneratedImage {
   url: string;
@@ -32,6 +33,7 @@ export const useRunwayImageGeneration = () => {
     error: null,
     generatedImage: null,
   });
+  const { token } = useAuth();
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     setState(prev => ({
@@ -44,13 +46,17 @@ export const useRunwayImageGeneration = () => {
       const { prompt, uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
 
       // Use the Runway API endpoint
-      const apiUrl = getApiUrl('/api/unified-generate');
+      const apiUrl = getApiUrl('/unified-generate');
 
       debugLog('[runway] POST', apiUrl);
-      
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ 
           prompt, 
           model: uiModel,
@@ -113,7 +119,7 @@ export const useRunwayImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

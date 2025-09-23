@@ -3,8 +3,8 @@
 
 import { API_BASE_URL } from '../utils/api';
 
-const BASE = (import.meta as any).env?.VITE_BFL_API_BASE || 'https://api.bfl.ai';
-const KEY = (import.meta as any).env?.VITE_BFL_API_KEY;
+const BASE = import.meta.env.VITE_BFL_API_BASE || 'https://api.bfl.ai';
+const KEY = import.meta.env.VITE_BFL_API_KEY;
 
 export type CreateJobResponse = { 
   id: string; 
@@ -269,7 +269,7 @@ export async function createFluxJob(
   const webhookPayload = useWebhook && webhookOrigin
     ? {
         webhook_url: `${webhookOrigin}/api/flux/webhook`,
-        webhook_secret: (import.meta as any).env?.VITE_BFL_WEBHOOK_SECRET,
+        webhook_secret: import.meta.env.VITE_BFL_WEBHOOK_SECRET,
       }
     : {};
 

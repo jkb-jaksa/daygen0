@@ -20,18 +20,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const {
-      prompt,
-      imageBase64,
-      mimeType,
-      model,
-      references,
-      temperature,
-      outputLength,
-      topP,
-    } = req.body ?? {};
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const prompt = typeof body.prompt === 'string' ? body.prompt : '';
+    const imageBase64 = typeof body.imageBase64 === 'string' ? body.imageBase64 : undefined;
+    const mimeType = typeof body.mimeType === 'string' ? body.mimeType : undefined;
+    const references = Array.isArray(body.references)
+      ? body.references.filter((ref): ref is string => typeof ref === 'string')
+      : undefined;
 
-    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    const promptText = prompt.trim();
     if (!promptText) {
       return res.status(400).json({ error: 'Prompt is required' });
     }

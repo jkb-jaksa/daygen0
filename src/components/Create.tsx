@@ -17,7 +17,7 @@ import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayI
 import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import ModelBadge from './ModelBadge';
 import { usePromptHistory } from '../hooks/usePromptHistory';
 import { PromptHistoryChips } from './PromptHistoryChips';
@@ -30,6 +30,7 @@ import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from ".
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
+import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -675,7 +676,7 @@ const Create: React.FC = () => {
   const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [moreActionMenu, setMoreActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
-  const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
+  const [, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [bulkActionsMenu, setBulkActionsMenu] = useState<{ anchor: HTMLElement | null } | null>(null);
   const [galleryFilters, setGalleryFilters] = useState<{
     liked: boolean;
@@ -1941,6 +1942,8 @@ const Create: React.FC = () => {
   };
 
   const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
+    void _menuId;
+    void _image;
     return <div></div>;
   };
 
@@ -2626,11 +2629,16 @@ const Create: React.FC = () => {
         img = reveResult;
       } else if (isRecraftModel) {
         // Use Recraft generation via unified API
-        const response = await fetch('/api/unified-generate', {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(getApiUrl('/unified-generate'), {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify({
             model: modelForGeneration,
             prompt: trimmedPrompt,
@@ -2700,7 +2708,12 @@ const Create: React.FC = () => {
       if (img?.url) {
         const compressedUrl = await compressDataUrl(img.url);
         const timestamp = new Date().toISOString();
-        const derivedModel = typeof (img as any)?.model === 'string' ? (img as any).model : modelForGeneration ?? 'unknown';
+        const imgRecord = typeof img === 'object' && img !== null
+          ? (img as Record<string, unknown>)
+          : null;
+        const derivedModel = typeof imgRecord?.model === 'string'
+          ? (imgRecord.model as string)
+          : modelForGeneration ?? 'unknown';
 
         const galleryItem: GalleryImageLike = {
           url: compressedUrl,
@@ -2708,7 +2721,7 @@ const Create: React.FC = () => {
           model: derivedModel,
           timestamp,
           ownerId: user?.id,
-          jobId: 'jobId' in (img as any) ? (img as any).jobId : undefined,
+          jobId: typeof imgRecord?.jobId === 'string' ? (imgRecord.jobId as string) : undefined,
           isPublic: false,
         };
 

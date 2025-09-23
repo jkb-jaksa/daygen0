@@ -1,3 +1,4 @@
-export default function GoogleLogin(_: { onSuccess?: () => void }) {
+export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
+  void onSuccess;
   return null;
 }

@@ -38,7 +38,9 @@ export default async function handler(req: Request): Promise<Response> {
       if (response.ok) {
         return response;
       }
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to fetch asset in dev mode', error);
+    }
     return new Response('Not found', { status: 404 });
   }
 
@@ -46,13 +48,14 @@ export default async function handler(req: Request): Promise<Response> {
   const bypass = req.headers.get('x-auth-checked') === '1';
   if (bypass) {
     // Serve the actual static files after authentication
-    const url = new URL(req.url);
     try {
       const response = await fetch(req.url);
       if (response.ok) {
         return response;
       }
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to fetch asset after auth', error);
+    }
     return new Response('Not found', { status: 404 });
   }
 
@@ -72,13 +75,14 @@ export default async function handler(req: Request): Promise<Response> {
   if (!expectedUser && !expectedPass) {
     const headers = new Headers(req.headers);
     headers.set('x-auth-checked', '1');
-    const fwd = new Request(req.url, {
+    const hasBody = !['GET', 'HEAD'].includes(req.method.toUpperCase());
+    const forwardRequest = new Request(req.url, {
       method: req.method,
       headers,
-      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : (req as any).body,
+      body: hasBody ? req.body ?? undefined : undefined,
       redirect: 'manual',
     });
-    return fetch(fwd);
+    return fetch(forwardRequest);
   }
 
   const creds = parseBasicAuth(req.headers.get('authorization'));
@@ -96,7 +100,9 @@ export default async function handler(req: Request): Promise<Response> {
     if (response.ok) {
       return response;
     }
-  } catch {}
+  } catch (error) {
+    console.warn('Failed to fetch requested asset', error);
+  }
   
   // If direct fetch fails, try serving index.html for SPA routes
   if (url.pathname === '/' || url.pathname === '/index.html') {
@@ -107,7 +113,9 @@ export default async function handler(req: Request): Promise<Response> {
         statusText: indexResponse.statusText,
         headers: indexResponse.headers
       });
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to fetch index.html fallback', error);
+    }
   }
   
   return new Response('Not found', { status: 404 });

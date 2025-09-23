@@ -20,9 +20,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { model, prompt, imageBase64, mimeType, references, ...otherParams } = req.body ?? {};
+    type RawBody = Record<string, unknown> & {
+      model?: unknown;
+      prompt?: unknown;
+      imageBase64?: unknown;
+      mimeType?: unknown;
+      references?: unknown;
+    };
 
-    const promptText = typeof prompt === 'string' ? prompt.trim() : '';
+    const rawBody = (req.body ?? {}) as RawBody;
+    const model = typeof rawBody.model === 'string' ? rawBody.model : undefined;
+    const imageBase64 = typeof rawBody.imageBase64 === 'string' ? rawBody.imageBase64 : undefined;
+    const mimeType = typeof rawBody.mimeType === 'string' ? rawBody.mimeType : undefined;
+    const references = Array.isArray(rawBody.references)
+      ? rawBody.references.filter((ref): ref is string => typeof ref === 'string')
+      : undefined;
+    const promptText = typeof rawBody.prompt === 'string' ? rawBody.prompt.trim() : '';
+    const reservedKeys = new Set(['model', 'prompt', 'imageBase64', 'mimeType', 'references']);
+    const otherParams = Object.fromEntries(
+      Object.entries(rawBody).filter(([key]) => !reservedKeys.has(key)),
+    );
+
     if (!promptText) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
@@ -36,31 +54,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Route to appropriate handler based on model
     switch (model) {
       case 'gemini-2.5-flash-image-preview':
-        return await handleGemini(req, res, { prompt: promptText, imageBase64, mimeType, references });
-      
+        return await handleGemini(res, { prompt: promptText, imageBase64, mimeType, references });
+
       case 'ideogram':
-        return await handleIdeogram(req, res, { prompt: promptText, ...otherParams });
-      
+        return await handleIdeogram(res, { prompt: promptText, params: otherParams });
+
       case 'qwen-image':
-        return await handleQwen(req, res, { prompt: promptText, imageBase64, mimeType, references });
-      
+        return await handleQwen(res, { prompt: promptText, imageBase64, mimeType, references });
+
       case 'runway-gen4':
       case 'runway-gen4-turbo':
-        return await handleRunway(req, res, { prompt: promptText, model, imageBase64, mimeType, references });
-      
+        return await handleRunway(res, { prompt: promptText, model });
+
       case 'seedream-3.0':
-        return await handleSeedream(req, res, { prompt: promptText, imageBase64, mimeType, references });
-      
+        return await handleSeedream(res, { prompt: promptText });
+
       case 'chatgpt-image':
-        return await handleChatGPT(req, res, { prompt: promptText, imageBase64, mimeType, references });
-      
+        return await handleChatGPT(res, { prompt: promptText });
+
       case 'reve-image':
-        return await handleReve(req, res, { prompt: promptText, imageBase64, mimeType, references });
-      
+        return await handleReve(res, { prompt: promptText });
+
       case 'recraft-v3':
       case 'recraft-v2':
-        return await handleRecraft(req, res, { prompt: promptText, model, ...otherParams });
-      
+        return await handleRecraft(res, { prompt: promptText, model, params: otherParams });
+
       default:
         return res.status(400).json({ error: `Unsupported model: ${model}` });
     }
@@ -73,8 +91,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+type GeminiPayload = {
+  prompt: string;
+  imageBase64?: string;
+  mimeType?: string;
+  references?: string[];
+};
+
+type IdeogramPayload = {
+  prompt: string;
+  params: Record<string, unknown>;
+};
+
+type QwenPayload = {
+  prompt: string;
+  imageBase64?: string;
+  mimeType?: string;
+};
+
+type RunwayPayload = {
+  prompt: string;
+  model: string;
+};
+
+type SeedreamPayload = {
+  prompt: string;
+};
+
+type ChatGPTPayload = {
+  prompt: string;
+};
+
+type RevePayload = {
+  prompt: string;
+};
+
+type RecraftParams = {
+  style?: string;
+  substyle?: string;
+  size?: string;
+  n?: number;
+  negative_prompt?: string;
+  controls?: unknown;
+  text_layout?: unknown;
+  response_format?: string;
+  [key: string]: unknown;
+};
+
+type RecraftPayload = {
+  prompt: string;
+  model: string;
+  params: RecraftParams;
+};
+
 // Gemini 2.5 Flash Image handler
-async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleGemini(res: VercelResponse, { prompt, imageBase64, mimeType, references }: GeminiPayload) {
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({ error: 'Gemini API key not configured' });
   }
@@ -82,7 +153,11 @@ async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, i
   const targetModel = 'gemini-2.5-flash-image-preview';
   const apiKey = process.env.GEMINI_API_KEY;
 
-  const parts = [{ text: prompt }];
+  type GeminiPart =
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } };
+
+  const parts: GeminiPart[] = [{ text: prompt }];
 
   if (imageBase64) {
     const primaryInline = normalizeInlineImage(imageBase64, mimeType || 'image/png');
@@ -125,8 +200,23 @@ async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, i
   }
 
   const result = await response.json();
-  const candidateParts = result?.candidates?.[0]?.content?.parts ?? [];
-  const imgPart = candidateParts.find((p: any) => p.inlineData?.data);
+
+  type GeminiResponsePart = {
+    inlineData?: {
+      data?: string;
+      mimeType?: string;
+    };
+    [key: string]: unknown;
+  };
+
+  const candidateParts = Array.isArray(result?.candidates?.[0]?.content?.parts)
+    ? (result.candidates[0].content.parts as GeminiResponsePart[])
+    : [];
+
+  const imgPart = candidateParts.find(
+    (part): part is GeminiResponsePart & { inlineData: { data: string; mimeType?: string } } =>
+      typeof part.inlineData?.data === 'string',
+  );
 
   if (!imgPart?.inlineData?.data) {
     return res.status(400).json({ error: 'No image returned from Gemini 2.5 Flash Image' });
@@ -141,7 +231,7 @@ async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, i
 }
 
 // Ideogram handler
-async function handleIdeogram(req: VercelRequest, res: VercelResponse, { prompt, ...params }: any) {
+async function handleIdeogram(res: VercelResponse, { prompt, params }: IdeogramPayload) {
   if (!process.env.IDEOGRAM_API_KEY) {
     return res.status(500).json({ error: 'Ideogram API key not configured' });
   }
@@ -155,7 +245,7 @@ async function handleIdeogram(req: VercelRequest, res: VercelResponse, { prompt,
     body: JSON.stringify({
       prompt,
       model: 'ideogram-v3',
-      ...params
+      ...params,
     })
   });
 
@@ -169,12 +259,19 @@ async function handleIdeogram(req: VercelRequest, res: VercelResponse, { prompt,
 }
 
 // Qwen handler
-async function handleQwen(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleQwen(res: VercelResponse, { prompt, imageBase64, mimeType }: QwenPayload) {
   if (!process.env.DASHSCOPE_API_KEY) {
     return res.status(500).json({ error: 'Qwen API key not configured' });
   }
 
-  const messages = [{ role: 'user', content: [{ type: 'text', text: prompt }] }];
+  type QwenContent =
+    | { type: 'text'; text: string }
+    | { type: 'image_url'; image_url: { url: string } };
+
+  const messages: Array<{ role: 'user'; content: QwenContent[] }> = [{
+    role: 'user',
+    content: [{ type: 'text', text: prompt }],
+  }];
 
   if (imageBase64) {
     const primaryInline = normalizeInlineImage(imageBase64, mimeType || 'image/png');
@@ -209,7 +306,7 @@ async function handleQwen(req: VercelRequest, res: VercelResponse, { prompt, ima
 }
 
 // Runway handler
-async function handleRunway(req: VercelRequest, res: VercelResponse, { prompt, model, imageBase64, mimeType, references }: any) {
+async function handleRunway(res: VercelResponse, { prompt, model }: RunwayPayload) {
   if (!process.env.RUNWAY_API_KEY) {
     return res.status(500).json({ error: 'Runway API key not configured' });
   }
@@ -237,7 +334,7 @@ async function handleRunway(req: VercelRequest, res: VercelResponse, { prompt, m
 }
 
 // Seedream handler
-async function handleSeedream(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleSeedream(res: VercelResponse, { prompt }: SeedreamPayload) {
   if (!process.env.ARK_API_KEY) {
     return res.status(500).json({ error: 'Seedream API key not configured' });
   }
@@ -267,7 +364,7 @@ async function handleSeedream(req: VercelRequest, res: VercelResponse, { prompt,
 }
 
 // ChatGPT handler
-async function handleChatGPT(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleChatGPT(res: VercelResponse, { prompt }: ChatGPTPayload) {
   if (!process.env.OPENAI_API_KEY) {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
@@ -296,7 +393,7 @@ async function handleChatGPT(req: VercelRequest, res: VercelResponse, { prompt, 
 }
 
 // Reve handler
-async function handleReve(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleReve(res: VercelResponse, { prompt }: RevePayload) {
   if (!process.env.REVE_API_KEY) {
     return res.status(500).json({ error: 'Reve API key not configured' });
   }
@@ -325,7 +422,7 @@ async function handleReve(req: VercelRequest, res: VercelResponse, { prompt, ima
 }
 
 // Recraft handler
-async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+async function handleRecraft(res: VercelResponse, { prompt, model, params }: RecraftPayload) {
   console.log('Recraft handler called with model:', model);
   
   if (!process.env.RECRAFT_API_KEY) {
@@ -342,14 +439,14 @@ async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, 
       body: JSON.stringify({
         prompt,
         model: model === 'recraft-v2' ? 'recraftv2' : 'recraftv3',
-        style: params.style || 'realistic_image',
+        style: params.style ?? 'realistic_image',
         substyle: params.substyle,
-        size: params.size || '1024x1024',
-        n: params.n || 1,
+        size: params.size ?? '1024x1024',
+        n: params.n ?? 1,
         negative_prompt: params.negative_prompt,
         controls: params.controls,
         text_layout: params.text_layout,
-        response_format: params.response_format || 'url',
+        response_format: params.response_format ?? 'url',
       })
     });
 

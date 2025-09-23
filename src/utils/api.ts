@@ -1,5 +1,5 @@
-const rawBase = (import.meta as any)?.env?.VITE_API_BASE_URL
-  ?? (import.meta as any)?.env?.VITE_BASE_URL
+const rawBase = import.meta.env.VITE_API_BASE_URL
+  ?? import.meta.env.VITE_BASE_URL
   ?? '';
 
 const cleanedBase = typeof rawBase === 'string' ? rawBase.trim() : '';

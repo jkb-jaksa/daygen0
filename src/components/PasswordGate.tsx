@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { buttons, glass } from "../styles/designSystem";
 
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
-export default function PasswordGate({ children }: { children: React.ReactNode }) {
-  const isProd = (import.meta as any).env?.PROD as boolean;
-  const configuredPassword = (import.meta as any).env?.VITE_SITE_PASSWORD as string | undefined;
+export default function PasswordGate({ children }: { children: ReactNode }) {
+  const isProd = import.meta.env.PROD;
+  const configuredPassword = import.meta.env.VITE_SITE_PASSWORD;
 
   // Read from sessionStorage to persist for the tab session.
   const [entered, setEntered] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     return entered === configuredPassword;
   }, [entered, configuredPassword, isProd]);
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!configuredPassword) {
       // Should not happen if not configured, but just in case
