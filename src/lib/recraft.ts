@@ -278,11 +278,13 @@ export function validateRecraftParams(params: Partial<RecraftGenerateParams>): v
 /**
  * Convert File to FormData for multipart requests
  */
-export function createFormData(fields: Record<string, any>): FormData {
+type FormFieldValue = string | number | boolean | File | Blob | null | undefined;
+
+export function createFormData(fields: Record<string, FormFieldValue>): FormData {
   const formData = new FormData();
   
   for (const [key, value] of Object.entries(fields)) {
-    if (value instanceof File) {
+    if (value instanceof Blob) {
       formData.append(key, value);
     } else if (value !== undefined && value !== null) {
       formData.append(key, String(value));

@@ -1069,6 +1069,9 @@ const Create: React.FC = () => {
         while (!cancelled) {
           const { items, nextCursor } = await fetchGallery(token, cursor, 50);
           for (const entry of items) {
+            if (entry.status && entry.status !== 'ACTIVE') {
+              continue;
+            }
             const metadata = entry.metadata ?? {};
             aggregated.push({
               url: entry.assetUrl,
@@ -2708,20 +2711,22 @@ const Create: React.FC = () => {
       if (img?.url) {
         const compressedUrl = await compressDataUrl(img.url);
         const timestamp = new Date().toISOString();
-        const imgRecord = typeof img === 'object' && img !== null
-          ? (img as Record<string, unknown>)
-          : null;
-        const derivedModel = typeof imgRecord?.model === 'string'
-          ? (imgRecord.model as string)
-          : modelForGeneration ?? 'unknown';
+        const pickStringProp = (value: unknown, prop: string): string | undefined => {
+          if (typeof value !== 'object' || value === null) return undefined;
+          const maybe = (value as Record<string, unknown>)[prop];
+          return typeof maybe === 'string' ? maybe : undefined;
+        };
+        const fallbackModel = modelForGeneration ?? 'unknown';
+        const resolvedModel = pickStringProp(img, 'model') ?? fallbackModel;
+        const resolvedJobId = pickStringProp(img, 'jobId');
 
         const galleryItem: GalleryImageLike = {
           url: compressedUrl,
           prompt: trimmedPrompt,
-          model: derivedModel,
+          model: resolvedModel,
           timestamp,
           ownerId: user?.id,
-          jobId: typeof imgRecord?.jobId === 'string' ? (imgRecord.jobId as string) : undefined,
+          jobId: resolvedJobId,
           isPublic: false,
         };
 
@@ -2763,7 +2768,7 @@ const Create: React.FC = () => {
         if (token) {
           const metadataPayload = {
             prompt: trimmedPrompt,
-            model: derivedModel,
+            model: resolvedModel,
             isPublic: false,
             createdAt: timestamp,
           } as Record<string, unknown>;
@@ -4174,226 +4179,7 @@ const Create: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Folder Contents View - Moved to separate section */}
-                {false && selectedFolder && (
-                  <div className="w-full">
-                    {/* Folder header with back button and info */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <button
-                          onClick={() => setSelectedFolder(null)}
-                          className="flex items-center gap-2 text-d-white hover:text-d-orange-1 transition-colors duration-200 font-raleway text-base group"
-                        >
-                          <ArrowLeft className="w-4 h-4 group-hover:text-d-orange-1 transition-colors duration-200" />
-                          Back to folders
-                        </button>
-                        
-                        <div className="flex items-center gap-2">
-                          <Folder className="w-5 h-5 text-d-orange-1" />
-                          <span className="text-d-white font-raleway text-sm">
-                            {(() => {
-                              const folder = folders.find(f => f.id === selectedFolder);
-                              return folder?.name || 'Unknown folder';
-                            })()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="text-center">
-                        <h2 className="text-2xl font-cabin text-d-text mb-2">
-                          {(() => {
-                            const folder = folders.find(f => f.id === selectedFolder);
-                            return folder?.name || 'Unknown folder';
-                          })()}
-                        </h2>
-                        <p className="text-d-white/60 font-raleway text-sm">
-                          {(() => {
-                            const folder = folders.find(f => f.id === selectedFolder);
-                            if (!folder) return '0 images';
-                            const folderImages = gallery.filter(img => folder?.imageIds.includes(img.url));
-                            return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-4 gap-3 w-full" style={{ contain: 'paint', isolation: 'isolate' }}>
-                    {(() => {
-                      const folder = folders.find(f => f.id === selectedFolder);
-                      if (!folder) return null;
-                      
-                      const folderImages = gallery.filter(img => folder?.imageIds.includes(img.url));
-                      
-                      return folderImages.map((img, idx) => (
-                        <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
-                          imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'parallax-active' : ''
-                        }`} style={{ willChange: 'opacity' }}>
-                          <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
-                          
-                          {/* Hover prompt overlay */}
-                          {img.prompt && (
-                            <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
-                                imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                              }`}
-                            >
-                              {/* Content layer */}
-                              <div className="relative z-10 w-full p-4">
-                                <div className="mb-2">
-                                  <div className="relative">
-                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
-                                      {img.prompt}
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyPromptToClipboard(img.prompt);
-                                        }}
-                                        className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-orange-1 relative z-20 align-middle pointer-events-auto"
-                                        onMouseEnter={(e) => {
-                                          showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
-                                        }}
-                                        onMouseLeave={() => {
-                                          hideHoverTooltip(`folder-${folder?.id}-${img.url}-${idx}`);
-                                        }}
-                                      >
-                                        <Copy className="w-3 h-3" />
-                                      </button>
-                                    </p>
-                                  </div>
-                                </div>
-                                {img.references && img.references.length > 0 && (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="flex gap-1">
-                                      {img.references.map((ref, refIdx) => (
-                                        <div key={refIdx} className="relative">
-                                          <img 
-                                            src={ref} 
-                                            alt={`Reference ${refIdx + 1}`} 
-                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-orange-1 transition-colors duration-200"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedReferenceImage(ref);
-                                              setIsFullSizeOpen(true);
-                                            }}
-                                          />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-cabin">
-                                            {refIdx + 1}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const link = document.createElement('a');
-                                        link.href = img.references![0];
-                                        link.target = '_blank';
-                                        link.click();
-                                      }}
-                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-orange-1"
-                                    >
-                                      View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Tooltip positioned outside the hover overlay container */}
-                          <div 
-                            data-tooltip-for={`folder-${folder?.id}-${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-[11px] text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                            style={{ 
-                              left: '50%', 
-                              transform: 'translateX(-50%) translateY(-100%)',
-                              top: '-8px'
-                            }}
-                          >
-                            Copy prompt
-                          </div>
-                          
-                          <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
-                            imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                          }`}>
-                            {renderHoverPrimaryActions(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
-                            <div className="flex items-center gap-0.5">
-                              {renderEditButton(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
-                              <button 
-                                type="button" 
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  confirmDeleteImage(img.url);
-                                }} 
-                                className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                                  imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                }`}
-                                title="Delete image" 
-                                aria-label="Delete image"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  toggleFavorite(img.url);
-                                }} 
-                                className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
-                                  imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                }`}
-                                title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
-                                aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                              >
-                                <Heart 
-                                  className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                                    favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                                  }`} 
-                                />
-                              </button>
-                              {renderMoreButton(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
-                            </div>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                    
-                    {/* Empty state for folder */}
-                    {(() => {
-                      const folder = folders.find(f => f.id === selectedFolder);
-                      if (!folder || folder?.imageIds.length === 0) {
-                        return (
-                          <div className="col-span-full flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
-                            <Folder className="default-orange-icon mb-4" />
-                            <h3 className="text-xl font-cabin text-d-text mb-2">Folder is empty</h3>
-                            <p className="text-base font-raleway text-d-white max-w-md">
-                              This folder doesn't contain any images yet.
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Coming Soon Sections */}
-                {activeCategory === "text" && (
-                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="text">
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Edit className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-cabin text-d-text mb-2">Text Generation Coming Soon</h3>
-                      <p className="text-base font-raleway text-d-white max-w-md">
-                        We're working on bringing you powerful text generation capabilities. Stay tuned!
-                      </p>
-                    </div>
-                  </div>
-                )}
+                {/* Folder contents view temporarily disabled */}
 
                 {activeCategory === "video" && (
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="video">

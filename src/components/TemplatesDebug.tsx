@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { apiFetch, type Template } from "../lib/api";
+import { useAuth } from "../auth/useAuth";
+import { apiRequest } from "../lib/apiClient";
+import { type Template } from "../lib/api";
 import { layout, text, glass } from "../styles/designSystem";
 
 type Status = "idle" | "loading" | "ready" | "error";
@@ -8,12 +10,31 @@ export default function TemplatesDebug() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const { token, loading } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
-    setStatus("loading");
+    if (loading) {
+      return () => {
+        isMounted = false;
+      };
+    }
 
-    apiFetch<Template[]>("/templates")
+    if (!token) {
+      if (isMounted) {
+        setTemplates([]);
+        setError("Please sign in to view templates.");
+        setStatus("error");
+      }
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setStatus("loading");
+    setError(null);
+
+    apiRequest<Template[]>("/templates", { method: "GET" }, token)
       .then((data) => {
         if (!isMounted) {
           return;
@@ -32,7 +53,7 @@ export default function TemplatesDebug() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [token, loading]);
 
   return (
     <div className={`${layout.page} flex items-center justify-center`}>

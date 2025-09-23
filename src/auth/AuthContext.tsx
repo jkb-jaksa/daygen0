@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiRequest } from "../lib/apiClient";
 import { AuthContext, type AuthContextValue, type User } from "./context";
 
@@ -21,8 +21,6 @@ type AuthResponse = {
   accessToken: string;
   user: ApiUser;
 };
-
-export const AuthContext = createContext<AuthContextValue | null>(null);
 
 function colourFromEmail(email: string) {
   const normalized = email.trim().toLowerCase();
@@ -47,7 +45,7 @@ function mapUser(apiUser: ApiUser): User {
   };
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

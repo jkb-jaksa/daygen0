@@ -6,6 +6,7 @@ export type GalleryEntry = {
   templateId: string | null;
   assetUrl: string;
   metadata: Record<string, unknown> | null;
+  status: 'ACTIVE' | 'REMOVED';
   createdAt: string;
   updatedAt: string;
 };
