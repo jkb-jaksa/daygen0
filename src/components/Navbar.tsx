@@ -6,6 +6,9 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthModal from "./AuthModal";
 import Pricing from "./Pricing";
+import DiscordIcon from "./DiscordIcon";
+import XIcon from "./XIcon";
+import InstagramIcon from "./InstagramIcon";
 import { buttons, glass } from "../styles/designSystem";
 
 type MenuId = "create" | "edit" | "explore" | "knowledge base" | "about us";
@@ -207,7 +210,7 @@ export default function Navbar() {
               onClick={handleLogoClick}
               className="parallax-large h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 block m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden md:flex items-center gap-6 lg:gap-8 text-base font-cabin">
+            <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-cabin">
               {NAV_ITEMS.map((item) => (
                 <Link
                   key={item.label}
@@ -224,6 +227,28 @@ export default function Navbar() {
           <div className="flex items-center gap-1 md:gap-2">
             {!user ? (
               <>
+                <button 
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => window.open('https://discord.gg/daygen', '_blank')}
+                  aria-label="Discord"
+                >
+                  <DiscordIcon className="size-4" />
+                </button>
+                <button 
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => window.open('https://x.com', '_blank')}
+                  aria-label="X"
+                >
+                  <XIcon className="size-4" />
+                </button>
+                <button 
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => window.open('https://instagram.com', '_blank')}
+                  aria-label="Instagram"
+                >
+                  <InstagramIcon className="size-4" />
+                </button>
+                <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
                   onClick={() => setShowPricing(true)}
@@ -246,6 +271,35 @@ export default function Navbar() {
               </>
             ) : (
               <>
+                {/* Discord Button */}
+                <button 
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => window.open('https://discord.gg/daygen', '_blank')}
+                  aria-label="Discord"
+                >
+                  <DiscordIcon className="size-4" />
+                </button>
+                
+                {/* X Button */}
+                <button 
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => window.open('https://x.com', '_blank')}
+                  aria-label="X"
+                >
+                  <XIcon className="size-4" />
+                </button>
+                
+                {/* Instagram Button */}
+                <button 
+                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
+                  onClick={() => window.open('https://instagram.com', '_blank')}
+                  aria-label="Instagram"
+                >
+                  <InstagramIcon className="size-4" />
+                </button>
+                
+                <div className="h-6 w-px bg-d-white/20"></div>
+                
                 {/* Credit Usage Button */}
                 <button 
                   onClick={() => setShowPricing(true)}
