@@ -1,25 +1,17 @@
 import type React from "react";
-import { buttons } from "../styles/designSystem";
 
 interface AIToolCardProps {
-  image: string;
   title: string;
   subtitle: string;
   buttonText?: string;
   onClick?: () => void;
-  /** allows custom classes */
-  titleClassName?: string;
-  subtitleClassName?: string;
 }
 
 const AIToolCard: React.FC<AIToolCardProps> = ({
-  image,
   title,
   subtitle,
   buttonText = "learn more",
   onClick,
-  titleClassName = "",
-  subtitleClassName = "",
 }) => {
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.currentTarget;

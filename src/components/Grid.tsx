@@ -314,7 +314,6 @@ export function Grid() {
             >
               <motion.div>
                 <AIToolCard
-                  image={card.image}
                   title={card.title}
                   subtitle={card.subtitle}
                 />
@@ -338,7 +337,6 @@ export function Grid() {
             >
               <motion.div>
                 <AIToolCard
-                  image={card.image}
                   title={card.title}
                   subtitle={card.subtitle}
                 />
@@ -362,7 +360,6 @@ export function Grid() {
             >
               <motion.div>
                 <AIToolCard
-                  image={card.image}
                   title={card.title}
                   subtitle={card.subtitle}
                 />
