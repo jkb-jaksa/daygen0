@@ -116,7 +116,7 @@
 
         .auth-logo h1 {
             font-size: 2.5rem;
-            font-weight: 300;
+            font-weight: 400;
             margin: 0;
             letter-spacing: -0.02em;
         }
@@ -200,7 +200,7 @@
             cursor: pointer;
             font-family: var(--font-raleway);
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             height: 48px;
             padding: 0 2rem;
             width: 100%;
@@ -224,7 +224,6 @@
                 inset 0 1px 2px rgba(255, 255, 255, 0.4),
                 inset 0 -1px 2px rgba(0, 0, 0, 0.25),
                 0 6px 12px rgba(0, 0, 0, 0.3);
-            transform: translateY(-1px);
         }
 
         .submit-btn:active {
@@ -233,6 +232,27 @@
                 inset 0 1px 2px rgba(255, 255, 255, 0.2),
                 inset 0 -1px 2px rgba(0, 0, 0, 0.3),
                 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Parallax effects */
+        .parallax-big {
+            perspective: 1000px;
+            transition: transform 0.2s;
+        }
+
+        .parallax-big:hover,
+        .parallax-big.parallax-active {
+            transform: translateZ(200px) scale(1.015);
+            transition: transform 0.2s;
+        }
+
+        /* Disable parallax effects for reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .parallax-big:hover,
+            .parallax-big.parallax-active {
+                transform: none !important;
+                transition: none !important;
+            }
         }
 
         .error {
@@ -275,7 +295,6 @@
             </h1>
         </div>
         
-        <p class="auth-subtitle">Please enter your credentials to access this application.</p>
         
         <form id="authForm">
             <div class="form-group">
@@ -286,7 +305,7 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
-            <button type="submit" class="submit-btn">Authenticate</button>
+            <button type="submit" class="submit-btn parallax-big">Authenticate</button>
         </form>
         
         <div id="error" class="error">
