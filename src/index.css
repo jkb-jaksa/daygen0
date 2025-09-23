@@ -36,8 +36,8 @@
   --d-mid-rgb: 47 52 52;
   --d-dark: #1E2020;
   --d-dark-rgb: 30 32 32;
-  --d-black: #060806;
-  --d-black-rgb: 6 8 6;
+  --d-black: #0A0C0A;
+  --d-black-rgb: 10 12 10;
 
   /* Brand warm gradient stops */
   --d-orange-1: #ff8c00;
@@ -842,17 +842,17 @@ select option::-webkit-scrollbar-thumb:hover {
   --orb-glow: 160, 248, 255;
   --orb-shadow: 1, 108, 144;
   border-radius: 999px;
-  filter: blur(62px);
-  opacity: 0.8;
+  filter: blur(80px);
+  opacity: 1.0;
   mix-blend-mode: screen;
   pointer-events: none;
   transform: rotate(15deg);
   overflow: hidden;
-  background: radial-gradient(circle at 28% 28%, rgba(var(--orb-glow), 0.9) 0%, rgba(var(--orb-primary), 0.85) 45%, rgba(var(--orb-shadow), 0.75) 100%);
+  background: radial-gradient(circle at 28% 28%, rgba(var(--orb-glow), 1.0) 0%, rgba(var(--orb-primary), 0.95) 45%, rgba(var(--orb-shadow), 0.85) 100%);
   box-shadow:
-    inset -42px -58px 140px rgba(var(--orb-shadow), 0.45),
-    inset 26px 34px 90px rgba(255, 255, 255, 0.55),
-    0 0 140px rgba(var(--orb-primary), 0.35);
+    inset -42px -58px 140px rgba(var(--orb-shadow), 0.6),
+    inset 26px 34px 90px rgba(255, 255, 255, 0.7),
+    0 0 180px rgba(var(--orb-primary), 0.5);
 }
 
 
@@ -861,19 +861,19 @@ select option::-webkit-scrollbar-thumb:hover {
   position: absolute;
   inset: 16% 22% 52% 26%;
   border-radius: 999px;
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.05) 65%, transparent 75%);
-  opacity: 0.8;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 1.0) 0%, rgba(255, 255, 255, 0.1) 65%, transparent 75%);
+  opacity: 1.0;
   filter: blur(8px);
 }
 
 .home-hero-card__orb--cyan {
   width: clamp(16rem, 30vw, 26rem);
   height: clamp(12rem, 22vw, 18rem);
-  top: -35%;
+  top: -45%;
   right: 1%;
   --orb-primary: 3, 188, 189;
-  --orb-glow: 164, 255, 255;
-  --orb-shadow: 0, 118, 140;
+  --orb-glow: 180, 255, 255;
+  --orb-shadow: 0, 140, 160;
   transform: rotate(20deg) scale(1.05);
 }
 
@@ -881,11 +881,11 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--yellow {
   width: clamp(10rem, 20vw, 16rem);
   height: clamp(12rem, 24vw, 20rem);
-  top: 44%;
+  top: 85%;
   left: -12%;
   --orb-primary: 255, 200, 0;
-  --orb-glow: 255, 230, 160;
-  --orb-shadow: 204, 140, 0;
+  --orb-glow: 255, 240, 180;
+  --orb-shadow: 220, 160, 0;
   transform: rotate(25deg) scale(0.95);
 }
 
@@ -893,11 +893,11 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--red {
   width: clamp(19rem, 37vw, 33rem);
   height: clamp(11rem, 21vw, 17rem);
-  bottom: -41%;
+  bottom: -50%;
   left: 4%;
   --orb-primary: 243, 36, 54;
-  --orb-glow: 255, 150, 164;
-  --orb-shadow: 168, 12, 45;
+  --orb-glow: 255, 170, 180;
+  --orb-shadow: 190, 20, 60;
   transform: rotate(-20deg) scale(1.1);
 }
 
@@ -905,34 +905,34 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--blue {
   width: clamp(16rem, 30vw, 26rem);
   height: clamp(14rem, 26vw, 22rem);
-  bottom: -25%;
+  bottom: -40%;
   right: -15%;
   --orb-primary: 42, 93, 255;
-  --orb-glow: 160, 190, 255;
-  --orb-shadow: 14, 40, 160;
+  --orb-glow: 180, 210, 255;
+  --orb-shadow: 20, 60, 180;
   transform: rotate(12deg) scale(0.9);
 }
 
 .home-hero-card__orb--violet {
   width: clamp(20rem, 40vw, 36rem);
   height: clamp(12rem, 24vw, 20rem);
-  bottom: -55%;
-  left: 65%;
+  bottom: -65%;
+  left: 70%;
   transform: translateX(-50%) rotate(15deg) scale(1.05);
   --orb-primary: 195, 105, 255;
-  --orb-glow: 234, 190, 255;
-  --orb-shadow: 120, 55, 200;
+  --orb-glow: 244, 210, 255;
+  --orb-shadow: 140, 75, 220;
 }
 
 .home-hero-card__orb--orange {
   width: clamp(20rem, 42vw, 38rem);
   height: clamp(10rem, 22vw, 18rem);
-  top: -39%;
+  top: -44%;
   left: 26%;
   transform: translate(-10%, 0) rotate(-4deg) scale(0.9);
   --orb-primary: 255, 170, 60;
-  --orb-glow: 255, 236, 208;
-  --orb-shadow: 210, 110, 22;
+  --orb-glow: 255, 246, 220;
+  --orb-shadow: 230, 130, 30;
 }
 
 @media (max-width: 640px) {
@@ -941,32 +941,32 @@ select option::-webkit-scrollbar-thumb:hover {
   }
 
   .home-hero-card__orb {
-    filter: blur(58px);
-    opacity: 0.8;
+    filter: blur(80px);
+    opacity: 1.0;
   }
 
   .home-hero-card__orb--cyan {
-    top: -31%;
+    top: -36%;
     right: -5%;
   }
 
   .home-hero-card__orb--yellow {
-    top: 50%;
+    top: 66%;
     left: -16%;
   }
 
   .home-hero-card__orb--red {
-    bottom: -25%;
+    bottom: -29%;
     left: -12%;
   }
 
   .home-hero-card__orb--blue {
-    bottom: 0%;
+    bottom: -10%;
     right: -26%;
   }
 
   .home-hero-card__orb--violet {
-    bottom: -56%;
+    bottom: -61%;
     left: 52%;
     transform: translateX(-50%) rotate(15deg) scale(1.05);
   }
