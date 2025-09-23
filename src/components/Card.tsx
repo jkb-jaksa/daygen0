@@ -1,4 +1,5 @@
 import type React from "react";
+import { buttons } from "../styles/designSystem";
 
 interface AIToolCardProps {
   image: string;
@@ -47,39 +48,23 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   return (
     <div
-      className="tag-gradient parallax-small relative w-full h-56 rounded-[32px] overflow-hidden group cursor-pointer border border-d-dark bg-black hover:border-d-mid transition-colors duration-200"
+      className="tag-gradient relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full cursor-pointer p-5 flex flex-col bg-d-black"
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      <img
-        src={image}
-        alt={title}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      {/* Overlay removed as per design; keep tag-gradient only */}
-
-      <div className="relative z-10 h-full flex flex-col justify-between p-6">
-        <div>
-          <h3
-            className={`text-d-text text-xl font-light font-cabin mb-0.5 ${titleClassName}`}
-          >
-            {title}
-          </h3>
-          <p
-            className={`text-d-white text-base font-normal font-raleway ${subtitleClassName}`}
-          >
-            {subtitle}
-          </p>
-        </div>
-
-        <button
-          onClick={onClick}
-          className="self-start btn btn-ghost btn-ghost-compact parallax-mid"
-        >
-          {buttonText}
-        </button>
+      {/* No overlay; tag-gradient provides subtle glow only */}
+      <div className="relative z-10 flex items-center gap-2">
+        <div className="text-d-text text-xl font-light font-cabin">{title}</div>
       </div>
+      <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{subtitle}</p>
+      <div className="flex-1" />
+      <button
+        onClick={onClick}
+        className="self-start btn btn-ghost btn-ghost-compact parallax-mid mt-2"
+      >
+        {buttonText}
+      </button>
     </div>
   );
 };

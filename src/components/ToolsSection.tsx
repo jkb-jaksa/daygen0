@@ -4,24 +4,26 @@ import { Link } from "react-router-dom";
 import {
   Atom,
   Box,
+  Edit,
   Film,
-  Image as ImageIcon,
+  Image,
+  Mic,
   Music,
   Palette,
   PenLine,
   Sparkles,
   Users,
   Video,
+  Volume2,
   Wand2,
   AppWindow,
   Shapes,
   Package,
-  Mic,
   Leaf,
   Search,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { layout, cards, buttons } from "../styles/designSystem";
+import { layout, cards, buttons, glass } from "../styles/designSystem";
 
 // --- Minimal card + layout utilities ---
 const cx = (...classes: Array<string | undefined | false>) =>
@@ -298,11 +300,11 @@ const THREE_D_TOOLS: Tool[] = [
 ];
 
 const CATEGORIES = [
-  { label: "text", Icon: PenLine },
-  { label: "image", Icon: ImageIcon },
+  { label: "text", Icon: Edit },
+  { label: "image", Icon: Image },
   { label: "video", Icon: Video },
   { label: "avatars", Icon: Users },
-  { label: "voice", Icon: Mic },
+  { label: "voice", Icon: Volume2 },
   { label: "music", Icon: Music },
   { label: "3d", Icon: Box },
 ];
@@ -335,19 +337,19 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
     <div
       className={cx(
         cards.shell,
-        "group h-full cursor-pointer p-5 flex flex-col"
+        "group h-full cursor-pointer p-5 flex flex-col bg-d-black"
       )}
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
       {/* No overlay; tag-gradient provides subtle glow only */}
-      <div className="relative z-10 flex items-center gap-3">
+      <div className="relative z-10 flex items-center gap-2">
         {hasToolLogo(name) ? (
           <img 
             src={getToolLogo(name)!} 
             alt={`${name} logo`}
-            className="size-7 object-contain rounded-lg"
+            className="size-5 object-contain rounded"
           />
         ) : (
           <div
@@ -361,14 +363,14 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
         )}
         <div className="text-d-text text-xl font-light font-cabin">{name}</div>
       </div>
-      <p className="relative z-10 mt-3 text-d-white text-base font-normal font-raleway">{desc}</p>
+      <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{desc}</p>
       <div className="flex-1" />
       {href ? (
-        <Link to={href} className={`${buttons.ghostCompact} mt-4 self-start`}>
+        <Link to={href} className={`${buttons.ghostCompact} mt-2 self-start`}>
           learn more
         </Link>
       ) : (
-        <button type="button" className={`${buttons.ghostCompact} mt-4 self-start`}>
+        <button type="button" className={`${buttons.ghostCompact} mt-2 self-start`}>
           learn more
         </button>
       )}
@@ -380,7 +382,7 @@ export default function ToolsSection() {
   const [activeCategory, setActiveCategory] = useState<string>("image");
   return (
     <section className={`${layout.container} ${layout.heroPadding}`}>
-      <div>
+      <div className="pb-16">
         <div className="grid grid-cols-[150px,1fr] gap-6 mb-2">
           <div className="col-span-2">
             <div className="relative">
@@ -396,12 +398,12 @@ export default function ToolsSection() {
           </div>
         </div>
 
-        <section className="grid grid-cols-[150px,1fr] gap-x-6">
+        <section className="grid grid-cols-[150px,1fr]">
           <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">
             notable tools
           </h3>
 
-          <aside className="row-start-2 hidden md:flex flex-col gap-4">
+          <aside className="row-start-2 hidden md:flex flex-col gap-3">
             {CATEGORIES.map(({ label, Icon }) => {
               const isActive = activeCategory === label;
               return (
@@ -410,17 +412,15 @@ export default function ToolsSection() {
                   type="button"
                   onClick={() => setActiveCategory(label)}
                   className={cx(
-                    "parallax-small flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0",
-                    isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+                    "group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0",
+                    isActive ? "text-brand" : "text-d-white hover:text-brand"
                   )}
                   aria-pressed={isActive}
                 >
                   <div
                     className={cx(
-                      "size-8 grid place-items-center rounded-lg border transition-colors duration-200",
-                      isActive
-                        ? "bg-[#222427] border-d-dark"
-                        : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
+                      `size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`,
+                      isActive && "border-d-mid"
                     )}
                   >
                     <Icon className="size-4" />
@@ -432,49 +432,49 @@ export default function ToolsSection() {
           </aside>
 
           {activeCategory === "image" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "video" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {VIDEO_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "avatars" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {AVATAR_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "voice" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {VOICE_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "music" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {MUSIC_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "text" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {TEXT_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}
             </div>
           )}
           {activeCategory === "3d" && (
-            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {THREE_D_TOOLS.map((tool) => (
                 <ToolCard key={tool.name} {...tool} />
               ))}

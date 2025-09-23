@@ -69,6 +69,7 @@ export const TOOL_LOGOS: Record<string, string> = {
   'Kling': '/kling logo.jpg',
   'Morphic': '/morphic logo.jpeg',
   'Luma': '/luma logo.jpg',
+  'Luma Photon': '/luma logo.jpg',
   'Luma Photon 1': '/luma logo.jpg',
   'Luma Photon Flash 1': '/luma logo.jpg',
   'Luma Ray 2': '/luma logo.jpg',

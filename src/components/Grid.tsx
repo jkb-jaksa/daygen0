@@ -1,8 +1,9 @@
 import { Edit, Image, Video, Users, Music, Volume2, Box, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import AIToolCard from "./Card";
 import { useState } from "react";
+import { glass } from "../styles/designSystem";
+import AIToolCard from "./Card";
 
 type CardItem = {
   slug: string; // this will be the route id
@@ -256,7 +257,7 @@ export function Grid() {
     : { create: imageCreateCards, edit: imageEditCards, personalize: imagePersonalizeCards };
 
   return (
-    <div>
+    <div className="pb-16">
       {/* Search bar */}
       <div className="grid grid-cols-[150px,1fr] gap-6 mb-2">
         <div className="col-span-2">
@@ -277,7 +278,7 @@ export function Grid() {
       <section className="grid grid-cols-[150px,1fr]">
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">create</h3>
 
-        <aside className="row-start-2 hidden md:flex flex-col gap-4">
+        <aside className="row-start-2 hidden md:flex flex-col gap-3">
           {sidebarItems.map((item, index) => {
             const isActive = active === item.label;
             return (
@@ -285,16 +286,14 @@ export function Grid() {
                 key={index}
                 type="button"
                 onClick={() => setActive(item.label)}
-                className={`parallax-small flex items-center gap-3 transition duration-200 cursor-pointer group text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
-                  isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+                className={`group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                  isActive ? "text-brand" : "text-d-white hover:text-brand"
                 }`}
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-8 grid place-items-center rounded-lg border transition-colors duration-200 ${
-                    isActive
-                      ? "bg-[#222427] border-d-dark"
-                      : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
+                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid ${
+                    isActive ? "border-d-mid" : ""
                   }`}
                 >
                   {item.icon}
@@ -305,7 +304,7 @@ export function Grid() {
           })}
         </aside>
 
-        <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {sets.create.map((card) => (
             <Link
               key={card.slug}
@@ -329,7 +328,7 @@ export function Grid() {
       <section className="grid grid-cols-[150px,1fr]">
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">edit</h3>
 
-        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {sets.edit.map((card) => (
             <Link
               key={card.slug}
@@ -353,7 +352,7 @@ export function Grid() {
       <section className="grid grid-cols-[150px,1fr]">
         <h3 className="col-start-2 text-xl font-light font-cabin text-d-text">personalize</h3>
 
-        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {sets.personalize.map((card) => (
             <Link
               key={card.slug}
