@@ -13,7 +13,7 @@ function RootFallback() {
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-d-white/30 border-t-d-white" aria-hidden="true" />
         <span className="font-cabin text-sm uppercase tracking-[0.3em] text-d-white/60">
-          Loading Daygen…
+          Loading…
         </span>
       </div>
     </div>
