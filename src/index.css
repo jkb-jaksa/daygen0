@@ -928,7 +928,7 @@ select option::-webkit-scrollbar-thumb:hover {
   width: clamp(20rem, 42vw, 38rem);
   height: clamp(10rem, 22vw, 18rem);
   top: -39%;
-  left: 25%;
+  left: 26%;
   transform: translate(-10%, 0) rotate(-4deg) scale(0.9);
   --orb-primary: 255, 170, 60;
   --orb-glow: 255, 236, 208;
