@@ -893,7 +893,7 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--red {
   width: clamp(19rem, 37vw, 33rem);
   height: clamp(11rem, 21vw, 17rem);
-  bottom: -50%;
+  bottom: -52%;
   left: 4%;
   --orb-primary: 243, 36, 54;
   --orb-glow: 255, 170, 180;
