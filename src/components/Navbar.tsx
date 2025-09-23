@@ -142,6 +142,10 @@ export default function Navbar() {
   }, []);
 
   const handleLogoClick = useCallback(() => {
+    // Close all dropdowns before navigation
+    setActiveMenu(null);
+    setMenuOpen(false);
+    
     if (location.pathname === "/") {
       scrollToTop(200);
     } else {
@@ -150,6 +154,12 @@ export default function Navbar() {
   }, [location.pathname, navigate, scrollToTop]);
 
   const closeMenu = useCallback(() => setActiveMenu(null), []);
+
+  // Close all dropdowns when location changes
+  useEffect(() => {
+    setActiveMenu(null);
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   const emitNavigateToCategory = useCallback((category: string) => {
     if (typeof window === "undefined") return;
@@ -201,6 +211,10 @@ export default function Navbar() {
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded"
                   onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
+                  onClick={() => {
+                    setActiveMenu(null);
+                    setMenuOpen(false);
+                  }}
                 >
                   {item.label}
                 </Link>
@@ -234,7 +248,11 @@ export default function Navbar() {
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
                   className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-cabin"
-                  onClick={() => navigate('/upgrade')}
+                  onClick={() => {
+                    setActiveMenu(null);
+                    setMenuOpen(false);
+                    navigate('/upgrade');
+                  }}
                 >
                   Pricing
                 </button>
@@ -285,7 +303,11 @@ export default function Navbar() {
                 
                 {/* Credit Usage Button */}
                 <button 
-                  onClick={() => navigate('/upgrade')}
+                  onClick={() => {
+                    setActiveMenu(null);
+                    setMenuOpen(false);
+                    navigate('/upgrade');
+                  }}
                   className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
@@ -299,7 +321,11 @@ export default function Navbar() {
                 {/* Upgrade Button */}
                 <button 
                   className={`${buttons.primary} btn-compact flex items-center gap-1.5`}
-                  onClick={() => navigate('/upgrade')}
+                  onClick={() => {
+                    setActiveMenu(null);
+                    setMenuOpen(false);
+                    navigate('/upgrade');
+                  }}
                 >
                   <Zap className="w-4 h-4" />
                   <span className="hidden sm:inline">Upgrade</span>
@@ -432,6 +458,7 @@ export default function Navbar() {
           >
             <button
               onClick={() => {
+                setActiveMenu(null);
                 setMenuOpen(false);
                 navigate("/account");
               }}
@@ -442,6 +469,7 @@ export default function Navbar() {
             </button>
             <button
               onClick={() => {
+                setActiveMenu(null);
                 setMenuOpen(false);
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
@@ -453,6 +481,7 @@ export default function Navbar() {
             </button>
             <button
               onClick={() => {
+                setActiveMenu(null);
                 setMenuOpen(false);
                 logOut();
                 navigate("/");
