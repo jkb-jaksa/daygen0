@@ -4,12 +4,15 @@ import './index.css'
 import App from './App.tsx'
 import PasswordGate from './components/PasswordGate'
 import { AuthProvider } from './auth/AuthContext'
+import { FooterProvider } from './contexts/FooterContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <PasswordGate>
       <AuthProvider>
-        <App />
+        <FooterProvider>
+          <App />
+        </FooterProvider>
       </AuthProvider>
     </PasswordGate>
   </StrictMode>,

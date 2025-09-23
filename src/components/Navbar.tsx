@@ -309,7 +309,7 @@ export default function Navbar() {
         style={{ top: navH - 1 }}
       >
         <div
-          className={`${glass.promptDark} border-t-0 border-b border-d-black bg-black/25 backdrop-strong transition-opacity duration-200`}
+          className={`${glass.promptDark} border-t-0 transition-opacity duration-200`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
@@ -326,7 +326,7 @@ export default function Navbar() {
                         onClick={() => handleCategoryClick(category.key)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
-                        <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="size-3.5" />
                         </div>
                         <span>{category.label}</span>
@@ -342,7 +342,7 @@ export default function Navbar() {
                         onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
-                        <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="size-3.5" />
                         </div>
                         <span>{category.label}</span>
@@ -360,7 +360,7 @@ export default function Navbar() {
                         onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
-                        <div className="size-7 grid place-items-center rounded-lg border transition-colors duration-200 bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]">
+                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <item.Icon className="size-3.5" />
                         </div>
                         <span>{item.label}</span>

@@ -5,6 +5,7 @@ import FAQSection from "./components/Faq";
 import Footer from "./components/Footer";
 import GlobalSvgDefs from "./components/GlobalSvgDefs";
 import { useAuth } from "./auth/AuthContext";
+import { useFooter } from "./contexts/FooterContext";
 import { layout, text, buttons } from "./styles/designSystem";
 
 const UseCases = lazy(() => import("./components/UseCases"));
@@ -112,6 +113,8 @@ function RouteFallback() {
 }
 
 export default function App() {
+  const { isFooterVisible } = useFooter();
+  
   return (
     <BrowserRouter>
       <div>
@@ -133,7 +136,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-        <Footer />
+        {isFooterVisible && <Footer />}
       </div>
     </BrowserRouter>
   );

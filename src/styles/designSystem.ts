@@ -46,5 +46,5 @@ export const glass = {
   surface: `${glassBase} rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
   prompt: `${glassCore} bg-d-dark/85`,
-  promptDark: `${glassCore} bg-d-black/70`,
+  promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/70`,
 };

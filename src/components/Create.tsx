@@ -37,6 +37,7 @@ import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
 import { getApiUrl } from "../utils/api";
+import { useFooter } from "../contexts/FooterContext";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -660,6 +661,7 @@ const Create: React.FC = () => {
   );
   
   const { user, storagePrefix } = useAuth();
+  const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
   
   // Prompt history
@@ -783,6 +785,17 @@ const Create: React.FC = () => {
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("image");
+  
+  // Control footer visibility based on activeCategory
+  useEffect(() => {
+    const hideFooterSections = ['text', 'image', 'video', 'avatars', 'audio'];
+    setFooterVisible(!hideFooterSections.includes(activeCategory));
+    
+    // Cleanup: show footer when component unmounts
+    return () => {
+      setFooterVisible(true);
+    };
+  }, [activeCategory, setFooterVisible]);
   
   const MAX_PARALLEL_GENERATIONS = 5;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -4188,11 +4201,7 @@ const handleGenerate = async () => {
                         aria-pressed={isActive}
                       >
                         <div
-                          className={`size-7 grid place-items-center rounded-lg border transition-colors duration-200 ${
-                            isActive
-                              ? "bg-[#222427] border-d-dark"
-                              : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
-                          }`}
+                          className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                         >
                           <cat.Icon className="size-3.5" />
                         </div>
@@ -4227,11 +4236,7 @@ const handleGenerate = async () => {
                         aria-pressed={isActive}
                       >
                         <div
-                          className={`size-7 grid place-items-center rounded-lg border transition-colors duration-200 ${
-                            isActive
-                              ? "bg-[#222427] border-d-dark"
-                              : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
-                          }`}
+                          className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                         >
                           <cat.Icon className="size-3.5" />
                         </div>
@@ -4250,11 +4255,7 @@ const handleGenerate = async () => {
                     aria-pressed={activeCategory === "my-folders"}
                   >
                     <div
-                      className={`size-7 grid place-items-center rounded-lg border transition-colors duration-200 ${
-                        activeCategory === "my-folders"
-                          ? "bg-[#222427] border-d-dark"
-                          : "bg-[#1b1c1e] border-d-black group-hover:bg-[#222427]"
-                      }`}
+                      className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                     >
                       <Folder className="size-3.5" />
                     </div>
