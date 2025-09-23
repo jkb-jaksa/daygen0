@@ -18,7 +18,7 @@ export const text = {
 };
 
 export const cards = {
-  shell: "tag-gradient relative rounded-[28px] border border-d-dark bg-black hover:border-d-mid transition-all duration-200",
+  shell: "tag-gradient relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200",
   panel: "relative rounded-[64px] overflow-hidden isolate",
 };
 
@@ -43,7 +43,7 @@ const glassBase = `${glassCore} bg-d-light/15`;
 
 export const glass = {
   base: glassBase,
-  surface: `${glassBase} rounded-[20px]`,
+  surface: `${glassCore} bg-d-black/15 rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
   prompt: `${glassCore} bg-d-dark/85`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/70`,
