@@ -1324,12 +1324,19 @@ select option::-webkit-scrollbar-thumb:hover {
   background: rgba(2, 3, 6, 0.85);
   backdrop-filter: blur(18px);
   box-shadow: 0 8px 24px rgba(3, 188, 189, 0.02), 0 4px 12px rgba(255, 140, 0, 0.015);
-  transition: border-color 200ms ease, transform 200ms ease;
+  will-change: transform, border-color;
+  transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .faq-card--active {
   border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-4px);
+}
+
+.faq-card--clicked {
+  transform: translateY(-2px) scale(0.98);
+  border-color: rgba(255, 140, 0, 0.3);
 }
 
 .faq-card__halo {
@@ -1383,13 +1390,23 @@ select option::-webkit-scrollbar-thumb:hover {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: rgba(var(--d-white-rgb), 0.68);
-  transition: background-color 200ms ease, color 200ms ease;
+  will-change: background-color, color, transform;
+  transition: background-color 120ms cubic-bezier(0.4, 0, 0.2, 1), 
+              color 120ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 120ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .faq-card:hover .faq-card__icon,
 .faq-card--active .faq-card__icon {
   background: rgba(255, 140, 0, 0.2);
   color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+.faq-card--clicked .faq-card__icon {
+  background: rgba(255, 140, 0, 0.35);
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
 }
 
 .faq-card__answer {
@@ -1398,12 +1415,17 @@ select option::-webkit-scrollbar-thumb:hover {
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: max-height 260ms ease, opacity 220ms ease;
+  transform: translateY(-8px);
+  will-change: max-height, opacity, transform;
+  transition: max-height 180ms cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .faq-card__answer--open {
   max-height: 320px;
   opacity: 1;
+  transform: translateY(0);
 }
 
 .faq-card__answer-inner {

@@ -8,6 +8,24 @@ interface FAQItem {
   answer: string;
 }
 
+type PointerState = {
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+};
+
+const DEFAULT_POINTER_STATE: PointerState = {
+  x: 50,
+  y: 50,
+  tx: 0,
+  ty: 0,
+};
+
+const isFinePointer = (pointerType: string) => pointerType === "mouse" || pointerType === "pen";
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
 const FAQ_DATA: FAQItem[] = [
   {
     question: "What is Creative AI?",
@@ -43,46 +61,182 @@ const FAQ_DATA: FAQItem[] = [
 
 const FAQSection: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [clickedIndex, setClickedIndex] = useState<number | null>(null);
   const faqCardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const pointerStateRef = useRef<PointerState[]>([]);
+  const animationFrameRef = useRef<(number | null)[]>([]);
+  const prefersReducedMotionRef = useRef(false);
 
   const toggleQuestion = useCallback((index: number) => {
+    // Immediate visual feedback
+    setClickedIndex(index);
+    
+    // Clear the clicked state after a short delay
+    setTimeout(() => setClickedIndex(null), 150);
+    
+    // Toggle the open state
     setOpenIndex(prev => (prev === index ? null : index));
   }, []);
 
-  // Match product card hover glow/parallax behavior
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    el.style.setProperty("--x", `${x.toFixed(2)}%`);
-    el.style.setProperty("--y", `${y.toFixed(2)}%`);
-    const tx = (x - 50) / 10;
-    const ty = (y - 50) / 10;
-    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
-    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
+  const applyPointerState = useCallback((index: number) => {
+    const card = faqCardsRef.current[index];
+    const state = pointerStateRef.current[index];
+
+    animationFrameRef.current[index] = null;
+
+    if (!card || !state) {
+      return;
+    }
+
+    card.style.setProperty("--x", `${state.x}%`);
+    card.style.setProperty("--y", `${state.y}%`);
+    card.style.setProperty("--tx", `${state.tx}px`);
+    card.style.setProperty("--ty", `${state.ty}px`);
   }, []);
 
-  const onEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "200ms");
-    el.style.setProperty("--l", "1");
+  const cancelScheduledAnimation = useCallback((index: number) => {
+    const frameId = animationFrameRef.current[index];
+    if (frameId != null) {
+      cancelAnimationFrame(frameId);
+      animationFrameRef.current[index] = null;
+    }
   }, []);
 
-  const onLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "400ms");
-    el.style.setProperty("--l", "0.5");
-  }, []);
+  const schedulePointerUpdate = useCallback(
+    (index: number) => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      if (animationFrameRef.current[index] != null) {
+        return;
+      }
+
+      animationFrameRef.current[index] = window.requestAnimationFrame(() => {
+        applyPointerState(index);
+      });
+    },
+    [applyPointerState],
+  );
+
+  const handlePointerMove = useCallback(
+    (index: number, event: React.PointerEvent<HTMLDivElement>) => {
+      if (prefersReducedMotionRef.current || !isFinePointer(event.pointerType)) {
+        return;
+      }
+
+      const card = faqCardsRef.current[index];
+      if (!card) {
+        return;
+      }
+
+      const rect = card.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        return;
+      }
+
+      const relativeX = ((event.clientX - rect.left) / rect.width) * 100;
+      const relativeY = ((event.clientY - rect.top) / rect.height) * 100;
+      const clampedX = clamp(relativeX, 0, 100);
+      const clampedY = clamp(relativeY, 0, 100);
+
+      pointerStateRef.current[index] = {
+        x: clampedX,
+        y: clampedY,
+        tx: (clampedX - 50) / 10,
+        ty: (clampedY - 50) / 10,
+      };
+
+      schedulePointerUpdate(index);
+    },
+    [schedulePointerUpdate],
+  );
+
+  const handlePointerEnter = useCallback(
+    (index: number, event: React.PointerEvent<HTMLDivElement>) => {
+      if (prefersReducedMotionRef.current || !isFinePointer(event.pointerType)) {
+        return;
+      }
+
+      const card = faqCardsRef.current[index];
+      if (!card) {
+        return;
+      }
+
+      card.style.setProperty("--fade-ms", "200ms");
+      card.style.setProperty("--l", "1");
+    },
+    [],
+  );
+
+  const handlePointerLeave = useCallback(
+    (index: number, event: React.PointerEvent<HTMLDivElement>) => {
+      if (prefersReducedMotionRef.current || !isFinePointer(event.pointerType)) {
+        return;
+      }
+
+      const card = faqCardsRef.current[index];
+      if (!card) {
+        return;
+      }
+
+      card.style.setProperty("--fade-ms", "400ms");
+      card.style.setProperty("--l", "0.5");
+
+      pointerStateRef.current[index] = { ...DEFAULT_POINTER_STATE };
+
+      cancelScheduledAnimation(index);
+      schedulePointerUpdate(index);
+    },
+    [cancelScheduledAnimation, schedulePointerUpdate],
+  );
 
   // Initialize cards with default glow state
   useEffect(() => {
-    faqCardsRef.current.forEach((card) => {
+    faqCardsRef.current.forEach((card, index) => {
       if (card) {
         card.style.setProperty("--l", "0.5");
         card.style.setProperty("--fade-ms", "200ms");
       }
+
+      pointerStateRef.current[index] = { ...DEFAULT_POINTER_STATE };
     });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    prefersReducedMotionRef.current = mediaQuery.matches;
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      prefersReducedMotionRef.current = event.matches;
+    };
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => {
+        mediaQuery.removeEventListener("change", handleChange);
+      };
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => {
+      mediaQuery.removeListener(handleChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const frameIds = animationFrameRef.current;
+    return () => {
+      frameIds.forEach((frameId) => {
+        if (frameId != null) {
+          cancelAnimationFrame(frameId);
+        }
+      });
+    };
   }, []);
 
   return (
@@ -103,6 +257,7 @@ const FAQSection: React.FC = () => {
         <div className="faq-section__content">
           {FAQ_DATA.map((item, index) => {
             const isOpen = openIndex === index;
+            const isClicked = clickedIndex === index;
             const contentId = `faq-panel-${index}`;
             const triggerId = `faq-trigger-${index}`;
 
@@ -110,10 +265,10 @@ const FAQSection: React.FC = () => {
               <div
                 key={item.question}
                 ref={(el) => { faqCardsRef.current[index] = el; }}
-                className={`${cards.shell} faq-card ${isOpen ? "faq-card--active" : ""}`}
-                onMouseMove={onMove}
-                onMouseEnter={onEnter}
-                onMouseLeave={onLeave}
+                className={`${cards.shell} faq-card ${isOpen ? "faq-card--active" : ""} ${isClicked ? "faq-card--clicked" : ""}`}
+                onPointerMove={(event) => handlePointerMove(index, event)}
+                onPointerEnter={(event) => handlePointerEnter(index, event)}
+                onPointerLeave={(event) => handlePointerLeave(index, event)}
               >
                 <span className="faq-card__halo" aria-hidden="true" />
 
