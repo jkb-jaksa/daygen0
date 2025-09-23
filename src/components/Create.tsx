@@ -4175,9 +4175,9 @@ const handleGenerate = async () => {
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
             <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
               <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
-                <aside className="flex flex-col gap-1.5 w-full mt-2">
+                <aside className="flex flex-col gap-2 w-full mt-2">
                   {/* Generate section */}
-                  <div className="text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
+                  <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
                     create
                   </div>
                   
@@ -4195,7 +4195,7 @@ const handleGenerate = async () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
@@ -4203,7 +4203,7 @@ const handleGenerate = async () => {
                         <div
                           className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                         >
-                          <cat.Icon className="size-3.5" />
+                          <cat.Icon className="size-4" />
                         </div>
                         <span>{cat.label}</span>
                       </button>
@@ -4214,7 +4214,7 @@ const handleGenerate = async () => {
                   <div className="border-t border-d-dark my-2"></div>
                   
                   {/* Library section */}
-                  <div className="text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
+                  <div className="flex items-center px-2 text-xs text-d-text font-cabin font-medium uppercase tracking-wider mb-1">
                     My creations
                   </div>
                   
@@ -4230,7 +4230,7 @@ const handleGenerate = async () => {
                         key={cat.key}
                         type="button"
                         onClick={() => setActiveCategory(cat.key)}
-                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                        className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                           isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                         }`}
                         aria-pressed={isActive}
@@ -4238,7 +4238,7 @@ const handleGenerate = async () => {
                         <div
                           className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                         >
-                          <cat.Icon className="size-3.5" />
+                          <cat.Icon className="size-4" />
                         </div>
                         <span>{cat.label}</span>
                       </button>
@@ -4249,7 +4249,7 @@ const handleGenerate = async () => {
                   <button
                     type="button"
                     onClick={handleMyFoldersClick}
-                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
+                    className={`parallax-small group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                       activeCategory === "my-folders" ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
                     }`}
                     aria-pressed={activeCategory === "my-folders"}
@@ -4257,7 +4257,7 @@ const handleGenerate = async () => {
                     <div
                       className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                     >
-                      <Folder className="size-3.5" />
+                      <Folder className="size-4" />
                     </div>
                     <span>folders</span>
                   </button>

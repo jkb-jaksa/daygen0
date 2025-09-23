@@ -28,8 +28,8 @@ export const buttons = {
   ghost: "btn btn-ghost font-cabin text-base gap-2 parallax-mid",
   ghostCompact: "btn btn-ghost btn-ghost-compact font-cabin text-base gap-2 parallax-mid",
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-brand parallax-large",
-  pillWarm: "inline-flex items-center justify-center gap-2 rounded-full bg-[var(--d-orange-1)] px-3 py-1.5 text-xs font-raleway font-medium text-b-black transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--d-orange-1)_78%,white_22%)] parallax-large",
-  blockPrimary: "inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--d-orange-1)] px-4 py-2 text-sm font-raleway font-medium text-b-black transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--d-orange-1)_78%,white_22%)] parallax-large",
+  pillWarm: "btn btn-orange btn-compact font-raleway text-xs font-medium gap-2 parallax-large",
+  blockPrimary: "btn btn-orange w-full font-cabin text-sm font-medium gap-2 parallax-large",
 };
 
 export const panels = {

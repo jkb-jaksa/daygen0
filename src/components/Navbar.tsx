@@ -241,7 +241,7 @@ export default function Navbar() {
                   className="md:hidden parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white"
                   aria-label="Account"
                 >
-                  <User className="size-5" />
+                  <User className="size-4" />
                 </button>
               </>
             ) : (
@@ -297,7 +297,7 @@ export default function Navbar() {
               </>
             )}
             <button aria-label="Search" className="parallax-large size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
-              <Search className="size-5" />
+              <Search className="size-4" />
             </button>
           </div>
         </div>
@@ -327,7 +327,7 @@ export default function Navbar() {
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <category.Icon className="size-3.5" />
+                          <category.Icon className="size-4" />
                         </div>
                         <span>{category.label}</span>
                       </button>
@@ -343,7 +343,7 @@ export default function Navbar() {
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <category.Icon className="size-3.5" />
+                          <category.Icon className="size-4" />
                         </div>
                         <span>{category.label}</span>
                       </Link>
@@ -361,7 +361,7 @@ export default function Navbar() {
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-cabin font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <item.Icon className="size-3.5" />
+                          <item.Icon className="size-4" />
                         </div>
                         <span>{item.label}</span>
                       </Link>

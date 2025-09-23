@@ -61,8 +61,8 @@
 }
 .range-brand { -webkit-appearance: none; appearance: none; background: transparent; }
 .range-brand:focus { outline: none; }
-.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); transform: translateY(-50%); }
-.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: 2px solid rgba(255,255,255,0.15); transform: translateY(-50%); }
+.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: none; transform: translateY(-50%); }
+.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--d-orange-1); cursor: pointer; border: none; transform: translateY(-50%); }
 .range-brand::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background:
   radial-gradient(circle at 0 50%, var(--d-orange-1) 2px, transparent 3px) repeat-x,
   linear-gradient(90deg, var(--d-orange-1), rgba(250,170,22,0.5));
@@ -166,20 +166,57 @@ html, body {
 
 /* Solid orange primary button */
 .btn-orange {
-  background-color: var(--d-orange-1);
-  border-color: color-mix(in srgb, var(--d-orange-1) 80%, white 20%);
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.25) 0%,
+      rgba(255, 255, 255, 0.1) 25%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.1) 75%,
+      rgba(0, 0, 0, 0.2) 100%
+    ),
+    var(--d-orange-1);
+  border-color: transparent;
   color: var(--d-black);
   flex-shrink: 0;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-orange:hover {
-  background-color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
-  border-color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.15) 25%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.15) 75%,
+      rgba(0, 0, 0, 0.25) 100%
+    ),
+    color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+  border-color: transparent;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 .btn-orange:active {
-  background-color: color-mix(in srgb, var(--d-orange-1) 70%, black 30%);
-  border-color: color-mix(in srgb, var(--d-orange-1) 70%, black 30%);
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.05) 25%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.2) 75%,
+      rgba(0, 0, 0, 0.3) 100%
+    ),
+    color-mix(in srgb, var(--d-orange-1) 70%, black 30%);
+  border-color: transparent;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px);
 }
 
 /* Warm panel background - solid orange */
@@ -196,9 +233,13 @@ html, body {
 
 
 
-/* Text warm gradient - solid orange */
+/* Text warm gradient - solid orange with 3D effect */
 .text-warm-gradient {
   color: var(--d-orange-1);
+  text-shadow: 
+    0 1px 2px rgba(255, 255, 255, 0.3),
+    0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Simple reusable fade-in utility for 200ms transitions */
@@ -265,18 +306,32 @@ html, body {
   }
 }
 
-/* Brand orange text utility - solid orange */
+/* Brand orange text utility - solid orange with 3D effect */
 .text-d-orange { 
   color: var(--d-orange-1);
+  text-shadow: 
+    0 1px 2px rgba(255, 255, 255, 0.3),
+    0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Softer, lighter warm for active states */
+/* Softer, lighter warm for active states with 3D effect */
 .text-d-orange-soft { 
-  color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%); 
+  color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+  text-shadow: 
+    0 1px 2px rgba(255, 255, 255, 0.25),
+    0 -1px 2px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-/* Brand color - primary orange */
-.text-brand { color: var(--d-orange-1); }
+/* Brand color - primary orange with 3D effect */
+.text-brand { 
+  color: var(--d-orange-1);
+  text-shadow: 
+    0 1px 2px rgba(255, 255, 255, 0.3),
+    0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
 /* Cyan button styles */
 .btn-cyan {
@@ -326,9 +381,13 @@ html, body {
   }
 }
 
-/* Lighter text color classes for pricing */
+/* Lighter text color classes for pricing with 3D effect */
 .text-orange-lighter {
   color: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+  text-shadow: 
+    0 1px 2px rgba(255, 255, 255, 0.25),
+    0 -1px 2px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .text-cyan-lighter {
@@ -511,16 +570,59 @@ html, body {
 
 /* Soft white pill button */
 .btn-white {
-  background-color: var(--d-text);
-  border-color: color-mix(in srgb, var(--d-text) 60%, white 40%);
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.2) 25%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.05) 75%,
+      rgba(0, 0, 0, 0.1) 100%
+    ),
+    var(--d-text);
+  border-color: transparent;
   color: var(--d-black);
   flex-shrink: 0;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .btn-white:hover {
-  background-color: #ffffff;
-  border-color: #ffffff;
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0.3) 25%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.08) 75%,
+      rgba(0, 0, 0, 0.12) 100%
+    ),
+    #ffffff;
+  border-color: transparent;
   color: var(--d-black);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.7),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
+    0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:active {
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.1) 25%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.1) 75%,
+      rgba(0, 0, 0, 0.15) 100%
+    ),
+    color-mix(in srgb, #ffffff 85%, black 15%);
+  border-color: transparent;
+  color: var(--d-black);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+  transform: translateY(1px);
 }
 
 /* Black button */
