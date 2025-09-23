@@ -881,7 +881,7 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--yellow {
   width: clamp(10rem, 20vw, 16rem);
   height: clamp(12rem, 24vw, 20rem);
-  top: 85%;
+  top: 90%;
   left: -12%;
   --orb-primary: 255, 200, 0;
   --orb-glow: 255, 240, 180;
@@ -905,7 +905,7 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-hero-card__orb--blue {
   width: clamp(16rem, 30vw, 26rem);
   height: clamp(14rem, 26vw, 22rem);
-  bottom: -40%;
+  bottom: -45%;
   right: -15%;
   --orb-primary: 42, 93, 255;
   --orb-glow: 180, 210, 255;
