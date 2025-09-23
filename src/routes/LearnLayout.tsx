@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { layout, text, glass } from "../styles/designSystem";
+import { layout, glass } from "../styles/designSystem";
 
 const LEARN_LINKS = [
   { to: "/learn/use-cases", label: "Use cases" },
