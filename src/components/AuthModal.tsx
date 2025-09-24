@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import GoogleLogin from "./GoogleLogin";
-import { buttons, glass } from "../styles/designSystem";
+import { buttons, glass, inputs } from "../styles/designSystem";
 
 interface AuthModalProps {
   open: boolean;
@@ -47,12 +47,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               {mode === "signup" && (
                 <div className="space-y-2">
                   <label className="block text-sm text-d-text font-raleway">Name</label>
-                  <input value={name} onChange={e=>setName(e.target.value)} className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your name" />
+                  <input value={name} onChange={e=>setName(e.target.value)} className={inputs.base} placeholder="Enter your name" />
                 </div>
               )}
               <div className="space-y-2">
                 <label className="block text-sm text-d-text font-raleway">Email</label>
-                <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" placeholder="Enter your email" />
+                <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className={inputs.base} placeholder="Enter your email" />
               </div>
               <button type="submit" className={`${buttons.blockPrimary} font-raleway`}>
                 Continue

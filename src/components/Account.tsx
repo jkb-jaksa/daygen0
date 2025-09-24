@@ -4,7 +4,7 @@ import { Upload, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
-import { buttons, glass } from "../styles/designSystem";
+import { buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
@@ -242,7 +242,7 @@ export default function Account() {
           </div>
 
           <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
-          <input className="w-full py-3 rounded-lg bg-b-mid text-d-white placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200" value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
+          <input className={inputs.base} value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
           <div className="flex gap-2 mt-3">
             <button 
               className={buttons.ghost}

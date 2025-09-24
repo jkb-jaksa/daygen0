@@ -2,7 +2,7 @@ import { Edit, Image, Video, Users, Music, Volume2, Box, Search } from "lucide-r
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { glass } from "../styles/designSystem";
+import { glass, inputs } from "../styles/designSystem";
 import AIToolCard from "./Card";
 
 type CardItem = {
@@ -268,7 +268,7 @@ export function Grid() {
             <input
               type="text"
               placeholder="what do you want to do?"
-              className="w-full py-3 rounded-full bg-b-mid text-d-white placeholder-d-white/60 px-12 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
+              className={`${inputs.pill} pl-12`}
             />
           </div>
         </div>

@@ -30,7 +30,7 @@ import { compressDataUrl } from "../lib/imageCompression";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { layout, buttons, glass } from "../styles/designSystem";
+import { layout, buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
@@ -2648,8 +2648,8 @@ const Create: React.FC = () => {
             <div
               className={`ml-auto flex items-center gap-0.5 ${
                 isMenuActive
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
               }`}
             >
               {renderHoverPrimaryActions(menuId, img)}
@@ -3793,12 +3793,12 @@ const handleGenerate = async () => {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className={`w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border transition-colors duration-200 focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway ${
-                    folders.some(folder => 
+                  className={`${inputs.base} text-d-text ${
+                    folders.some(folder =>
                       folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                     ) && newFolderName.trim()
-                      ? 'border-d-orange-1 focus:border-d-orange-1' 
-                      : 'border-b-mid focus:border-d-light'
+                      ? 'border-d-orange-1 focus:border-d-orange-1'
+                      : 'border-b-mid'
                   }`}
                   autoFocus
                   onKeyDown={(e) => {
@@ -4665,13 +4665,13 @@ const handleGenerate = async () => {
                                     toggleImageSelection(img.url);
                                   }}
                                   className={`image-action-btn parallax-large image-select-toggle transition-opacity duration-100 ${
-                                    isSelected
-                                      ? 'image-select-toggle--active opacity-100 pointer-events-auto'
-                                      : isSelectMode
-                                        ? 'opacity-100 pointer-events-auto'
-                                        : imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
+                                      isSelected
+                                        ? 'image-select-toggle--active opacity-100 pointer-events-auto'
+                                        : isSelectMode
                                           ? 'opacity-100 pointer-events-auto'
-                                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                                          : imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
+                                            ? 'opacity-100 pointer-events-auto'
+                                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                                   }`}
                                   aria-pressed={isSelected}
                                   aria-label={isSelected ? 'Unselect image' : 'Select image'}
@@ -4681,8 +4681,8 @@ const handleGenerate = async () => {
                                 {!isSelectMode && (
                                   <div className={`ml-auto flex items-center gap-0.5 ${
                                     imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
-                                      ? 'opacity-100 pointer-events-auto'
-                                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100'
+                                      ? 'opacity-100'
+                                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                                   }`}>
                                     {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                 <div className="flex items-center gap-0.5">
@@ -4794,7 +4794,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4840,7 +4840,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4877,7 +4877,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-small absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-orange-1 text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -6320,7 +6320,7 @@ const handleGenerate = async () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1`}
+                      className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-orange-1`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -6328,7 +6328,7 @@ const handleGenerate = async () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-d-orange-1`}
+                      className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-orange-1`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >

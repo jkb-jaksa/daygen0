@@ -8,7 +8,7 @@ import AuthModal from "./AuthModal";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
-import { buttons, glass } from "../styles/designSystem";
+import { buttons, glass, iconButtons } from "../styles/designSystem";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
@@ -224,22 +224,22 @@ export default function Navbar() {
           <div className="flex items-center gap-1 md:gap-2">
             {!user ? (
               <>
-                <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                <button
+                  className={iconButtons.sm}
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
                   <DiscordIcon className="size-4" />
                 </button>
-                <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                <button
+                  className={iconButtons.sm}
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
                   <XIcon className="size-4" />
                 </button>
-                <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                <button
+                  className={iconButtons.sm}
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
@@ -247,7 +247,7 @@ export default function Navbar() {
                 </button>
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                  className="parallax-large text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -262,9 +262,9 @@ export default function Navbar() {
                 <button className={`${buttons.primary} btn-compact`} onClick={()=>setShowAuth("signup")}>
                   Sign Up
                 </button>
-                <button 
-                  onClick={()=>setShowAuth("login")} 
-                  className="md:hidden parallax-mid size-8 grid place-items-center rounded-full hover:bg-white/10 transition duration-200 text-d-white"
+                <button
+                  onClick={()=>setShowAuth("login")}
+                  className={`md:hidden ${iconButtons.sm}`}
                   aria-label="Account"
                 >
                   <User className="w-4 h-4" />
@@ -273,8 +273,8 @@ export default function Navbar() {
             ) : (
               <>
                 {/* Discord Button */}
-                <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                <button
+                  className={iconButtons.sm}
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
@@ -282,8 +282,8 @@ export default function Navbar() {
                 </button>
                 
                 {/* X Button */}
-                <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                <button
+                  className={iconButtons.sm}
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
@@ -291,8 +291,8 @@ export default function Navbar() {
                 </button>
                 
                 {/* Instagram Button */}
-                <button 
-                  className="parallax-small flex items-center justify-center text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                <button
+                  className={iconButtons.sm}
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
@@ -308,7 +308,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`parallax-small flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
+                  className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -330,12 +330,12 @@ export default function Navbar() {
                   <Zap className="w-4 h-4" />
                   <span className="hidden sm:inline">Upgrade</span>
                 </button>
-                
+
                 <div className="relative">
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`parallax-mid flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-brand transition-colors`}
+                    className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-brand transition-colors`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -359,7 +359,7 @@ export default function Navbar() {
                 </div>
               </>
             )}
-            <button aria-label="Search" className="parallax-large size-8 grid place-items-center rounded-full hover:bg-white/10 hover:text-brand transition duration-200 text-d-white">
+            <button aria-label="Search" className={iconButtons.md}>
               <Search className="w-4 h-4" />
             </button>
           </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { Share2 } from "lucide-react";
+import { iconButtons } from "../styles/designSystem";
 
 const shareUtilsPromise = import("../lib/shareUtils");
 
@@ -18,9 +19,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({
   size = "sm",
   onCopy,
 }) => {
-  const sizeClasses = size === "sm"
-    ? "px-2 py-1 text-xs"
-    : "px-3 py-1.5 text-sm";
+  const sizeClass = size === "sm" ? iconButtons.sm : iconButtons.md;
 
   const handleCopyLink = async () => {
     const { makeRemixUrl, withUtm, copyLink } = await shareUtilsPromise;
@@ -37,7 +36,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({
     <button
       type="button"
       onClick={handleCopyLink}
-      className={`rounded-lg border border-d-mid bg-d-black/40 hover:bg-d-black/60 text-d-white hover:text-brand transition-all duration-200 flex items-center justify-center ${sizeClasses} ${className}`}
+      className={`${sizeClass} ${className}`}
       aria-label="Copy share link"
       title="Copy share link"
     >

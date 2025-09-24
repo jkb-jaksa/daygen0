@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { buttons, glass } from "../styles/designSystem";
+import { buttons, glass, inputs } from "../styles/designSystem";
 
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
@@ -73,7 +73,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
               onChange={(e) => setInput(e.target.value)}
               placeholder="Password"
               autoFocus
-              className="w-full py-3 rounded-lg bg-b-mid text-d-text placeholder-d-white/60 px-4 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
+              className={inputs.base}
             />
             {error && <p className="text-sm text-red-400 font-raleway">{error}</p>}
             <div className="flex gap-4 justify-center">

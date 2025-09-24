@@ -256,7 +256,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
                 window.location.href = '/';
               }
             }}
-            className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-mid ${
+            className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
               tier.id === 'free' 
                 ? 'btn-orange' 
                 : tier.id === 'pro'

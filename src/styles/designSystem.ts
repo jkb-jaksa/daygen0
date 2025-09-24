@@ -23,10 +23,10 @@ export const cards = {
 };
 
 export const buttons = {
-  primary: "btn btn-orange font-raleway text-base font-semibold gap-2 parallax-mid",
+  primary: "btn btn-orange font-raleway text-base font-semibold gap-2 parallax-large",
   secondary: "btn btn-white font-raleway text-base font-semibold gap-2 parallax-large",
-  ghost: "btn btn-ghost font-raleway text-base font-semibold gap-2 parallax-mid",
-  ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-semibold gap-2 parallax-mid",
+  ghost: "btn btn-ghost font-raleway text-base font-semibold gap-2 parallax-large",
+  ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-semibold gap-2 parallax-large",
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-semibold text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-brand parallax-large",
   pillWarm: "btn btn-orange btn-compact font-raleway text-base font-semibold gap-2 parallax-large",
   blockPrimary: "btn btn-orange w-full font-raleway text-base font-semibold gap-2 parallax-large",
@@ -48,3 +48,77 @@ export const glass = {
   prompt: `${glassCore} bg-d-dark/85`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/70`,
 };
+
+const iconButtonFocus =
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+const iconButtonBase =
+  `parallax-large inline-flex items-center justify-center bg-transparent text-d-white transition-colors duration-200 hover:text-brand disabled:cursor-not-allowed disabled:opacity-60 ${iconButtonFocus}`;
+
+export const iconButtons = {
+  sm: `${iconButtonBase} rounded-full size-8`,
+  md: `${iconButtonBase} rounded-full size-9`,
+  lg: `${iconButtonBase} rounded-full size-10`,
+  squareSm: `${iconButtonBase} rounded-lg size-8`,
+};
+
+const inputFocus =
+  "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-d-light";
+const inputCore =
+  `w-full ${glass.prompt} px-4 text-d-white placeholder:text-d-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-d-mid focus:bg-d-dark/90 disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
+
+export const inputs = {
+  base: `${inputCore} rounded-xl py-3`,
+  compact: `${inputCore} rounded-lg py-2 text-sm`,
+  pill: `${inputCore} rounded-full py-3`,
+  textarea: `${inputCore} rounded-xl py-3 min-h-[140px] resize-y`,
+};
+
+export const toolAccents = {
+  emerald: {
+    badge:
+      "border border-[color:var(--accent-emerald-border)] bg-[color:var(--accent-emerald-bg)] text-[color:var(--accent-emerald-text)]",
+    ring: "ring-[color:var(--accent-emerald-ring)]",
+  },
+  yellow: {
+    badge:
+      "border border-[color:var(--accent-yellow-border)] bg-[color:var(--accent-yellow-bg)] text-[color:var(--accent-yellow-text)]",
+    ring: "ring-[color:var(--accent-yellow-ring)]",
+  },
+  blue: {
+    badge:
+      "border border-[color:var(--accent-blue-border)] bg-[color:var(--accent-blue-bg)] text-[color:var(--accent-blue-text)]",
+    ring: "ring-[color:var(--accent-blue-ring)]",
+  },
+  violet: {
+    badge:
+      "border border-[color:var(--accent-violet-border)] bg-[color:var(--accent-violet-bg)] text-[color:var(--accent-violet-text)]",
+    ring: "ring-[color:var(--accent-violet-ring)]",
+  },
+  pink: {
+    badge:
+      "border border-[color:var(--accent-pink-border)] bg-[color:var(--accent-pink-bg)] text-[color:var(--accent-pink-text)]",
+    ring: "ring-[color:var(--accent-pink-ring)]",
+  },
+  cyan: {
+    badge:
+      "border border-[color:var(--accent-cyan-border)] bg-[color:var(--accent-cyan-bg)] text-[color:var(--accent-cyan-text)]",
+    ring: "ring-[color:var(--accent-cyan-ring)]",
+  },
+  orange: {
+    badge:
+      "border border-[color:var(--accent-orange-border)] bg-[color:var(--accent-orange-bg)] text-[color:var(--accent-orange-text)]",
+    ring: "ring-[color:var(--accent-orange-ring)]",
+  },
+  lime: {
+    badge:
+      "border border-[color:var(--accent-lime-border)] bg-[color:var(--accent-lime-bg)] text-[color:var(--accent-lime-text)]",
+    ring: "ring-[color:var(--accent-lime-ring)]",
+  },
+  indigo: {
+    badge:
+      "border border-[color:var(--accent-indigo-border)] bg-[color:var(--accent-indigo-bg)] text-[color:var(--accent-indigo-text)]",
+    ring: "ring-[color:var(--accent-indigo-ring)]",
+  },
+} as const;
+
+export type ToolAccentKey = keyof typeof toolAccents;

@@ -23,67 +23,18 @@ import {
   Search,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { layout, cards, buttons, glass } from "../styles/designSystem";
+import { layout, cards, buttons, glass, inputs, toolAccents } from "../styles/designSystem";
+import type { ToolAccentKey } from "../styles/designSystem";
 
 // --- Minimal card + layout utilities ---
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
 
-type Accent =
-  | "emerald"
-  | "yellow"
-  | "blue"
-  | "violet"
-  | "pink"
-  | "cyan"
-  | "orange"
-  | "lime"
-  | "indigo";
-
-const accentStyles: Record<Accent, { badge: string; ring: string }> = {
-  emerald: {
-    badge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
-    ring: "ring-emerald-500/10",
-  },
-  yellow: {
-    badge: "bg-yellow-500/20 text-yellow-300 border-yellow-400/30",
-    ring: "ring-yellow-500/10",
-  },
-  blue: {
-    badge: "bg-sky-500/20 text-sky-300 border-sky-400/30",
-    ring: "ring-sky-500/10",
-  },
-  violet: {
-    badge: "bg-violet-500/20 text-violet-300 border-violet-400/30",
-    ring: "ring-violet-500/10",
-  },
-  pink: {
-    badge: "bg-pink-500/20 text-pink-300 border-pink-400/30",
-    ring: "ring-pink-500/10",
-  },
-  cyan: {
-    badge: "bg-cyan-500/20 text-cyan-300 border-cyan-400/30",
-    ring: "ring-cyan-500/10",
-  },
-  orange: {
-    badge: "bg-orange-500/20 text-orange-300 border-orange-400/30",
-    ring: "ring-orange-500/10",
-  },
-  lime: {
-    badge: "bg-lime-500/20 text-lime-300 border-lime-400/30",
-    ring: "ring-lime-500/10",
-  },
-  indigo: {
-    badge: "bg-indigo-500/20 text-indigo-300 border-indigo-400/30",
-    ring: "ring-indigo-500/10",
-  },
-};
-
 type Tool = {
   name: string;
   desc: string;
   Icon: React.ComponentType<{ className?: string }>;
-  accent: Accent;
+  accent: ToolAccentKey;
   href?: string;
 };
 
@@ -310,7 +261,7 @@ const CATEGORIES = [
 ];
 
 function ToolCard({ name, desc, Icon, accent, href }: Tool) {
-  const s = accentStyles[accent];
+  const accentTokens = toolAccents[accent];
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     const rect = el.getBoundingClientRect();
@@ -354,8 +305,8 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
         ) : (
           <div
             className={cx(
-              "size-7 grid place-items-center rounded-lg border",
-              s.badge
+              "size-7 grid place-items-center rounded-lg",
+              accentTokens.badge
             )}
           >
             <Icon className="size-5" />
@@ -392,7 +343,7 @@ export default function ToolsSection() {
               <input
                 type="text"
                 placeholder="what do you want to do?"
-                className="w-full py-3 rounded-full bg-b-mid text-d-white placeholder-d-white/60 px-12 border border-b-mid focus:border-d-light focus:outline-none ring-0 focus:ring-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-raleway transition-colors duration-200"
+                className={`${inputs.pill} pl-12`}
               />
             </div>
           </div>

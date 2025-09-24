@@ -53,7 +53,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       <div className="flex-1" />
       <button
         onClick={onClick}
-        className="self-start btn btn-ghost btn-ghost-compact parallax-mid mt-2"
+        className="self-start btn btn-ghost btn-ghost-compact parallax-large mt-2"
       >
         {buttonText}
       </button>

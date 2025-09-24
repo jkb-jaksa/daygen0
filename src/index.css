@@ -47,9 +47,55 @@
   
   /* Brand cyan color */
   --brand-cyan: rgb(3,188,189);
-  
+
   /* Brand red color */
   --brand-red: rgb(243,36,54);
+
+  /* Accent tokens derived from the brand palette */
+  --accent-emerald-bg: rgba(45, 212, 198, 0.16);
+  --accent-emerald-border: rgba(45, 212, 198, 0.36);
+  --accent-emerald-ring: rgba(45, 212, 198, 0.45);
+  --accent-emerald-text: #bdf5ee;
+
+  --accent-yellow-bg: rgba(255, 209, 102, 0.18);
+  --accent-yellow-border: rgba(255, 209, 102, 0.4);
+  --accent-yellow-ring: rgba(255, 209, 102, 0.5);
+  --accent-yellow-text: #ffe8a8;
+
+  --accent-blue-bg: rgba(60, 185, 255, 0.18);
+  --accent-blue-border: rgba(60, 185, 255, 0.42);
+  --accent-blue-ring: rgba(60, 185, 255, 0.52);
+  --accent-blue-text: #aee2ff;
+
+  --accent-violet-bg: rgba(255, 122, 195, 0.18);
+  --accent-violet-border: rgba(255, 122, 195, 0.42);
+  --accent-violet-ring: rgba(255, 122, 195, 0.5);
+  --accent-violet-text: #ffc4e3;
+
+  --accent-pink-bg: rgba(255, 111, 145, 0.18);
+  --accent-pink-border: rgba(255, 111, 145, 0.42);
+  --accent-pink-ring: rgba(255, 111, 145, 0.5);
+  --accent-pink-text: #ffc0d2;
+
+  --accent-cyan-bg: rgba(3, 188, 189, 0.18);
+  --accent-cyan-border: rgba(3, 188, 189, 0.42);
+  --accent-cyan-ring: rgba(3, 188, 189, 0.5);
+  --accent-cyan-text: #8cebeb;
+
+  --accent-orange-bg: rgba(255, 140, 0, 0.18);
+  --accent-orange-border: rgba(255, 140, 0, 0.42);
+  --accent-orange-ring: rgba(255, 140, 0, 0.5);
+  --accent-orange-text: #ffd0a6;
+
+  --accent-lime-bg: rgba(182, 242, 127, 0.18);
+  --accent-lime-border: rgba(182, 242, 127, 0.4);
+  --accent-lime-ring: rgba(182, 242, 127, 0.5);
+  --accent-lime-text: #def9c9;
+
+  --accent-indigo-bg: rgba(140, 124, 255, 0.18);
+  --accent-indigo-border: rgba(140, 124, 255, 0.4);
+  --accent-indigo-ring: rgba(140, 124, 255, 0.5);
+  --accent-indigo-text: #d1c9ff;
 
   /* Primary font family */
   --font-raleway: "Raleway", sans-serif;
@@ -147,7 +193,6 @@ html, body {
   border-color: var(--d-mid);
   color: var(--d-white);
   font-family: 'Raleway', sans-serif;
-  font-weight: 400;
 }
 
 .btn-ghost:hover {
@@ -675,19 +720,19 @@ html, body {
 /* More pronounced effect for large elements */
 .parallax-large:hover,
 .parallax-large.parallax-active {
-  transform: translateZ(150px) scale(1.012);
+  transform: translateZ(150px) scale(1.01);
   transition: transform 0.1s;
 }
 
 /* Force parallax effect for footer icons - bypasses reduced motion */
 .parallax-force:hover {
-  transform: translateZ(150px) scale(1.012) !important;
+  transform: translateZ(150px) scale(1.01) !important;
   transition: transform 0.1s !important;
 }
 
 /* Special parallax for positioned elements (like scroll up button) */
 .parallax-force-positioned:hover {
-  transform: translateY(-50%) translateZ(150px) scale(1.012) !important;
+  transform: translateY(-50%) translateZ(150px) scale(1.01) !important;
   transition: transform 0.1s !important;
 }
 
@@ -699,7 +744,7 @@ html, body {
 .parallax-small:hover,
 .parallax-small.parallax-active {
   transform: translateZ(100px) scale(1.004);
-  transition: transform 0.2s;
+  transition: transform 0.1s;
 }
 
 /* Prompt bar hover/interaction styles */
@@ -739,6 +784,17 @@ html, body {
   color: var(--d-orange-1);
   transform: scale(1.01);
 }
+
+/* Override image-action-btn transform for parallax elements */
+.image-action-btn.parallax-large:hover {
+  transform: translateZ(150px) scale(1.01);
+}
+
+/* Override image-action-btn transform for positioned parallax elements */
+.image-action-btn.parallax-force-positioned:hover {
+  transform: translateY(-50%) translateZ(150px) scale(1.01);
+}
+
 
 .image-action-btn--labelled {
   display: inline-flex;
