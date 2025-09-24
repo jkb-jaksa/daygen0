@@ -787,12 +787,12 @@ html, body {
 
 /* Override image-action-btn transform for parallax elements */
 .image-action-btn.parallax-large:hover {
-  transform: translateZ(150px) scale(1.01);
+  transform: scale(1.01);
 }
 
 /* Override image-action-btn transform for positioned parallax elements */
 .image-action-btn.parallax-force-positioned:hover {
-  transform: translateY(-50%) translateZ(150px) scale(1.01);
+  transform: translateY(-50%) scale(1.01);
 }
 
 
