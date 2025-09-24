@@ -31,6 +31,7 @@ import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, request
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass, inputs } from "../styles/designSystem";
+import OrbBackdrop from "./OrbBackdrop";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
@@ -4172,7 +4173,7 @@ const handleGenerate = async () => {
 
       
       {/* Background overlay to show gradient behind navbar */}
-      <div className={layout.backdrop} aria-hidden="true" />
+      <OrbBackdrop />
       
       {/* PLATFORM HERO */}
       <header className={`relative z-10 ${layout.container} pt-[calc(var(--nav-h)+0.25rem)] pb-48`}>
