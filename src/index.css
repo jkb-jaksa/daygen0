@@ -32,10 +32,10 @@
   --d-light: #8E9393;
   --d-light-rgb: 142 147 147;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --d-mid: #323838;
-  --d-mid-rgb: 50 56 56;
-  --d-dark: #222424;
-  --d-dark-rgb: 34 36 36;
+  --d-mid: #3d4343;
+  --d-mid-rgb: 61 67 67;
+  --d-dark: #1a1c1c;
+  --d-dark-rgb: 26 28 28;
   --d-black: #060806;
   --d-black-rgb: 6 8 6;
 
@@ -125,33 +125,11 @@
   background-position: 0 0, 0 0;
 }
 
-/* Ensure page background behind transparent header is black */
+/* Ensure page background behind transparent header is d-black */
 html, body {
-  background-color: #000000;
+  background-color: var(--d-black);
 }
 
-/* Reusable orb background class */
-.orb-background {
-  position: relative;
-  overflow: hidden;
-}
-
-.orb-background::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-color: #000000;
-  z-index: 0;
-}
-
-.orb-background::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-color: #000000;
-  z-index: 0;
-  pointer-events: none;
-}
 
 
 
@@ -196,8 +174,8 @@ html, body {
 }
 
 .btn-ghost:hover {
-  border-color: var(--d-light);
-  color: var(--d-orange-1);
+  border-color: var(--d-white);
+  color: var(--d-text);
 }
 
 /* Compact ghost button variant */
@@ -615,6 +593,64 @@ html, body {
   }
 }
 
+/* Jaksa gradient - tag-gradient without blur effects */
+.jaksagradient {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+
+  /* defaults */
+  --x: 50%;
+  --y: 50%;
+  --tx: 0px;
+  --ty: 0px;
+
+  /* lighter idle for better post-hover feel */
+  --idle-op: 1;
+  --hover-op: 1.5;
+  --l: 0.5; /* glow strength toggled by JS */
+  --fade-ms: 200ms; /* default fade duration */
+  --li: 1; /* intensity multiplier */
+}
+
+.jaksagradient::before {
+  background: linear-gradient(150deg,
+    hsla(38,  35%, 68%, 0.03)  0%,
+    hsla(342, 32%, 70%, 0.04) 20%,
+    hsla(226, 30%, 70%, 0.05) 40%,
+    hsla(182, 28%, 68%, 0.06) 60%,
+    hsla(226, 30%, 70%, 0.07) 80%,
+    hsla(182, 28%, 68%, 0.08) 100%
+  );
+  content: "";
+  filter: brightness(1.06); /* Removed blur(24px) */
+  inset: -2px;
+  opacity: var(--idle-op);
+  position: absolute;
+  transition: opacity 0.2s ease;
+  will-change: opacity;
+  z-index: -2;
+}
+
+.jaksagradient::after {
+  background: radial-gradient(200px 200px at var(--x) var(--y),
+      rgb(255 255 255 / calc(0.16 * var(--l) * var(--li))),
+      rgb(255 255 255 / calc(0.06 * var(--l) * var(--li))) 45%,
+      rgb(255 255 255 / 0) 60%);
+  content: "";
+  /* Removed filter: blur(96px) */
+  inset: -2px;
+  mix-blend-mode: screen;
+  opacity: calc(0.0001 + var(--l));
+  pointer-events: none;
+  position: absolute;
+  transform: translate3d(var(--tx), var(--ty), 0);
+  transition: opacity var(--fade-ms) cubic-bezier(.22,.61,.36,1),
+              transform 200ms ease;
+  will-change: opacity, transform;
+  z-index: 3;
+}
+
 
 /* Soft white pill button */
 .btn-white {
@@ -781,7 +817,7 @@ html, body {
 .image-action-btn:hover {
   background-color: rgba(14, 18, 18, 0.8); /* Updated to match glass.prompt opacity */
   border-color: var(--d-mid); /* Updated to match glass.prompt hover border */
-  color: var(--d-orange-1);
+  color: white;
   transform: scale(1.01);
 }
 
@@ -858,11 +894,11 @@ html, body {
   overflow: hidden;
 }
 
-/* Default orange icon for empty states */
+/* Default icon for empty states */
 .default-orange-icon {
   width: 2.5rem;
   height: 2.5rem;
-  color: var(--d-orange-1);
+  color: var(--d-text);
 }
 
 /* Custom select option hover styles for Gallery dropdowns */
@@ -997,73 +1033,6 @@ select option::-webkit-scrollbar-thumb:hover {
   pointer-events: none;
 }
 
-.home-hero-card__orb {
-  position: absolute;
-  filter: blur(140px);
-  opacity: 0.9;
-  mix-blend-mode: screen;
-  pointer-events: none;
-  border-radius: 9999px;
-  transform: none;
-}
-
-
-.home-hero-card__orb::before {
-  content: none;
-}
-
-.home-hero-card__orb--cyan {
-  width: clamp(16rem, 26vw, 24rem);
-  height: clamp(16rem, 26vw, 24rem);
-  top: -33%;
-  right: -12%;
-  background: radial-gradient(circle, rgba(3, 188, 189, 0.7) 0%, rgba(3, 188, 189, 0.08) 55%, rgba(3, 188, 189, 0) 80%);
-}
-
-
-.home-hero-card__orb--yellow {
-  width: clamp(14rem, 24vw, 20rem);
-  height: clamp(14rem, 24vw, 20rem);
-  top: -7%;
-  left: -18%;
-  background: radial-gradient(circle, rgba(255, 140, 0, 0.7) 0%, rgba(255, 140, 0, 0.12) 48%, rgba(255, 140, 0, 0) 78%);
-}
-
-
-.home-hero-card__orb--red {
-  width: clamp(14rem, 26vw, 22rem);
-  height: clamp(14rem, 26vw, 22rem);
-  bottom: -29%;
-  left: 4%;
-  background: radial-gradient(circle, rgba(243, 36, 54, 0.7) 0%, rgba(243, 36, 54, 0.10) 52%, rgba(243, 36, 54, 0) 78%);
-}
-
-
-.home-hero-card__orb--blue {
-  width: clamp(17rem, 30vw, 26rem);
-  height: clamp(17rem, 30vw, 26rem);
-  bottom: -37%;
-  right: -18%;
-  background: radial-gradient(circle, rgba(42, 93, 255, 0.7) 0%, rgba(42, 93, 255, 0.10) 52%, rgba(42, 93, 255, 0) 80%);
-}
-
-.home-hero-card__orb--violet {
-  width: clamp(15rem, 28vw, 24rem);
-  height: clamp(15rem, 28vw, 24rem);
-  bottom: -63%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(195, 105, 255, 0.7) 0%, rgba(195, 105, 255, 0.10) 52%, rgba(195, 105, 255, 0) 80%);
-}
-
-
-.home-hero-card__orb--orange-center {
-  width: clamp(12rem, 22vw, 18rem);
-  height: clamp(12rem, 22vw, 18rem);
-  top: -2%;
-  left: 38%;
-  background: radial-gradient(circle, rgba(255, 158, 41, 0.7) 0%, rgba(255, 158, 41, 0.09) 45%, rgba(255, 158, 41, 0) 75%);
-}
 
 
 @media (max-width: 640px) {
@@ -1071,42 +1040,6 @@ select option::-webkit-scrollbar-thumb:hover {
     padding: clamp(2.25rem, 8vw, 3.25rem) clamp(1.5rem, 6vw, 2.75rem);
   }
 
-  .home-hero-card__orb {
-    filter: blur(120px);
-    opacity: 0.9;
-  }
-
-  .home-hero-card__orb--cyan {
-    top: -30%;
-    right: -20%;
-  }
-
-  .home-hero-card__orb--yellow {
-    top: -7%;
-    left: -20%;
-  }
-
-  .home-hero-card__orb--red {
-    bottom: -29%;
-    left: -8%;
-  }
-
-  .home-hero-card__orb--blue {
-    bottom: -35%;
-    right: -30%;
-  }
-
-  .home-hero-card__orb--violet {
-    bottom: -66%;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-
-  .home-hero-card__orb--orange-center {
-    top: -4%;
-    left: 32%;
-  }
 }
 
 .home-hero-logo {
@@ -1198,7 +1131,6 @@ select option::-webkit-scrollbar-thumb:hover {
    ------------------------------------------------------------- */
 .faq-section {
   background: var(--d-black);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
   position: relative;
   z-index: 1;
   padding-bottom: 6rem;

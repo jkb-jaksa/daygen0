@@ -66,20 +66,11 @@ function Home() {
   }, [location.hash]);
 
   return (
-    <div className={`${layout.page} home-page`}>
+    <div className={`${layout.page} home-page tag-gradient no-hover-bg`}>
 
       <div className="relative z-10">
         {/* Welcome Section */}
         <section className="relative min-h-screen flex items-center justify-center pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
-          {/* Background effects */}
-          <div className="home-hero-card__frame" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--cyan" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--yellow" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--orange" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--red" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--blue" aria-hidden="true" />
-          <div className="home-hero-card__orb home-hero-card__orb--violet" aria-hidden="true" />
-          <div className="home-hero-card__spark" aria-hidden="true" />
 
           {/* Logo section - positioned better */}
           <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-0 right-0 z-20">
@@ -87,7 +78,7 @@ function Home() {
               <div className="home-hero-logo text-left">
                 <div className={text.subHeading}>
                   <span className="text-white-gradient">day</span>
-                  <span className="text-brand">gen</span>
+                  <span className="text-white-gradient">gen</span>
                 </div>
               </div>
             </div>
@@ -98,16 +89,15 @@ function Home() {
             {/* Main content */}
             <div className="home-hero-copy text-center flex flex-col gap-4">
               <h1 className={`${text.heroHeading} home-hero-title`}>
-                Your <span className="text-d-orange">Daily</span> AI Generations.
+                Your Daily AI Generations.
               </h1>
-              <div className="home-hero-line"></div>
               <div className="home-hero-description text-xl text-d-white font-raleway leading-relaxed">
                 Master all the best Creative AI Tools in one place.
               </div>
               <div className="home-hero-actions">
                 <Link
                   to="/learn/use-cases"
-                  className={buttons.secondary}
+                  className={buttons.ghost}
                 >
                   Learn
                 </Link>
