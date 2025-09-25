@@ -332,7 +332,7 @@ const CustomDropdown: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="w-full px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`w-full px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={selectedOption ? 'text-d-white' : 'text-d-white/50'}>
           {selectedOption?.label || placeholder || 'Select...'}
@@ -343,7 +343,7 @@ const CustomDropdown: React.FC<{
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed bg-d-black border border-d-mid rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto"
+          className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
           style={{
             top: pos.top,
             left: pos.left,
@@ -358,11 +358,11 @@ const CustomDropdown: React.FC<{
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-text hover:text-d-black ${
-                option.value === value 
-                  ? 'bg-d-white text-d-black' 
-                  : 'text-d-white hover:bg-d-text hover:text-d-black'
-              }`}
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
+                  option.value === value
+                    ? 'bg-white border-white/70 shadow-lg shadow-white/30 text-d-black'
+                    : 'bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text'
+                }`}
             >
               {option.label}
             </button>
@@ -428,7 +428,7 @@ const CustomMultiSelect: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <div className="flex flex-wrap gap-1.5 flex-1">
           {values.length === 0 ? (
@@ -460,7 +460,7 @@ const CustomMultiSelect: React.FC<{
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed bg-d-black border border-d-mid rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto"
+          className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
           style={{
             top: pos.top,
             left: pos.left,
@@ -474,11 +474,11 @@ const CustomMultiSelect: React.FC<{
                 key={option.value}
                 type="button"
                 onClick={() => toggleOption(option.value)}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-text hover:text-d-black ${
-                  isSelected 
-                    ? 'bg-d-white text-d-black' 
-                    : 'text-d-white hover:bg-d-text hover:text-d-black'
-                }`}
+                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
+                    isSelected
+                      ? 'bg-white border-white/70 shadow-lg shadow-white/30 text-d-black'
+                      : 'bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text'
+                  }`}
               >
                 {option.label}
               </button>
