@@ -105,38 +105,6 @@ const ModelMenuPortal: React.FC<{
 
 // Main Component
 export default function Edit() {
-  // Add CSS for slider thumb using the d-text accent color
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      input[type="range"]::-webkit-slider-thumb {
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: rgba(var(--d-text-rgb), 1);
-        cursor: pointer;
-        border: 2px solid var(--d-text);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      }
-      input[type="range"]::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: rgba(var(--d-text-rgb), 1);
-        cursor: pointer;
-        border: 2px solid var(--d-text);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
-    };
-  }, []);
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -462,7 +430,7 @@ export default function Edit() {
 
   // Image resize functions (only work in move mode)
   const increaseImageSize = () => {
-    setImageSize(prev => Math.min(prev + 10, 2000)); // Max 2000%
+    setImageSize(prev => Math.min(prev + 10, 500)); // Max 500%
   };
 
   const decreaseImageSize = () => {
@@ -516,7 +484,11 @@ export default function Edit() {
     const newPath = [...currentPath, { x, y }];
     setCurrentPath(newPath);
     
-    // Redraw everything without clearing the canvas
+    // Update mouse position for brush preview
+    setMousePosition({ x, y });
+    setShowBrushPreview(true);
+    
+    // Redraw everything immediately
     redrawCanvas();
   };
 
@@ -605,12 +577,10 @@ export default function Edit() {
     
     // Immediately redraw the entire canvas with consistent opacity
     // This ensures all strokes have the same opacity regardless of overlap
-    setTimeout(() => {
-      redrawCanvas();
-      // Save the mask data after redraw
-      const maskDataUrl = canvas.toDataURL();
-      setMaskData(maskDataUrl);
-    }, 0);
+    redrawCanvas();
+    // Save the mask data after redraw
+    const maskDataUrl = canvas.toDataURL();
+    setMaskData(maskDataUrl);
   };
 
   const clearMask = () => {
@@ -1095,9 +1065,23 @@ export default function Edit() {
                         isMoveMode ? 'pointer-events-none' : 'cursor-crosshair'
                       }`}
                       onMouseDown={isMoveMode ? undefined : startDrawing}
-                      onMouseMove={isMoveMode ? undefined : draw}
+                      onMouseMove={isMoveMode ? undefined : (e) => {
+                        if (!isDrawing) {
+                          // Update brush preview position even when not drawing
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = e.clientX - rect.left;
+                          const y = e.clientY - rect.top;
+                          setMousePosition({ x, y });
+                          setShowBrushPreview(true);
+                        } else {
+                          draw(e);
+                        }
+                      }}
                       onMouseUp={isMoveMode ? undefined : stopDrawing}
-                      onMouseLeave={isMoveMode ? undefined : stopDrawing}
+                      onMouseLeave={isMoveMode ? undefined : (e) => {
+                        setShowBrushPreview(false);
+                        stopDrawing();
+                      }}
                       onTouchStart={isMoveMode ? undefined : startDrawing}
                       onTouchMove={isMoveMode ? undefined : draw}
                       onTouchEnd={isMoveMode ? undefined : stopDrawing}
@@ -1130,7 +1114,7 @@ export default function Edit() {
                   />
                   <button
                     onClick={handleDeleteImage}
-                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto"
+                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1174,13 +1158,13 @@ export default function Edit() {
                   <input
                     type="range"
                     min="10"
-                    max="2000"
+                    max="500"
                     step="10"
                     value={imageSize}
                     onChange={(e) => setImageSize(Number(e.target.value))}
-                    className="w-40 h-1 bg-d-text rounded-lg appearance-none cursor-pointer"
+                    className="w-40 h-1 bg-d-white rounded-lg appearance-none cursor-pointer"
                     style={{
-                      background: `linear-gradient(to right, rgba(var(--d-text-rgb), 1) 0%, rgba(var(--d-text-rgb), 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(var(--d-text-rgb), 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(var(--d-text-rgb), 0.3) 100%)`,
+                      background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                       WebkitAppearance: 'none',
                       appearance: 'none',
                       height: '4px',
@@ -1193,7 +1177,7 @@ export default function Edit() {
                 
                 <button
                   onClick={increaseImageSize}
-                  disabled={imageSize >= 2000}
+                  disabled={imageSize >= 500}
                   className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-text`}
                   title="Increase size"
                 >
@@ -1216,7 +1200,7 @@ export default function Edit() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isMoveMode 
                     ? 'text-d-text border-d-text' 
-                    : 'text-d-white border-d-dark hover:border-d-text'
+                    : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
                 }`}
                 title="Toggle move mode"
               >
@@ -1228,7 +1212,7 @@ export default function Edit() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isPreciseEditMode 
                     ? 'text-d-text border-d-text' 
-                    : 'text-d-white border-d-dark hover:border-d-text'
+                    : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
                 }`}
                 title="Draw a mask"
               >
@@ -1248,9 +1232,9 @@ export default function Edit() {
                       max="200"
                       value={brushSize}
                       onChange={(e) => setBrushSize(Number(e.target.value))}
-                      className="w-16 h-1 bg-d-text rounded-lg appearance-none cursor-pointer"
+                      className="w-16 h-1 bg-d-white rounded-lg appearance-none cursor-pointer"
                       style={{
-                        background: `linear-gradient(to right, rgba(var(--d-text-rgb), 1) 0%, rgba(var(--d-text-rgb), 1) ${(brushSize - 2) / 198 * 100}%, rgba(var(--d-text-rgb), 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(var(--d-text-rgb), 0.3) 100%)`,
+                        background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                         WebkitAppearance: 'none',
                         appearance: 'none',
                         height: '4px',
@@ -1259,7 +1243,7 @@ export default function Edit() {
                       }}
                       title="Adjust brush size"
                     />
-                    <span className="text-d-text text-xs font-mono min-w-[2rem] text-center">
+                    <span className="text-d-white text-xs font-mono font-light min-w-[2rem] text-center">
                       {brushSize}px
                     </span>
                   </div>
@@ -1299,14 +1283,15 @@ export default function Edit() {
                 <Eraser className="w-3.5 h-3.5" />
               </button>
 
-              {/* Clear mask button - only show when mask exists */}
-              {maskData && (
+              {/* Reset mask button - only show when precise edit mode is active and mask exists */}
+              {isPreciseEditMode && maskData && (
                 <button
                   onClick={clearMask}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-text/30 hover:border-d-text/50 hover:text-d-text`}
-                  title="Clear mask"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
+                  title="Reset mask"
                 >
-                  <X className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" />
+                  Reset mask
                 </button>
               )}
             </div>

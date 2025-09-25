@@ -34,8 +34,8 @@
   /* Mid tone: made a bit lighter for hover/border contrast */
   --d-mid: #353b3b;
   --d-mid-rgb: 53 59 59;
-  --d-dark: #1a1c1c;
-  --d-dark-rgb: 26 28 28;
+  --d-dark: #1d1f1f;
+  --d-dark-rgb: 29 31 31;
   --d-black: #060806;
   --d-black-rgb: 6 8 6;
 
@@ -1223,4 +1223,26 @@ select option::-webkit-scrollbar-thumb:hover {
 .sidebar-section-header {
   font-weight: 400;
   letter-spacing: 0.1em;
+}
+
+/* Range slider thumb styling for Edit section */
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgb(184, 192, 192);
+  cursor: pointer;
+  border: 2px solid rgb(184, 192, 192);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgb(184, 192, 192);
+  cursor: pointer;
+  border: 2px solid rgb(184, 192, 192);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }

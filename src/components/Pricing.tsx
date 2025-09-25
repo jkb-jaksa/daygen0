@@ -258,7 +258,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
             }}
             className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
               tier.id === 'free' 
-                ? 'btn-white' 
+                ? 'btn-orange' 
                 : tier.id === 'pro'
                 ? 'btn-cyan'
                 : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
@@ -287,7 +287,7 @@ export default function Pricing() {
         <section className={`${layout.container} pt-8 pb-16`}>
           <div className="text-center mb-8">
             <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-d-text">
-              Choose your <span className="text-d-orange-1">plan</span><span className="text-d-text">.</span>
+              Choose your plan.
             </h1>
             <p className="mx-auto mb-6 max-w-2xl text-lg text-d-white font-raleway">
               Unlock the full potential of daily generations.
@@ -303,14 +303,14 @@ export default function Pricing() {
                 className="relative w-14 h-7 bg-d-dark rounded-full border border-d-mid transition-colors duration-200 hover:border-d-text parallax-large"
               >
                 <div
-                  className={`absolute top-0.5 left-0.5 w-6 h-6 bg-d-orange-1 rounded-full transition-transform duration-200 ${
+                  className={`absolute top-0.5 left-0.5 w-6 h-6 bg-d-white rounded-full transition-transform duration-200 ${
                     billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'
                   }`}
                 />
               </button>
               <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-d-text' : 'text-d-white'}`}>
                 Yearly
-                <span className="ml-1 text-xs text-d-orange-1 font-raleway">(Save 20%)</span>
+                <span className="ml-1 text-xs text-d-white font-raleway">(Save 20%)</span>
               </span>
             </div>
           </div>
@@ -335,20 +335,20 @@ export default function Pricing() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-d-orange-1/20 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-d-orange-1" />
+                  <div className="w-8 h-8 rounded-lg bg-d-white/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-d-white" />
                   </div>
                   <span className="text-d-white font-raleway">Unlimited generations</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-d-orange-1/20 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-d-orange-1" />
+                  <div className="w-8 h-8 rounded-lg bg-d-white/20 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-d-white" />
                   </div>
                   <span className="text-d-white font-raleway">Commercial usage rights</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-d-orange-1/20 flex items-center justify-center">
-                    <Crown className="w-4 h-4 text-d-orange-1" />
+                  <div className="w-8 h-8 rounded-lg bg-d-white/20 flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-d-white" />
                   </div>
                   <span className="text-d-white font-raleway">Priority processing</span>
                 </div>
