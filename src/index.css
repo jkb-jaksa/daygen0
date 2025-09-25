@@ -32,8 +32,8 @@
   --d-light: #8E9393;
   --d-light-rgb: 142 147 147;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --d-mid: #3d4343;
-  --d-mid-rgb: 61 67 67;
+  --d-mid: #353b3b;
+  --d-mid-rgb: 53 59 59;
   --d-dark: #1a1c1c;
   --d-dark-rgb: 26 28 28;
   --d-black: #060806;
@@ -989,14 +989,25 @@ select option::-webkit-scrollbar-thumb:hover {
 .PromptDescriptionBar {
   background: linear-gradient(
     to top,
-    rgba(var(--d-black-rgb), 0.9) 0%,
-    rgba(var(--d-black-rgb), 0.85) 10%,
-    rgba(var(--d-black-rgb), 0.75) 25%,
-    rgba(var(--d-black-rgb), 0.65) 40%,
-    rgba(var(--d-black-rgb), 0.45) 60%,
-    rgba(var(--d-black-rgb), 0.35) 80%,
-    rgba(var(--d-black-rgb), 0.2) 95%,
-    rgba(var(--d-black-rgb), 0.08) 100%
+    rgba(0, 0, 0, 0.56) 0%,
+    rgba(0, 0, 0, 0.525) 10%,
+    rgba(0, 0, 0, 0.455) 25%,
+    rgba(0, 0, 0, 0.385) 40%,
+    rgba(0, 0, 0, 0.245) 60%,
+    rgba(0, 0, 0, 0.175) 80%,
+    rgba(0, 0, 0, 0.07) 95%,
+    rgba(0, 0, 0, 0.0) 100%
+  );
+  background: linear-gradient(
+    to top,
+    rgb(var(--d-black-rgb) / 0.56) 0%,
+    rgb(var(--d-black-rgb) / 0.525) 10%,
+    rgb(var(--d-black-rgb) / 0.455) 25%,
+    rgb(var(--d-black-rgb) / 0.385) 40%,
+    rgb(var(--d-black-rgb) / 0.245) 60%,
+    rgb(var(--d-black-rgb) / 0.175) 80%,
+    rgb(var(--d-black-rgb) / 0.07) 95%,
+    rgb(var(--d-black-rgb) / 0.0) 100%
   );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
