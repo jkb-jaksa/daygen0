@@ -414,13 +414,13 @@ export function SettingsMenu({
                   type="file"
                   accept="image/*"
                   onChange={event => hailuo.onFirstFrameChange(event.target.files?.[0] ?? null)}
-                  className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-orange-1/20"
+                  className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-dark/40"
                 />
                 {hailuo.firstFrame && (
                   <button
                     type="button"
                     onClick={() => hailuo.onFirstFrameChange(null)}
-                    className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors"
+                    className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-dark/40 hover:text-d-text transition-colors"
                   >
                     Clear
                   </button>
@@ -437,13 +437,13 @@ export function SettingsMenu({
                   type="file"
                   accept="image/*"
                   onChange={event => hailuo.onLastFrameChange(event.target.files?.[0] ?? null)}
-                  className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-orange-1/20"
+                  className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-dark/40"
                 />
                 {hailuo.lastFrame && (
                   <button
                     type="button"
                     onClick={() => hailuo.onLastFrameChange(null)}
-                    className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-orange-1/20 hover:text-d-orange-1 transition-colors"
+                    className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-dark/40 hover:text-d-text transition-colors"
                   >
                     Clear
                   </button>

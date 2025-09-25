@@ -208,7 +208,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className="parallax-small text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-medium"
+                  className="parallax-small text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-medium"
                   onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onClick={() => {
@@ -247,7 +247,7 @@ export default function Navbar() {
                 </button>
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
-                  className="parallax-large text-d-white hover:text-brand transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                  className="parallax-large text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -308,7 +308,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-brand transition-colors`}
+                  className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-d-text transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -335,7 +335,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-brand transition-colors`}
+                    className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-d-text transition-colors`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -348,7 +348,7 @@ export default function Navbar() {
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-black text-xs font-bold font-raleway"
+                        className="inline-grid place-items-center size-5 rounded-full text-d-black text-xs font-bold font-raleway"
                         style={{ background: user.color || "#FF8C00" }}
                       >
                         {(user.name || user.email)[0]?.toUpperCase()}
@@ -387,7 +387,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -403,7 +403,7 @@ export default function Navbar() {
                         key={category.key}
                         to="/edit"
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -421,7 +421,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-brand"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <item.Icon className="w-4 h-4" />
@@ -465,7 +465,7 @@ export default function Navbar() {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-brand transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-normal"
               role="menuitem"
             >
               My account
@@ -477,7 +477,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-brand transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-normal"
               role="menuitem"
             >
               My works
@@ -489,7 +489,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-brand transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-normal"
               role="menuitem"
             >
               Log out

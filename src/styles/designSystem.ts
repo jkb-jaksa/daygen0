@@ -1,11 +1,11 @@
 export const layout = {
-  page: "relative min-h-screen text-d-text overflow-hidden bg-black",
+  page: "relative min-h-screen text-d-text overflow-hidden bg-d-black",
   backdrop: "orb-background absolute inset-0 z-0",
   container: "mx-auto max-w-[85rem] px-6 lg:px-8",
   heroPadding: "pt-0 pb-0",
   sectionPadding: "py-16",
   sectionPaddingTight: "py-12",
-  sectionDivider: "relative w-full overflow-hidden bg-black border-b border-d-black",
+  sectionDivider: "relative w-full overflow-hidden bg-d-black border-b border-d-black",
 };
 
 export const text = {
@@ -27,7 +27,7 @@ export const buttons = {
   secondary: "btn btn-white font-raleway text-base font-semibold gap-2 parallax-large",
   ghost: "btn btn-ghost font-raleway text-base font-semibold gap-2 parallax-large",
   ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-semibold gap-2 parallax-large",
-  subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-semibold text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-brand parallax-large",
+  subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-semibold text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-d-text parallax-large",
   pillWarm: "btn btn-white btn-compact font-raleway text-base font-semibold gap-2 parallax-large",
   blockPrimary: "btn btn-white w-full font-raleway text-base font-semibold gap-2 parallax-large",
 };
@@ -50,9 +50,9 @@ export const glass = {
 };
 
 const iconButtonFocus =
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black";
 const iconButtonBase =
-  `parallax-large inline-flex items-center justify-center bg-transparent text-d-white transition-colors duration-200 hover:text-brand disabled:cursor-not-allowed disabled:opacity-60 ${iconButtonFocus}`;
+  `parallax-large inline-flex items-center justify-center bg-transparent text-d-white transition-colors duration-200 hover:text-d-text disabled:cursor-not-allowed disabled:opacity-60 ${iconButtonFocus}`;
 
 export const iconButtons = {
   sm: `${iconButtonBase} rounded-full size-8`,

@@ -300,7 +300,7 @@ export default function Pricing() {
               </span>
               <button
                 onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-                className="relative w-14 h-7 bg-d-dark rounded-full border border-d-mid transition-colors duration-200 hover:border-d-orange-1 parallax-large"
+                className="relative w-14 h-7 bg-d-dark rounded-full border border-d-mid transition-colors duration-200 hover:border-d-text parallax-large"
               >
                 <div
                   className={`absolute top-0.5 left-0.5 w-6 h-6 bg-d-orange-1 rounded-full transition-transform duration-200 ${

@@ -310,7 +310,7 @@ html, body {
 
 /* Subtle white gradient text for 'day' */
 .text-white-gradient {
-  color: #fff; /* fallback */
+  color: var(--d-text); /* fallback */
 }
 
 @supports (-webkit-background-clip: text) or (background-clip: text) {
@@ -871,13 +871,13 @@ html, body {
 }
 
 .image-select-toggle--active {
-  background-color: rgba(255, 149, 77, 0.15);
-  border-color: var(--d-orange-1);
-  color: var(--d-orange-1);
+  background-color: rgba(var(--d-text-rgb), 0.15);
+  border-color: var(--d-text);
+  color: var(--d-text);
 }
 
 .image-select-toggle:focus-visible {
-  outline: 2px solid var(--d-orange-1);
+  outline: 2px solid var(--d-text);
   outline-offset: 2px;
 }
 
@@ -987,7 +987,17 @@ select option::-webkit-scrollbar-thumb:hover {
 
 /* Prompt Description Bar Effect */
 .PromptDescriptionBar {
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.85) 10%, rgba(0,0,0,0.75) 25%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.35) 80%, rgba(0,0,0,0.2) 95%, rgba(0,0,0,0.08) 100%);
+  background: linear-gradient(
+    to top,
+    rgba(var(--d-black-rgb), 0.9) 0%,
+    rgba(var(--d-black-rgb), 0.85) 10%,
+    rgba(var(--d-black-rgb), 0.75) 25%,
+    rgba(var(--d-black-rgb), 0.65) 40%,
+    rgba(var(--d-black-rgb), 0.45) 60%,
+    rgba(var(--d-black-rgb), 0.35) 80%,
+    rgba(var(--d-black-rgb), 0.2) 95%,
+    rgba(var(--d-black-rgb), 0.08) 100%
+  );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   height: fit-content;
@@ -998,7 +1008,7 @@ select option::-webkit-scrollbar-thumb:hover {
    Homepage hero redesign
    ------------------------------------------------------------- */
 .home-page {
-  background-color: #000000;
+  background-color: var(--d-black);
 }
 
 
@@ -1018,7 +1028,7 @@ select option::-webkit-scrollbar-thumb:hover {
   inset: 0;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: radial-gradient(120% 110% at 100% 80%, rgba(3, 188, 189, 0.06) 0%, rgba(3, 188, 189, 0) 70%),
-    #000000;
+    var(--d-black);
   opacity: 0.7;
   pointer-events: none;
 }
@@ -1134,6 +1144,7 @@ select option::-webkit-scrollbar-thumb:hover {
   position: relative;
   z-index: 1;
   padding-bottom: 6rem;
+  border-top: 1px solid var(--d-dark);
 }
 
 .faq-section__header {

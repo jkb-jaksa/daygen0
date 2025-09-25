@@ -198,8 +198,8 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             onClick={() => setActiveTab(tab.id as any)}
             className={`px-4 py-2 rounded-full font-raleway text-sm transition-colors border border-d-dark ${
               activeTab === tab.id
-                ? 'bg-[color:var(--d-orange-1)] text-black shadow-[0_8px_24px_rgba(255,140,0,0.25)]'
-                : 'bg-d-dark/60 text-d-white/70 hover:text-brand hover:bg-d-dark/80'
+                ? 'bg-[color:var(--d-orange-1)] text-d-black shadow-[0_8px_24px_rgba(255,140,0,0.25)]'
+                : 'bg-d-dark/60 text-d-white/70 hover:text-d-text hover:bg-d-dark/80'
             }`}
           >
             <span className="mr-2">{tab.icon}</span>
@@ -214,7 +214,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           <p className="text-[color:var(--brand-red)] font-raleway">{error}</p>
           <button
             onClick={clearError}
-            className="mt-2 text-sm font-raleway text-[color:var(--brand-red)] hover:text-d-white underline"
+            className="mt-2 text-sm font-raleway text-[color:var(--brand-red)] hover:text-d-text underline"
           >
             Dismiss
           </button>
@@ -638,7 +638,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             <h3 className="text-lg font-semibold text-d-text font-raleway">Generated Images</h3>
             <button
               onClick={clearGeneratedImages}
-              className="text-sm text-d-white/60 hover:text-brand underline font-raleway"
+              className="text-sm text-d-white/60 hover:text-d-text underline font-raleway"
             >
               Clear All
             </button>

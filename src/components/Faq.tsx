@@ -115,7 +115,6 @@ const FAQSection: React.FC = () => {
           <h2 className={`${text.sectionHeading} faq-section__title pb-6`}>
             <span>FAQ</span>
           </h2>
-          <div className="home-hero-line"></div>
         </div>
 
         <div className="faq-section__content">

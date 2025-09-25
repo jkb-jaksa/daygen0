@@ -116,7 +116,7 @@ export default function Edit() {
         border-radius: 50%;
         background: #FF8C00;
         cursor: pointer;
-        border: 2px solid #fff;
+        border: 2px solid var(--d-text);
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       }
       input[type="range"]::-moz-range-thumb {
@@ -125,7 +125,7 @@ export default function Edit() {
         border-radius: 50%;
         background: #FF8C00;
         cursor: pointer;
-        border: 2px solid #fff;
+        border: 2px solid var(--d-text);
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       }
     `;
@@ -995,7 +995,7 @@ export default function Edit() {
           {!previewUrl && (
             <div className="w-full max-w-md mx-auto">
               <div 
-                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-d-white/30 hover:border-d-orange-1/50'}`}
+                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-d-white/30 hover:border-d-text/50'}`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
@@ -1128,7 +1128,7 @@ export default function Edit() {
                   />
                   <button
                     onClick={handleDeleteImage}
-                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5 pointer-events-auto"
+                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1150,7 +1150,7 @@ export default function Edit() {
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-text`}
                   title="Decrease size"
                 >
                   <Minus className="w-4 h-4" />
@@ -1163,7 +1163,7 @@ export default function Edit() {
                     </span>
                     <button
                       onClick={resetImageToDefault}
-                      className="p-1 text-d-white hover:text-d-orange-1 transition-colors duration-200"
+                      className="p-1 text-d-white hover:text-d-text transition-colors duration-200"
                       title="Reset to default position and size"
                     >
                       <RotateCcw className="w-3 h-3" />
@@ -1192,7 +1192,7 @@ export default function Edit() {
                 <button
                   onClick={increaseImageSize}
                   disabled={imageSize >= 2000}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-orange-1`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-text`}
                   title="Increase size"
                 >
                   <Plus className="w-4 h-4" />
@@ -1214,7 +1214,7 @@ export default function Edit() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isMoveMode 
                     ? 'text-d-orange-1 border-d-orange-1' 
-                    : 'text-d-white border-d-dark hover:border-d-orange-1'
+                    : 'text-d-white border-d-dark hover:border-d-text'
                 }`}
                 title="Toggle move mode"
               >
@@ -1226,7 +1226,7 @@ export default function Edit() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isPreciseEditMode 
                     ? 'text-d-orange-1 border-d-orange-1' 
-                    : 'text-d-white border-d-dark hover:border-d-orange-1'
+                    : 'text-d-white border-d-dark hover:border-d-text'
                 }`}
                 title="Draw a mask"
               >
@@ -1268,7 +1268,7 @@ export default function Edit() {
               <button
                 onClick={undoStroke}
                 disabled={allPaths.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Undo last stroke"
               >
                 <Undo2 className="w-4 h-4" />
@@ -1278,7 +1278,7 @@ export default function Edit() {
               <button
                 onClick={redoStroke}
                 disabled={redoStack.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-orange-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Redo last stroke"
               >
                 <Redo2 className="w-4 h-4" />
@@ -1290,7 +1290,7 @@ export default function Edit() {
                 className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${
                   isEraseMode 
                     ? 'text-d-orange-1 border-d-orange-1 bg-d-orange-1/20' 
-                    : 'text-d-white border-d-dark hover:text-d-orange-1'
+                    : 'text-d-white border-d-dark hover:text-d-text'
                 }`}
                 title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
               >
@@ -1301,7 +1301,7 @@ export default function Edit() {
               {maskData && (
                 <button
                   onClick={clearMask}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-orange-1/30 hover:border-d-orange-1/50 hover:text-d-orange-1`}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-orange-1/30 hover:border-d-text/50 hover:text-d-text`}
                   title="Clear mask"
                 >
                   <X className="w-4 h-4" />
@@ -1321,7 +1321,7 @@ export default function Edit() {
                 />
                 <button
                   onClick={() => clearCurrentGeneratedImage()}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1338,7 +1338,7 @@ export default function Edit() {
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-red-500/50">
                 <button
                   onClick={() => clearCurrentError()}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-orange-1 transition-colors duration-200 rounded-full p-1.5"
+                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1410,7 +1410,7 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-transparent hover:bg-d-dark/40 text-d-white hover:text-d-text border-0'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm font-raleway">Add more references</span>
@@ -1422,7 +1422,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                className={`bg-transparent hover:bg-d-dark/40 text-d-white hover:text-d-text border-0 flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1436,10 +1436,10 @@ export default function Edit() {
                     );
                   } else {
                     const Icon = currentModel.Icon;
-                    return <Icon className="w-5 h-5 group-hover:text-brand transition-colors duration-200" />;
+                    return <Icon className="w-5 h-5 group-hover:text-d-text transition-colors duration-200" />;
                   }
                 })()}
-                <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-brand transition-colors duration-200">{getCurrentModel().name}</span>
+                <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-200">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}
@@ -1461,7 +1461,7 @@ export default function Edit() {
                       className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                         isSelected 
                           ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
-                          : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-orange-1"
+                          : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-text"
                       }`}
                     >
                       {hasToolLogo(model.name) ? (
@@ -1472,17 +1472,17 @@ export default function Edit() {
                         />
                       ) : (
                         <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-d-text'
                         }`} />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-brand'
+                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-d-text'
                         }`}>
                           {model.name}
                         </div>
                         <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                          isSelected ? 'text-d-orange-1' : 'text-d-white group-hover:text-brand'
+                          isSelected ? 'text-d-orange-1' : 'text-d-white group-hover:text-d-text'
                         }`}>
                           {model.desc}
                         </div>
@@ -1503,7 +1503,7 @@ export default function Edit() {
                 onClick={toggleSettings}
                 title="Settings"
                 aria-label="Settings"
-                className={`bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border-0 grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+                className={`bg-transparent hover:bg-d-dark/40 text-d-white hover:text-d-text border-0 grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
               >
                 <Settings className="w-4 h-4" />
               </button>
@@ -1534,7 +1534,7 @@ export default function Edit() {
                             e.stopPropagation();
                             handleDeleteImage();
                           }}
-                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
+                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
                           title="Remove base reference"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -1548,7 +1548,7 @@ export default function Edit() {
                             clearReference(item.index);
                           }
                         }}
-                        className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-orange-1 rounded-full p-0.5 transition-all duration-200"
+                        className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
                         title="Remove reference"
                       >
                         <X className="w-2.5 h-2.5" />
@@ -1637,7 +1637,7 @@ export default function Edit() {
       {/* Full-size image modal */}
       {isFullSizeOpen && selectedFullImage && (
         <div
-          className="fixed inset-0 z-[60] bg-black/80 flex items-start justify-center p-4"
+          className="fixed inset-0 z-[60] bg-d-black/80 flex items-start justify-center p-4"
           onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
         >
           <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
@@ -1650,7 +1650,7 @@ export default function Edit() {
             
             <button
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
-              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-brand rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />

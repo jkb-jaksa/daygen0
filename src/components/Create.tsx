@@ -358,10 +358,10 @@ const CustomDropdown: React.FC<{
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-white hover:text-d-black ${
+              className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-text hover:text-d-black ${
                 option.value === value 
                   ? 'bg-d-orange-1 text-d-black' 
-                  : 'text-d-white hover:bg-white hover:text-d-black'
+                  : 'text-d-white hover:bg-d-text hover:text-d-black'
               }`}
             >
               {option.label}
@@ -445,7 +445,7 @@ const CustomMultiSelect: React.FC<{
                       e.stopPropagation();
                       removeOption(value);
                     }}
-                    className="hover:text-white transition-colors duration-200 ml-1 text-base font-bold"
+                    className="hover:text-d-text transition-colors duration-200 ml-1 text-base font-bold"
                   >
                     ×
                   </button>
@@ -474,10 +474,10 @@ const CustomMultiSelect: React.FC<{
                 key={option.value}
                 type="button"
                 onClick={() => toggleOption(option.value)}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-white hover:text-d-black ${
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-text hover:text-d-black ${
                   isSelected 
                     ? 'bg-d-orange-1 text-d-black' 
-                    : 'text-d-white hover:bg-white hover:text-d-black'
+                    : 'text-d-white hover:bg-d-text hover:text-d-black'
                 }`}
               >
                 {option.label}
@@ -2335,7 +2335,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -2346,7 +2346,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -2357,7 +2357,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleRerun();
@@ -2368,7 +2368,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleRerunWithDifferentModel();
@@ -2379,7 +2379,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -2424,7 +2424,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -2450,7 +2450,7 @@ const Create: React.FC = () => {
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -2461,7 +2461,7 @@ const Create: React.FC = () => {
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -2473,7 +2473,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-white"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               toggleImagePublicStatus(image.url);
@@ -2514,7 +2514,7 @@ const Create: React.FC = () => {
         key={`${context}-${img.url}-${idx}`}
         className={`group relative rounded-[24px] overflow-hidden border transition-all ${isSelectMode ? 'duration-100' : 'duration-200'} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
-            ? 'border-d-mid bg-d-black hover:bg-d-dark'
+            ? 'border-d-white bg-d-black hover:bg-d-dark'
             : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
         } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
       >
@@ -2544,7 +2544,7 @@ const Create: React.FC = () => {
                         e.stopPropagation();
                         copyPromptToClipboard(img.prompt);
                       }}
-                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-white relative z-20 align-middle pointer-events-auto"
+                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, tooltipId);
                       }}
@@ -2565,7 +2565,7 @@ const Create: React.FC = () => {
                         <img
                           src={ref}
                           alt={`Reference ${refIdx + 1}`}
-                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-white transition-colors duration-200"
+                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedReferenceImage(ref);
@@ -2586,7 +2586,7 @@ const Create: React.FC = () => {
                       link.target = '_blank';
                       link.click();
                     }}
-                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-white"
+                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
                   >
                     View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                   </button>
@@ -3987,10 +3987,10 @@ const handleGenerate = async () => {
                               ? "border-d-orange-1 bg-d-orange-1"
                               : isPartiallyInFolder
                                 ? "border-d-orange-1 bg-d-orange-1/30"
-                                : "border-d-mid hover:border-white/50"
+                                : "border-d-mid hover:border-d-text/50"
                           }`}>
                             {isFullyInFolder ? (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 text-d-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : isPartiallyInFolder ? (
@@ -4084,7 +4084,7 @@ const handleGenerate = async () => {
                           setFolderThumbnailDialog({show: false, folderId: null});
                           setFolderThumbnailFile(null);
                         }}
-                        className="absolute top-0 right-0 w-8 h-8 rounded-full bg-d-mid/20 hover:bg-white/30 text-d-text hover:text-white flex items-center justify-center transition-colors duration-200"
+                        className="absolute top-0 right-0 w-8 h-8 rounded-full bg-d-mid/20 hover:bg-d-text/30 text-d-text hover:text-d-text flex items-center justify-center transition-colors duration-200"
                         title="Remove current thumbnail"
                       >
                         <X className="w-4 h-4" />
@@ -4132,7 +4132,7 @@ const handleGenerate = async () => {
                         <button
                           key={idx}
                           onClick={() => handleSetFolderThumbnail(folder.id, img.url)}
-                          className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-white transition-colors duration-200"
+                          className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-d-text transition-colors duration-200"
                         >
                           <img 
                             src={img.url} 
@@ -4211,7 +4211,7 @@ const handleGenerate = async () => {
                             type: 'all',
                             folder: 'all'
                           })}
-                          className="px-2.5 py-1 text-xs text-d-white hover:text-white transition-colors duration-200 font-raleway"
+                          className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
                         >
                           Clear
                         </button>
@@ -4227,7 +4227,7 @@ const handleGenerate = async () => {
                               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                                 galleryFilters.liked 
                                   ? 'text-d-text border-d-mid' 
-                                  : 'text-d-white border-d-dark hover:border-white hover:text-white'
+                                  : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
                               }`}
                             >
                               <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
@@ -4238,7 +4238,7 @@ const handleGenerate = async () => {
                               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                                 galleryFilters.public 
                                   ? 'text-d-text border-d-mid' 
-                                  : 'text-d-white border-d-dark hover:border-white hover:text-white'
+                                  : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
                               }`}
                             >
                               <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? 'text-d-text' : 'text-current'}`} />
@@ -4318,7 +4318,7 @@ const handleGenerate = async () => {
                           <button
                             type="button"
                             onClick={toggleSelectMode}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-white !font-normal ${isSelectMode ? '!bg-d-mid/20 !text-d-text !border-d-mid/40' : ''}`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal ${isSelectMode ? '!bg-d-mid/20 !text-d-text !border-d-mid/40' : ''}`}
                           >
                             {isSelectMode ? 'Done' : 'Select'}
                           </button>
@@ -4326,7 +4326,7 @@ const handleGenerate = async () => {
                             type="button"
                             onClick={toggleSelectAllVisible}
                             disabled={filteredGallery.length === 0}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-white !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             {allVisibleSelected ? 'Unselect all' : 'Select all'}
                           </button>
@@ -4334,7 +4334,7 @@ const handleGenerate = async () => {
                             type="button"
                             onClick={clearImageSelection}
                             disabled={!hasSelection}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-white !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             Clear selection
                           </button>
@@ -4365,7 +4365,7 @@ const handleGenerate = async () => {
                                   handleBulkLike();
                                   closeBulkActionsMenu();
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-white/10 hover:text-white flex items-center gap-3"
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
                               >
                                 <Heart className="h-4 w-4" />
                                 <span>Like</span>
@@ -4377,7 +4377,7 @@ const handleGenerate = async () => {
                                   handleBulkUnlike();
                                   closeBulkActionsMenu();
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-white/10 hover:text-white flex items-center gap-3"
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
                               >
                                 <HeartOff className="h-4 w-4" />
                                 <span>Unlike</span>
@@ -4389,7 +4389,7 @@ const handleGenerate = async () => {
                                   handleBulkPublish();
                                   closeBulkActionsMenu();
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-white/10 hover:text-white flex items-center gap-3"
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
                               >
                                 <Globe className="h-4 w-4" />
                                 <span>Publish</span>
@@ -4401,7 +4401,7 @@ const handleGenerate = async () => {
                                   handleBulkUnpublish();
                                   closeBulkActionsMenu();
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-white/10 hover:text-white flex items-center gap-3"
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
                               >
                                 <Lock className="h-4 w-4" />
                                 <span>Unpublish</span>
@@ -4413,7 +4413,7 @@ const handleGenerate = async () => {
                                   handleBulkAddToFolder();
                                   closeBulkActionsMenu();
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-white/10 hover:text-white flex items-center gap-3"
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
                               >
                                 <FolderPlus className="h-4 w-4" />
                                 <span>Manage folders</span>
@@ -4425,7 +4425,7 @@ const handleGenerate = async () => {
                                   handleBulkDelete();
                                   closeBulkActionsMenu();
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-white/10 hover:text-white flex items-center gap-3"
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span>Delete</span>
@@ -4570,9 +4570,9 @@ const handleGenerate = async () => {
                     <div className="mb-6 flex items-center justify-between">
                       <button
                         onClick={() => { setActiveCategory("my-folders"); setSelectedFolder(null); }}
-                        className="flex items-center gap-2 text-d-white hover:text-white transition-colors duration-200 font-raleway text-base group"
+                        className="flex items-center gap-2 text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-base group"
                       >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-white transition-colors duration-200" />
+                        <ArrowLeft className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />
                         Back to folders
                       </button>
                     </div>
@@ -4792,7 +4792,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-white text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4838,7 +4838,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-white text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4875,7 +4875,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-white text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4912,9 +4912,9 @@ const handleGenerate = async () => {
                       <div className="flex items-center justify-between mb-4">
                         <button
                           onClick={() => setSelectedFolder(null)}
-                          className="flex items-center gap-2 text-d-white hover:text-white transition-colors duration-200 font-raleway text-base group"
+                          className="flex items-center gap-2 text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-base group"
                         >
-                          <ArrowLeft className="w-4 h-4 group-hover:text-white transition-colors duration-200" />
+                          <ArrowLeft className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />
                           Back to folders
                         </button>
                         
@@ -4978,7 +4978,7 @@ const handleGenerate = async () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                        className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-white relative z-20 align-middle pointer-events-auto"
+                                        className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
@@ -4999,7 +4999,7 @@ const handleGenerate = async () => {
                                           <img 
                                             src={ref} 
                                             alt={`Reference ${refIdx + 1}`} 
-                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-white transition-colors duration-200"
+                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setSelectedReferenceImage(ref);
@@ -5020,7 +5020,7 @@ const handleGenerate = async () => {
                                         link.target = '_blank';
                                         link.click();
                                       }}
-                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-white"
+                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
                                     >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -5269,7 +5269,7 @@ const handleGenerate = async () => {
                                         {video.operationName && (
                                           <button
                                             onClick={() => handleDownloadVideo(video.operationName!)}
-                                            className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway hover:bg-white/20 hover:text-white transition-colors duration-200`}
+                                            className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway hover:bg-d-dark/60 hover:text-d-text transition-colors duration-200`}
                                             title="Download video"
                                           >
                                             <Download className="w-3 h-3" />
@@ -5286,7 +5286,7 @@ const handleGenerate = async () => {
                         
                         // Placeholder tile for videos
                         return (
-                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square cursor-pointer hover:bg-[#222427] hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black grid place-items-center aspect-square cursor-pointer hover:bg-d-dark hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                             <div className="flex flex-col items-center gap-2 text-center px-2">
                               <VideoIcon className="w-8 h-8 text-d-light" />
                               <div className="text-d-light font-raleway text-base">Create something amazing.</div>
@@ -5381,7 +5381,7 @@ const handleGenerate = async () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-white relative z-20 align-middle pointer-events-auto"
+                                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                                       onMouseEnter={(e) => {
                                         showHoverTooltip(e.currentTarget, `${img.url}-${idx}`);
                                       }}
@@ -5402,7 +5402,7 @@ const handleGenerate = async () => {
                                           <img 
                                             src={ref} 
                                             alt={`Reference ${refIdx + 1}`} 
-                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-white transition-colors duration-200"
+                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setSelectedReferenceImage(ref);
@@ -5423,7 +5423,7 @@ const handleGenerate = async () => {
                                       link.target = '_blank';
                                       link.click();
                                     }}
-                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-white"
+                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
                                   >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -5510,7 +5510,7 @@ const handleGenerate = async () => {
                     }
                     // Placeholder tile
                     return (
-                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-[#1b1c1e] grid place-items-center aspect-square cursor-pointer hover:bg-[#222427] hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black grid place-items-center aspect-square cursor-pointer hover:bg-d-dark hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="flex flex-col items-center gap-2 text-center px-2">
                           <ImageIcon className="w-8 h-8 text-d-light" />
                           <div className="text-d-light font-raleway text-base">Create something amazing.</div>
@@ -5546,7 +5546,7 @@ const handleGenerate = async () => {
           {activeCategory === "image" && !selectedFolder && (
             <div className="mt-4 w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
               {isCacheBarVisible && (
-                <div className="mb-4 rounded-2xl border border-d-dark bg-[#101012]/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
+                <div className="mb-4 rounded-2xl border border-d-dark bg-d-black/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center justify-between text-xs font-raleway uppercase tracking-wide text-d-white/70">
                     <span>Cache usage</span>
                     <div className="flex items-center gap-2">
@@ -5555,13 +5555,13 @@ const handleGenerate = async () => {
                       </span>
                       <button 
                         onClick={() => refreshStorageEstimate()}
-                        className="text-xs px-2 py-1 bg-d-mid hover:bg-white/20 rounded text-d-white/60 hover:text-white transition-colors"
+                        className="text-xs px-2 py-1 bg-d-mid hover:bg-d-dark/60 rounded text-d-white/60 hover:text-d-text transition-colors"
                       >
                         Refresh
                       </button>
                       <button 
                         onClick={() => setIsCacheBarVisible(false)}
-                        className="text-xs p-1 hover:bg-white/20 rounded text-d-white/60 hover:text-white transition-colors"
+                        className="text-xs p-1 hover:bg-d-dark/60 rounded text-d-white/60 hover:text-d-text transition-colors"
                         title="Close cache bar"
                       >
                         <X className="size-3" />
@@ -5588,7 +5588,7 @@ const handleGenerate = async () => {
                 <div className="mb-4">
                   <button 
                     onClick={() => setIsCacheBarVisible(true)}
-                    className={`${glass.promptDark} rounded-lg text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-white/20 hover:text-white`}
+                    className={`${glass.promptDark} rounded-lg text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-text/20 hover:text-d-text`}
                   >
                     Show cache usage
                   </button>
@@ -5706,7 +5706,7 @@ const handleGenerate = async () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? 'bg-transparent hover:bg-white/20 text-d-white hover:text-white border border-d-mid hover:border-d-dark' : 'bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? 'bg-transparent hover:bg-d-text/20 text-d-white hover:text-d-text border border-d-mid hover:border-d-dark' : 'bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
@@ -5720,7 +5720,7 @@ const handleGenerate = async () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
-                        ? 'bg-transparent hover:bg-white/20 text-d-white hover:text-white border border-d-mid hover:border-d-dark' 
+                        ? 'bg-transparent hover:bg-d-text/20 text-d-white hover:text-d-text border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
                   >
@@ -5871,7 +5871,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`bg-transparent hover:bg-white/20 text-d-white hover:text-white border border-d-mid hover:border-d-dark flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                    className={`bg-transparent hover:bg-d-text/20 text-d-white hover:text-d-text border border-d-mid hover:border-d-dark flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -5885,10 +5885,10 @@ const handleGenerate = async () => {
                         );
                       } else {
                         const Icon = currentModel.Icon;
-                        return <Icon className="w-5 h-5 group-hover:text-white transition-colors duration-100" />;
+                        return <Icon className="w-5 h-5 group-hover:text-d-text transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-white transition-colors duration-100">{getCurrentModel().name}</span>
+                    <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -5908,7 +5908,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "veo-3"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Veo 3") ? (
@@ -5919,17 +5919,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Veo 3
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Best video model. Great cinematic quality with sound output.
                             </div>
@@ -5948,7 +5948,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "runway-video-gen4"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Runway Gen-4") ? (
@@ -5959,17 +5959,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Runway Gen-4
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Good video model. Great editing with Runway Aleph.
                             </div>
@@ -5986,7 +5986,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "hailuo-02"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Hailuo 02") ? (
@@ -5997,17 +5997,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Hailuo 02
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Great text-to-image.
                             </div>
@@ -6024,7 +6024,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "wan-video-2.2"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Wan 2.2 Video") ? (
@@ -6035,17 +6035,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Wan 2.2 Video
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Great text-to-image.
                             </div>
@@ -6062,7 +6062,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "kling-video"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Kling") ? (
@@ -6073,17 +6073,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Kling
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Great text-to-image.
                             </div>
@@ -6102,7 +6102,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "seedance-1.0-pro"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Seedance 1.0 Pro (Video)") ? (
@@ -6113,17 +6113,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Seedance 1.0 Pro
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Great quality text-to-image.
                             </div>
@@ -6141,7 +6141,7 @@ const handleGenerate = async () => {
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "luma-ray-2"
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10'
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Luma Ray 2") ? (
@@ -6152,17 +6152,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-text group-hover:text-white'
+                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               Luma Ray 2
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-white group-hover:text-white'
+                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               Cinematic 4K video with detailed camera control.
                             </div>
@@ -6200,7 +6200,7 @@ const handleGenerate = async () => {
                               ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
                               : isComingSoon
                               ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
-                              : 'bg-transparent hover:bg-white/20 border-0'
+                              : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo(model.name) ? (
@@ -6211,17 +6211,17 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-white'
+                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-d-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-white'
+                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               {model.name}
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-white'
+                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-d-text'
                             }`}>
                               {isComingSoon ? 'Coming soon.' : model.desc}
                             </div>
@@ -6258,7 +6258,7 @@ const handleGenerate = async () => {
                             e.stopPropagation();
                             clearReference(idx);
                           }}
-                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-white rounded-full p-0.5 transition-all duration-200"
+                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
                           title="Remove reference"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -6318,7 +6318,7 @@ const handleGenerate = async () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-white`}
+                      className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -6326,7 +6326,7 @@ const handleGenerate = async () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-white`}
+                      className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >
@@ -6406,7 +6406,7 @@ const handleGenerate = async () => {
                                 e.stopPropagation();
                                 copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
                               }}
-                              className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-white relative z-20 align-middle pointer-events-auto"
+                              className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                             >
                               <Copy className="w-3 h-3" />
                             </button>
@@ -6435,7 +6435,7 @@ const handleGenerate = async () => {
                 
                 <button
                   onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
-                  className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-white rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+                  className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
                   aria-label="Close full size view"
                 >
                   <X className="w-4 h-4" />

@@ -153,7 +153,7 @@ export default function Account() {
   }, [user, nextPath, navigate]);
 
   if (!user) return (
-    <main className="min-h-screen bg-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+    <main className="min-h-screen bg-d-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
       <p className="text-d-white font-raleway">Please log in to view your account.</p>
     </main>
   );
@@ -161,7 +161,7 @@ export default function Account() {
   // If user is authenticated and there's a next parameter, show loading while redirecting
   if (user && nextPath) {
     return (
-      <main className="min-h-screen bg-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+      <main className="min-h-screen bg-d-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-2xl font-raleway mb-4 text-d-text">Redirecting...</h1>
           <p className="text-d-white font-raleway">Taking you to your destination.</p>
@@ -171,7 +171,7 @@ export default function Account() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+    <main className="min-h-screen bg-d-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
       <header className="max-w-5xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -186,7 +186,7 @@ export default function Account() {
             className="p-2 hover:bg-d-dark/50 rounded-lg transition-colors group"
             title="Close account"
           >
-            <X className="w-5 h-5 text-d-white group-hover:text-brand transition-colors" />
+            <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors" />
           </button>
         </div>
         <input
@@ -214,18 +214,18 @@ export default function Account() {
                   />
                 ) : (
                   <div 
-                    className="size-12 rounded-full flex items-center justify-center text-white text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity"
+                    className="size-12 rounded-full flex items-center justify-center text-d-text text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity"
                     style={{ background: user.color || "#FF8C00" }}
                   >
                     {(user.name || user.email)[0]?.toUpperCase()}
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                  <Upload className="size-4 text-white" />
+                <div className="absolute inset-0 bg-d-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                  <Upload className="size-4 text-d-text" />
                 </div>
                 {isUploadingPic && (
-                  <div className="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center">
-                    <div className="text-white text-xs font-raleway">Uploading...</div>
+                  <div className="absolute inset-0 bg-d-black/70 rounded-full flex items-center justify-center">
+                    <div className="text-d-text text-xs font-raleway">Uploading...</div>
                   </div>
                 )}
               </div>

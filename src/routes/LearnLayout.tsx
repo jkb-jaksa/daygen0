@@ -24,7 +24,7 @@ export default function LearnLayout() {
               to={link.to}
               className={({ isActive }) =>
                 `${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
-                  isActive ? "text-brand border border-d-mid" : "text-d-white/80 hover:text-brand"
+                  isActive ? "text-d-text border border-d-mid" : "text-d-white/80 hover:text-d-text"
                 }`
               }
             >

@@ -752,7 +752,7 @@ function PageChrome({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-black text-d-text">
+    <main className="min-h-screen bg-d-black text-d-text">
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent blur-3xl opacity-40" />
         <div className="relative max-w-6xl mx-auto px-6 pt-16 pb-10">
@@ -810,7 +810,7 @@ function Card({
 
   return (
     <div 
-      className="tag-gradient rounded-2xl bg-white/5 border border-d-black p-6 hover:border-d-mid transition-colors duration-200"
+      className="rounded-2xl bg-d-text/5 border border-d-black p-6 hover:border-d-mid transition-colors duration-200"
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
@@ -884,7 +884,7 @@ export default function Subpage() {
             return (
               <div
                 key={t.title}
-                className="tag-gradient rounded-2xl bg-white/5 border border-d-black p-5 hover:border-d-mid transition-colors duration-200"
+                className="rounded-2xl bg-d-text/5 border border-d-black p-5 hover:border-d-mid transition-colors duration-200"
                 onMouseMove={onMove}
                 onMouseEnter={onEnter}
                 onMouseLeave={onLeave}
@@ -898,7 +898,7 @@ export default function Subpage() {
                       className="h-7 w-7 object-contain rounded-lg"
                     />
                   ) : (
-                    <div className="h-7 w-7 rounded-lg bg-white/10" />
+                    <div className="h-7 w-7 rounded-lg bg-d-text/10" />
                   )}
                   <h3 className="text-lg font-raleway">{t.title}</h3>
                 </div>
@@ -961,7 +961,7 @@ function FaqRow({ q, a }: { q: string; a: string }) {
 
   return (
     <div 
-      className="tag-gradient rounded-2xl overflow-hidden border border-d-black bg-white/5"
+      className="rounded-2xl overflow-hidden border border-d-black bg-d-text/5"
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}

@@ -25,7 +25,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
+    <div className="fixed inset-0 z-[120] bg-d-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
       <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
@@ -35,8 +35,8 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-brand"}`}>Login</button>
-            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-brand"}`}>Sign up</button>
+            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Login</button>
+            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Sign up</button>
           </div>
 
           <div className="space-y-4">

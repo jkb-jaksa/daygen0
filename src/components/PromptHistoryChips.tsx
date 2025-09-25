@@ -32,7 +32,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
           <button
             type="button"
             onClick={onClear}
-            className="text-xs text-d-white/40 hover:text-d-orange-1 underline underline-offset-4 transition-colors duration-200 font-raleway ml-4"
+            className="text-xs text-d-white/40 hover:text-d-text underline underline-offset-4 transition-colors duration-200 font-raleway ml-4"
           >
             Clear
           </button>
@@ -44,7 +44,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
           <div key={idx} className="group flex items-center overflow-hidden rounded-lg border border-d-dark bg-d-black/40 hover:bg-d-black/60 transition-all duration-200">
             <button
               type="button"
-              className="flex-1 px-3 py-2 text-sm text-d-white hover:text-brand transition-colors duration-200 font-raleway text-left break-words"
+              className="flex-1 px-3 py-2 text-sm text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-left break-words"
               title={e.text}
               onClick={() => onSelect(e.text)}
             >
@@ -53,7 +53,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
             {onRun && (
               <button
                 type="button"
-                className="px-3 py-2 text-sm text-d-white/60 hover:text-d-orange-1 hover:bg-d-black/40 transition-all duration-200 border-l border-d-mid flex items-center gap-1 flex-shrink-0"
+                className="px-3 py-2 text-sm text-d-white/60 hover:text-d-text hover:bg-d-black/40 transition-all duration-200 border-l border-d-mid flex items-center gap-1 flex-shrink-0"
                 title="Run this prompt"
                 onClick={() => onRun(e.text)}
               >

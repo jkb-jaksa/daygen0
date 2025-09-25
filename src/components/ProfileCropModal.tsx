@@ -118,15 +118,15 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center py-12">
+    <div className="fixed inset-0 z-[120] bg-d-black/80 flex items-center justify-center py-12">
       <div className={`${glass.promptDark} rounded-[20px] py-12 px-6 max-w-2xl w-full min-w-[28rem] max-h-[90vh] overflow-hidden`}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-raleway text-d-text">Crop Profile Picture</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-orange-500/20 rounded-lg transition-colors group"
+            className="p-2 hover:bg-d-dark/40 rounded-lg transition-colors group"
           >
-            <X className="w-5 h-5 text-d-white group-hover:text-brand transition-colors" />
+            <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors" />
           </button>
         </div>
 

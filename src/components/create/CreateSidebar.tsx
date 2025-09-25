@@ -56,7 +56,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
                 type="button"
                 onClick={() => onSelectCategory(key)}
                 className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                  isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+                  isActive ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
                 }`}
                 aria-pressed={isActive}
               >
@@ -84,7 +84,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
                 type="button"
                 onClick={() => onSelectCategory(key)}
                 className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                  isActive ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+                  isActive ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
                 }`}
                 aria-pressed={isActive}
               >
@@ -102,7 +102,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
             type="button"
             onClick={onOpenMyFolders}
             className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-              activeCategory === "my-folders" ? "text-d-light hover:text-brand" : "text-d-white hover:text-brand"
+              activeCategory === "my-folders" ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
             }`}
             aria-pressed={activeCategory === "my-folders"}
           >

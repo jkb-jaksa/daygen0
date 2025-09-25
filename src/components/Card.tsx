@@ -40,7 +40,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   return (
     <div
-      className="tag-gradient relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full cursor-pointer p-5 flex flex-col bg-d-black"
+      className="relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full cursor-pointer p-5 flex flex-col bg-d-black"
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
