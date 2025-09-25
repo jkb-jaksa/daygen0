@@ -143,7 +143,7 @@ html, body {
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
-  font-weight: 600;
+  font-weight: 500;
   gap: 0.5rem;
   height: 40px;
   justify-content: center;
@@ -1079,7 +1079,7 @@ select option::-webkit-scrollbar-thumb:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(1.25rem, 4vw, 2rem);
+  gap: clamp(0.75rem, 2.5vw, 1.25rem);
   text-align: center;
 }
 
@@ -1217,7 +1217,7 @@ select option::-webkit-scrollbar-thumb:hover {
   text-align: left;
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.4;
   cursor: pointer;
 }
@@ -1261,6 +1261,7 @@ select option::-webkit-scrollbar-thumb:hover {
   color: var(--d-white);
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 0.95rem;
+  font-weight: 300;
   line-height: 1.65;
 }
 
@@ -1286,4 +1287,10 @@ select option::-webkit-scrollbar-thumb:hover {
   .faq-card__trigger {
     gap: 0.75rem;
   }
+}
+
+/* Sidebar section headers with letter spacing */
+.sidebar-section-header {
+  font-weight: 400;
+  letter-spacing: 0.1em;
 }

@@ -112,7 +112,7 @@ const FAQSection: React.FC = () => {
     <section id="faq" className="faq-section">
       <div className={`${layout.container} ${layout.sectionPaddingTight}`}>
         <div className="faq-section__header">
-          <h2 className={`${text.sectionHeading} faq-section__title pb-6`}>
+          <h2 className={`${text.sectionHeading} faq-section__title pb-4`}>
             <span>FAQ</span>
           </h2>
         </div>

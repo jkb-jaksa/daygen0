@@ -9,12 +9,12 @@ export const layout = {
 };
 
 export const text = {
-  heroHeading: "text-5xl font-normal tracking-tight leading-[1.1] font-raleway",
-  subHeading: "text-4xl font-normal text-d-text font-raleway",
-  sectionHeading: "text-4xl font-normal text-d-text font-raleway",
+  heroHeading: "text-5xl font-light tracking-tight leading-[1.1] font-raleway",
+  subHeading: "text-4xl font-light text-d-text font-raleway",
+  sectionHeading: "text-4xl font-light text-d-text font-raleway",
   eyebrow: "text-xs text-d-white/60 font-raleway font-medium uppercase tracking-[0.2em]",
-  body: "text-base text-d-white font-raleway",
-  finePrint: "text-sm text-d-white/70 font-raleway",
+  body: "text-base text-d-white font-raleway font-light",
+  finePrint: "text-sm text-d-white/70 font-raleway font-light",
 };
 
 export const cards = {
@@ -23,13 +23,13 @@ export const cards = {
 };
 
 export const buttons = {
-  primary: "btn btn-white font-raleway text-base font-semibold gap-2 parallax-large",
-  secondary: "btn btn-white font-raleway text-base font-semibold gap-2 parallax-large",
-  ghost: "btn btn-ghost font-raleway text-base font-semibold gap-2 parallax-large",
-  ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-semibold gap-2 parallax-large",
-  subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-semibold text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-d-text parallax-large",
-  pillWarm: "btn btn-white btn-compact font-raleway text-base font-semibold gap-2 parallax-large",
-  blockPrimary: "btn btn-white w-full font-raleway text-base font-semibold gap-2 parallax-large",
+  primary: "btn btn-white font-raleway text-base font-medium gap-2 parallax-large",
+  secondary: "btn btn-white font-raleway text-base font-medium gap-2 parallax-large",
+  ghost: "btn btn-ghost font-raleway text-base font-medium gap-2 parallax-large",
+  ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-medium gap-2 parallax-large",
+  subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-medium text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-d-text parallax-large",
+  pillWarm: "btn btn-white btn-compact font-raleway text-base font-medium gap-2 parallax-large",
+  blockPrimary: "btn btn-white w-full font-raleway text-base font-medium gap-2 parallax-large",
 };
 
 export const panels = {

@@ -79,7 +79,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
             <div className="flex gap-4 justify-center">
               <button
                 type="submit"
-                className={`${buttons.primary} font-semibold`}
+                className={`${buttons.primary}`}
               >
                 Unlock
               </button>

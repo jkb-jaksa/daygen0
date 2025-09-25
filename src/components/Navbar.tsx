@@ -208,7 +208,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className="parallax-small text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-medium"
+                  className="parallax-small text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-normal"
                   onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onClick={() => {
@@ -247,7 +247,7 @@ export default function Navbar() {
                 </button>
                 <div className="h-6 w-px bg-d-white/20"></div>
                 <button 
-                  className="parallax-large text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-medium"
+                  className="parallax-large text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -312,10 +312,10 @@ export default function Navbar() {
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="hidden sm:inline font-raleway text-sm font-medium">
+                  <span className="hidden sm:inline font-raleway text-sm font-normal">
                     Credits: 1,247
                   </span>
-                  <span className="sm:hidden font-raleway text-sm font-medium">1,247</span>
+                  <span className="sm:hidden font-raleway text-sm font-normal">1,247</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -354,7 +354,7 @@ export default function Navbar() {
                         {(user.name || user.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden sm:inline font-raleway text-base py-0.5 font-medium">{user.name || user.email}</span>
+                    <span className="hidden sm:inline font-raleway text-base py-0.5 font-normal">{user.name || user.email}</span>
                   </button>
                 </div>
               </>
@@ -378,7 +378,7 @@ export default function Navbar() {
           <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
-                <div className="text-base font-medium font-raleway mb-4">
+                <div className="text-base font-normal font-raleway mb-4">
                   {activeMenu}
                 </div>
                 {activeMenu === "create" ? (
@@ -387,7 +387,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -403,7 +403,7 @@ export default function Navbar() {
                         key={category.key}
                         to="/edit"
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -421,7 +421,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
                           <item.Icon className="w-4 h-4" />
@@ -456,7 +456,7 @@ export default function Navbar() {
             }}
             className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
           >
-            <div className="px-4 py-2 text-base font-medium font-raleway text-d-white border-b border-d-white/10 mb-1">
+            <div className="px-4 py-2 text-base font-normal font-raleway text-d-white border-b border-d-white/10 mb-1">
               Account
             </div>
             <button
@@ -465,7 +465,7 @@ export default function Navbar() {
                 setMenuOpen(false);
                 navigate("/account");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               My account
@@ -477,7 +477,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               My works
@@ -489,7 +489,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               Log out

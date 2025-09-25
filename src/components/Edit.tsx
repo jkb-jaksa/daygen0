@@ -105,7 +105,7 @@ const ModelMenuPortal: React.FC<{
 
 // Main Component
 export default function Edit() {
-  // Add CSS for orange slider thumb
+  // Add CSS for slider thumb using the d-text accent color
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -114,7 +114,7 @@ export default function Edit() {
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #FF8C00;
+        background: rgba(var(--d-text-rgb), 1);
         cursor: pointer;
         border: 2px solid var(--d-text);
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -123,16 +123,18 @@ export default function Edit() {
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #FF8C00;
+        background: rgba(var(--d-text-rgb), 1);
         cursor: pointer;
         border: 2px solid var(--d-text);
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
-      document.head.removeChild(style);
+      if (style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
     };
   }, []);
   const location = useLocation();
@@ -575,7 +577,7 @@ export default function Edit() {
     
     // Apply the mask color to all non-erased areas
     ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = 'rgba(255, 140, 0, 0.75)';
+    ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, [allPaths, currentPath, brushSize, isEraseMode]);
 
@@ -670,7 +672,7 @@ export default function Edit() {
         
         // Apply the mask color
         ctx.globalCompositeOperation = 'source-in';
-        ctx.fillStyle = 'rgba(255, 140, 0, 0.75)';
+        ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         const maskDataUrl = canvas.toDataURL();
@@ -726,7 +728,7 @@ export default function Edit() {
         
         // Apply the mask color
         ctx.globalCompositeOperation = 'source-in';
-        ctx.fillStyle = 'rgba(255, 140, 0, 0.75)';
+        ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         const maskDataUrl = canvas.toDataURL();
@@ -1022,7 +1024,7 @@ export default function Edit() {
                 </p>
                 
                 {/* Upload Button */}
-                <div className={`${buttons.primary} font-semibold inline-flex items-center gap-2`}>
+                <div className={`${buttons.primary} inline-flex items-center gap-2`}>
                   <Upload className="w-4 h-4" />
                   Upload
                 </div>
@@ -1105,13 +1107,13 @@ export default function Edit() {
                   {/* Brush preview circle - only visible in precise edit mode and not in move mode */}
                   {isPreciseEditMode && !isMoveMode && showBrushPreview && (
                     <div
-                      className="absolute pointer-events-none z-30 border-2 border-d-orange-1 rounded-full"
+                      className="absolute pointer-events-none z-30 border-2 border-d-text rounded-full"
                       style={{
                         left: mousePosition.x - brushSize / 2,
                         top: mousePosition.y - brushSize / 2,
                         width: brushSize,
                         height: brushSize,
-                        borderColor: isEraseMode ? '#FF8C00' : '#FF8C00',
+                        borderColor: 'rgba(var(--d-text-rgb), 1)',
                         opacity: 0.8
                       }}
                     />
@@ -1176,9 +1178,9 @@ export default function Edit() {
                     step="10"
                     value={imageSize}
                     onChange={(e) => setImageSize(Number(e.target.value))}
-                    className="w-40 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
+                    className="w-40 h-1 bg-d-text rounded-lg appearance-none cursor-pointer"
                     style={{
-                      background: `linear-gradient(to right, #FF8C00 0%, #FF8C00 ${(imageSize - 10) / 19.9 * 100}%, rgba(255, 140, 0, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(255, 140, 0, 0.3) 100%)`,
+                      background: `linear-gradient(to right, rgba(var(--d-text-rgb), 1) 0%, rgba(var(--d-text-rgb), 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(var(--d-text-rgb), 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(var(--d-text-rgb), 0.3) 100%)`,
                       WebkitAppearance: 'none',
                       appearance: 'none',
                       height: '4px',
@@ -1213,7 +1215,7 @@ export default function Edit() {
                 onClick={toggleMoveMode}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isMoveMode 
-                    ? 'text-d-orange-1 border-d-orange-1' 
+                    ? 'text-d-text border-d-text' 
                     : 'text-d-white border-d-dark hover:border-d-text'
                 }`}
                 title="Toggle move mode"
@@ -1225,7 +1227,7 @@ export default function Edit() {
                 onClick={togglePreciseEditMode}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isPreciseEditMode 
-                    ? 'text-d-orange-1 border-d-orange-1' 
+                    ? 'text-d-text border-d-text' 
                     : 'text-d-white border-d-dark hover:border-d-text'
                 }`}
                 title="Draw a mask"
@@ -1246,9 +1248,9 @@ export default function Edit() {
                       max="200"
                       value={brushSize}
                       onChange={(e) => setBrushSize(Number(e.target.value))}
-                      className="w-16 h-1 bg-d-orange-1 rounded-lg appearance-none cursor-pointer"
+                      className="w-16 h-1 bg-d-text rounded-lg appearance-none cursor-pointer"
                       style={{
-                        background: `linear-gradient(to right, #FF8C00 0%, #FF8C00 ${(brushSize - 2) / 198 * 100}%, rgba(255, 140, 0, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(255, 140, 0, 0.3) 100%)`,
+                        background: `linear-gradient(to right, rgba(var(--d-text-rgb), 1) 0%, rgba(var(--d-text-rgb), 1) ${(brushSize - 2) / 198 * 100}%, rgba(var(--d-text-rgb), 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(var(--d-text-rgb), 0.3) 100%)`,
                         WebkitAppearance: 'none',
                         appearance: 'none',
                         height: '4px',
@@ -1257,7 +1259,7 @@ export default function Edit() {
                       }}
                       title="Adjust brush size"
                     />
-                    <span className="text-d-orange-1 text-xs font-mono min-w-[2rem] text-center">
+                    <span className="text-d-text text-xs font-mono min-w-[2rem] text-center">
                       {brushSize}px
                     </span>
                   </div>
@@ -1289,7 +1291,7 @@ export default function Edit() {
                 onClick={toggleEraseMode}
                 className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${
                   isEraseMode 
-                    ? 'text-d-orange-1 border-d-orange-1 bg-d-orange-1/20' 
+                    ? 'text-d-text border-d-text bg-d-text/20' 
                     : 'text-d-white border-d-dark hover:text-d-text'
                 }`}
                 title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
@@ -1301,7 +1303,7 @@ export default function Edit() {
               {maskData && (
                 <button
                   onClick={clearMask}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-orange-1/30 hover:border-d-text/50 hover:text-d-text`}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-text/30 hover:border-d-text/50 hover:text-d-text`}
                   title="Clear mask"
                 >
                   <X className="w-4 h-4" />
@@ -1460,7 +1462,7 @@ export default function Edit() {
                       }}
                       className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                         isSelected 
-                          ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
+                          ? "bg-d-dark/80 border-d-text/30 shadow-lg shadow-d-text/10" 
                           : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-text"
                       }`}
                     >
@@ -1472,23 +1474,23 @@ export default function Edit() {
                         />
                       ) : (
                         <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-d-text'
+                          isSelected ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                         }`} />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                          isSelected ? 'text-d-orange-1' : 'text-d-text group-hover:text-d-text'
+                          isSelected ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                         }`}>
                           {model.name}
                         </div>
                         <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                          isSelected ? 'text-d-orange-1' : 'text-d-white group-hover:text-d-text'
+                          isSelected ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
                         }`}>
                           {model.desc}
                         </div>
                       </div>
                       {isSelected && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                       )}
                     </button>
                   );
@@ -1528,7 +1530,7 @@ export default function Edit() {
                     />
                     {item.isPrimary ? (
                       <>
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-xs font-raleway uppercase tracking-wide text-d-orange-1">Base</span>
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-xs font-raleway uppercase tracking-wide text-d-text">Base</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1571,7 +1573,7 @@ export default function Edit() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-d-white font-raleway">Temperature</label>
-                  <span className="text-xs text-d-orange-1 font-mono">{temperature}</span>
+                  <span className="text-xs text-d-text font-mono">{temperature}</span>
                 </div>
                 <input
                   type="range"
@@ -1588,7 +1590,7 @@ export default function Edit() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-d-white font-raleway">Top P</label>
-                  <span className="text-xs text-d-orange-1 font-mono">{topP}</span>
+                  <span className="text-xs text-d-text font-mono">{topP}</span>
                 </div>
                 <input
                   type="range"
@@ -1605,7 +1607,7 @@ export default function Edit() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-d-white font-raleway">Top K</label>
-                  <span className="text-xs text-d-orange-1 font-mono">{topK}</span>
+                  <span className="text-xs text-d-text font-mono">{topK}</span>
                 </div>
                 <input
                   type="range"

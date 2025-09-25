@@ -85,13 +85,13 @@ function Home() {
           </div>
 
           {/* Content */}
-          <div className={`${layout.container} relative z-10 flex flex-col gap-4 items-center justify-center`}>
+          <div className={`${layout.container} relative z-10 flex flex-col gap-3 items-center justify-center`}>
             {/* Main content */}
-            <div className="home-hero-copy text-center flex flex-col gap-4">
+            <div className="home-hero-copy text-center flex flex-col gap-3">
               <h1 className={`${text.heroHeading} home-hero-title`}>
                 Your Daily AI Generations.
               </h1>
-              <div className="home-hero-description text-xl text-d-white font-raleway leading-relaxed">
+              <div className="home-hero-description text-xl text-d-white font-raleway font-light leading-relaxed">
                 Master all the best Creative AI Tools in one place.
               </div>
               <div className="home-hero-actions">

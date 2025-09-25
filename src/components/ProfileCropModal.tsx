@@ -209,7 +209,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
             <button
               onClick={onDownloadCropClick}
               disabled={!completedCrop}
-              className={`${buttons.primary} font-semibold`}
+              className={`${buttons.primary}`}
             >
               <Check className="w-4 h-4" />
               Apply Crop

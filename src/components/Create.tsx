@@ -2512,7 +2512,7 @@ const Create: React.FC = () => {
     return (
       <div
         key={`${context}-${img.url}-${idx}`}
-        className={`group relative rounded-[24px] overflow-hidden border transition-all ${isSelectMode ? 'duration-100' : 'duration-200'} ${isSelectMode ? '' : 'parallax-large'} ${
+        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-d-white bg-d-black hover:bg-d-dark'
             : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
@@ -2544,7 +2544,7 @@ const Create: React.FC = () => {
                         e.stopPropagation();
                         copyPromptToClipboard(img.prompt);
                       }}
-                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, tooltipId);
                       }}
@@ -2586,7 +2586,7 @@ const Create: React.FC = () => {
                       link.target = '_blank';
                       link.click();
                     }}
-                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                    className="text-xs font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
                   >
                     View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                   </button>
@@ -2630,7 +2630,7 @@ const Create: React.FC = () => {
               event.stopPropagation();
               toggleImageSelection(img.url);
             }}
-            className={`image-action-btn parallax-large image-select-toggle transition-opacity duration-100 ${
+            className={`image-action-btn parallax-large image-select-toggle ${
               isSelected
                 ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                 : isSelectMode
@@ -2661,7 +2661,7 @@ const Create: React.FC = () => {
                     event.stopPropagation();
                     confirmDeleteImage(img.url);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                  className={`image-action-btn parallax-large ${
                     isMenuActive
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2677,7 +2677,7 @@ const Create: React.FC = () => {
                     event.stopPropagation();
                     toggleFavorite(img.url);
                   }}
-                  className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
+                  className={`image-action-btn parallax-large favorite-toggle ${
                     isMenuActive
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2686,7 +2686,7 @@ const Create: React.FC = () => {
                   aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                 >
                   <Heart
-                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-100 ${
                       favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                     }`}
                   />
@@ -4662,7 +4662,7 @@ const handleGenerate = async () => {
                                     event.stopPropagation();
                                     toggleImageSelection(img.url);
                                   }}
-                                  className={`image-action-btn parallax-large image-select-toggle transition-opacity duration-100 ${
+                                  className={`image-action-btn parallax-large image-select-toggle ${
                                       isSelected
                                         ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                                         : isSelectMode
@@ -4691,7 +4691,7 @@ const handleGenerate = async () => {
                                       event.stopPropagation();
                                       confirmDeleteImage(img.url);
                                     }} 
-                                    className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                                    className={`image-action-btn parallax-large ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
                                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4707,7 +4707,7 @@ const handleGenerate = async () => {
                                       event.stopPropagation();
                                       toggleFavorite(img.url);
                                     }} 
-                                    className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
+                                    className={`image-action-btn parallax-large favorite-toggle ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
                                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -4716,7 +4716,7 @@ const handleGenerate = async () => {
                                     aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   >
                                     <Heart 
-                                      className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                      className={`heart-icon w-3.5 h-3.5 transition-colors duration-100 ${
                                         favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                                       }`} 
                                     />
@@ -4978,7 +4978,7 @@ const handleGenerate = async () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                        className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                        className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
@@ -5020,7 +5020,7 @@ const handleGenerate = async () => {
                                         link.target = '_blank';
                                         link.click();
                                       }}
-                                      className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                                      className="text-xs font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
                                     >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -5381,7 +5381,7 @@ const handleGenerate = async () => {
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                      className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                                       onMouseEnter={(e) => {
                                         showHoverTooltip(e.currentTarget, `${img.url}-${idx}`);
                                       }}
@@ -5423,7 +5423,7 @@ const handleGenerate = async () => {
                                       link.target = '_blank';
                                       link.click();
                                     }}
-                                    className="text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                                    className="text-xs font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
                                   >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -6406,7 +6406,7 @@ const handleGenerate = async () => {
                                 e.stopPropagation();
                                 copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
                               }}
-                              className="ml-2 inline cursor-pointer text-d-white/70 transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                              className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
                             >
                               <Copy className="w-3 h-3" />
                             </button>

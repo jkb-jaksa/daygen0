@@ -19,15 +19,15 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}
             <div className="pt-4">
-              <div className="text-xl font-normal tracking-tight font-raleway leading-[1.05] mb-2">
+              <div className="text-xl font-light tracking-tight font-raleway leading-[1.05] mb-2">
                 <span className="text-d-text">daygen</span>
               </div>
-              <p className="text-base text-b-white mb-2 font-raleway">next-gen ideas. every day.</p>
+              <p className="text-base text-b-white mb-2 font-raleway font-light">next-gen ideas. every day.</p>
             </div>
 
             {/* Right block: links */}
             <div className="md:justify-self-end pt-4">
-              <nav className="flex flex-col gap-3 text-base font-raleway">
+              <nav className="flex flex-col gap-3 text-base font-raleway font-light">
                 <Link to="/privacy-policy" className="parallax-small text-b-white hover:text-d-text transition-colors">Privacy Policy</Link>
                 <Link to="/#faq" className="parallax-small text-b-white hover:text-d-text transition-colors">FAQ</Link>
               </nav>
@@ -38,8 +38,8 @@ export default function Footer() {
         {/* Copyright bar - moved inside footer container */}
         <div className={`${glass.promptDark} w-full mt-8 py-4 relative`}>
           <div className="text-center">
-            <span className="text-b-white font-raleway">
-              © 2025 — <span className="text-b-text">daygen</span>
+            <span className="text-b-white font-raleway font-light">
+              © <span className="font-light">2025</span> — <span className="text-b-text font-normal">daygen</span>
             </span>
           </div>
           {/* Back-to-top button - centered within copyright bar */}
