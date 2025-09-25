@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import GoogleLogin from "./GoogleLogin";
-import { buttons, glass, inputs } from "../styles/designSystem";
+import { buttons, inputs } from "../styles/designSystem";
 
 interface AuthModalProps {
   open: boolean;

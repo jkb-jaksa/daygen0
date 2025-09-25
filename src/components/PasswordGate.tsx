@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { buttons, glass, inputs } from "../styles/designSystem";
+import { buttons, inputs } from "../styles/designSystem";
 
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
