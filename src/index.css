@@ -771,6 +771,60 @@ select option::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
 }
 
+/* General scrollbar styles for custom scrollable elements */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--d-dark);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--d-orange-1);
+  border-radius: 3px;
+  border: 1px solid var(--d-dark);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--d-orange-1) 78%, white 22%);
+}
+
+.scrollbar-thin::-webkit-scrollbar-corner {
+  background: var(--d-dark);
+}
+
+.scrollbar-thumb-d-orange-1::-webkit-scrollbar-thumb {
+  background: var(--d-orange-1) !important;
+}
+
+.scrollbar-track-d-dark::-webkit-scrollbar-track {
+  background: var(--d-dark) !important;
+}
+
+/* Force scrollbar visibility for dropdowns */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: var(--d-dark) !important;
+  border-radius: 3px !important;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: var(--d-orange-1) !important;
+  border-radius: 3px !important;
+  border: 1px solid var(--d-dark) !important;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--d-orange-1) 78%, white 22%) !important;
+}
+
 /* Force override for all select elements in the app */
 * select option {
   background-color: var(--d-black) !important;

@@ -1,5 +1,17 @@
 # DayGen
 
+A modern AI image generation platform with support for multiple AI models.
+
+## Backend Connection
+
+The frontend is configured to connect to a Google Cloud Run backend:
+- **Production Backend**: `https://daygen-backend-365299591811.europe-central2.run.app/api`
+- **Local Development**: Uses Vite proxy to `http://localhost:3000`
+
+The backend URL is automatically configured based on the build environment:
+- Development: Uses local backend via Vite proxy
+- Production: Uses Google Cloud Run backend
+
 ## Environment Setup
 
 Create a `.env` file in the root directory with the following variables:

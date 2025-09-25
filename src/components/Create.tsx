@@ -2,22 +2,12 @@ import React, { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, Palette, RefreshCw, Grid3X3, Globe, Lock, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
-import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import type { FluxGeneratedImage, FluxImageGenerationOptions } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import type { ChatGPTGeneratedImage } from "../hooks/useChatGPTImageGeneration";
-import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
-import type { IdeogramGeneratedImage } from "../hooks/useIdeogramImageGeneration";
 import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
-import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
-import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
-import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
-import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
-import { useRecraftImageGeneration } from "../hooks/useRecraftImageGeneration";
-import { useLumaImageGeneration } from "../hooks/useLumaImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
 import ModelBadge from './ModelBadge';
@@ -32,6 +22,7 @@ import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from ".
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
+import ModelMenuPortal from './ModelMenuPortal';
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -102,93 +93,27 @@ const hydrateStoredGallery = (items: StoredGalleryImage[]): GalleryImageLike[] =
     return base as GalleryImageLike;
   });
 
-// AI Model data with icons and accent colors
+// AI Model data with icons and accent colors - Only working models
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
   { name: "FLUX Pro 1.1", desc: "High-quality text-to-image generation.", Icon: Wand2, accent: "blue" as Accent, id: "flux-pro-1.1" },
   { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as Accent, id: "flux-pro-1.1-ultra" },
   { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: Edit, accent: "violet" as Accent, id: "flux-kontext-pro" },
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
-  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
-  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
-  { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3" },
-  { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2" },
-  { name: "Luma Dream Shaper", desc: "High-quality text-to-image generation with artistic styles.", Icon: Sparkles, accent: "purple" as Accent, id: "luma-dream-shaper" },
-  { name: "Luma Realistic Vision", desc: "Photorealistic image generation with advanced controls.", Icon: Camera, accent: "blue" as Accent, id: "luma-realistic-vision" },
-  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
-  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
+  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
+  // Coming soon models (will show as disabled)
+  { name: "Gemini 2.5 Flash Image", desc: "Image analysis and editing (coming soon).", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview", comingSoon: true },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram", comingSoon: true },
+  { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3", comingSoon: true },
+  { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2", comingSoon: true },
+  { name: "Luma Dream Shaper", desc: "High-quality text-to-image generation with artistic styles.", Icon: Sparkles, accent: "purple" as Accent, id: "luma-dream-shaper", comingSoon: true },
+  { name: "Luma Realistic Vision", desc: "Photorealistic image generation with advanced controls.", Icon: Camera, accent: "blue" as Accent, id: "luma-realistic-vision", comingSoon: true },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4", comingSoon: true },
+  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo", comingSoon: true },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0", comingSoon: true },
+  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image", comingSoon: true },
 ];
 
-// Portal component for model menu to avoid clipping by parent containers
-const ModelMenuPortal: React.FC<{ 
-  anchorRef: React.RefObject<HTMLElement | null>; 
-  open: boolean; 
-  onClose: () => void; 
-  children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    if (!open || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    // Position above the trigger button with some offset
-    setPos({ 
-      top: rect.top - 8, // 8px offset above
-      left: rect.left, 
-      width: Math.max(384, rect.width) // Minimum 384px width (w-96 equivalent)
-    });
-  }, [open, anchorRef]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && 
-          !menuRef.current.contains(event.target as Node) && 
-          !anchorRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={menuRef}
-      style={{ 
-        position: "fixed", 
-        top: pos.top, 
-        left: pos.left, 
-        width: pos.width, 
-        zIndex: 1000,
-        transform: 'translateY(-100%)' // Position above the trigger
-      }}
-      className={`${glass.prompt} rounded-lg p-2 max-h-96 overflow-y-auto`}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
 
 // Custom dropdown component for Gallery filters
 const CustomDropdown: React.FC<{
@@ -626,18 +551,18 @@ const Create: React.FC = () => {
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
-  const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
+  const [selectedModel, setSelectedModel] = useState<string>("flux-pro-1.1");
+  
+  // Get current model index for scroll positioning
+  const selectedModelIndex = AI_MODELS.findIndex(model => model.id === selectedModel);
+  
+  // Check if current model is working (not coming soon)
+  const currentModel = AI_MODELS.find(model => model.id === selectedModel);
+  const isComingSoon = currentModel?.comingSoon || false;
+  
+  // Model type checks for backward compatibility
   const isFlux = selectedModel.startsWith("flux-");
-  const isChatGPT = selectedModel === "chatgpt-image";
-  const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
-  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
-  const isSeeDream = selectedModel === "seedream-3.0";
-  const isReve = selectedModel === "reve-image";
-  const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
-  const isLuma = selectedModel === "luma-dream-shaper" || selectedModel === "luma-realistic-vision";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft && !isLuma;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -922,15 +847,6 @@ const Create: React.FC = () => {
   }, []);
 
   
-  // Use the Gemini image generation hook
-  const {
-    error: geminiError,
-    generatedImage: geminiImage,
-    generateImage: generateGeminiImage,
-    clearError: clearGeminiError,
-    clearGeneratedImage: clearGeminiImage,
-  } = useGeminiImageGeneration();
-
   const {
     error: fluxError,
     generatedImage: fluxImage,
@@ -948,48 +864,13 @@ const Create: React.FC = () => {
   } = useChatGPTImageGeneration();
 
   const {
-    error: ideogramError,
-    generateImage: generateIdeogramImage,
-    clearError: clearIdeogramError,
-  } = useIdeogramImageGeneration();
-
-  const {
     error: qwenError,
     generateImage: generateQwenImage,
   } = useQwenImageGeneration();
 
-  const {
-    error: runwayError,
-    generateImage: generateRunwayImage,
-    clearError: clearRunwayError,
-  } = useRunwayImageGeneration();
-
-  const {
-    error: seedreamError,
-    generatedImage: seedreamImage,
-    generateImage: generateSeeDreamImage,
-    clearError: clearSeeDreamError,
-  } = useSeeDreamImageGeneration();
-
-  const {
-    error: reveError,
-    generatedImage: reveImage,
-    generateImage: generateReveImage,
-  } = useReveImageGeneration();
-
-  const {
-    error: recraftError,
-    generateImage: generateRecraftImage,
-  } = useRecraftImageGeneration();
-
-  const {
-    error: lumaError,
-    generateImage: generateLumaImage,
-  } = useLumaImageGeneration();
-
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError || recraftError || lumaError;
-  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
+  const error = fluxError || chatgptError || qwenError;
+  const generatedImage = fluxImage || chatgptImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
   // Load gallery state and related metadata from client storage
@@ -1443,19 +1324,20 @@ const Create: React.FC = () => {
   const handleDeleteConfirmed = () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
-      let nextGallery: GalleryImageLike[] = [];
       const remoteIdsToDelete: string[] = [];
-      setGallery(currentGallery => {
-        currentGallery.forEach(img => {
-          if (urlsToDelete.has(img.url) && img.remoteId) {
-            remoteIdsToDelete.push(img.remoteId);
-          }
-        });
-        const updated = currentGallery.filter(img => img && !urlsToDelete.has(img.url));
-        nextGallery = updated;
-        return updated;
+      
+      // First, collect remote IDs to delete
+      gallery.forEach(img => {
+        if (urlsToDelete.has(img.url) && img.remoteId) {
+          remoteIdsToDelete.push(img.remoteId);
+        }
       });
+      
+      // Update gallery state immediately
+      const nextGallery = gallery.filter(img => img && !urlsToDelete.has(img.url));
+      setGallery(nextGallery);
 
+      // Persist the updated gallery
       void (async () => {
         const persisted = await persistGallery(nextGallery);
         if (persisted.length !== nextGallery.length) {
@@ -1816,7 +1698,6 @@ const Create: React.FC = () => {
       
       // Clear existing references and generated image to show references
       clearAllReferences();
-      clearGeminiImage();
       clearFluxImage();
       clearChatGPTImage();
       
@@ -2420,8 +2301,8 @@ const Create: React.FC = () => {
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // Only handle paste for Gemini model (same as drag & drop)
-    if (!isGemini) return;
+    // Only handle paste for FLUX models (same as drag & drop)
+    if (!isFlux) return;
     
     const items = Array.from(event.clipboardData.items);
     const imageItems = items.filter(item => item.type.startsWith('image/'));
@@ -2494,7 +2375,7 @@ const Create: React.FC = () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, and Recraft models are available.');
+      alert('This model is coming soon! Currently only FLUX, ChatGPT Image, and Qwen Image models are available.');
       return;
     }
 
@@ -2508,9 +2389,6 @@ const Create: React.FC = () => {
     const modelForGeneration = selectedModel;
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
-    const temperatureForGeneration = temperature;
-    const outputLengthForGeneration = outputLength;
-    const topPForGeneration = topP;
     const qwenSizeForGeneration = qwenSize;
     const qwenPromptExtendForGeneration = qwenPromptExtend;
     const qwenWatermarkForGeneration = qwenWatermark;
@@ -2537,143 +2415,14 @@ const Create: React.FC = () => {
         });
       }
 
-      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage;
+      let img: FluxGeneratedImage | ChatGPTGeneratedImage | QwenGeneratedImage;
 
-      const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image-preview";
       const isFluxModel = modelForGeneration.startsWith("flux-");
       const isChatGPTModel = modelForGeneration === "chatgpt-image";
-      const isIdeogramModel = modelForGeneration === "ideogram";
       const isQwenModel = modelForGeneration === "qwen-image";
-      const isRunwayModel = modelForGeneration === "runway-gen4" || modelForGeneration === "runway-gen4-turbo";
-      const isSeeDreamModel = modelForGeneration === "seedream-3.0";
-      const isReveModel = modelForGeneration === "reve-image";
-      const isRecraftModel = modelForGeneration === "recraft-v3" || modelForGeneration === "recraft-v2";
-      const isLumaModel = modelForGeneration === "luma-dream-shaper" || modelForGeneration === "luma-realistic-vision";
 
-      if (isGeminiModel) {
-        // Use Gemini generation
-        img = await generateGeminiImage({
-          prompt: trimmedPrompt,
-          model: modelForGeneration,
-          imageData,
-          references: await (async () => {
-            if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result as string);
-              r.readAsDataURL(f);
-            })));
-            return arr;
-          })(),
-          temperature: temperatureForGeneration,
-          outputLength: outputLengthForGeneration,
-          topP: topPForGeneration,
-        });
-      } else if (isChatGPTModel) {
-        // Use ChatGPT Image generation
-        img = await generateChatGPTImage({
-          prompt: trimmedPrompt,
-          size: '1024x1024',
-          quality: 'high',
-          background: 'transparent',
-        });
-      } else if (isIdeogramModel) {
-        // Use Ideogram generation
-        const ideogramResult = await generateIdeogramImage({
-          prompt: trimmedPrompt,
-          aspect_ratio: '1:1',
-          rendering_speed: 'DEFAULT',
-          num_images: 1,
-        });
-        if (!ideogramResult || ideogramResult.length === 0) {
-          throw new Error('Ideogram generation failed');
-        }
-        img = ideogramResult[0]; // Take the first generated image
-      } else if (isQwenModel) {
-        // Use Qwen Image generation
-        const qwenResult = await generateQwenImage({
-          prompt: trimmedPrompt,
-          size: qwenSizeForGeneration,
-          prompt_extend: qwenPromptExtendForGeneration,
-          watermark: qwenWatermarkForGeneration,
-        });
-        if (!qwenResult || qwenResult.length === 0) {
-          throw new Error('Qwen generation failed');
-        }
-        img = qwenResult[0]; // Take the first generated image
-      } else if (isRunwayModel) {
-        // Use Runway generation
-        const runwayResult = await generateRunwayImage({
-          prompt: trimmedPrompt,
-          model: modelForGeneration === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
-          uiModel: modelForGeneration, // Pass the UI model ID for display
-          references: await (async () => {
-            if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result as string);
-              r.readAsDataURL(f);
-            })));
-            return arr;
-          })(),
-          ratio: "1920:1080", // Default ratio, could be made configurable
-        });
-        img = runwayResult;
-      } else if (isSeeDreamModel) {
-        // Use Seedream generation
-        const seedreamResult = await generateSeeDreamImage({
-          prompt: trimmedPrompt,
-          size: "1024x1024",
-          n: 1,
-        });
-        img = seedreamResult;
-      } else if (isReveModel) {
-        // Use Reve generation
-        const reveResult = await generateReveImage({
-          prompt: trimmedPrompt,
-          model: "reve-image-1.0",
-          width: 1024,
-          height: 1024,
-          references: await (async () => {
-            if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result as string);
-              r.readAsDataURL(f);
-            })));
-            return arr;
-          })(),
-        });
-        img = reveResult;
-      } else if (isRecraftModel) {
-        // Use Recraft generation
-        const recraftResult = await generateRecraftImage({
-          prompt: trimmedPrompt,
-          model: modelForGeneration as 'recraft-v2' | 'recraft-v3',
-          style: 'realistic_image',
-          size: '1024x1024',
-          n: 1,
-          response_format: 'url'
-        });
-        if (!recraftResult || recraftResult.length === 0) {
-          throw new Error('No image returned from Recraft');
-        }
-        img = recraftResult[0]; // Take the first generated image
-      } else if (isLumaModel) {
-        // Use Luma generation
-        const lumaResult = await generateLumaImage({
-          prompt: trimmedPrompt,
-          model: modelForGeneration as 'luma-dream-shaper' | 'luma-realistic-vision',
-          aspectRatio: '1:1',
-          style: 'realistic',
-          quality: 'standard'
-        });
-        if (!lumaResult || lumaResult.length === 0) {
-          throw new Error('No image returned from Luma AI');
-        }
-        img = lumaResult[0]; // Take the first generated image
-      } else if (isFluxModel) {
-        // Use Flux generation
+      if (isFluxModel) {
+        // Use FLUX generation
         const fluxParams: FluxImageGenerationOptions = {
           prompt: trimmedPrompt,
           model: modelForGeneration as FluxModel,
@@ -2705,6 +2454,26 @@ const Create: React.FC = () => {
           throw new Error('Flux generation failed');
         }
         img = fluxResult;
+      } else if (isChatGPTModel) {
+        // Use ChatGPT Image generation
+        img = await generateChatGPTImage({
+          prompt: trimmedPrompt,
+          size: '1024x1024',
+          quality: 'high',
+          background: 'transparent',
+        });
+      } else if (isQwenModel) {
+        // Use Qwen Image generation
+        const qwenResult = await generateQwenImage({
+          prompt: trimmedPrompt,
+          size: qwenSizeForGeneration,
+          prompt_extend: qwenPromptExtendForGeneration,
+          watermark: qwenWatermarkForGeneration,
+        });
+        if (!qwenResult || qwenResult.length === 0) {
+          throw new Error('Qwen generation failed');
+        }
+        img = qwenResult[0]; // Take the first generated image
       } else {
         throw new Error('Unsupported model');
       }
@@ -2713,17 +2482,46 @@ const Create: React.FC = () => {
       if (img?.url) {
         const compressedUrl = await compressDataUrl(img.url);
         const timestamp = new Date().toISOString();
+        
         const pickStringProp = (value: unknown, prop: string): string | undefined => {
           if (typeof value !== 'object' || value === null) return undefined;
           const maybe = (value as Record<string, unknown>)[prop];
           return typeof maybe === 'string' ? maybe : undefined;
         };
-        const fallbackModel = modelForGeneration ?? 'unknown';
+        const fallbackModel = modelForGeneration ?? selectedModel ?? 'flux-pro-1.1';
         const resolvedModel = pickStringProp(img, 'model') ?? fallbackModel;
         const resolvedJobId = pickStringProp(img, 'jobId');
+        
+        // Check if compressed URL is too long for backend validation
+        let finalUrl = compressedUrl;
+        if (compressedUrl.length > 2048) {
+          debugWarn(`Compressed URL too long (${compressedUrl.length} chars), using more aggressive compression`);
+          // Try more aggressive compression with smaller dimensions and lower quality
+          finalUrl = await compressDataUrl(compressedUrl, 512, 0.5); // Much more aggressive compression
+          if (finalUrl.length > 2048) {
+            debugWarn(`Still too long after aggressive compression (${finalUrl.length} chars), using maximum compression`);
+            // Try maximum compression
+            finalUrl = await compressDataUrl(compressedUrl, 256, 0.3); // Maximum compression
+            if (finalUrl.length > 2048) {
+              debugWarn(`Still too long after maximum compression (${finalUrl.length} chars), skipping gallery persistence`);
+              // Still add to local gallery but don't persist to server
+              const galleryItem: GalleryImageLike = {
+                url: finalUrl,
+                prompt: trimmedPrompt,
+                model: resolvedModel,
+                timestamp,
+                ownerId: user?.id,
+                jobId: resolvedJobId,
+                isPublic: false,
+              };
+              setGallery(prev => [galleryItem, ...prev.filter(item => item.url !== compressedUrl)].slice(0, 50));
+              return;
+            }
+          }
+        }
 
         const galleryItem: GalleryImageLike = {
-          url: compressedUrl,
+          url: finalUrl,
           prompt: trimmedPrompt,
           model: resolvedModel,
           timestamp,
@@ -2796,13 +2594,26 @@ const Create: React.FC = () => {
       }
     } catch (error) {
       debugError('Error generating image:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      if (errorMessage.includes('API key not configured') || errorMessage.includes('401') || errorMessage.includes('403')) {
+        setCopyNotification('API key not configured. Please check your settings.');
+      } else if (errorMessage.includes('404')) {
+        setCopyNotification('API endpoint not found. This model may not be available.');
+      } else if (errorMessage.includes('400')) {
+        setCopyNotification('Invalid request. Please check your prompt and try again.');
+      } else if (errorMessage.includes('500')) {
+        setCopyNotification('Server error. Please try again later.');
+      } else {
+        setCopyNotification(`Generation failed: ${errorMessage}`);
+      }
+      
+      setTimeout(() => setCopyNotification(null), 5000);
+      
       // Clear any previous errors from all hooks
-      clearGeminiError();
       clearFluxError();
       clearChatGPTError();
-      clearIdeogramError();
-      clearRunwayError();
-      clearSeeDreamError();
     } finally {
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -4506,7 +4317,7 @@ const Create: React.FC = () => {
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "video" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isFlux ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ 
                 left: 'max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem))', 
                 right: 'max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem + 6px))', 
@@ -4517,9 +4328,9 @@ const Create: React.FC = () => {
                 maxHeight: 'calc(100vh - 2rem)',
                 width: 'calc(100vw - 2 * max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem)))'
               }}
-              onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
+              onDragOver={(e) => { if (!isFlux) return; e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+              onDrop={(e) => { if (!isFlux) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
             >
             <div>
               <textarea
@@ -4561,11 +4372,11 @@ const Create: React.FC = () => {
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={isGemini ? handleRefsClick : undefined}
+                  onClick={isFlux ? handleRefsClick : undefined}
                   title="Add reference image"
                   aria-label="Add reference image"
-                  disabled={!isGemini}
-                  className={`${isGemini ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' : 'bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  disabled={!isFlux}
+                  className={`${isFlux ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' : 'bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
@@ -4574,11 +4385,11 @@ const Create: React.FC = () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={isGemini ? toggleSettings : () => alert('Settings are only available for Gemini models.')}
-                    title={isGemini ? "Settings" : "Settings only available for Gemini models"}
+                    onClick={isFlux ? toggleSettings : () => alert('Settings are only available for FLUX models.')}
+                    title={isFlux ? "Settings" : "Settings only available for FLUX models"}
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      isGemini 
+                      isFlux 
                         ? 'bg-transparent hover:bg-d-orange-1/20 text-d-white hover:text-brand border border-d-mid hover:border-d-dark' 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
@@ -4587,7 +4398,7 @@ const Create: React.FC = () => {
                   </button>
                   
                   {/* Settings Dropdown Portal */}
-                  {isGemini && (
+                  {isFlux && (
                     <SettingsPortal 
                       anchorRef={settingsRef}
                       open={isSettingsOpen}
@@ -4779,17 +4590,18 @@ const Create: React.FC = () => {
                     anchorRef={modelSelectorRef}
                     open={isModelSelectorOpen}
                     onClose={() => setIsModelSelectorOpen(false)}
+                    selectedModelIndex={selectedModelIndex}
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "luma-dream-shaper" && model.id !== "luma-realistic-vision";
+                      const isComingSoon = model.comingSoon || false;
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, FLUX, ChatGPT Image, Ideogram, Qwen Image, Runway, Seedream, Reve, and Recraft models are available.');
+                              alert('This model is coming soon! Currently only FLUX, ChatGPT Image, and Qwen Image models are available.');
                               return;
                             }
                             handleModelSelect(model.name);
@@ -4895,7 +4707,7 @@ const Create: React.FC = () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
                 <p className="font-raleway text-sm">{error}</p>
                 <button
-                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearSeeDreamError(); }}
+                  onClick={() => { clearFluxError(); clearChatGPTError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss

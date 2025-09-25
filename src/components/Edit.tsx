@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Eraser, Undo2, Redo2 } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
@@ -15,21 +14,23 @@ import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 import { debugError } from "../utils/debug";
 import type { FluxModel } from "../lib/bfl";
+import ModelMenuPortal from './ModelMenuPortal';
 
-// AI Model data for Edit section - all supported text-to-image models
+// AI Model data for Edit section - only working models
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview" },
   { name: "FLUX Pro 1.1", desc: "High-quality text-to-image generation.", Icon: Wand2, accent: "blue" as const, id: "flux-pro-1.1" },
   { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as const, id: "flux-pro-1.1-ultra" },
   { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: EditIcon, accent: "violet" as const, id: "flux-kontext-pro" },
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: EditIcon, accent: "purple" as const, id: "flux-kontext-max" },
-  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image" },
-  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram" },
-  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as const, id: "qwen-image" },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4" },
-  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as const, id: "runway-gen4-turbo" },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as const, id: "chatgpt-image" },
+  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as const, id: "qwen-image" },
+  // Coming soon models
+  { name: "Gemini 2.5 Flash Image", desc: "Image analysis and editing (coming soon).", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview", comingSoon: true },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram", comingSoon: true },
+  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image", comingSoon: true },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4", comingSoon: true },
+  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as const, id: "runway-gen4-turbo", comingSoon: true },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0", comingSoon: true },
 ];
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -42,73 +43,6 @@ type ImageEditLocationState = {
 };
 
 
-// Portal component for model menu to avoid clipping by parent containers
-const ModelMenuPortal: React.FC<{ 
-  anchorRef: React.RefObject<HTMLElement | null>; 
-  open: boolean; 
-  onClose: () => void; 
-  children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    if (!open || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    // Position above the trigger button with some offset
-    setPos({ 
-      top: rect.top - 8, // 8px offset above
-      left: rect.left, 
-      width: Math.max(384, rect.width) // Minimum 384px width (w-96 equivalent)
-    });
-  }, [open, anchorRef]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && 
-          !menuRef.current.contains(event.target as Node) && 
-          !anchorRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={menuRef}
-      style={{ 
-        position: "fixed", 
-        top: pos.top, 
-        left: pos.left, 
-        width: pos.width, 
-        zIndex: 1000,
-        transform: 'translateY(-100%)' // Position above the trigger
-      }}
-      className={`${glass.prompt} rounded-lg p-2 max-h-96 overflow-y-auto`}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
 
 // Main Component
 export default function Edit() {
@@ -167,8 +101,12 @@ export default function Edit() {
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
   const [topK, setTopK] = useState(64);
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
+  const [selectedModel, setSelectedModel] = useState<string>("flux-pro-1.1");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
+  
+  // Get current model index for scroll positioning
+  const selectedModelIndex = AI_MODELS.findIndex(model => model.id === selectedModel);
+  
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState<number>(100); // Percentage scale
@@ -1454,21 +1392,29 @@ export default function Edit() {
                 anchorRef={modelSelectorRef}
                 open={isModelSelectorOpen}
                 onClose={() => setIsModelSelectorOpen(false)}
+                selectedModelIndex={selectedModelIndex}
               >
                 {AI_MODELS.map((model) => {
                   const isSelected = selectedModel === model.id;
+                  const isComingSoon = model.comingSoon || false;
                   
                   return (
                     <button
                       key={model.name}
                       onClick={() => {
+                        if (isComingSoon) {
+                          alert('This model is coming soon! Currently only FLUX, ChatGPT Image, and Qwen Image models are available.');
+                          return;
+                        }
                         setSelectedModel(model.id);
                         setIsModelSelectorOpen(false);
                       }}
                       className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                         isSelected 
                           ? "bg-d-dark/80 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10" 
-                          : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-orange-1"
+                          : isComingSoon
+                          ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
+                          : "bg-transparent hover:bg-d-dark/40 hover:border-d-orange-1"
                       }`}
                     >
                       {hasToolLogo(model.name) ? (
