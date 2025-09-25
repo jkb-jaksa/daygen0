@@ -258,7 +258,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
             }}
             className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
               tier.id === 'free' 
-                ? 'btn-orange' 
+                ? 'btn-white' 
                 : tier.id === 'pro'
                 ? 'btn-cyan'
                 : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`

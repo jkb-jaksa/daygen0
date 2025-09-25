@@ -23,13 +23,13 @@ export const cards = {
 };
 
 export const buttons = {
-  primary: "btn btn-orange font-raleway text-base font-semibold gap-2 parallax-large",
+  primary: "btn btn-white font-raleway text-base font-semibold gap-2 parallax-large",
   secondary: "btn btn-white font-raleway text-base font-semibold gap-2 parallax-large",
   ghost: "btn btn-ghost font-raleway text-base font-semibold gap-2 parallax-large",
   ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-semibold gap-2 parallax-large",
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-semibold text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-brand parallax-large",
-  pillWarm: "btn btn-orange btn-compact font-raleway text-base font-semibold gap-2 parallax-large",
-  blockPrimary: "btn btn-orange w-full font-raleway text-base font-semibold gap-2 parallax-large",
+  pillWarm: "btn btn-white btn-compact font-raleway text-base font-semibold gap-2 parallax-large",
+  blockPrimary: "btn btn-white w-full font-raleway text-base font-semibold gap-2 parallax-large",
 };
 
 export const panels = {
