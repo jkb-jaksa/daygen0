@@ -5286,7 +5286,7 @@ const handleGenerate = async () => {
                         
                         // Placeholder tile for videos
                         return (
-                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black grid place-items-center aspect-square cursor-pointer hover:bg-d-dark hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                             <div className="flex flex-col items-center gap-2 text-center px-2">
                               <VideoIcon className="w-8 h-8 text-d-light" />
                               <div className="text-d-light font-raleway text-base">Create something amazing.</div>
@@ -5510,7 +5510,7 @@ const handleGenerate = async () => {
                     }
                     // Placeholder tile
                     return (
-                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-black grid place-items-center aspect-square cursor-pointer hover:bg-d-dark hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="flex flex-col items-center gap-2 text-center px-2">
                           <ImageIcon className="w-8 h-8 text-d-light" />
                           <div className="text-d-light font-raleway text-base">Create something amazing.</div>
