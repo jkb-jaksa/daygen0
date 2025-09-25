@@ -174,8 +174,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small`}
-      style={{backgroundColor: 'var(--d-black)'}}
+      className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow`}
     >
       {/* Popular badge */}
       {tier.popular && (
@@ -279,7 +278,7 @@ export default function Pricing() {
   const currentTiers = billingPeriod === 'yearly' ? YEARLY_PRICING_TIERS : PRICING_TIERS;
 
   return (
-    <div className="min-h-screen" style={{backgroundColor: 'var(--d-black)'}}>
+    <div className="min-h-screen">
       <div className={layout.backdrop} aria-hidden="true" />
       
       <div className="relative z-10">

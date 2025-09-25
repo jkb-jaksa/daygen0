@@ -153,7 +153,7 @@ export default function Account() {
   }, [user, nextPath, navigate]);
 
   if (!user) return (
-    <main className="min-h-screen bg-d-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+    <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
       <p className="text-d-white font-raleway">Please log in to view your account.</p>
     </main>
   );
@@ -161,7 +161,7 @@ export default function Account() {
   // If user is authenticated and there's a next parameter, show loading while redirecting
   if (user && nextPath) {
     return (
-      <main className="min-h-screen bg-d-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+      <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-2xl font-raleway mb-4 text-d-text">Redirecting...</h1>
           <p className="text-d-white font-raleway">Taking you to your destination.</p>
@@ -171,7 +171,7 @@ export default function Account() {
   }
 
   return (
-    <main className="min-h-screen bg-d-black text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+    <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
       <header className="max-w-5xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

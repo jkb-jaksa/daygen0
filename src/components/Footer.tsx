@@ -14,7 +14,7 @@ export default function Footer() {
   return (
     <footer>
       {/* Footer panel */}
-      <section className="relative bg-d-black overflow-hidden border-t border-d-dark">
+      <section className="relative bg-d-black-subtle overflow-hidden border-t border-d-dark">
         <div className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-8 pb-40 relative z-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}

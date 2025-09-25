@@ -288,7 +288,7 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
     <div
       className={cx(
         cards.shell,
-        "group h-full cursor-pointer p-5 flex flex-col bg-d-black"
+        "group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow"
       )}
       onMouseMove={onMove}
       onMouseEnter={onEnter}

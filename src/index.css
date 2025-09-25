@@ -32,10 +32,10 @@
   --d-light: #8E9393;
   --d-light-rgb: 142 147 147;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --d-mid: #353b3b;
-  --d-mid-rgb: 53 59 59;
-  --d-dark: #1d1f1f;
-  --d-dark-rgb: 29 31 31;
+  --d-mid: #2a2f2f;
+  --d-mid-rgb: 42 47 47;
+  --d-dark: #1a1c1c;
+  --d-dark-rgb: 26 28 28;
   --d-black: #060806;
   --d-black-rgb: 6 8 6;
 
@@ -128,6 +128,20 @@
 /* Ensure page background behind transparent header is d-black */
 html, body {
   background-color: var(--d-black);
+}
+
+/* Subtle gradient for main page backgrounds */
+.bg-d-black-subtle {
+  background: 
+    radial-gradient(
+      ellipse 1200px 900px at 0% 0%,
+      #0a0c0a 0%,
+      #0c0e0c 15%,
+      #0a0c0a 30%,
+      #080a08 50%,
+      var(--d-black) 80%
+    ),
+    var(--d-black);
 }
 
 
@@ -523,52 +537,28 @@ html, body {
   }
 }
 
-/* Jaksa gradient - without blur effects */
-.jaksagradient {
-  isolation: isolate;
-  overflow: hidden;
+/* Mouse glow effect - pure glow only, no background changes */
+.mouse-glow {
   position: relative;
+  overflow: hidden;
 
   /* defaults */
   --x: 50%;
   --y: 50%;
   --tx: 0px;
   --ty: 0px;
-
-  /* lighter idle for better post-hover feel */
-  --idle-op: 1;
-  --hover-op: 1.5;
-  --l: 0.5; /* glow strength toggled by JS */
+  --l: 0; /* glow strength toggled by JS */
   --fade-ms: 200ms; /* default fade duration */
   --li: 1; /* intensity multiplier */
 }
 
-.jaksagradient::before {
-  background: linear-gradient(150deg,
-    hsla(38,  35%, 68%, 0.03)  0%,
-    hsla(342, 32%, 70%, 0.04) 20%,
-    hsla(226, 30%, 70%, 0.05) 40%,
-    hsla(182, 28%, 68%, 0.06) 60%,
-    hsla(226, 30%, 70%, 0.07) 80%,
-    hsla(182, 28%, 68%, 0.08) 100%
-  );
-  content: "";
-  filter: brightness(1.06); /* Removed blur(24px) */
-  inset: -2px;
-  opacity: var(--idle-op);
-  position: absolute;
-  transition: opacity 0.2s ease;
-  will-change: opacity;
-  z-index: -2;
-}
-
-.jaksagradient::after {
+.mouse-glow::after {
   background: radial-gradient(200px 200px at var(--x) var(--y),
-      rgb(255 255 255 / calc(0.16 * var(--l) * var(--li))),
-      rgb(255 255 255 / calc(0.06 * var(--l) * var(--li))) 45%,
+      rgb(255 255 255 / calc(0.08 * var(--l) * var(--li))),
+      rgb(255 255 255 / calc(0.03 * var(--l) * var(--li))) 45%,
       rgb(255 255 255 / 0) 60%);
   content: "";
-  /* Removed filter: blur(96px) */
+  filter: blur(80px);
   inset: -2px;
   mix-blend-mode: screen;
   opacity: calc(0.0001 + var(--l));
@@ -949,7 +939,16 @@ select option::-webkit-scrollbar-thumb:hover {
    Homepage hero redesign
    ------------------------------------------------------------- */
 .home-page {
-  background-color: var(--d-black);
+  background: 
+    radial-gradient(
+      ellipse 1200px 900px at 0% 0%,
+      #0a0c0a 0%,
+      #0c0e0c 15%,
+      #0a0c0a 30%,
+      #080a08 50%,
+      var(--d-black) 80%
+    ),
+    var(--d-black);
 }
 
 
@@ -1081,7 +1080,16 @@ select option::-webkit-scrollbar-thumb:hover {
    Homepage FAQ simplified
    ------------------------------------------------------------- */
 .faq-section {
-  background: var(--d-black);
+  background: 
+    radial-gradient(
+      ellipse 1200px 900px at 0% 0%,
+      #0a0c0a 0%,
+      #0c0e0c 15%,
+      #0a0c0a 30%,
+      #080a08 50%,
+      var(--d-black) 80%
+    ),
+    var(--d-black);
   position: relative;
   z-index: 1;
   padding-bottom: 6rem;

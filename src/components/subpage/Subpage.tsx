@@ -752,7 +752,7 @@ function PageChrome({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-d-black text-d-text">
+    <main className="min-h-screen text-d-text">
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent blur-3xl opacity-40" />
         <div className="relative max-w-6xl mx-auto px-6 pt-16 pb-10">

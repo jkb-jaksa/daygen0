@@ -66,7 +66,7 @@ function Home() {
   }, [location.hash]);
 
   return (
-    <div className={`${layout.page} home-page bg-d-black`}>
+    <div className={`${layout.page} home-page`}>
 
       <div className="relative z-10">
         {/* Welcome Section */}

@@ -126,7 +126,7 @@ const FAQSection: React.FC = () => {
             return (
               <div
                 key={item.question}
-                className={`faq-card parallax-small ${isOpen ? "faq-card--active" : ""}`}
+                className={`faq-card parallax-small mouse-glow ${isOpen ? "faq-card--active" : ""}`}
                 onPointerMove={handlePointerMove}
                 onPointerEnter={handlePointerEnter}
                 onPointerLeave={handlePointerLeave}

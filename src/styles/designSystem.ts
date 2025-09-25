@@ -1,11 +1,11 @@
 export const layout = {
-  page: "relative min-h-screen text-d-text overflow-hidden bg-d-black",
+  page: "relative min-h-screen text-d-text overflow-hidden bg-d-black-subtle",
   backdrop: "orb-background absolute inset-0 z-0",
   container: "mx-auto max-w-[85rem] px-6 lg:px-8",
   heroPadding: "pt-0 pb-0",
   sectionPadding: "py-16",
   sectionPaddingTight: "py-12",
-  sectionDivider: "relative w-full overflow-hidden bg-d-black border-b border-d-black",
+  sectionDivider: "relative w-full overflow-hidden bg-d-black-subtle border-b border-d-black",
 };
 
 export const text = {
@@ -45,7 +45,7 @@ export const glass = {
   base: glassBase,
   surface: `${glassCore} bg-d-black/15 rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
-  prompt: `${glassCore} bg-d-dark/80`,
+  prompt: `${glassCore} bg-d-mid`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/60`,
 };
 
@@ -64,7 +64,7 @@ export const iconButtons = {
 const inputFocus =
   "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-d-light";
 const inputCore =
-  `w-full ${glass.prompt} px-4 text-d-white placeholder:text-d-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-d-mid focus:bg-d-dark/90 disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
+  `w-full ${glass.prompt} px-4 text-d-white placeholder:text-d-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-d-mid disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
 
 export const inputs = {
   base: `${inputCore} rounded-xl py-3`,
