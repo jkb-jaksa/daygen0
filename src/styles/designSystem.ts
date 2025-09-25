@@ -18,7 +18,7 @@ export const text = {
 };
 
 export const cards = {
-  shell: "tag-gradient relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200",
+  shell: "relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200",
   panel: "relative rounded-[64px] overflow-hidden isolate",
 };
 
@@ -45,8 +45,8 @@ export const glass = {
   base: glassBase,
   surface: `${glassCore} bg-d-black/15 rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
-  prompt: `${glassCore} bg-d-dark/85`,
-  promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/70`,
+  prompt: `${glassCore} bg-d-dark/80`,
+  promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/60`,
 };
 
 const iconButtonFocus =

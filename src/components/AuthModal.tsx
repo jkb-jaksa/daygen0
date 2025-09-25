@@ -29,8 +29,8 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
       <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
-            <h3 className="text-d-text font-raleway text-xl">{mode === "login" ? "Log in" : "Sign up"}</h3>
-            <p className="text-d-light text-sm font-raleway">Welcome to DayGen</p>
+            <h3 className="text-d-text font-raleway font-normal text-xl">{mode === "login" ? "Log in" : "Sign up"}</h3>
+            <p className="text-d-light text-sm font-raleway font-light">Welcome to DayGen</p>
             <button onClick={onClose} className="absolute top-6 right-6 text-d-light hover:text-d-text transition-colors">✕</button>
           </div>
 

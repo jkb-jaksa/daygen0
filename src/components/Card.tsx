@@ -45,7 +45,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      {/* No overlay; tag-gradient provides subtle glow only */}
+      {/* No overlay */}
       <div className="relative z-10 flex items-center gap-2">
         <div className="text-d-text text-xl font-normal font-raleway">{title}</div>
       </div>

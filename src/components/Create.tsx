@@ -3739,7 +3739,7 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-d-text">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -3748,7 +3748,7 @@ const handleGenerate = async () => {
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway text-d-white">
+                <p className="text-base font-raleway font-light text-d-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -3784,8 +3784,8 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">Create New Folder</h3>
-                <p className="text-base font-raleway text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-d-text">Create New Folder</h3>
+                <p className="text-base font-raleway font-light text-d-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -3860,10 +3860,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-d-text">
                   {publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway text-d-white">
+                <p className="text-base font-raleway font-light text-d-white">
                   {publishConfirmation.count === 1 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : `Are you sure you want to publish these ${publishConfirmation.count} images? They will be visible to other users.`}
@@ -3895,10 +3895,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-d-text">
                   {unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway text-d-white">
+                <p className="text-base font-raleway font-light text-d-white">
                   {unpublishConfirmation.count === 1 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : `Are you sure you want to unpublish these ${unpublishConfirmation.count} images? They will no longer be visible to other users.`}
@@ -3930,8 +3930,8 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">Manage Folders</h3>
-                <p className="text-base font-raleway text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-d-text">Manage Folders</h3>
+                <p className="text-base font-raleway font-light text-d-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
@@ -4786,13 +4786,13 @@ const handleGenerate = async () => {
                                 </p>
                               </div>
                               
-                              {/* Set/Remove Thumbnail button - top right */}
+                              {/* Set/Remove Thumbnail button - bottom center */}
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4832,13 +4832,13 @@ const handleGenerate = async () => {
                                 </p>
                               </div>
                               
-                              {/* Set/Remove Thumbnail button - top right */}
+                              {/* Set/Remove Thumbnail button - bottom center */}
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4869,13 +4869,13 @@ const handleGenerate = async () => {
                                 No images yet
                               </p>
                               
-                              {/* Set/Remove Thumbnail button for empty folders */}
+                              {/* Set/Remove Thumbnail button for empty folders - bottom center */}
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute top-2 right-2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -4883,7 +4883,7 @@ const handleGenerate = async () => {
                           )}
                         </div>
                         
-                        <div className="absolute top-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                           <button 
                             type="button" 
                             onClick={(e) => {
@@ -5604,10 +5604,8 @@ const handleGenerate = async () => {
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 left-6 right-6 sm:left-8 sm:right-8 lg:left-[calc((100vw-85rem)/2+1.5rem)] lg:right-[calc((100vw-85rem)/2+1.5rem+6px)]`}
               style={{ 
-                left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
-                right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
                 bottom: '0.75rem',
                 transform: 'translateZ(0)',
                 willChange: 'transform',

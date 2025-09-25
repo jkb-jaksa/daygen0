@@ -294,7 +294,7 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      {/* No overlay; tag-gradient provides subtle glow only */}
+      {/* No overlay */}
       <div className="relative z-10 flex items-center gap-2">
         {hasToolLogo(name) ? (
           <img 
