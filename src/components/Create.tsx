@@ -806,6 +806,7 @@ const Create: React.FC = () => {
   const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
   const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
+  const [downloadConfirmation, setDownloadConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
@@ -1806,6 +1807,13 @@ const Create: React.FC = () => {
     setUnpublishConfirmation({show: true, count});
   };
 
+  const handleBulkDownload = () => {
+    if (selectedImages.size === 0) return;
+    
+    const count = selectedImages.size;
+    setDownloadConfirmation({show: true, count});
+  };
+
   const confirmBulkPublish = () => {
     const count = selectedImages.size;
     setGallery(currentGallery => {
@@ -1846,6 +1854,34 @@ const Create: React.FC = () => {
 
   const cancelBulkUnpublish = () => {
     setUnpublishConfirmation({show: false, count: 0});
+  };
+
+  const confirmBulkDownload = () => {
+    const count = selectedImages.size;
+    const selectedImageObjects = gallery.filter(img => selectedImages.has(img.url));
+    
+    // Download each selected image
+    selectedImageObjects.forEach((img, index) => {
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = img.url;
+        const timestamp = new Date(img.timestamp).toISOString().split('T')[0];
+        const model = img.model ? `_${img.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+        const extension = img.url.split('.').pop()?.split('?')[0] || 'jpg';
+        a.download = `daygen_${timestamp}${model}_${index + 1}.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, index * 100); // Stagger downloads by 100ms to avoid browser blocking
+    });
+    
+    setCopyNotification(`${count} image${count === 1 ? '' : 's'} downloading!`);
+    setTimeout(() => setCopyNotification(null), 2000);
+    setDownloadConfirmation({show: false, count: 0});
+  };
+
+  const cancelBulkDownload = () => {
+    setDownloadConfirmation({show: false, count: 0});
   };
 
   const focusPromptBar = () => {
@@ -3755,12 +3791,18 @@ const handleGenerate = async () => {
         } else if (event.key === 'Enter') {
           confirmBulkUnpublish();
         }
+      } else if (downloadConfirmation.show) {
+        if (event.key === 'Escape') {
+          cancelBulkDownload();
+        } else if (event.key === 'Enter') {
+          confirmBulkDownload();
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show]);
+  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show]);
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
@@ -3956,6 +3998,41 @@ const handleGenerate = async () => {
                   className={buttons.primary}
                 >
                   Unpublish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Download confirmation dialog */}
+      {downloadConfirmation.show && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Download className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway font-normal text-d-text">
+                  {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
+                </h3>
+                <p className="text-base font-raleway font-light text-d-white">
+                  {downloadConfirmation.count === 1 
+                    ? 'Are you sure you want to download this image?'
+                    : `Are you sure you want to download ${downloadConfirmation.count} images?`}
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={cancelBulkDownload}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBulkDownload}
+                  className={buttons.primary}
+                >
+                  Download
                 </button>
               </div>
             </div>
@@ -4455,6 +4532,18 @@ const handleGenerate = async () => {
                               >
                                 <FolderPlus className="h-4 w-4" />
                                 <span>Manage folders</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkDownload();
+                                  closeBulkActionsMenu();
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                              >
+                                <Download className="h-4 w-4" />
+                                <span>Download</span>
                               </button>
                               <button
                                 type="button"
