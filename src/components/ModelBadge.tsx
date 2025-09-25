@@ -118,6 +118,18 @@ const MODEL_CONFIG = {
     shortName: 'R2',
     icon: '🎨',
     description: 'Recraft v2 - High-quality image generation and editing'
+  },
+  'luma-dream-shaper': {
+    name: 'Luma Dream Shaper',
+    shortName: 'LDS',
+    icon: '✨',
+    description: 'Luma Dream Shaper - High-quality text-to-image generation with artistic styles'
+  },
+  'luma-realistic-vision': {
+    name: 'Luma Realistic Vision',
+    shortName: 'LRV',
+    icon: '📷',
+    description: 'Luma Realistic Vision - Photorealistic image generation with advanced controls'
   }
 } as const;
 

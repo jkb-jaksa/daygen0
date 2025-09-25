@@ -16,6 +16,8 @@ import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
+import { useRecraftImageGeneration } from "../hooks/useRecraftImageGeneration";
+import { useLumaImageGeneration } from "../hooks/useLumaImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
 import ModelBadge from './ModelBadge';
@@ -30,7 +32,6 @@ import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from ".
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
-import { getApiUrl } from "../utils/api";
 
 // Accent types for AI models
 type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
@@ -112,6 +113,8 @@ const AI_MODELS = [
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
   { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3" },
   { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2" },
+  { name: "Luma Dream Shaper", desc: "High-quality text-to-image generation with artistic styles.", Icon: Sparkles, accent: "purple" as Accent, id: "luma-dream-shaper" },
+  { name: "Luma Realistic Vision", desc: "Photorealistic image generation with advanced controls.", Icon: Camera, accent: "blue" as Accent, id: "luma-realistic-vision" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
@@ -633,7 +636,8 @@ const Create: React.FC = () => {
   const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft-v3" || selectedModel === "recraft-v2";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft;
+  const isLuma = selectedModel === "luma-dream-shaper" || selectedModel === "luma-realistic-vision";
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isSeeDream && !isReve && !isRecraft && !isLuma;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -973,8 +977,18 @@ const Create: React.FC = () => {
     generateImage: generateReveImage,
   } = useReveImageGeneration();
 
+  const {
+    error: recraftError,
+    generateImage: generateRecraftImage,
+  } = useRecraftImageGeneration();
+
+  const {
+    error: lumaError,
+    generateImage: generateLumaImage,
+  } = useLumaImageGeneration();
+
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || seedreamError || reveError || recraftError || lumaError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
 
@@ -2534,6 +2548,7 @@ const Create: React.FC = () => {
       const isSeeDreamModel = modelForGeneration === "seedream-3.0";
       const isReveModel = modelForGeneration === "reve-image";
       const isRecraftModel = modelForGeneration === "recraft-v3" || modelForGeneration === "recraft-v2";
+      const isLumaModel = modelForGeneration === "luma-dream-shaper" || modelForGeneration === "luma-realistic-vision";
 
       if (isGeminiModel) {
         // Use Gemini generation
@@ -2631,45 +2646,32 @@ const Create: React.FC = () => {
         });
         img = reveResult;
       } else if (isRecraftModel) {
-        // Use Recraft generation via unified API
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-
-        const response = await fetch(getApiUrl('/unified-generate'), {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            model: modelForGeneration,
-            prompt: trimmedPrompt,
-            style: 'realistic_image',
-            size: '1024x1024',
-            n: 1,
-            response_format: 'url'
-          })
+        // Use Recraft generation
+        const recraftResult = await generateRecraftImage({
+          prompt: trimmedPrompt,
+          model: modelForGeneration as 'recraft-v2' | 'recraft-v3',
+          style: 'realistic_image',
+          size: '1024x1024',
+          n: 1,
+          response_format: 'url'
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Recraft API error: ${errorData.error || response.statusText}`);
-        }
-
-        const result = await response.json();
-        if (!result.data || result.data.length === 0) {
+        if (!recraftResult || recraftResult.length === 0) {
           throw new Error('No image returned from Recraft');
         }
-
-        // Convert Recraft response to our GeneratedImage format
-        img = {
-          url: result.data[0].url,
+        img = recraftResult[0]; // Take the first generated image
+      } else if (isLumaModel) {
+        // Use Luma generation
+        const lumaResult = await generateLumaImage({
           prompt: trimmedPrompt,
-          model: modelForGeneration,
-          timestamp: new Date().toISOString(),
-          ownerId: user?.id
-        };
+          model: modelForGeneration as 'luma-dream-shaper' | 'luma-realistic-vision',
+          aspectRatio: '1:1',
+          style: 'realistic',
+          quality: 'standard'
+        });
+        if (!lumaResult || lumaResult.length === 0) {
+          throw new Error('No image returned from Luma AI');
+        }
+        img = lumaResult[0]; // Take the first generated image
       } else if (isFluxModel) {
         // Use Flux generation
         const fluxParams: FluxImageGenerationOptions = {
@@ -3362,7 +3364,13 @@ const Create: React.FC = () => {
           {/* Categories + Gallery row */}
           <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
             {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
-            <div className="hidden md:block fixed z-30" style={{ top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', bottom: 'calc(0.75rem + 8rem)', left: 'calc((100vw - 85rem) / 2 + 1.5rem)' }}>
+            <div className="hidden md:block fixed z-30" style={{ 
+              top: 'calc(var(--nav-h) + 0.25rem + 0.5rem)', 
+              bottom: 'max(calc(0.75rem + 8rem), calc(env(safe-area-inset-bottom) + 8rem))', 
+              left: 'max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem))', 
+              maxHeight: 'calc(100vh - var(--nav-h) - 2rem)',
+              width: 'calc(min(200px, 15vw))'
+            }}>
               <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
                 <aside className="flex flex-col gap-1.5 w-full mt-2">
                   {/* Generate section */}
@@ -3465,8 +3473,8 @@ const Create: React.FC = () => {
                 </aside>
             </div>
           </div>
-          {/* Gallery - compressed to avoid overlap with left menu */}
-          <div className="w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
+          {/* Gallery - responsive layout that adapts to console */}
+          <div className="w-full max-w-full md:max-w-[calc(100%-220px)] lg:max-w-[calc(100%-220px)] ml-auto md:ml-[220px] lg:ml-[220px]">
             <div className="w-full mb-4" ref={galleryRef}>
 
                 
@@ -4500,12 +4508,14 @@ const Create: React.FC = () => {
             <div 
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
               style={{ 
-                left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
-                right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
-                bottom: '0.75rem',
+                left: 'max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem))', 
+                right: 'max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem + 6px))', 
+                bottom: 'max(0.75rem, env(safe-area-inset-bottom))',
                 transform: 'translateZ(0)',
                 willChange: 'transform',
-                backfaceVisibility: 'hidden'
+                backfaceVisibility: 'hidden',
+                maxHeight: 'calc(100vh - 2rem)',
+                width: 'calc(100vw - 2 * max(1.5rem, calc((100vw - 85rem) / 2 + 1.5rem)))'
               }}
               onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -4772,7 +4782,7 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2";
+                      const isComingSoon = !model.id.startsWith("flux-") && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "runway-gen4-turbo" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft-v3" && model.id !== "recraft-v2" && model.id !== "luma-dream-shaper" && model.id !== "luma-realistic-vision";
                       
                       return (
                         <button
