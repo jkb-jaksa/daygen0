@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Edit as EditIcon, Package, Film, Leaf, Eraser, Undo2, Redo2 } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -18,17 +18,16 @@ import { debugError } from "../utils/debug";
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
   { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview" },
-  { name: "FLUX Pro 1.1", desc: "High-quality text-to-image generation.", Icon: Wand2, accent: "blue" as const, id: "flux-pro-1.1" },
-  { name: "FLUX Pro 1.1 Ultra", desc: "Ultra-high quality 4MP+ generation.", Icon: Wand2, accent: "indigo" as const, id: "flux-pro-1.1-ultra" },
-  { name: "FLUX Kontext Pro", desc: "Image editing with text prompts.", Icon: EditIcon, accent: "violet" as const, id: "flux-kontext-pro" },
-  { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: EditIcon, accent: "purple" as const, id: "flux-kontext-max" },
+  { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue" as const, id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram" },
+  { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink" as const, id: "recraft" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as const, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4" },
-  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as const, id: "runway-gen4-turbo" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as const, id: "chatgpt-image" },
+  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan" as const, id: "luma-photon-1" },
+  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan" as const, id: "luma-photon-flash-1" },
 ];
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -41,20 +40,31 @@ const ModelMenuPortal: React.FC<{
   open: boolean; 
   onClose: () => void; 
   children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
+  activeCategory: string;
+}> = ({ anchorRef, open, onClose, children, activeCategory }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
 
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    // Position above the trigger button with some offset
+    const viewportHeight = window.innerHeight;
+    const dropdownHeight = 384; // max-h-96 = 384px
+    
+    // Check if there's enough space above the trigger
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+    
+    // Position above if there's more space above, otherwise position below
+    const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
+    
     setPos({ 
-      top: rect.top - 8, // 8px offset above
+      top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
       left: rect.left, 
-      width: Math.max(384, rect.width) // Minimum 384px width (w-96 equivalent)
+      width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
+      transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
     });
-  }, [open, anchorRef]);
+  }, [open, anchorRef, activeCategory]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -74,6 +84,10 @@ const ModelMenuPortal: React.FC<{
     if (open) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleKeyDown);
+      // Focus the dropdown when it opens for better keyboard navigation
+      if (menuRef.current) {
+        menuRef.current.focus();
+      }
     }
 
     return () => {
@@ -87,15 +101,32 @@ const ModelMenuPortal: React.FC<{
   return createPortal(
     <div
       ref={menuRef}
+      tabIndex={-1}
       style={{ 
         position: "fixed", 
         top: pos.top, 
         left: pos.left, 
         width: pos.width, 
-        zIndex: 1000,
-        transform: 'translateY(-100%)' // Position above the trigger
+        zIndex: 9999,
+        transform: pos.transform,
+        maxHeight: '384px',
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}
-      className={`${glass.prompt} rounded-lg p-2 max-h-96 overflow-y-auto`}
+      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50 ${
+        activeCategory === "video" ? "p-1" : "p-2"
+      }`}
+      onWheel={(e) => {
+        // Allow scrolling within the dropdown but prevent page scroll
+        e.stopPropagation();
+        // Don't prevent default to allow normal scrolling behavior
+      }}
+      onFocus={() => {
+        // Ensure the dropdown can receive focus for keyboard navigation
+        if (menuRef.current) {
+          menuRef.current.focus();
+        }
+      }}
     >
       {children}
     </div>,
@@ -1397,7 +1428,7 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 border-d-mid/40 cursor-not-allowed' : 'bg-transparent hover:bg-d-dark/40 text-d-white hover:text-d-text border-0'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm font-raleway">Add more references</span>
@@ -1409,7 +1440,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className={`bg-transparent hover:bg-d-dark/40 text-d-white hover:text-d-text border-0 flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1434,6 +1465,7 @@ export default function Edit() {
                 anchorRef={modelSelectorRef}
                 open={isModelSelectorOpen}
                 onClose={() => setIsModelSelectorOpen(false)}
+                activeCategory="image"
               >
                 {AI_MODELS.map((model) => {
                   const isSelected = selectedModel === model.id;
@@ -1447,8 +1479,8 @@ export default function Edit() {
                       }}
                       className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                         isSelected 
-                          ? "bg-d-dark/80 border-d-text/30 shadow-lg shadow-d-text/10" 
-                          : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-text"
+                          ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
+                          : "bg-transparent hover:bg-d-text/20 border-0"
                       }`}
                     >
                       {hasToolLogo(model.name) ? (
@@ -1482,19 +1514,20 @@ export default function Edit() {
                 })}
               </ModelMenuPortal>
             </div>
-            
-            <div className="relative settings-dropdown">
-              <button
-                ref={settingsRef}
-                type="button"
-                onClick={toggleSettings}
-                title="Settings"
-                aria-label="Settings"
-                className={`bg-transparent hover:bg-d-dark/40 text-d-white hover:text-d-text border-0 grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-            </div>
+          </div>
+          
+          {/* Settings button - moved to the right of model selector */}
+          <div className="relative settings-dropdown">
+            <button
+              ref={settingsRef}
+              type="button"
+              onClick={toggleSettings}
+              title="Settings"
+              aria-label="Settings"
+              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
           
           {/* Reference images display - to the right of buttons */}

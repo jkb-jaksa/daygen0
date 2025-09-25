@@ -332,7 +332,7 @@ const CustomDropdown: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="w-full px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className={selectedOption ? 'text-d-white' : 'text-d-white/50'}>
           {selectedOption?.label || placeholder || 'Select...'}
@@ -360,7 +360,7 @@ const CustomDropdown: React.FC<{
               }}
               className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-text hover:text-d-black ${
                 option.value === value 
-                  ? 'bg-d-orange-1 text-d-black' 
+                  ? 'bg-d-white text-d-black' 
                   : 'text-d-white hover:bg-d-text hover:text-d-black'
               }`}
             >
@@ -428,7 +428,7 @@ const CustomMultiSelect: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-orange-1 transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-d-dark bg-d-black text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <div className="flex flex-wrap gap-1.5 flex-1">
           {values.length === 0 ? (
@@ -476,7 +476,7 @@ const CustomMultiSelect: React.FC<{
                 onClick={() => toggleOption(option.value)}
                 className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway hover:bg-d-text hover:text-d-black ${
                   isSelected 
-                    ? 'bg-d-orange-1 text-d-black' 
+                    ? 'bg-d-white text-d-black' 
                     : 'text-d-white hover:bg-d-text hover:text-d-black'
                 }`}
               >
@@ -800,6 +800,7 @@ const Create: React.FC = () => {
   const [shouldAutoGenerateAfterModelSelect, setShouldAutoGenerateAfterModelSelect] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [lastSelectedImage, setLastSelectedImage] = useState<string | null>(null);
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
@@ -1677,23 +1678,54 @@ const Create: React.FC = () => {
     }
   };
 
-  const toggleImageSelection = (imageUrl: string) => {
+  const selectRange = (startUrl: string, endUrl: string, currentGallery: GalleryImageLike[]) => {
+    const startIndex = currentGallery.findIndex(img => img.url === startUrl);
+    const endIndex = currentGallery.findIndex(img => img.url === endUrl);
+    
+    if (startIndex === -1 || endIndex === -1) return;
+    
+    const minIndex = Math.min(startIndex, endIndex);
+    const maxIndex = Math.max(startIndex, endIndex);
+    
     setSelectedImages(prev => {
       const next = new Set(prev);
-      if (next.has(imageUrl)) {
-        next.delete(imageUrl);
-        // If no images are selected after this removal, exit select mode
-        if (next.size === 0 && isSelectMode) {
-          setIsSelectMode(false);
-        }
-      } else {
-        next.add(imageUrl);
-        // When selecting an individual image, activate select mode
-        if (!isSelectMode) {
-          setIsSelectMode(true);
-        }
+      for (let i = minIndex; i <= maxIndex; i++) {
+        next.add(currentGallery[i].url);
       }
       return next;
+    });
+  };
+
+  const toggleImageSelection = (imageUrl: string, event?: React.MouseEvent) => {
+    const isShiftClick = event?.shiftKey && lastSelectedImage;
+    
+    setSelectedImages(prev => {
+      const next = new Set(prev);
+      
+      if (isShiftClick && lastSelectedImage) {
+        // Range selection with Shift+click
+        selectRange(lastSelectedImage, imageUrl, filteredGallery);
+        setLastSelectedImage(imageUrl);
+        return next; // selectRange already updates the state
+      } else {
+        // Normal toggle behavior
+        if (next.has(imageUrl)) {
+          next.delete(imageUrl);
+          // If no images are selected after this removal, exit select mode
+          if (next.size === 0 && isSelectMode) {
+            setIsSelectMode(false);
+          }
+          setLastSelectedImage(null);
+        } else {
+          next.add(imageUrl);
+          // When selecting an individual image, activate select mode
+          if (!isSelectMode) {
+            setIsSelectMode(true);
+          }
+          setLastSelectedImage(imageUrl);
+        }
+        return next;
+      }
     });
   };
 
@@ -1709,6 +1741,7 @@ const Create: React.FC = () => {
         if (next.size === 0 && isSelectMode) {
           setIsSelectMode(false);
         }
+        setLastSelectedImage(null);
       } else {
         filteredGallery.forEach(item => {
           next.add(item.url);
@@ -1717,6 +1750,8 @@ const Create: React.FC = () => {
         if (!isSelectMode) {
           setIsSelectMode(true);
         }
+        // Set the last selected to the first item when selecting all
+        setLastSelectedImage(filteredGallery[0]?.url || null);
       }
       return next;
     });
@@ -1725,6 +1760,7 @@ const Create: React.FC = () => {
   const clearImageSelection = () => {
     if (selectedImages.size === 0) return;
     setSelectedImages(new Set());
+    setLastSelectedImage(null);
     // Exit select mode when clearing selection
     if (isSelectMode) {
       setIsSelectMode(false);
@@ -2512,7 +2548,7 @@ const Create: React.FC = () => {
     return (
       <div
         key={`${context}-${img.url}-${idx}`}
-        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? '' : 'parallax-large'} ${
+        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-d-white bg-d-black hover:bg-d-dark'
             : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
@@ -2521,10 +2557,14 @@ const Create: React.FC = () => {
         <img
           src={img.url}
           alt={img.prompt || `Generated ${idx + 1}`}
-          className="w-full aspect-square object-cover"
-          onClick={() => {
-            setSelectedFullImage(img);
-            setIsFullSizeOpen(true);
+          className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`}
+          onClick={(event) => {
+            if (isSelectMode) {
+              toggleImageSelection(img.url, event);
+            } else {
+              setSelectedFullImage(img);
+              setIsFullSizeOpen(true);
+            }
           }}
         />
 
@@ -2628,7 +2668,7 @@ const Create: React.FC = () => {
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              toggleImageSelection(img.url);
+              toggleImageSelection(img.url, event);
             }}
             className={`image-action-btn parallax-large image-select-toggle ${
               isSelected
@@ -3797,7 +3837,7 @@ const handleGenerate = async () => {
                     folders.some(folder =>
                       folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                     ) && newFolderName.trim()
-                      ? 'border-d-orange-1 focus:border-d-orange-1'
+                      ? 'border-d-white focus:border-d-white'
                       : 'border-b-mid'
                   }`}
                   autoFocus
@@ -3969,10 +4009,10 @@ const handleGenerate = async () => {
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
                             isFullyInFolder
-                              ? "bg-d-orange-1/10 border-d-orange-1 shadow-lg shadow-d-orange-1/20"
+                              ? "bg-d-white/10 border-d-white shadow-lg shadow-d-white/20"
                               : isPartiallyInFolder
-                                ? "bg-d-orange-1/10 border-d-orange-1/70"
-                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                                ? "bg-d-white/10 border-d-white/70"
+                                : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
                           }`}
                         >
                           <input
@@ -3984,9 +4024,9 @@ const handleGenerate = async () => {
                           />
                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                             isFullyInFolder
-                              ? "border-d-orange-1 bg-d-orange-1"
+                              ? "border-d-white bg-d-white"
                               : isPartiallyInFolder
-                                ? "border-d-orange-1 bg-d-orange-1/30"
+                                ? "border-d-white bg-d-white/30"
                                 : "border-d-mid hover:border-d-text/50"
                           }`}>
                             {isFullyInFolder ? (
@@ -4001,7 +4041,7 @@ const handleGenerate = async () => {
                           </div>
                           <div className="flex-shrink-0">
                             {isFullyInFolder ? (
-                              <div className="w-5 h-5 bg-d-orange-1/20 rounded-lg flex items-center justify-center">
+                              <div className="w-5 h-5 bg-d-white/20 rounded-lg flex items-center justify-center">
                                 <Folder className="w-3 h-3 text-d-text" />
                               </div>
                             ) : (
@@ -4302,46 +4342,44 @@ const handleGenerate = async () => {
 
                     {/* Selection Toolbar */}
                     <div className={`${glass.promptDark} rounded-[20px] mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-raleway text-d-white">{selectedImages.size}</span>
-                          <span className="text-xs font-raleway text-d-white">
-                            {selectedImages.size === 1 ? 'item selected' : 'items selected'}
-                          </span>
-                          {selectedImages.size !== visibleSelectedCount && (
-                            <span className="text-xs font-raleway text-d-white">
-                              ({visibleSelectedCount} visible)
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={toggleSelectMode}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal ${isSelectMode ? '!bg-d-mid/20 !text-d-text !border-d-mid/40' : ''}`}
-                          >
-                            {isSelectMode ? 'Done' : 'Select'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={toggleSelectAllVisible}
-                            disabled={filteredGallery.length === 0}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
-                          >
-                            {allVisibleSelected ? 'Unselect all' : 'Select all'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={clearImageSelection}
-                            disabled={!hasSelection}
-                            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
-                          >
-                            Clear selection
-                          </button>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={toggleSelectMode}
+                          className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal ${isSelectMode ? '!bg-d-mid/20 !text-d-text !border-d-mid/40' : ''}`}
+                        >
+                          {isSelectMode ? 'Done' : 'Select'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={toggleSelectAllVisible}
+                          disabled={filteredGallery.length === 0}
+                          className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                          {allVisibleSelected ? 'Unselect all' : 'Select all'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={clearImageSelection}
+                          disabled={!hasSelection}
+                          className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                          Clear selection
+                        </button>
                       </div>
                       {hasSelection && (
                         <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-2 mr-2">
+                            <span className="text-sm font-raleway text-d-white">{selectedImages.size}</span>
+                            <span className="text-xs font-raleway text-d-white">
+                              {selectedImages.size === 1 ? 'item selected' : 'items selected'}
+                            </span>
+                            {selectedImages.size !== visibleSelectedCount && (
+                              <span className="text-xs font-raleway text-d-white">
+                                ({visibleSelectedCount} visible)
+                              </span>
+                            )}
+                          </div>
                           <div className="relative">
                             <button
                               type="button"
@@ -4621,8 +4659,15 @@ const handleGenerate = async () => {
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
-                            <div key={`folder-image-${img.url}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }}>
-                              <img src={img.url} alt={img.prompt || 'Generated image'} className="w-full aspect-square object-cover" />
+                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => { 
+                              if (isSelectMode) {
+                                toggleImageSelection(img.url, event);
+                              } else {
+                                setSelectedFullImage(img); 
+                                setIsFullSizeOpen(true); 
+                              }
+                            }}>
+                              <img src={img.url} alt={img.prompt || 'Generated image'} className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
                               
                               {/* Image info overlay */}
                               <div
@@ -4660,7 +4705,7 @@ const handleGenerate = async () => {
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
-                                    toggleImageSelection(img.url);
+                                    toggleImageSelection(img.url, event);
                                   }}
                                   className={`image-action-btn parallax-large image-select-toggle ${
                                       isSelected
@@ -5704,7 +5749,7 @@ const handleGenerate = async () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? 'bg-transparent hover:bg-d-text/20 text-d-white hover:text-d-text border border-d-mid hover:border-d-dark' : 'bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
@@ -5718,7 +5763,7 @@ const handleGenerate = async () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
-                        ? 'bg-transparent hover:bg-d-text/20 text-d-white hover:text-d-text border border-d-mid hover:border-d-dark' 
+                        ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
                   >
@@ -5869,7 +5914,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`bg-transparent hover:bg-d-text/20 text-d-white hover:text-d-text border border-d-mid hover:border-d-dark flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -5905,7 +5950,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "veo-3"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -5933,7 +5978,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {selectedModel === "veo-3" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -5945,7 +5990,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "runway-video-gen4"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -5973,7 +6018,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {selectedModel === "runway-video-gen4" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -5983,7 +6028,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "hailuo-02"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -6011,7 +6056,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {selectedModel === "hailuo-02" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6021,7 +6066,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "wan-video-2.2"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -6049,7 +6094,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {selectedModel === "wan-video-2.2" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6059,7 +6104,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "kling-video"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -6087,7 +6132,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {selectedModel === "kling-video" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6099,7 +6144,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "seedance-1.0-pro"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -6126,9 +6171,9 @@ const handleGenerate = async () => {
                               Great quality text-to-image.
                             </div>
                           </div>
-                        {selectedModel === "seedance-1.0-pro" && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
-                        )}
+                          {selectedModel === "seedance-1.0-pro" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                          )}
                       </button>
                         <button
                           onClick={() => {
@@ -6138,7 +6183,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "luma-ray-2"
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10'
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
@@ -6166,7 +6211,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {selectedModel === "luma-ray-2" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                       </>
@@ -6195,7 +6240,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
-                              ? 'bg-d-orange-1/20 border-d-orange-1/30 shadow-lg shadow-d-orange-1/10' 
+                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : isComingSoon
                               ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6225,7 +6270,7 @@ const handleGenerate = async () => {
                             </div>
                           </div>
                           {isSelected && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-orange-1 flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                       );

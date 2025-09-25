@@ -45,7 +45,8 @@ export const glass = {
   base: glassBase,
   surface: `${glassCore} bg-d-black/15 rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
-  prompt: `${glassCore} bg-d-mid`,
+  prompt: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-d-dark bg-d-mid/85`,
+  promptBorderless: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] bg-d-mid/85`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/60`,
 };
 
@@ -64,7 +65,7 @@ export const iconButtons = {
 const inputFocus =
   "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-d-light";
 const inputCore =
-  `w-full ${glass.prompt} px-4 text-d-white placeholder:text-d-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-d-mid disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
+  `w-full glass-liquid willchange-backdrop isolate backdrop-blur-[32px] border border-d-dark bg-d-mid/85 px-4 text-d-white placeholder:text-d-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-d-mid disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
 
 export const inputs = {
   base: `${inputCore} rounded-xl py-3`,

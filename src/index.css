@@ -32,8 +32,8 @@
   --d-light: #8E9393;
   --d-light-rgb: 142 147 147;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --d-mid: #2a2f2f;
-  --d-mid-rgb: 42 47 47;
+  --d-mid: #252a2a;
+  --d-mid-rgb: 37 42 42;
   --d-dark: #1a1c1c;
   --d-dark-rgb: 26 28 28;
   --d-black: #060806;
@@ -929,8 +929,8 @@ select option::-webkit-scrollbar-thumb:hover {
     rgb(var(--d-black-rgb) / 0.1) 95%,
     rgb(var(--d-black-rgb) / 0.0) 100%
   );
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   height: fit-content;
   contain: paint;
 }

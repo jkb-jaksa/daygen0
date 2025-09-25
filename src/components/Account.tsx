@@ -186,7 +186,7 @@ export default function Account() {
             className="p-2 hover:bg-d-dark/50 rounded-lg transition-colors group"
             title="Close account"
           >
-            <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors" />
+            <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors rounded-full" />
           </button>
         </div>
         <input
@@ -232,9 +232,9 @@ export default function Account() {
               {user.profilePic && (
                 <button
                   onClick={handleRemoveProfilePic}
-                  className={buttons.primary}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
                 >
-                  <X className="size-4" />
+                  <X className="w-4 h-4 rounded-full" />
                   Remove
                 </button>
               )}

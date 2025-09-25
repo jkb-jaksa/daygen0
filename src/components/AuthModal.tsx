@@ -26,7 +26,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
 
   return (
     <div className="fixed inset-0 z-[120] bg-d-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-      <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-mid border-t border-r border-b border-l bg-d-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
             <h3 className="text-d-text font-raleway font-normal text-xl">{mode === "login" ? "Log in" : "Sign up"}</h3>
