@@ -284,7 +284,7 @@ export default function Pricing() {
       
       <div className="relative z-10">
         {/* Header Section */}
-        <section className={`${layout.container} pt-8 pb-16`}>
+        <section className={`${layout.container} pt-4 pb-16`}>
           <div className="text-center mb-8">
             <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-d-text">
               Choose your plan.

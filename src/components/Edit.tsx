@@ -1078,7 +1078,7 @@ export default function Edit() {
                         }
                       }}
                       onMouseUp={isMoveMode ? undefined : stopDrawing}
-                      onMouseLeave={isMoveMode ? undefined : (e) => {
+                      onMouseLeave={isMoveMode ? undefined : () => {
                         setShowBrushPreview(false);
                         stopDrawing();
                       }}
