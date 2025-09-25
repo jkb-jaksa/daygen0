@@ -5,7 +5,6 @@ import {
   text,
   glass,
   buttons,
-  inputs,
 } from "../styles/designSystem";
 import {
   ArrowUpRight,
@@ -19,16 +18,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const categories = [
-  "All inspiration",
-  "Trending today",
-  "Portraits",
-  "Architecture",
-  "Concept art",
-  "Fashion",
-  "Motion stills",
-  "Product",
-] as const;
 
 const styleFilters = [
   "Neon noir",
@@ -204,74 +193,7 @@ const galleryItems: GalleryItem[] = [
   },
 ];
 
-type SpotlightCreator = {
-  name: string;
-  handle: string;
-  focus: string;
-  cover: string;
-  summary: string;
-};
 
-const spotlightCreators: SpotlightCreator[] = [
-  {
-    name: "Neve Laurent",
-    handle: "@neve.codes",
-    focus: "Cinematic fashion",
-    cover:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80",
-    summary:
-      "Explores couture silhouettes with generative draping studies and editorial grade lighting.",
-  },
-  {
-    name: "August Park",
-    handle: "@august.motion",
-    focus: "Motion poetry",
-    cover:
-      "https://images.unsplash.com/photo-1465146633011-14f8e0781093?auto=format&fit=crop&w=900&q=80",
-    summary:
-      "Transforms music narratives into kinetic stills infused with audio-reactive particle trails.",
-  },
-  {
-    name: "Zuri Hale",
-    handle: "@zuri.hale",
-    focus: "Speculative spaces",
-    cover:
-      "https://images.unsplash.com/photo-1526401485004-46910ecc8e51?auto=format&fit=crop&w=900&q=80",
-    summary:
-      "Designs immersive architectural worlds balancing biophilic forms with futuristic materials.",
-  },
-];
-
-type CuratedCollection = {
-  name: string;
-  description: string;
-  cover: string;
-  count: number;
-};
-
-const curatedCollections: CuratedCollection[] = [
-  {
-    name: "Midnight Architectures",
-    description: "Glass and light experiments built with Flux Pro and Runway Gen-4.",
-    cover:
-      "https://images.unsplash.com/photo-1487956382158-bb926046304a?auto=format&fit=crop&w=900&q=80",
-    count: 42,
-  },
-  {
-    name: "Organic Motion",
-    description: "Explorations of dance, fabric, and fluid simulation across AI motion suites.",
-    cover:
-      "https://images.unsplash.com/photo-1465146633011-14f8e0781093?auto=format&fit=crop&w=900&q=80&sat=10",
-    count: 36,
-  },
-  {
-    name: "Analog Futures",
-    description: "Film emulation prompts that mix grain, chromatic bloom, and nostalgic palettes.",
-    cover:
-      "https://images.unsplash.com/photo-1513617339276-cca1a096417a?auto=format&fit=crop&w=900&q=80",
-    count: 51,
-  },
-];
 
 const recentActivity = [
   {
@@ -851,24 +773,5 @@ const Explore: React.FC = () => {
   );
 };
 
-function PlusIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-3"
-      fill="none"
-      viewBox="0 0 12 12"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M6 2v8M2 6h8"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-      />
-    </svg>
-  );
-}
 
 export default Explore;
