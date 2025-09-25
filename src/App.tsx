@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
+import type { ReactNode } from "react";
 import { useAuth } from "./auth/AuthContext";
 import { useFooter } from "./contexts/FooterContext";
 import { layout, text, buttons } from "./styles/designSystem";
@@ -121,10 +122,10 @@ function Home() {
   );
 }
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
+function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
-  
+
   if (!user) {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/account?next=${next}`} replace />;
@@ -180,12 +181,26 @@ export default function App() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/ai-tools" element={<ToolsSection />} />
             <Route path="/ai-tools/:id" element={<Subpage />} />
-            <Route path="/create/*" element={<CreateRoutes />} />
+            <Route
+              path="/create/*"
+              element={(
+                <RequireAuth>
+                  <CreateRoutes />
+                </RequireAuth>
+              )}
+            />
             <Route path="/gallery/*" element={<GalleryRoutes />} />
             <Route path="/upgrade" element={<Upgrade />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/edit" element={<Edit />} />
-            <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+            <Route
+              path="/edit"
+              element={(
+                <RequireAuth>
+                  <Edit />
+                </RequireAuth>
+              )}
+            />
+            <Route path="/account" element={<Account />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
