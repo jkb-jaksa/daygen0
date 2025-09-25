@@ -127,10 +127,19 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   if (!user) {
-    const next = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/account?next=${next}`} replace />;
+    const params = new URLSearchParams();
+
+    const isCreateRoute = location.pathname.startsWith("/create");
+    const isEditRoute = location.pathname.startsWith("/edit");
+
+    const requiresStudioRedirect = isCreateRoute || isEditRoute;
+    const nextPath = requiresStudioRedirect ? "/create/image" : location.pathname + location.search;
+
+    params.set("next", nextPath);
+
+    return <Navigate to={`/account?${params.toString()}`} replace />;
   }
-  
+
   // If user is authenticated but URL has query parameters, clean them up
   if (location.search) {
     return <Navigate to={location.pathname} replace />;

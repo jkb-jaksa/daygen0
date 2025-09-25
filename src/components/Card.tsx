@@ -40,7 +40,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   return (
     <div
-      className="relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow"
+      className="relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow parallax-small"
       onMouseMove={onMove}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
@@ -51,12 +51,14 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       </div>
       <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{subtitle}</p>
       <div className="flex-1" />
-      <button
-        onClick={onClick}
-        className="self-start btn btn-ghost btn-ghost-compact parallax-large mt-2"
-      >
-        {buttonText}
-      </button>
+      <div className="parallax-isolate">
+        <button
+          onClick={onClick}
+          className="self-start btn btn-ghost btn-ghost-compact parallax-large mt-2"
+        >
+          {buttonText}
+        </button>
+      </div>
     </div>
   );
 };

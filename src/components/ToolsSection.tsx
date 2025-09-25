@@ -288,7 +288,7 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
     <div
       className={cx(
         cards.shell,
-        "group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow"
+        "group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow parallax-small"
       )}
       onMouseMove={onMove}
       onMouseEnter={onEnter}
@@ -316,15 +316,17 @@ function ToolCard({ name, desc, Icon, accent, href }: Tool) {
       </div>
       <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{desc}</p>
       <div className="flex-1" />
-      {href ? (
-        <Link to={href} className={`${buttons.ghostCompact} mt-2 self-start`}>
-          learn more
-        </Link>
-      ) : (
-        <button type="button" className={`${buttons.ghostCompact} mt-2 self-start`}>
-          learn more
-        </button>
-      )}
+      <div className="parallax-isolate">
+        {href ? (
+          <Link to={href} className={`${buttons.ghostCompact} mt-2 self-start`}>
+            learn more
+          </Link>
+        ) : (
+          <button type="button" className={`${buttons.ghostCompact} mt-2 self-start`}>
+            learn more
+          </button>
+        )}
+      </div>
     </div>
   );
 }

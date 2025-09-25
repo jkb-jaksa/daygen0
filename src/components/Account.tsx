@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useAuth } from "../auth/AuthContext";
-import { Upload, X, ArrowRight, CheckCircle2, Lock } from "lucide-react";
+import { Upload, X, CheckCircle2, Lock } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
@@ -32,7 +32,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
 
   const subheading = useMemo(() => {
     if (nextPath) {
-      return `You're just one step away from entering ${destinationCopy}. Complete the quick sign-in below to continue.`;
+      return "Unlock your daily generations. Complete the quick sign-in below to continue.";
     }
     return "Sign in with our password-free demo account to sync your prompts, credits, and creative preferences on this device.";
   }, [nextPath, destinationCopy]);
@@ -89,11 +89,11 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
   return (
     <main className="relative min-h-screen overflow-hidden bg-d-black-subtle text-d-text">
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pt-[calc(var(--nav-h)+2.5rem)] pb-16 lg:flex-row lg:items-stretch lg:justify-between lg:gap-20 lg:px-8">
-        <section className="flex w-full flex-col justify-center gap-8 lg:max-w-xl">
+        <section className="flex w-full flex-col justify-start gap-8 lg:max-w-xl mt-2">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-d-mid/40 bg-d-black/40 px-4 py-2 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-d-white/70">
-            Access required
+            Login required
           </span>
-          <div className="space-y-4">
+          <div className="space-y-4 -mt-4">
             <h1 className="text-4xl font-light leading-tight text-d-text font-raleway sm:text-5xl">{heading}</h1>
             <p className="max-w-xl text-base font-raleway leading-relaxed text-d-white">{subheading}</p>
           </div>
@@ -119,12 +119,6 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
             </div>
             <div className="mt-6 space-y-5">
               <GoogleLogin />
-              <div className="relative text-center">
-                <span className="relative z-10 inline-flex bg-d-black-subtle px-3 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-d-white/60">
-                  use email
-                </span>
-                <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-d-white/10" aria-hidden="true" />
-              </div>
               <div className="flex rounded-full border border-d-dark bg-d-black/40 p-1 text-sm font-raleway">
                 <button
                   type="button"
