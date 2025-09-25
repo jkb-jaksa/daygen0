@@ -163,7 +163,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className={inputs.base}
-                    placeholder="you@example.com"
+                    placeholder="Enter your email"
                     autoComplete="email"
                     required
                     disabled={isSubmitting}
