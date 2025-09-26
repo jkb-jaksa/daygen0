@@ -20,6 +20,9 @@ import {
   Settings,
   ChevronDown,
   Edit,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
@@ -60,7 +63,6 @@ const AI_MODELS = [
 
 type GalleryItem = {
   id: string;
-  title: string;
   creator: {
     name: string;
     handle: string;
@@ -80,7 +82,6 @@ type GalleryItem = {
 const galleryItems: GalleryItem[] = [
   {
     id: "luminous-neon",
-    title: "Luminous Neon Reverie",
     creator: {
       name: "Mina Ito",
       handle: "@mina_ito",
@@ -100,7 +101,6 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: "desert-dream",
-    title: "Mirage Bloom Hotel",
     creator: {
       name: "Rafael Sol",
       handle: "@rafael.sol",
@@ -120,7 +120,6 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: "velvet-astral",
-    title: "Velvet Astral Botanica",
     creator: {
       name: "Daria Bloom",
       handle: "@daria.codes",
@@ -140,7 +139,6 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: "sonic-waves",
-    title: "Sonic Waveforms",
     creator: {
       name: "Jules Ried",
       handle: "@jules.fm",
@@ -160,7 +158,6 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: "ceramic-dream",
-    title: "Ceramic Dreamscape",
     creator: {
       name: "Anjali Rao",
       handle: "@anjali.designs",
@@ -180,7 +177,6 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: "fjord-lullaby",
-    title: "Fjord Lullaby",
     creator: {
       name: "Soren Beck",
       handle: "@sorenbeck",
@@ -583,6 +579,11 @@ const Explore: React.FC = () => {
     item: GalleryItem;
   } | null>(null);
 
+  // Full-size view state
+  const [isFullSizeOpen, setIsFullSizeOpen] = useState(false);
+  const [selectedFullImage, setSelectedFullImage] = useState<GalleryItem | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   // Copy prompt function
   const copyPromptToClipboard = async (prompt: string) => {
     try {
@@ -644,6 +645,33 @@ const Explore: React.FC = () => {
 
   const closeMoreActionMenu = () => {
     setMoreActionMenu(null);
+  };
+
+  // Navigation functions for full-size view
+  const navigateFullSizeImage = (direction: 'prev' | 'next') => {
+    const totalImages = filteredGallery.length;
+    if (totalImages === 0) return;
+    
+    const newIndex = direction === 'prev' 
+      ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
+      : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
+    
+    setCurrentImageIndex(newIndex);
+    setSelectedFullImage(filteredGallery[newIndex]);
+  };
+
+  // Open full-size view
+  const openFullSizeView = (item: GalleryItem) => {
+    const index = filteredGallery.findIndex(galleryItem => galleryItem.id === item.id);
+    setCurrentImageIndex(index);
+    setSelectedFullImage(item);
+    setIsFullSizeOpen(true);
+  };
+
+  // Close full-size view
+  const closeFullSizeView = () => {
+    setIsFullSizeOpen(false);
+    setSelectedFullImage(null);
   };
 
   const copyImageLink = async (item: GalleryItem) => {
@@ -728,6 +756,31 @@ const Explore: React.FC = () => {
 
   const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryFilters]);
 
+  // Keyboard navigation for full-size view
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isFullSizeOpen) return;
+      
+      if (event.key === 'Escape') {
+        closeFullSizeView();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        navigateFullSizeImage('prev');
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        navigateFullSizeImage('next');
+      }
+    };
+
+    if (isFullSizeOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullSizeOpen, currentImageIndex, filteredGallery]);
+
   return (
     <div className={`${layout.page} explore-page`}>
       {/* Copy notification */}
@@ -808,12 +861,13 @@ const Explore: React.FC = () => {
               {filteredGallery.map((item) => (
                 <article
                   key={item.id}
-                  className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small"
+                  className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                  onClick={() => openFullSizeView(item)}
                 >
                   <div className={`relative ${orientationStyles[item.orientation]} min-h-[320px] sm:min-h-[360px] xl:min-h-[420px]`}>
                     <img
                       src={item.imageUrl}
-                      alt={`${item.title} by ${item.creator.name}`}
+                      alt={`Image by ${item.creator.name}`}
                       className="absolute inset-0 h-full w-full object-cover object-center"
                       loading="lazy"
                     />
@@ -1058,6 +1112,186 @@ const Explore: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* Full-size image modal */}
+        {isFullSizeOpen && selectedFullImage && (
+          <div
+            className="fixed inset-0 z-[60] bg-d-black/80 flex items-start justify-center p-4"
+            onClick={closeFullSizeView}
+          >
+            <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
+              {/* Navigation arrows for full-size modal */}
+              {filteredGallery.length > 1 && (
+                <>
+                  <button
+                    onClick={() => navigateFullSizeImage('prev')}
+                    className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                    title="Previous image (←)"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                  </button>
+                  <button
+                    onClick={() => navigateFullSizeImage('next')}
+                    className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                    title="Next image (→)"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                  </button>
+                </>
+              )}
+              
+              <img 
+                src={selectedFullImage.imageUrl} 
+                alt={`Image by ${selectedFullImage.creator.name}`} 
+                className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+                style={{ objectPosition: 'top' }}
+              />
+              
+              {/* Action buttons */}
+              <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+                <div className={`pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleFavorite(selectedFullImage.imageUrl);
+                    }}
+                    className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                    aria-label={favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
+                  >
+                    <Heart 
+                      className={`size-3.5 transition-colors duration-100 ${
+                        favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                      }`}
+                      aria-hidden="true" 
+                    />
+                    {selectedFullImage.likes}
+                  </button>
+                </div>
+                <div className={`flex items-center gap-0.5 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      copyPromptToClipboard(selectedFullImage.prompt);
+                    }}
+                    className="rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}"
+                    aria-label="Copy prompt"
+                  >
+                    <Copy className="size-4" aria-hidden="true" />
+                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
+                      }}
+                      className={`rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                      aria-label="More options"
+                    >
+                      <MoreHorizontal className="size-4" aria-hidden="true" />
+                    </button>
+                    <ImageActionMenuPortal
+                      anchorEl={moreActionMenu?.id === selectedFullImage.id ? moreActionMenu?.anchor ?? null : null}
+                      open={moreActionMenu?.id === selectedFullImage.id}
+                      onClose={closeMoreActionMenu}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                        onClick={async (event) => {
+                          event.stopPropagation();
+                          await copyImageLink(selectedFullImage);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Copy link
+                      </button>
+                      <a
+                        href={selectedFullImage.imageUrl}
+                        download
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          closeMoreActionMenu();
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                      </a>
+                    </ImageActionMenuPortal>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeFullSizeView}
+                    className="rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}"
+                    aria-label="Close"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Image info overlay */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pointer-events-none">
+                <div className="pointer-events-auto">
+                  <div className="glassprompt2">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="relative size-10 overflow-hidden rounded-full">
+                        <div className={`absolute inset-0 bg-gradient-to-br ${selectedFullImage.creator.avatarColor}`} aria-hidden="true" />
+                        <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
+                          {getInitials(selectedFullImage.creator.name)}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-raleway text-sm text-d-text">{selectedFullImage.creator.name}</p>
+                        <p className="truncate text-xs text-d-white">
+                          {selectedFullImage.creator.handle}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-d-dark text-xs font-medium text-d-white backdrop-blur">
+                        {hasToolLogo(selectedFullImage.modelId) && (
+                          <img
+                            src={getToolLogo(selectedFullImage.modelId)!}
+                            alt={`${getModelDisplayName(selectedFullImage.modelId, selectedFullImage.modelLabel)} logo`}
+                            className="w-4 h-4 rounded-sm object-cover"
+                          />
+                        )}
+                        {getModelDisplayName(selectedFullImage.modelId, selectedFullImage.modelLabel)}
+                      </span>
+                    </div>
+                    
+                    <h3 className="mt-3 font-raleway text-lg text-d-white mb-2">{selectedFullImage.title}</h3>
+                    
+                    <p className="text-sm text-d-white/80 mb-3">
+                      {selectedFullImage.prompt}
+                    </p>
+                    
+                    <div className="mt-3 mb-1 flex items-center justify-between text-xs text-d-light">
+                      <div className="flex items-center gap-4">
+                        <span>{selectedFullImage.creator.location}</span>
+                        <span>{selectedFullImage.timeAgo}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedFullImage.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur bg-black/40"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
