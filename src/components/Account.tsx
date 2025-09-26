@@ -185,6 +185,7 @@ export default function Account() {
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next");
   const normalizedRawNext = useMemo(() => rawNext?.trim() ?? null, [rawNext]);
+  
   const decodedNextPath = useMemo(() => {
     if (!normalizedRawNext) return null;
     try {
@@ -358,35 +359,15 @@ export default function Account() {
     }
   };
 
-  // If user is authenticated and there's a next parameter, redirect them
-  useEffect(() => {
-    if (user && normalizedRawNext) {
-      if (decodedNextPath) {
-        const target = safeNext(decodedNextPath);
-        debugLog("Account - redirecting authenticated user to:", target);
-        navigate(target, { replace: true });
-      } else {
-        debugError("Failed to decode next path:", normalizedRawNext);
-        navigate("/create", { replace: true });
-      }
-    }
-  }, [user, normalizedRawNext, decodedNextPath, navigate]);
+  // Don't auto-redirect when user clicks "My account" - let them see the account page
+  // The next parameter will be used when they explicitly choose to return
 
   if (!user) {
     return <AccountAuthScreen nextPath={sanitizedNextPath ?? undefined} destinationLabel={destinationLabel} />;
   }
 
-  // If user is authenticated and there's a next parameter, show loading while redirecting
-  if (user && normalizedRawNext) {
-    return (
-      <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-2xl font-raleway mb-4 text-d-text">Redirecting...</h1>
-          <p className="text-d-white font-raleway">Taking you to your destination.</p>
-        </div>
-      </main>
-    );
-  }
+  // Show return button when there's a next parameter
+  const showReturnButton = user && normalizedRawNext && decodedNextPath;
 
   return (
     <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
@@ -397,6 +378,17 @@ export default function Account() {
               <div className="text-xs text-d-text mt-1 font-raleway">
                 Complete your profile to continue to {destinationLabel === "DayGen" ? "your destination" : destinationLabel}
               </div>
+            )}
+            {showReturnButton && (
+              <button
+                onClick={() => {
+                  const target = safeNext(decodedNextPath);
+                  navigate(target, { replace: true });
+                }}
+                className="px-4 py-2 bg-d-primary text-d-black rounded-lg hover:bg-d-primary/90 transition-colors font-raleway text-sm"
+              >
+                Return to {destinationLabel}
+              </button>
             )}
           </div>
           <button
