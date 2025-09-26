@@ -1,4 +1,3 @@
-import React from "react";
 import GoogleLogin from "./GoogleLogin";
 import { buttons, inputs } from "../styles/designSystem";
 import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
