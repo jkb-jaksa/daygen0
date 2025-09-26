@@ -220,9 +220,9 @@ const recentActivity = [
 
 // Normalise gallery card aspect so overlays always fit while respecting orientation intent.
 const orientationStyles: Record<GalleryItem["orientation"], string> = {
-  portrait: "aspect-[4/5]",
-  landscape: "aspect-[4/5]",
-  square: "aspect-[4/5]",
+  portrait: "aspect-square",
+  landscape: "aspect-square",
+  square: "aspect-square",
 };
 
 const getInitials = (name: string) =>
@@ -921,7 +921,7 @@ const Explore: React.FC = () => {
                       openFullSizeView(item);
                     }}
                   >
-                  <div className={`relative ${orientationStyles[item.orientation]} min-h-[320px] sm:min-h-[360px] xl:min-h-[420px]`}>
+                  <div className={`relative ${orientationStyles[item.orientation]} min-h-[240px] sm:min-h-[280px] xl:min-h-[320px]`}>
                     <img
                       src={item.imageUrl}
                       alt={`Image by ${item.creator.name}`}
