@@ -9,6 +9,7 @@ import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons } from "../styles/designSystem";
+import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
@@ -58,6 +59,13 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const MENU_WIDTH = 176; // tailwind w-44 = 11rem = 176px
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -189,7 +197,7 @@ export default function Navbar() {
   }, [navigate, closeMenu, emitNavigateToCategory]);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50" onMouseLeave={closeMenu}>
+    <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
       {/* Top navbar */}
       <nav
         ref={navRef}
@@ -445,7 +453,10 @@ export default function Navbar() {
       {menuOpen &&
         createPortal(
           <div
-            ref={menuRef}
+            ref={(node) => {
+              menuRef.current = node;
+              setScrollableRef(node);
+            }}
             role="menu"
             style={{
               position: "fixed",
@@ -455,6 +466,11 @@ export default function Navbar() {
               zIndex: 100
             }}
             className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             <div className="px-4 py-2 text-base font-normal font-raleway text-d-white border-b border-d-white/10 mb-1">
               Account

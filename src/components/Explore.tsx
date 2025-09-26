@@ -36,6 +36,7 @@ import {
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { debugError } from "../utils/debug";
+import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 
@@ -252,24 +253,14 @@ const ImageActionMenuPortal: React.FC<{
   isRecreateMenu?: boolean;
 }> = ({ anchorEl, open, onClose, children, isRecreateMenu = false }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const originalBodyOverflow = useRef<string | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-
-  const lockBodyScroll = () => {
-    if (typeof document === "undefined") return;
-    if (originalBodyOverflow.current === null) {
-      originalBodyOverflow.current = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-    }
-  };
-
-  const unlockBodyScroll = () => {
-    if (typeof document === "undefined") return;
-    if (originalBodyOverflow.current !== null) {
-      document.body.style.overflow = originalBodyOverflow.current;
-      originalBodyOverflow.current = null;
-    }
-  };
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
     if (!open || !anchorEl) return;
@@ -281,12 +272,6 @@ const ImageActionMenuPortal: React.FC<{
       width,
     });
   }, [open, anchorEl]);
-
-  useEffect(() => {
-    return () => {
-      unlockBodyScroll();
-    };
-  }, []);
 
   useLayoutEffect(() => {
     if (!open || !anchorEl || !menuRef.current) return;
@@ -379,16 +364,15 @@ const ImageActionMenuPortal: React.FC<{
 
   return createPortal(
     <div
-      ref={menuRef}
-      onMouseEnter={lockBodyScroll}
-      onMouseLeave={unlockBodyScroll}
-      onTouchStart={lockBodyScroll}
-      onTouchEnd={unlockBodyScroll}
-      onTouchCancel={unlockBodyScroll}
-      onWheel={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
       }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       style={{
         position: "fixed",
         top: pos.top,
@@ -422,15 +406,35 @@ const CustomDropdown: React.FC<{
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!isOpen || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    setPos({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.left + window.scrollX,
-      width: rect.width,
-    });
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -469,13 +473,21 @@ const CustomDropdown: React.FC<{
       {isOpen &&
         createPortal(
           <div
-            ref={dropdownRef}
+            ref={(node) => {
+              dropdownRef.current = node;
+              setScrollableRef(node);
+            }}
             className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,
               width: pos.width,
             }}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             {options.map(option => (
               <button
@@ -513,15 +525,35 @@ const CustomMultiSelect: React.FC<{
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!isOpen || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    setPos({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.left + window.scrollX,
-      width: rect.width,
-    });
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -591,13 +623,21 @@ const CustomMultiSelect: React.FC<{
       {isOpen &&
         createPortal(
           <div
-            ref={dropdownRef}
+            ref={(node) => {
+              dropdownRef.current = node;
+              setScrollableRef(node);
+            }}
             className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,
               width: pos.width,
             }}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             {options.map(option => {
               const isSelected = values.includes(option.value);

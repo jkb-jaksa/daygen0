@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { glass } from "../../styles/designSystem";
+import { useDropdownScrollLock } from "../../hooks/useDropdownScrollLock";
 
 type FluxModelOption = "flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max";
 
@@ -168,15 +169,35 @@ const SettingsPortal: React.FC<{
 }> = ({ anchorRef, open, onClose, children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!open || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    setPos({
-      top: rect.top - 8,
-      left: rect.left,
-      width: Math.max(320, rect.width),
-    });
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorRef.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.top - 8,
+        left: rect.left,
+        width: Math.max(320, rect.width),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [open, anchorRef]);
 
   useEffect(() => {
@@ -212,7 +233,10 @@ const SettingsPortal: React.FC<{
 
   return createPortal(
     <div
-      ref={menuRef}
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
+      }}
       style={{
         position: "fixed",
         top: pos.top,
@@ -222,6 +246,11 @@ const SettingsPortal: React.FC<{
         transform: "translateY(-100%)",
       }}
       className={`${glass.prompt} rounded-lg p-4`}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
       {children}
     </div>,

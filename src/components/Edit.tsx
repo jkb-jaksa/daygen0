@@ -14,6 +14,7 @@ import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 import { debugError } from "../utils/debug";
+import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -44,26 +45,46 @@ const ModelMenuPortal: React.FC<{
 }> = ({ anchorRef, open, onClose, children, activeCategory }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!open || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const dropdownHeight = 384; // max-h-96 = 384px
-    
-    // Check if there's enough space above the trigger
-    const spaceAbove = rect.top;
-    const spaceBelow = viewportHeight - rect.bottom;
-    
-    // Position above if there's more space above, otherwise position below
-    const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
-    
-    setPos({ 
-      top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
-      left: rect.left, 
-      width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
-      transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
-    });
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorRef.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 384; // max-h-96 = 384px
+
+      // Check if there's enough space above the trigger
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+
+      // Position above if there's more space above, otherwise position below
+      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
+
+      setPos({
+        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
+        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [open, anchorRef, activeCategory]);
 
   useEffect(() => {
@@ -100,7 +121,10 @@ const ModelMenuPortal: React.FC<{
 
   return createPortal(
     <div
-      ref={menuRef}
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
+      }}
       tabIndex={-1}
       style={{ 
         position: "fixed", 
@@ -116,11 +140,11 @@ const ModelMenuPortal: React.FC<{
       className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50 ${
         activeCategory === "video" ? "p-1" : "p-2"
       }`}
-      onWheel={(e) => {
-        // Allow scrolling within the dropdown but prevent page scroll
-        e.stopPropagation();
-        // Don't prevent default to allow normal scrolling behavior
-      }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       onFocus={() => {
         // Ensure the dropdown can receive focus for keyboard navigation
         if (menuRef.current) {

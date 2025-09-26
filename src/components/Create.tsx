@@ -32,6 +32,7 @@ import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from ".
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
+import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
 import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
@@ -205,26 +206,46 @@ const ModelMenuPortal: React.FC<{
 }> = ({ anchorRef, open, onClose, children, activeCategory }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!open || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const dropdownHeight = 384; // max-h-96 = 384px
-    
-    // Check if there's enough space above the trigger
-    const spaceAbove = rect.top;
-    const spaceBelow = viewportHeight - rect.bottom;
-    
-    // Position above if there's more space above, otherwise position below
-    const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
-    
-    setPos({ 
-      top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
-      left: rect.left, 
-      width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
-      transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
-    });
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorRef.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 384; // max-h-96 = 384px
+
+      // Check if there's enough space above the trigger
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+
+      // Position above if there's more space above, otherwise position below
+      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
+
+      setPos({
+        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
+        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [open, anchorRef, activeCategory]);
 
   useEffect(() => {
@@ -261,7 +282,10 @@ const ModelMenuPortal: React.FC<{
 
   return createPortal(
     <div
-      ref={menuRef}
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
+      }}
       tabIndex={-1}
       style={{ 
         position: "fixed", 
@@ -277,11 +301,11 @@ const ModelMenuPortal: React.FC<{
       className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50 ${
         activeCategory === "video" ? "p-1" : "p-2"
       }`}
-      onWheel={(e) => {
-        // Allow scrolling within the dropdown but prevent page scroll
-        e.stopPropagation();
-        // Don't prevent default to allow normal scrolling behavior
-      }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       onFocus={() => {
         // Ensure the dropdown can receive focus for keyboard navigation
         if (menuRef.current) {
@@ -307,15 +331,35 @@ const CustomDropdown: React.FC<{
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!isOpen || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    setPos({ 
-      top: rect.bottom + window.scrollY + 4, // 4px gap below button
-      left: rect.left + window.scrollX, 
-      width: rect.width
-    });
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4, // 4px gap below button
+        left: rect.left,
+        width: rect.width
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -349,13 +393,21 @@ const CustomDropdown: React.FC<{
       
       {isOpen && createPortal(
         <div
-          ref={dropdownRef}
+          ref={(node) => {
+            dropdownRef.current = node;
+            setScrollableRef(node);
+          }}
           className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
           style={{
             top: pos.top,
             left: pos.left,
             width: pos.width,
           }}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           {options.map((option) => (
             <button
@@ -393,15 +445,35 @@ const CustomMultiSelect: React.FC<{
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!isOpen || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    setPos({ 
-      top: rect.bottom + window.scrollY + 4, // 4px gap below button
-      left: rect.left + window.scrollX, 
-      width: rect.width
-    });
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4, // 4px gap below button
+        left: rect.left,
+        width: rect.width
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -466,13 +538,21 @@ const CustomMultiSelect: React.FC<{
       
       {isOpen && createPortal(
         <div
-          ref={dropdownRef}
+          ref={(node) => {
+            dropdownRef.current = node;
+            setScrollableRef(node);
+          }}
           className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
           style={{
             top: pos.top,
             left: pos.left,
             width: pos.width,
           }}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           {options.map((option) => {
             const isSelected = values.includes(option.value);
@@ -506,15 +586,35 @@ const ImageActionMenuPortal: React.FC<{
 }> = ({ anchorEl, open, onClose, children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!open || !anchorEl) return;
-    const rect = anchorEl.getBoundingClientRect();
-    setPos({
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: Math.max(200, rect.width),
-    });
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(200, rect.width),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [open, anchorEl]);
 
   useEffect(() => {
@@ -550,7 +650,10 @@ const ImageActionMenuPortal: React.FC<{
 
   return createPortal(
     <div
-      ref={menuRef}
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
+      }}
       style={{
         position: "fixed",
         top: pos.top,
@@ -559,6 +662,11 @@ const ImageActionMenuPortal: React.FC<{
         zIndex: 1100,
       }}
       className={`${glass.promptDark} rounded-lg py-2`}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
       {children}
     </div>,
@@ -574,15 +682,35 @@ const BulkActionsMenuPortal: React.FC<{
 }> = ({ anchorEl, open, onClose, children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
 
   useEffect(() => {
-    if (!open || !anchorEl) return;
-    const rect = anchorEl.getBoundingClientRect();
-    setPos({
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: Math.max(200, rect.width),
-    });
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(200, rect.width),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [open, anchorEl]);
 
   useEffect(() => {
@@ -618,7 +746,10 @@ const BulkActionsMenuPortal: React.FC<{
 
   return createPortal(
     <div
-      ref={menuRef}
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
+      }}
       style={{
         position: "fixed",
         top: pos.top,
@@ -627,6 +758,11 @@ const BulkActionsMenuPortal: React.FC<{
         zIndex: 1100,
       }}
       className={`${glass.promptDark} rounded-lg py-2`}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
       {children}
     </div>,
