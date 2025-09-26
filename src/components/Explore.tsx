@@ -763,6 +763,47 @@ const Explore: React.FC = () => {
 
   const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryFilters]);
 
+  const initialBatchSize = useMemo(() => 9, []);
+  const [visibleCount, setVisibleCount] = useState(initialBatchSize);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setVisibleCount(Math.min(initialBatchSize, filteredGallery.length || initialBatchSize));
+  }, [galleryFilters, filteredGallery.length, initialBatchSize]);
+
+  const visibleGallery = useMemo(
+    () => filteredGallery.slice(0, visibleCount),
+    [filteredGallery, visibleCount],
+  );
+
+  useEffect(() => {
+    if (visibleCount > filteredGallery.length) {
+      setVisibleCount(filteredGallery.length);
+    }
+  }, [filteredGallery.length, visibleCount]);
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    if (visibleGallery.length >= filteredGallery.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry?.isIntersecting) {
+        setVisibleCount((prev) =>
+          Math.min(prev + initialBatchSize, filteredGallery.length),
+        );
+      }
+    }, { rootMargin: "0px 0px 200px 0px" });
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [filteredGallery.length, initialBatchSize, visibleGallery.length, isFullSizeOpen]);
+
   // Keyboard navigation for full-size view
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -865,13 +906,20 @@ const Explore: React.FC = () => {
         <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredGallery.map((item) => {
+              {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
                 return (
                   <article
                     key={item.id}
                     className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
-                    onClick={() => openFullSizeView(item)}
+                    onClick={(event) => {
+                      // Check if the click came from a copy button
+                      const target = event.target as HTMLElement;
+                      if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+                        return;
+                      }
+                      openFullSizeView(item);
+                    }}
                   >
                   <div className={`relative ${orientationStyles[item.orientation]} min-h-[320px] sm:min-h-[360px] xl:min-h-[420px]`}>
                     <img
@@ -1011,8 +1059,17 @@ const Explore: React.FC = () => {
                           </div>
                           <button
                             type="button"
-                            onClick={() => copyPromptToClipboard(item.prompt)}
-                            className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                            data-copy-button="true"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              copyPromptToClipboard(item.prompt);
+                            }}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
                             onMouseEnter={(e) => {
                               showHoverTooltip(e.currentTarget, `copy-${item.id}`);
                             }}
@@ -1066,10 +1123,16 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                </article>
-              );
-            })}
+                  </article>
+                );
+              })}
+              <div ref={loadMoreRef} aria-hidden />
             </div>
+            {visibleGallery.length < filteredGallery.length && (
+              <div className="flex justify-center py-4 text-xs font-raleway text-d-white/60" aria-live="polite">
+                Loading more inspiration…
+              </div>
+            )}
           </div>
         </section>
 
@@ -1336,9 +1399,15 @@ const Explore: React.FC = () => {
                       <p className="flex-1 font-raleway leading-relaxed">{selectedFullImage.prompt}</p>
                       <button
                         type="button"
+                        data-copy-button="true"
                         onClick={(event) => {
+                          event.preventDefault();
                           event.stopPropagation();
                           void copyPromptToClipboard(selectedFullImage.prompt);
+                        }}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
                         }}
                         className="text-d-white transition-colors duration-200 hover:text-d-text"
                         aria-label="Copy prompt"

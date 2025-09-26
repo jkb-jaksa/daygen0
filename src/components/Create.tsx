@@ -2595,6 +2595,11 @@ const Create: React.FC = () => {
           alt={img.prompt || `Generated ${idx + 1}`}
           className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`}
           onClick={(event) => {
+            // Check if the click came from a copy button
+            const target = event.target as HTMLElement;
+            if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+              return;
+            }
             if (isSelectMode) {
               toggleImageSelection(img.url, event);
             } else {
@@ -2606,9 +2611,12 @@ const Create: React.FC = () => {
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <div className="w-full p-4">
               <div className="mb-2">
@@ -2616,11 +2624,17 @@ const Create: React.FC = () => {
                   <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                     {img.prompt}
                     <button
+                      data-copy-button="true"
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         copyPromptToClipboard(img.prompt);
                       }}
-                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, tooltipId);
                       }}
@@ -4749,6 +4763,11 @@ const handleGenerate = async () => {
                             const isSelected = selectedImages.has(img.url);
                             return (
                             <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => { 
+                              // Check if the click came from a copy button
+                              const target = event.target as HTMLElement;
+                              if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+                                return;
+                              }
                               if (isSelectMode) {
                                 toggleImageSelection(img.url, event);
                               } else {
@@ -4760,15 +4779,41 @@ const handleGenerate = async () => {
                               
                               {/* Image info overlay */}
                               <div
-                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
+                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                   imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
                               >
                                 <div className="w-full p-4">
                                   <div className="mb-2">
                                     <div className="relative">
                                       <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
+                                        {img.prompt && (
+                                          <button
+                                            data-copy-button="true"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              copyPromptToClipboard(img.prompt);
+                                            }}
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                            }}
+                                            className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                            onMouseEnter={(e) => {
+                                              showHoverTooltip(e.currentTarget, `folder-select-${folder.id}-${img.url}-${idx}`);
+                                            }}
+                                            onMouseLeave={() => {
+                                              hideHoverTooltip(`folder-select-${folder.id}-${img.url}-${idx}`);
+                                            }}
+                                          >
+                                            <Copy className="w-3 h-3" />
+                                          </button>
+                                        )}
                                       </p>
                                       {/* Model Badge and Public Indicator */}
                                       <div className="flex justify-between items-center mt-2">
@@ -5092,14 +5137,24 @@ const handleGenerate = async () => {
                         <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
                           imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
-                          <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { setSelectedFullImage(img); setIsFullSizeOpen(true); }} />
+                          <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={(event) => {
+                            // Check if the click came from a copy button
+                            if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
+                              return;
+                            }
+                            setSelectedFullImage(img);
+                            setIsFullSizeOpen(true);
+                          }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
                             >
                               {/* Content layer */}
                               <div className="relative z-10 w-full p-4">
@@ -5108,11 +5163,17 @@ const handleGenerate = async () => {
                                     <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
+                                        data-copy-button="true"
                                         onClick={(e) => {
+                                          e.preventDefault();
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                        className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
@@ -5495,14 +5556,23 @@ const handleGenerate = async () => {
                         <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
-                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={() => { openImageAtIndex(galleryIndex); }} />
+                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={(event) => {
+                            // Check if the click came from a copy button
+                            if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
+                              return;
+                            }
+                            openImageAtIndex(galleryIndex);
+                          }} />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
                             >
                               {/* Content layer */}
                               <div className="relative z-10 w-full p-4">
@@ -5511,11 +5581,17 @@ const handleGenerate = async () => {
                                     <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
+                                        data-copy-button="true"
                                         onClick={(e) => {
+                                          e.preventDefault();
                                           e.stopPropagation();
                                           copyPromptToClipboard(img.prompt);
                                         }}
-                                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
                                       onMouseEnter={(e) => {
                                         showHoverTooltip(e.currentTarget, `${img.url}-${idx}`);
                                       }}
