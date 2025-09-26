@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, HeartOff, Minus, MoreHorizontal, Share2, RefreshCw, Grid3X3, Globe, Lock, ChevronDown, Shapes } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -24,6 +24,7 @@ import { usePromptHistory } from "../hooks/usePromptHistory";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const PromptHistoryPanel = lazy(() => import("./create/PromptHistoryPanel"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
+const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 import { compressDataUrl } from "../lib/imageCompression";
@@ -41,57 +42,23 @@ import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
 import { getApiUrl } from "../utils/api";
 import { useFooter } from "../contexts/FooterContext";
-
-// Accent types for AI models
-type Accent = "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
-
-// Folder type
-type Folder = {
-  id: string;
-  name: string;
-  createdAt: Date;
-  imageIds: string[]; // Array of image URLs in this folder
-  videoIds: string[]; // Array of video URLs in this folder
-  customThumbnail?: string; // Optional custom thumbnail URL
-};
-
-type GalleryImageLike = {
-  url: string;
-  prompt: string;
-  model?: string;
-  timestamp: string;
-  ownerId?: string;
-  jobId?: string;
-  references?: string[];
-  isPublic?: boolean;
-};
-
-type GalleryVideoLike = {
-  url: string;
-  prompt: string;
-  model?: string;
-  timestamp: string;
-  ownerId?: string;
-  jobId?: string;
-  references?: string[];
-  isPublic?: boolean;
-  type: 'video';
-  operationName?: string;
-};
-
-type StoredGalleryImage = { url: string; prompt: string; model?: string; timestamp: string; ownerId?: string; jobId?: string; isPublic?: boolean };
-type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };
-
-type SerializedUpload = { id: string; fileName: string; fileType: string; previewUrl: string; uploadDate: string };
-
-type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[]; videoIds: string[]; customThumbnail?: string };
-
-type CreateNavigationState = {
-  referenceImageUrl?: string;
-  promptToPrefill?: string;
-  selectedModel?: string;
-  focusPromptBar?: boolean;
-};
+import type {
+  Accent,
+  Folder,
+  GalleryImageLike,
+  GalleryVideoLike,
+  PendingGalleryItem,
+  SerializedFolder,
+  SerializedUpload,
+  StoredGalleryImage,
+  CreateNavigationState,
+  GalleryFilters,
+  ImageActionMenuState,
+  BulkActionsMenuState,
+  UploadItem,
+  FolderThumbnailDialogState,
+  FolderThumbnailConfirmState,
+} from "./create/types";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -197,10 +164,10 @@ const AI_MODELS = [
 ];
 
 // Portal component for model menu to avoid clipping by parent containers
-const ModelMenuPortal: React.FC<{ 
-  anchorRef: React.RefObject<HTMLElement | null>; 
-  open: boolean; 
-  onClose: () => void; 
+const ModelMenuPortal: React.FC<{
+  anchorRef: React.RefObject<HTMLElement | null>;
+  open: boolean;
+  onClose: () => void;
   children: React.ReactNode;
   activeCategory: string;
 }> = ({ anchorRef, open, onClose, children, activeCategory }) => {
@@ -287,11 +254,11 @@ const ModelMenuPortal: React.FC<{
         setScrollableRef(node);
       }}
       tabIndex={-1}
-      style={{ 
-        position: "fixed", 
-        top: pos.top, 
-        left: pos.left, 
-        width: pos.width, 
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
         zIndex: 9999,
         transform: pos.transform,
         maxHeight: '384px',
@@ -319,265 +286,6 @@ const ModelMenuPortal: React.FC<{
   );
 };
 
-// Custom dropdown component for Gallery filters
-const CustomDropdown: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-  placeholder?: string;
-  disabled?: boolean;
-}> = ({ value, onChange, options, placeholder, disabled }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const updatePosition = () => {
-      if (!buttonRef.current) return;
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + 4, // 4px gap below button
-        left: rect.left,
-        width: rect.width
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && 
-          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const selectedOption = options.find(opt => opt.value === value);
-
-  return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={disabled}
-        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
-      >
-        <span className={selectedOption ? 'text-d-white' : 'text-d-white/50'}>
-          {selectedOption?.label || placeholder || 'Select...'}
-        </span>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      
-      {isOpen && createPortal(
-        <div
-          ref={(node) => {
-            dropdownRef.current = node;
-            setScrollableRef(node);
-          }}
-          className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
-          style={{
-            top: pos.top,
-            left: pos.left,
-            width: pos.width,
-          }}
-          onWheel={handleWheel}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-        >
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
-                  option.value === value
-                    ? 'bg-white border-white/70 shadow-lg shadow-white/30 text-d-black'
-                    : 'bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text'
-                }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-};
-
-// Custom multi-select dropdown component for Gallery model filters
-const CustomMultiSelect: React.FC<{
-  values: string[];
-  onChange: (values: string[]) => void;
-  options: Array<{ value: string; label: string }>;
-  placeholder?: string;
-  disabled?: boolean;
-}> = ({ values, onChange, options, placeholder, disabled }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const updatePosition = () => {
-      if (!buttonRef.current) return;
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + 4, // 4px gap below button
-        left: rect.left,
-        width: rect.width
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && 
-          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const toggleOption = (optionValue: string) => {
-    if (values.includes(optionValue)) {
-      onChange(values.filter(v => v !== optionValue));
-    } else {
-      onChange([...values, optionValue]);
-    }
-  };
-
-  const removeOption = (optionValue: string) => {
-    onChange(values.filter(v => v !== optionValue));
-  };
-
-  return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={disabled}
-        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
-      >
-        <div className="flex flex-wrap gap-1.5 flex-1">
-          {values.length === 0 ? (
-            <span className="text-d-white/50">{placeholder || 'Select...'}</span>
-          ) : (
-            values.map(value => {
-              const option = options.find(opt => opt.value === value);
-              return (
-                <div key={value} className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 text-d-white rounded-md text-xs">
-                  <span>{option?.label || value}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeOption(value);
-                    }}
-                    className="hover:text-d-text transition-colors duration-200 ml-1 text-base font-bold"
-                  >
-                    ×
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} flex-shrink-0`} />
-      </button>
-      
-      {isOpen && createPortal(
-        <div
-          ref={(node) => {
-            dropdownRef.current = node;
-            setScrollableRef(node);
-          }}
-          className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
-          style={{
-            top: pos.top,
-            left: pos.left,
-            width: pos.width,
-          }}
-          onWheel={handleWheel}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-        >
-          {options.map((option) => {
-            const isSelected = values.includes(option.value);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => toggleOption(option.value)}
-                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
-                    isSelected
-                      ? 'bg-white border-white/70 shadow-lg shadow-white/30 text-d-black'
-                      : 'bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text'
-                  }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-};
-
 const ImageActionMenuPortal: React.FC<{
   anchorEl: HTMLElement | null;
   open: boolean;
@@ -585,7 +293,7 @@ const ImageActionMenuPortal: React.FC<{
   children: React.ReactNode;
 }> = ({ anchorEl, open, onClose, children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 220 });
   const {
     setScrollableRef,
     handleWheel,
@@ -601,7 +309,7 @@ const ImageActionMenuPortal: React.FC<{
       if (!anchorEl) return;
       const rect = anchorEl.getBoundingClientRect();
       setPos({
-        top: rect.bottom + 4,
+        top: rect.bottom + 8,
         left: rect.left,
         width: Math.max(200, rect.width),
       });
@@ -615,108 +323,13 @@ const ImageActionMenuPortal: React.FC<{
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [open, anchorEl]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        open &&
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        !(anchorEl && anchorEl.contains(event.target as Node))
-      ) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, anchorEl, onClose]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={(node) => {
-        menuRef.current = node;
-        setScrollableRef(node);
-      }}
-      style={{
-        position: "fixed",
-        top: pos.top,
-        left: pos.left,
-        width: pos.width,
-        zIndex: 1100,
-      }}
-      className={`${glass.promptDark} rounded-lg py-2`}
-      onWheel={handleWheel}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
-
-const BulkActionsMenuPortal: React.FC<{
-  anchorEl: HTMLElement | null;
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}> = ({ anchorEl, open, onClose, children }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  }, [anchorEl, open]);
 
   useEffect(() => {
     if (!open) return;
 
-    const updatePosition = () => {
-      if (!anchorEl) return;
-      const rect = anchorEl.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: Math.max(200, rect.width),
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open, anchorEl]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        open &&
         menuRef.current &&
         !menuRef.current.contains(event.target as Node) &&
         !(anchorEl && anchorEl.contains(event.target as Node))
@@ -726,21 +339,19 @@ const BulkActionsMenuPortal: React.FC<{
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
 
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleKeyDown);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, anchorEl, onClose]);
+  }, [anchorEl, open, onClose]);
 
   if (!open) return null;
 
@@ -751,11 +362,11 @@ const BulkActionsMenuPortal: React.FC<{
         setScrollableRef(node);
       }}
       style={{
-        position: "fixed",
+        position: 'fixed',
         top: pos.top,
         left: pos.left,
         width: pos.width,
-        zIndex: 1100,
+        zIndex: 1200,
       }}
       className={`${glass.promptDark} rounded-lg py-2`}
       onWheel={handleWheel}
@@ -766,7 +377,7 @@ const BulkActionsMenuPortal: React.FC<{
     >
       {children}
     </div>,
-    document.body
+    document.body,
   );
 };
 
@@ -781,11 +392,12 @@ const Create: React.FC = () => {
       )}
     </div>
   );
-  
+
   const { user, storagePrefix } = useAuth();
   const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
   const location = useLocation();
+  const galleryModelOptions = useMemo(() => AI_MODELS.map(({ id, name }) => ({ id, name })), []);
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
@@ -945,7 +557,7 @@ const Create: React.FC = () => {
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [lastSelectedImage, setLastSelectedImage] = useState<string | null>(null);
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
-  const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadItem[]>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
   const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
@@ -953,25 +565,19 @@ const Create: React.FC = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
-  const [folderThumbnailDialog, setFolderThumbnailDialog] = useState<{show: boolean, folderId: string | null}>({show: false, folderId: null});
+  const [folderThumbnailDialog, setFolderThumbnailDialog] = useState<FolderThumbnailDialogState>({show: false, folderId: null});
   const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
-  const [folderThumbnailConfirm, setFolderThumbnailConfirm] = useState<{show: boolean, folderId: string | null, imageUrl: string | null}>({show: false, folderId: null, imageUrl: null});
+  const [folderThumbnailConfirm, setFolderThumbnailConfirm] = useState<FolderThumbnailConfirmState>({show: false, folderId: null, imageUrl: null});
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImagesForFolder, setSelectedImagesForFolder] = useState<string[]>([]);
   const [returnToFolderDialog, setReturnToFolderDialog] = useState<boolean>(false);
-  const [imageActionMenu, setImageActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
+  const [imageActionMenu, setImageActionMenu] = useState<ImageActionMenuState>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
-  const [moreActionMenu, setMoreActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
+  const [moreActionMenu, setMoreActionMenu] = useState<ImageActionMenuState>(null);
   const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
-  const [bulkActionsMenu, setBulkActionsMenu] = useState<{ anchor: HTMLElement | null } | null>(null);
-  const [galleryFilters, setGalleryFilters] = useState<{
-    liked: boolean;
-    public: boolean;
-    models: string[];
-    type: 'all' | 'image' | 'video';
-    folder: string;
-  }>({
+  const [bulkActionsMenu, setBulkActionsMenu] = useState<BulkActionsMenuState>(null);
+  const [galleryFilters, setGalleryFilters] = useState<GalleryFilters>({
     liked: false,
     public: false,
     models: [],
@@ -4327,7 +3933,7 @@ const handleGenerate = async () => {
               <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
-                    <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
+                    <FolderIcon className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
                     <p className="text-base text-d-white/50 mb-4">No folders available</p>
                     <button
                       onClick={() => {
@@ -4398,10 +4004,10 @@ const handleGenerate = async () => {
                               </div>
                             ) : isFullyInFolder ? (
                               <div className="w-5 h-5 bg-d-white/20 rounded-lg flex items-center justify-center">
-                                <Folder className="w-3 h-3 text-d-text" />
+                                <FolderIcon className="w-3 h-3 text-d-text" />
                               </div>
                             ) : (
-                              <Folder className="w-5 h-5 text-d-white/60" />
+                              <FolderIcon className="w-5 h-5 text-d-white/60" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -4486,7 +4092,7 @@ const handleGenerate = async () => {
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
-                <Folder className="default-orange-icon mx-auto" />
+                <FolderIcon className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway text-d-text">Set Folder Thumbnail</h3>
                 <p className="text-base font-raleway text-d-white">
                   Choose a custom thumbnail for this folder.
@@ -4608,7 +4214,7 @@ const handleGenerate = async () => {
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
-                <Folder className="default-orange-icon mx-auto" />
+                <FolderIcon className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway text-d-text">Thumbnail</h3>
                 <p className="text-base font-raleway text-d-white">
                   Do you want to use this image as thumbnail?
@@ -4670,285 +4276,38 @@ const handleGenerate = async () => {
                 
                 {/* Gallery View */}
                 {activeCategory === "gallery" && (
-                  <div className="w-full">
-                    {/* Filters Section */}
-                    <div className={`mb-4 p-3 ${glass.promptDark} rounded-[20px]`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Settings className="w-4 h-4 text-d-text" />
-                          <h3 className="text-sm font-raleway text-d-white">Filters</h3>
-                        </div>
-                        <button
-                          onClick={() => setGalleryFilters({
-                            liked: false,
-                            public: false,
-                            models: [],
-                            type: 'all',
-                            folder: 'all'
-                          })}
-                          className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        {/* Liked/Public Filter */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-d-white/70 font-raleway">Liked/Public</label>
-                          <div className="flex gap-1 flex-wrap">
-                            <button
-                              onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
-                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                                galleryFilters.liked 
-                                  ? 'text-d-text border-d-mid' 
-                                  : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
-                              }`}
-                            >
-                              <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
-                              <span>Liked</span>
-                            </button>
-                            <button
-                              onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
-                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                                galleryFilters.public 
-                                  ? 'text-d-text border-d-mid' 
-                                  : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
-                              }`}
-                            >
-                              <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? 'text-d-text' : 'text-current'}`} />
-                              <span>Public</span>
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* Modality Filter */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-d-white/70 font-raleway">Modality</label>
-                          <CustomDropdown
-                            value={galleryFilters.type}
-                            onChange={(value) => {
-                              const newType = value as 'all' | 'image' | 'video';
-                              setGalleryFilters(prev => ({ 
-                                ...prev, 
-                                type: newType,
-                                models: [] // Reset model filter when type changes
-                              }));
-                            }}
-                            options={[
-                              { value: "image", label: "Image" },
-                              { value: "video", label: "Video" }
-                            ]}
-                          />
-                        </div>
-                        
-                        {/* Model Filter */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-d-white/70 font-raleway">Model</label>
-                          <CustomMultiSelect
-                            values={galleryFilters.models}
-                            onChange={(models) => setGalleryFilters(prev => ({ ...prev, models }))}
-                            options={getAvailableModels().map(modelId => {
-                              const model = AI_MODELS.find(m => m.id === modelId);
-                              return { value: modelId, label: model?.name || modelId };
-                            })}
-                            placeholder="All models"
-                          />
-                        </div>
-                        
-                        {/* Folder Filter */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-d-white/70 font-raleway">Folder</label>
-                          <CustomDropdown
-                            value={galleryFilters.folder}
-                            onChange={(value) => setGalleryFilters(prev => ({ ...prev, folder: value }))}
-                            options={[
-                              ...getAvailableFolders().map(folderId => {
-                                const folder = folders.find(f => f.id === folderId);
-                                return { value: folderId, label: folder?.name || folderId };
-                              })
-                            ]}
-                            disabled={getAvailableFolders().length === 0}
-                            placeholder={getAvailableFolders().length === 0 ? "No folders available" : undefined}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Selection Toolbar */}
-                    <div className={`${glass.promptDark} rounded-[20px] mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={toggleSelectMode}
-                          className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal ${isSelectMode ? '!bg-d-mid/20 !text-d-text !border-d-mid/40' : ''}`}
-                        >
-                          {isSelectMode ? 'Done' : 'Select'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={toggleSelectAllVisible}
-                          disabled={filteredGallery.length === 0}
-                          className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
-                        >
-                          {allVisibleSelected ? 'Unselect all' : 'Select all'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={clearImageSelection}
-                          disabled={!hasSelection}
-                          className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
-                        >
-                          Clear selection
-                        </button>
-                      </div>
-                      {hasSelection && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex items-center gap-2 mr-2">
-                            <span className="text-sm font-raleway text-d-white">{selectedImages.size}</span>
-                            <span className="text-xs font-raleway text-d-white">
-                              {selectedImages.size === 1 ? 'item selected' : 'items selected'}
-                            </span>
-                            {selectedImages.size !== visibleSelectedCount && (
-                              <span className="text-xs font-raleway text-d-white">
-                                ({visibleSelectedCount} visible)
-                              </span>
-                            )}
-                          </div>
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={(e) => toggleBulkActionsMenu(e.currentTarget)}
-                              className={`${buttons.subtle} !h-8 gap-1.5 text-d-white !font-normal`}
-                            >
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                              <span>Actions</span>
-                              <ChevronDown className="h-3 w-3" />
-                            </button>
-                            
-                            <BulkActionsMenuPortal
-                              anchorEl={bulkActionsMenu?.anchor ?? null}
-                              open={Boolean(bulkActionsMenu)}
-                              onClose={closeBulkActionsMenu}
-                            >
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkLike();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <Heart className="h-4 w-4" />
-                                <span>Like</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkUnlike();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <HeartOff className="h-4 w-4" />
-                                <span>Unlike</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkPublish();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <Globe className="h-4 w-4" />
-                                <span>Publish</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkUnpublish();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <Lock className="h-4 w-4" />
-                                <span>Unpublish</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkAddToFolder();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <FolderPlus className="h-4 w-4" />
-                                <span>Manage folders</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkDownload();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <Download className="h-4 w-4" />
-                                <span>Download</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBulkDelete();
-                                  closeBulkActionsMenu();
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span>Delete</span>
-                              </button>
-                            </BulkActionsMenuPortal>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-2 w-full p-1">
-                    {filteredGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'gallery'))}
-                    
-                    {/* Empty state for gallery */}
-                    {gallery.length === 0 && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Grid3X3 className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-d-text mb-2">No gallery yet</h3>
-                        <p className="text-base font-raleway text-d-white max-w-md">
-                          Your generation gallery will appear here once you start creating images.
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Empty state for filtered results */}
-                    {gallery.length > 0 && filteredGallery.length === 0 && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Settings className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-d-text mb-2">No results found</h3>
-                        <p className="text-base font-raleway text-d-white max-w-md">
-                          Try adjusting your filters to see more results.
-                        </p>
-                      </div>
-                    )}
-                    </div>
-                  </div>
+                  <Suspense fallback={null}>
+                    <GalleryPanel
+                      galleryFilters={galleryFilters}
+                      setGalleryFilters={setGalleryFilters}
+                      getAvailableModels={getAvailableModels}
+                      aiModels={galleryModelOptions}
+                      getAvailableFolders={getAvailableFolders}
+                      folders={folders}
+                      toggleSelectMode={toggleSelectMode}
+                      toggleSelectAllVisible={toggleSelectAllVisible}
+                      filteredGallery={filteredGallery}
+                      gallery={gallery}
+                      allVisibleSelected={allVisibleSelected}
+                      clearImageSelection={clearImageSelection}
+                      hasSelection={hasSelection}
+                      isSelectMode={isSelectMode}
+                      selectedImages={selectedImages}
+                      visibleSelectedCount={visibleSelectedCount}
+                      toggleBulkActionsMenu={toggleBulkActionsMenu}
+                      bulkActionsMenu={bulkActionsMenu}
+                      closeBulkActionsMenu={closeBulkActionsMenu}
+                      handleBulkLike={handleBulkLike}
+                      handleBulkUnlike={handleBulkUnlike}
+                      handleBulkPublish={handleBulkPublish}
+                      handleBulkUnpublish={handleBulkUnpublish}
+                      handleBulkAddToFolder={handleBulkAddToFolder}
+                      handleBulkDownload={handleBulkDownload}
+                      handleBulkDelete={handleBulkDelete}
+                      renderGalleryItem={(img, idx) => renderLibraryGalleryItem(img, idx, 'gallery')}
+                    />
+                  </Suspense>
                 )}
-
                 {activeCategory === "public" && (
                   <div className="w-full">
                     {/* Share Gallery button */}
@@ -5065,7 +4424,7 @@ const handleGenerate = async () => {
                     {/* Folder header */}
                     <div className="text-center mb-6">
                       <div className="flex items-center justify-center gap-2 mb-2">
-                        <Folder className="w-6 h-6 text-d-text" />
+                        <FolderIcon className="w-6 h-6 text-d-text" />
                         <h2 className="text-2xl font-raleway text-d-text">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
@@ -5092,7 +4451,7 @@ const handleGenerate = async () => {
                       if (folderImages.length === 0) {
                         return (
                           <div className="flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
-                            <Folder className="default-orange-icon mb-4" />
+                            <FolderIcon className="default-orange-icon mb-4" />
                             <h3 className="text-xl font-raleway text-d-text mb-2">Folder is empty</h3>
                             <p className="text-base font-raleway text-d-white max-w-md">
                               Add images to this folder to see them here.
@@ -5274,7 +4633,7 @@ const handleGenerate = async () => {
                     
                     {folders.length === 0 ? (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Folder className="default-orange-icon mb-4" />
+                        <FolderIcon className="default-orange-icon mb-4" />
                         <h3 className="text-xl font-raleway text-d-text mb-2">No folders yet</h3>
                         <p className="text-base font-raleway text-d-white max-w-md mb-4">
                           Create your first folder to organize your images.
@@ -5302,7 +4661,7 @@ const handleGenerate = async () => {
                               />
                               {/* Overlay with folder info */}
                               <div className="absolute inset-0 bg-d-black/60 group-hover:bg-d-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
-                                <Folder className="default-orange-icon mb-2" />
+                                <FolderIcon className="default-orange-icon mb-2" />
                                 <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
@@ -5322,7 +4681,7 @@ const handleGenerate = async () => {
                               {/* Show additional thumbnails if more than 1 image */}
                               {folder.imageIds.length > 1 && (
                                 <div className="absolute top-2 left-2 bg-d-black/80 rounded-lg p-1 flex gap-1">
-                                  {folder.imageIds.slice(1, 4).map((imageId, idx) => (
+                                  {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
                                     <img 
                                       key={idx}
                                       src={imageId} 
@@ -5348,7 +4707,7 @@ const handleGenerate = async () => {
                               />
                               {/* Overlay with folder info */}
                               <div className="absolute inset-0 bg-d-black/60 group-hover:bg-d-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
-                                <Folder className="default-orange-icon mb-2" />
+                                <FolderIcon className="default-orange-icon mb-2" />
                                 <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
                                 <p className="text-sm text-d-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
@@ -5368,7 +4727,7 @@ const handleGenerate = async () => {
                               {/* Show additional thumbnails if more than 1 image */}
                               {folder.imageIds.length > 1 && (
                                 <div className="absolute top-2 left-2 bg-d-black/80 rounded-lg p-1 flex gap-1">
-                                  {folder.imageIds.slice(1, 4).map((imageId, idx) => (
+                                  {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
                                     <img 
                                       key={idx}
                                       src={imageId} 
@@ -5386,7 +4745,7 @@ const handleGenerate = async () => {
                             </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
-                              <Folder className="default-orange-icon mb-3" />
+                              <FolderIcon className="default-orange-icon mb-3" />
                               <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
                               <p className="text-sm text-d-white font-raleway text-center">
                                 No images yet
@@ -5442,7 +4801,7 @@ const handleGenerate = async () => {
                         </button>
                         
                         <div className="flex items-center gap-2">
-                          <Folder className="w-5 h-5 text-d-text" />
+                          <FolderIcon className="w-5 h-5 text-d-text" />
                           <span className="text-d-white font-raleway text-sm">
                             {(() => {
                               const folder = folders.find(f => f.id === selectedFolder);
@@ -5637,7 +4996,7 @@ const handleGenerate = async () => {
                       if (!folder || folder?.imageIds.length === 0) {
                         return (
                           <div className="col-span-full flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
-                            <Folder className="default-orange-icon mb-4" />
+                            <FolderIcon className="default-orange-icon mb-4" />
                             <h3 className="text-xl font-raleway text-d-text mb-2">Folder is empty</h3>
                             <p className="text-base font-raleway text-d-white max-w-md">
                               This folder doesn't contain any images yet.
