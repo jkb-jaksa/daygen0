@@ -1,4 +1,11 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
@@ -242,19 +249,102 @@ const ImageActionMenuPortal: React.FC<{
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
-}> = ({ anchorEl, open, onClose, children }) => {
+  isRecreateMenu?: boolean;
+}> = ({ anchorEl, open, onClose, children, isRecreateMenu = false }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const originalBodyOverflow = useRef<string | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  const lockBodyScroll = () => {
+    if (typeof document === "undefined") return;
+    if (originalBodyOverflow.current === null) {
+      originalBodyOverflow.current = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const unlockBodyScroll = () => {
+    if (typeof document === "undefined") return;
+    if (originalBodyOverflow.current !== null) {
+      document.body.style.overflow = originalBodyOverflow.current;
+      originalBodyOverflow.current = null;
+    }
+  };
 
   useEffect(() => {
     if (!open || !anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
+    const width = Math.max(200, rect.width);
     setPos({
-      top: rect.bottom + 4,
+      top: rect.top,
       left: rect.left,
-      width: Math.max(200, rect.width),
+      width,
     });
   }, [open, anchorEl]);
+
+  useEffect(() => {
+    return () => {
+      unlockBodyScroll();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !anchorEl || !menuRef.current) return;
+    if (typeof window === "undefined") return;
+
+    const updatePosition = () => {
+      if (!menuRef.current) return;
+      if (typeof window === "undefined") return;
+      const anchorRect = anchorEl.getBoundingClientRect();
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const width = Math.max(200, anchorRect.width);
+      const margin = 8;
+      
+      let top;
+      if (isRecreateMenu) {
+        // For recreate menu, always position above the button
+        // Use actual menu height if available, otherwise use a more accurate estimate
+        // The recreate menu has 3 items, each ~44px high (py-2 = 8px top + 8px bottom + text height)
+        const actualHeight = menuRect.height > 0 ? menuRect.height : 140; // 3 * 44px + padding
+        // Reduce margin to bring dropdown closer to button (no whitespace)
+        top = Math.max(2, anchorRect.top - actualHeight - 2);
+      } else {
+        // Position below the button for other menus
+        top = anchorRect.bottom + window.scrollY + margin;
+      }
+      
+      const availableLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
+      const left = Math.min(
+        Math.max(margin, anchorRect.left),
+        availableLeft
+      );
+
+      setPos({ top, left, width });
+    };
+
+    // Initial positioning using requestAnimationFrame to ensure menu is rendered
+    const rafId = requestAnimationFrame(() => {
+      updatePosition();
+      // Double-check position after another frame to ensure accurate height
+      requestAnimationFrame(() => {
+        updatePosition();
+      });
+    });
+
+    // Only update position on scroll and resize, not on every hover
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [open, anchorEl, isRecreateMenu]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -290,6 +380,15 @@ const ImageActionMenuPortal: React.FC<{
   return createPortal(
     <div
       ref={menuRef}
+      onMouseEnter={lockBodyScroll}
+      onMouseLeave={unlockBodyScroll}
+      onTouchStart={lockBodyScroll}
+      onTouchEnd={unlockBodyScroll}
+      onTouchCancel={unlockBodyScroll}
+      onWheel={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
       style={{
         position: "fixed",
         top: pos.top,
@@ -695,7 +794,6 @@ const Explore: React.FC = () => {
     navigate("/create/image", {
       state: {
         referenceImageUrl: item.imageUrl,
-        promptToPrefill: item.prompt,
         selectedModel: item.modelId,
         focusPromptBar: true,
       },
@@ -1044,6 +1142,7 @@ const Explore: React.FC = () => {
                           anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
                           open={moreActionMenu?.id === item.id}
                           onClose={closeMoreActionMenu}
+                          isRecreateMenu={false}
                         >
                           <button
                             type="button"
@@ -1183,12 +1282,12 @@ const Explore: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                           <span>Recreate</span>
-                          <ChevronDown className="w-4 h-4" aria-hidden="true" />
                         </button>
                         <ImageActionMenuPortal
                           anchorEl={isRecreateMenuOpen ? recreateActionMenu?.anchor ?? null : null}
                           open={isRecreateMenuOpen}
                           onClose={closeRecreateActionMenu}
+                          isRecreateMenu={true}
                         >
                           <button
                             type="button"
@@ -1410,6 +1509,7 @@ const Explore: React.FC = () => {
                       anchorEl={moreActionMenu?.id === selectedFullImage.id ? moreActionMenu?.anchor ?? null : null}
                       open={moreActionMenu?.id === selectedFullImage.id}
                       onClose={closeMoreActionMenu}
+                      isRecreateMenu={false}
                     >
                       <button
                         type="button"
