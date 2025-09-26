@@ -7,13 +7,30 @@ const GOOGLE_SCRIPT_ATTR = "data-daygen-google-client";
 
 let hasInitializedGoogleClient = false;
 
-declare global { 
-  interface Window { 
+type GoogleCredentialResponse = {
+  credential: string;
+};
+
+type GoogleIdConfiguration = {
+  client_id: string;
+  callback: (response: GoogleCredentialResponse) => void | Promise<void>;
+};
+
+type GoogleButtonConfiguration = {
+  theme?: string;
+  size?: string;
+  shape?: string;
+  text?: string;
+  width?: string | number;
+};
+
+declare global {
+  interface Window {
     google?: {
       accounts: {
         id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement, config: any) => void;
+          initialize: (config: GoogleIdConfiguration) => void;
+          renderButton: (element: HTMLElement, config: GoogleButtonConfiguration) => void;
           prompt: () => void;
           disableAutoSelect: () => void;
           revoke: (email: string, callback: () => void) => void;
@@ -23,11 +40,16 @@ declare global {
   } 
 }
 
-function decodeJwt(idToken: string) {
+function decodeJwt(idToken: string): Record<string, unknown> {
   const [, payload] = idToken.split(".");
   const pad = "=".repeat((4 - (payload.length % 4)) % 4);
   const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/") + pad);
-  return JSON.parse(json);
+  const parsed: unknown = JSON.parse(json);
+  if (parsed && typeof parsed === "object") {
+    return parsed as Record<string, unknown>;
+  }
+
+  return {};
 }
 
 export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
@@ -48,12 +70,15 @@ export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
       if (!hasInitializedGoogleClient) {
         window.google.accounts.id.initialize({
           client_id: clientId,
-          callback: async (resp: any) => {
+          callback: async (resp: GoogleCredentialResponse) => {
             try {
-              const p = decodeJwt(resp.credential);
-              const email = p.email as string;
-              const name = p.name as string | undefined;
-              const picture = p.picture as string | undefined;
+              const payload = decodeJwt(resp.credential);
+              const email = typeof payload.email === "string" ? payload.email : undefined;
+              if (!email) {
+                throw new Error("Missing email in credential response");
+              }
+              const name = typeof payload.name === "string" ? payload.name : undefined;
+              const picture = typeof payload.picture === "string" ? payload.picture : undefined;
 
               // Create or load the local user, then enrich profile
               await signIn(email).catch(() => signUp(email, name));

@@ -157,14 +157,15 @@ export const useSeedanceVideoGeneration = () => {
             stopPolling();
             setState({ isLoading: false, error: 'Timed out waiting for video', video: null, taskId, status });
           }
-        } catch (e: any) {
+        } catch (error: unknown) {
           stopPolling();
-          setState({ isLoading: false, error: String(e?.message || e), video: null, taskId, status: 'failed' });
+          const message = error instanceof Error ? error.message : String(error);
+          setState({ isLoading: false, error: message, video: null, taskId, status: 'failed' });
         }
       }, 3000);
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -190,6 +191,36 @@ async function fileToDataUrl(file: File): Promise<string> {
   return `data:${mime};base64,${b64}`;
 }
 
-async function safeJson(r: Response) {
-  try { return await r.json(); } catch { return null as any; }
+type SeedancePollResponse = {
+  status?: string;
+  videoUrl?: string;
+  error?: string;
+};
+
+function isSeedancePollResponse(value: unknown): value is SeedancePollResponse {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const isOptionalString = (val: unknown) => val === undefined || typeof val === 'string';
+
+  return (
+    isOptionalString(record.status) &&
+    isOptionalString(record.videoUrl) &&
+    isOptionalString(record.error)
+  );
+}
+
+async function safeJson(r: Response): Promise<SeedancePollResponse | null> {
+  try {
+    const data: unknown = await r.json();
+    if (isSeedancePollResponse(data)) {
+      return data;
+    }
+  } catch {
+    // Swallow JSON parsing errors and return null to continue polling.
+  }
+
+  return null;
 }

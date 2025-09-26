@@ -52,8 +52,9 @@ export function useRunwayVideoGeneration() {
       setTaskId(body.taskId ?? null);
       setStatus('done');
       return body as { url: string; taskId: string; meta?: unknown };
-    } catch (e: any) {
-      setError(e?.message || 'Generation failed');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Generation failed';
+      setError(message);
       setStatus('error');
       throw e;
     }
