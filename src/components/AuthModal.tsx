@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useAuth } from "../auth/AuthContext";
+import React from "react";
 import GoogleLogin from "./GoogleLogin";
 import { buttons, inputs } from "../styles/designSystem";
+import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
 
 interface AuthModalProps {
   open: boolean;
@@ -10,19 +10,12 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, onClose, defaultMode = "login" }: AuthModalProps) {
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<"login"|"signup">(defaultMode);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const { mode, setMode, email, setEmail, name, setName, isSubmitting, error, handleSubmit } = useEmailAuthForm({
+    initialMode: defaultMode,
+    onSuccess: onClose,
+  });
 
   if (!open) return null;
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mode === "login") await signIn(email.trim());
-    else await signUp(email.trim(), name.trim() || undefined);
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-[120] bg-d-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
@@ -42,20 +35,35 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
           <div className="space-y-4">
             <GoogleLogin onSuccess={onClose} />
             <div className="text-center text-xs text-d-light font-raleway">or continue with email</div>
-            
-            <form onSubmit={submit} className="space-y-4">
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "signup" && (
                 <div className="space-y-2">
                   <label className="block text-sm text-d-text font-raleway">Name</label>
-                  <input value={name} onChange={e=>setName(e.target.value)} className={inputs.base} placeholder="Enter your name" />
+                  <input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    className={inputs.base}
+                    placeholder="Enter your name"
+                    disabled={isSubmitting}
+                  />
                 </div>
               )}
               <div className="space-y-2">
                 <label className="block text-sm text-d-text font-raleway">Email</label>
-                <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className={inputs.base} placeholder="Enter your email" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className={inputs.base}
+                  placeholder="Enter your email"
+                  disabled={isSubmitting}
+                />
               </div>
-              <button type="submit" className={`${buttons.blockPrimary} font-raleway`}>
-                Continue
+              {error && <p className="text-xs font-raleway text-red-400 text-left">{error}</p>}
+              <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
+                {isSubmitting ? "Please wait…" : "Continue"}
               </button>
             </form>
           </div>

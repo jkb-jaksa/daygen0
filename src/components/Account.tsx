@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { Upload, X, CheckCircle2, Lock } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
@@ -7,6 +7,7 @@ import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
 import { buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
 import GoogleLogin from "./GoogleLogin";
+import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -16,12 +17,9 @@ type AccountAuthScreenProps = {
 };
 
 function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProps) {
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">(nextPath ? "login" : "signup");
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { mode, setMode, email, setEmail, name, setName, isSubmitting, error, handleSubmit } = useEmailAuthForm({
+    initialMode: nextPath ? "login" : "signup",
+  });
 
   const destinationCopy = destinationLabel === "DayGen" ? "your DayGen workspace" : destinationLabel;
   const heading = useMemo(() => {
@@ -35,7 +33,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
       return "Unlock your daily generations. Complete the quick sign-in below to continue.";
     }
     return "Sign in with our password-free demo account to sync your prompts, credits, and creative preferences on this device.";
-  }, [nextPath, destinationCopy]);
+  }, [nextPath]);
 
   const highlights = useMemo(
     () => [
@@ -56,35 +54,6 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
     ],
     [destinationCopy],
   );
-
-  useEffect(() => {
-    setError(null);
-  }, [mode]);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setError("Enter your email to continue.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      if (mode === "login") {
-        await signIn(trimmedEmail);
-      } else {
-        await signUp(trimmedEmail, name.trim() || undefined);
-      }
-    } catch (err) {
-      debugError("AccountAuthScreen - failed to authenticate", err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-d-black-subtle text-d-text">
@@ -112,7 +81,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
           </ul>
         </section>
         <section className="w-full lg:max-w-md">
-          <div className={`${glass.promptDark} rounded-[28px] p-8 shadow-[0_24px_80px_rgba(8,5,24,0.45)]`}> 
+          <div className={`${glass.promptDark} rounded-[28px] p-8 shadow-[0_24px_80px_rgba(8,5,24,0.45)]`}>
             <div className="space-y-3 text-center">
               <h2 className="text-2xl font-raleway font-normal text-d-text">Enter the studio</h2>
               <p className="text-sm font-raleway text-d-white">Log in below to get full access to DayGen.</p>
@@ -184,7 +153,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
               </p>
             </div>
             <p className="mt-6 text-center text-[0.7rem] font-raleway text-d-white/50">
-              By continuing you agree to our {" "}
+              By continuing you agree to our{" "}
               <Link to="/privacy-policy" className="text-d-white hover:text-d-text underline decoration-d-white/40 decoration-dotted underline-offset-4">
                 Privacy Policy
               </Link>
@@ -197,13 +166,24 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
   );
 }
 
+function safeNext(path?: string | null) {
+  const allowed = ["/create", "/edit", "/gallery", "/learn", "/upgrade", "/account"];
+  if (!path || !path.startsWith("/") || path.startsWith("//")) return "/create";
+  if (allowed.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return path;
+  return "/create";
+}
+
 export default function Account() {
   const { user, updateProfile, logOut, storagePrefix } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string>("");
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [showSaved, setShowSaved] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -216,9 +196,10 @@ export default function Account() {
       return null;
     }
   }, [rawNext]);
+  const sanitizedNextPath = useMemo(() => (rawNext ? safeNext(decodedNextPath) : null), [decodedNextPath, rawNext]);
 
   const destinationLabel = useMemo(() => {
-    if (!decodedNextPath) return "DayGen";
+    if (!sanitizedNextPath) return "DayGen";
 
     const formatSegment = (segment: string) =>
       segment
@@ -227,17 +208,17 @@ export default function Account() {
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(" ");
 
-    if (decodedNextPath.startsWith("/create")) {
-      const segments = decodedNextPath.split("/").filter(Boolean);
+    if (sanitizedNextPath.startsWith("/create")) {
+      const segments = sanitizedNextPath.split("/").filter(Boolean);
       const category = segments[1];
       return category ? `Create → ${formatSegment(category)}` : "the Create studio";
     }
-    if (decodedNextPath.startsWith("/edit")) return "the Edit workspace";
-    if (decodedNextPath.startsWith("/gallery")) return "your gallery";
-    if (decodedNextPath.startsWith("/learn")) return "the Learn hub";
-    if (decodedNextPath.startsWith("/upgrade")) return "the Upgrade page";
-    return decodedNextPath === "/account" ? "your account" : "DayGen";
-  }, [decodedNextPath]);
+    if (sanitizedNextPath.startsWith("/edit")) return "the Edit workspace";
+    if (sanitizedNextPath.startsWith("/gallery")) return "your gallery";
+    if (sanitizedNextPath.startsWith("/learn")) return "the Learn hub";
+    if (sanitizedNextPath.startsWith("/upgrade")) return "the Upgrade page";
+    return sanitizedNextPath === "/account" ? "your account" : "DayGen";
+  }, [sanitizedNextPath]);
 
   const hasPendingRedirect = Boolean(rawNext);
 
@@ -248,19 +229,18 @@ export default function Account() {
     }
   }, [user?.name, name]);
 
-
   useEffect(() => {
     let cancelled = false;
 
     const loadGallery = async () => {
       try {
-        await migrateKeyToIndexedDb(storagePrefix, 'gallery');
-        const stored = await getPersistedValue<GalleryItem[]>(storagePrefix, 'gallery');
+        await migrateKeyToIndexedDb(storagePrefix, "gallery");
+        const stored = await getPersistedValue<GalleryItem[]>(storagePrefix, "gallery");
         if (!cancelled && Array.isArray(stored)) {
           setGallery(stored);
         }
       } catch (error) {
-        debugError('Account - Error loading gallery:', error);
+        debugError("Account - Error loading gallery:", error);
       }
     };
 
@@ -271,86 +251,130 @@ export default function Account() {
     };
   }, [storagePrefix]);
 
+  const resetFileInput = useCallback(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  const releasePreview = useCallback(() => {
+    setImageToCrop((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+  }, []);
+
+  const handleCropModalClose = useCallback(() => {
+    setCropModalOpen(false);
+    releasePreview();
+    resetFileInput();
+  }, [releasePreview, resetFileInput]);
+
+  useEffect(() => {
+    return () => {
+      if (imageToCrop) {
+        URL.revokeObjectURL(imageToCrop);
+      }
+    };
+  }, [imageToCrop]);
 
   const handleProfilePicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please choose an image file.");
+      resetFileInput();
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      setUploadError("Image size must be less than 5MB.");
+      resetFileInput();
       return;
     }
 
-    // Read file and open crop modal
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        setImageToCrop(result);
-        setCropModalOpen(true);
-      }
-    };
-    reader.onerror = () => {
-      alert('Failed to read image file');
-    };
-    reader.readAsDataURL(file);
+    setUploadError(null);
+    releasePreview();
+
+    const objectUrl = URL.createObjectURL(file);
+    setImageToCrop(objectUrl);
+    setCropModalOpen(true);
   };
 
-  const handleCropComplete = (croppedImageBlob: Blob) => {
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
     setIsUploadingPic(true);
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        updateProfile({ profilePic: result });
-        setIsUploadingPic(false);
+    setUploadError(null);
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string) ?? "");
+        reader.onerror = () => reject(new Error("Failed to read cropped image"));
+        reader.readAsDataURL(croppedImageBlob);
+      });
+
+      if (!dataUrl) {
+        throw new Error("Empty cropped image data");
       }
-    };
-    reader.onerror = () => {
-      alert('Failed to process cropped image');
+
+      updateProfile({ profilePic: dataUrl });
+    } catch (error) {
+      debugError("Account - Failed to process cropped image", error);
+      setUploadError("We couldn't process that image. Please try again.");
+    } finally {
       setIsUploadingPic(false);
-    };
-    reader.readAsDataURL(croppedImageBlob);
+    }
   };
 
   const handleRemoveProfilePic = () => {
     updateProfile({ profilePic: undefined });
+    setUploadError(null);
+    releasePreview();
+    resetFileInput();
   };
 
+  const trimmedName = useMemo(() => (name ?? "").trim(), [name]);
+  const currentUserName = useMemo(() => (user?.name ?? "").trim(), [user?.name]);
+  const isNameValid = trimmedName.length > 0 && trimmedName.length <= 60;
+  const isNameChanged = trimmedName !== currentUserName;
+  const canSaveProfile = isNameValid && isNameChanged;
+  const nameErrorMessage = trimmedName.length === 0 ? "Display name is required." : "Display name must be 60 characters or fewer.";
+
+  useEffect(() => {
+    if (!showSaved) return undefined;
+    const timeout = setTimeout(() => setShowSaved(false), 3000);
+    return () => clearTimeout(timeout);
+  }, [showSaved]);
+
   const handleSaveProfile = () => {
-    const trimmed = (name ?? "").trim();
-    
-    if (!trimmed) {
-      alert("Please enter your display name");
+    setNameTouched(true);
+
+    if (!isNameValid) {
+      setSaveError(nameErrorMessage);
       return;
     }
-    
-    // Compare with the current user name (also trimmed for consistency)
-    const currentUserName = (user?.name ?? "").trim();
-    if (trimmed !== currentUserName) {
-      // Only update if there are changes
-      updateProfile({ name: trimmed });
+
+    if (!isNameChanged) {
+      return;
     }
-    
-    // Always navigate to close the section, regardless of whether changes were made
+
+    updateProfile({ name: trimmedName });
+
     if (rawNext) {
       if (decodedNextPath) {
-        navigate(decodedNextPath);
+        const target = safeNext(decodedNextPath);
+        debugLog("Account - redirecting after profile save to:", target);
+        navigate(target, { replace: true });
       } else {
-        debugError('Failed to decode next path after saving profile:', rawNext);
-        navigate('/create');
+        debugError("Failed to decode next path after saving profile:", rawNext);
+        navigate("/create", { replace: true });
       }
     } else {
-      // If no 'next' parameter, redirect to create page to close account section
-      navigate('/create');
+      setSaveError(null);
+      setShowSaved(true);
     }
   };
 
@@ -358,17 +382,18 @@ export default function Account() {
   useEffect(() => {
     if (user && rawNext) {
       if (decodedNextPath) {
-        debugLog('Account - redirecting authenticated user to:', decodedNextPath);
-        navigate(decodedNextPath, { replace: true });
+        const target = safeNext(decodedNextPath);
+        debugLog("Account - redirecting authenticated user to:", target);
+        navigate(target, { replace: true });
       } else {
-        debugError('Failed to decode next path:', rawNext);
-        navigate('/create', { replace: true });
+        debugError("Failed to decode next path:", rawNext);
+        navigate("/create", { replace: true });
       }
     }
   }, [user, rawNext, decodedNextPath, navigate]);
 
   if (!user) {
-    return <AccountAuthScreen nextPath={decodedNextPath} destinationLabel={destinationLabel} />;
+    return <AccountAuthScreen nextPath={sanitizedNextPath ?? undefined} destinationLabel={destinationLabel} />;
   }
 
   // If user is authenticated and there's a next parameter, show loading while redirecting
@@ -390,12 +415,12 @@ export default function Account() {
           <div className="flex items-center gap-3">
             {hasPendingRedirect && (
               <div className="text-xs text-d-text mt-1 font-raleway">
-                Complete your profile to continue to {destinationLabel === 'DayGen' ? 'your destination' : destinationLabel}
+                Complete your profile to continue to {destinationLabel === "DayGen" ? "your destination" : destinationLabel}
               </div>
             )}
           </div>
           <button
-            onClick={() => navigate('/create')}
+            onClick={() => navigate("/create")}
             className="p-2 hover:bg-d-dark/50 rounded-lg transition-colors group"
             title="Close account"
           >
@@ -414,7 +439,7 @@ export default function Account() {
       <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
         <div className={`${glass.surface} p-5`}>
           <h3 className="text-lg font-raleway mb-3 text-d-text">Profile</h3>
-          
+
           <div className="mb-4">
             <label className="block text-sm text-d-white mb-2 font-raleway">Picture</label>
             <div className="flex items-center gap-3">
@@ -426,7 +451,7 @@ export default function Account() {
                     className="size-12 rounded-full object-cover border-2 border-d-dark group-hover:opacity-80 transition-opacity"
                   />
                 ) : (
-                  <div 
+                  <div
                     className="size-12 rounded-full flex items-center justify-center text-d-text text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity"
                     style={{ background: user.color || "var(--d-text)" }}
                   >
@@ -452,12 +477,33 @@ export default function Account() {
                 </button>
               )}
             </div>
+            {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
           </div>
 
           <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
-          <input className={inputs.base} value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your display name" />
-          <div className="flex gap-2 mt-3">
-            <button 
+          <input
+            className={inputs.base}
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (!nameTouched) {
+                setNameTouched(true);
+              }
+              if (saveError) {
+                setSaveError(null);
+              }
+              if (showSaved) {
+                setShowSaved(false);
+              }
+            }}
+            onBlur={() => setNameTouched(true)}
+            placeholder="Enter your display name"
+          />
+          {(saveError || (nameTouched && !isNameValid)) && (
+            <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
+          )}
+          <div className="flex gap-2 mt-3 items-center">
+            <button
               className={buttons.ghost}
               onClick={() => {
                 logOut();
@@ -469,29 +515,30 @@ export default function Account() {
             <button
               className={buttons.primary}
               onClick={handleSaveProfile}
+              disabled={!canSaveProfile}
             >
               Save
             </button>
+            {showSaved && !rawNext && <span className="text-xs font-raleway text-emerald-300">Saved</span>}
           </div>
         </div>
 
         <div className={`${glass.surface} p-5`}>
           <h3 className="text-lg font-raleway mb-3 text-d-text">At a glance</h3>
           <ul className="text-sm font-raleway text-d-white space-y-1">
-            <li>Generated images: <strong>{gallery.length}</strong></li>
+            <li>
+              Generated images: <strong>{gallery.length}</strong>
+            </li>
           </ul>
         </div>
       </section>
 
-
-      {/* Profile Crop Modal */}
       <ProfileCropModal
-        isOpen={cropModalOpen}
-        onClose={() => setCropModalOpen(false)}
-        imageSrc={imageToCrop}
+        isOpen={cropModalOpen && Boolean(imageToCrop)}
+        onClose={handleCropModalClose}
+        imageSrc={imageToCrop ?? ""}
         onCropComplete={handleCropComplete}
       />
-
     </main>
   );
 }
