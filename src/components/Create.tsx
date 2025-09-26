@@ -6523,47 +6523,6 @@ const handleGenerate = async () => {
                   </div>
                 )}
                 
-                {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
-                {(selectedFullImage || generatedImage) && (
-                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-d-text transition-opacity duration-100 ${
-                    imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}>
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-sm font-raleway leading-relaxed">
-                          {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
-                          {(selectedFullImage || generatedImage)?.prompt && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
-                              }}
-                              className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                        <div className="mt-2 flex justify-center items-center gap-2">
-                          <Suspense fallback={null}>
-                            <ModelBadge 
-                              model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
-                              size="md" 
-                            />
-                          </Suspense>
-                          {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
-                            <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
-                              <div className="flex items-center gap-1">
-                                <Globe className="w-3 h-3 text-d-text" />
-                                <span className="leading-none">Public</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
                 
                 <button
                   onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
@@ -6572,6 +6531,61 @@ const handleGenerate = async () => {
                 >
                   <X className="w-4 h-4" />
                 </button>
+              </div>
+              
+            </div>
+          )}
+
+          {/* Model and metadata info - full width at bottom */}
+          {isFullSizeOpen && (selectedFullImage || generatedImage) && (
+            <div 
+              className={`fixed bottom-0 left-0 right-0 border-t border-d-mid p-4 text-d-text transition-opacity duration-100 z-[61] ${
+                imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}
+              style={{
+                width: '100vw',
+                left: 0,
+                right: 0,
+                background: 'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.75) 10%, rgba(0, 0, 0, 0.65) 25%, rgba(0, 0, 0, 0.55) 40%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0.25) 80%, rgba(0, 0, 0, 0.1) 95%, rgba(0, 0, 0, 0.0) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                height: 'fit-content',
+                contain: 'paint'
+              }}
+            >
+              <div className="flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-sm font-raleway leading-relaxed">
+                    {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
+                    {(selectedFullImage || generatedImage)?.prompt && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
+                        }}
+                        className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-2 flex justify-center items-center gap-2">
+                    <Suspense fallback={null}>
+                      <ModelBadge 
+                        model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
+                        size="md" 
+                      />
+                    </Suspense>
+                    {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
+                      <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3 text-d-text" />
+                          <span className="leading-none">Public</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
