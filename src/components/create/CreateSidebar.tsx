@@ -44,7 +44,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
     <div className="hidden md:block fixed z-30" style={sidebarPosition}>
       <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
         <aside className="flex flex-col gap-2 w-full mt-2">
-          <div className="flex items-center px-2 text-xs text-d-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
+          <div className="flex items-center px-2 text-[12px] text-d-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
             create
           </div>
 
@@ -55,15 +55,15 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                   isActive ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
                 }`}
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
+                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                 >
-                  <Icon className="size-4" />
+                  <Icon className="size-3" />
                 </div>
                 <span>{label}</span>
               </button>
@@ -72,7 +72,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
 
           <div className="border-t border-d-dark my-2" />
 
-          <div className="flex items-center px-2 text-xs text-d-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
+          <div className="flex items-center px-2 text-[12px] text-d-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
             My works
           </div>
 
@@ -83,15 +83,15 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                   isActive ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
                 }`}
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
+                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}
                 >
-                  <Icon className="size-4" />
+                  <Icon className="size-3" />
                 </div>
                 <span>{label}</span>
               </button>
@@ -101,13 +101,13 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
           <button
             type="button"
             onClick={onOpenMyFolders}
-            className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+            className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
               activeCategory === "my-folders" ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
             }`}
             aria-pressed={activeCategory === "my-folders"}
           >
-            <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-              <Folder className="size-4" />
+            <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
+              <Folder className="size-3" />
             </div>
             <span>folders</span>
           </button>

@@ -472,9 +472,6 @@ export default function Navbar() {
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
           >
-            <div className="px-4 py-2 text-base font-normal font-raleway text-d-white border-b border-d-white/10 mb-1">
-              Account
-            </div>
             <button
               onClick={() => {
                 setActiveMenu(null);

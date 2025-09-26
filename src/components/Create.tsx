@@ -2660,7 +2660,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -2671,7 +2671,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -2682,7 +2682,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleRerun();
@@ -2693,7 +2693,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleRerunWithDifferentModel();
@@ -2704,7 +2704,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -2749,7 +2749,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -2775,7 +2775,7 @@ const Create: React.FC = () => {
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -2786,7 +2786,7 @@ const Create: React.FC = () => {
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -2798,7 +2798,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               toggleImagePublicStatus(image.url);
