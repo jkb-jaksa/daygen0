@@ -60,7 +60,9 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   disabled={isSubmitting}
                 />
               </div>
-              {error && <p className="text-xs font-raleway text-red-400 text-left">{error}</p>}
+              <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
+                {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
+              </div>
               <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
                 {isSubmitting ? "Please wait…" : "Continue"}
               </button>

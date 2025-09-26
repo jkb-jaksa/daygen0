@@ -8,6 +8,7 @@ import { buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
 import GoogleLogin from "./GoogleLogin";
 import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
+import { describePath, safeNext } from "../utils/navigation";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -138,7 +139,9 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                     disabled={isSubmitting}
                   />
                 </div>
-                {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
+                <div aria-live="polite" role="status" className="min-h-[1rem]">
+                  {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
+                </div>
                 <button
                   type="submit"
                   className={`${buttons.blockPrimary} ${isSubmitting ? "cursor-wait opacity-80" : ""}`}
@@ -166,13 +169,6 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
   );
 }
 
-function safeNext(path?: string | null) {
-  const allowed = ["/create", "/edit", "/gallery", "/learn", "/upgrade", "/account"];
-  if (!path || !path.startsWith("/") || path.startsWith("//")) return "/create";
-  if (allowed.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return path;
-  return "/create";
-}
-
 export default function Account() {
   const { user, updateProfile, logOut, storagePrefix } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
@@ -188,39 +184,23 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next");
+  const normalizedRawNext = useMemo(() => rawNext?.trim() ?? null, [rawNext]);
   const decodedNextPath = useMemo(() => {
-    if (!rawNext) return null;
+    if (!normalizedRawNext) return null;
     try {
-      return decodeURIComponent(rawNext);
+      return decodeURIComponent(normalizedRawNext);
     } catch {
       return null;
     }
-  }, [rawNext]);
-  const sanitizedNextPath = useMemo(() => (rawNext ? safeNext(decodedNextPath) : null), [decodedNextPath, rawNext]);
+  }, [normalizedRawNext]);
+  const sanitizedNextPath = useMemo(
+    () => (normalizedRawNext ? safeNext(decodedNextPath ?? undefined) : null),
+    [decodedNextPath, normalizedRawNext],
+  );
 
-  const destinationLabel = useMemo(() => {
-    if (!sanitizedNextPath) return "DayGen";
+  const destinationLabel = useMemo(() => describePath(sanitizedNextPath), [sanitizedNextPath]);
 
-    const formatSegment = (segment: string) =>
-      segment
-        .split("-")
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-
-    if (sanitizedNextPath.startsWith("/create")) {
-      const segments = sanitizedNextPath.split("/").filter(Boolean);
-      const category = segments[1];
-      return category ? `Create → ${formatSegment(category)}` : "the Create studio";
-    }
-    if (sanitizedNextPath.startsWith("/edit")) return "the Edit workspace";
-    if (sanitizedNextPath.startsWith("/gallery")) return "your gallery";
-    if (sanitizedNextPath.startsWith("/learn")) return "the Learn hub";
-    if (sanitizedNextPath.startsWith("/upgrade")) return "the Upgrade page";
-    return sanitizedNextPath === "/account" ? "your account" : "DayGen";
-  }, [sanitizedNextPath]);
-
-  const hasPendingRedirect = Boolean(rawNext);
+  const hasPendingRedirect = Boolean(normalizedRawNext);
 
   // Keep the input in sync if user loads after first render, but don't override user input
   useEffect(() => {
@@ -363,13 +343,13 @@ export default function Account() {
 
     updateProfile({ name: trimmedName });
 
-    if (rawNext) {
+    if (normalizedRawNext) {
       if (decodedNextPath) {
         const target = safeNext(decodedNextPath);
         debugLog("Account - redirecting after profile save to:", target);
         navigate(target, { replace: true });
       } else {
-        debugError("Failed to decode next path after saving profile:", rawNext);
+        debugError("Failed to decode next path after saving profile:", normalizedRawNext);
         navigate("/create", { replace: true });
       }
     } else {
@@ -380,24 +360,24 @@ export default function Account() {
 
   // If user is authenticated and there's a next parameter, redirect them
   useEffect(() => {
-    if (user && rawNext) {
+    if (user && normalizedRawNext) {
       if (decodedNextPath) {
         const target = safeNext(decodedNextPath);
         debugLog("Account - redirecting authenticated user to:", target);
         navigate(target, { replace: true });
       } else {
-        debugError("Failed to decode next path:", rawNext);
+        debugError("Failed to decode next path:", normalizedRawNext);
         navigate("/create", { replace: true });
       }
     }
-  }, [user, rawNext, decodedNextPath, navigate]);
+  }, [user, normalizedRawNext, decodedNextPath, navigate]);
 
   if (!user) {
     return <AccountAuthScreen nextPath={sanitizedNextPath ?? undefined} destinationLabel={destinationLabel} />;
   }
 
   // If user is authenticated and there's a next parameter, show loading while redirecting
-  if (user && rawNext) {
+  if (user && normalizedRawNext) {
     return (
       <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
         <div className="max-w-5xl mx-auto text-center">
@@ -420,7 +400,7 @@ export default function Account() {
             )}
           </div>
           <button
-            onClick={() => navigate("/create")}
+            onClick={() => navigate(sanitizedNextPath ?? "/create")}
             className="p-2 hover:bg-d-dark/50 rounded-lg transition-colors group"
             title="Close account"
           >
@@ -519,7 +499,9 @@ export default function Account() {
             >
               Save
             </button>
-            {showSaved && !rawNext && <span className="text-xs font-raleway text-emerald-300">Saved</span>}
+            {showSaved && !normalizedRawNext && (
+              <span className="text-xs font-raleway text-emerald-300">Saved</span>
+            )}
           </div>
         </div>
 

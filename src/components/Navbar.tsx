@@ -10,6 +10,7 @@ import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
+import { safeNext } from "../utils/navigation";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
@@ -484,7 +485,16 @@ export default function Navbar() {
               onClick={() => {
                 setActiveMenu(null);
                 setMenuOpen(false);
-                navigate("/account");
+                const shouldPreserveFlow =
+                  location.pathname.startsWith("/create") || location.pathname.startsWith("/edit");
+
+                if (shouldPreserveFlow) {
+                  const params = new URLSearchParams();
+                  params.set("next", safeNext(`${location.pathname}${location.search}`));
+                  navigate(`/account?${params.toString()}`);
+                } else {
+                  navigate("/account");
+                }
               }}
               className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
               role="menuitem"
