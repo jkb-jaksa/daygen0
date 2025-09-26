@@ -266,9 +266,19 @@ const ImageActionMenuPortal: React.FC<{
     if (!open || !anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
     const width = Math.max(200, rect.width);
+    const margin = 8;
+
+    const availableLeft = Math.max(
+      margin,
+      (typeof window !== "undefined"
+        ? window.innerWidth - width - margin
+        : rect.left)
+    );
+    const left = Math.min(Math.max(margin, rect.left), availableLeft);
+
     setPos({
-      top: rect.top,
-      left: rect.left,
+      top: rect.bottom + margin,
+      left,
       width,
     });
   }, [open, anchorEl]);
@@ -295,7 +305,7 @@ const ImageActionMenuPortal: React.FC<{
         top = Math.max(2, anchorRect.top - actualHeight - 2);
       } else {
         // Position below the button for other menus
-        top = anchorRect.bottom + window.scrollY + margin;
+        top = anchorRect.bottom + margin;
       }
       
       const availableLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
