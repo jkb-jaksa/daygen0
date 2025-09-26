@@ -310,6 +310,17 @@ html, body {
   overflow: hidden;
 }
 
+/* Glass prompt bar effect for Explore section */
+.glassprompt2 {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 /* Enhanced glass effect for prompt bars */
 .glass-liquid.backdrop-blur-2xl {
   -webkit-backdrop-filter: blur(40px) brightness(0.8) contrast(1.1) saturate(0.9);
@@ -678,6 +689,12 @@ html, body {
 .parallax-large.parallax-active {
   transform: translateZ(150px) scale(1.01);
   transition: transform 0.1s;
+}
+
+/* Remove translateZ jump on glass surfaces to avoid hover flicker */
+.glass-liquid.parallax-large:hover,
+.glass-liquid.parallax-large.parallax-active {
+  transform: scale(1.01);
 }
 
 /* Force parallax effect for footer icons - bypasses reduced motion */
@@ -1253,4 +1270,27 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: 2px solid rgb(184, 192, 192);
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Tooltip styles - consistent across the site */
+.tooltip {
+  position: fixed;
+  z-index: 99999;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  background-color: var(--d-black);
+  color: var(--d-white);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--d-mid);
+  font-size: 12px;
+  font-weight: normal;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  font-family: var(--font-raleway, "Raleway", sans-serif);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-100%);
+  margin-top: -8px;
 }

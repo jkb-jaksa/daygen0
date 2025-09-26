@@ -9,6 +9,7 @@ import {
 import {
   ArrowUpRight,
   Clock,
+  Copy,
   Download,
   Heart,
   MoreHorizontal,
@@ -219,10 +220,11 @@ const recentActivity = [
   },
 ];
 
+// Normalise gallery card aspect so overlays always fit while respecting orientation intent.
 const orientationStyles: Record<GalleryItem["orientation"], string> = {
-  portrait: "aspect-[3/4]",
-  landscape: "aspect-[3/4]",
-  square: "aspect-[3/4]",
+  portrait: "aspect-[4/5]",
+  landscape: "aspect-[4/5]",
+  square: "aspect-[4/5]",
 };
 
 const getInitials = (name: string) =>
@@ -592,6 +594,47 @@ const Explore: React.FC = () => {
     }
   };
 
+  // Tooltip functions
+  const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    
+    // Remove any existing tooltip first
+    const existingTooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`);
+    if (existingTooltip) {
+      existingTooltip.remove();
+    }
+    
+    console.log('Creating tooltip for ID:', tooltipId);
+    
+    // Create tooltip element dynamically
+    const tooltip = document.createElement('div');
+    tooltip.setAttribute('data-tooltip-for', tooltipId);
+    tooltip.className = 'tooltip';
+    tooltip.textContent = 'Copy prompt';
+    
+    // Position tooltip just above the button
+    const triggerRect = target.getBoundingClientRect();
+    tooltip.style.top = `${triggerRect.top - 32}px`;
+    tooltip.style.left = `${triggerRect.left + triggerRect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+    
+    // Append to body
+    document.body.appendChild(tooltip);
+    
+    console.log('Tooltip created and positioned at:', {
+      top: tooltip.style.top,
+      left: tooltip.style.left,
+      transform: tooltip.style.transform
+    });
+  };
+
+  const hideHoverTooltip = (tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.remove();
+  };
+
   // More button dropdown handlers
   const toggleMoreActionMenu = (itemId: string, anchor: HTMLElement, item: GalleryItem) => {
     setMoreActionMenu(prev => 
@@ -765,13 +808,13 @@ const Explore: React.FC = () => {
               {filteredGallery.map((item) => (
                 <article
                   key={item.id}
-                  className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
+                  className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small"
                 >
-                  <div className={`relative ${orientationStyles[item.orientation]}`}>
+                  <div className={`relative ${orientationStyles[item.orientation]} min-h-[320px] sm:min-h-[360px] xl:min-h-[420px]`}>
                     <img
                       src={item.imageUrl}
                       alt={`${item.title} by ${item.creator.name}`}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                      className="absolute inset-0 h-full w-full object-cover object-center"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
@@ -850,8 +893,8 @@ const Explore: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="absolute inset-x-4 bottom-16">
-                      <div className="rounded-2xl border border-white/10 bg-black/50 p-4 shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur">
+                    <div className="absolute inset-x-4 bottom-4 flex flex-col gap-4">
+                      <div className="glassprompt2">
                         <div className="flex flex-wrap items-center gap-4">
                           <div className="relative size-10 overflow-hidden rounded-full">
                             <div className={`absolute inset-0 bg-gradient-to-br ${item.creator.avatarColor}`} aria-hidden="true" />
@@ -868,12 +911,18 @@ const Explore: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => copyPromptToClipboard(item.prompt)}
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-d-white transition hover:border-d-mid hover:text-d-text ${glass.promptDark}`}
+                            className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                            onMouseEnter={(e) => {
+                              showHoverTooltip(e.currentTarget, `copy-${item.id}`);
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip(`copy-${item.id}`);
+                            }}
                           >
-                            Copy prompt
-                            <ArrowUpRight className="size-3.5" aria-hidden="true" />
+                            <Copy className="w-3 h-3" />
                           </button>
                         </div>
+                        
                         <p
                           className="mt-3 text-xs text-d-white"
                           style={{
@@ -902,12 +951,10 @@ const Explore: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="absolute inset-x-4 bottom-4">
+
                       <button
                         type="button"
-                        className={`${buttons.glassPromptDark} w-full justify-center ${glass.promptDark}`}
+                        className={`${buttons.glassPromptDark} w-full justify-center py-3 ${glass.promptDark}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           // TODO: Implement recreate functionality
@@ -918,6 +965,7 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                  
                 </article>
               ))}
             </div>
