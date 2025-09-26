@@ -23,7 +23,7 @@ import {
   Search,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { layout, cards, buttons, glass, inputs, toolAccents, text } from "../styles/designSystem";
+import { layout, cards, buttons, glass, inputs, toolAccents } from "../styles/designSystem";
 import type { ToolAccentKey } from "../styles/designSystem";
 
 // --- Minimal card + layout utilities ---
