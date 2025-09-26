@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   layout,
@@ -23,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
@@ -532,6 +534,8 @@ const Explore: React.FC = () => {
     type: 'all',
   });
 
+  const navigate = useNavigate();
+
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
@@ -581,6 +585,12 @@ const Explore: React.FC = () => {
 
   // More button dropdown state
   const [moreActionMenu, setMoreActionMenu] = useState<{
+    id: string;
+    anchor: HTMLElement;
+    item: GalleryItem;
+  } | null>(null);
+
+  const [recreateActionMenu, setRecreateActionMenu] = useState<{
     id: string;
     anchor: HTMLElement;
     item: GalleryItem;
@@ -645,13 +655,62 @@ const Explore: React.FC = () => {
 
   // More button dropdown handlers
   const toggleMoreActionMenu = (itemId: string, anchor: HTMLElement, item: GalleryItem) => {
-    setMoreActionMenu(prev => 
+    setMoreActionMenu(prev =>
       prev?.id === itemId ? null : { id: itemId, anchor, item }
     );
   };
 
   const closeMoreActionMenu = () => {
     setMoreActionMenu(null);
+  };
+
+  const toggleRecreateActionMenu = (itemId: string, anchor: HTMLElement, item: GalleryItem) => {
+    setMoreActionMenu(null);
+    setRecreateActionMenu(prev =>
+      prev?.id === itemId ? null : { id: itemId, anchor, item }
+    );
+  };
+
+  const closeRecreateActionMenu = () => {
+    setRecreateActionMenu(null);
+  };
+
+  const handleRecreateEdit = (item: GalleryItem) => {
+    closeRecreateActionMenu();
+    navigate("/edit", {
+      state: {
+        imageToEdit: {
+          url: item.imageUrl,
+          prompt: item.prompt,
+          model: item.modelId,
+          timestamp: new Date().toISOString(),
+          isPublic: true,
+        },
+      },
+    });
+  };
+
+  const handleRecreateUseAsReference = (item: GalleryItem) => {
+    closeRecreateActionMenu();
+    navigate("/create/image", {
+      state: {
+        referenceImageUrl: item.imageUrl,
+        promptToPrefill: item.prompt,
+        selectedModel: item.modelId,
+        focusPromptBar: true,
+      },
+    });
+  };
+
+  const handleRecreateRunPrompt = (item: GalleryItem) => {
+    closeRecreateActionMenu();
+    navigate("/create/image", {
+      state: {
+        promptToPrefill: item.prompt,
+        selectedModel: item.modelId,
+        focusPromptBar: true,
+      },
+    });
   };
 
   // Navigation functions for full-size view
@@ -908,6 +967,7 @@ const Explore: React.FC = () => {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
+                const isRecreateMenuOpen = recreateActionMenu?.id === item.id;
                 return (
                   <article
                     key={item.id}
@@ -1110,17 +1170,64 @@ const Explore: React.FC = () => {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        className={`${buttons.glassPromptDark} w-full justify-center py-3 ${glass.promptDark}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          // TODO: Implement recreate functionality
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Recreate</span>
-                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className={`${buttons.glassPromptDark} w-full justify-center py-3 ${glass.promptDark}`}
+                          aria-haspopup="menu"
+                          aria-expanded={isRecreateMenuOpen}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleRecreateActionMenu(item.id, event.currentTarget, item);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span>Recreate</span>
+                          <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <ImageActionMenuPortal
+                          anchorEl={isRecreateMenuOpen ? recreateActionMenu?.anchor ?? null : null}
+                          open={isRecreateMenuOpen}
+                          onClose={closeRecreateActionMenu}
+                        >
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleRecreateEdit(item);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit image
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleRecreateUseAsReference(item);
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                            Use as reference
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleRecreateRunPrompt(item);
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            Run the same prompt
+                          </button>
+                        </ImageActionMenuPortal>
+                      </div>
                     </div>
                   </div>
                   </article>

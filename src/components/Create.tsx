@@ -85,6 +85,13 @@ type SerializedUpload = { id: string; fileName: string; fileType: string; previe
 
 type SerializedFolder = { id: string; name: string; createdAt: string; imageIds: string[]; videoIds: string[]; customThumbnail?: string };
 
+type CreateNavigationState = {
+  referenceImageUrl?: string;
+  promptToPrefill?: string;
+  selectedModel?: string;
+  focusPromptBar?: boolean;
+};
+
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
   image: "/create/image",
@@ -2252,20 +2259,20 @@ const Create: React.FC = () => {
     try {
       // Convert the image URL to a File object
       const file = await urlToFile(img.url, `reference-${Date.now()}.png`);
-      
+
       // Clear existing references and generated image to show references
       clearAllReferences();
       clearGeminiImage();
       clearFluxImage();
       clearChatGPTImage();
-      
+
       // Set this image as the reference
       setReferenceFiles([file]);
-      
+
       // Create preview URL for the reference
       const previewUrl = URL.createObjectURL(file);
       setReferencePreviews([previewUrl]);
-      
+
       // Focus the prompt bar
       focusPromptBar();
     } catch (error) {
@@ -2273,6 +2280,56 @@ const Create: React.FC = () => {
       alert('Failed to set image as reference. Please try again.');
     }
   };
+
+  useEffect(() => {
+    const locationState = location.state as CreateNavigationState | null;
+    if (!locationState) {
+      return;
+    }
+
+    const applyStateFromNavigation = async () => {
+      const {
+        referenceImageUrl,
+        promptToPrefill,
+        selectedModel: modelFromState,
+        focusPromptBar: shouldFocus,
+      } = locationState;
+
+      if (modelFromState) {
+        setSelectedModel(modelFromState);
+      }
+
+      if (promptToPrefill) {
+        setPrompt(promptToPrefill);
+      }
+
+      if (referenceImageUrl) {
+        try {
+          const file = await urlToFile(referenceImageUrl, `reference-${Date.now()}.png`);
+          setReferencePreviews(prev => {
+            prev.forEach(url => URL.revokeObjectURL(url));
+            return [];
+          });
+          clearGeminiImage();
+          clearFluxImage();
+          clearChatGPTImage();
+          setReferenceFiles([file]);
+          const previewUrl = URL.createObjectURL(file);
+          setReferencePreviews([previewUrl]);
+        } catch (error) {
+          debugError('Error applying reference image from navigation state:', error);
+        }
+      }
+
+      if (referenceImageUrl || promptToPrefill || shouldFocus) {
+        promptTextareaRef.current?.focus();
+      }
+
+      navigate(location.pathname, { replace: true, state: null });
+    };
+
+    void applyStateFromNavigation();
+  }, [location.state, location.pathname, navigate, clearGeminiImage, clearFluxImage, clearChatGPTImage]);
 
   const closeImageActionMenu = () => {
     setImageActionMenu(null);
