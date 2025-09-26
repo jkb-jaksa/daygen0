@@ -15,21 +15,37 @@ import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 import { debugError } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
+import type { FluxModel, FluxModelType } from "../lib/bfl";
+import type { GalleryImageLike } from "./create/types";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview" },
-  { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue" as const, id: "flux-1.1" },
-  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image" },
-  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram" },
-  { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink" as const, id: "recraft" },
-  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as const, id: "qwen-image" },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4" },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0" },
-  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as const, id: "chatgpt-image" },
-  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan" as const, id: "luma-photon-1" },
-  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan" as const, id: "luma-photon-flash-1" },
-];
+  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow", id: "gemini-2.5-flash-image-preview" },
+  { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue", id: "flux-1.1" },
+  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange", id: "reve-image" },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan", id: "ideogram" },
+  { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink", id: "recraft" },
+  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue", id: "qwen-image" },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet", id: "runway-gen4" },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald", id: "seedream-3.0" },
+  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink", id: "chatgpt-image" },
+  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan", id: "luma-photon-1" },
+  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan", id: "luma-photon-flash-1" },
+] as const;
+
+type EditModel = (typeof AI_MODELS)[number];
+type EditModelId = EditModel["id"] | "runway-gen4-turbo";
+type FluxEditModelId = Extract<EditModelId, `flux-${string}`>;
+
+const FLUX_MODEL_LOOKUP: Record<FluxEditModelId, FluxModel | FluxModelType> = {
+  "flux-1.1": "flux-e1",
+};
+
+interface EditNavigationState {
+  imageToEdit?: GalleryImageLike;
+}
+
+const isFluxModelId = (modelId: EditModelId): modelId is FluxEditModelId => modelId.startsWith("flux-");
 
 const MAX_REFERENCE_IMAGES = 3;
 const ADDITIONAL_REFERENCE_LIMIT = MAX_REFERENCE_IMAGES - 1;
@@ -185,7 +201,7 @@ export default function Edit() {
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
   const [topK, setTopK] = useState(64);
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
+  const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-2.5-flash-image-preview");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
@@ -279,7 +295,7 @@ export default function Edit() {
 
   // Determine which model is selected and get the appropriate state
   const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
-  const isFlux = selectedModel.startsWith("flux-");
+  const isFlux = isFluxModelId(selectedModel);
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
@@ -383,10 +399,11 @@ export default function Edit() {
           topP,
           outputLength: topK,
         });
-      } else if (isFlux) {
+      } else if (isFluxModelId(selectedModel)) {
+        const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
         await generateFluxImage({
           prompt,
-          model: selectedModel as any,
+          model: fluxModel,
           input_image: imageData,
           input_image_2: additionalReferences[0],
           input_image_3: additionalReferences[1],
@@ -979,7 +996,7 @@ export default function Edit() {
 
   // Handle navigation state to automatically load image from Create section
   useEffect(() => {
-    const state = location.state as { imageToEdit?: any } | null;
+    const state = location.state as EditNavigationState | null;
     if (state?.imageToEdit) {
       const imageData = state.imageToEdit;
       // Create a mock File object from the image URL
