@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import { Upload, X, CheckCircle2, Lock } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";

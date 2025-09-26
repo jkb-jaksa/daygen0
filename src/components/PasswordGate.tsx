@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { buttons, inputs } from "../styles/designSystem";
 
+type PasswordGateEnv = ImportMetaEnv & {
+  readonly VITE_SITE_PASSWORD?: string;
+};
+
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
-export default function PasswordGate({ children }: { children: React.ReactNode }) {
-  const configuredPassword = (import.meta as any).env?.VITE_SITE_PASSWORD as string | undefined;
+export default function PasswordGate({ children }: { children: ReactNode }) {
+  const configuredPassword = (import.meta.env as PasswordGateEnv).VITE_SITE_PASSWORD;
 
   // Read from sessionStorage to persist for the tab session.
   const [entered, setEntered] = useState<string | null>(null);

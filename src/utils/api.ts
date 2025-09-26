@@ -1,5 +1,12 @@
-const rawBase = (import.meta as any)?.env?.VITE_API_BASE_URL
-  ?? (import.meta as any)?.env?.VITE_BASE_URL
+type ApiEnv = ImportMetaEnv & {
+  readonly VITE_API_BASE_URL?: string;
+  readonly VITE_BASE_URL?: string;
+};
+
+const env = import.meta.env as ApiEnv;
+
+const rawBase = env?.VITE_API_BASE_URL
+  ?? env?.VITE_BASE_URL
   ?? '';
 
 const normalizedBase = typeof rawBase === 'string' && rawBase.length > 0

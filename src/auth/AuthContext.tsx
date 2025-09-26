@@ -1,21 +1,20 @@
-import React, { createContext, useContext, useMemo, useCallback, useEffect, useState } from "react";
+import React, { useMemo, useCallback, useEffect, useState } from "react";
+import { AuthContext } from "./context";
+import type { AuthContextValue, User } from "./context";
 
-type User = {
-  id: string;           // stable per email
-  email: string;
-  name?: string;
-  color?: string;       // for avatar chip
-  profilePic?: string;  // base64 data URL for profile picture
+type GoogleAccountsId = {
+  disableAutoSelect: () => void;
+  revoke: (email: string, callback: () => void) => void;
 };
 
-type AuthContextValue = {
-  user: User | null;
-  users: User[];
-  storagePrefix: string;                       // e.g. "daygen:u_xxx:"
-  signIn: (email: string) => Promise<User>;
-  signUp: (email: string, name?: string) => Promise<User>;
-  logOut: () => void;
-  updateProfile: (patch: Partial<User>) => void;
+type GoogleGlobal = {
+  accounts?: {
+    id?: GoogleAccountsId;
+  };
+};
+
+type GoogleWindow = Window & {
+  google?: GoogleGlobal;
 };
 
 const LS_USERS = "daygen:users";
@@ -36,8 +35,6 @@ function randomColor() {
   const colors = ["#f59e0b","#84cc16","#10b981","#06b6d4","#60a5fa","#a78bfa","#f472b6"];
   return colors[Math.floor(Math.random()*colors.length)];
 }
-
-const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
@@ -101,12 +98,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const current = user;
     try {
       // Revoke Google consent if available
-      const g = (window as any)?.google?.accounts?.id;
-      if (g) {
-        g.disableAutoSelect();
-        if (current?.email) g.revoke(current.email, () => {});
+      const googleApi = (window as GoogleWindow).google?.accounts?.id;
+      if (googleApi) {
+        googleApi.disableAutoSelect();
+        if (current?.email) {
+          googleApi.revoke(current.email, () => {});
+        }
       }
-    } catch {}
+    } catch (error) {
+      console.warn("Failed to revoke Google auth", error);
+    }
     setUser(null);
     persistCurrent(null);
   }, [persistCurrent, user]);
@@ -124,10 +125,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = { user, users, storagePrefix, signIn, signUp, logOut, updateProfile };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
-  return ctx;
 }

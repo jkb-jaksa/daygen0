@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import type { ReactNode } from "react";
-import { useAuth } from "./auth/AuthContext";
-import { useFooter } from "./contexts/FooterContext";
+import { useAuth } from "./auth/useAuth";
+import { useFooter } from "./contexts/useFooter";
 import { layout, text, buttons } from "./styles/designSystem";
 
 const UseCases = lazy(() => import("./components/UseCases"));

@@ -48,5 +48,7 @@ export function addPrompt(userKey: string, text: string, opts?: { limit?: number
 export function clearPromptHistory(userKey: string) {
   try {
     localStorage.removeItem(keyFor(userKey));
-  } catch {}
+  } catch (error) {
+    console.warn("Failed to clear prompt history", error);
+  }
 }

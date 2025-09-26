@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import { debugError, debugWarn } from "../utils/debug";
 
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";

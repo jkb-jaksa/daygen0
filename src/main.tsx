@@ -3,11 +3,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import PasswordGate from './components/PasswordGate'
 import { AuthProvider } from './auth/AuthContext'
-import { FooterProvider } from './contexts/FooterContext'
+import { FooterProvider } from './contexts/FooterContext.tsx'
 
 const App = lazy(() => import('./App'))
 
-function RootFallback() {
+export function RootFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-d-black text-d-white">
       <div className="flex flex-col items-center gap-3">

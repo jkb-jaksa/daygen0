@@ -1,8 +1,15 @@
 // Recraft API utility library for image generation and editing
 // Based on Recraft documentation: https://www.recraft.ai/docs/api-reference/usage
 
-const BASE = (import.meta as any).env?.VITE_RECRAFT_API_BASE || 'https://external.api.recraft.ai/v1';
-const KEY = (import.meta as any).env?.VITE_RECRAFT_API_KEY;
+type RecraftEnv = ImportMetaEnv & {
+  readonly VITE_RECRAFT_API_BASE?: string;
+  readonly VITE_RECRAFT_API_KEY?: string;
+};
+
+const recraftEnv = import.meta.env as RecraftEnv;
+
+const BASE = recraftEnv.VITE_RECRAFT_API_BASE || 'https://external.api.recraft.ai/v1';
+const KEY = recraftEnv.VITE_RECRAFT_API_KEY;
 
 export type RecraftStyle = 
   | 'realistic_image' 
@@ -278,16 +285,20 @@ export function validateRecraftParams(params: Partial<RecraftGenerateParams>): v
 /**
  * Convert File to FormData for multipart requests
  */
-export function createFormData(fields: Record<string, any>): FormData {
+type FormFieldValue = File | Blob | string | number | boolean | null | undefined;
+
+export function createFormData(fields: Record<string, FormFieldValue>): FormData {
   const formData = new FormData();
-  
+
   for (const [key, value] of Object.entries(fields)) {
-    if (value instanceof File) {
+    if (typeof File !== 'undefined' && value instanceof File) {
+      formData.append(key, value);
+    } else if (value instanceof Blob) {
       formData.append(key, value);
     } else if (value !== undefined && value !== null) {
       formData.append(key, String(value));
     }
   }
-  
+
   return formData;
 }

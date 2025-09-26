@@ -18,7 +18,7 @@ import { useRunwayVideoGeneration } from "../hooks/useRunwayVideoGeneration";
 import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 import { usePromptHistory } from "../hooks/usePromptHistory";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
@@ -41,7 +41,7 @@ import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
 import { getApiUrl } from "../utils/api";
-import { useFooter } from "../contexts/FooterContext";
+import { useFooter } from "../contexts/useFooter";
 import type {
   Accent,
   Folder,
@@ -575,7 +575,7 @@ const Create: React.FC = () => {
   const [imageActionMenu, setImageActionMenu] = useState<ImageActionMenuState>(null);
   const [imageActionMenuImage, setImageActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [moreActionMenu, setMoreActionMenu] = useState<ImageActionMenuState>(null);
-  const [_moreActionMenuImage, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
+  const [, setMoreActionMenuImage] = useState<GalleryImageLike | null>(null);
   const [bulkActionsMenu, setBulkActionsMenu] = useState<BulkActionsMenuState>(null);
   const [galleryFilters, setGalleryFilters] = useState<GalleryFilters>({
     liked: false,
@@ -2232,8 +2232,8 @@ const Create: React.FC = () => {
     setIsModelSelectorOpen(true);
   };
 
-  const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
-    return <div></div>;
+  const renderHoverPrimaryActions = (): React.JSX.Element => {
+    return <div />;
   };
 
   const renderEditButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {

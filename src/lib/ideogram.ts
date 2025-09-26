@@ -1,5 +1,6 @@
 import FormData from "form-data";
 import { fetch } from "undici";
+import type { BodyInit } from "undici";
 
 const IDEO_BASE = "https://api.ideogram.ai";
 
@@ -32,7 +33,7 @@ async function sendMultipart(endpoint: string, form: FormData) {
   const res = await fetch(`${IDEO_BASE}${endpoint}`, {
     method: "POST",
     headers: { ...authHeaders(), ...form.getHeaders() },
-    body: form as any,
+    body: form as unknown as BodyInit,
   });
   if (!res.ok) {
     const text = await res.text();

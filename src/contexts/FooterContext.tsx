@@ -1,13 +1,9 @@
-import React, { createContext, useContext, useState } from "react";
+import { useState } from "react";
+import type { ReactNode } from "react";
+import { FooterContext } from "./footerContext";
+import type { FooterContextValue } from "./footerContext";
 
-type FooterContextValue = {
-  isFooterVisible: boolean;
-  setFooterVisible: (visible: boolean) => void;
-};
-
-const FooterContext = createContext<FooterContextValue | null>(null);
-
-export function FooterProvider({ children }: { children: React.ReactNode }) {
+export function FooterProvider({ children }: { children: ReactNode }) {
   const [isFooterVisible, setIsFooterVisible] = useState(true);
 
   const setFooterVisible = (visible: boolean) => {
@@ -16,10 +12,4 @@ export function FooterProvider({ children }: { children: React.ReactNode }) {
 
   const value: FooterContextValue = { isFooterVisible, setFooterVisible };
   return <FooterContext.Provider value={value}>{children}</FooterContext.Provider>;
-}
-
-export function useFooter() {
-  const ctx = useContext(FooterContext);
-  if (!ctx) throw new Error("useFooter must be used inside <FooterProvider>");
-  return ctx;
 }
