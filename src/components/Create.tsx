@@ -332,7 +332,7 @@ const CustomDropdown: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
+        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={selectedOption ? 'text-d-white' : 'text-d-white/50'}>
           {selectedOption?.label || placeholder || 'Select...'}
@@ -4315,7 +4315,7 @@ const handleGenerate = async () => {
                   <div className="w-full">
                     {/* Filters Section */}
                     <div className={`mb-4 p-3 ${glass.promptDark} rounded-[20px]`}>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <Settings className="w-4 h-4 text-d-text" />
                           <h3 className="text-sm font-raleway text-d-white">Filters</h3>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   layout,
@@ -27,6 +27,8 @@ import {
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { debugError } from "../utils/debug";
+import XIcon from "./XIcon";
+import InstagramIcon from "./InstagramIcon";
 
 
 const styleFilters = [
@@ -355,7 +357,7 @@ const CustomDropdown: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
+        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={selectedOption ? "text-d-white" : "text-d-white/50"}>
           {selectedOption?.label || placeholder || "Select..."}
@@ -571,6 +573,11 @@ const Explore: React.FC = () => {
     }
     void persistFavorites(newFavorites);
   };
+
+  const getDisplayLikes = useCallback(
+    (item: GalleryItem) => item.likes + (favorites.has(item.imageUrl) ? 1 : 0),
+    [favorites],
+  );
 
   // More button dropdown state
   const [moreActionMenu, setMoreActionMenu] = useState<{
@@ -797,7 +804,7 @@ const Explore: React.FC = () => {
           <div className={`${layout.container} space-y-1`}>
             {/* Filters Section */}
             <div className={`mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Settings className="w-4 h-4 text-d-text" />
                   <h3 className="text-sm font-raleway text-d-white">Filters</h3>
@@ -858,12 +865,14 @@ const Explore: React.FC = () => {
         <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredGallery.map((item) => (
-                <article
-                  key={item.id}
-                  className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
-                  onClick={() => openFullSizeView(item)}
-                >
+              {filteredGallery.map((item) => {
+                const isMenuActive = moreActionMenu?.id === item.id;
+                return (
+                  <article
+                    key={item.id}
+                    className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                    onClick={() => openFullSizeView(item)}
+                  >
                   <div className={`relative ${orientationStyles[item.orientation]} min-h-[320px] sm:min-h-[360px] xl:min-h-[420px]`}>
                     <img
                       src={item.imageUrl}
@@ -873,35 +882,43 @@ const Explore: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                    <div className="absolute left-4 top-4 flex flex-wrap gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
                       {item.tags.map((tag) => (
-                        <span
+                        <button
                           key={tag}
-                          className={`rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur ${glass.promptDark}`}
+                          type="button"
+                          className={`rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur transition-colors duration-200 hover:text-d-text pointer-events-auto ${glass.promptDark}`}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           #{tag}
-                        </span>
+                        </button>
                       ))}
                     </div>
 
 
-                    <div className="absolute right-4 top-4 flex gap-2">
+                    <div
+                      className={`absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
+                        isMenuActive
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                      }`}
+                    >
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
                           toggleFavorite(item.imageUrl);
                         }}
-                        className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                        className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
                         aria-label={favorites.has(item.imageUrl) ? "Remove from liked" : "Add to liked"}
                       >
-                        <Heart 
+                        <Heart
                           className={`size-3.5 transition-colors duration-100 ${
                             favorites.has(item.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                           }`}
-                          aria-hidden="true" 
+                          aria-hidden="true"
                         />
-                        {item.likes}
+                        {getDisplayLikes(item)}
                       </button>
                       <div className="relative">
                         <button
@@ -910,7 +927,7 @@ const Explore: React.FC = () => {
                             event.stopPropagation();
                             toggleMoreActionMenu(item.id, event.currentTarget, item);
                           }}
-                          className={`rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                          className="image-action-btn parallax-large"
                           aria-label="More options"
                         >
                           <MoreHorizontal className="size-4" aria-hidden="true" />
@@ -947,7 +964,13 @@ const Explore: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="absolute inset-x-4 bottom-4 flex flex-col gap-4">
+                    <div
+                      className={`absolute inset-x-4 bottom-4 flex flex-col gap-4 transition-opacity duration-100 ${
+                        isMenuActive
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                      }`}
+                    >
                       <div className="glassprompt2">
                         <div className="flex flex-wrap items-center gap-4">
                           <div className="relative size-10 overflow-hidden rounded-full">
@@ -957,7 +980,31 @@ const Explore: React.FC = () => {
                             </span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-raleway text-sm text-d-text">{item.creator.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="truncate font-raleway text-sm text-d-text">{item.creator.name}</p>
+                              <div className="flex items-center gap-1.5 text-d-white/70">
+                                <a
+                                  href="https://x.com"
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  className="transition-colors duration-200 hover:text-d-text"
+                                  onClick={(event) => event.stopPropagation()}
+                                  aria-label="View on X"
+                                >
+                                  <XIcon className="w-3.5 h-3.5" />
+                                </a>
+                                <a
+                                  href="https://instagram.com"
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  className="transition-colors duration-200 hover:text-d-text"
+                                  onClick={(event) => event.stopPropagation()}
+                                  aria-label="View on Instagram"
+                                >
+                                  <InstagramIcon className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            </div>
                             <p className="truncate text-xs text-d-white">
                               {item.creator.handle}
                             </p>
@@ -978,7 +1025,7 @@ const Explore: React.FC = () => {
                         </div>
                         
                         <p
-                          className="mt-3 text-xs text-d-white"
+                          className="mt-3 text-sm font-raleway leading-relaxed text-d-white"
                           style={{
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
@@ -1019,9 +1066,9 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  
                 </article>
-              ))}
+              );
+            })}
             </div>
           </div>
         </section>
@@ -1125,19 +1172,21 @@ const Explore: React.FC = () => {
                 <>
                   <button
                     onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                    className={`nav-arrow-btn absolute left-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:scale-105`}
                     title="Previous image (←)"
                     aria-label="Previous image"
+                    style={{ width: "3rem", height: "3rem" }}
                   >
-                    <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                    <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                    className={`nav-arrow-btn absolute right-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:scale-105`}
                     title="Next image (→)"
                     aria-label="Next image"
+                    style={{ width: "3rem", height: "3rem" }}
                   >
-                    <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                    <ChevronRight className="w-6 h-6" />
                   </button>
                 </>
               )}
@@ -1150,37 +1199,30 @@ const Explore: React.FC = () => {
               />
               
               {/* Action buttons */}
-              <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-                <div className={`pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+              <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-2 px-4 pt-4 pointer-events-none">
+                <div
+                  className={`flex items-center gap-1 transition-opacity duration-100 ${
+                    moreActionMenu?.id === selectedFullImage.id
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       toggleFavorite(selectedFullImage.imageUrl);
                     }}
-                    className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                    className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
                     aria-label={favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                   >
-                    <Heart 
-                      className={`size-3.5 transition-colors duration-100 ${
+                    <Heart
+                      className={`w-3.5 h-3.5 transition-colors duration-100 ${
                         favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                       }`}
-                      aria-hidden="true" 
+                      aria-hidden="true"
                     />
-                    {selectedFullImage.likes}
-                  </button>
-                </div>
-                <div className={`flex items-center gap-0.5 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      copyPromptToClipboard(selectedFullImage.prompt);
-                    }}
-                    className="rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}"
-                    aria-label="Copy prompt"
-                  >
-                    <Copy className="size-4" aria-hidden="true" />
+                    {getDisplayLikes(selectedFullImage)}
                   </button>
                   <div className="relative">
                     <button
@@ -1189,7 +1231,7 @@ const Explore: React.FC = () => {
                         event.stopPropagation();
                         toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                       }}
-                      className={`rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                      className="image-action-btn parallax-large"
                       aria-label="More options"
                     >
                       <MoreHorizontal className="size-4" aria-hidden="true" />
@@ -1224,19 +1266,21 @@ const Explore: React.FC = () => {
                       </a>
                     </ImageActionMenuPortal>
                   </div>
-                  <button
-                    type="button"
-                    onClick={closeFullSizeView}
-                    className="rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}"
-                    aria-label="Close"
-                  >
-                    <X className="size-4" aria-hidden="true" />
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={closeFullSizeView}
+                  className="image-action-btn parallax-large pointer-events-auto"
+                  aria-label="Close"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
               </div>
 
               {/* Image info overlay */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pointer-events-none">
+              <div
+                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+              >
                 <div className="pointer-events-auto">
                   <div className="glassprompt2">
                     <div className="flex flex-wrap items-center gap-4">
@@ -1247,7 +1291,31 @@ const Explore: React.FC = () => {
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-raleway text-sm text-d-text">{selectedFullImage.creator.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate font-raleway text-sm text-d-text">{selectedFullImage.creator.name}</p>
+                          <div className="flex items-center gap-1.5 text-d-white/70">
+                            <a
+                              href="https://x.com"
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="transition-colors duration-200 hover:text-d-text"
+                              onClick={(event) => event.stopPropagation()}
+                              aria-label="View on X"
+                            >
+                              <XIcon className="w-3.5 h-3.5" />
+                            </a>
+                            <a
+                              href="https://instagram.com"
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="transition-colors duration-200 hover:text-d-text"
+                              onClick={(event) => event.stopPropagation()}
+                              aria-label="View on Instagram"
+                            >
+                              <InstagramIcon className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
                         <p className="truncate text-xs text-d-white">
                           {selectedFullImage.creator.handle}
                         </p>
@@ -1263,13 +1331,28 @@ const Explore: React.FC = () => {
                         {getModelDisplayName(selectedFullImage.modelId, selectedFullImage.modelLabel)}
                       </span>
                     </div>
-                    
-                    <h3 className="mt-3 font-raleway text-lg text-d-white mb-2">{selectedFullImage.prompt}</h3>
-                    
-                    <p className="text-sm text-d-white/80 mb-3">
-                      {selectedFullImage.prompt}
-                    </p>
-                    
+
+                    <div className="mt-3 flex items-start gap-2 text-sm text-d-white">
+                      <p className="flex-1 font-raleway leading-relaxed">{selectedFullImage.prompt}</p>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void copyPromptToClipboard(selectedFullImage.prompt);
+                        }}
+                        className="text-d-white transition-colors duration-200 hover:text-d-text"
+                        aria-label="Copy prompt"
+                        onMouseEnter={(event) => {
+                          showHoverTooltip(event.currentTarget, `fullsize-copy-${selectedFullImage.id}`);
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`fullsize-copy-${selectedFullImage.id}`);
+                        }}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                     <div className="mt-3 mb-1 flex items-center justify-between text-xs text-d-light">
                       <div className="flex items-center gap-4">
                         <span>{selectedFullImage.creator.location}</span>
@@ -1277,12 +1360,14 @@ const Explore: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedFullImage.tags.map((tag) => (
-                          <span
+                          <button
                             key={tag}
-                            className="rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur bg-black/40"
+                            type="button"
+                            className="rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur bg-black/40 transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => event.stopPropagation()}
                           >
                             #{tag}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </div>

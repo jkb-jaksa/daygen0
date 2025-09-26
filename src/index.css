@@ -768,6 +768,34 @@ html, body {
   transform: translateY(-50%) scale(1.01);
 }
 
+/* Override image-action-btn transform for navigation arrows to prevent movement */
+.image-action-btn--no-transform:hover {
+  transform: none !important;
+}
+
+/* Custom navigation arrow buttons for full-size modal */
+.nav-arrow-btn {
+  align-items: center;
+  background-color: rgba(14, 18, 18, 0.8);
+  border: 1px solid var(--d-dark);
+  border-radius: 9999px;
+  color: var(--d-white);
+  display: inline-grid;
+  justify-content: center;
+  padding: 0.375rem;
+  place-items: center;
+  transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s ease;
+  -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
+}
+
+.nav-arrow-btn:hover {
+  background-color: rgba(14, 18, 18, 0.8);
+  border-color: var(--d-mid);
+  color: white;
+  /* Scale effect is handled by Tailwind's hover:scale-105 class */
+}
+
 
 .image-action-btn--labelled {
   display: inline-flex;
