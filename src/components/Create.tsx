@@ -2232,7 +2232,7 @@ const Create: React.FC = () => {
     setIsModelSelectorOpen(true);
   };
 
-  const renderHoverPrimaryActions = (): React.JSX.Element => {
+  const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
     return <div />;
   };
 
