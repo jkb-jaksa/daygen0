@@ -11,12 +11,18 @@ import {
   Clock,
   Download,
   Heart,
+  MoreHorizontal,
   Palette,
+  Share2,
   Sparkles,
   Users,
   Settings,
   ChevronDown,
+  Edit,
 } from "lucide-react";
+import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
+import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
+import { debugError } from "../utils/debug";
 
 
 const styleFilters = [
@@ -215,8 +221,8 @@ const recentActivity = [
 
 const orientationStyles: Record<GalleryItem["orientation"], string> = {
   portrait: "aspect-[3/4]",
-  landscape: "aspect-[16/10]",
-  square: "aspect-square",
+  landscape: "aspect-[3/4]",
+  square: "aspect-[3/4]",
 };
 
 const getInitials = (name: string) =>
@@ -227,6 +233,75 @@ const getInitials = (name: string) =>
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+// ImageActionMenuPortal component (exact copy from Create.tsx)
+const ImageActionMenuPortal: React.FC<{
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ anchorEl, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!open || !anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(200, rect.width),
+    });
+  }, [open, anchorEl]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        open &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !(anchorEl && anchorEl.contains(event.target as Node))
+      ) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, anchorEl, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 1100,
+      }}
+      className={`${glass.promptDark} rounded-lg py-2`}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
 
 const getModelDisplayName = (modelId: string, label?: string) => {
   if (label) return label;
@@ -457,6 +532,95 @@ const Explore: React.FC = () => {
     type: 'all',
   });
 
+  // Copy notification state
+  const [copyNotification, setCopyNotification] = useState<string | null>(null);
+
+  // Favorites state
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  // Load favorites from storage
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const storedFavorites = await getPersistedValue<string[]>('explore-', 'favorites');
+        if (storedFavorites) {
+          setFavorites(new Set(storedFavorites));
+        }
+      } catch (error) {
+        debugError('Failed to load favorites:', error);
+      }
+    };
+    void loadFavorites();
+  }, []);
+
+  // Persist favorites to storage
+  const persistFavorites = async (newFavorites: Set<string>) => {
+    setFavorites(newFavorites);
+    try {
+      await setPersistedValue('explore-', 'favorites', Array.from(newFavorites));
+    } catch (error) {
+      debugError('Failed to persist favorites:', error);
+    }
+  };
+
+  // Toggle favorite function
+  const toggleFavorite = (imageUrl: string) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(imageUrl)) {
+      newFavorites.delete(imageUrl);
+    } else {
+      newFavorites.add(imageUrl);
+    }
+    void persistFavorites(newFavorites);
+  };
+
+  // More button dropdown state
+  const [moreActionMenu, setMoreActionMenu] = useState<{
+    id: string;
+    anchor: HTMLElement;
+    item: GalleryItem;
+  } | null>(null);
+
+  // Copy prompt function
+  const copyPromptToClipboard = async (prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopyNotification('Prompt copied!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy prompt:', err);
+    }
+  };
+
+  // More button dropdown handlers
+  const toggleMoreActionMenu = (itemId: string, anchor: HTMLElement, item: GalleryItem) => {
+    setMoreActionMenu(prev => 
+      prev?.id === itemId ? null : { id: itemId, anchor, item }
+    );
+  };
+
+  const closeMoreActionMenu = () => {
+    setMoreActionMenu(null);
+  };
+
+  const copyImageLink = async (item: GalleryItem) => {
+    try {
+      // Import the share utilities (same as Create section)
+      const { makeRemixUrl, withUtm, copyLink } = await import("../lib/shareUtils");
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+      const remixUrl = makeRemixUrl(baseUrl, item.prompt || "");
+      const trackedUrl = withUtm(remixUrl, "copy");
+      await copyLink(trackedUrl);
+      setCopyNotification('Link copied!');
+      setTimeout(() => setCopyNotification(null), 2000);
+      closeMoreActionMenu();
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      setCopyNotification('Failed to copy link');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+  };
+
   // Helper functions for filters
   const getAvailableModels = () => {
     if (galleryFilters.type === 'video') {
@@ -523,6 +687,13 @@ const Explore: React.FC = () => {
 
   return (
     <div className={`${layout.page} explore-page`}>
+      {/* Copy notification */}
+      {copyNotification && (
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+          {copyNotification}
+        </div>
+      )}
+      
       <div className="relative isolate">
         <div className={`${layout.backdrop}`} aria-hidden />
 
@@ -588,13 +759,13 @@ const Explore: React.FC = () => {
           </div>
         </section>
 
-        <section className="relative pb-24 -mt-6">
+        <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredGallery.map((item) => (
                 <article
                   key={item.id}
-                  className="group relative overflow-hidden rounded-[28px] border border-d-dark/70 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
+                  className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
                 >
                   <div className={`relative ${orientationStyles[item.orientation]}`}>
                     <img
@@ -609,32 +780,77 @@ const Explore: React.FC = () => {
                       {item.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-full border border-white/20 bg-black/40 px-3 py-1 text-xs font-medium text-d-white/80 backdrop-blur"
+                          className={`rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur ${glass.promptDark}`}
                         >
                           #{tag}
                         </span>
                       ))}
                     </div>
 
+
                     <div className="absolute right-4 top-4 flex gap-2">
                       <button
                         type="button"
-                        className="flex items-center gap-1 rounded-full bg-black/40 px-3 py-1 text-xs text-d-white/70 transition hover:bg-black/60"
-                        aria-label="Appreciate image"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleFavorite(item.imageUrl);
+                        }}
+                        className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                        aria-label={favorites.has(item.imageUrl) ? "Remove from liked" : "Add to liked"}
                       >
-                        <Heart className="size-3.5" aria-hidden="true" />
+                        <Heart 
+                          className={`size-3.5 transition-colors duration-100 ${
+                            favorites.has(item.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                          }`}
+                          aria-hidden="true" 
+                        />
                         {item.likes}
                       </button>
-                      <button
-                        type="button"
-                        className="rounded-full bg-black/40 p-2 text-d-white/70 transition hover:bg-black/60"
-                        aria-label="Download image preview"
-                      >
-                        <Download className="size-4" aria-hidden="true" />
-                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleMoreActionMenu(item.id, event.currentTarget, item);
+                          }}
+                          className={`rounded-full p-2 text-d-white transition backdrop-blur hover:text-d-text hover:border-d-mid border border-transparent ${glass.promptDark}`}
+                          aria-label="More options"
+                        >
+                          <MoreHorizontal className="size-4" aria-hidden="true" />
+                        </button>
+                        <ImageActionMenuPortal
+                          anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
+                          open={moreActionMenu?.id === item.id}
+                          onClose={closeMoreActionMenu}
+                        >
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              await copyImageLink(item);
+                            }}
+                          >
+                            <Share2 className="h-4 w-4" />
+                            Copy link
+                          </button>
+                          <a
+                            href={item.imageUrl}
+                            download
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              closeMoreActionMenu();
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                            Download
+                          </a>
+                        </ImageActionMenuPortal>
+                      </div>
                     </div>
 
-                    <div className="absolute inset-x-4 bottom-4">
+                    <div className="absolute inset-x-4 bottom-16">
                       <div className="rounded-2xl border border-white/10 bg-black/50 p-4 shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur">
                         <div className="flex flex-wrap items-center gap-4">
                           <div className="relative size-10 overflow-hidden rounded-full">
@@ -644,21 +860,22 @@ const Explore: React.FC = () => {
                             </span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-raleway text-sm text-d-white">{item.creator.name}</p>
-                            <p className="truncate text-xs text-d-white/60">
-                              {item.creator.handle} · {getModelDisplayName(item.modelId, item.modelLabel)}
+                            <p className="truncate font-raleway text-sm text-d-text">{item.creator.name}</p>
+                            <p className="truncate text-xs text-d-white">
+                              {item.creator.handle}
                             </p>
                           </div>
                           <button
                             type="button"
-                            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs text-d-white/80 transition hover:border-white/40"
+                            onClick={() => copyPromptToClipboard(item.prompt)}
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-d-white transition hover:border-d-mid hover:text-d-text ${glass.promptDark}`}
                           >
-                            View prompt
+                            Copy prompt
                             <ArrowUpRight className="size-3.5" aria-hidden="true" />
                           </button>
                         </div>
                         <p
-                          className="mt-3 text-xs text-d-white/70"
+                          className="mt-3 text-xs text-d-white"
                           style={{
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
@@ -668,11 +885,37 @@ const Explore: React.FC = () => {
                         >
                           {item.prompt}
                         </p>
-                        <div className="mt-3 flex items-center justify-between text-xs text-d-white/50">
-                          <span>{item.creator.location}</span>
-                          <span>{item.timeAgo}</span>
+                        <div className="mt-3 mb-1 flex items-center justify-between text-xs text-d-light">
+                          <div className="flex items-center gap-4">
+                            <span>{item.creator.location}</span>
+                            <span>{item.timeAgo}</span>
+                          </div>
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-d-dark text-xs font-medium text-d-white backdrop-blur">
+                            {hasToolLogo(item.modelId) && (
+                              <img
+                                src={getToolLogo(item.modelId)!}
+                                alt={`${getModelDisplayName(item.modelId, item.modelLabel)} logo`}
+                                className="w-4 h-4 rounded-sm object-cover"
+                              />
+                            )}
+                            {getModelDisplayName(item.modelId, item.modelLabel)}
+                          </span>
                         </div>
                       </div>
+                    </div>
+                    
+                    <div className="absolute inset-x-4 bottom-4">
+                      <button
+                        type="button"
+                        className={`${buttons.glassPromptDark} w-full justify-center ${glass.promptDark}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          // TODO: Implement recreate functionality
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Recreate</span>
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -697,11 +940,11 @@ const Explore: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                  <button type="button" className={buttons.primary}>
+                  <button type="button" className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs text-d-white border-d-dark hover:border-d-text hover:text-d-text`}>
                     Share your creation
                     <ArrowUpRight className="size-4" aria-hidden="true" />
                   </button>
-                  <button type="button" className={buttons.ghost}>
+                  <button type="button" className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs text-d-white border-d-dark hover:border-d-text hover:text-d-text`}>
                     View submission guide
                   </button>
                 </div>

@@ -30,6 +30,8 @@ export const buttons = {
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-d-dark px-3 text-xs font-raleway font-medium text-d-white/80 transition-colors duration-200 hover:border-d-mid hover:text-d-text parallax-large",
   pillWarm: "btn btn-white btn-compact font-raleway text-base font-medium gap-2 parallax-large",
   blockPrimary: "btn btn-white w-full font-raleway text-base font-medium gap-2 parallax-large",
+  glassPromptDark: "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-raleway font-medium text-d-white transition-colors duration-200 hover:text-d-text hover:border-d-mid border border-transparent parallax-large",
+  glassPromptDarkCompact: "inline-flex items-center justify-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-d-white transition-colors duration-200 hover:text-d-text hover:border-d-mid border border-transparent parallax-large",
 };
 
 export const panels = {
