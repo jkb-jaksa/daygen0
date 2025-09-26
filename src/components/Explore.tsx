@@ -384,7 +384,7 @@ const CustomDropdown: React.FC<{
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                   option.value === value
                     ? "bg-white border-white/70 shadow-lg shadow-white/30 text-d-black"
                     : "bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text"
@@ -505,7 +505,7 @@ const CustomMultiSelect: React.FC<{
                   key={option.value}
                   type="button"
                   onClick={() => toggleOption(option.value)}
-                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
+                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
                       ? "bg-white border-white/70 shadow-lg shadow-white/30 text-d-black"
                       : "bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text"

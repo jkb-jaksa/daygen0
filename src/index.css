@@ -19,6 +19,29 @@
   animation: gradient-x 0.1s ease infinite;
 }
 
+/* Custom scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
 
 :root {
   --nav-h: 64px; /* Navbar height used for hero offset */
@@ -192,11 +215,25 @@ html, body {
   color: var(--d-text);
 }
 
+.btn-ghost:focus,
+.btn-ghost:active {
+  background-color: var(--d-dark);
+  border-color: var(--d-mid);
+  color: var(--d-text);
+}
+
 /* Compact ghost button variant */
 .btn-ghost-compact {
   height: 32px;
   min-width: 0;
   padding: 0 16px;
+}
+
+.btn-ghost-compact:focus,
+.btn-ghost-compact:active {
+  background-color: var(--d-dark);
+  border-color: var(--d-mid);
+  color: var(--d-text);
 }
 
 .btn:disabled {
@@ -314,7 +351,7 @@ html, body {
 .glassprompt2 {
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   padding: 1rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(8px);
@@ -833,6 +870,18 @@ html, body {
 
 .parallax-small:hover .parallax-isolate .parallax-large:hover {
   transform: translateZ(150px) scale(1.015) !important;
+}
+
+/* Preserve centering transform for parallax elements that need it */
+.parallax-large[class*="-translate-x-1/2"]:hover,
+.parallax-large[class*="-translate-x-1/2"].parallax-active {
+  transform: translateX(-50%) translateZ(150px) scale(1.01) !important;
+}
+
+/* Remove translateZ for glass elements to prevent flickering */
+.parallax-large[class*="-translate-x-1/2"][class*="glass"]:hover,
+.parallax-large[class*="-translate-x-1/2"][class*="glass"].parallax-active {
+  transform: translateX(-50%) scale(1.01) !important;
 }
 
 .image-select-toggle--active {

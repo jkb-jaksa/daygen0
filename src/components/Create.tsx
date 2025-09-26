@@ -358,7 +358,7 @@ const CustomDropdown: React.FC<{
                 onChange(option.value);
                 setIsOpen(false);
               }}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                   option.value === value
                     ? 'bg-white border-white/70 shadow-lg shadow-white/30 text-d-black'
                     : 'bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text'
@@ -474,7 +474,7 @@ const CustomMultiSelect: React.FC<{
                 key={option.value}
                 type="button"
                 onClick={() => toggleOption(option.value)}
-                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
+                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
                       ? 'bg-white border-white/70 shadow-lg shadow-white/30 text-d-black'
                       : 'bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text'
@@ -804,14 +804,15 @@ const Create: React.FC = () => {
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
-  const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
-  const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
+  const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
+  const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
   const [downloadConfirmation, setDownloadConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderDialog, setNewFolderDialog] = useState<boolean>(false);
   const [folderThumbnailDialog, setFolderThumbnailDialog] = useState<{show: boolean, folderId: string | null}>({show: false, folderId: null});
   const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
+  const [folderThumbnailConfirm, setFolderThumbnailConfirm] = useState<{show: boolean, folderId: string | null, imageUrl: string | null}>({show: false, folderId: null, imageUrl: null});
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImagesForFolder, setSelectedImagesForFolder] = useState<string[]>([]);
@@ -1815,37 +1816,49 @@ const Create: React.FC = () => {
   };
 
   const confirmBulkPublish = () => {
-    const count = selectedImages.size;
-    setGallery(currentGallery => {
-      const updatedGallery = currentGallery.map(img => 
-        selectedImages.has(img.url) 
-          ? { ...img, isPublic: true }
-          : img
-      );
-      // Persist the updated gallery
-      persistGallery(updatedGallery);
-      return updatedGallery;
-    });
-    setCopyNotification(`${count} image${count === 1 ? '' : 's'} published!`);
-    setTimeout(() => setCopyNotification(null), 2000);
-    setPublishConfirmation({show: false, count: 0});
+    if (publishConfirmation.imageUrl) {
+      // Individual image publish
+      confirmIndividualPublish();
+    } else {
+      // Bulk publish
+      const count = selectedImages.size;
+      setGallery(currentGallery => {
+        const updatedGallery = currentGallery.map(img => 
+          selectedImages.has(img.url) 
+            ? { ...img, isPublic: true }
+            : img
+        );
+        // Persist the updated gallery
+        persistGallery(updatedGallery);
+        return updatedGallery;
+      });
+      setCopyNotification(`${count} image${count === 1 ? '' : 's'} published!`);
+      setTimeout(() => setCopyNotification(null), 2000);
+      setPublishConfirmation({show: false, count: 0});
+    }
   };
 
   const confirmBulkUnpublish = () => {
-    const count = selectedImages.size;
-    setGallery(currentGallery => {
-      const updatedGallery = currentGallery.map(img => 
-        selectedImages.has(img.url) 
-          ? { ...img, isPublic: false }
-          : img
-      );
-      // Persist the updated gallery
-      persistGallery(updatedGallery);
-      return updatedGallery;
-    });
-    setCopyNotification(`${count} image${count === 1 ? '' : 's'} unpublished!`);
-    setTimeout(() => setCopyNotification(null), 2000);
-    setUnpublishConfirmation({show: false, count: 0});
+    if (unpublishConfirmation.imageUrl) {
+      // Individual image unpublish
+      confirmIndividualUnpublish();
+    } else {
+      // Bulk unpublish
+      const count = selectedImages.size;
+      setGallery(currentGallery => {
+        const updatedGallery = currentGallery.map(img => 
+          selectedImages.has(img.url) 
+            ? { ...img, isPublic: false }
+            : img
+        );
+        // Persist the updated gallery
+        persistGallery(updatedGallery);
+        return updatedGallery;
+      });
+      setCopyNotification(`${count} image${count === 1 ? '' : 's'} unpublished!`);
+      setTimeout(() => setCopyNotification(null), 2000);
+      setUnpublishConfirmation({show: false, count: 0});
+    }
   };
 
   const cancelBulkPublish = () => {
@@ -2062,6 +2075,17 @@ const Create: React.FC = () => {
     setFolderThumbnailFile(null);
   };
 
+  const handleConfirmFolderThumbnail = () => {
+    if (folderThumbnailConfirm.folderId && folderThumbnailConfirm.imageUrl) {
+      handleSetFolderThumbnail(folderThumbnailConfirm.folderId, folderThumbnailConfirm.imageUrl);
+      setFolderThumbnailConfirm({show: false, folderId: null, imageUrl: null});
+    }
+  };
+
+  const handleCancelFolderThumbnail = () => {
+    setFolderThumbnailConfirm({show: false, folderId: null, imageUrl: null});
+  };
+
   const handleRemoveFolderThumbnail = (folderId: string) => {
     const updatedFolders = folders.map(folder => 
       folder.id === folderId 
@@ -2274,16 +2298,52 @@ const Create: React.FC = () => {
   };
 
   const toggleImagePublicStatus = (imageUrl: string) => {
-    setGallery(currentGallery => {
-      const updatedGallery = currentGallery.map(img => 
-        img.url === imageUrl 
-          ? { ...img, isPublic: !img.isPublic }
-          : img
-      );
-      // Persist the updated gallery
-      persistGallery(updatedGallery);
-      return updatedGallery;
-    });
+    const image = gallery.find(img => img.url === imageUrl);
+    if (!image) return;
+    
+    if (image.isPublic) {
+      // Show unpublish confirmation
+      setUnpublishConfirmation({show: true, count: 1, imageUrl});
+    } else {
+      // Show publish confirmation
+      setPublishConfirmation({show: true, count: 1, imageUrl});
+    }
+  };
+
+  const confirmIndividualPublish = () => {
+    if (publishConfirmation.imageUrl) {
+      setGallery(currentGallery => {
+        const updatedGallery = currentGallery.map(img => 
+          img.url === publishConfirmation.imageUrl 
+            ? { ...img, isPublic: true }
+            : img
+        );
+        // Persist the updated gallery
+        persistGallery(updatedGallery);
+        return updatedGallery;
+      });
+      setCopyNotification('Image published!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+    setPublishConfirmation({show: false, count: 0});
+  };
+
+  const confirmIndividualUnpublish = () => {
+    if (unpublishConfirmation.imageUrl) {
+      setGallery(currentGallery => {
+        const updatedGallery = currentGallery.map(img => 
+          img.url === unpublishConfirmation.imageUrl 
+            ? { ...img, isPublic: false }
+            : img
+        );
+        // Persist the updated gallery
+        persistGallery(updatedGallery);
+        return updatedGallery;
+      });
+      setCopyNotification('Image unpublished!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+    setUnpublishConfirmation({show: false, count: 0});
   };
 
   const handleEditMenuSelect = () => {
@@ -3957,12 +4017,14 @@ const handleGenerate = async () => {
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-d-text">
-                  {publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`}
+                  {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
                 <p className="text-base font-raleway font-light text-d-white">
-                  {publishConfirmation.count === 1 
+                  {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
-                    : `Are you sure you want to publish these ${publishConfirmation.count} images? They will be visible to other users.`}
+                    : (publishConfirmation.count === 1 
+                      ? 'Are you sure you want to publish this image? It will be visible to other users.'
+                      : `Are you sure you want to publish these ${publishConfirmation.count} images? They will be visible to other users.`)}
                 </p>
               </div>
               <div className="flex justify-center gap-3">
@@ -3992,12 +4054,14 @@ const handleGenerate = async () => {
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-d-text">
-                  {unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`}
+                  {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
                 <p className="text-base font-raleway font-light text-d-white">
-                  {unpublishConfirmation.count === 1 
+                  {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
-                    : `Are you sure you want to unpublish these ${unpublishConfirmation.count} images? They will no longer be visible to other users.`}
+                    : (unpublishConfirmation.count === 1 
+                      ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
+                      : `Are you sure you want to unpublish these ${unpublishConfirmation.count} images? They will no longer be visible to other users.`)}
                 </p>
               </div>
               <div className="flex justify-center gap-3">
@@ -4067,7 +4131,7 @@ const handleGenerate = async () => {
                 </p>
               </div>
               
-              <div className="max-h-64 overflow-y-auto space-y-4">
+              <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
                     <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
@@ -4131,7 +4195,15 @@ const handleGenerate = async () => {
                             )}
                           </div>
                           <div className="flex-shrink-0">
-                            {isFullyInFolder ? (
+                            {folder.customThumbnail ? (
+                              <div className="w-5 h-5 rounded-lg overflow-hidden">
+                                <img 
+                                  src={folder.customThumbnail} 
+                                  alt={`${folder.name} thumbnail`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : isFullyInFolder ? (
                               <div className="w-5 h-5 bg-d-white/20 rounded-lg flex items-center justify-center">
                                 <Folder className="w-3 h-3 text-d-text" />
                               </div>
@@ -4164,10 +4236,31 @@ const handleGenerate = async () => {
                           </div>
                         </label>
                       );
-                    })}
-                  </div>
+                      })}
+                    </div>
                 )}
               </div>
+              
+              {/* New Folder button below folders list - outside scrollable area */}
+              {folders.length > 0 && (
+                <div className="flex justify-start">
+                  <button
+                    onClick={() => {
+                      setReturnToFolderDialog(true);
+                      setAddToFolderDialog(false);
+                      setNewFolderDialog(true);
+                    }}
+                    className={`${buttons.ghostCompact} cursor-pointer text-sm`}
+                    title="Create new folder"
+                    aria-label="Create new folder"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    New folder
+                  </button>
+                </div>
+              )}
               
               <div className="flex justify-center gap-3">
                 <button
@@ -4203,7 +4296,7 @@ const handleGenerate = async () => {
                 <Folder className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway text-d-text">Set Folder Thumbnail</h3>
                 <p className="text-base font-raleway text-d-white">
-                  Choose a custom thumbnail for this folder
+                  Choose a custom thumbnail for this folder.
                 </p>
                 {(() => {
                   const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
@@ -4226,33 +4319,48 @@ const handleGenerate = async () => {
                 })()}
               </div>
               
-              <div className="mb-6">
+              <div className="mb-6 space-y-4">
                 {/* Upload new image */}
-                <div className="mb-4">
-                  <label className="block text-sm font-raleway text-d-text mb-2">
+                <div className="space-y-3">
+                  <label className="block text-sm font-raleway text-d-text">
                     Upload New Image
                   </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFolderThumbnailUpload}
-                    className="w-full py-3 px-4 border border-d-dark rounded-lg bg-d-black text-d-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-raleway file:bg-d-mid file:text-d-black file:cursor-pointer hover:file:bg-d-mid/90"
-                  />
+                  <div className="flex items-center justify-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFolderThumbnailUpload}
+                      className="hidden"
+                      id="folder-thumbnail-upload"
+                    />
+                    <label
+                      htmlFor="folder-thumbnail-upload"
+                      className={`${buttons.ghostCompact} cursor-pointer text-sm`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Choose file
+                    </label>
+                    {folderThumbnailFile && (
+                      <span className="text-sm text-d-white/80 font-raleway">
+                        {folderThumbnailFile.name}
+                      </span>
+                    )}
+                  </div>
                   {folderThumbnailFile && (
-                    <div className="mt-2">
+                    <div className="flex justify-center">
                       <img 
                         src={URL.createObjectURL(folderThumbnailFile)} 
                         alt="Preview" 
-                        className="w-20 h-20 object-cover rounded-lg mx-auto"
+                        className="w-20 h-20 object-cover rounded-lg"
                       />
                     </div>
                   )}
                 </div>
 
                 {/* Select from existing images */}
-                <div>
-                  <label className="block text-sm font-raleway text-d-text mb-2">
-                    Or Select from Folder Images
+                <div className="space-y-3">
+                  <label className="block text-sm font-raleway text-d-text">
+                    Or select from Folder Images.
                   </label>
                   <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
                     {(() => {
@@ -4262,7 +4370,7 @@ const handleGenerate = async () => {
                       return folderImages.map((img, idx) => (
                         <button
                           key={idx}
-                          onClick={() => handleSetFolderThumbnail(folder.id, img.url)}
+                          onClick={() => setFolderThumbnailConfirm({show: true, folderId: folder.id, imageUrl: img.url})}
                           className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-d-text transition-colors duration-200"
                         >
                           <img 
@@ -4295,6 +4403,49 @@ const handleGenerate = async () => {
                     Done
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Folder thumbnail confirmation dialog */}
+      {folderThumbnailConfirm.show && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-d-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3 relative">
+                <Folder className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway text-d-text">Thumbnail</h3>
+                <p className="text-base font-raleway text-d-white">
+                  Do you want to use this image as thumbnail?
+                </p>
+              </div>
+              
+              {/* Preview of selected image */}
+              {folderThumbnailConfirm.imageUrl && (
+                <div className="flex justify-center">
+                  <img 
+                    src={folderThumbnailConfirm.imageUrl} 
+                    alt="Selected thumbnail" 
+                    className="w-32 h-32 object-cover rounded-lg border border-d-mid"
+                  />
+                </div>
+              )}
+              
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={handleCancelFolderThumbnail}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmFolderThumbnail}
+                  className={buttons.primary}
+                >
+                  Done
+                </button>
               </div>
             </div>
           </div>
