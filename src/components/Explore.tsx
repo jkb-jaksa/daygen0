@@ -1264,7 +1264,7 @@ const Explore: React.FC = () => {
                       </span>
                     </div>
                     
-                    <h3 className="mt-3 font-raleway text-lg text-d-white mb-2">{selectedFullImage.title}</h3>
+                    <h3 className="mt-3 font-raleway text-lg text-d-white mb-2">{selectedFullImage.prompt}</h3>
                     
                     <p className="text-sm text-d-white/80 mb-3">
                       {selectedFullImage.prompt}
