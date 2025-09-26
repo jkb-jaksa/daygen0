@@ -172,32 +172,33 @@ export default function App() {
         <Suspense fallback={<NavbarFallback />}>
           <Navbar />
         </Suspense>
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/learn" element={<LearnLayout />}>
-              <Route index element={<Navigate to="use-cases" replace />} />
-              <Route path="use-cases" element={<UseCases />} />
-              <Route path="tools" element={<ToolsSection />} />
-              <Route path="prompts" element={<Prompts />} />
-              <Route path="courses" element={<Courses />} />
-            </Route>
-            <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
-            <Route path="/tools" element={<Navigate to="/learn/tools" replace />} />
-            <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
-            <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/ai-tools" element={<ToolsSection />} />
-            <Route path="/ai-tools/:id" element={<Subpage />} />
-            <Route
-              path="/create/*"
-              element={(
-                <RequireAuth>
-                  <CreateRoutes />
-                </RequireAuth>
-              )}
-            />
+        <main id="main-content" tabIndex={-1} className="focus:outline-none">
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/learn" element={<LearnLayout />}>
+                <Route index element={<Navigate to="use-cases" replace />} />
+                <Route path="use-cases" element={<UseCases />} />
+                <Route path="tools" element={<ToolsSection />} />
+                <Route path="prompts" element={<Prompts />} />
+                <Route path="courses" element={<Courses />} />
+              </Route>
+              <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+              <Route path="/tools" element={<Navigate to="/learn/tools" replace />} />
+              <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
+              <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
+              <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/ai-tools" element={<ToolsSection />} />
+              <Route path="/ai-tools/:id" element={<Subpage />} />
+              <Route
+                path="/create/*"
+                element={(
+                  <RequireAuth>
+                    <CreateRoutes />
+                  </RequireAuth>
+                )}
+              />
             <Route path="/gallery/*" element={<GalleryRoutes />} />
             <Route path="/upgrade" element={<Upgrade />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -213,6 +214,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        </main>
         {isFooterVisible && (
           <Suspense fallback={null}>
             <Footer />

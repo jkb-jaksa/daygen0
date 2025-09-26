@@ -23,7 +23,7 @@ import {
   Search,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
-import { layout, cards, buttons, glass, inputs, toolAccents } from "../styles/designSystem";
+import { layout, cards, buttons, glass, inputs, toolAccents, text } from "../styles/designSystem";
 import type { ToolAccentKey } from "../styles/designSystem";
 
 // --- Minimal card + layout utilities ---
@@ -335,7 +335,7 @@ export default function ToolsSection() {
   const [activeCategory, setActiveCategory] = useState<string>("image");
   return (
     <section className={`${layout.container} ${layout.heroPadding}`}>
-      <div className="pb-16">
+      <div className="pb-16 pt-4">
         <div className="grid grid-cols-[150px,1fr] gap-6 mb-2">
           <div className="col-span-2">
             <div className="relative">

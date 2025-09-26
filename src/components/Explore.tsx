@@ -1050,6 +1050,15 @@ const Explore: React.FC = () => {
 
         <section className="relative pb-12 pt-[calc(var(--nav-h,4rem)+1rem)]">
           <div className={`${layout.container} space-y-1`}>
+            <header className="mb-6 flex flex-col gap-3">
+              <p className={`${text.eyebrow} text-d-white/70`}>Community</p>
+              <h1 className={`${text.sectionHeading} text-d-text`}>
+                Explore creations from our community.
+              </h1>
+              <p className={`${text.body} max-w-3xl text-d-white`}>
+                Get inspired by featured works from our community members, save your favorites, and recreate stand-out prompts across the best AI models.
+              </p>
+            </header>
             {/* Filters Section */}
             <div className={`mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
               <div className="flex items-center justify-between mb-2">

@@ -1,6 +1,6 @@
 import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
@@ -198,6 +198,12 @@ export default function Navbar() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[10000] focus:rounded focus:bg-d-white focus:px-4 focus:py-2 focus:text-d-black"
+      >
+        Skip to main content
+      </a>
       {/* Top navbar */}
       <nav
         ref={navRef}
@@ -213,10 +219,12 @@ export default function Navbar() {
             />
             <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-raleway">
               {NAV_ITEMS.filter(item => item.label !== "my works" || user).map((item) => (
-                <Link
+                <NavLink
                   key={item.label}
                   to={item.path}
-                  className="parallax-small text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-normal"
+                  className={({ isActive }) =>
+                    `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
+                  }
                   onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
                   onClick={() => {
@@ -225,7 +233,7 @@ export default function Navbar() {
                   }}
                 >
                   {item.label}
-                </Link>
+                </NavLink>
               ))}
             </div>
           </div>
