@@ -2,42 +2,48 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { layout, glass, text } from "../styles/designSystem";
 
 const LEARN_LINKS = [
-  { to: "/learn/use-cases", label: "Use cases" },
-  { to: "/learn/tools", label: "Tools" },
-  { to: "/learn/prompts", label: "Prompts" },
-  { to: "/learn/courses", label: "Courses" },
+  {
+    to: "/learn/use-cases",
+    label: "Use cases",
+    title: "Use cases",
+    description:
+      "Discover workflows, tools, and techniques to unlock your creative potential with AI.",
+  },
+  {
+    to: "/learn/tools",
+    label: "Tools",
+    title: "Tools",
+    description:
+      "Explore the best AI tools across all modalities. Find the perfect model for your creative projects.",
+  },
+  {
+    to: "/learn/prompts",
+    label: "Prompts",
+    title: "Prompts",
+    description:
+      "Master the art of prompting. Learn techniques to get better results from AI models.",
+  },
+  {
+    to: "/learn/courses",
+    label: "Courses",
+    title: "Courses",
+    description:
+      "Structured learning paths to master AI creativity. From beginner to advanced techniques.",
+  },
 ];
 
 export default function LearnLayout() {
   const location = useLocation();
   
   const getHeaderContent = () => {
-    if (location.pathname === '/learn/tools') {
-      return {
-        title: 'Tools',
-        description: 'Explore the best AI tools across all modalities. Find the perfect model for your creative projects.'
-      };
-    } else if (location.pathname === '/learn/use-cases') {
-      return {
-        title: 'Use cases',
-        description: 'Discover workflows, tools, and techniques to unlock your creative potential with AI.'
-      };
-    } else if (location.pathname === '/learn/prompts') {
-      return {
-        title: 'Prompts',
-        description: 'Master the art of prompting. Learn techniques to get better results from AI models.'
-      };
-    } else if (location.pathname === '/learn/courses') {
-      return {
-        title: 'Courses',
-        description: 'Structured learning paths to master AI creativity. From beginner to advanced techniques.'
-      };
-    }
-    // Default fallback
-    return {
-      title: 'Learn',
-      description: 'Master AI creativity with our comprehensive learning resources.'
+    const defaultContent = {
+      title: "Learn",
+      description: "Master AI creativity with our comprehensive learning resources.",
     };
+
+    return (
+      LEARN_LINKS.find((link) => link.to === location.pathname) ?? defaultContent
+    );
   };
 
   const headerContent = getHeaderContent();
