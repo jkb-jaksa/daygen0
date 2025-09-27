@@ -23,9 +23,9 @@ const PRICING_TIERS: PricingTier[] = [
     description: "Perfect for getting started",
     price: "$0",
     period: "forever",
-    credits: 50,
+    credits: 3,
     features: [
-      "50 credits per month",
+      "3 free credits to start",
       "Basic image generation",
       "Standard quality models",
       "Community support",
@@ -84,9 +84,9 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
     description: "Perfect for getting started",
     price: "$0",
     period: "forever",
-    credits: 50,
+    credits: 3,
     features: [
-      "50 credits per month",
+      "3 free credits to start",
       "Basic image generation",
       "Standard quality models",
       "Community support",

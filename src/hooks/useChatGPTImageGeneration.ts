@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { getApiUrl } from '../utils/api';
-import { debugError, debugLog } from '../utils/debug';
+import { debugApiRequest, debugApiResponse, debugApiError } from '../utils/debug';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -34,7 +34,7 @@ export const useChatGPTImageGeneration = () => {
     error: null,
     generatedImage: null,
   });
-  const { token } = useAuth();
+  const { token, refreshProfile } = useAuth();
 
   const generateImage = useCallback(async (options: ChatGPTImageGenerationOptions) => {
     setState(prev => ({
@@ -49,7 +49,7 @@ export const useChatGPTImageGeneration = () => {
       // Use the ChatGPT Image API endpoint
       const apiUrl = getApiUrl('/unified-generate');
 
-      debugLog('[chatgpt-image] POST', apiUrl);
+      debugApiRequest('chatgpt-image', apiUrl);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -70,15 +70,24 @@ export const useChatGPTImageGeneration = () => {
         }),
       });
 
-      debugLog('[chatgpt-image] Response status:', res.status);
+      debugApiResponse('chatgpt-image', res.status);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+        const errorMessage = errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+        debugApiError('chatgpt-image', errorMessage);
+        
+        if (res.status === 403) {
+          throw new Error('Insufficient credits. Each generation costs 1 credit. Please purchase more credits to continue.');
+        }
+        if (res.status === 429) {
+          throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
-      debugLog('[chatgpt-image] Response data:', data);
+      debugApiResponse('chatgpt-image', res.status, data);
 
       // Handle multiple images (dataUrls array) or single image (dataUrl)
       const imageUrls = data.dataUrls || (data.dataUrl ? [data.dataUrl] : []);
@@ -104,9 +113,16 @@ export const useChatGPTImageGeneration = () => {
         error: null,
       }));
 
+      // Refresh user profile to get updated credits
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn('Failed to refresh user profile after generation:', error);
+      }
+
       return generatedImage;
     } catch (error) {
-      debugError('[chatgpt-image] Generation failed:', error);
+      debugApiError('chatgpt-image', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       

@@ -41,7 +41,7 @@ export const useRecraftImageGeneration = () => {
     generatedImages: [],
     progress: undefined,
   });
-  const { token } = useAuth();
+  const { token, refreshProfile } = useAuth();
 
   const generateImage = useCallback(async (options: RecraftImageGenerationOptions) => {
     setState(prev => ({
@@ -73,6 +73,13 @@ export const useRecraftImageGeneration = () => {
       if (!res.ok) {
         const errBody = await res.json().catch(() => null);
         const errorMessage = errBody?.error || `Request failed with ${res.status}`;
+        
+        if (res.status === 403) {
+          throw new Error('Insufficient credits. Each generation costs 1 credit. Please purchase more credits to continue.');
+        }
+        if (res.status === 429) {
+          throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
+        }
         throw new Error(errorMessage);
       }
 
@@ -96,6 +103,13 @@ export const useRecraftImageGeneration = () => {
         progress: 'Generation complete!',
         error: null,
       }));
+
+      // Refresh user profile to get updated credits
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn('Failed to refresh user profile after generation:', error);
+      }
 
       return generatedImages;
 

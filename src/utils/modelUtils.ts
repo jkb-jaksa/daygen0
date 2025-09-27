@@ -22,7 +22,7 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     name: 'FLUX.1 Kontext Pro / Max',
     shortName: 'FLUX Pro',
     description: 'FLUX.1 Kontext Pro / Max',
-    isAvailable: false
+    isAvailable: true
   },
   'runway-gen4': {
     id: 'runway-gen4',
@@ -43,7 +43,7 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     name: 'DALL-E 3',
     shortName: 'DALL-E 3',
     description: 'OpenAI DALL-E 3',
-    isAvailable: false
+    isAvailable: true
   },
   'qwen-image': {
     id: 'qwen-image',
@@ -57,7 +57,7 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     name: 'ChatGPT Image',
     shortName: 'ChatGPT',
     description: 'ChatGPT Image',
-    isAvailable: false
+    isAvailable: true
   },
   'ideogram': {
     id: 'ideogram',

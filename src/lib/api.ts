@@ -27,12 +27,3 @@ export async function apiFetch<T>(path: string, init: JsonInput = {}): Promise<T
   return response.json() as Promise<T>;
 }
 
-export type Template = {
-  id: string;
-  name: string;
-  modality: string;
-  category?: string | null;
-  description?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};

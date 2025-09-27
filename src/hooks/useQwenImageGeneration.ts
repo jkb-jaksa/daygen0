@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugLog } from '../utils/debug';
+import { debugApiRequest, debugApiError, debugApiSuccess } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 
 export interface QwenGeneratedImage {
@@ -47,7 +47,7 @@ export const useQwenImageGeneration = () => {
     generatedImages: [],
     progress: undefined,
   });
-  const { token } = useAuth();
+  const { token, refreshProfile } = useAuth();
 
   const generateImage = useCallback(async (options: QwenGenerateOptions) => {
     setState(prev => ({
@@ -60,7 +60,7 @@ export const useQwenImageGeneration = () => {
     try {
       const apiUrl = getApiUrl('/unified-generate');
       
-      debugLog('[qwen] POST', apiUrl);
+      debugApiRequest('qwen', apiUrl);
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -75,10 +75,19 @@ export const useQwenImageGeneration = () => {
       if (!res.ok) {
         const errBody = await res.json().catch(() => null);
         const errorMessage = errBody?.error || `Request failed with ${res.status}`;
+        debugApiError('qwen', errorMessage);
+        
+        if (res.status === 403) {
+          throw new Error('Insufficient credits. Each generation costs 1 credit. Please purchase more credits to continue.');
+        }
+        if (res.status === 429) {
+          throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
+        }
         throw new Error(errorMessage);
       }
 
       const { dataUrl } = await res.json();
+      debugApiSuccess('qwen', 'Image generated successfully');
 
       const generatedImage: QwenGeneratedImage = {
         url: dataUrl,
@@ -99,6 +108,13 @@ export const useQwenImageGeneration = () => {
         progress: 'Generation complete!',
         error: null,
       }));
+
+      // Refresh user profile to get updated credits
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn('Failed to refresh user profile after generation:', error);
+      }
 
       return [generatedImage];
 

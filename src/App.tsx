@@ -14,7 +14,6 @@ import Prompts from "./components/Prompts";
 import Explore from "./components/Explore";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons } from "./styles/designSystem";
-import TemplatesDebug from "./components/TemplatesDebug";
 
 function Home() {
   return (
@@ -108,7 +107,6 @@ export default function App() {
           <Route path="/create" element={<Create />} />
           <Route path="/edit" element={<Edit />} />
           <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
-          <Route path="/debug/templates" element={<TemplatesDebug />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />

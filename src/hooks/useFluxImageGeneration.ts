@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
 import { getApiUrl } from '../utils/api';
-import { debugLog } from '../utils/debug';
+import { debugApiRequest, debugApiError, debugApiSuccess } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 
 export interface FluxGeneratedImage {
@@ -57,7 +57,7 @@ export const useFluxImageGeneration = () => {
     jobStatus: null,
     progress: undefined,
   });
-  const { token } = useAuth();
+  const { token, refreshProfile } = useAuth();
 
   const generateImage = useCallback(async (options: FluxImageGenerationOptions) => {
     setState(prev => ({
@@ -76,7 +76,7 @@ export const useFluxImageGeneration = () => {
         model in FLUX_MODEL_MAP ? FLUX_MODEL_MAP[model as FluxModelType] : (model as FluxModel);
 
       const apiUrl = getApiUrl('/unified-generate');
-      debugLog('[flux] POST', apiUrl);
+      debugApiRequest('flux', apiUrl);
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
@@ -97,6 +97,7 @@ export const useFluxImageGeneration = () => {
       if (!res.ok) {
         const errBody = await res.json().catch(() => null);
         const errorMessage = errBody?.error || `Request failed with ${res.status}`;
+        debugApiError('flux', errorMessage);
 
         if (res.status === 402) {
           throw new Error('Flux credits exceeded. Please add credits to continue.');
@@ -112,6 +113,8 @@ export const useFluxImageGeneration = () => {
       if (!payload?.dataUrl) {
         throw new Error('Flux did not return an image.');
       }
+
+      debugApiSuccess('flux', 'Image generated successfully');
 
       const generatedImage: FluxGeneratedImage = {
         url: payload.dataUrl,
@@ -131,9 +134,17 @@ export const useFluxImageGeneration = () => {
         error: null,
       }));
 
+      // Refresh user profile to get updated credits
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn('Failed to refresh user profile after generation:', error);
+      }
+
       return generatedImage;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      debugApiError('flux', error);
 
       setState(prev => ({
         ...prev,

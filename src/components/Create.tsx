@@ -15,13 +15,13 @@ import { usePromptHistory } from '../hooks/usePromptHistory';
 import { PromptHistoryChips } from './PromptHistoryChips';
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
-import { compressDataUrl } from "../lib/imageCompression";
-import { fetchGallery, createGalleryEntry, deleteGalleryEntry } from "../lib/galleryApi";
+import { fetchR2Files, deleteR2File } from "../lib/r2filesApi";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
+import { getApiUrl } from "../utils/api";
 import ModelMenuPortal from './ModelMenuPortal';
 
 // Accent types for AI models
@@ -101,17 +101,17 @@ const AI_MODELS = [
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: Edit, accent: "purple" as Accent, id: "flux-kontext-max" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
-  // Coming soon models (will show as disabled)
-  { name: "Gemini 2.5 Flash Image", desc: "Image analysis and editing (coming soon).", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview", comingSoon: true },
-  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram", comingSoon: true },
-  { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3", comingSoon: true },
-  { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2", comingSoon: true },
-  { name: "Luma Dream Shaper", desc: "High-quality text-to-image generation with artistic styles.", Icon: Sparkles, accent: "purple" as Accent, id: "luma-dream-shaper", comingSoon: true },
-  { name: "Luma Realistic Vision", desc: "Photorealistic image generation with advanced controls.", Icon: Camera, accent: "blue" as Accent, id: "luma-realistic-vision", comingSoon: true },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4", comingSoon: true },
-  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo", comingSoon: true },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0", comingSoon: true },
-  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image", comingSoon: true },
+  // Additional available models
+  { name: "Gemini 2.5 Flash Image", desc: "Image analysis and editing with multimodal capabilities.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
+  { name: "Recraft v3", desc: "Advanced image generation with text layout and brand controls.", Icon: Palette, accent: "lime" as Accent, id: "recraft-v3" },
+  { name: "Recraft v2", desc: "High-quality image generation and editing.", Icon: Palette, accent: "cyan" as Accent, id: "recraft-v2" },
+  { name: "Luma Dream Shaper", desc: "High-quality text-to-image generation with artistic styles.", Icon: Sparkles, accent: "purple" as Accent, id: "luma-dream-shaper" },
+  { name: "Luma Realistic Vision", desc: "Photorealistic image generation with advanced controls.", Icon: Camera, accent: "blue" as Accent, id: "luma-realistic-vision" },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
+  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as Accent, id: "runway-gen4-turbo" },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
+  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
 ];
 
 
@@ -558,7 +558,7 @@ const Create: React.FC = () => {
   
   // Check if current model is working (not coming soon)
   const currentModel = AI_MODELS.find(model => model.id === selectedModel);
-  const isComingSoon = currentModel?.comingSoon || false;
+  const isComingSoon = (currentModel as any)?.comingSoon || false;
   
   // Model type checks for backward compatibility
   const isFlux = selectedModel.startsWith("flux-");
@@ -956,26 +956,22 @@ const Create: React.FC = () => {
     if (!token || !user?.id) return;
     let cancelled = false;
 
-    const syncGalleryFromServer = async () => {
+    const syncR2FilesFromServer = async () => {
       try {
         const aggregated: GalleryImageLike[] = [];
         let cursor: string | undefined;
 
         while (!cancelled) {
-          const { items, nextCursor } = await fetchGallery(token, cursor, 50);
-          for (const entry of items) {
-            if (entry.status && entry.status !== 'ACTIVE') {
-              continue;
-            }
-            const metadata = entry.metadata ?? {};
+          const { items, nextCursor } = await fetchR2Files(token, cursor, 50);
+          for (const file of items) {
             aggregated.push({
-              url: entry.assetUrl,
-              prompt: typeof metadata.prompt === 'string' ? metadata.prompt : '',
-              model: typeof metadata.model === 'string' ? metadata.model : undefined,
-              timestamp: entry.createdAt ?? new Date().toISOString(),
+              url: file.fileUrl,
+              prompt: file.prompt || '',
+              model: file.model,
+              timestamp: file.createdAt,
               ownerId: user.id,
-              remoteId: entry.id,
-              isPublic: metadata.isPublic === true,
+              remoteId: file.id,
+              isPublic: false, // R2Files are private by default
             });
           }
 
@@ -987,11 +983,11 @@ const Create: React.FC = () => {
         setGallery(aggregated);
         await setPersistedValue(storagePrefix, 'gallery', toStorable(aggregated));
       } catch (error) {
-        debugError('Failed to sync gallery from server', error);
+        debugError('Failed to sync R2 files from server', error);
       }
     };
 
-    void syncGalleryFromServer();
+    void syncR2FilesFromServer();
     return () => {
       cancelled = true;
     };
@@ -1348,7 +1344,7 @@ const Create: React.FC = () => {
       if (token && remoteIdsToDelete.length > 0) {
         void Promise.all(
           remoteIdsToDelete.map(id => 
-            deleteGalleryEntry(token, id).catch(error => debugWarn('Failed to delete gallery entry on server', error))
+            deleteR2File(token, id).catch(error => debugWarn('Failed to delete gallery entry on server', error))
           ),
         );
       }
@@ -2373,9 +2369,15 @@ const Create: React.FC = () => {
       return;
     }
 
+    // Check if user has credits
+    if (user && user.credits < 1) {
+      alert('You have no credits remaining. Each generation costs 1 credit. Please purchase more credits to continue.');
+      return;
+    }
+
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only FLUX, ChatGPT Image, and Qwen Image models are available.');
+      alert('This model is coming soon! Please try one of the available models.');
       return;
     }
 
@@ -2475,12 +2477,63 @@ const Create: React.FC = () => {
         }
         img = qwenResult[0]; // Take the first generated image
       } else {
-        throw new Error('Unsupported model');
+        // Handle other models through the unified API
+        const apiUrl = getApiUrl('/unified-generate');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            prompt: trimmedPrompt,
+            model: modelForGeneration,
+            references: referencesForGeneration.length > 0 ? await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.readAsDataURL(f);
+            }))) : undefined,
+            imageBase64: imageData,
+            mimeType: "image/png",
+          }),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => null);
+          const errorMessage = errBody?.error || `Request failed with ${res.status}`;
+          
+          if (res.status === 403) {
+            throw new Error('Insufficient credits. Each generation costs 1 credit. Please purchase more credits to continue.');
+          }
+          if (res.status === 429) {
+            throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
+          }
+          throw new Error(errorMessage);
+        }
+
+        const payload = await res.json();
+        
+        if (!payload?.dataUrl && !payload?.imageBase64) {
+          throw new Error('No image data returned from API');
+        }
+
+        // Create a generic image object for the unified API response
+        const imageUrl = payload.dataUrl || `data:image/png;base64,${payload.imageBase64}`;
+        img = {
+          url: imageUrl,
+          prompt: trimmedPrompt,
+          model: modelForGeneration,
+          timestamp: new Date().toISOString(),
+          jobId: payload.jobId || `unified-${Date.now()}`,
+        };
       }
 
       // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
-        const compressedUrl = await compressDataUrl(img.url);
+        // Use the original image URL - no compression needed for R2
+        const compressedUrl = img.url;
         const timestamp = new Date().toISOString();
         
         const pickStringProp = (value: unknown, prop: string): string | undefined => {
@@ -2492,33 +2545,8 @@ const Create: React.FC = () => {
         const resolvedModel = pickStringProp(img, 'model') ?? fallbackModel;
         const resolvedJobId = pickStringProp(img, 'jobId');
         
-        // Check if compressed URL is too long for backend validation
-        let finalUrl = compressedUrl;
-        if (compressedUrl.length > 2048) {
-          debugWarn(`Compressed URL too long (${compressedUrl.length} chars), using more aggressive compression`);
-          // Try more aggressive compression with smaller dimensions and lower quality
-          finalUrl = await compressDataUrl(compressedUrl, 512, 0.5); // Much more aggressive compression
-          if (finalUrl.length > 2048) {
-            debugWarn(`Still too long after aggressive compression (${finalUrl.length} chars), using maximum compression`);
-            // Try maximum compression
-            finalUrl = await compressDataUrl(compressedUrl, 256, 0.3); // Maximum compression
-            if (finalUrl.length > 2048) {
-              debugWarn(`Still too long after maximum compression (${finalUrl.length} chars), skipping gallery persistence`);
-              // Still add to local gallery but don't persist to server
-              const galleryItem: GalleryImageLike = {
-                url: finalUrl,
-                prompt: trimmedPrompt,
-                model: resolvedModel,
-                timestamp,
-                ownerId: user?.id,
-                jobId: resolvedJobId,
-                isPublic: false,
-              };
-              setGallery(prev => [galleryItem, ...prev.filter(item => item.url !== compressedUrl)].slice(0, 50));
-              return;
-            }
-          }
-        }
+        // Use the compressed URL directly - no more complex validation
+        const finalUrl = compressedUrl;
 
         const galleryItem: GalleryImageLike = {
           url: finalUrl,
@@ -2530,65 +2558,14 @@ const Create: React.FC = () => {
           isPublic: false,
         };
 
-        let computedNext: GalleryImageLike[] = [];
+        // Add to local gallery only - no server persistence
         setGallery(currentGallery => {
-          debugLog('Adding new image to gallery. Current gallery size:', currentGallery.length);
-
-          const dedup = (list: GalleryImageLike[]) => {
-            const seen = new Set<string>();
-            const out: GalleryImageLike[] = [];
-            for (const it of list) {
-              if (it?.url && !seen.has(it.url)) {
-                seen.add(it.url);
-                out.push(it);
-              }
-            }
-            debugLog('Deduplication: input length', list.length, 'output length', out.length);
-            return out;
-          };
-
-          const newGallery = dedup([galleryItem, ...currentGallery]);
-          const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
-          debugLog('Final gallery size after dedup and slice:', next.length);
-
-          computedNext = next;
-          return next;
+          const newGallery = [galleryItem, ...currentGallery.filter(item => item.url !== compressedUrl)].slice(0, 20);
+          debugLog(`Gallery updated with ${newGallery.length} images`);
+          return newGallery;
         });
 
-        void (async () => {
-          const persisted = await persistGallery(computedNext);
-          if (persisted.length !== computedNext.length) {
-            debugWarn(`Gallery persistence mismatch: expected ${computedNext.length}, got ${persisted.length}`);
-          }
-          setTimeout(() => {
-            refreshStorageEstimate();
-          }, 100);
-        })();
-
-        if (token) {
-          const metadataPayload = {
-            prompt: trimmedPrompt,
-            model: resolvedModel,
-            isPublic: false,
-            createdAt: timestamp,
-          } as Record<string, unknown>;
-
-          void createGalleryEntry(token, { assetUrl: compressedUrl, metadata: metadataPayload })
-            .then(entry => {
-              setGallery(current => {
-                const updated = current.map(item =>
-                  item.url === galleryItem.url
-                    ? { ...item, remoteId: entry.id, timestamp: entry.createdAt ?? item.timestamp }
-                    : item,
-                );
-                void setPersistedValue(storagePrefix, 'gallery', toStorable(updated));
-                return updated;
-              });
-            })
-            .catch(error => {
-              debugError('Failed to persist gallery entry to server', error);
-            });
-        }
+        // No server persistence - images are only stored in R2
 
         addPrompt(trimmedPrompt);
       }
@@ -4344,17 +4321,29 @@ const Create: React.FC = () => {
                 className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
               />
             </div>
-            <div className="absolute right-4 bottom-4 flex items-center gap-2">
+            <div className="absolute right-4 bottom-4 flex flex-col items-end gap-2">
+              {/* Credit warning */}
+              {user && user.credits < 3 && (
+                <div className="text-xs text-d-orange/80 bg-d-orange/10 px-2 py-1 rounded">
+                  {user.credits === 0 
+                    ? "No credits remaining - purchase more to continue"
+                    : `${user.credits} credit${user.credits === 1 ? '' : 's'} remaining`
+                  }
+                </div>
+              )}
+              
               <Tooltip text={!prompt.trim()
                 ? "Enter your prompt to generate"
                 : !hasGenerationCapacity
                   ? `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`
                   : isComingSoon
                     ? "This model is coming soon!"
-                    : ""}>
+                    : user && user.credits < 1
+                      ? "Insufficient credits - each generation costs 1 credit"
+                      : ""}>
                 <button 
                   onClick={handleGenerateImage}
-                  disabled={!hasGenerationCapacity || !prompt.trim()}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || (user?.credits ?? 0) < 1}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {isButtonSpinning ? (
@@ -4594,14 +4583,14 @@ const Create: React.FC = () => {
                   >
                     {AI_MODELS.map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = model.comingSoon || false;
+                      const isComingSoon = (model as any).comingSoon || false;
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only FLUX, ChatGPT Image, and Qwen Image models are available.');
+                              alert('This model is coming soon! Please try one of the available models.');
                               return;
                             }
                             handleModelSelect(model.name);

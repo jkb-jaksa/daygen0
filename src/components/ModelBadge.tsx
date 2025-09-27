@@ -130,6 +130,24 @@ const MODEL_CONFIG = {
     shortName: 'LRV',
     icon: '📷',
     description: 'Luma Realistic Vision - Photorealistic image generation with advanced controls'
+  },
+  'reve-v1': {
+    name: 'Reve v1',
+    shortName: 'Reve',
+    icon: '✨',
+    description: 'Reve v1 - Great text-to-image and image editing'
+  },
+  'flux-1.1-pro': {
+    name: 'FLUX 1.1 Pro',
+    shortName: 'F1.1P',
+    icon: '⚡',
+    description: 'FLUX 1.1 Pro - High-quality text-to-image generation'
+  },
+  'flux-1.1-ultra': {
+    name: 'FLUX 1.1 Ultra',
+    shortName: 'F1.1U',
+    icon: '⚡',
+    description: 'FLUX 1.1 Ultra - Ultra-high quality generation'
   }
 } as const;
 
@@ -140,10 +158,10 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   className = '' 
 }) => {
   const config = MODEL_CONFIG[model as keyof typeof MODEL_CONFIG] || {
-    name: 'Unknown',
-    shortName: '?',
+    name: model || 'Unknown',
+    shortName: model?.split('-')[0]?.toUpperCase() || '?',
     icon: '❓',
-    description: 'Unknown Model'
+    description: model ? `Model: ${model}` : 'Unknown Model'
   };
 
   const sizeClasses = {

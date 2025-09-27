@@ -5,8 +5,8 @@ import { debugWarn } from '../utils/debug';
  */
 export const compressDataUrl = async (
   srcDataUrl: string,
-  maxWidth = 1024,
-  quality = 0.78
+  maxWidth = 4096, // Increased from 2048
+  quality = 0.9    // Increased from 0.85
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();

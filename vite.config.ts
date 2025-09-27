@@ -7,11 +7,9 @@ export default defineConfig({
   // Vite automatically exposes VITE_* environment variables
   // No need for manual define configuration
   define: {
-    // Set production API URL for Cloud Run backend
+    // Set API URL for both development and production to use Cloud Run backend
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(
-      process.env.NODE_ENV === 'production' 
-        ? 'https://daygen-backend-365299591811.europe-central2.run.app/api'
-        : undefined
+      'https://daygen-backend-365299591811.europe-central2.run.app/api'
     ),
   },
   server: {

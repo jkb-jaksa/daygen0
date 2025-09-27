@@ -24,13 +24,13 @@ const AI_MODELS = [
   { name: "FLUX Kontext Max", desc: "Highest quality image editing.", Icon: EditIcon, accent: "purple" as const, id: "flux-kontext-max" },
   { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as const, id: "chatgpt-image" },
   { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as const, id: "qwen-image" },
-  // Coming soon models
-  { name: "Gemini 2.5 Flash Image", desc: "Image analysis and editing (coming soon).", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview", comingSoon: true },
-  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram", comingSoon: true },
-  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image", comingSoon: true },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4", comingSoon: true },
-  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as const, id: "runway-gen4-turbo", comingSoon: true },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0", comingSoon: true },
+  // Additional available models
+  { name: "Gemini 2.5 Flash Image", desc: "Image analysis and editing with multimodal capabilities.", Icon: Sparkles, accent: "yellow" as const, id: "gemini-2.5-flash-image-preview" },
+  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as const, id: "ideogram" },
+  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as const, id: "reve-image" },
+  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as const, id: "runway-gen4" },
+  { name: "Runway Gen-4 Turbo", desc: "Fast Runway generation with reference images", Icon: Film, accent: "indigo" as const, id: "runway-gen4-turbo" },
+  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as const, id: "seedream-3.0" },
 ];
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -1396,14 +1396,14 @@ export default function Edit() {
               >
                 {AI_MODELS.map((model) => {
                   const isSelected = selectedModel === model.id;
-                  const isComingSoon = model.comingSoon || false;
+                  const isComingSoon = (model as any).comingSoon || false;
                   
                   return (
                     <button
                       key={model.name}
                       onClick={() => {
                         if (isComingSoon) {
-                          alert('This model is coming soon! Currently only FLUX, ChatGPT Image, and Qwen Image models are available.');
+                          alert('This model is coming soon! Please try one of the available models.');
                           return;
                         }
                         setSelectedModel(model.id);

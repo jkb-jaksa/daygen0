@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugLog } from '../utils/debug';
+import { debugApiRequest, debugApiSuccess } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 
 export interface GeneratedImage {
@@ -34,7 +34,7 @@ export const useGeminiImageGeneration = () => {
     error: null,
     generatedImage: null,
   });
-  const { token } = useAuth();
+  const { token, refreshProfile } = useAuth();
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     setState(prev => ({
@@ -49,7 +49,7 @@ export const useGeminiImageGeneration = () => {
       // Use the new API endpoint structure
       const apiUrl = getApiUrl('/unified-generate');
 
-      debugLog('[image] POST', apiUrl);
+      debugApiRequest('gemini', apiUrl);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -76,6 +76,9 @@ export const useGeminiImageGeneration = () => {
         const errBody = await res.json().catch(() => null);
         const errorMessage = errBody?.error || `Request failed with ${res.status}`;
         
+        if (res.status === 403) {
+          throw new Error('Insufficient credits. Each generation costs 1 credit. Please purchase more credits to continue.');
+        }
         if (res.status === 429) {
           throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
         }
@@ -88,9 +91,14 @@ export const useGeminiImageGeneration = () => {
         throw new Error('No image data returned from API');
       }
 
+      // Always try to upload to R2 first, fallback to base64 if it fails
+      // Always use data URL - backend will handle R2 upload
+      const imageUrl = `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`;
+      debugApiSuccess('gemini', 'Image generated successfully');
+
       // Convert the new API response format to our expected format
       const generatedImage: GeneratedImage = {
-        url: `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`,
+        url: imageUrl,
         prompt,
         model: model || 'gemini-2.5-flash-image-preview',
         timestamp: new Date().toISOString(),
@@ -103,6 +111,13 @@ export const useGeminiImageGeneration = () => {
         generatedImage,
         error: null,
       }));
+
+      // Refresh user profile to get updated credits
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn('Failed to refresh user profile after generation:', error);
+      }
 
       return generatedImage;
     } catch (error) {

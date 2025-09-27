@@ -6,7 +6,7 @@ import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb, setPersistedValue } from "../lib/clientStorage";
 import { buttons, glass } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
-import { fetchGallery } from "../lib/galleryApi";
+import { fetchR2Files } from "../lib/r2filesApi";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string; remoteId?: string; isPublic?: boolean };
 
@@ -61,17 +61,16 @@ export default function Account() {
         let cursor: string | undefined;
 
         while (!cancelled) {
-          const { items, nextCursor } = await fetchGallery(token, cursor, 50);
-          for (const entry of items) {
-            const metadata = entry.metadata ?? {};
+          const { items, nextCursor } = await fetchR2Files(token, cursor, 50);
+          for (const file of items) {
             aggregated.push({
-              url: entry.assetUrl,
-              prompt: typeof metadata.prompt === 'string' ? metadata.prompt : '',
-              model: typeof metadata.model === 'string' ? metadata.model : 'unknown',
-              timestamp: entry.createdAt ?? new Date().toISOString(),
+              url: file.fileUrl,
+              prompt: file.prompt || '',
+              model: file.model || 'unknown',
+              timestamp: file.createdAt,
               ownerId: user.id,
-              remoteId: entry.id,
-              isPublic: metadata.isPublic === true,
+              remoteId: file.id,
+              isPublic: false, // R2Files are private by default
             });
           }
 

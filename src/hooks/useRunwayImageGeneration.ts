@@ -33,7 +33,7 @@ export const useRunwayImageGeneration = () => {
     error: null,
     generatedImage: null,
   });
-  const { token } = useAuth();
+  const { token, refreshProfile } = useAuth();
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     setState(prev => ({
@@ -70,6 +70,9 @@ export const useRunwayImageGeneration = () => {
         const errBody = await res.json().catch(() => null);
         const errorMessage = errBody?.error || `Request failed with ${res.status}`;
         
+        if (res.status === 403) {
+          throw new Error('Insufficient credits. Each generation costs 1 credit. Please purchase more credits to continue.');
+        }
         if (res.status === 422) {
           // Handle Runway task failure specifically
           const details = errBody?.details;
@@ -105,6 +108,13 @@ export const useRunwayImageGeneration = () => {
         generatedImage,
         error: null,
       }));
+
+      // Refresh user profile to get updated credits
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn('Failed to refresh user profile after generation:', error);
+      }
 
       return generatedImage;
     } catch (error) {
