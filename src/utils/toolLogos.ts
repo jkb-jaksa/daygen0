@@ -28,7 +28,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   },
   {
     logo: '/reve logo.jpg',
-    names: ['Reve'],
+    names: ['Reve', 'Reve Image'],
   },
   {
     logo: '/midjourney logo.png',

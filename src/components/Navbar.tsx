@@ -220,8 +220,20 @@ export default function Navbar() {
                   className={({ isActive }) =>
                     `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
                   }
-                  onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && setActiveMenu(item.label)}
-                  onFocus={() => item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && setActiveMenu(item.label)}
+                  onMouseEnter={() => {
+                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit") {
+                      setActiveMenu(item.label);
+                    } else {
+                      setActiveMenu(null);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit") {
+                      setActiveMenu(item.label);
+                    } else {
+                      setActiveMenu(null);
+                    }
+                  }}
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
