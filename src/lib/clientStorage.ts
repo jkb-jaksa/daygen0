@@ -10,7 +10,8 @@ type StorageKey =
   | 'uploads'
   | 'folders'
   | 'editGallery'
-  | 'inspirations';
+  | 'inspirations'
+  | 'avatars';
 
 type PersistedValue = unknown;
 

@@ -25,6 +25,7 @@ const Navbar = lazy(() => import("./components/Navbar"));
 const FAQSection = lazy(() => import("./components/Faq"));
 const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
+const Avatars = lazy(() => import("./components/Avatars"));
 
 function NavbarFallback() {
   return (
@@ -203,21 +204,29 @@ export default function App() {
                   </RequireAuth>
                 )}
               />
-            <Route path="/gallery/*" element={<GalleryRoutes />} />
-            <Route path="/upgrade" element={<Upgrade />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route
-              path="/edit"
-              element={(
-                <RequireAuth>
-                  <Edit />
-                </RequireAuth>
-              )}
-            />
-            <Route path="/account" element={<Account />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+              <Route path="/gallery/*" element={<GalleryRoutes />} />
+              <Route path="/upgrade" element={<Upgrade />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route
+                path="/avatars"
+                element={(
+                  <RequireAuth>
+                    <Avatars />
+                  </RequireAuth>
+                )}
+              />
+              <Route
+                path="/edit"
+                element={(
+                  <RequireAuth>
+                    <Edit />
+                  </RequireAuth>
+                )}
+              />
+              <Route path="/account" element={<Account />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </main>
         {isFooterVisible && (
           <Suspense fallback={null}>

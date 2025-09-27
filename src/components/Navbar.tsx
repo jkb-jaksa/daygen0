@@ -12,12 +12,13 @@ import { buttons, glass, iconButtons } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeNext } from "../utils/navigation";
 
-type MenuId = "create" | "edit" | "explore" | "learn" | "my works";
+type MenuId = "create" | "edit" | "avatars" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 
 const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
   { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
+  { label: "avatars", path: "/avatars" },
   { label: "learn", path: "/learn/use-cases" },
   { label: "explore", path: "/explore" },
   { label: "my works", path: "/gallery" },

@@ -2274,6 +2274,17 @@ const Create: React.FC = () => {
     }
   };
 
+  const handleCreateAvatarFromMenu = (image: GalleryImageLike) => {
+    closeImageActionMenu();
+    navigate('/avatars', {
+      state: {
+        openAvatarCreator: true,
+        selectedImageUrl: image.url,
+        suggestedName: image.prompt,
+      },
+    });
+  };
+
   const toggleImageActionMenu = (id: string, anchor: HTMLElement, image: GalleryImageLike) => {
     setImageActionMenu(prev => {
       if (prev?.id === id) {
@@ -2394,6 +2405,17 @@ const Create: React.FC = () => {
           >
             <Edit className="h-4 w-4" />
             Edit image
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleCreateAvatarFromMenu(image);
+            }}
+          >
+            <Users className="h-4 w-4" />
+            Create avatar
           </button>
           <button
             type="button"
