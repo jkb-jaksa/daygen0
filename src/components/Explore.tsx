@@ -695,9 +695,11 @@ const Explore: React.FC = () => {
   const [galleryFilters, setGalleryFilters] = useState<{
     models: string[];
     type: 'all' | 'image' | 'video';
+    tags: string[];
   }>({
     models: [],
     type: 'all',
+    tags: [],
   });
 
   const navigate = useNavigate();
@@ -1246,6 +1248,12 @@ const Explore: React.FC = () => {
   };
 
   // Helper functions for filters
+  const getAllUniqueTags = () => {
+    const allTags = galleryItems.flatMap(item => item.tags);
+    const uniqueTags = Array.from(new Set(allTags)).sort();
+    return uniqueTags;
+  };
+
   const getAvailableModels = () => {
     if (galleryFilters.type === 'video') {
       // Return video models
@@ -1299,6 +1307,16 @@ const Explore: React.FC = () => {
           return false;
         }
         if (galleryFilters.type === 'video' && !isVideo) {
+          return false;
+        }
+      }
+      
+      // Tag filter
+      if (galleryFilters.tags.length > 0) {
+        const hasMatchingTag = galleryFilters.tags.some(selectedTag => 
+          item.tags.includes(selectedTag)
+        );
+        if (!hasMatchingTag) {
           return false;
         }
       }
@@ -1398,6 +1416,42 @@ const Explore: React.FC = () => {
                 Get inspired by featured works from our community members, save your favorites, and recreate stand-out prompts across the best AI models.
               </p>
             </header>
+
+            {/* Tag Filter Bar */}
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2">
+                {getAllUniqueTags().map((tag) => {
+                  const isSelected = galleryFilters.tags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setGalleryFilters(prev => ({
+                            ...prev,
+                            tags: prev.tags.filter(t => t !== tag)
+                          }));
+                        } else {
+                          setGalleryFilters(prev => ({
+                            ...prev,
+                            tags: [...prev.tags, tag]
+                          }));
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${
+                        isSelected
+                          ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
+                          : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Filters Section */}
             <div className={`mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
               <div className="flex items-center justify-between mb-2">
@@ -1410,6 +1464,7 @@ const Explore: React.FC = () => {
                     setGalleryFilters({
                       models: [],
                       type: "all",
+                      tags: [],
                     })
                   }
                   className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
