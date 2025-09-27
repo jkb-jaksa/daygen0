@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen } from "lucide-react";
+import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen, Music } from "lucide-react";
 import { layout, glass, text as textStyles } from "../styles/designSystem";
 import { getToolLogo } from "../utils/toolLogos";
 import { getLearnToolByName, slugifyLearnTool } from "../data/learnTools";
@@ -11,6 +11,7 @@ const CATEGORIES = [
   { id: "video", label: "video", Icon: VideoIcon },
   { id: "avatars", label: "avatars", Icon: Users },
   { id: "3d", label: "3d", Icon: Box },
+  { id: "audio", label: "audio", Icon: Music },
 ] as const;
 
 type CategoryId = (typeof CATEGORIES)[number]["id"];
@@ -73,6 +74,7 @@ const CATEGORY_TOOLS: Record<CategoryId, readonly ToolResource[]> = {
   video: VIDEO_TOOLS,
   avatars: [],
   "3d": [],
+  audio: [],
 };
 
 function ToolCard({ tool }: { tool: ToolResource }) {
@@ -155,13 +157,27 @@ export default function KnowledgeBase() {
             <div className="flex-1">
               <div className={`${glass.surface} rounded-3xl border-d-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                 <h2 className={`text-2xl font-raleway font-light text-d-text ${activeCategory === "image" ? "" : "capitalize"}`}>
-                   {activeCategory === "image" ? "Image generation" : `${activeCategory === "3d" ? "3D" : activeCategory} resources`}
+                 <h2 className="text-2xl font-raleway font-light text-d-text">
+                   {activeCategory === "image" 
+                     ? "Image generation" 
+                     : activeCategory === "3d" 
+                       ? "3D generation"
+                       : activeCategory === "text"
+                         ? "Text generation"
+                         : activeCategory === "video"
+                           ? "Video generation"
+                           : activeCategory === "avatars"
+                             ? "Avatars generation"
+                             : activeCategory === "audio"
+                               ? "Audio generation"
+                               : `${activeCategory} generation`}
                  </h2>
                 <p className="mt-2 text-sm font-raleway text-d-white">
                   {hasContent
                     ? "Here are the tools you can use with DayGen."
-                    : "We're actively expanding this section. Check back soon for detailed guides."}
+                    : (activeCategory === "text" || activeCategory === "avatars" || activeCategory === "3d" || activeCategory === "audio")
+                      ? "Coming soon."
+                      : "We're actively expanding this section. Check back soon for detailed guides."}
                 </p>
                 {hasContent ? (
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -169,26 +185,38 @@ export default function KnowledgeBase() {
                       <ToolCard key={tool.name} tool={tool} />
                     ))}
                   </div>
-                ) : (
+                ) : !(activeCategory === "text" || activeCategory === "avatars" || activeCategory === "3d" || activeCategory === "audio") ? (
                   <div className="mt-8 flex flex-col gap-4 text-sm font-raleway text-d-white/70">
                     <p>
                       No resources are available for this category yet. Let us know what you'd like to see in the daygen community!
                     </p>
                   </div>
+                ) : null}
+
+                {/* Other tools subsection - only show for image category */}
+                {activeCategory === "image" && (
+                  <div className="mt-12">
+                    <h3 className="text-2xl font-raleway font-light text-d-text">Other tools</h3>
+                    <p className="mt-2 text-sm font-raleway text-d-white">
+                      Here are other great tools to improve your DayGen workflows.
+                    </p>
+                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {OTHER_TOOLS.map((tool) => (
+                        <ToolCard key={tool.name} tool={tool} />
+                      ))}
+                    </div>
+                  </div>
                 )}
 
-                {/* Other tools subsection */}
-                <div className="mt-12">
-                  <h3 className="text-2xl font-raleway font-light text-d-text">Other tools</h3>
-                  <p className="mt-2 text-sm font-raleway text-d-white">
-                    Here are other great tools to improve your DayGen workflows.
-                  </p>
-                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {OTHER_TOOLS.map((tool) => (
-                      <ToolCard key={tool.name} tool={tool} />
-                    ))}
+                {/* Coming soon for video category */}
+                {activeCategory === "video" && (
+                  <div className="mt-12">
+                    <h3 className="text-2xl font-raleway font-light text-d-text">Other tools</h3>
+                    <p className="mt-2 text-sm font-raleway text-d-white">
+                      Coming soon
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
