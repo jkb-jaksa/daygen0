@@ -49,7 +49,7 @@ export const glass = {
   tight: `${glassBase} rounded-lg`,
   prompt: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-d-dark bg-d-mid/85`,
   promptBorderless: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] bg-d-mid/85`,
-  promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-dark bg-d-black/60`,
+  promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[40px] border border-d-dark bg-d-black/70`,
 };
 
 const iconButtonFocus =

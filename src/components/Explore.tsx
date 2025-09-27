@@ -304,8 +304,9 @@ const ImageActionMenuPortal: React.FC<{
         // Reduce margin to bring dropdown closer to button (no whitespace)
         top = Math.max(2, anchorRect.top - actualHeight - 2);
       } else {
-        // Position below the button for other menus
-        top = anchorRect.bottom + margin;
+        // Position below the button for other menus (full-size view)
+        // Reduce margin to bring dropdown closer to button
+        top = anchorRect.bottom + 2;
       }
       
       const availableLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
@@ -1124,7 +1125,6 @@ const Explore: React.FC = () => {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
-                const isRecreateMenuOpen = recreateActionMenu?.id === item.id;
                 return (
                   <article
                     key={item.id}
@@ -1333,7 +1333,7 @@ const Explore: React.FC = () => {
                           type="button"
                           className={`${buttons.glassPromptDark} w-full justify-center py-3 ${glass.promptDark}`}
                           aria-haspopup="menu"
-                          aria-expanded={isRecreateMenuOpen}
+                          aria-expanded={recreateActionMenu?.id === item.id}
                           onClick={(event) => {
                             event.stopPropagation();
                             toggleRecreateActionMenu(item.id, event.currentTarget, item);
@@ -1343,8 +1343,8 @@ const Explore: React.FC = () => {
                           <span>Recreate</span>
                         </button>
                         <ImageActionMenuPortal
-                          anchorEl={isRecreateMenuOpen ? recreateActionMenu?.anchor ?? null : null}
-                          open={isRecreateMenuOpen}
+                          anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
+                          open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
                           onClose={closeRecreateActionMenu}
                           isRecreateMenu={true}
                         >
@@ -1386,6 +1386,7 @@ const Explore: React.FC = () => {
                           </button>
                         </ImageActionMenuPortal>
                       </div>
+
                     </div>
                   </div>
                   </article>
@@ -1527,83 +1528,150 @@ const Explore: React.FC = () => {
               />
               
               {/* Action buttons */}
-              <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-2 px-4 pt-4 pointer-events-none">
-                <div
-                  className={`flex items-center gap-1 transition-opacity duration-100 ${
-                    moreActionMenu?.id === selectedFullImage.id
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                  }`}
-                >
+              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
+                {/* Left side - Recreate button */}
+                <div className="relative">
                   <button
                     type="button"
+                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${
+                      recreateActionMenu?.id === selectedFullImage.id
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                    }`}
+                    aria-haspopup="menu"
+                    aria-expanded={recreateActionMenu?.id === selectedFullImage.id}
                     onClick={(event) => {
                       event.stopPropagation();
-                      toggleFavorite(selectedFullImage.imageUrl);
+                      toggleRecreateActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                     }}
-                    className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                    aria-label={favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                   >
-                    <Heart
-                      className={`w-3.5 h-3.5 transition-colors duration-100 ${
-                        favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                      }`}
-                      aria-hidden="true"
-                    />
-                    {getDisplayLikes(selectedFullImage)}
+                    <Edit className="w-4 h-4" />
+                    <span className="text-sm font-medium">Recreate</span>
                   </button>
-                  <div className="relative">
+                  <ImageActionMenuPortal
+                    anchorEl={recreateActionMenu?.id === selectedFullImage.id ? recreateActionMenu?.anchor ?? null : null}
+                    open={recreateActionMenu?.id === selectedFullImage.id}
+                    onClose={closeRecreateActionMenu}
+                    isRecreateMenu={false}
+                  >
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleRecreateEdit(selectedFullImage);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit image
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleRecreateUseAsReference(selectedFullImage);
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Use as reference
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleRecreateRunPrompt(selectedFullImage);
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Run the same prompt
+                    </button>
+                  </ImageActionMenuPortal>
+                </div>
+
+                {/* Right side - Heart, More, and Close buttons */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`flex items-center gap-1 transition-opacity duration-100 ${
+                      moreActionMenu?.id === selectedFullImage.id
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                    }`}
+                  >
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
+                        toggleFavorite(selectedFullImage.imageUrl);
                       }}
-                      className="image-action-btn parallax-large"
-                      aria-label="More options"
+                      className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
+                      aria-label={favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                     >
-                      <MoreHorizontal className="size-4" aria-hidden="true" />
+                      <Heart
+                        className={`w-3.5 h-3.5 transition-colors duration-100 ${
+                          favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {getDisplayLikes(selectedFullImage)}
                     </button>
-                    <ImageActionMenuPortal
-                      anchorEl={moreActionMenu?.id === selectedFullImage.id ? moreActionMenu?.anchor ?? null : null}
-                      open={moreActionMenu?.id === selectedFullImage.id}
-                      onClose={closeMoreActionMenu}
-                      isRecreateMenu={false}
-                    >
+                    <div className="relative">
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-                        onClick={async (event) => {
-                          event.stopPropagation();
-                          await copyImageLink(selectedFullImage);
-                        }}
-                      >
-                        <Share2 className="h-4 w-4" />
-                        Copy link
-                      </button>
-                      <a
-                        href={selectedFullImage.imageUrl}
-                        download
-                        className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
                         onClick={(event) => {
                           event.stopPropagation();
-                          closeMoreActionMenu();
+                          toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                         }}
+                        className="image-action-btn parallax-large"
+                        aria-label="More options"
                       >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </a>
-                    </ImageActionMenuPortal>
+                        <MoreHorizontal className="size-4" aria-hidden="true" />
+                      </button>
+                      <ImageActionMenuPortal
+                        anchorEl={moreActionMenu?.id === selectedFullImage.id ? moreActionMenu?.anchor ?? null : null}
+                        open={moreActionMenu?.id === selectedFullImage.id}
+                        onClose={closeMoreActionMenu}
+                        isRecreateMenu={false}
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                          onClick={async (event) => {
+                            event.stopPropagation();
+                            await copyImageLink(selectedFullImage);
+                          }}
+                        >
+                          <Share2 className="h-4 w-4" />
+                          Copy link
+                        </button>
+                        <a
+                          href={selectedFullImage.imageUrl}
+                          download
+                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            closeMoreActionMenu();
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </a>
+                      </ImageActionMenuPortal>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={closeFullSizeView}
+                    className="image-action-btn parallax-large pointer-events-auto"
+                    aria-label="Close"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={closeFullSizeView}
-                  className="image-action-btn parallax-large pointer-events-auto"
-                  aria-label="Close"
-                >
-                  <X className="size-4" aria-hidden="true" />
-                </button>
               </div>
 
               {/* Image info overlay */}
