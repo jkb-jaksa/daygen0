@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -6126,10 +6126,17 @@ const handleGenerate = async () => {
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
+                            <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${
                               isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               {model.name}
+                              <HelpCircle 
+                                className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity duration-200 cursor-pointer" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate('/knowledge-base');
+                                }}
+                              />
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                               isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-d-text'

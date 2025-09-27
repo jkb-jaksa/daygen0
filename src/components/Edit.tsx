@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes, HelpCircle } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
@@ -177,6 +177,7 @@ const ModelMenuPortal: React.FC<{
 // Main Component
 export default function Edit() {
   const location = useLocation();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -1536,10 +1537,17 @@ export default function Edit() {
                         }`} />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
+                        <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${
                           isSelected ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                         }`}>
                           {model.name}
+                          <HelpCircle 
+                            className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity duration-200 cursor-pointer" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate('/knowledge-base');
+                            }}
+                          />
                         </div>
                         <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
                           isSelected ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
