@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Upload, Users, X } from "lucide-react";
+import {
+  Upload,
+  Users,
+  X,
+  Pencil,
+  Trash2,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Check,
+} from "lucide-react";
 import { layout, text, buttons, inputs, glass } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
@@ -52,6 +61,9 @@ export default function Avatars() {
     sourceId?: string;
   } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -169,6 +181,63 @@ export default function Avatars() {
     setUploadError(null);
   }, []);
 
+  const startRenaming = useCallback((avatar: StoredAvatar) => {
+    setEditingAvatarId(avatar.id);
+    setEditingName(avatar.name);
+  }, []);
+
+  const cancelRenaming = useCallback(() => {
+    setEditingAvatarId(null);
+    setEditingName("");
+  }, []);
+
+  const submitRename = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!editingAvatarId) return;
+      const trimmed = editingName.trim();
+      if (!trimmed) return;
+
+      setAvatars(prev => {
+        const updated = prev.map(record =>
+          record.id === editingAvatarId ? { ...record, name: trimmed } : record,
+        );
+        void persistAvatars(updated);
+        return updated;
+      });
+
+      setEditingAvatarId(null);
+      setEditingName("");
+    },
+    [editingAvatarId, editingName, persistAvatars],
+  );
+
+  const confirmDelete = useCallback(() => {
+    if (!avatarToDelete) return;
+    setAvatars(prev => {
+      const updated = prev.filter(record => record.id !== avatarToDelete.id);
+      void persistAvatars(updated);
+      return updated;
+    });
+    if (editingAvatarId === avatarToDelete.id) {
+      setEditingAvatarId(null);
+      setEditingName("");
+    }
+    setAvatarToDelete(null);
+  }, [avatarToDelete, editingAvatarId, persistAvatars]);
+
+  const handleNavigateToCreate = useCallback(
+    (avatar: StoredAvatar) => {
+      navigate("/create/image", {
+        state: {
+          avatarId: avatar.id,
+          focusPromptBar: true,
+        },
+      });
+    },
+    [navigate],
+  );
+
   const hasGalleryImages = galleryImages.length > 0;
   const disableSave = !selection || !avatarName.trim();
   const subtitle = useMemo(() => defaultSubtitle, []);
@@ -214,6 +283,31 @@ export default function Avatars() {
                     className="group overflow-hidden rounded-[28px] border border-d-dark bg-d-black/70 shadow-lg transition-colors duration-200"
                   >
                     <div className="relative aspect-square overflow-hidden">
+                      <div className="absolute left-4 top-4 z-10 flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateToCreate(avatar)}
+                          className={`${buttons.glassPromptDarkCompact} bg-d-black/70 hover:bg-d-text/20`}
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Create image</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`${buttons.glassPromptDarkCompact} bg-d-black/70 hover:bg-d-text/20`}
+                        >
+                          <VideoIcon className="h-4 w-4" />
+                          <span>Make video</span>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        className="absolute right-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/70 px-3 py-1 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-red-400 hover:text-red-300"
+                        onClick={() => setAvatarToDelete(avatar)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete avatar
+                      </button>
                       <img
                         src={avatar.imageUrl}
                         alt={avatar.name}
@@ -222,7 +316,54 @@ export default function Avatars() {
                       />
                     </div>
                     <div className="px-6 py-5">
-                      <p className="text-lg font-raleway text-d-white">{avatar.name}</p>
+                      {editingAvatarId === avatar.id ? (
+                        <form
+                          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+                          onSubmit={submitRename}
+                        >
+                          <input
+                            className={inputs.compact}
+                            value={editingName}
+                            onChange={event => setEditingName(event.target.value)}
+                            onKeyDown={event => {
+                              if (event.key === "Escape") {
+                                event.preventDefault();
+                                cancelRenaming();
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="submit"
+                              className={`${buttons.glassPromptDarkCompact} bg-d-black/60 hover:bg-d-text/20`}
+                            >
+                              <Check className="h-4 w-4" />
+                              <span>Save</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`${buttons.glassPromptDarkCompact} bg-d-black/60 hover:bg-d-text/20`}
+                              onClick={cancelRenaming}
+                            >
+                              <X className="h-4 w-4" />
+                              <span>Cancel</span>
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-lg font-raleway text-d-white">{avatar.name}</p>
+                          <button
+                            type="button"
+                            className={`${buttons.glassPromptDarkCompact} bg-d-black/60 hover:bg-d-text/20`}
+                            onClick={() => startRenaming(avatar)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span>Rename</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -361,6 +502,44 @@ export default function Avatars() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {avatarToDelete && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+          <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-d-dark bg-d-black/90 p-8 shadow-2xl">
+            <button
+              type="button"
+              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+              onClick={() => setAvatarToDelete(null)}
+              aria-label="Close delete avatar dialog"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="space-y-4">
+              <h3 className="text-2xl font-raleway text-d-white">Delete avatar</h3>
+              <p className="text-sm font-raleway text-d-white/70">
+                Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
+              </p>
+            </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                className={`${buttons.glassPromptDark} bg-d-black/60 hover:bg-d-text/20`}
+                onClick={() => setAvatarToDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-red-500/60 bg-red-500/10 px-5 py-2 text-sm font-raleway font-medium text-red-200 transition-colors duration-200 hover:border-red-400 hover:text-red-100"
+                onClick={confirmDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete avatar
+              </button>
             </div>
           </div>
         </div>

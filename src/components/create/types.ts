@@ -85,6 +85,7 @@ export type CreateNavigationState = {
   promptToPrefill?: string;
   selectedModel?: string;
   focusPromptBar?: boolean;
+  avatarId?: string;
 };
 
 export type GalleryFilters = {

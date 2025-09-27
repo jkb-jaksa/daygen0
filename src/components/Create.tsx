@@ -60,6 +60,7 @@ import type {
   FolderThumbnailConfirmState,
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
+import type { StoredAvatar } from "./Avatars";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -137,6 +138,9 @@ const AI_MODELS = [
   { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan" as Accent, id: "luma-photon-flash-1" },
   { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, accent: "cyan" as Accent, id: "luma-ray-2" },
 ];
+
+const DEFAULT_REFERENCE_LIMIT = 3;
+const MAX_REFERENCES_WITH_AVATAR = 2;
 
 // Portal component for model menu to avoid clipping by parent containers
 const ModelMenuPortal: React.FC<{
@@ -381,11 +385,18 @@ const Create: React.FC = () => {
   const refsInputRef = useRef<HTMLInputElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
   const settingsRef = useRef<HTMLButtonElement | null>(null);
+  const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
+  const avatarPickerRef = useRef<HTMLDivElement | null>(null);
   const persistentStorageRequested = useRef(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
+  const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
+  const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
@@ -1334,6 +1345,95 @@ const Create: React.FC = () => {
   }, [gallery.length]); // Only depend on gallery length, not the entire gallery array
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadAvatars = async () => {
+      if (!storagePrefix) {
+        if (isMounted) {
+          setStoredAvatars([]);
+          setSelectedAvatar(null);
+          setPendingAvatarId(null);
+        }
+        return;
+      }
+
+      try {
+        const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars");
+        if (!isMounted) return;
+        setStoredAvatars(stored ?? []);
+      } catch (error) {
+        debugError("Failed to load stored avatars", error);
+        if (isMounted) {
+          setStoredAvatars([]);
+        }
+      }
+    };
+
+    void loadAvatars();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storagePrefix]);
+
+  useEffect(() => {
+    if (!pendingAvatarId) return;
+    const match = storedAvatars.find(avatar => avatar.id === pendingAvatarId);
+    if (match) {
+      setSelectedAvatar(match);
+      setPendingAvatarId(null);
+    } else if (storedAvatars.length > 0) {
+      setPendingAvatarId(null);
+    }
+  }, [pendingAvatarId, storedAvatars]);
+
+  useEffect(() => {
+    if (!selectedAvatar) return;
+    const match = storedAvatars.find(avatar => avatar.id === selectedAvatar.id);
+    if (!match) {
+      setSelectedAvatar(null);
+      return;
+    }
+    if (match !== selectedAvatar) {
+      setSelectedAvatar(match);
+    }
+  }, [selectedAvatar, storedAvatars]);
+
+  useEffect(() => {
+    if (activeCategory !== "image" && isAvatarPickerOpen) {
+      setIsAvatarPickerOpen(false);
+    }
+  }, [activeCategory, isAvatarPickerOpen]);
+
+  useEffect(() => {
+    if (!isAvatarPickerOpen) return;
+
+    const handleClick = (event: MouseEvent) => {
+      if (
+        avatarPickerRef.current &&
+        !avatarPickerRef.current.contains(event.target as Node) &&
+        !avatarButtonRef.current?.contains(event.target as Node)
+      ) {
+        setIsAvatarPickerOpen(false);
+      }
+    };
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAvatarPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeydown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeydown);
+    };
+  }, [isAvatarPickerOpen]);
+
+  useEffect(() => {
     if (gallery.length < 10 || persistentStorageRequested.current) return;
     persistentStorageRequested.current = true;
 
@@ -2155,6 +2255,7 @@ const Create: React.FC = () => {
         promptToPrefill,
         selectedModel: modelFromState,
         focusPromptBar: shouldFocus,
+        avatarId,
       } = locationState;
 
       if (modelFromState) {
@@ -2185,6 +2286,10 @@ const Create: React.FC = () => {
 
       if (referenceImageUrl || promptToPrefill || shouldFocus) {
         promptTextareaRef.current?.focus();
+      }
+
+      if (avatarId) {
+        setPendingAvatarId(avatarId);
       }
 
       navigate(location.pathname, { replace: true, state: null });
@@ -2887,22 +2992,55 @@ const Create: React.FC = () => {
     }
   };
 
+  const handleAddReferenceFiles = useCallback(
+    (files: File[]) => {
+      const imageFiles = files.filter(file => file.type.startsWith('image/'));
+      if (imageFiles.length === 0) return;
+
+      const combined = [...referenceFiles, ...imageFiles].slice(0, referenceLimit);
+      referencePreviews.forEach(url => URL.revokeObjectURL(url));
+      setReferenceFiles(combined);
+      const previewUrls = combined.map(file => URL.createObjectURL(file));
+      setReferencePreviews(previewUrls);
+
+      const newUploads = imageFiles.map(file => ({
+        id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        file: file,
+        previewUrl: URL.createObjectURL(file),
+        uploadDate: new Date()
+      }));
+      void persistUploadedImages([...uploadedImages, ...newUploads]);
+    },
+    [referenceFiles, referencePreviews, referenceLimit, uploadedImages, persistUploadedImages],
+  );
+
+  const handleAvatarSelect = useCallback(
+    (avatar: StoredAvatar) => {
+      setPendingAvatarId(null);
+      setSelectedAvatar(avatar);
+      setIsAvatarPickerOpen(false);
+      if (referenceFiles.length > MAX_REFERENCES_WITH_AVATAR) {
+        const trimmedFiles = referenceFiles.slice(0, MAX_REFERENCES_WITH_AVATAR);
+        const trimmedPreviews = referencePreviews.slice(0, MAX_REFERENCES_WITH_AVATAR);
+        referencePreviews.slice(MAX_REFERENCES_WITH_AVATAR).forEach(url => URL.revokeObjectURL(url));
+        setReferenceFiles(trimmedFiles);
+        setReferencePreviews(trimmedPreviews);
+      }
+    },
+    [referenceFiles, referencePreviews],
+  );
+
+  const clearSelectedAvatar = useCallback(() => {
+    setSelectedAvatar(null);
+    setPendingAvatarId(null);
+    setIsAvatarPickerOpen(false);
+  }, []);
+
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []).filter(f => f.type.startsWith('image/'));
-    const combined = [...referenceFiles, ...files].slice(0, 3); // limit 3 for Nano Banana
-    setReferenceFiles(combined);
-    // create previews
-    const readers = combined.map(f => URL.createObjectURL(f));
-    setReferencePreviews(readers);
-    
-    // Add new reference files to uploaded images collection
-    const newUploads = files.map(file => ({
-      id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      file: file,
-      previewUrl: URL.createObjectURL(file),
-      uploadDate: new Date()
-    }));
-    void persistUploadedImages([...uploadedImages, ...newUploads]);
+    handleAddReferenceFiles(Array.from(event.target.files || []));
+    if (event.target) {
+      event.target.value = '';
+    }
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -2917,7 +3055,7 @@ const Create: React.FC = () => {
     
     // Only prevent default when we're actually handling images
     event.preventDefault();
-    
+
     try {
       // Convert clipboard items to files
       const files: File[] = [];
@@ -2927,26 +3065,11 @@ const Create: React.FC = () => {
           files.push(file);
         }
       }
-      
+
       if (files.length === 0) return;
-      
-      // Add to reference files (same logic as handleRefsSelected)
-      const combined = [...referenceFiles, ...files].slice(0, 3); // limit 3 for Nano Banana
-      setReferenceFiles(combined);
-      
-      // Create previews
-      const readers = combined.map(f => URL.createObjectURL(f));
-      setReferencePreviews(readers);
-      
-      // Add new reference files to uploaded images collection
-      const newUploads = files.map(file => ({
-        id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        file: file,
-        previewUrl: URL.createObjectURL(file),
-        uploadDate: new Date()
-      }));
-      void persistUploadedImages([...uploadedImages, ...newUploads]);
-      
+
+      handleAddReferenceFiles(files);
+
     } catch (error) {
       debugError('Error handling paste:', error);
     }
@@ -3290,6 +3413,14 @@ const handleGenerate = async () => {
     debugLog('[Create] handleGenerateImage called with model:', modelForGeneration);
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
+    if (selectedAvatar) {
+      try {
+        const avatarFile = await urlToFile(selectedAvatar.imageUrl, `${selectedAvatar.id}.png`);
+        referencesForGeneration.unshift(avatarFile);
+      } catch (error) {
+        debugError('Failed to prepare avatar reference for generation', error);
+      }
+    }
     const temperatureForGeneration = temperature;
     const outputLengthForGeneration = outputLength;
     const topPForGeneration = topP;
@@ -3356,7 +3487,7 @@ const handleGenerate = async () => {
           imageData,
           references: await (async () => {
             if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            const arr = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
               const r = new FileReader();
               r.onload = () => resolve(r.result as string);
               r.readAsDataURL(f);
@@ -3407,7 +3538,7 @@ const handleGenerate = async () => {
           uiModel: runwayModel, // Pass the UI model ID for display
           references: await (async () => {
             if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            const arr = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
               const r = new FileReader();
               r.onload = () => resolve(r.result as string);
               r.readAsDataURL(f);
@@ -3524,7 +3655,7 @@ const handleGenerate = async () => {
           height: 1024,
           references: await (async () => {
             if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
+            const arr = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
               const r = new FileReader();
               r.onload = () => resolve(r.result as string);
               r.readAsDataURL(f);
@@ -3585,7 +3716,7 @@ const handleGenerate = async () => {
 
         // Add reference images as additional input images for Kontext
         if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && referencesForGeneration.length > 0) {
-          const referenceImages = await Promise.all(referencesForGeneration.slice(0, 3).map(f => new Promise<string>((resolve) => {
+          const referenceImages = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
             const r = new FileReader();
             r.onload = () => resolve(r.result as string);
             r.readAsDataURL(f);
@@ -5848,7 +5979,7 @@ const handleGenerate = async () => {
               }}
               onDragOver={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); if (files.length) { const combined = [...referenceFiles, ...files].slice(0, 3); setReferenceFiles(combined); const readers = combined.map(f => URL.createObjectURL(f)); setReferencePreviews(readers); } }}
+              onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []); if (files.length) { handleAddReferenceFiles(files); } }}
             >
             <div>
               <textarea
@@ -5930,7 +6061,7 @@ const handleGenerate = async () => {
               </Tooltip>
             </div>
             {/* Left icons and references overlayed so they don't shift textarea left edge */}
-            <div className="absolute left-4 bottom-4 flex items-center gap-3 pointer-events-auto">
+            <div className="absolute left-4 bottom-4 flex flex-wrap items-center gap-3 pointer-events-auto">
               {/* Action buttons */}
               <div className="flex items-center gap-1">
                 <button
@@ -5944,6 +6075,95 @@ const handleGenerate = async () => {
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-raleway">Add reference</span>
                 </button>
+                {activeCategory === "image" && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={avatarButtonRef}
+                      onClick={() => setIsAvatarPickerOpen(prev => !prev)}
+                      className={`${glass.promptBorderless} flex items-center gap-2 h-8 px-3 rounded-full text-d-white transition-colors duration-200 hover:bg-d-text/20 hover:text-d-text`}
+                    >
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm font-raleway">Select Avatar</span>
+                    </button>
+                    {isAvatarPickerOpen && (
+                      <div
+                        ref={avatarPickerRef}
+                        className="absolute bottom-full left-0 z-50 mb-3 w-72 rounded-3xl border border-d-dark/70 bg-d-black/85 p-4 shadow-2xl"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-raleway text-d-white/70">Your avatars</p>
+                            <button
+                              type="button"
+                              className="inline-flex size-7 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+                              onClick={() => setIsAvatarPickerOpen(false)}
+                              aria-label="Close avatar picker"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          {storedAvatars.length > 0 ? (
+                            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                              {storedAvatars.map(avatar => {
+                                const isActive = selectedAvatar?.id === avatar.id;
+                                return (
+                                  <button
+                                    key={avatar.id}
+                                    type="button"
+                                    onClick={() => handleAvatarSelect(avatar)}
+                                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 transition-colors duration-200 ${
+                                      isActive
+                                        ? 'border-d-light bg-d-text/10 text-d-text'
+                                        : 'border-d-dark/60 text-d-white hover:border-d-mid hover:bg-d-text/10'
+                                    }`}
+                                  >
+                                    <img
+                                      src={avatar.imageUrl}
+                                      alt={avatar.name}
+                                      className="h-12 w-12 rounded-2xl object-cover"
+                                    />
+                                    <div className="min-w-0 flex-1 text-left">
+                                      <p className="truncate text-sm font-raleway">{avatar.name}</p>
+                                    </div>
+                                    {isActive && <Check className="h-4 w-4 text-d-text" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-d-dark/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
+                              You haven't saved any avatars yet. Visit the avatars page to create one.
+                            </div>
+                          )}
+                          {selectedAvatar && (
+                            <button
+                              type="button"
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                              onClick={clearSelectedAvatar}
+                            >
+                              <X className="h-4 w-4" />
+                              Remove avatar
+                            </button>
+                          )}
+                          {!storedAvatars.length && (
+                            <button
+                              type="button"
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                              onClick={() => {
+                                navigate('/avatars');
+                                setIsAvatarPickerOpen(false);
+                              }}
+                            >
+                              <Users className="h-4 w-4" />
+                              Go to avatars
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="relative settings-dropdown">
                   <button
                     ref={settingsRef}
@@ -6476,11 +6696,35 @@ const handleGenerate = async () => {
                   </ModelMenuPortal>
                 </div>
               </div>
-              
+
+              {selectedAvatar && (
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-raleway text-d-white/80">Avatar:</div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative group">
+                      <img
+                        src={selectedAvatar.imageUrl}
+                        alt={selectedAvatar.name}
+                        className="h-9 w-9 rounded-full border border-d-dark/70 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearSelectedAvatar}
+                        className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-d-black/80 p-0.5 text-d-white transition-colors duration-200 hover:text-d-text"
+                        title="Remove avatar"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                    <span className="max-w-[10rem] truncate text-sm font-raleway text-d-white/80">{selectedAvatar.name}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Reference images display - to the right of buttons */}
               {referencePreviews.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <div className="text-sm text-d-white/80 font-raleway">Reference ({referencePreviews.length}/3):</div>
+                  <div className="text-sm text-d-white/80 font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
                   <div className="flex items-center gap-1.5">
                     {referencePreviews.map((url, idx) => (
                       <div key={idx} className="relative group">
