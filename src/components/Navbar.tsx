@@ -1,4 +1,4 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, BookOpen } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -44,6 +44,7 @@ const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideI
   { to: "/learn/tools", label: "tools", Icon: Edit },
   { to: "/learn/prompts", label: "prompts", Icon: FileText },
   { to: "/learn/courses", label: "courses", Icon: GraduationCap },
+  { to: "/knowledge-base", label: "knowledge base", Icon: BookOpen },
 ];
 
 export default function Navbar() {

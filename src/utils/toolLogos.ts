@@ -80,6 +80,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
       'Flux Kontext Pro',
       'Flux Kontext Max',
       'FLUX.1 Kontext Pro / Max',
+      'FLUX Kontext Pro/Max',
     ],
   },
   {

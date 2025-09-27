@@ -11,6 +11,7 @@ const AboutUs = lazy(() => import("./components/AboutUs"));
 const Prompts = lazy(() => import("./components/Prompts"));
 const Explore = lazy(() => import("./components/Explore"));
 const Subpage = lazy(() => import("./components/subpage/Subpage"));
+const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
@@ -191,6 +192,7 @@ export default function App() {
               <Route path="/explore" element={<Explore />} />
               <Route path="/ai-tools" element={<ToolsSection />} />
               <Route path="/ai-tools/:id" element={<Subpage />} />
+              <Route path="/knowledge-base" element={<KnowledgeBase />} />
               <Route
                 path="/create/*"
                 element={(
