@@ -13,7 +13,6 @@ import {
   text,
   glass,
   buttons,
-  inputs,
 } from "../styles/designSystem";
 import {
   ArrowUpRight,
@@ -35,6 +34,7 @@ import {
   Edit,
   ChevronLeft,
   ChevronRight,
+  Trash2,
   X,
   RefreshCw,
 } from "lucide-react";
@@ -716,7 +716,6 @@ const Explore: React.FC = () => {
     item: GalleryItem | null;
   }>({ open: false, item: null });
   const [newFolderName, setNewFolderName] = useState("");
-  const [folderError, setFolderError] = useState<string | null>(null);
 
   const savedImageUrls = useMemo(() => new Set(personalGallery.map(item => item.url)), [personalGallery]);
 
@@ -811,7 +810,15 @@ const Explore: React.FC = () => {
           }));
           setFolders(prev => (prev.length > 0 ? prev : restored));
         } else {
-          setFolders([]);
+          // Create default "inspirations" folder if no folders exist
+          const defaultFolder: Folder = {
+            id: 'inspirations-folder',
+            name: 'Inspirations',
+            createdAt: new Date(),
+            imageIds: [],
+            videoIds: [],
+          };
+          setFolders([defaultFolder]);
         }
       } catch (error) {
         debugError('Failed to load gallery from storage:', error);
@@ -837,7 +844,6 @@ const Explore: React.FC = () => {
   const closeSavePrompt = useCallback(() => {
     setSavePrompt({ open: false, item: null, imageUrl: null, alreadySaved: false });
     setNewFolderName("");
-    setFolderError(null);
   }, []);
 
   const closeUnsaveConfirm = useCallback(() => {
@@ -907,14 +913,32 @@ const Explore: React.FC = () => {
 
       setSavePrompt({ open: true, item, imageUrl: savedImage.url, alreadySaved });
       setNewFolderName("");
-      setFolderError(null);
+      
+      // Automatically assign to "inspirations" folder if it exists
+      const inspirationsFolder = folders.find(f => f.id === 'inspirations-folder');
+      if (inspirationsFolder && !inspirationsFolder.imageIds.includes(savedImage.url)) {
+        setFolders(prev => {
+          const next = prev.map(folder => {
+            if (folder.id === 'inspirations-folder') {
+              return { ...folder, imageIds: [...folder.imageIds, savedImage.url] };
+            }
+            return folder;
+          });
+          void persistFolders(next);
+          return next;
+        });
+      }
     },
-    [persistGallery],
+    [persistGallery, persistFolders, folders],
   );
 
   const toggleImageFolderAssignment = useCallback(
     (folderId: string) => {
       if (!savePrompt.imageUrl) return;
+      
+      // Prevent unchecking the "inspirations" folder
+      if (folderId === 'inspirations-folder') return;
+      
       setFolders(prev => {
         const next = prev.map(folder => {
           if (folder.id !== folderId) return folder;
@@ -934,16 +958,10 @@ const Explore: React.FC = () => {
   const handleCreateFolderFromDialog = useCallback(() => {
     if (!savePrompt.imageUrl) return;
     const trimmed = newFolderName.trim();
-    if (!trimmed) {
-      setFolderError('Enter a folder name');
-      return;
-    }
+    if (!trimmed) return;
 
     const duplicate = folders.some(folder => folder.name.toLowerCase() === trimmed.toLowerCase());
-    if (duplicate) {
-      setFolderError('Folder already exists');
-      return;
-    }
+    if (duplicate) return;
 
     const newFolder: Folder = {
       id: `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -960,7 +978,6 @@ const Explore: React.FC = () => {
     });
 
     setNewFolderName("");
-    setFolderError(null);
   }, [folders, newFolderName, persistFolders, savePrompt.imageUrl]);
 
   // Toggle favorite function
@@ -1783,7 +1800,7 @@ const Explore: React.FC = () => {
 
               <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-[24px] border border-d-dark/70">
+                  <div className="overflow-hidden rounded-[24px] border border-d-dark/70 w-1/2">
                     <img
                       src={savePrompt.item.imageUrl}
                       alt={`Saved inspiration ${savePrompt.item.id}`}
@@ -1792,13 +1809,13 @@ const Explore: React.FC = () => {
                   </div>
                   <div className="space-y-3 rounded-[20px] border border-d-dark/70 bg-d-black/40 p-4">
                     <span className="inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-d-white/60">
-                      Saved inspiration
+                      Save inspiration
                       {savePrompt.alreadySaved && <span className="rounded-full bg-d-white/10 px-2 py-0.5 text-[10px] font-semibold text-d-text">updated</span>}
                     </span>
                     <div className="flex items-center gap-3">
-                      <div className="relative size-12 overflow-hidden rounded-full">
+                      <div className="relative size-8 overflow-hidden rounded-full">
                         <div className={`absolute inset-0 bg-gradient-to-br ${savePrompt.item.creator.avatarColor}`} aria-hidden="true" />
-                        <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
+                        <span className="relative flex h-full w-full items-center justify-center text-xs font-semibold text-white">
                           {getInitials(savePrompt.item.creator.name)}
                         </span>
                       </div>
@@ -1816,14 +1833,14 @@ const Explore: React.FC = () => {
                         <ArrowUpRight className="size-3.5" />
                       </a>
                     </div>
-                    <p className="text-sm font-raleway leading-relaxed text-d-white/80">{savePrompt.item.prompt}</p>
+                    <p className="text-sm font-raleway leading-relaxed text-d-white">{savePrompt.item.prompt}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-6">
                   <div className="space-y-3">
-                    <h3 className="text-lg font-raleway text-d-text">Add to a folder</h3>
-                    <p className="text-sm text-d-white/70">
+                    <h3 className="text-xl font-raleway font-normal text-d-text">Add to a folder</h3>
+                    <p className="text-sm text-d-white">
                       Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
                     </p>
                     <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
@@ -1837,27 +1854,48 @@ const Explore: React.FC = () => {
                       ) : (
                         folders.map(folder => {
                           const isAssigned = assignedFolderIds.has(folder.id);
+                          const isInspirationsFolder = folder.id === 'inspirations-folder';
                           return (
                             <button
                               key={folder.id}
                               type="button"
-                              onClick={() => toggleImageFolderAssignment(folder.id)}
+                              onClick={() => !isInspirationsFolder && toggleImageFolderAssignment(folder.id)}
+                              disabled={isInspirationsFolder}
                               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${
-                                isAssigned
-                                  ? 'border-d-white/70 bg-d-white/10 text-d-text shadow-lg shadow-d-white/10'
-                                  : 'border-d-dark bg-d-black/30 text-d-white/80 hover:border-d-mid hover:text-d-text'
+                                isInspirationsFolder
+                                  ? 'border-d-white/70 bg-d-white/10 text-d-text shadow-lg shadow-d-white/10 cursor-default'
+                                  : isAssigned
+                                    ? 'border-d-white/70 bg-d-white/10 text-d-text shadow-lg shadow-d-white/10'
+                                    : 'border-d-dark bg-d-black/30 text-d-white/80 hover:border-d-mid hover:text-d-text'
                               }`}
                             >
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-raleway">{folder.name}</p>
-                                <p className="text-xs text-d-white/60">{folder.imageIds.length} saved</p>
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="flex-shrink-0">
+                                  {folder.customThumbnail ? (
+                                    <div className="w-8 h-8 rounded-lg overflow-hidden">
+                                      <img 
+                                        src={folder.customThumbnail} 
+                                        alt={`${folder.name} thumbnail`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-lg bg-d-dark/50 flex items-center justify-center">
+                                      <FolderPlus className="w-4 h-4 text-d-white/50" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-raleway">{folder.name}</p>
+                                  <p className="text-xs text-d-white/60">{folder.imageIds.length} saved</p>
+                                </div>
                               </div>
                               <span
                                 className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${
-                                  isAssigned ? 'border-d-text bg-d-text text-b-black' : 'border-d-mid text-d-white/50'
+                                  (isAssigned || isInspirationsFolder) ? 'border-d-text bg-d-text text-b-black' : 'border-d-mid text-d-white/50'
                                 }`}
                               >
-                                {isAssigned && <Check className="h-3.5 w-3.5" />}
+                                {(isAssigned || isInspirationsFolder) && <Check className="h-3.5 w-3.5" />}
                               </span>
                             </button>
                           );
@@ -1866,33 +1904,33 @@ const Explore: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-[20px] border border-d-dark/70 bg-d-black/30 p-4">
-                    <label className="text-xs font-raleway uppercase tracking-[0.24em] text-d-white/60">Create new folder</label>
-                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <input
-                        type="text"
-                        value={newFolderName}
-                        onChange={event => setNewFolderName(event.target.value)}
-                        placeholder="Folder name"
-                        className={`${inputs.base} sm:flex-1`}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCreateFolderFromDialog}
-                        className={`${buttons.glassPromptDark} justify-center border-d-dark bg-d-black/60 text-sm`}
-                      >
-                        <FolderPlus className="size-3.5" />
-                        Create & add
-                      </button>
-                    </div>
-                    {folderError && <p className="mt-2 text-xs font-raleway text-red-400">{folderError}</p>}
+                  <div className="flex justify-start">
+                    <button
+                      onClick={() => {
+                        setNewFolderName("");
+                        // This will trigger the folder creation flow
+                        const trimmed = prompt("Enter folder name:");
+                        if (trimmed) {
+                          setNewFolderName(trimmed);
+                          handleCreateFolderFromDialog();
+                        }
+                      }}
+                      className={`${buttons.ghostCompact} cursor-pointer text-sm`}
+                      title="Create new folder"
+                      aria-label="Create new folder"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      New folder
+                    </button>
                   </div>
 
                   <div className="flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={closeSavePrompt}
-                      className={buttons.ghostCompact}
+                      className={buttons.primary}
                     >
                       Done
                     </button>
@@ -2194,31 +2232,22 @@ const Explore: React.FC = () => {
         {/* Unsave confirmation modal */}
         {unsaveConfirm.open && unsaveConfirm.item && (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-d-black/80 px-4 py-8"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-d-black/80 py-12"
             onClick={closeUnsaveConfirm}
           >
             <div
-              className={`${glass.promptDark} relative w-full max-w-md rounded-[28px] border border-d-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+              className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}
               onClick={event => event.stopPropagation()}
             >
-              <button
-                type="button"
-                onClick={closeUnsaveConfirm}
-                className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-d-dark/60 text-d-white/70 transition-colors duration-200 hover:text-d-text"
-                aria-label="Close confirmation dialog"
-              >
-                <X className="size-4" />
-              </button>
-
-              <div className="space-y-6">
+              <div className="text-center space-y-4">
                 <div className="space-y-3">
-                  <h3 className="text-lg font-raleway text-d-text">Remove from gallery?</h3>
-                  <p className="text-sm text-d-white/80">
+                  <Trash2 className="default-orange-icon mx-auto" />
+                  <h3 className="text-xl font-raleway font-normal text-d-text">Remove from gallery?</h3>
+                  <p className="text-base font-raleway font-light text-d-white">
                     This will remove the image from your saved gallery and any folders it's in.
                   </p>
                 </div>
-
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-center gap-3">
                   <button
                     type="button"
                     onClick={closeUnsaveConfirm}
