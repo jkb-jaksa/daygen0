@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box } from "lucide-react";
+import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen } from "lucide-react";
 import { layout, glass, text as textStyles } from "../styles/designSystem";
 import { getToolLogo } from "../utils/toolLogos";
 
@@ -59,7 +59,7 @@ function ToolCard({ tool }: { tool: ToolResource }) {
 
   return (
     <article
-      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark/60 px-5 py-3 transition-colors duration-200 hover:border-d-mid`}
+      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}
     >
       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
         {logo ? (
@@ -92,7 +92,10 @@ export default function KnowledgeBase() {
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
-            <p className="text-xs uppercase tracking-[0.25em] text-d-light font-raleway">Knowledge base</p>
+            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-d-light font-raleway">
+              <BookOpen className="h-4 w-4" />
+              Knowledge base
+            </p>
             <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-d-text`}>Creative AI tools</h1>
             <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-d-white">
               Explore model guides, best practices, and tips for the creative AI tools you use every day.
@@ -101,7 +104,7 @@ export default function KnowledgeBase() {
 
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
-            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-d-dark/60 p-4`}
+            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-d-dark p-4`}
               aria-label="Knowledge base categories">
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {
@@ -112,7 +115,7 @@ export default function KnowledgeBase() {
                       <button
                         type="button"
                         onClick={() => setActiveCategory(category.id)}
-                        className={`flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway capitalize transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black ${
+                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway capitalize transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black ${
                           isActive
                             ? "border border-d-mid bg-d-white/10 text-d-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
                             : "border border-transparent text-d-white hover:border-d-mid hover:text-d-text"
@@ -127,7 +130,7 @@ export default function KnowledgeBase() {
               </ul>
             </nav>
             <div className="flex-1">
-              <div className={`${glass.surface} rounded-3xl border-d-dark/60 px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
+              <div className={`${glass.surface} rounded-3xl border-d-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
                  <h2 className={`text-2xl font-raleway font-medium text-d-text ${activeCategory === "image" ? "" : "capitalize"}`}>
                    {activeCategory === "image" ? "Image generation" : `${activeCategory === "3d" ? "3D" : activeCategory} resources`}
@@ -138,7 +141,7 @@ export default function KnowledgeBase() {
                     : "We're actively expanding this section. Check back soon for detailed guides."}
                 </p>
                 {hasContent ? (
-                  <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {activeTools.map((tool) => (
                       <ToolCard key={tool.name} tool={tool} />
                     ))}
@@ -150,9 +153,91 @@ export default function KnowledgeBase() {
                     </p>
                   </div>
                 )}
+
+                {/* Other tools subsection */}
+                <div className="mt-12">
+                  <h3 className="text-2xl font-raleway font-medium text-d-text">Other tools</h3>
+                  <p className="mt-2 text-sm font-raleway text-d-white">
+                    Here are other great tools to improve your DayGen workflows.
+                  </p>
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+                        <img src="/midjourney logo.png" alt="Midjourney logo" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h4 className="text-base font-raleway font-medium capitalize text-d-text">Midjourney</h4>
+                        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+                          Best aesthetics. First choice for artists.
+                        </p>
+                      </div>
+                    </article>
+
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+                        <img src="/magnific logo.png" alt="Magnific logo" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h4 className="text-base font-raleway font-medium capitalize text-d-text">Magnific</h4>
+                        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+                          Best image upscaler. Great style transfer.
+                        </p>
+                      </div>
+                    </article>
+
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+                        <img src="/flair ai logo.jpg" alt="Flair logo" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h4 className="text-base font-raleway font-medium capitalize text-d-text">Flair</h4>
+                        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+                          Good tool for marketing.
+                        </p>
+                      </div>
+                    </article>
+
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+                        <img src="/higgsfield logo.jpg" alt="Higgsfield logo" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h4 className="text-base font-raleway font-medium capitalize text-d-text">Higgsfield</h4>
+                        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+                          High photorealism. Great for avatars and social media content.
+                        </p>
+                      </div>
+                    </article>
+
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+                        <img src="/freepik logo.png" alt="Freepik logo" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h4 className="text-base font-raleway font-medium capitalize text-d-text">Freepik</h4>
+                        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+                          Platform with multiple tools available.
+                        </p>
+                      </div>
+                    </article>
+
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+                        <img src="/krea logo.jpeg" alt="Krea logo" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h4 className="text-base font-raleway font-medium capitalize text-d-text">Krea</h4>
+                        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+                          Platform with multiple tools available.
+                        </p>
+                      </div>
+                    </article>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
       </section>
     </div>
