@@ -449,7 +449,7 @@ export function GalleryPanel({
             <h3 className="text-sm font-raleway text-d-white">Filters</h3>
           </div>
           <button
-            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], type: "all", folder: "all" })}
+            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], type: "all", folder: "all", origin: "all" })}
             className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
           >
             Clear
@@ -519,6 +519,30 @@ export function GalleryPanel({
               disabled={folderOptions.length === 0}
               placeholder={folderOptions.length === 0 ? "No folders available" : undefined}
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-d-white/70 font-raleway">Origin</label>
+            <div className="flex gap-1 flex-wrap">
+              {[
+                { key: "all", label: "All" },
+                { key: "mine", label: "My creations" },
+                { key: "saved", label: "Saved" },
+              ].map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, origin: option.key as "all" | "mine" | "saved" }))}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
+                    galleryFilters.origin === option.key
+                      ? "text-d-text border-d-mid bg-d-white/10"
+                      : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
+                  }`}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -668,7 +692,7 @@ export function GalleryPanel({
         )}
       </div>
 
-      <div className="grid grid-cols-5 gap-2 w-full p-1">
+      <div className="grid grid-cols-4 gap-2 w-full p-1">
         {filteredGallery.map((img, idx) => renderGalleryItem(img, idx))}
 
         {gallery.length === 0 && (

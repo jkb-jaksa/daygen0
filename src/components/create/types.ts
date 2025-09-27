@@ -18,6 +18,13 @@ export type Folder = {
   customThumbnail?: string;
 };
 
+export type SavedCreator = {
+  name: string;
+  handle?: string;
+  avatarColor?: string;
+  profileUrl?: string;
+};
+
 export type GalleryImageLike = {
   url: string;
   prompt: string;
@@ -27,6 +34,7 @@ export type GalleryImageLike = {
   jobId?: string;
   references?: string[];
   isPublic?: boolean;
+  savedFrom?: SavedCreator;
 };
 
 export type GalleryVideoLike = {
@@ -50,6 +58,7 @@ export type StoredGalleryImage = {
   ownerId?: string;
   jobId?: string;
   isPublic?: boolean;
+  savedFrom?: SavedCreator;
 };
 
 export type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };
@@ -84,6 +93,7 @@ export type GalleryFilters = {
   models: string[];
   type: "all" | "image" | "video";
   folder: string;
+  origin: "all" | "mine" | "saved";
 };
 
 export type ImageActionMenuState = { id: string; anchor: HTMLElement | null } | null;

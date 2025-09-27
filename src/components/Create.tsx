@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ArrowUpRight, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -59,6 +59,7 @@ import type {
   FolderThumbnailDialogState,
   FolderThumbnailConfirmState,
 } from "./create/types";
+import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -105,41 +106,13 @@ const deriveCategoryFromPath = (pathname: string): string => {
 
 const pathForCategory = (category: string): string | null => CATEGORY_TO_PATH[category] ?? null;
 
-const isJobBackedImage = (item: GalleryImageLike): item is FluxGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage =>
-  'jobId' in item && typeof item.jobId === 'string';
-
-const toStorable = (items: GalleryImageLike[]): StoredGalleryImage[] =>
-  items.map(item => ({
-    url: item.url,
-    prompt: item.prompt,
-    model: item.model,
-    timestamp: item.timestamp,
-    ownerId: item.ownerId,
-    isPublic: item.isPublic,
-    ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
-  }));
-
-const hydrateStoredGallery = (items: StoredGalleryImage[]): GalleryImageLike[] =>
-  items.map((item, index) => {
-    const base = {
-      url: item.url,
-      prompt: item.prompt,
-      model: item.model ?? 'unknown',
-      timestamp: item.timestamp,
-      ownerId: item.ownerId,
-      isPublic: item.isPublic ?? false,
-    };
-
-    if (item.model?.startsWith('flux') || item.model?.startsWith('reve')) {
-      const fallbackJobId = item.jobId ?? `restored-${index}-${Date.now()}`;
-      return {
-        ...base,
-        jobId: fallbackJobId,
-      } as GalleryImageLike;
-    }
-
-    return base as GalleryImageLike;
-  });
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .map(part => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
@@ -582,11 +555,25 @@ const Create: React.FC = () => {
     public: false,
     models: [],
     type: 'all',
-    folder: 'all'
+    folder: 'all',
+    origin: 'all'
   });
   const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
-  
+
+  const matchesOriginFilter = useCallback(
+    (item: GalleryImageLike) => {
+      if (galleryFilters.origin === 'mine') {
+        return !item.savedFrom;
+      }
+      if (galleryFilters.origin === 'saved') {
+        return Boolean(item.savedFrom);
+      }
+      return true;
+    },
+    [galleryFilters.origin],
+  );
+
   // Filter function for gallery
   const filterGalleryItems = (items: typeof gallery) => {
     return items.filter(item => {
@@ -612,12 +599,16 @@ const Create: React.FC = () => {
           return false;
         }
       }
-      
+
+      if (!matchesOriginFilter(item)) {
+        return false;
+      }
+
       // Type filter (for now, we'll assume all items are images)
       if (galleryFilters.type !== 'all' && galleryFilters.type !== 'image') {
         return false;
       }
-      
+
       return true;
     });
   };
@@ -1206,7 +1197,7 @@ const Create: React.FC = () => {
 
           if (validImages.length !== storedGallery.length) {
             debugWarn('Some images were invalid and removed from gallery');
-            void setPersistedValue(storagePrefix, 'gallery', toStorable(hydrated));
+            void setPersistedValue(storagePrefix, 'gallery', serializeGallery(hydrated));
           }
 
           setGallery(hydrated);
@@ -1349,7 +1340,7 @@ const Create: React.FC = () => {
     }
 
     const persistLean = async (data: GalleryImageLike[]) => {
-      await setPersistedValue(storagePrefix, 'gallery', toStorable(data));
+      await setPersistedValue(storagePrefix, 'gallery', serializeGallery(data));
       await refreshStorageEstimate();
     };
     try {
@@ -2467,6 +2458,39 @@ const Create: React.FC = () => {
             }
           }}
         />
+
+        {img.savedFrom && !isSelectMode && (
+          <div
+            className="absolute left-3 bottom-3 z-30 flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/80 px-3 py-2 text-xs text-d-white shadow-lg backdrop-blur"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="relative h-6 w-6 overflow-hidden rounded-full border border-white/10">
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${img.savedFrom.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                aria-hidden="true"
+              />
+              <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                {getInitials(img.savedFrom.name)}
+              </span>
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white/60">Saved inspiration</span>
+              <span className="truncate text-xs font-raleway text-d-white">{img.savedFrom.name}</span>
+            </div>
+            {img.savedFrom.profileUrl && (
+              <a
+                href={img.savedFrom.profileUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-d-dark/60 bg-d-black/60 text-d-white/80 transition-colors duration-200 hover:text-d-text"
+                onClick={event => event.stopPropagation()}
+                aria-label={`View ${img.savedFrom.name}'s profile`}
+              >
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </div>
+        )}
 
         {img.prompt && !isSelectMode && (
           <div
@@ -4165,7 +4189,9 @@ const handleGenerate = async () => {
                     {(() => {
                       const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
                       if (!folder) return null;
-                      const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                      const folderImages = gallery.filter(
+                        img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                      );
                       return folderImages.map((img, idx) => (
                         <button
                           key={idx}
@@ -4325,7 +4351,7 @@ const handleGenerate = async () => {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-2 w-full p-1">
+                    <div className="grid grid-cols-4 gap-2 w-full p-1">
                       {publicGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'public'))}
                       {publicGallery.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
@@ -4410,8 +4436,8 @@ const handleGenerate = async () => {
                 {/* Folder View */}
                 {activeCategory === "folder-view" && selectedFolder && (
                   <div className="w-full">
-                    {/* Back navigation */}
-                    <div className="mb-6 flex items-center justify-between">
+                    {/* Back navigation and filters */}
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                       <button
                         onClick={() => { setActiveCategory("my-folders"); setSelectedFolder(null); }}
                         className="flex items-center gap-2 text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-base group"
@@ -4419,6 +4445,30 @@ const handleGenerate = async () => {
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />
                         Back to folders
                       </button>
+
+                      <div className="flex items-center gap-3 text-xs font-raleway text-d-white/70">
+                        <span className="uppercase tracking-[0.24em] text-[10px]">Show</span>
+                        <div className="flex items-center gap-1 rounded-full border border-d-dark bg-d-black/40 p-1">
+                          {[
+                            { key: 'all', label: 'All' },
+                            { key: 'mine', label: 'My creations' },
+                            { key: 'saved', label: 'Saved' },
+                          ].map(option => (
+                            <button
+                              key={option.key}
+                              onClick={() => setGalleryFilters(prev => ({ ...prev, origin: option.key as 'all' | 'mine' | 'saved' }))}
+                              className={`rounded-full px-3 py-1 text-xs transition-colors duration-200 ${
+                                galleryFilters.origin === option.key
+                                  ? 'bg-d-white text-d-text shadow-lg shadow-d-white/10'
+                                  : 'text-d-white/70 hover:text-d-text'
+                              }`}
+                              type="button"
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Folder header */}
@@ -4436,7 +4486,9 @@ const handleGenerate = async () => {
                         {(() => {
                           const folder = folders.find(f => f.id === selectedFolder);
                           if (!folder) return '0 images';
-                          const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                          const folderImages = gallery.filter(
+                            img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                          );
                           return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
                         })()}
                       </p>
@@ -4446,7 +4498,9 @@ const handleGenerate = async () => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
                       
-                      const folderImages = gallery.filter(img => folder.imageIds.includes(img.url));
+                      const folderImages = gallery.filter(
+                        img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                      );
                       
                       if (folderImages.length === 0) {
                         return (
@@ -4479,7 +4533,40 @@ const handleGenerate = async () => {
                               }
                             }}>
                               <img src={img.url} alt={img.prompt || 'Generated image'} className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
-                              
+
+                              {img.savedFrom && !isSelectMode && (
+                                <div
+                                  className="absolute left-3 bottom-3 z-30 flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/80 px-3 py-2 text-xs text-d-white shadow-lg backdrop-blur"
+                                  onClick={event => event.stopPropagation()}
+                                >
+                                  <div className="relative h-6 w-6 overflow-hidden rounded-full border border-white/10">
+                                    <div
+                                      className={`absolute inset-0 bg-gradient-to-br ${img.savedFrom.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                                      aria-hidden="true"
+                                    />
+                                    <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                                      {getInitials(img.savedFrom.name)}
+                                    </span>
+                                  </div>
+                                  <div className="flex min-w-0 flex-col">
+                                    <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white/60">Saved inspiration</span>
+                                    <span className="truncate text-xs font-raleway text-d-white">{img.savedFrom.name}</span>
+                                  </div>
+                                  {img.savedFrom.profileUrl && (
+                                    <a
+                                      href={img.savedFrom.profileUrl}
+                                      target="_blank"
+                                      rel="noreferrer noopener"
+                                      className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-d-dark/60 bg-d-black/60 text-d-white/80 transition-colors duration-200 hover:text-d-text"
+                                      onClick={event => event.stopPropagation()}
+                                      aria-label={`View ${img.savedFrom.name}'s profile`}
+                                    >
+                                      <ArrowUpRight className="h-3.5 w-3.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+
                               {/* Image info overlay */}
                               <div
                                 className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
@@ -4822,7 +4909,9 @@ const handleGenerate = async () => {
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             if (!folder) return '0 images';
-                            const folderImages = gallery.filter(img => folder?.imageIds.includes(img.url));
+                            const folderImages = gallery.filter(
+                              img => folder?.imageIds.includes(img.url) && matchesOriginFilter(img),
+                            );
                             return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
                           })()}
                         </p>
@@ -4834,7 +4923,9 @@ const handleGenerate = async () => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
                       
-                      const folderImages = gallery.filter(img => folder?.imageIds.includes(img.url));
+                      const folderImages = gallery.filter(
+                        img => folder?.imageIds.includes(img.url) && matchesOriginFilter(img),
+                      );
                       
                       return folderImages.map((img, idx) => (
                         <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
@@ -4848,7 +4939,40 @@ const handleGenerate = async () => {
                             setSelectedFullImage(img);
                             setIsFullSizeOpen(true);
                           }} />
-                          
+
+                          {img.savedFrom && (
+                            <div
+                              className="absolute left-3 bottom-3 z-30 flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/80 px-3 py-2 text-xs text-d-white shadow-lg backdrop-blur"
+                              onClick={event => event.stopPropagation()}
+                            >
+                              <div className="relative h-6 w-6 overflow-hidden rounded-full border border-white/10">
+                                <div
+                                  className={`absolute inset-0 bg-gradient-to-br ${img.savedFrom.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                                  aria-hidden="true"
+                                />
+                                <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                                  {getInitials(img.savedFrom.name)}
+                                </span>
+                              </div>
+                              <div className="flex min-w-0 flex-col">
+                                <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white/60">Saved inspiration</span>
+                                <span className="truncate text-xs font-raleway text-d-white">{img.savedFrom.name}</span>
+                              </div>
+                              {img.savedFrom.profileUrl && (
+                                <a
+                                  href={img.savedFrom.profileUrl}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-d-dark/60 bg-d-black/60 text-d-white/80 transition-colors duration-200 hover:text-d-text"
+                                  onClick={event => event.stopPropagation()}
+                                  aria-label={`View ${img.savedFrom.name}'s profile`}
+                                >
+                                  <ArrowUpRight className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div

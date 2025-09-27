@@ -13,12 +13,17 @@ import {
   text,
   glass,
   buttons,
+  inputs,
 } from "../styles/designSystem";
 import {
   ArrowUpRight,
+  BookmarkCheck,
+  BookmarkPlus,
+  Check,
   Clock,
   Copy,
   Download,
+  FolderPlus,
   Heart,
   MoreHorizontal,
   Palette,
@@ -39,6 +44,14 @@ import { debugError } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
+import { useAuth } from "../auth/useAuth";
+import type {
+  Folder,
+  GalleryImageLike,
+  SerializedFolder,
+  StoredGalleryImage,
+} from "./create/types";
+import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 
 
 const styleFilters = [
@@ -243,6 +256,9 @@ const getInitials = (name: string) =>
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+const buildCreatorProfileUrl = (creator: GalleryItem["creator"]) =>
+  `https://www.daygen.ai/explore?creator=${encodeURIComponent(creator.handle.replace(/^@/, ""))}`;
 
 // ImageActionMenuPortal component (exact copy from Create.tsx)
 const ImageActionMenuPortal: React.FC<{
@@ -685,6 +701,19 @@ const Explore: React.FC = () => {
   });
 
   const navigate = useNavigate();
+  const { storagePrefix } = useAuth();
+  const [personalGallery, setPersonalGallery] = useState<GalleryImageLike[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [savePrompt, setSavePrompt] = useState<{
+    open: boolean;
+    item: GalleryItem | null;
+    imageUrl: string | null;
+    alreadySaved: boolean;
+  }>({ open: false, item: null, imageUrl: null, alreadySaved: false });
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderError, setFolderError] = useState<string | null>(null);
+
+  const savedImageUrls = useMemo(() => new Set(personalGallery.map(item => item.url)), [personalGallery]);
 
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -716,6 +745,191 @@ const Explore: React.FC = () => {
       debugError('Failed to persist favorites:', error);
     }
   };
+
+  const persistGallery = useCallback(
+    async (next: GalleryImageLike[]) => {
+      try {
+        await setPersistedValue(storagePrefix, 'gallery', serializeGallery(next));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('daygen:gallery-updated'));
+        }
+      } catch (error) {
+        debugError('Failed to persist gallery from explore:', error);
+      }
+    },
+    [storagePrefix],
+  );
+
+  const persistFolders = useCallback(
+    async (next: Folder[]) => {
+      const serialised: SerializedFolder[] = next.map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        createdAt: folder.createdAt.toISOString(),
+        imageIds: folder.imageIds,
+        videoIds: folder.videoIds || [],
+        customThumbnail: folder.customThumbnail,
+      }));
+
+      try {
+        await setPersistedValue(storagePrefix, 'folders', serialised);
+      } catch (error) {
+        debugError('Failed to persist folders from explore:', error);
+      }
+    },
+    [storagePrefix],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [storedGallery, storedFolders] = await Promise.all([
+          getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'gallery'),
+          getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders'),
+        ]);
+
+        if (cancelled) return;
+
+        if (Array.isArray(storedGallery)) {
+          setPersonalGallery(prev => (prev.length > 0 ? prev : hydrateStoredGallery(storedGallery)));
+        } else {
+          setPersonalGallery([]);
+        }
+
+        if (Array.isArray(storedFolders)) {
+          const restored = storedFolders.map(folder => ({
+            ...folder,
+            createdAt: new Date(folder.createdAt),
+            videoIds: folder.videoIds || [],
+          }));
+          setFolders(prev => (prev.length > 0 ? prev : restored));
+        } else {
+          setFolders([]);
+        }
+      } catch (error) {
+        debugError('Failed to load gallery from storage:', error);
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storagePrefix]);
+
+  const assignedFolderIds = useMemo(() => {
+    if (!savePrompt.imageUrl) return new Set<string>();
+    return new Set(
+      folders
+        .filter(folder => folder.imageIds.includes(savePrompt.imageUrl!))
+        .map(folder => folder.id),
+    );
+  }, [folders, savePrompt.imageUrl]);
+
+  const closeSavePrompt = useCallback(() => {
+    setSavePrompt({ open: false, item: null, imageUrl: null, alreadySaved: false });
+    setNewFolderName("");
+    setFolderError(null);
+  }, []);
+
+  const handleSaveToGallery = useCallback(
+    (item: GalleryItem) => {
+      const savedImage: GalleryImageLike = {
+        url: item.imageUrl,
+        prompt: item.prompt,
+        model: item.modelId,
+        timestamp: new Date().toISOString(),
+        isPublic: true,
+        savedFrom: {
+          name: item.creator.name,
+          handle: item.creator.handle,
+          avatarColor: item.creator.avatarColor,
+          profileUrl: buildCreatorProfileUrl(item.creator),
+        },
+      };
+
+      let alreadySaved = false;
+      setPersonalGallery(prev => {
+        const exists = prev.some(img => img.url === savedImage.url);
+        alreadySaved = exists;
+        const next = exists
+          ? prev.map(img =>
+              img.url === savedImage.url
+                ? {
+                    ...img,
+                    prompt: savedImage.prompt,
+                    model: savedImage.model,
+                    isPublic: savedImage.isPublic,
+                    savedFrom: savedImage.savedFrom,
+                  }
+                : img,
+            )
+          : [savedImage, ...prev];
+
+        void persistGallery(next);
+        return next;
+      });
+
+      setSavePrompt({ open: true, item, imageUrl: savedImage.url, alreadySaved });
+      setNewFolderName("");
+      setFolderError(null);
+    },
+    [persistGallery],
+  );
+
+  const toggleImageFolderAssignment = useCallback(
+    (folderId: string) => {
+      if (!savePrompt.imageUrl) return;
+      setFolders(prev => {
+        const next = prev.map(folder => {
+          if (folder.id !== folderId) return folder;
+          const hasImage = folder.imageIds.includes(savePrompt.imageUrl!);
+          const imageIds = hasImage
+            ? folder.imageIds.filter(url => url !== savePrompt.imageUrl)
+            : [...folder.imageIds, savePrompt.imageUrl!];
+          return { ...folder, imageIds };
+        });
+        void persistFolders(next);
+        return next;
+      });
+    },
+    [persistFolders, savePrompt.imageUrl],
+  );
+
+  const handleCreateFolderFromDialog = useCallback(() => {
+    if (!savePrompt.imageUrl) return;
+    const trimmed = newFolderName.trim();
+    if (!trimmed) {
+      setFolderError('Enter a folder name');
+      return;
+    }
+
+    const duplicate = folders.some(folder => folder.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      setFolderError('Folder already exists');
+      return;
+    }
+
+    const newFolder: Folder = {
+      id: `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: trimmed,
+      createdAt: new Date(),
+      imageIds: [savePrompt.imageUrl],
+      videoIds: [],
+    };
+
+    setFolders(prev => {
+      const next = [...prev, newFolder];
+      void persistFolders(next);
+      return next;
+    });
+
+    setNewFolderName("");
+    setFolderError(null);
+  }, [folders, newFolderName, persistFolders, savePrompt.imageUrl]);
 
   // Toggle favorite function
   const toggleFavorite = (imageUrl: string) => {
@@ -1125,6 +1339,7 @@ const Explore: React.FC = () => {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
+                const isSaved = savedImageUrls.has(item.imageUrl);
                 return (
                   <article
                     key={item.id}
@@ -1147,19 +1362,70 @@ const Explore: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-                      {item.tags.map((tag) => (
+                    <div className="absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                      <div className="relative">
                         <button
-                          key={tag}
                           type="button"
-                          className={`rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur transition-colors duration-200 hover:text-d-text pointer-events-auto ${glass.promptDark}`}
-                          onClick={(event) => event.stopPropagation()}
+                          className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${
+                            recreateActionMenu?.id === item.id
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                          }`}
+                          aria-haspopup="menu"
+                          aria-expanded={recreateActionMenu?.id === item.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleRecreateActionMenu(item.id, event.currentTarget, item);
+                          }}
                         >
-                          #{tag}
+                          <Edit className="w-4 h-4" />
+                          <span className="text-sm font-medium">Recreate</span>
                         </button>
-                      ))}
+                        <ImageActionMenuPortal
+                          anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
+                          open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
+                          onClose={closeRecreateActionMenu}
+                          isRecreateMenu={false}
+                        >
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleRecreateEdit(item);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit image
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleRecreateUseAsReference(item);
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                            Use as reference
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleRecreateRunPrompt(item);
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            Run the same prompt
+                          </button>
+                        </ImageActionMenuPortal>
+                      </div>
                     </div>
-
 
                     <div
                       className={`absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
@@ -1168,6 +1434,25 @@ const Explore: React.FC = () => {
                           : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                       }`}
                     >
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSaveToGallery(item);
+                        }}
+                        className={`image-action-btn image-action-btn--labelled parallax-large ${
+                          isSaved ? 'border-d-white/50 bg-d-white/10 text-d-text' : ''
+                        }`}
+                        aria-pressed={isSaved}
+                        aria-label={isSaved ? 'Saved to your gallery' : 'Save to your gallery'}
+                      >
+                        {isSaved ? (
+                          <BookmarkCheck className="size-3.5" aria-hidden="true" />
+                        ) : (
+                          <BookmarkPlus className="size-3.5" aria-hidden="true" />
+                        )}
+                        {isSaved ? 'Saved' : 'Save'}
+                      </button>
                       <button
                         type="button"
                         onClick={(event) => {
@@ -1275,46 +1560,6 @@ const Explore: React.FC = () => {
                               {item.creator.handle}
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            data-copy-button="true"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              copyPromptToClipboard(item.prompt);
-                            }}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
-                            onMouseEnter={(e) => {
-                              showHoverTooltip(e.currentTarget, `copy-${item.id}`);
-                            }}
-                            onMouseLeave={() => {
-                              hideHoverTooltip(`copy-${item.id}`);
-                            }}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                        
-                        <p
-                          className="mt-3 text-sm font-raleway leading-relaxed text-d-white"
-                          style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {item.prompt}
-                        </p>
-                        <div className="mt-3 mb-1 flex items-center justify-between text-xs text-d-light">
-                          <div className="flex items-center gap-4">
-                            <span>{item.creator.location}</span>
-                            <span>{item.timeAgo}</span>
-                          </div>
                           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-d-dark text-xs font-medium text-d-white backdrop-blur">
                             {hasToolLogo(item.modelId) && (
                               <img
@@ -1326,66 +1571,59 @@ const Explore: React.FC = () => {
                             {getModelDisplayName(item.modelId, item.modelLabel)}
                           </span>
                         </div>
+                        
+                        <div className="mt-3 flex items-start gap-2 text-sm text-d-white">
+                          <p 
+                            className="flex-1 font-raleway leading-relaxed"
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {item.prompt}
+                          </p>
+                          <button
+                            type="button"
+                            data-copy-button="true"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void copyPromptToClipboard(item.prompt);
+                            }}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            className="text-d-white transition-colors duration-200 hover:text-d-text"
+                            aria-label="Copy prompt"
+                            onMouseEnter={(event) => {
+                              showHoverTooltip(event.currentTarget, `copy-${item.id}`);
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip(`copy-${item.id}`);
+                            }}
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="mt-3 mb-1 flex items-center justify-start text-xs text-d-light">
+                          <div className="flex items-center gap-2">
+                            {item.tags.map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                className={`rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur transition-colors duration-200 hover:text-d-text pointer-events-auto ${glass.promptDark}`}
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                #{tag}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className={`${buttons.glassPromptDark} w-full justify-center py-3 ${glass.promptDark}`}
-                          aria-haspopup="menu"
-                          aria-expanded={recreateActionMenu?.id === item.id}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleRecreateActionMenu(item.id, event.currentTarget, item);
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span>Recreate</span>
-                        </button>
-                        <ImageActionMenuPortal
-                          anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
-                          open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
-                          onClose={closeRecreateActionMenu}
-                          isRecreateMenu={true}
-                        >
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRecreateEdit(item);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit image
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRecreateUseAsReference(item);
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                            Use as reference
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRecreateRunPrompt(item);
-                            }}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                            Run the same prompt
-                          </button>
-                        </ImageActionMenuPortal>
-                      </div>
 
                     </div>
                   </div>
@@ -1488,6 +1726,146 @@ const Explore: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {savePrompt.open && savePrompt.item && (
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-d-black/80 px-4 py-8"
+            onClick={closeSavePrompt}
+          >
+            <div
+              className={`${glass.promptDark} relative w-full max-w-3xl rounded-[28px] border border-d-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+              onClick={event => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={closeSavePrompt}
+                className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-d-dark/60 text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                aria-label="Close save dialog"
+              >
+                <X className="size-4" />
+              </button>
+
+              <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                <div className="space-y-4">
+                  <div className="overflow-hidden rounded-[24px] border border-d-dark/70">
+                    <img
+                      src={savePrompt.item.imageUrl}
+                      alt={`Saved inspiration ${savePrompt.item.id}`}
+                      className="aspect-square w-full object-cover"
+                    />
+                  </div>
+                  <div className="space-y-3 rounded-[20px] border border-d-dark/70 bg-d-black/40 p-4">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-d-white/60">
+                      Saved inspiration
+                      {savePrompt.alreadySaved && <span className="rounded-full bg-d-white/10 px-2 py-0.5 text-[10px] font-semibold text-d-text">updated</span>}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="relative size-12 overflow-hidden rounded-full">
+                        <div className={`absolute inset-0 bg-gradient-to-br ${savePrompt.item.creator.avatarColor}`} aria-hidden="true" />
+                        <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
+                          {getInitials(savePrompt.item.creator.name)}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-raleway text-d-white">{savePrompt.item.creator.name}</p>
+                        <p className="truncate text-xs text-d-white/60">{savePrompt.item.creator.handle}</p>
+                      </div>
+                      <a
+                        href={buildCreatorProfileUrl(savePrompt.item.creator)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="ml-auto inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                      >
+                        View profile
+                        <ArrowUpRight className="size-3.5" />
+                      </a>
+                    </div>
+                    <p className="text-sm font-raleway leading-relaxed text-d-white/80">{savePrompt.item.prompt}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-raleway text-d-text">Add to a folder</h3>
+                    <p className="text-sm text-d-white/70">
+                      Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
+                    </p>
+                    <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+                      {folders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-d-dark/70 bg-d-black/30 py-8 text-center text-d-white/70">
+                          <FolderPlus className="size-8 text-d-white/50" />
+                          <p className="max-w-xs text-sm font-raleway text-d-white/70">
+                            You don’t have any folders yet. Create one to organise your saved inspirations.
+                          </p>
+                        </div>
+                      ) : (
+                        folders.map(folder => {
+                          const isAssigned = assignedFolderIds.has(folder.id);
+                          return (
+                            <button
+                              key={folder.id}
+                              type="button"
+                              onClick={() => toggleImageFolderAssignment(folder.id)}
+                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${
+                                isAssigned
+                                  ? 'border-d-white/70 bg-d-white/10 text-d-text shadow-lg shadow-d-white/10'
+                                  : 'border-d-dark bg-d-black/30 text-d-white/80 hover:border-d-mid hover:text-d-text'
+                              }`}
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-raleway">{folder.name}</p>
+                                <p className="text-xs text-d-white/60">{folder.imageIds.length} saved</p>
+                              </div>
+                              <span
+                                className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${
+                                  isAssigned ? 'border-d-text bg-d-text text-b-black' : 'border-d-mid text-d-white/50'
+                                }`}
+                              >
+                                {isAssigned && <Check className="h-3.5 w-3.5" />}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[20px] border border-d-dark/70 bg-d-black/30 p-4">
+                    <label className="text-xs font-raleway uppercase tracking-[0.24em] text-d-white/60">Create new folder</label>
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                      <input
+                        type="text"
+                        value={newFolderName}
+                        onChange={event => setNewFolderName(event.target.value)}
+                        placeholder="Folder name"
+                        className={`${inputs.base} sm:flex-1`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateFolderFromDialog}
+                        className={`${buttons.glassPromptDark} justify-center border-d-dark bg-d-black/60 text-sm`}
+                      >
+                        <FolderPlus className="size-3.5" />
+                        Create & add
+                      </button>
+                    </div>
+                    {folderError && <p className="mt-2 text-xs font-raleway text-red-400">{folderError}</p>}
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={closeSavePrompt}
+                      className={buttons.ghostCompact}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Full-size image modal */}
         {isFullSizeOpen && selectedFullImage && (
@@ -1756,11 +2134,7 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="mt-3 mb-1 flex items-center justify-between text-xs text-d-light">
-                      <div className="flex items-center gap-4">
-                        <span>{selectedFullImage.creator.location}</span>
-                        <span>{selectedFullImage.timeAgo}</span>
-                      </div>
+                    <div className="mt-3 mb-1 flex items-center justify-start text-xs text-d-light">
                       <div className="flex items-center gap-2">
                         {selectedFullImage.tags.map((tag) => (
                           <button
