@@ -59,7 +59,7 @@ function ToolCard({ tool }: { tool: ToolResource }) {
 
   return (
     <article
-      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}
+      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}
     >
       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
         {logo ? (
@@ -161,7 +161,7 @@ export default function KnowledgeBase() {
                     Here are other great tools to improve your DayGen workflows.
                   </p>
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
                       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
                         <img src="/midjourney logo.png" alt="Midjourney logo" className="h-full w-full object-cover" />
                       </div>
@@ -173,7 +173,7 @@ export default function KnowledgeBase() {
                       </div>
                     </article>
 
-                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
                       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
                         <img src="/magnific logo.png" alt="Magnific logo" className="h-full w-full object-cover" />
                       </div>
@@ -185,7 +185,7 @@ export default function KnowledgeBase() {
                       </div>
                     </article>
 
-                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
                       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
                         <img src="/flair ai logo.jpg" alt="Flair logo" className="h-full w-full object-cover" />
                       </div>
@@ -197,7 +197,7 @@ export default function KnowledgeBase() {
                       </div>
                     </article>
 
-                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
                       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
                         <img src="/higgsfield logo.jpg" alt="Higgsfield logo" className="h-full w-full object-cover" />
                       </div>
@@ -209,7 +209,7 @@ export default function KnowledgeBase() {
                       </div>
                     </article>
 
-                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
                       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
                         <img src="/freepik logo.png" alt="Freepik logo" className="h-full w-full object-cover" />
                       </div>
@@ -221,7 +221,7 @@ export default function KnowledgeBase() {
                       </div>
                     </article>
 
-                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-5 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
+                    <article className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small`}>
                       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
                         <img src="/krea logo.jpeg" alt="Krea logo" className="h-full w-full object-cover" />
                       </div>

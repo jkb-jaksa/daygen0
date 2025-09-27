@@ -31,13 +31,6 @@ const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
   { key: "audio", label: "audio", Icon: Volume2 },
 ];
 
-const EDIT_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
-  { key: "inpaint", label: "inpaint", Icon: Edit },
-  { key: "outpaint", label: "outpaint", Icon: ImageIcon },
-  { key: "replace", label: "replace", Icon: VideoIcon },
-  { key: "style", label: "style transfer", Icon: Users },
-  { key: "upscale", label: "upscale", Icon: Volume2 },
-];
 
 const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
   { to: "/learn/use-cases", label: "use cases", Icon: Users },
@@ -227,8 +220,8 @@ export default function Navbar() {
                   className={({ isActive }) =>
                     `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
                   }
-                  onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
-                  onFocus={() => item.label !== "explore" && item.label !== "my works" && setActiveMenu(item.label)}
+                  onMouseEnter={() => item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && setActiveMenu(item.label)}
+                  onFocus={() => item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && setActiveMenu(item.label)}
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -412,22 +405,6 @@ export default function Navbar() {
                         </div>
                         <span>{category.label}</span>
                       </button>
-                    ))}
-                  </div>
-                ) : activeMenu === "edit" ? (
-                  <div className="flex flex-col gap-1.5">
-                    {EDIT_MENU_ITEMS.map((category) => (
-                      <Link
-                        key={category.key}
-                        to="/edit"
-                        onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
-                      >
-                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-                          <category.Icon className="w-4 h-4" />
-                        </div>
-                        <span>{category.label}</span>
-                      </Link>
                     ))}
                   </div>
                 ) : activeMenu === "explore" ? (
