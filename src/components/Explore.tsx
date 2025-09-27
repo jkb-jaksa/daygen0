@@ -710,6 +710,11 @@ const Explore: React.FC = () => {
     imageUrl: string | null;
     alreadySaved: boolean;
   }>({ open: false, item: null, imageUrl: null, alreadySaved: false });
+  
+  const [unsaveConfirm, setUnsaveConfirm] = useState<{
+    open: boolean;
+    item: GalleryItem | null;
+  }>({ open: false, item: null });
   const [newFolderName, setNewFolderName] = useState("");
   const [folderError, setFolderError] = useState<string | null>(null);
 
@@ -834,6 +839,33 @@ const Explore: React.FC = () => {
     setNewFolderName("");
     setFolderError(null);
   }, []);
+
+  const closeUnsaveConfirm = useCallback(() => {
+    setUnsaveConfirm({ open: false, item: null });
+  }, []);
+
+  const handleUnsaveFromGallery = useCallback(
+    (item: GalleryItem) => {
+      setPersonalGallery(prev => {
+        const next = prev.filter(img => img.url !== item.imageUrl);
+        void persistGallery(next);
+        return next;
+      });
+
+      // Also remove from folders
+      setFolders(prev => {
+        const next = prev.map(folder => ({
+          ...folder,
+          imageIds: folder.imageIds.filter(url => url !== item.imageUrl),
+        }));
+        void persistFolders(next);
+        return next;
+      });
+
+      closeUnsaveConfirm();
+    },
+    [persistGallery, persistFolders, closeUnsaveConfirm],
+  );
 
   const handleSaveToGallery = useCallback(
     (item: GalleryItem) => {
@@ -1438,13 +1470,17 @@ const Explore: React.FC = () => {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleSaveToGallery(item);
+                          if (isSaved) {
+                            setUnsaveConfirm({ open: true, item });
+                          } else {
+                            handleSaveToGallery(item);
+                          }
                         }}
                         className={`image-action-btn image-action-btn--labelled parallax-large ${
                           isSaved ? 'border-d-white/50 bg-d-white/10 text-d-text' : ''
                         }`}
                         aria-pressed={isSaved}
-                        aria-label={isSaved ? 'Saved to your gallery' : 'Save to your gallery'}
+                        aria-label={isSaved ? 'Remove from your gallery' : 'Save to your gallery'}
                       >
                         {isSaved ? (
                           <BookmarkCheck className="size-3.5" aria-hidden="true" />
@@ -2149,6 +2185,54 @@ const Explore: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unsave confirmation modal */}
+        {unsaveConfirm.open && unsaveConfirm.item && (
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-d-black/80 px-4 py-8"
+            onClick={closeUnsaveConfirm}
+          >
+            <div
+              className={`${glass.promptDark} relative w-full max-w-md rounded-[28px] border border-d-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+              onClick={event => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={closeUnsaveConfirm}
+                className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-d-dark/60 text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                aria-label="Close confirmation dialog"
+              >
+                <X className="size-4" />
+              </button>
+
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-raleway text-d-text">Remove from gallery?</h3>
+                  <p className="text-sm text-d-white/80">
+                    This will remove the image from your saved gallery and any folders it's in.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeUnsaveConfirm}
+                    className={buttons.ghost}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUnsaveFromGallery(unsaveConfirm.item!)}
+                    className={buttons.primary}
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             </div>
