@@ -37,6 +37,7 @@ import {
   Trash2,
   X,
   RefreshCw,
+  Crown,
 } from "lucide-react";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
@@ -102,6 +103,7 @@ type GalleryItem = {
   tags: string[];
   imageUrl: string;
   orientation: "portrait" | "landscape" | "square";
+  mediaType?: "image" | "video";
 };
 
 const galleryItems: GalleryItem[] = [
@@ -123,6 +125,7 @@ const galleryItems: GalleryItem[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
     orientation: "portrait",
+    mediaType: "image",
   },
   {
     id: "desert-dream",
@@ -142,6 +145,7 @@ const galleryItems: GalleryItem[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80&sat=-20",
     orientation: "landscape",
+    mediaType: "image",
   },
   {
     id: "velvet-astral",
@@ -161,6 +165,7 @@ const galleryItems: GalleryItem[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=900&q=80&sat=30",
     orientation: "square",
+    mediaType: "image",
   },
   {
     id: "sonic-waves",
@@ -180,6 +185,7 @@ const galleryItems: GalleryItem[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80",
     orientation: "landscape",
+    mediaType: "image",
   },
   {
     id: "ceramic-dream",
@@ -199,6 +205,7 @@ const galleryItems: GalleryItem[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80",
     orientation: "portrait",
+    mediaType: "image",
   },
   {
     id: "fjord-lullaby",
@@ -218,8 +225,178 @@ const galleryItems: GalleryItem[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80",
     orientation: "landscape",
+    mediaType: "image",
   },
 ];
+
+type AvatarGalleryItem = {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  likes: number;
+  publishedAgo: string;
+  tags: string[];
+  modelId: string;
+  modelLabel?: string;
+  shareUrl: string;
+  accentGradient: string;
+  creator: GalleryItem["creator"];
+};
+
+const avatarGallery: AvatarGalleryItem[] = [
+  {
+    id: "aurora-warden",
+    name: "Aurora Warden",
+    description:
+      "Futuristic synth DJ persona with luminous braids, holographic makeup, and prism reflections that glow under club lighting.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1521579770037-4d856ce018f9?auto=format&fit=crop&w=900&q=80",
+    likes: 982,
+    publishedAgo: "3h ago",
+    tags: ["futuristic", "music", "neon"],
+    modelId: "flux-1.1",
+    modelLabel: "Flux Portrait",
+    shareUrl: "https://www.daygen.ai/avatars/aurora-warden",
+    accentGradient: "from-fuchsia-500/70 via-violet-500/60 to-sky-400/70",
+    creator: {
+      name: "Leah Wave",
+      handle: "@leah.wave",
+      avatarColor: "from-fuchsia-500/70 via-purple-400/70 to-sky-500/70",
+      location: "Los Angeles, US",
+    },
+  },
+  {
+    id: "helix-protocol",
+    name: "Helix Protocol",
+    description:
+      "Cinematic AI guide avatar crafted for startup pitch decks with confident gaze, sharp tailoring, and volumetric rim light.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80",
+    likes: 861,
+    publishedAgo: "6h ago",
+    tags: ["professional", "corporate", "minimal"],
+    modelId: "runway-gen4",
+    modelLabel: "Runway Portrait",
+    shareUrl: "https://www.daygen.ai/avatars/helix-protocol",
+    accentGradient: "from-slate-300/70 via-blue-400/60 to-violet-500/70",
+    creator: {
+      name: "Tomas Meyer",
+      handle: "@tmeyerstudio",
+      avatarColor: "from-blue-400/70 via-sky-300/70 to-cyan-400/70",
+      location: "Amsterdam, NL",
+    },
+  },
+  {
+    id: "ember-warden",
+    name: "Ember Warden",
+    description:
+      "Mythic warrior avatar designed for RPG stream overlays, featuring ember-lit armor, freckles, and cinematic depth of field.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=900&q=80",
+    likes: 792,
+    publishedAgo: "1d ago",
+    tags: ["fantasy", "gaming", "hero"],
+    modelId: "ideogram",
+    modelLabel: "Ideogram Render",
+    shareUrl: "https://www.daygen.ai/avatars/ember-warden",
+    accentGradient: "from-amber-400/70 via-rose-500/60 to-purple-600/70",
+    creator: {
+      name: "Nia Frost",
+      handle: "@niafrost",
+      avatarColor: "from-rose-400/70 via-orange-300/70 to-amber-300/70",
+      location: "Reykjavík, IS",
+    },
+  },
+  {
+    id: "solstice-echo",
+    name: "Solstice Echo",
+    description:
+      "Slow-tv storyteller avatar with cinematic freckles, warm daylight palette, and gentle eye contact that works across languages.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=900&q=80",
+    likes: 744,
+    publishedAgo: "2d ago",
+    tags: ["lifestyle", "storyteller", "warm"],
+    modelId: "gemini-2.5-flash-image-preview",
+    modelLabel: "Gemini Portrait",
+    shareUrl: "https://www.daygen.ai/avatars/solstice-echo",
+    accentGradient: "from-amber-300/70 via-emerald-300/60 to-sky-300/70",
+    creator: {
+      name: "Marin Cho",
+      handle: "@marin.cho",
+      avatarColor: "from-emerald-400/70 via-teal-400/70 to-lime-400/70",
+      location: "Seoul, KR",
+    },
+  },
+  {
+    id: "noir-catalyst",
+    name: "Noir Catalyst",
+    description:
+      "High-fashion editorial avatar tuned for campaign rollouts with moody lighting, crystal accessories, and sharp posing.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80",
+    likes: 701,
+    publishedAgo: "3d ago",
+    tags: ["fashion", "editorial", "dramatic"],
+    modelId: "recraft",
+    modelLabel: "Recraft Studio",
+    shareUrl: "https://www.daygen.ai/avatars/noir-catalyst",
+    accentGradient: "from-slate-900/70 via-purple-500/50 to-rose-500/60",
+    creator: {
+      name: "Isla Knox",
+      handle: "@isla.knox",
+      avatarColor: "from-indigo-500/70 via-purple-400/70 to-slate-500/70",
+      location: "London, UK",
+    },
+  },
+  {
+    id: "cobalt-runner",
+    name: "Cobalt Runner",
+    description:
+      "Esports shoutcaster avatar with kinetic hair lighting, vivid cyan accents, and headset-ready framing for stream overlays.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
+    likes: 668,
+    publishedAgo: "5d ago",
+    tags: ["gaming", "esports", "dynamic"],
+    modelId: "seedream-3.0",
+    modelLabel: "Seedream Studio",
+    shareUrl: "https://www.daygen.ai/avatars/cobalt-runner",
+    accentGradient: "from-cyan-500/70 via-blue-500/60 to-indigo-500/70",
+    creator: {
+      name: "Elliot Park",
+      handle: "@elliot.park",
+      avatarColor: "from-blue-400/70 via-sky-300/70 to-cyan-400/70",
+      location: "Toronto, CA",
+    },
+  },
+  {
+    id: "lumen-anchor",
+    name: "Lumen Anchor",
+    description:
+      "Newsroom-ready avatar built for daily briefing videos with softbox lighting, precise expression control, and neutral styling.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=900&q=80",
+    likes: 642,
+    publishedAgo: "1w ago",
+    tags: ["broadcast", "news", "studio"],
+    modelId: "runway-gen4",
+    modelLabel: "Runway Broadcast",
+    shareUrl: "https://www.daygen.ai/avatars/lumen-anchor",
+    accentGradient: "from-sky-200/70 via-emerald-300/50 to-lime-300/60",
+    creator: {
+      name: "Priya Sen",
+      handle: "@priyasync",
+      avatarColor: "from-rose-400/70 via-orange-300/70 to-amber-300/70",
+      location: "Singapore, SG",
+    },
+  },
+];
+
+const AVATAR_TAGS = Array.from(
+  new Set(avatarGallery.flatMap(item => item.tags)),
+).sort((a, b) => a.localeCompare(b));
 
 
 
@@ -419,6 +596,155 @@ const getModelDisplayName = (modelId: string, label?: string) => {
   if (label) return label;
   const model = AI_MODELS.find(m => m.id === modelId);
   return model?.name || modelId;
+};
+
+type AvatarCardVariant = "feature" | "spotlight" | "grid";
+
+const AvatarCard: React.FC<{
+  item: AvatarGalleryItem;
+  variant: AvatarCardVariant;
+  rank: number;
+  likeCount: number;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
+}> = ({ item, variant, rank, likeCount, isFavorite, onToggleFavorite }) => {
+  const isFeature = variant === "feature";
+  const isSpotlight = variant === "spotlight";
+  const padding = isFeature ? "p-8 sm:p-10" : isSpotlight ? "p-6 sm:p-7" : "p-6";
+  const radius = isFeature ? "rounded-[32px]" : "rounded-[24px]";
+  const minHeight = isFeature ? "min-h-[420px]" : isSpotlight ? "min-h-[280px]" : "min-h-[260px]";
+
+  return (
+    <article
+      className={`relative overflow-hidden border border-d-dark/70 bg-d-black/40 ${radius} ${minHeight}`}
+    >
+      <img
+        src={item.imageUrl}
+        alt={`${item.name} avatar preview`}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${item.accentGradient} opacity-80 mix-blend-multiply`}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-d-black/80 via-d-black/40 to-d-black/5"
+        aria-hidden="true"
+      />
+
+      <div className={`relative flex h-full flex-col justify-end gap-5 ${padding}`}>
+        <div className="flex items-center justify-between text-xs text-white/80">
+          <span
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 uppercase tracking-[0.3em] ${
+              isFeature
+                ? "border-white/30 bg-white/10"
+                : "border-white/20 bg-black/40"
+            }`}
+          >
+            {isFeature ? <Crown className="size-3.5" aria-hidden="true" /> : <Sparkles className="size-3.5" aria-hidden="true" />}
+            <span className="tracking-[0.1em]">Top #{rank}</span>
+          </span>
+          <span className="text-white/60">{item.publishedAgo}</span>
+        </div>
+
+        <div className="space-y-3">
+          <h3
+            className={`${
+              isFeature
+                ? "text-3xl sm:text-4xl"
+                : isSpotlight
+                  ? "text-2xl"
+                  : "text-xl"
+            } font-raleway font-light text-white`}
+          >
+            {item.name}
+          </h3>
+          <p className="max-w-xl text-sm text-white/80">{item.description}</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative size-10 overflow-hidden rounded-full border border-white/20">
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.creator.avatarColor}`} aria-hidden="true" />
+              <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
+                {getInitials(item.creator.name)}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white">{item.creator.name}</p>
+              <a
+                href={buildCreatorProfileUrl(item.creator)}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-xs text-white/70 transition-colors duration-200 hover:text-white"
+              >
+                {item.creator.handle}
+              </a>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3 py-1 text-xs text-white/70">
+            {getModelDisplayName(item.modelId, item.modelLabel)}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2 text-xs text-white/80">
+            {item.tags.map(tag => (
+              <span
+                key={tag}
+                className="rounded-full border border-white/20 bg-black/50 px-3 py-1"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={event => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleFavorite(item.id);
+            }}
+            className={`inline-flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+              isFavorite ? "bg-white/20 text-white" : "bg-black/40 text-white/70 hover:text-white"
+            }`}
+            aria-pressed={isFavorite}
+          >
+            <Heart
+              className="size-3.5"
+              aria-hidden="true"
+              fill={isFavorite ? "currentColor" : "none"}
+              strokeWidth={1.5}
+            />
+            {likeCount.toLocaleString()} likes
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-3 text-sm text-white">
+          <a
+            href={item.shareUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 font-raleway transition-colors duration-200 hover:bg-white/20"
+          >
+            View avatar
+            <ArrowUpRight className="size-4" aria-hidden="true" />
+          </a>
+          {isFeature && (
+            <a
+              href={buildCreatorProfileUrl(item.creator)}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/40 px-4 py-2 font-raleway text-white/80 transition-colors duration-200 hover:text-white"
+            >
+              Creator profile
+              <ArrowUpRight className="size-4" aria-hidden="true" />
+            </a>
+          )}
+        </div>
+      </div>
+    </article>
+  );
 };
 
 // Custom dropdown component for Gallery filters
@@ -726,6 +1052,9 @@ const Explore: React.FC = () => {
 
   // Favorites state
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [avatarFavorites, setAvatarFavorites] = useState<Set<string>>(new Set());
+  const [activeGalleryView, setActiveGalleryView] = useState<"creations" | "avatars">("creations");
+  const [avatarTagFilter, setAvatarTagFilter] = useState<string>("all");
 
   // Load favorites from storage
   useEffect(() => {
@@ -742,6 +1071,21 @@ const Explore: React.FC = () => {
     void loadFavorites();
   }, []);
 
+  useEffect(() => {
+    const loadAvatarFavorites = async () => {
+      try {
+        const stored = await getPersistedValue<string[]>('explore-', 'avatar-favorites');
+        if (stored) {
+          setAvatarFavorites(new Set(stored));
+        }
+      } catch (error) {
+        debugError('Failed to load avatar favorites:', error);
+      }
+    };
+
+    void loadAvatarFavorites();
+  }, []);
+
   // Persist favorites to storage
   const persistFavorites = async (newFavorites: Set<string>) => {
     setFavorites(newFavorites);
@@ -751,6 +1095,34 @@ const Explore: React.FC = () => {
       debugError('Failed to persist favorites:', error);
     }
   };
+
+  const persistAvatarFavorites = useCallback(async (next: Set<string>) => {
+    try {
+      await setPersistedValue('explore-', 'avatar-favorites', Array.from(next));
+    } catch (error) {
+      debugError('Failed to persist avatar favorites:', error);
+    }
+  }, []);
+
+  const toggleAvatarFavorite = useCallback(
+    (avatarId: string) => {
+      setAvatarFavorites(prev => {
+        const next = new Set(prev);
+        if (next.has(avatarId)) {
+          next.delete(avatarId);
+        } else {
+          next.add(avatarId);
+        }
+        void persistAvatarFavorites(next);
+        return next;
+      });
+    },
+    [persistAvatarFavorites],
+  );
+
+  const handleNavigateToAvatars = useCallback(() => {
+    navigate('/avatars');
+  }, [navigate]);
 
   const persistInspirations = useCallback(
     async (next: GalleryImageLike[]) => {
@@ -870,6 +1242,37 @@ const Explore: React.FC = () => {
         .map(folder => folder.id),
     );
   }, [folders, savePrompt.imageUrl]);
+
+  const getAvatarLikes = useCallback(
+    (item: AvatarGalleryItem) => item.likes + (avatarFavorites.has(item.id) ? 1 : 0),
+    [avatarFavorites],
+  );
+
+  const avatarLeaderboard = useMemo(
+    () =>
+      avatarGallery
+        .slice()
+        .sort((a, b) => getAvatarLikes(b) - getAvatarLikes(a)),
+    [getAvatarLikes],
+  );
+
+  const filteredAvatars = useMemo(
+    () =>
+      avatarLeaderboard.filter(item =>
+        avatarTagFilter === 'all' || item.tags.includes(avatarTagFilter),
+      ),
+    [avatarLeaderboard, avatarTagFilter],
+  );
+
+  const topAvatars = useMemo(
+    () => filteredAvatars.slice(0, 3),
+    [filteredAvatars],
+  );
+
+  const remainingAvatars = useMemo(
+    () => filteredAvatars.slice(3),
+    [filteredAvatars],
+  );
 
   const closeSavePrompt = useCallback(() => {
     setSavePrompt({ open: false, item: null, imageUrl: null, alreadySaved: false });
@@ -1294,19 +1697,21 @@ const Explore: React.FC = () => {
       
       // Type filter
       if (galleryFilters.type !== 'all') {
-        const isVideo = item.modelId.includes('video') || 
-                       item.modelId === 'veo-3' || 
-                       item.modelId === 'runway-video-gen4' ||
-                       item.modelId === 'wan-video-2.2' ||
-                       item.modelId === 'hailuo-02' ||
-                       item.modelId === 'kling-video' ||
-                       item.modelId === 'seedance-1.0-pro' ||
-                       item.modelId === 'luma-ray-2';
-        
-        if (galleryFilters.type === 'image' && isVideo) {
+        const inferredVideo = item.modelId.includes('video') ||
+          item.modelId === 'veo-3' ||
+          item.modelId === 'runway-video-gen4' ||
+          item.modelId === 'wan-video-2.2' ||
+          item.modelId === 'hailuo-02' ||
+          item.modelId === 'kling-video' ||
+          item.modelId === 'seedance-1.0-pro' ||
+          item.modelId === 'luma-ray-2';
+
+        const itemType = item.mediaType ?? (inferredVideo ? 'video' : 'image');
+
+        if (galleryFilters.type === 'image' && itemType !== 'image') {
           return false;
         }
-        if (galleryFilters.type === 'video' && !isVideo) {
+        if (galleryFilters.type === 'video' && itemType !== 'video') {
           return false;
         }
       }
@@ -1417,103 +1822,188 @@ const Explore: React.FC = () => {
               </p>
             </header>
 
-            {/* Tag Filter Bar */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2">
-                {getAllUniqueTags().map((tag) => {
-                  const isSelected = galleryFilters.tags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setGalleryFilters(prev => ({
-                            ...prev,
-                            tags: prev.tags.filter(t => t !== tag)
-                          }));
-                        } else {
-                          setGalleryFilters(prev => ({
-                            ...prev,
-                            tags: [...prev.tags, tag]
-                          }));
-                        }
-                      }}
-                      className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${
-                        isSelected
-                          ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
-                          : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
-                      }`}
-                    >
-                      #{tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Filters Section */}
-            <div className={`mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-d-text" />
-                  <h3 className="text-sm font-raleway text-d-white">Filters</h3>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-d-white/60">View</span>
+                <div className="inline-flex rounded-full border border-d-dark/70 bg-d-black/40 p-1">
+                  <button
+                    type="button"
+                    aria-pressed={activeGalleryView === 'creations'}
+                    onClick={() => setActiveGalleryView('creations')}
+                    className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
+                      activeGalleryView === 'creations'
+                        ? 'bg-d-white text-d-black shadow-lg shadow-d-white/20'
+                        : 'text-d-white/70 hover:text-d-text'
+                    }`}
+                  >
+                    Creations
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={activeGalleryView === 'avatars'}
+                    onClick={() => setActiveGalleryView('avatars')}
+                    className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
+                      activeGalleryView === 'avatars'
+                        ? 'bg-d-white text-d-black shadow-lg shadow-d-white/20'
+                        : 'text-d-white/70 hover:text-d-text'
+                    }`}
+                  >
+                    Avatars
+                  </button>
                 </div>
+              </div>
+              {activeGalleryView === 'avatars' && (
                 <button
-                  onClick={() =>
-                    setGalleryFilters({
-                      models: [],
-                      type: "all",
-                      tags: [],
-                    })
-                  }
-                  className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
+                  type="button"
+                  onClick={handleNavigateToAvatars}
+                  className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1.5 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
                 >
-                  Clear
+                  Launch avatar studio
+                  <ArrowUpRight className="size-4" aria-hidden="true" />
                 </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {/* Modality Filter */}
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs text-d-white/70 font-raleway">Modality</label>
-                  <CustomDropdown
-                    value={galleryFilters.type}
-                    onChange={value => {
-                      const newType = value as "all" | "image" | "video";
-                      setGalleryFilters(prev => ({
-                        ...prev,
-                        type: newType,
-                        models: [],
-                      }));
-                    }}
-                    options={[
-                      { value: "image", label: "Image" },
-                      { value: "video", label: "Video" },
-                    ]}
-                    placeholder="All modalities"
-                  />
-                </div>
-
-                {/* Model Filter */}
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs text-d-white/70 font-raleway">Model</label>
-                  <CustomMultiSelect
-                    values={galleryFilters.models}
-                    onChange={models => setGalleryFilters(prev => ({ ...prev, models }))}
-                    options={getAvailableModels().map(modelId => {
-                      const model = AI_MODELS.find(m => m.id === modelId);
-                      return { value: modelId, label: model?.name || modelId };
-                    })}
-                    placeholder="All models"
-                  />
-                </div>
-              </div>
+              )}
             </div>
-          </div>
-        </section>
 
-        <section className="relative pb-12 -mt-6">
+            {activeGalleryView === 'creations' ? (
+              <>
+                {/* Tag Filter Bar */}
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-2">
+                    {getAllUniqueTags().map((tag) => {
+                      const isSelected = galleryFilters.tags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setGalleryFilters(prev => ({
+                                ...prev,
+                                tags: prev.tags.filter(t => t !== tag)
+                              }));
+                            } else {
+                              setGalleryFilters(prev => ({
+                                ...prev,
+                                tags: [...prev.tags, tag]
+                              }));
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${
+                            isSelected
+                              ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
+                              : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
+                          }`}
+                        >
+                          #{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Filters Section */}
+                <div className={`mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-d-text" />
+                      <h3 className="text-sm font-raleway text-d-white">Filters</h3>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setGalleryFilters({
+                          models: [],
+                          type: "all",
+                          tags: [],
+                        })
+                      }
+                      className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    {/* Modality Filter */}
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                      <label className="text-xs text-d-white/70 font-raleway">Modality</label>
+                      <CustomDropdown
+                        value={galleryFilters.type}
+                        onChange={value => {
+                          const newType = value as "all" | "image" | "video";
+                          setGalleryFilters(prev => ({
+                            ...prev,
+                            type: newType,
+                            models: [],
+                          }));
+                        }}
+                        options={[
+                          { value: "image", label: "Image" },
+                          { value: "video", label: "Video" },
+                        ]}
+                        placeholder="All modalities"
+                      />
+                    </div>
+
+                    {/* Model Filter */}
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                      <label className="text-xs text-d-white/70 font-raleway">Model</label>
+                      <CustomMultiSelect
+                        values={galleryFilters.models}
+                        onChange={models => setGalleryFilters(prev => ({ ...prev, models }))}
+                        options={getAvailableModels().map(modelId => {
+                          const model = AI_MODELS.find(m => m.id === modelId);
+                          return { value: modelId, label: model?.name || modelId };
+                        })}
+                        placeholder="All models"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="mt-6 space-y-4">
+                <p className={`${text.body} max-w-3xl text-d-white`}>
+                  Spotlight community-made avatars that have been shared publicly. Filter by vibe, save the ones you love, and discover new creators to collaborate with.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAvatarTagFilter('all')}
+                    className={`px-4 py-2 rounded-full text-xs font-raleway transition-all duration-100 ${
+                      avatarTagFilter === 'all'
+                        ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
+                        : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
+                    }`}
+                    aria-pressed={avatarTagFilter === 'all'}
+                  >
+                    All avatars
+                  </button>
+                  {AVATAR_TAGS.map(tag => {
+                    const isActive = avatarTagFilter === tag;
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setAvatarTagFilter(tag)}
+                        className={`px-4 py-2 rounded-full text-xs font-raleway capitalize transition-all duration-100 ${
+                          isActive
+                            ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
+                            : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
+                        }`}
+                        aria-pressed={isActive}
+                      >
+                        #{tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          </section>
+
+        {activeGalleryView === 'creations' ? (
+          <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
@@ -1821,6 +2311,83 @@ const Explore: React.FC = () => {
             )}
           </div>
         </section>
+        ) : (
+        <section className="relative pb-12 -mt-6">
+          <div className={`${layout.container} space-y-8`}>
+            {filteredAvatars.length === 0 ? (
+              <div className={`rounded-[28px] border border-d-dark/70 bg-d-black/40 p-10 text-center text-d-white/80 ${glass.promptDark}`}>
+                <p className="text-lg font-raleway text-d-white">No public avatars match this vibe yet.</p>
+                <p className="mt-2 text-sm text-d-white/70">
+                  Publish one from the avatars studio or adjust your filters to explore more community styles.
+                </p>
+                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAvatarTagFilter('all')}
+                    className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-4 py-2 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
+                  >
+                    Reset filters
+                    <RefreshCw className="size-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNavigateToAvatars}
+                    className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-4 py-2 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
+                  >
+                    Create an avatar
+                    <ArrowUpRight className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {topAvatars.length > 0 && (
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                    <AvatarCard
+                      key={topAvatars[0].id}
+                      item={topAvatars[0]}
+                      variant="feature"
+                      rank={1}
+                      likeCount={getAvatarLikes(topAvatars[0])}
+                      isFavorite={avatarFavorites.has(topAvatars[0].id)}
+                      onToggleFavorite={toggleAvatarFavorite}
+                    />
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                      {topAvatars.slice(1).map((avatar, index) => (
+                        <AvatarCard
+                          key={avatar.id}
+                          item={avatar}
+                          variant="spotlight"
+                          rank={index + 2}
+                          likeCount={getAvatarLikes(avatar)}
+                          isFavorite={avatarFavorites.has(avatar.id)}
+                          onToggleFavorite={toggleAvatarFavorite}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {remainingAvatars.length > 0 && (
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {remainingAvatars.map((avatar, index) => (
+                      <AvatarCard
+                        key={avatar.id}
+                        item={avatar}
+                        variant="grid"
+                        rank={index + 1 + topAvatars.length}
+                        likeCount={getAvatarLikes(avatar)}
+                        isFavorite={avatarFavorites.has(avatar.id)}
+                        onToggleFavorite={toggleAvatarFavorite}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+        )}
 
 
 
