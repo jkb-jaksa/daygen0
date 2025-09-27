@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Check, Zap, Crown, Sparkles, Star } from "lucide-react";
 import { layout, cards, glass } from "../styles/designSystem";
+import useParallaxHover from "../hooks/useParallaxHover";
 
 type PricingTier = {
   id: string;
@@ -142,38 +143,14 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
 
 
 function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSelected: boolean; onSelect: () => void }) {
-
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    el.style.setProperty("--x", `${x.toFixed(2)}%`);
-    el.style.setProperty("--y", `${y.toFixed(2)}%`);
-    const tx = (x - 50) / 10;
-    const ty = (y - 50) / 10;
-    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
-    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
-  };
-
-  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "200ms");
-    el.style.setProperty("--l", "1");
-  };
-
-  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "400ms");
-    el.style.setProperty("--l", "0");
-  };
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
   return (
     <div
       onClick={onSelect}
-      onMouseMove={onMove}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
       className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow`}
     >
       {/* Popular badge */}

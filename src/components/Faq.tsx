@@ -2,13 +2,12 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { layout, text } from "../styles/designSystem";
+import useParallaxHover from "../hooks/useParallaxHover";
 
 interface FAQItem {
   question: string;
   answer: string;
 }
-
-const isFinePointer = (pointerType: string) => pointerType === "mouse" || pointerType === "pen";
 
 const FAQ_DATA: FAQItem[] = [
   {
@@ -50,63 +49,11 @@ const FAQSection: React.FC = () => {
     setOpenIndex(prev => (prev === index ? null : index));
   }, []);
 
-  const updatePointerVariables = useCallback((element: HTMLDivElement, x: number, y: number) => {
-    element.style.setProperty("--x", `${x.toFixed(2)}%`);
-    element.style.setProperty("--y", `${y.toFixed(2)}%`);
-    element.style.setProperty("--tx", `${((x - 50) / 10).toFixed(2)}px`);
-    element.style.setProperty("--ty", `${((y - 50) / 10).toFixed(2)}px`);
-  }, []);
-
-  const resetPointerVariables = useCallback((element: HTMLDivElement) => {
-    element.style.setProperty("--fade-ms", "200ms");
-    element.style.setProperty("--l", "0");
-    element.style.setProperty("--x", "50%");
-    element.style.setProperty("--y", "50%");
-    element.style.setProperty("--tx", "0px");
-    element.style.setProperty("--ty", "0px");
-  }, []);
-
-  const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isFinePointer(event.pointerType)) {
-        return;
-      }
-
-      const card = event.currentTarget;
-      const rect = card.getBoundingClientRect();
-
-      if (rect.width === 0 || rect.height === 0) {
-        return;
-      }
-
-      const relativeX = ((event.clientX - rect.left) / rect.width) * 100;
-      const relativeY = ((event.clientY - rect.top) / rect.height) * 100;
-
-      updatePointerVariables(card, relativeX, relativeY);
-    },
-    [updatePointerVariables],
-  );
-
-  const handlePointerEnter = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (!isFinePointer(event.pointerType)) {
-      return;
-    }
-
-    const card = event.currentTarget;
-    card.style.setProperty("--fade-ms", "200ms");
-    card.style.setProperty("--l", "0.9");
-  }, []);
-
-  const handlePointerLeave = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isFinePointer(event.pointerType)) {
-        return;
-      }
-
-      resetPointerVariables(event.currentTarget);
-    },
-    [resetPointerVariables],
-  );
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>({
+    enterLight: "0.9",
+    leaveFadeMs: "200ms",
+    resetOnLeave: true,
+  });
 
   return (
     <section id="faq" className="faq-section">
@@ -127,9 +74,9 @@ const FAQSection: React.FC = () => {
               <div
                 key={item.question}
                 className={`faq-card parallax-small mouse-glow ${isOpen ? "faq-card--active" : ""}`}
-                onPointerMove={handlePointerMove}
-                onPointerEnter={handlePointerEnter}
-                onPointerLeave={handlePointerLeave}
+                onPointerMove={onPointerMove}
+                onPointerEnter={onPointerEnter}
+                onPointerLeave={onPointerLeave}
               >
                 <button
                   id={triggerId}

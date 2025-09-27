@@ -25,6 +25,7 @@ import {
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, cards, buttons, glass, inputs, toolAccents } from "../styles/designSystem";
 import type { ToolAccentKey } from "../styles/designSystem";
+import useParallaxHover from "../hooks/useParallaxHover";
 
 // --- Minimal card + layout utilities ---
 const cx = (...classes: Array<string | undefined | false>) =>
@@ -262,37 +263,16 @@ const CATEGORIES = [
 
 function ToolCard({ name, desc, Icon, accent, href }: Tool) {
   const accentTokens = toolAccents[accent];
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    el.style.setProperty("--x", `${x.toFixed(2)}%`);
-    el.style.setProperty("--y", `${y.toFixed(2)}%`);
-    const tx = (x - 50) / 10;
-    const ty = (y - 50) / 10;
-    el.style.setProperty("--tx", `${tx.toFixed(2)}px`);
-    el.style.setProperty("--ty", `${ty.toFixed(2)}px`);
-  };
-  const onEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "200ms");
-    el.style.setProperty("--l", "1");
-  };
-  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.setProperty("--fade-ms", "400ms");
-    el.style.setProperty("--l", "0");
-  };
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
   return (
     <div
       className={cx(
         cards.shell,
         "group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow parallax-small"
       )}
-      onMouseMove={onMove}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
     >
       {/* No overlay */}
       <div className="relative z-10 flex items-center gap-2">
