@@ -702,7 +702,7 @@ const Explore: React.FC = () => {
 
   const navigate = useNavigate();
   const { storagePrefix } = useAuth();
-  const [personalGallery, setPersonalGallery] = useState<GalleryImageLike[]>([]);
+  const [savedInspirations, setSavedInspirations] = useState<GalleryImageLike[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [savePrompt, setSavePrompt] = useState<{
     open: boolean;
@@ -717,7 +717,7 @@ const Explore: React.FC = () => {
   }>({ open: false, item: null });
   const [newFolderName, setNewFolderName] = useState("");
 
-  const savedImageUrls = useMemo(() => new Set(personalGallery.map(item => item.url)), [personalGallery]);
+  const savedImageUrls = useMemo(() => new Set(savedInspirations.map(item => item.url)), [savedInspirations]);
 
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -750,10 +750,10 @@ const Explore: React.FC = () => {
     }
   };
 
-  const persistGallery = useCallback(
+  const persistInspirations = useCallback(
     async (next: GalleryImageLike[]) => {
       try {
-        await setPersistedValue(storagePrefix, 'gallery', serializeGallery(next));
+        await setPersistedValue(storagePrefix, 'inspirations', serializeGallery(next));
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('daygen:gallery-updated'));
         }
@@ -789,17 +789,45 @@ const Explore: React.FC = () => {
 
     const load = async () => {
       try {
-        const [storedGallery, storedFolders] = await Promise.all([
+        const [storedGallery, storedFolders, storedInspirations] = await Promise.all([
           getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'gallery'),
           getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders'),
+          getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'inspirations'),
         ]);
 
         if (cancelled) return;
 
+        let migratedInspirations: GalleryImageLike[] = [];
         if (Array.isArray(storedGallery)) {
-          setPersonalGallery(prev => (prev.length > 0 ? prev : hydrateStoredGallery(storedGallery)));
+          const hydrated = hydrateStoredGallery(storedGallery);
+          migratedInspirations = hydrated.filter(item => item.savedFrom);
+          if (migratedInspirations.length > 0) {
+            const ownWorks = hydrated.filter(item => !item.savedFrom);
+            void setPersistedValue(storagePrefix, 'gallery', serializeGallery(ownWorks));
+          }
+        }
+
+        let restoredInspirations: GalleryImageLike[] = [];
+        if (Array.isArray(storedInspirations)) {
+          restoredInspirations = hydrateStoredGallery(storedInspirations);
+        }
+
+        const combinedInspirations = (() => {
+          if (restoredInspirations.length === 0 && migratedInspirations.length === 0) {
+            return [] as GalleryImageLike[];
+          }
+          const inspirationMap = new Map<string, GalleryImageLike>();
+          [...restoredInspirations, ...migratedInspirations].forEach(item => {
+            inspirationMap.set(item.url, item);
+          });
+          return Array.from(inspirationMap.values());
+        })();
+
+        if (combinedInspirations.length > 0) {
+          setSavedInspirations(combinedInspirations);
+          void setPersistedValue(storagePrefix, 'inspirations', serializeGallery(combinedInspirations));
         } else {
-          setPersonalGallery([]);
+          setSavedInspirations([]);
         }
 
         if (Array.isArray(storedFolders)) {
@@ -852,9 +880,9 @@ const Explore: React.FC = () => {
 
   const handleUnsaveFromGallery = useCallback(
     (item: GalleryItem) => {
-      setPersonalGallery(prev => {
+      setSavedInspirations(prev => {
         const next = prev.filter(img => img.url !== item.imageUrl);
-        void persistGallery(next);
+        void persistInspirations(next);
         return next;
       });
 
@@ -870,7 +898,7 @@ const Explore: React.FC = () => {
 
       closeUnsaveConfirm();
     },
-    [persistGallery, persistFolders, closeUnsaveConfirm],
+    [persistInspirations, persistFolders, closeUnsaveConfirm],
   );
 
   const handleSaveToGallery = useCallback(
@@ -890,7 +918,7 @@ const Explore: React.FC = () => {
       };
 
       let alreadySaved = false;
-      setPersonalGallery(prev => {
+      setSavedInspirations(prev => {
         const exists = prev.some(img => img.url === savedImage.url);
         alreadySaved = exists;
         const next = exists
@@ -907,7 +935,7 @@ const Explore: React.FC = () => {
             )
           : [savedImage, ...prev];
 
-        void persistGallery(next);
+        void persistInspirations(next);
         return next;
       });
 
@@ -929,7 +957,7 @@ const Explore: React.FC = () => {
         });
       }
     },
-    [persistGallery, persistFolders, folders],
+    [persistInspirations, persistFolders, folders],
   );
 
   const toggleImageFolderAssignment = useCallback(
@@ -1018,7 +1046,7 @@ const Explore: React.FC = () => {
   const copyPromptToClipboard = async (prompt: string) => {
     try {
       await navigator.clipboard.writeText(prompt);
-      setCopyNotification('Prompt copied!');
+      setCopyNotification('Link copied!');
       setTimeout(() => setCopyNotification(null), 2000);
     } catch (err) {
       console.error('Failed to copy prompt:', err);
@@ -1166,6 +1194,53 @@ const Explore: React.FC = () => {
     } catch (error) {
       console.error('Failed to copy link:', error);
       setCopyNotification('Failed to copy link');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+  };
+
+  const downloadImage = async (item: GalleryItem) => {
+    try {
+      // Try to fetch the image first
+      let blob: Blob;
+      try {
+        const response = await fetch(item.imageUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+        blob = await response.blob();
+      } catch (fetchError) {
+        console.warn('Fetch failed, trying direct download:', fetchError);
+        // Fallback: create a direct download link
+        const a = document.createElement('a');
+        a.href = item.imageUrl;
+        a.download = `daygen-${item.id}-${Date.now()}.jpg`;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        closeMoreActionMenu();
+        return;
+      }
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `daygen-${item.id}-${Date.now()}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      closeMoreActionMenu();
+    } catch (error) {
+      console.error('Failed to download image:', error);
+      setCopyNotification('Failed to download image');
       setTimeout(() => setCopyNotification(null), 2000);
     }
   };
@@ -1552,18 +1627,17 @@ const Explore: React.FC = () => {
                             <Share2 className="h-4 w-4" />
                             Copy link
                           </button>
-                          <a
-                            href={item.imageUrl}
-                            download
+                          <button
+                            type="button"
                             className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-                            onClick={(event) => {
+                            onClick={async (event) => {
                               event.stopPropagation();
-                              closeMoreActionMenu();
+                              await downloadImage(item);
                             }}
                           >
                             <Download className="h-4 w-4" />
                             Download
-                          </a>
+                          </button>
                         </ImageActionMenuPortal>
                       </div>
                     </div>
@@ -2058,18 +2132,20 @@ const Explore: React.FC = () => {
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        toggleFavorite(selectedFullImage.imageUrl);
+                        if (selectedFullImage) {
+                          toggleFavorite(selectedFullImage.imageUrl);
+                        }
                       }}
-                      className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                      aria-label={favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
+                      className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle pointer-events-auto"
+                      aria-label={selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                     >
                       <Heart
                         className={`w-3.5 h-3.5 transition-colors duration-100 ${
-                          favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                          selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                         }`}
                         aria-hidden="true"
                       />
-                      {getDisplayLikes(selectedFullImage)}
+                      {selectedFullImage ? getDisplayLikes(selectedFullImage) : 0}
                     </button>
                     <div className="relative">
                       <button
@@ -2078,14 +2154,14 @@ const Explore: React.FC = () => {
                           event.stopPropagation();
                           toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                         }}
-                        className="image-action-btn parallax-large"
+                        className="image-action-btn parallax-large pointer-events-auto"
                         aria-label="More options"
                       >
                         <MoreHorizontal className="size-4" aria-hidden="true" />
                       </button>
                       <ImageActionMenuPortal
-                        anchorEl={moreActionMenu?.id === selectedFullImage.id ? moreActionMenu?.anchor ?? null : null}
-                        open={moreActionMenu?.id === selectedFullImage.id}
+                        anchorEl={moreActionMenu?.id === selectedFullImage?.id ? moreActionMenu?.anchor ?? null : null}
+                        open={moreActionMenu?.id === selectedFullImage?.id}
                         onClose={closeMoreActionMenu}
                         isRecreateMenu={false}
                       >
@@ -2100,18 +2176,17 @@ const Explore: React.FC = () => {
                           <Share2 className="h-4 w-4" />
                           Copy link
                         </button>
-                        <a
-                          href={selectedFullImage.imageUrl}
-                          download
+                        <button
+                          type="button"
                           className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-                          onClick={(event) => {
+                          onClick={async (event) => {
                             event.stopPropagation();
-                            closeMoreActionMenu();
+                            await downloadImage(selectedFullImage);
                           }}
                         >
                           <Download className="h-4 w-4" />
                           Download
-                        </a>
+                        </button>
                       </ImageActionMenuPortal>
                     </div>
                   </div>

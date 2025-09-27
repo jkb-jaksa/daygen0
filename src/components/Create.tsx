@@ -71,6 +71,7 @@ const CATEGORY_TO_PATH: Record<string, string> = {
   public: "/gallery/public",
   uploads: "/gallery/uploads",
   "my-folders": "/gallery/folders",
+  inspirations: "/gallery/inspirations",
 };
 
 const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "avatars", "audio"]);
@@ -79,6 +80,7 @@ const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
   public: "public",
   uploads: "uploads",
   folders: "my-folders",
+  inspirations: "inspirations",
 };
 
 const deriveCategoryFromPath = (pathname: string): string => {
@@ -485,13 +487,16 @@ const Create: React.FC = () => {
   const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<File | null>(null);
   const [seedanceLastFrame, setSeedanceLastFrame] = useState<File | null>(null);
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
+  const [inspirations, setInspirations] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [isRunwayVideoGenerating, setIsRunwayVideoGenerating] = useState<boolean>(false);
   const [runwayVideoPrompt, setRunwayVideoPrompt] = useState<string>('');
   const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
+  const [currentInspirationIndex, setCurrentInspirationIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
+  const [fullSizeContext, setFullSizeContext] = useState<'gallery' | 'inspirations'>('gallery');
   const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
 
   const setActiveCategory = useCallback((category: string, options?: { skipRoute?: boolean }) => {
@@ -531,7 +536,14 @@ const Create: React.FC = () => {
   const [lastSelectedImage, setLastSelectedImage] = useState<string | null>(null);
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [uploadedImages, setUploadedImages] = useState<UploadItem[]>([]);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{show: boolean, imageUrl: string | null, imageUrls: string[] | null, uploadId: string | null, folderId: string | null}>({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    show: boolean,
+    imageUrl: string | null,
+    imageUrls: string[] | null,
+    uploadId: string | null,
+    folderId: string | null,
+    source: 'gallery' | 'inspirations' | null,
+  }>({ show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null });
   const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
   const [downloadConfirmation, setDownloadConfirmation] = useState<{show: boolean, count: number}>({show: false, count: 0});
@@ -659,7 +671,7 @@ const Create: React.FC = () => {
   }, [videoGallery, galleryFilters, favorites, folders]);
   const publicGallery = useMemo(() => {
     return gallery
-      .filter(item => item.isPublic)
+      .filter(item => item.isPublic && !item.savedFrom)
       .sort((a, b) => {
         const aTime = new Date(a.timestamp).getTime();
         const bTime = new Date(b.timestamp).getTime();
@@ -669,6 +681,32 @@ const Create: React.FC = () => {
         return bTime - aTime;
       });
   }, [gallery]);
+  const inspirationsGallery = useMemo(() => {
+    return inspirations
+      .slice()
+      .sort((a, b) => {
+        const aTime = new Date(a.timestamp).getTime();
+        const bTime = new Date(b.timestamp).getTime();
+        if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
+        if (Number.isNaN(aTime)) return 1;
+        if (Number.isNaN(bTime)) return -1;
+        return bTime - aTime;
+      });
+  }, [inspirations]);
+  const combinedLibraryImages = useMemo(() => {
+    const map = new Map<string, GalleryImageLike>();
+    gallery.forEach(item => {
+      if (item?.url) {
+        map.set(item.url, item);
+      }
+    });
+    inspirations.forEach(item => {
+      if (item?.url) {
+        map.set(item.url, item);
+      }
+    });
+    return Array.from(map.values());
+  }, [gallery, inspirations]);
   const allVisibleSelected = useMemo(() => (
     filteredGallery.length > 0 && filteredGallery.every(item => selectedImages.has(item.url))
   ), [filteredGallery, selectedImages]);
@@ -1165,6 +1203,11 @@ const Create: React.FC = () => {
   const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || wanError || hailuoError || lumaVideoError || klingError;
   const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
+  const activeFullSizeContext: 'gallery' | 'inspirations' =
+    fullSizeContext === 'inspirations' ||
+    (activeFullSizeImage && 'savedFrom' in activeFullSizeImage && Boolean((activeFullSizeImage as GalleryImageLike).savedFrom))
+      ? 'inspirations'
+      : 'gallery';
 
   // Load gallery state and related metadata from client storage
   useEffect(() => {
@@ -1177,32 +1220,61 @@ const Create: React.FC = () => {
           migrateKeyToIndexedDb(storagePrefix, 'favorites'),
           migrateKeyToIndexedDb(storagePrefix, 'uploads'),
           migrateKeyToIndexedDb(storagePrefix, 'folders'),
+          migrateKeyToIndexedDb(storagePrefix, 'inspirations'),
         ]);
 
-        const [storedGallery, storedFavorites, storedUploads, storedFolders] = await Promise.all([
+        const [storedGallery, storedFavorites, storedUploads, storedFolders, storedInspirations] = await Promise.all([
           getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'gallery'),
           getPersistedValue<string[]>(storagePrefix, 'favorites'),
           getPersistedValue<SerializedUpload[]>(storagePrefix, 'uploads'),
           getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders'),
+          getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'inspirations'),
         ]);
 
         if (cancelled) return;
 
+        let migratedInspirations: GalleryImageLike[] = [];
         if (Array.isArray(storedGallery) && storedGallery.length > 0) {
           // Be more lenient with validation - only require url
           const validImages = storedGallery.filter(img => img && img.url);
           debugLog('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
 
           const hydrated = hydrateStoredGallery(validImages);
+          const ownWorks = hydrated.filter(item => !item.savedFrom);
+          migratedInspirations = hydrated.filter(item => Boolean(item.savedFrom));
 
-          if (validImages.length !== storedGallery.length) {
-            debugWarn('Some images were invalid and removed from gallery');
-            void setPersistedValue(storagePrefix, 'gallery', serializeGallery(hydrated));
+          if (validImages.length !== storedGallery.length || migratedInspirations.length > 0) {
+            if (migratedInspirations.length > 0) {
+              debugLog('Migrating', migratedInspirations.length, 'saved inspirations out of gallery storage');
+            }
+            void setPersistedValue(storagePrefix, 'gallery', serializeGallery(ownWorks));
           }
 
-          setGallery(hydrated);
+          setGallery(ownWorks);
         } else {
           debugLog('No gallery data found in client storage');
+          setGallery([]);
+        }
+
+        let restoredInspirations: GalleryImageLike[] = [];
+        if (Array.isArray(storedInspirations) && storedInspirations.length > 0) {
+          const validInspirations = storedInspirations.filter(item => item && item.url);
+          if (validInspirations.length !== storedInspirations.length) {
+            debugWarn('Some inspirations were invalid and removed from storage');
+          }
+          restoredInspirations = hydrateStoredGallery(validInspirations);
+        }
+
+        if (migratedInspirations.length > 0 || restoredInspirations.length > 0) {
+          const inspirationMap = new Map<string, GalleryImageLike>();
+          [...restoredInspirations, ...migratedInspirations].forEach(item => {
+            inspirationMap.set(item.url, item);
+          });
+          const combinedInspirations = Array.from(inspirationMap.values());
+          setInspirations(combinedInspirations);
+          void setPersistedValue(storagePrefix, 'inspirations', serializeGallery(combinedInspirations));
+        } else {
+          setInspirations([]);
         }
 
         if (Array.isArray(storedFavorites)) {
@@ -1235,6 +1307,7 @@ const Create: React.FC = () => {
         debugError('Failed to load persisted gallery data', error);
         if (!cancelled) {
           await removePersistedValue(storagePrefix, 'gallery');
+          await removePersistedValue(storagePrefix, 'inspirations');
         }
       }
     };
@@ -1275,7 +1348,7 @@ const Create: React.FC = () => {
     if (selectedImages.size === 0) return;
     setSelectedImages(prev => {
       if (prev.size === 0) return prev;
-      const available = new Set(gallery.map(item => item.url));
+      const available = new Set(combinedLibraryImages.map(item => item.url));
       let changed = false;
       const next = new Set<string>();
       prev.forEach(url => {
@@ -1287,10 +1360,15 @@ const Create: React.FC = () => {
       });
       return changed ? next : prev;
     });
-  }, [gallery, selectedImages.size]);
+  }, [combinedLibraryImages, selectedImages.size]);
 
   useEffect(() => {
-    if (activeCategory !== 'gallery' && activeCategory !== 'public' && selectedImages.size > 0) {
+    if (
+      activeCategory !== 'gallery' &&
+      activeCategory !== 'public' &&
+      activeCategory !== 'inspirations' &&
+      selectedImages.size > 0
+    ) {
       setSelectedImages(new Set());
     }
   }, [activeCategory, selectedImages.size]);
@@ -1333,10 +1411,15 @@ const Create: React.FC = () => {
 
   // Backup function to persist gallery state
   const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+    const sanitizedData = galleryData.filter(item => !item.savedFrom);
+    if (sanitizedData.length !== galleryData.length) {
+      debugWarn('Filtered saved inspirations out of gallery persistence payload');
+    }
+
     // Don't persist empty galleries - this prevents race conditions
-    if (galleryData.length === 0) {
+    if (sanitizedData.length === 0) {
       debugWarn('Skipping persistence of empty gallery to prevent data loss');
-      return galleryData;
+      return sanitizedData;
     }
 
     const persistLean = async (data: GalleryImageLike[]) => {
@@ -1344,28 +1427,28 @@ const Create: React.FC = () => {
       await refreshStorageEstimate();
     };
     try {
-      await persistLean(galleryData);
-      debugLog('Gallery backup persisted with', galleryData.length, 'images');
-      return galleryData;
+      await persistLean(sanitizedData);
+      debugLog('Gallery backup persisted with', sanitizedData.length, 'images');
+      return sanitizedData;
     } catch (error) {
       debugError('Failed to persist gallery', error);
 
       // Don't trim the gallery too aggressively - keep at least 5 images
-      if (galleryData.length <= 5) {
+      if (sanitizedData.length <= 5) {
         debugWarn('Gallery too small to trim, returning original data');
-        return galleryData;
+        return sanitizedData;
       }
 
       // Try trimming to half the size first, then gradually reduce
       const trimSizes = [
-        Math.floor(galleryData.length / 2),
-        Math.floor(galleryData.length / 4),
+        Math.floor(sanitizedData.length / 2),
+        Math.floor(sanitizedData.length / 4),
         5, // Minimum size
       ];
 
       for (const size of trimSizes) {
         try {
-          const trimmed = galleryData.slice(0, size);
+          const trimmed = sanitizedData.slice(0, size);
           await persistLean(trimmed);
           debugLog('Gallery persisted after trimming to', trimmed.length, 'images');
           return trimmed;
@@ -1376,8 +1459,18 @@ const Create: React.FC = () => {
 
       // If all else fails, return the original data without persisting
       debugError('Failed to persist gallery even after trimming, returning original data');
-      return galleryData;
+      return sanitizedData;
     }
+  };
+
+  const persistInspirations = async (items: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+    try {
+      await setPersistedValue(storagePrefix, 'inspirations', serializeGallery(items));
+      await refreshStorageEstimate();
+    } catch (error) {
+      debugError('Failed to persist inspirations', error);
+    }
+    return items;
   };
 
   const toggleFavorite = (imageUrl: string) => {
@@ -1511,7 +1604,7 @@ const Create: React.FC = () => {
 
   const confirmDeleteImages = (imageUrls: string[]) => {
     if (imageUrls.length === 0) return;
-    setDeleteConfirmation({ show: true, imageUrl: null, imageUrls, uploadId: null, folderId: null });
+    setDeleteConfirmation({ show: true, imageUrl: null, imageUrls, uploadId: null, folderId: null, source: 'gallery' });
   };
 
   const handleBulkDelete = () => {
@@ -1611,7 +1704,7 @@ const Create: React.FC = () => {
 
   const confirmBulkDownload = () => {
     const count = selectedImages.size;
-    const selectedImageObjects = gallery.filter(img => selectedImages.has(img.url));
+    const selectedImageObjects = combinedLibraryImages.filter(img => selectedImages.has(img.url));
     
     // Download each selected image
     selectedImageObjects.forEach((img, index) => {
@@ -1641,34 +1734,50 @@ const Create: React.FC = () => {
     promptTextareaRef.current?.focus();
   };
 
-  const confirmDeleteImage = (imageUrl: string) => {
-    setDeleteConfirmation({show: true, imageUrl, imageUrls: [imageUrl], uploadId: null, folderId: null});
+  const confirmDeleteImage = (imageUrl: string, source: 'gallery' | 'inspirations' = 'gallery') => {
+    setDeleteConfirmation({show: true, imageUrl, imageUrls: [imageUrl], uploadId: null, folderId: null, source});
   };
 
   const confirmDeleteUpload = (uploadId: string) => {
-    setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId, folderId: null});
+    setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId, folderId: null, source: null});
   };
 
   const confirmDeleteFolder = (folderId: string) => {
-    setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId});
+    setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId, source: null});
   };
 
   const handleDeleteConfirmed = () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
-      let nextGallery: GalleryImageLike[] = [];
-      setGallery(currentGallery => {
-        const updated = currentGallery.filter(img => img && !urlsToDelete.has(img.url));
-        nextGallery = updated;
-        return updated;
-      });
+      if (deleteConfirmation.source === 'inspirations') {
+        let nextInspirations: GalleryImageLike[] = [];
+        setInspirations(currentInspirations => {
+          const updated = currentInspirations.filter(img => img && !urlsToDelete.has(img.url));
+          nextInspirations = updated;
+          return updated;
+        });
 
-      void (async () => {
-        const persisted = await persistGallery(nextGallery);
-        if (persisted.length !== nextGallery.length) {
-          setGallery(persisted);
-        }
-      })();
+        void (async () => {
+          const persisted = await persistInspirations(nextInspirations);
+          if (persisted.length !== nextInspirations.length) {
+            setInspirations(persisted);
+          }
+        })();
+      } else {
+        let nextGallery: GalleryImageLike[] = [];
+        setGallery(currentGallery => {
+          const updated = currentGallery.filter(img => img && !urlsToDelete.has(img.url));
+          nextGallery = updated;
+          return updated;
+        });
+
+        void (async () => {
+          const persisted = await persistGallery(nextGallery);
+          if (persisted.length !== nextGallery.length) {
+            setGallery(persisted);
+          }
+        })();
+      }
 
       const nextFavorites = new Set(favorites);
       let favoritesChanged = false;
@@ -1692,6 +1801,19 @@ const Create: React.FC = () => {
         });
         return changed ? next : prev;
       });
+
+      let foldersChanged = false;
+      const cleanedFolders = folders.map(folder => {
+        const filteredIds = folder.imageIds.filter(id => !urlsToDelete.has(id));
+        if (filteredIds.length !== folder.imageIds.length) {
+          foldersChanged = true;
+          return { ...folder, imageIds: filteredIds };
+        }
+        return folder;
+      });
+      if (foldersChanged) {
+        void persistFolders(cleanedFolders);
+      }
     } else if (deleteConfirmation.uploadId) {
       // Remove uploaded image
       const updatedUploads = uploadedImages.filter(upload => upload.id !== deleteConfirmation.uploadId);
@@ -1706,11 +1828,11 @@ const Create: React.FC = () => {
         setSelectedFolder(null);
       }
     }
-    setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
+    setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
   };
 
   const handleDeleteCancelled = () => {
-    setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null});
+    setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
   };
 
   const persistFolders = async (nextFolders: Folder[]) => {
@@ -1963,20 +2085,27 @@ const Create: React.FC = () => {
     if (index >= 0 && index < gallery.length && gallery[index]) {
       setSelectedFullImage(gallery[index]);
       setCurrentGalleryIndex(index);
+      setFullSizeContext('gallery');
       setIsFullSizeOpen(true);
     }
   };
 
   const navigateFullSizeImage = (direction: 'prev' | 'next') => {
-    const totalImages = gallery.length;
+    const collection = fullSizeContext === 'inspirations' ? inspirations : gallery;
+    const totalImages = collection.length;
     if (totalImages === 0) return;
-    
-    const newIndex = direction === 'prev' 
-      ? (currentGalleryIndex > 0 ? currentGalleryIndex - 1 : totalImages - 1)
-      : (currentGalleryIndex < totalImages - 1 ? currentGalleryIndex + 1 : 0);
-    
-    setCurrentGalleryIndex(newIndex);
-    setSelectedFullImage(gallery[newIndex]);
+
+    const currentIndex = fullSizeContext === 'inspirations' ? currentInspirationIndex : currentGalleryIndex;
+    const newIndex = direction === 'prev'
+      ? (currentIndex > 0 ? currentIndex - 1 : totalImages - 1)
+      : (currentIndex < totalImages - 1 ? currentIndex + 1 : 0);
+
+    if (fullSizeContext === 'inspirations') {
+      setCurrentInspirationIndex(newIndex);
+    } else {
+      setCurrentGalleryIndex(newIndex);
+    }
+    setSelectedFullImage(collection[newIndex]);
   };
 
 
@@ -2316,7 +2445,11 @@ const Create: React.FC = () => {
     );
   };
 
-  const renderMoreButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
+  const renderMoreButton = (
+    menuId: string,
+    image: GalleryImageLike,
+    context: 'gallery' | 'public' | 'inspirations',
+  ): React.JSX.Element => {
     const isOpen = moreActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
 
@@ -2393,27 +2526,29 @@ const Create: React.FC = () => {
             <FolderPlus className="h-4 w-4" />
             Manage folders
           </button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleImagePublicStatus(image.url);
-              closeMoreActionMenu();
-            }}
-          >
-            {image.isPublic ? (
-              <>
-                <Lock className="h-4 w-4" />
-                Unpublish
-              </>
-            ) : (
-              <>
-                <Globe className="h-4 w-4" />
-                Publish
-              </>
-            )}
-          </button>
+          {context !== 'inspirations' && (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleImagePublicStatus(image.url);
+                closeMoreActionMenu();
+              }}
+            >
+              {image.isPublic ? (
+                <>
+                  <Lock className="h-4 w-4" />
+                  Unpublish
+                </>
+              ) : (
+                <>
+                  <Globe className="h-4 w-4" />
+                  Publish
+                </>
+              )}
+            </button>
+          )}
         </ImageActionMenuPortal>
       </div>
     );
@@ -2423,7 +2558,7 @@ const Create: React.FC = () => {
   const renderLibraryGalleryItem = (
     img: GalleryImageLike,
     idx: number,
-    context: 'gallery' | 'public'
+    context: 'gallery' | 'public' | 'inspirations'
   ): React.JSX.Element => {
     const isSelected = selectedImages.has(img.url);
     const menuId = `${context}-actions-${idx}-${img.url}`;
@@ -2453,6 +2588,19 @@ const Create: React.FC = () => {
             if (isSelectMode) {
               toggleImageSelection(img.url, event);
             } else {
+              if (context === 'inspirations') {
+                const inspirationIndex = inspirations.findIndex(item => item.url === img.url);
+                if (inspirationIndex !== -1) {
+                  setCurrentInspirationIndex(inspirationIndex);
+                }
+                setFullSizeContext('inspirations');
+              } else {
+                const galleryIndex = gallery.findIndex(item => item.url === img.url);
+                if (galleryIndex !== -1) {
+                  setCurrentGalleryIndex(galleryIndex);
+                }
+                setFullSizeContext('gallery');
+              }
               setSelectedFullImage(img);
               setIsFullSizeOpen(true);
             }
@@ -2664,7 +2812,7 @@ const Create: React.FC = () => {
                     }`}
                   />
                 </button>
-                {renderMoreButton(menuId, img)}
+                {renderMoreButton(menuId, img, context)}
               </div>
             </div>
           )}
@@ -4189,7 +4337,7 @@ const handleGenerate = async () => {
                     {(() => {
                       const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
                       if (!folder) return null;
-                      const folderImages = gallery.filter(
+                      const folderImages = combinedLibraryImages.filter(
                         img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
                       );
                       return folderImages.map((img, idx) => (
@@ -4365,11 +4513,27 @@ const handleGenerate = async () => {
                     </div>
                   </div>
                 )}
+                {activeCategory === "inspirations" && (
+                  <div className="w-full">
+                    <div className="grid grid-cols-4 gap-2 w-full p-1">
+                      {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
+                      {inspirationsGallery.length === 0 && (
+                        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                          <Sparkles className="default-orange-icon mb-4" />
+                          <h3 className="text-xl font-raleway text-d-text mb-2">No inspirations yet</h3>
+                          <p className="text-base font-raleway text-d-white max-w-md">
+                            Explore the community gallery and save images you love to see them here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
                   <div className="w-full">
-                    
+
                     {uploadedImages.length === 0 ? (
                       /* Empty state for uploads */
                       <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
@@ -4486,9 +4650,9 @@ const handleGenerate = async () => {
                         {(() => {
                           const folder = folders.find(f => f.id === selectedFolder);
                           if (!folder) return '0 images';
-                          const folderImages = gallery.filter(
-                            img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
-                          );
+                      const folderImages = combinedLibraryImages.filter(
+                        img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                      );
                           return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
                         })()}
                       </p>
@@ -4498,7 +4662,7 @@ const handleGenerate = async () => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
                       
-                      const folderImages = gallery.filter(
+                      const folderImages = combinedLibraryImages.filter(
                         img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
                       );
                       
@@ -4654,12 +4818,12 @@ const handleGenerate = async () => {
                                     {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                 <div className="flex items-center gap-0.5">
                                   {renderEditButton(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
-                                  <button 
-                                    type="button" 
+                                  <button
+                                    type="button"
                                     onClick={(event) => {
                                       event.stopPropagation();
-                                      confirmDeleteImage(img.url);
-                                    }} 
+                                      confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
+                                    }}
                                     className={`image-action-btn parallax-large ${
                                       imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}`
                                         ? 'opacity-100 pointer-events-auto'
@@ -4690,7 +4854,11 @@ const handleGenerate = async () => {
                                       }`} 
                                     />
                                   </button>
-                                  {renderMoreButton(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
+                                  {renderMoreButton(
+                                    `folder-actions-${folder.id}-${idx}-${img.url}`,
+                                    img,
+                                    img.savedFrom ? 'inspirations' : 'gallery',
+                                  )}
                                 </div>
                                 </div>
                                 )}
@@ -4909,7 +5077,7 @@ const handleGenerate = async () => {
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             if (!folder) return '0 images';
-                            const folderImages = gallery.filter(
+                            const folderImages = combinedLibraryImages.filter(
                               img => folder?.imageIds.includes(img.url) && matchesOriginFilter(img),
                             );
                             return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
@@ -4923,7 +5091,7 @@ const handleGenerate = async () => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
                       
-                      const folderImages = gallery.filter(
+                      const folderImages = combinedLibraryImages.filter(
                         img => folder?.imageIds.includes(img.url) && matchesOriginFilter(img),
                       );
                       
@@ -5071,12 +5239,12 @@ const handleGenerate = async () => {
                             {renderHoverPrimaryActions(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
                             <div className="flex items-center gap-0.5">
                               {renderEditButton(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
-                              <button 
-                                type="button" 
+                              <button
+                                type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  confirmDeleteImage(img.url);
-                                }} 
+                                  confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
+                                }}
                                 className={`image-action-btn parallax-large transition-opacity duration-100 ${
                                   imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
                                     ? 'opacity-100 pointer-events-auto'
@@ -5107,7 +5275,11 @@ const handleGenerate = async () => {
                                   }`} 
                                 />
                               </button>
-                              {renderMoreButton(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
+                              {renderMoreButton(
+                                `folder-actions-${selectedFolder}-${idx}-${img.url}`,
+                                img,
+                                img.savedFrom ? 'inspirations' : 'gallery',
+                              )}
                             </div>
                           </div>
                         </div>
@@ -5503,12 +5675,12 @@ const handleGenerate = async () => {
                           {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
                           <div className="flex items-center gap-0.5">
                             {renderEditButton(`gallery-actions-${idx}-${img.url}`, img)}
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                confirmDeleteImage(img.url);
-                              }} 
+                                confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
+                              }}
                               className={`image-action-btn parallax-large transition-opacity duration-100 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
                                   ? 'opacity-100 pointer-events-auto'
@@ -5539,7 +5711,11 @@ const handleGenerate = async () => {
                                 }`} 
                               />
                             </button>
-                            {renderMoreButton(`gallery-actions-${idx}-${img.url}`, img)}
+                            {renderMoreButton(
+                              `gallery-actions-${idx}-${img.url}`,
+                              img,
+                              img.savedFrom ? 'inspirations' : 'gallery',
+                            )}
                           </div>
                         </div>
                         </div>
@@ -6356,7 +6532,8 @@ const handleGenerate = async () => {
             >
               <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
                 {/* Navigation arrows for full-size modal */}
-                {gallery.length > 1 && (selectedFullImage || generatedImage) && (
+                {(fullSizeContext === 'inspirations' ? inspirations.length : gallery.length) > 1 &&
+                  (selectedFullImage || generatedImage) && (
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
@@ -6396,9 +6573,9 @@ const handleGenerate = async () => {
                       imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
                       {renderEditButton(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
-                      <button 
-                        type="button" 
-                        onClick={() => confirmDeleteImage(activeFullSizeImage.url)} 
+                      <button
+                        type="button"
+                        onClick={() => confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext)}
                         className={`image-action-btn parallax-large transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
@@ -6428,7 +6605,11 @@ const handleGenerate = async () => {
                           }`} 
                         />
                       </button>
-                      {renderMoreButton(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
+                      {renderMoreButton(
+                        `fullsize-actions-${activeFullSizeImage.url}`,
+                        activeFullSizeImage,
+                        activeFullSizeContext,
+                      )}
                     </div>
                   </div>
                 )}

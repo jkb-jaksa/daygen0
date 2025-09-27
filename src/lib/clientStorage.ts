@@ -4,7 +4,13 @@ import { debugError } from '../utils/debug';
 const DB_NAME = 'daygen-client-storage';
 const STORE_NAME = 'kv';
 
-type StorageKey = 'gallery' | 'favorites' | 'uploads' | 'folders' | 'editGallery';
+type StorageKey =
+  | 'gallery'
+  | 'favorites'
+  | 'uploads'
+  | 'folders'
+  | 'editGallery'
+  | 'inspirations';
 
 type PersistedValue = unknown;
 

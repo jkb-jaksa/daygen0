@@ -9,6 +9,7 @@ import {
   Globe,
   Upload,
   Folder,
+  Sparkles,
 } from "lucide-react";
 
 import { glass } from "../../styles/designSystem";
@@ -31,6 +32,7 @@ const LIBRARY_CATEGORIES: Array<{ key: string; label: string; Icon: typeof Grid3
   { key: "gallery", label: "gallery", Icon: Grid3X3 },
   { key: "public", label: "public", Icon: Globe },
   { key: "uploads", label: "uploads", Icon: Upload },
+  { key: "inspirations", label: "inspirations", Icon: Sparkles },
 ];
 
 const sidebarPosition = {
