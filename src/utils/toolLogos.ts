@@ -1,134 +1,278 @@
-// Tool name to logo file mapping
-export const TOOL_LOGOS: Record<string, string> = {
-  // Direct matches - Image Tools
-  'Gemini': '/gemini logo.png',
-  'Gemini 2.5 Flash Image': '/gemini logo.png',
-  'gemini-2.5-flash-image-preview': '/gemini logo.png',
-  'Gemini Voice': '/gemini logo.png',
-  'Ideogram': '/ideogram logo.jpeg',
-  'ideogram': '/ideogram logo.jpeg',
-  'Qwen': '/qwen logo.png',
-  'Qwen Image': '/qwen logo.png',
-  'Runway': '/runway logo.jpg',
-  'runway-gen4': '/runway logo.jpg',
-  'Reve': '/reve logo.jpg',
-  'Midjourney': '/midjourney logo.png',
-  'Higgsfield': '/higgsfield logo.jpg',
-  'Recraft': '/recraft logo.jpg',
-  'recraft': '/recraft logo.jpg',
-  'Recraft v3': '/recraft logo.jpg',
-  'Recraft v2': '/recraft logo.jpg',
-  'Krea': '/krea logo.jpeg',
-  'Magnific': '/magnific logo.png',
-  'Freepik': '/freepik logo.png',
-  'Flair': '/flair ai logo.jpg',
-  
-  // ChatGPT and OpenAI variations
-  'ChatGPT': '/openai logo.jpg',
-  'ChatGPT Image': '/openai logo.jpg',
-  'ChatGPT Voice': '/openai logo.jpg',
-  
-  // Grok variations
-  'Grok': '/grok logo.jpg',
-  'Grok Image': '/grok logo.jpg',
-  'Grok Voice': '/grok logo.jpg',
-  
-  // FLUX variations
-  'FLUX': '/black forest labs logo.jpeg',
-  'Flux': '/black forest labs logo.jpeg',
-  'Flux 1.1': '/black forest labs logo.jpeg',
-  'flux-1.1': '/black forest labs logo.jpeg',
-  'FLUX Pro 1.1': '/black forest labs logo.jpeg',
-  'FLUX Pro 1.1 Ultra': '/black forest labs logo.jpeg',
-  'FLUX Kontext Pro': '/black forest labs logo.jpeg',
-  'FLUX Kontext Max': '/black forest labs logo.jpeg',
-  'Flux Kontext Pro': '/black forest labs logo.jpeg',
-  'Flux Kontext Max': '/black forest labs logo.jpeg',
-  'FLUX.1 Kontext Pro / Max': '/black forest labs logo.jpeg',
-  
-  // ByteDance/Seedream variations
-  'Seedream': '/bytedance logo.png',
-  'Seedream 3.0': '/bytedance logo.png',
-  'Seedream 4.0': '/bytedance logo.png',
-  'Seedance': '/bytedance logo.png',
-  'Seedance 1.0 Pro (Video)': '/bytedance logo.png',
-  'Seedance 1.0 Pro': '/bytedance logo.png',
-  
-  // Qwen/Wan variations (same logo)
-  'Wan': '/qwen logo.png',
-  'Wan 2.2 Video': '/qwen logo.png',
-  'Hailuo 02': '/minimax logo.jpg',
-  'MiniMax-Hailuo-02': '/minimax logo.jpg',
-
-  // Deepmind/Veo variations
-  'Veo 3': '/deepmind logo.jpeg',
-  
-  // Model-specific variations for ModelBadge
-  'Runway Gen-4': '/runway logo.jpg',
-  'Runway Gen-4 Turbo': '/runway logo.jpg',
-  'Ideogram 3.0': '/ideogram logo.jpeg',
-  
-  // Video Tools
-  'Sora': '/openai logo.jpg', // Uses OpenAI logo
-  'Pika': '/pika logo.png',
-  'Kling': '/kling logo.jpg',
-  'Morphic': '/morphic logo.jpeg',
-  'Luma': '/luma logo.jpg',
-  'Luma Photon': '/luma logo.jpg',
-  'Luma Photon 1': '/luma logo.jpg',
-  'luma-photon-1': '/luma logo.jpg',
-  'Luma Photon Flash 1': '/luma logo.jpg',
-  'Luma Ray 2': '/luma logo.jpg',
-  'Luma Ray Flash 2': '/luma logo.jpg',
-  'Luma Ray 1.6': '/luma logo.jpg',
-  'Photon 1': '/luma logo.jpg',
-  'Photon Flash': '/luma logo.jpg',
-  'Ray 2': '/luma logo.jpg',
-  'Ray Flash': '/luma logo.jpg',
-  'Ray 1.6': '/luma logo.jpg',
-  'Marey': '/marey logo.jpg',
-  'Minimax': '/minimax logo.jpg',
-  'Mochi': '/mochi logo.jpg',
-  'LTXV': '/ltxv logo.jpeg',
-  'Hunyuan': '/hunyuan logo.jpg',
-  'Adobe Firefly': '/firefly logo.jpg',
-  'Viggle': '/viggle logo.jpg',
-  
-  // Voice Tools
-  'ElevenLabs': '/elevenlabs.jpg',
-  'ElevenLabs Music': '/elevenlabs.jpg',
-  'Sync': '/sync logo.jpg',
-  'PlayHT': '/playht logo.jpeg',
-  'Sesame': '/sesame logo.jpeg',
-  'Hume': '/hume ai logo.jpg',
-  
-  // Music Tools
-  'Suno': '/suno logo.jpg',
-  'Udio': '/udio logo.jpg',
-  'Kits': '/kits logo.jpg',
-  'Mureka': '/mureka logo.jpg',
-  'Tavus': '/tavus ai.jpeg',
-  
-  // Text Tools
-  'Claude': '/claude logo.jpg',
-  'Perplexity': '/perplexity logo.jpg',
-  'NotebookLM': '/notebook lm logo.jpg',
-  'Kimi': '/kimi ai logo.jpg',
-  'Deepseek': '/deepseek logo.jpg',
-  'Meta': '/meta logo.jpg', // For Llama (Meta's model)
-  'Llama': '/meta logo.jpg',
-  
-  // Other tools
-  'Topaz': '/topaz logo.jpg',
-  'Imagen': '/gemini logo.png', // Uses Gemini logo since it's available in Gemini
+type ToolLogoGroup = {
+  logo: string;
+  names: readonly string[];
 };
+
+const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
+  {
+    logo: '/gemini logo.png',
+    names: [
+      'Gemini',
+      'Gemini 2.5 Flash Image',
+      'gemini-2.5-flash-image-preview',
+      'Gemini Voice',
+      'Imagen',
+    ],
+  },
+  {
+    logo: '/ideogram logo.jpeg',
+    names: ['Ideogram', 'ideogram', 'Ideogram 3.0'],
+  },
+  {
+    logo: '/qwen logo.png',
+    names: ['Qwen', 'Qwen Image', 'Wan', 'Wan 2.2 Video'],
+  },
+  {
+    logo: '/runway logo.jpg',
+    names: ['Runway', 'runway-gen4', 'Runway Gen-4', 'Runway Gen-4 Turbo'],
+  },
+  {
+    logo: '/reve logo.jpg',
+    names: ['Reve'],
+  },
+  {
+    logo: '/midjourney logo.png',
+    names: ['Midjourney'],
+  },
+  {
+    logo: '/higgsfield logo.jpg',
+    names: ['Higgsfield'],
+  },
+  {
+    logo: '/recraft logo.jpg',
+    names: ['Recraft', 'recraft', 'Recraft v3', 'Recraft v2'],
+  },
+  {
+    logo: '/krea logo.jpeg',
+    names: ['Krea'],
+  },
+  {
+    logo: '/magnific logo.png',
+    names: ['Magnific'],
+  },
+  {
+    logo: '/freepik logo.png',
+    names: ['Freepik'],
+  },
+  {
+    logo: '/flair ai logo.jpg',
+    names: ['Flair'],
+  },
+  {
+    logo: '/openai logo.jpg',
+    names: ['ChatGPT', 'ChatGPT Image', 'ChatGPT Voice', 'Sora'],
+  },
+  {
+    logo: '/grok logo.jpg',
+    names: ['Grok', 'Grok Image', 'Grok Voice'],
+  },
+  {
+    logo: '/black forest labs logo.jpeg',
+    names: [
+      'FLUX',
+      'Flux',
+      'Flux 1.1',
+      'flux-1.1',
+      'FLUX Pro 1.1',
+      'FLUX Pro 1.1 Ultra',
+      'FLUX Kontext Pro',
+      'FLUX Kontext Max',
+      'Flux Kontext Pro',
+      'Flux Kontext Max',
+      'FLUX.1 Kontext Pro / Max',
+    ],
+  },
+  {
+    logo: '/bytedance logo.png',
+    names: [
+      'Seedream',
+      'Seedream 3.0',
+      'Seedream 4.0',
+      'Seedance',
+      'Seedance 1.0 Pro (Video)',
+      'Seedance 1.0 Pro',
+    ],
+  },
+  {
+    logo: '/minimax logo.jpg',
+    names: ['Hailuo 02', 'MiniMax-Hailuo-02', 'Minimax'],
+  },
+  {
+    logo: '/deepmind logo.jpeg',
+    names: ['Veo 3'],
+  },
+  {
+    logo: '/pika logo.png',
+    names: ['Pika'],
+  },
+  {
+    logo: '/kling logo.jpg',
+    names: ['Kling'],
+  },
+  {
+    logo: '/morphic logo.jpeg',
+    names: ['Morphic'],
+  },
+  {
+    logo: '/luma logo.jpg',
+    names: [
+      'Luma',
+      'Luma Photon',
+      'Luma Photon 1',
+      'luma-photon-1',
+      'Luma Photon Flash 1',
+      'Luma Ray 2',
+      'Luma Ray Flash 2',
+      'Luma Ray 1.6',
+      'Photon 1',
+      'Photon Flash',
+      'Ray 2',
+      'Ray Flash',
+      'Ray 1.6',
+    ],
+  },
+  {
+    logo: '/marey logo.jpg',
+    names: ['Marey'],
+  },
+  {
+    logo: '/mochi logo.jpg',
+    names: ['Mochi'],
+  },
+  {
+    logo: '/ltxv logo.jpeg',
+    names: ['LTXV'],
+  },
+  {
+    logo: '/hunyuan logo.jpg',
+    names: ['Hunyuan'],
+  },
+  {
+    logo: '/firefly logo.jpg',
+    names: ['Adobe Firefly'],
+  },
+  {
+    logo: '/viggle logo.jpg',
+    names: ['Viggle'],
+  },
+  {
+    logo: '/elevenlabs.jpg',
+    names: ['ElevenLabs', 'ElevenLabs Music'],
+  },
+  {
+    logo: '/sync logo.jpg',
+    names: ['Sync'],
+  },
+  {
+    logo: '/playht logo.jpeg',
+    names: ['PlayHT'],
+  },
+  {
+    logo: '/sesame logo.jpeg',
+    names: ['Sesame'],
+  },
+  {
+    logo: '/hume ai logo.jpg',
+    names: ['Hume'],
+  },
+  {
+    logo: '/suno logo.jpg',
+    names: ['Suno'],
+  },
+  {
+    logo: '/udio logo.jpg',
+    names: ['Udio'],
+  },
+  {
+    logo: '/kits logo.jpg',
+    names: ['Kits'],
+  },
+  {
+    logo: '/mureka logo.jpg',
+    names: ['Mureka'],
+  },
+  {
+    logo: '/tavus ai.jpeg',
+    names: ['Tavus'],
+  },
+  {
+    logo: '/claude logo.jpg',
+    names: ['Claude'],
+  },
+  {
+    logo: '/perplexity logo.jpg',
+    names: ['Perplexity'],
+  },
+  {
+    logo: '/notebook lm logo.jpg',
+    names: ['NotebookLM'],
+  },
+  {
+    logo: '/kimi ai logo.jpg',
+    names: ['Kimi'],
+  },
+  {
+    logo: '/deepseek logo.jpg',
+    names: ['Deepseek'],
+  },
+  {
+    logo: '/meta logo.jpg',
+    names: ['Meta', 'Llama'],
+  },
+  {
+    logo: '/topaz logo.jpg',
+    names: ['Topaz'],
+  },
+];
+
+type LogoMaps = {
+  exact: Readonly<Record<string, string>>;
+  normalized: Readonly<Record<string, string>>;
+};
+
+const buildLogoMaps = (groups: readonly ToolLogoGroup[]): LogoMaps => {
+  const exact: Record<string, string> = {};
+  const normalized: Record<string, string> = {};
+
+  for (const { logo, names } of groups) {
+    for (const rawName of names) {
+      const name = rawName.trim();
+      if (!name) continue;
+
+      const normalizedKey = name.toLowerCase();
+      exact[name] = logo;
+      normalized[normalizedKey] = logo;
+    }
+  }
+
+  return {
+    exact: Object.freeze(exact),
+    normalized: Object.freeze(normalized),
+  };
+};
+
+const { exact: TOOL_LOGOS, normalized: NORMALIZED_TOOL_LOGOS } = buildLogoMaps(
+  TOOL_LOGO_GROUPS,
+);
+
+const normalizeToolName = (toolName: string) => toolName.trim().toLowerCase();
+
+// Tool name to logo file mapping
+export { TOOL_LOGOS };
 
 // Helper function to get logo for a tool name
 export function getToolLogo(toolName: string): string | null {
-  return TOOL_LOGOS[toolName] || null;
+  if (!toolName) return null;
+
+  const trimmed = toolName.trim();
+  if (!trimmed) return null;
+
+  return (
+    TOOL_LOGOS[trimmed] ?? NORMALIZED_TOOL_LOGOS[normalizeToolName(trimmed)] ?? null
+  );
 }
 
 // Helper function to check if a tool has a logo
 export function hasToolLogo(toolName: string): boolean {
-  return toolName in TOOL_LOGOS;
+  return getToolLogo(toolName) !== null;
 }
