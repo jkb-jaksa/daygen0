@@ -58,14 +58,21 @@ const ModelMenuPortal: React.FC<ModelMenuPortalProps> = ({
   // Auto-scroll to selected model when menu opens
   useEffect(() => {
     if (open && menuRef.current && selectedModelIndex >= 0) {
-      const menuElement = menuRef.current;
-      const selectedButton = menuElement.children[selectedModelIndex] as HTMLElement;
-      if (selectedButton) {
-        selectedButton.scrollIntoView({ 
-          block: 'center', 
-          behavior: 'smooth' 
-        });
-      }
+      // Small delay to ensure menu is fully rendered
+      const timeoutId = setTimeout(() => {
+        const menuElement = menuRef.current;
+        if (menuElement) {
+          const selectedButton = menuElement.children[selectedModelIndex] as HTMLElement;
+          if (selectedButton) {
+            selectedButton.scrollIntoView({ 
+              block: 'start', 
+              behavior: 'smooth' 
+            });
+          }
+        }
+      }, 50);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [open, selectedModelIndex]);
 
