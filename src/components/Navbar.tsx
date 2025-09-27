@@ -386,7 +386,7 @@ export default function Navbar() {
       {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
       <div
         className={`fixed left-0 right-0 z-[49] ${activeMenu ? "pointer-events-auto" : "pointer-events-none"}`}
-        style={{ top: navH - 1 }}
+        style={{ top: navH }}
       >
         <div
           className={`${glass.promptDark} border-t-0 transition-opacity duration-100`}

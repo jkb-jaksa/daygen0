@@ -148,20 +148,29 @@
   background-position: 0 0, 0 0;
 }
 
-/* Ensure page background behind transparent header is d-black */
+/* Ensure page background behind transparent header uses gradient */
 html, body {
-  background-color: var(--d-black);
+  background: 
+    radial-gradient(
+      ellipse 1000px 750px at -5% -5%,
+      #0e0f10 0%,
+      #101112 15%,
+      #0e0f10 30%,
+      #0c0d0e 50%,
+      var(--d-black) 80%
+    ),
+    var(--d-black);
 }
 
 /* Subtle gradient for main page backgrounds */
 .bg-d-black-subtle {
   background: 
     radial-gradient(
-      ellipse 1200px 900px at 0% 0%,
-      #0a0c0a 0%,
-      #0c0e0c 15%,
-      #0a0c0a 30%,
-      #080a08 50%,
+      ellipse 1000px 750px at -5% -5%,
+      #0e0f10 0%,
+      #101112 15%,
+      #0e0f10 30%,
+      #0c0d0e 50%,
       var(--d-black) 80%
     ),
     var(--d-black);
@@ -1035,11 +1044,11 @@ select option::-webkit-scrollbar-thumb:hover {
 .home-page {
   background: 
     radial-gradient(
-      ellipse 1200px 900px at 0% 0%,
-      #0a0c0a 0%,
-      #0c0e0c 15%,
-      #0a0c0a 30%,
-      #080a08 50%,
+      ellipse 1000px 750px at -5% -5%,
+      #0e0f10 0%,
+      #101112 15%,
+      #0e0f10 30%,
+      #0c0d0e 50%,
       var(--d-black) 80%
     ),
     var(--d-black);
@@ -1052,7 +1061,7 @@ select option::-webkit-scrollbar-thumb:hover {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 55%);
+  background: linear-gradient(150deg, rgba(240, 248, 255, 0.08) 0%, rgba(255, 255, 255, 0) 55%);
   opacity: 0.8;
   pointer-events: none;
 }

@@ -49,7 +49,7 @@ export default function LearnLayout() {
   const headerContent = getHeaderContent();
 
   return (
-    <div className="bg-d-black"> 
+    <div className="bg-d-black-subtle"> 
       <section className={`${layout.container} pt-[calc(var(--nav-h)+1rem)] pb-2`}> 
         <header className="mb-6 flex flex-col gap-3">
           <p className={`${text.eyebrow} text-d-white/70`}>Learn</p>
