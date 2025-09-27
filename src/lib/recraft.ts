@@ -139,10 +139,27 @@ function authHeaders(extra: Record<string, string> = {}) {
   if (!KEY) {
     throw new RecraftAPIError('VITE_RECRAFT_API_KEY is not configured', 500);
   }
-  return { 
-    'Authorization': `Bearer ${KEY}`, 
-    ...extra 
+
+  return {
+    Authorization: `Bearer ${KEY}`,
+    ...extra,
   };
+}
+
+async function parseErrorResponse(res: Response, path: string): Promise<never> {
+  const text = await res.text();
+  const messageBody = text || '(empty response body)';
+  let details: unknown = messageBody;
+
+  if (text) {
+    try {
+      details = JSON.parse(text);
+    } catch {
+      // Keep original text when JSON parsing fails
+    }
+  }
+
+  throw new RecraftAPIError(`Recraft ${path} ${res.status}: ${messageBody}`, res.status, details);
 }
 
 /**
@@ -156,22 +173,10 @@ export async function recraftJSON<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    let errorDetails;
-    try {
-      errorDetails = JSON.parse(text);
-    } catch {
-      errorDetails = text;
-    }
-    
-    throw new RecraftAPIError(
-      `Recraft ${path} ${res.status}: ${text}`,
-      res.status,
-      errorDetails
-    );
+    await parseErrorResponse(res, path);
   }
 
-  return res.json();
+  return (await res.json()) as T;
 }
 
 /**
@@ -185,49 +190,25 @@ export async function recraftMultipart<T>(path: string, formData: FormData): Pro
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    let errorDetails;
-    try {
-      errorDetails = JSON.parse(text);
-    } catch {
-      errorDetails = text;
-    }
-    
-    throw new RecraftAPIError(
-      `Recraft ${path} ${res.status}: ${text}`,
-      res.status,
-      errorDetails
-    );
+    await parseErrorResponse(res, path);
   }
 
-  return res.json();
+  return (await res.json()) as T;
 }
 
 /**
  * Make a GET request to Recraft API
  */
 export async function recraftGET<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { 
-    headers: authHeaders() 
+  const res = await fetch(`${BASE}${path}`, {
+    headers: authHeaders(),
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    let errorDetails;
-    try {
-      errorDetails = JSON.parse(text);
-    } catch {
-      errorDetails = text;
-    }
-    
-    throw new RecraftAPIError(
-      `Recraft ${path} ${res.status}: ${text}`,
-      res.status,
-      errorDetails
-    );
+    await parseErrorResponse(res, path);
   }
 
-  return res.json();
+  return (await res.json()) as T;
 }
 
 /**
