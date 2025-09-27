@@ -61,11 +61,7 @@ export function useParallaxHover<T extends HTMLElement = HTMLDivElement>(
   const pointerTypes = options.pointerTypes ?? DEFAULT_POINTER_TYPES;
 
   const pointerTypeSet = useMemo(() => {
-    if (Array.isArray(pointerTypes)) {
-      return new Set(pointerTypes as PointerType[]);
-    }
-
-    return new Set<PointerType>([pointerTypes as PointerType]);
+    return new Set(pointerTypes);
   }, [pointerTypes]);
 
   const isAllowedPointer = useCallback(
