@@ -198,7 +198,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             onClick={() => setActiveTab(tab.id as any)}
             className={`px-4 py-2 rounded-full font-raleway text-sm transition-colors border border-d-dark ${
               activeTab === tab.id
-                ? 'bg-[color:var(--d-orange-1)] text-d-black shadow-[0_8px_24px_rgba(255,140,0,0.25)]'
+                ? 'bg-[color:var(--d-orange-1)] text-d-black shadow-[0_8px_24px_#b8c0c040]'
                 : 'bg-d-dark/60 text-d-white/70 hover:text-d-text hover:bg-d-dark/80'
             }`}
           >

@@ -366,7 +366,7 @@ export default function Navbar() {
                     ) : (
                       <span
                         className="inline-grid place-items-center size-5 rounded-full text-d-black text-xs font-bold font-raleway"
-                        style={{ background: user.color || "#FF8C00" }}
+                        style={{ background: user.color || "#B8C0C0" }}
                       >
                         {(user.name || user.email)[0]?.toUpperCase()}
                       </span>

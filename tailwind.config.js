@@ -27,7 +27,7 @@ module.exports = {
         // Daygen palette
         d: daygenPalette,
         // Brand color
-        brand: '#FF8C00',
+        brand: '#B8C0C0',
         'brand-cyan': 'var(--brand-cyan)',
         'brand-red': 'var(--brand-red)',
         // Alias palette for testing (maps to d- tokens)

@@ -116,7 +116,7 @@ const galleryItems: GalleryItem[] = [
     creator: {
       name: "Rafael Sol",
       handle: "@rafael.sol",
-      avatarColor: "from-orange-500/70 via-rose-400/70 to-amber-500/70",
+      avatarColor: "from-d-white/70 via-slate-300/70 to-stone-400/70",
       location: "Lisbon, PT",
     },
     modelId: "luma-photon-1",

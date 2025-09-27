@@ -41,10 +41,10 @@
   --d-black-rgb: 1 2 2;
 
   /* Brand warm gradient stops */
-  --d-orange-1: #ff8c00;
-  --d-orange-1-rgb: 255 140 0;
-  --d-orange-2: #e43a63;
-  --d-orange-2-rgb: 228 58 99;
+  --d-orange-1: #b8c0c0;
+  --d-orange-1-rgb: 184 192 192;
+  --d-orange-2: #b8c0c0;
+  --d-orange-2-rgb: 184 192 192;
   
   /* Brand cyan color */
   --brand-cyan: rgb(3,188,189);
@@ -406,7 +406,7 @@ html, body {
   position: absolute;
   inset: 0;
   background: radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(140deg, rgba(3, 188, 189, 0.10), rgba(255, 140, 0, 0.06));
+    linear-gradient(140deg, rgba(3, 188, 189, 0.10), rgba(184, 192, 192, 0.06));
   mix-blend-mode: screen;
   opacity: 0.6;
   pointer-events: none;
@@ -451,7 +451,7 @@ html, body {
   height: clamp(10rem, 20vw, 16rem);
   top: 18%;
   left: -12%;
-  background: rgba(255, 140, 0, 0.5);
+  background: rgba(184, 192, 192, 0.5);
 }
 
 .home-hero-card__orb--red {
@@ -526,14 +526,14 @@ html, body {
 .home-hero-title {
   position: relative;
   letter-spacing: -0.02em;
-  text-shadow: 0 16px 56px rgba(3, 188, 189, 0.35), 0 12px 46px rgba(255, 140, 0, 0.2);
+  text-shadow: 0 16px 56px rgba(3, 188, 189, 0.35), 0 12px 46px rgba(184, 192, 192, 0.2);
 }
 
 .home-hero-line {
   width: clamp(8rem, 40%, 14rem);
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(3, 188, 189, 0.85), rgba(255, 140, 0, 0.9));
+  background: linear-gradient(90deg, rgba(3, 188, 189, 0.85), rgba(184, 192, 192, 0.9));
   opacity: 0.9;
   mix-blend-mode: screen;
   margin: 0 auto;
@@ -542,7 +542,7 @@ html, body {
 .home-hero-subheading {
   font-weight: 500;
   letter-spacing: -0.01em;
-  text-shadow: 0 8px 32px rgba(255, 140, 0, 0.3);
+  text-shadow: 0 8px 32px rgba(184, 192, 192, 0.3);
 }
 
 .home-hero-description {
@@ -566,7 +566,7 @@ html, body {
 }
 
 .home-hero-actions .btn-orange {
-  box-shadow: 0 18px 40px -18px rgba(255, 140, 0, 0.55);
+  box-shadow: 0 18px 40px -18px rgba(184, 192, 192, 0.55);
 }
 
 @media (min-width: 640px) {
