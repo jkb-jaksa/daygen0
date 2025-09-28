@@ -8,7 +8,6 @@ import {
   Pencil,
   Trash2,
   Image as ImageIcon,
-  Video as VideoIcon,
   Check,
   Edit,
   Camera,
@@ -138,9 +137,6 @@ export default function Avatars() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const primaryActionButtonClass = `${buttons.glassPromptDarkCompact} ${glass.promptDark} border border-d-dark/70 text-d-white hover:border-d-mid`;
-  const secondaryActionButtonClass = `${buttons.glassPromptDarkCompact} ${glass.promptDark} border border-d-dark/70 text-d-white/70 hover:border-d-mid hover:text-d-text`;
-  const iconActionButtonClass = `${glass.promptDark} inline-flex items-center justify-center rounded-full border border-d-dark/70 p-2 text-d-white transition-colors duration-200 hover:border-d-mid hover:text-d-text parallax-large`;
 
   const [avatars, setAvatars] = useState<StoredAvatar[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImageLike[]>([]);
@@ -666,7 +662,7 @@ export default function Avatars() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => document.querySelector('input[type="file"]')?.click()}
+                          onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
                           className="absolute bottom-1.5 left-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
                           aria-label="Change image"
                         >
