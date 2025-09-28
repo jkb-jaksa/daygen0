@@ -374,11 +374,6 @@ export default function Account() {
       <header className="max-w-5xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {hasPendingRedirect && (
-              <div className="text-xs text-d-text mt-1 font-raleway">
-                Complete your profile to continue to {destinationLabel === "DayGen" ? "your destination" : destinationLabel}
-              </div>
-            )}
             {showReturnButton && (
               <button
                 onClick={() => {

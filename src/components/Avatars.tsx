@@ -417,9 +417,12 @@ export default function Avatars() {
   return (
     <div className={layout.page}>
       <div className="relative z-10 py-12 sm:py-16 lg:py-20">
-        <section className={`${layout.container} flex flex-col gap-10`}>
-          <header className="max-w-3xl space-y-4">
-            <p className={text.eyebrow}>avatars</p>
+        <section className={`${layout.container} flex flex-col gap-10 items-center`}>
+          <header className="max-w-3xl space-y-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Users className="h-4 w-4 text-d-white/60" />
+              <p className={text.eyebrow}>avatars</p>
+            </div>
             <h1 className={`${text.sectionHeading} text-white`}>Create your Avatar.</h1>
             <p className={`${text.body} text-d-white/80`}>{subtitle}</p>
             <button
@@ -437,12 +440,12 @@ export default function Avatars() {
             </button>
           </header>
 
-          <div className="space-y-5">
-            <div className="space-y-2">
+          <div className="w-full max-w-6xl space-y-5">
+            <div className="space-y-2 text-center">
               <h2 className="text-2xl font-light font-raleway text-d-text">Your Avatars</h2>
             </div>
             {avatars.length > 0 && (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 justify-items-center">
                 {avatars.map(avatar => (
                   <div
                     key={avatar.id}
