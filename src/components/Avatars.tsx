@@ -152,6 +152,7 @@ export default function Avatars() {
     sourceId?: string;
   } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
@@ -249,6 +250,30 @@ export default function Avatars() {
     },
     [],
   );
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          setUploadError(null);
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            if (typeof result === "string") {
+              setSelection({ imageUrl: result, source: "upload" });
+            }
+          };
+          reader.onerror = () => {
+            setUploadError("We couldn't read that file. Try another image.");
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  }, []);
 
   const handleSaveAvatar = useCallback(() => {
     if (!selection || !avatarName.trim()) return;
@@ -593,7 +618,7 @@ export default function Avatars() {
 
       {isPanelOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-d-black/80 px-4 py-10">
-          <div className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl">
             <button
               type="button"
               className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
@@ -603,86 +628,109 @@ export default function Avatars() {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="grid gap-8 p-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10 lg:p-12">
-              <div className="flex flex-col gap-6">
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-raleway text-d-white">Avatar creation</h2>
-                  <p className="text-sm font-raleway text-d-white/70">
-                    Pick an image and give your avatar a name. We'll save it here for quick use later.
-                  </p>
-                </div>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-raleway text-d-white/70">Avatar name</span>
-                  <input
-                    className={inputs.base}
-                    placeholder="e.g. Neon explorer"
-                    value={avatarName}
-                    onChange={event => setAvatarName(event.target.value)}
-                  />
-                </label>
-
-                <div className="space-y-2">
-                  <span className="text-sm font-raleway text-d-white/70">Preview</span>
-                  <div className="relative aspect-square overflow-hidden rounded-[24px] border border-d-dark bg-d-black/50">
-                    {selection ? (
-                      <img src={selection.imageUrl} alt="Selected avatar" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-center text-d-white/50">
-                        <Users className="h-10 w-10" />
-                        <p className="font-raleway text-sm">Choose an image to preview your avatar.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className={`${buttons.blockPrimary} ${disableSave ? "pointer-events-none opacity-50" : ""}`}
-                  disabled={disableSave}
-                  onClick={handleSaveAvatar}
-                >
-                  Save avatar
-                </button>
+            <div className="flex flex-col gap-6 p-6 lg:p-8">
+              {/* Header Section */}
+              <div className="space-y-2">
+                <h2 className="text-2xl font-raleway text-d-text">Create Avatar</h2>
+                <p className="text-sm font-raleway text-d-white">
+                  Pick an image and give your avatar a name. We'll save it here for quick use later.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-6">
+              {/* Two Column Layout */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Left Column - Upload Image */}
                 <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-4 mb-4">
                     <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
                       <Upload className="h-5 w-5 text-d-white" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-lg font-raleway text-d-white">Upload image</h3>
-                      <p className="text-sm font-raleway text-d-white/70">
-                        Upload a portrait or logo to turn into a reusable avatar.
+                      <h3 className="text-lg font-raleway text-d-text">Upload image</h3>
+                      <p className="text-sm font-raleway text-d-white">
+                        Upload an image to turn into a reusable avatar.
                       </p>
                     </div>
                   </div>
-                  <label className="mt-6 flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-d-dark bg-d-black/60 py-8 text-center text-sm font-raleway text-d-white transition-colors duration-200 hover:border-d-light">
-                    <span className="font-medium">Select image</span>
-                    <span className="text-xs text-d-white/60">PNG, JPG, or WebP up to 5 MB</span>
-                    <input type="file" accept="image/*" className="sr-only" onChange={handleUpload} />
-                  </label>
+                  <div className="w-48 mx-auto">
+                    {selection ? (
+                      <div className="relative aspect-square overflow-hidden rounded-2xl border border-d-dark bg-d-black/50">
+                        <img src={selection.imageUrl} alt="Selected avatar" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setSelection(null)}
+                          className="absolute top-1.5 right-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
+                          aria-label="Remove selected image"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.querySelector('input[type="file"]')?.click()}
+                          className="absolute bottom-1.5 left-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
+                          aria-label="Change image"
+                        >
+                          <Upload className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label 
+                        className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-d-white transition-colors duration-200 ${
+                          isDragging 
+                            ? 'border-brand bg-brand/10' 
+                            : 'border-d-white/30 bg-d-black/60 hover:border-d-text/50'
+                        }`}
+                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={(e) => { 
+                          e.preventDefault(); 
+                          setIsDragging(false);
+                          const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                          if (files.length > 0) {
+                            const file = files[0];
+                            setUploadError(null);
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const result = reader.result;
+                              if (typeof result === "string") {
+                                setSelection({ imageUrl: result, source: "upload" });
+                              }
+                            };
+                            reader.onerror = () => {
+                              setUploadError("We couldn't read that file. Try another image.");
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        onPaste={handlePaste}
+                      >
+                        <span className="font-medium">Select image</span>
+                        <span className="text-xs text-d-white/60">PNG, JPG, or WebP up to 50 MB</span>
+                        <span className="text-xs text-d-white/40">Click, drag & drop, or paste</span>
+                        <input type="file" accept="image/*" className="sr-only" onChange={handleUpload} />
+                      </label>
+                    )}
+                  </div>
                   {uploadError && (
-                    <p className="mt-3 text-sm font-raleway text-red-400">{uploadError}</p>
+                    <p className="mt-3 text-sm font-raleway text-red-400 text-center">{uploadError}</p>
                   )}
                 </div>
 
+                {/* Right Column - Choose from Gallery */}
                 <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-4 mb-4">
                     <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
                       <Users className="h-5 w-5 text-d-white" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-lg font-raleway text-d-white">Choose from your creations</h3>
-                      <p className="text-sm font-raleway text-d-white/70">
-                        Pick from anything you've generated in the Daygen studio.
+                      <h3 className="text-lg font-raleway text-d-text">Choose from your creations</h3>
+                      <p className="text-sm font-raleway text-d-white">
+                        Pick from anything you've generated in the DayGen studio.
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-6 max-h-72 overflow-y-auto pr-1">
+                  <div className="max-h-72 overflow-y-auto pr-1">
                     {hasGalleryImages ? (
                       <div className="grid grid-cols-3 gap-3">
                         {galleryImages.map(image => {
@@ -711,13 +759,37 @@ export default function Avatars() {
                         })}
                       </div>
                     ) : (
-                      <div className="rounded-2xl border border-d-dark/70 bg-d-black/50 p-6 text-center">
+                      <div className="w-64 mx-auto rounded-2xl border border-d-dark/70 bg-d-black/50 p-6 text-center">
                         <p className="text-sm font-raleway text-d-white/70">
                           Generate an image in the studio to see it here.
                         </p>
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Bottom Section - Avatar Name and Save Button */}
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col items-center gap-6">
+                  <label className="flex flex-col space-y-2 w-fit">
+                    <span className="text-sm font-raleway text-d-white/70">Name</span>
+                    <input
+                      className={`${inputs.base} !w-64`}
+                      placeholder="e.g. Neon explorer"
+                      value={avatarName}
+                      onChange={event => setAvatarName(event.target.value)}
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    className={`${buttons.primary} !w-fit ${disableSave ? "pointer-events-none opacity-50" : ""}`}
+                    disabled={disableSave}
+                    onClick={handleSaveAvatar}
+                  >
+                    Save Avatar
+                  </button>
                 </div>
               </div>
             </div>
