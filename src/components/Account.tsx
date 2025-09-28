@@ -201,8 +201,6 @@ export default function Account() {
 
   const destinationLabel = useMemo(() => describePath(sanitizedNextPath), [sanitizedNextPath]);
 
-  const hasPendingRedirect = Boolean(normalizedRawNext);
-
   // Keep the input in sync if user loads after first render, but don't override user input
   useEffect(() => {
     if (user?.name && name === "") {
