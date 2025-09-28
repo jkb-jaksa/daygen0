@@ -337,9 +337,9 @@ export default function Navbar() {
                 >
                   <CreditCard className="w-4 h-4" />
                   <span className="hidden sm:inline font-raleway text-sm font-normal">
-                    Credits: 1,247
+                    Credits: {user.credits}
                   </span>
-                  <span className="sm:hidden font-raleway text-sm font-normal">1,247</span>
+                  <span className="sm:hidden font-raleway text-sm font-normal">{user.credits}</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -364,21 +364,20 @@ export default function Navbar() {
                     aria-expanded={menuOpen}
                     aria-label="My account"
                   >
-                    {user.profilePic ? (
+                    {user.profileImage ? (
                       <img
-                        src={user.profilePic}
+                        src={user.profileImage}
                         alt="Profile"
                         className="size-5 rounded-full object-cover"
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-d-black text-xs font-bold font-raleway"
-                        style={{ background: user.color || "#B8C0C0" }}
+                        className="inline-grid place-items-center size-5 rounded-full text-d-black text-xs font-bold font-raleway bg-d-white/90"
                       >
-                        {(user.name || user.email)[0]?.toUpperCase()}
+                        {(user.displayName || user.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden sm:inline font-raleway text-base py-0.5 font-normal">{user.name || user.email}</span>
+                    <span className="hidden sm:inline font-raleway text-base py-0.5 font-normal">{user.displayName || user.email}</span>
                   </button>
                 </div>
               </>

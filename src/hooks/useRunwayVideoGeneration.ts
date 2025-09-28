@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { getApiUrl } from '../utils/api';
+import { useState, useCallback } from 'react';
 
 export type RunwayVideoOptions = {
   model?: 'gen4_turbo' | 'gen4_aleph' | 'act_two';
@@ -15,50 +14,20 @@ export function useRunwayVideoGeneration() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
 
-  async function generate({
-    promptText,
-    promptImage,
-    options = {},
-  }: {
-    promptText: string;
-    promptImage?: string; // URL or data: URI - Made optional
-    options?: RunwayVideoOptions;
-  }) {
-    setStatus('running'); 
-    setError(null); 
-    setVideoUrl(null); 
-    setTaskId(null);
-    
-    try {
-      const res = await fetch(getApiUrl('/api/unified-video'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: 'runway',
-          action: 'create',
-          promptText,
-          promptImage,
-          ...options,
-        }),
-      });
-      
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || `HTTP ${res.status}`);
-      }
-      
-      const body = await res.json();
-      setVideoUrl(body.url);
-      setTaskId(body.taskId ?? null);
-      setStatus('done');
-      return body as { url: string; taskId: string; meta?: unknown };
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Generation failed';
-      setError(message);
+  const generate = useCallback(
+    async (_args: {
+      promptText: string;
+      promptImage?: string;
+      options?: RunwayVideoOptions;
+    }) => {
+      const message = 'Runway video generation is not yet supported in this backend integration.';
       setStatus('error');
-      throw e;
-    }
-  }
+      setError(message);
+      setVideoUrl(null);
+      setTaskId(null);
+      throw new Error(message);
+    },
+  []);
 
   return { status, error, videoUrl, taskId, generate };
 }

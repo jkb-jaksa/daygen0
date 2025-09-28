@@ -2,22 +2,34 @@ import { createContext } from "react";
 
 type User = {
   id: string;
+  authUserId: string;
   email: string;
-  name?: string;
-  color?: string;
-  profilePic?: string;
+  displayName: string | null;
+  credits: number;
+  profileImage: string | null;
+  role: 'USER' | 'ADMIN';
+  createdAt: string;
+  updatedAt: string;
+};
+
+type UpdateProfilePayload = {
+  displayName?: string | null;
+  profileImage?: string | null;
 };
 
 type AuthContextValue = {
   user: User | null;
-  users: User[];
+  token: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
   storagePrefix: string;
-  signIn: (email: string) => Promise<User>;
-  signUp: (email: string, name?: string) => Promise<User>;
+  signIn: (email: string, password: string) => Promise<User>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<User>;
   logOut: () => void;
-  updateProfile: (patch: Partial<User>) => void;
+  refreshUser: () => Promise<User>;
+  updateProfile: (patch: UpdateProfilePayload) => Promise<User>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-export type { AuthContextValue, User };
+export type { AuthContextValue, UpdateProfilePayload, User };

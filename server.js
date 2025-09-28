@@ -32,12 +32,171 @@ const isVercel = process.env.VERCEL === '1';
 })();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5177', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // Test endpoint
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!' });
+});
+
+// Mock user database (in production, use a real database)
+const users = new Map();
+let nextUserId = 1;
+
+// Helper function to generate a simple JWT-like token
+function generateToken(userId) {
+  return `mock_token_${userId}_${Date.now()}`;
+}
+
+// Helper function to verify token
+function verifyToken(token) {
+  if (!token || !token.startsWith('mock_token_')) {
+    return null;
+  }
+  const parts = token.split('_');
+  if (parts.length < 3) return null;
+  const userId = parts[2];
+  return users.get(userId) || null;
+}
+
+// Auth endpoints
+app.post('/api/auth/signup', (req, res) => {
+  try {
+    const { email, password, displayName } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    // Check if user already exists
+    for (const user of users.values()) {
+      if (user.email === email) {
+        return res.status(409).json({ error: 'User already exists' });
+      }
+    }
+    
+    // Create new user
+    const userId = nextUserId++;
+    const user = {
+      id: userId.toString(),
+      authUserId: userId.toString(),
+      email,
+      displayName: displayName || null,
+      credits: 10, // Give new users 10 credits
+      profileImage: null,
+      role: 'USER',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    users.set(userId.toString(), user);
+    
+    const token = generateToken(userId);
+    
+    res.json({
+      accessToken: token,
+      user
+    });
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    // Find user by email
+    let user = null;
+    for (const u of users.values()) {
+      if (u.email === email) {
+        user = u;
+        break;
+      }
+    }
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // In a real app, you'd verify the password hash here
+    // For now, we'll just check if password is not empty
+    if (!password) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const token = generateToken(user.id);
+    
+    res.json({
+      accessToken: token,
+      user
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/auth/me', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const token = authHeader.substring(7);
+    const user = verifyToken(token);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.patch('/api/users/me', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const token = authHeader.substring(7);
+    const user = verifyToken(token);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    const { displayName, profileImage } = req.body;
+    
+    // Update user
+    if (displayName !== undefined) user.displayName = displayName;
+    if (profileImage !== undefined) user.profileImage = profileImage;
+    user.updatedAt = new Date().toISOString();
+    
+    users.set(user.id, user);
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Multer setup for file uploads

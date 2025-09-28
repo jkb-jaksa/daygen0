@@ -18,7 +18,21 @@ type AccountAuthScreenProps = {
 };
 
 function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProps) {
-  const { mode, setMode, email, setEmail, name, setName, isSubmitting, error, handleSubmit } = useEmailAuthForm({
+  const {
+    mode,
+    setMode,
+    email,
+    setEmail,
+    name,
+    setName,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    isSubmitting,
+    error,
+    handleSubmit,
+  } = useEmailAuthForm({
     initialMode: nextPath ? "login" : "signup",
   });
 
@@ -33,7 +47,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
     if (nextPath) {
       return "Unlock your daily generations. Complete the quick sign-in below to continue.";
     }
-    return "Sign in with our password-free demo account to sync your prompts, credits, and creative preferences on this device.";
+    return "Sign in with your DayGen account to sync prompts, credits, and creative preferences across devices.";
   }, [nextPath]);
 
   const highlights = useMemo(
@@ -48,9 +62,9 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
         description: `The moment you're signed in, we’ll guide you straight to ${destinationCopy} so you can keep creating without friction.`,
       },
       {
-        title: "Private demo login",
+        title: "Secure authentication",
         description:
-          "No real credentials required. Everything lives locally on this device so you can prototype safely before production auth arrives.",
+          "Passwords are encrypted and verified by our backend so your creative workspace stays protected.",
       },
     ],
     [destinationCopy],
@@ -139,6 +153,42 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                     disabled={isSubmitting}
                   />
                 </div>
+                <div className="space-y-1">
+                  <label htmlFor="auth-password" className="block text-sm font-raleway text-d-white/80">
+                    Password
+                  </label>
+                  <input
+                    id="auth-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className={inputs.base}
+                    placeholder="Enter your password"
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    required
+                    minLength={8}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {mode === "signup" && (
+                  <div className="space-y-1">
+                    <label htmlFor="auth-confirm" className="block text-sm font-raleway text-d-white/80">
+                      Confirm password
+                    </label>
+                    <input
+                      id="auth-confirm"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      className={inputs.base}
+                      placeholder="Re-enter your password"
+                      autoComplete="new-password"
+                      required
+                      minLength={8}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                )}
                 <div aria-live="polite" role="status" className="min-h-[1rem]">
                   {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
                 </div>
@@ -152,7 +202,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
               </form>
               <p className="flex items-center justify-center gap-2 text-xs font-raleway text-d-white/60">
                 <Lock className="h-3.5 w-3.5" />
-                No passwords required — this mock login saves data locally for demo purposes only.
+                Passwords are handled securely by the DayGen backend with JWT-based sessions.
               </p>
             </div>
             <p className="mt-6 text-center text-[0.7rem] font-raleway text-d-white/50">
@@ -171,7 +221,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
 
 export default function Account() {
   const { user, updateProfile, logOut, storagePrefix } = useAuth();
-  const [name, setName] = useState(user?.name ?? "");
+  const [name, setName] = useState(user?.displayName ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -180,6 +230,7 @@ export default function Account() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -203,10 +254,10 @@ export default function Account() {
 
   // Keep the input in sync if user loads after first render, but don't override user input
   useEffect(() => {
-    if (user?.name && name === "") {
-      setName(user.name);
+    if (user?.displayName && name === "") {
+      setName(user.displayName);
     }
-  }, [user?.name, name]);
+  }, [name, user?.displayName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -299,7 +350,7 @@ export default function Account() {
         throw new Error("Empty cropped image data");
       }
 
-      updateProfile({ profilePic: dataUrl });
+      await updateProfile({ profileImage: dataUrl });
     } catch (error) {
       debugError("Account - Failed to process cropped image", error);
       setUploadError("We couldn't process that image. Please try again.");
@@ -308,18 +359,24 @@ export default function Account() {
     }
   };
 
-  const handleRemoveProfilePic = () => {
-    updateProfile({ profilePic: undefined });
-    setUploadError(null);
-    releasePreview();
-    resetFileInput();
+  const handleRemoveProfilePic = async () => {
+    try {
+      await updateProfile({ profileImage: null });
+      setUploadError(null);
+    } catch (error) {
+      debugError("Account - Failed to remove profile image", error);
+      setUploadError("We could not remove that image. Please try again.");
+    } finally {
+      releasePreview();
+      resetFileInput();
+    }
   };
 
   const trimmedName = useMemo(() => (name ?? "").trim(), [name]);
-  const currentUserName = useMemo(() => (user?.name ?? "").trim(), [user?.name]);
+  const currentUserName = useMemo(() => (user?.displayName ?? "").trim(), [user?.displayName]);
   const isNameValid = trimmedName.length > 0 && trimmedName.length <= 60;
   const isNameChanged = trimmedName !== currentUserName;
-  const canSaveProfile = isNameValid && isNameChanged;
+  const canSaveProfile = isNameValid && !isSavingProfile;
   const nameErrorMessage = trimmedName.length === 0 ? "Display name is required." : "Display name must be 60 characters or fewer.";
 
   useEffect(() => {
@@ -328,7 +385,7 @@ export default function Account() {
     return () => clearTimeout(timeout);
   }, [showSaved]);
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     setNameTouched(true);
 
     if (!isNameValid) {
@@ -337,23 +394,38 @@ export default function Account() {
     }
 
     if (!isNameChanged) {
+      // If name hasn't changed, just show success message
+      setShowSaved(true);
       return;
     }
 
-    updateProfile({ name: trimmedName });
+    setIsSavingProfile(true);
 
-    if (normalizedRawNext) {
-      if (decodedNextPath) {
-        const target = safeNext(decodedNextPath);
-        debugLog("Account - redirecting after profile save to:", target);
-        navigate(target, { replace: true });
-      } else {
-        debugError("Failed to decode next path after saving profile:", normalizedRawNext);
-        navigate("/create", { replace: true });
-      }
-    } else {
+    try {
+      await updateProfile({ displayName: trimmedName });
       setSaveError(null);
-      setShowSaved(true);
+
+      if (normalizedRawNext) {
+        if (decodedNextPath) {
+          const target = safeNext(decodedNextPath);
+          debugLog("Account - redirecting after profile save to:", target);
+          navigate(target, { replace: true });
+        } else {
+          debugError("Failed to decode next path after saving profile:", normalizedRawNext);
+          navigate("/create", { replace: true });
+        }
+      } else {
+        setShowSaved(true);
+      }
+    } catch (error) {
+      debugError("Account - Failed to save profile", error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "We could not save your changes. Please try again.";
+      setSaveError(message);
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -409,18 +481,17 @@ export default function Account() {
             <label className="block text-sm text-d-white mb-2 font-raleway">Picture</label>
             <div className="flex items-center gap-3">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                {user.profilePic ? (
+                {user.profileImage ? (
                   <img
-                    src={user.profilePic}
+                    src={user.profileImage}
                     alt="Profile"
                     className="size-12 rounded-full object-cover border-2 border-d-dark group-hover:opacity-80 transition-opacity"
                   />
                 ) : (
                   <div
-                    className="size-12 rounded-full flex items-center justify-center text-d-text text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity"
-                    style={{ background: user.color || "var(--d-text)" }}
+                    className="size-12 rounded-full flex items-center justify-center text-d-text text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity bg-d-dark"
                   >
-                    {(user.name || user.email)[0]?.toUpperCase()}
+                    {(user.displayName || user.email)[0]?.toUpperCase()}
                   </div>
                 )}
                 <div className="absolute inset-0 bg-d-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -432,9 +503,9 @@ export default function Account() {
                   </div>
                 )}
               </div>
-              {user.profilePic && (
+              {user.profileImage && (
                 <button
-                  onClick={handleRemoveProfilePic}
+                  onClick={() => { void handleRemoveProfilePic(); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
                 >
                   <X className="w-4 h-4 rounded-full" />
@@ -443,6 +514,7 @@ export default function Account() {
               )}
             </div>
             {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
+            <p className="mt-2 text-xs font-raleway text-d-white/60">Profile pictures update immediately when you complete cropping.</p>
           </div>
 
           <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
@@ -479,10 +551,10 @@ export default function Account() {
             </button>
             <button
               className={buttons.primary}
-              onClick={handleSaveProfile}
+              onClick={() => { void handleSaveProfile(); }}
               disabled={!canSaveProfile}
             >
-              Save
+              {isSavingProfile ? "Saving…" : "Save"}
             </button>
             {showSaved && !normalizedRawNext && (
               <span className="text-xs font-raleway text-emerald-300">Saved</span>
@@ -495,6 +567,9 @@ export default function Account() {
           <ul className="text-sm font-raleway text-d-white space-y-1">
             <li>
               Generated images: <strong>{gallery.length}</strong>
+            </li>
+            <li>
+              Credits remaining: <strong>{user.credits}</strong>
             </li>
           </ul>
         </div>

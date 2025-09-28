@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
 import { getApiUrl } from '../utils/api';
-import { debugError, debugLog } from '../utils/debug';
+import { debugError } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -10,8 +11,8 @@ export interface FluxGeneratedImage {
   model: string;
   timestamp: string;
   jobId: string;
-  references?: string[]; // Base64 data URLs for reference images used
-  ownerId?: string; // Optional user ID who generated the image
+  references?: string[];
+  ownerId?: string;
 }
 
 export interface FluxImageGenerationState {
@@ -25,30 +26,28 @@ export interface FluxImageGenerationState {
 export interface FluxImageGenerationOptions {
   prompt: string;
   model: FluxModel | FluxModelType;
-  // Sizing options
   width?: number;
   height?: number;
   aspect_ratio?: string;
-  // Ultra-specific params
   raw?: boolean;
   image_prompt?: string;
   image_prompt_strength?: number;
-  // Kontext (editing) params
-  input_image?: string; // Base64 encoded image
+  input_image?: string;
   input_image_2?: string;
   input_image_3?: string;
   input_image_4?: string;
-  // Common params
   seed?: number;
   output_format?: 'jpeg' | 'png';
   prompt_upsampling?: boolean;
   safety_tolerance?: number;
-  // Generation options
   useWebhook?: boolean;
-  references?: string[]; // Base64 data URLs for reference images
+  references?: string[];
 }
 
+const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
+
 export const useFluxImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<FluxImageGenerationState>({
     isLoading: false,
     error: null,
@@ -57,186 +56,140 @@ export const useFluxImageGeneration = () => {
     progress: undefined,
   });
 
-  const generateImage = useCallback(async (options: FluxImageGenerationOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      jobStatus: 'queued',
-      progress: 'Submitting job...',
-    }));
-
-    try {
-      const { prompt, model, references, useWebhook = false, ...params } = options;
-
-      // Map model to BFL model if needed
-      const bflModel = model in FLUX_MODEL_MAP 
-        ? FLUX_MODEL_MAP[model as FluxModelType]
-        : model as FluxModel;
-
-      // Submit the job
-      const apiUrl = getApiUrl('/api/flux/generate');
-
-      debugLog('[flux] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt, 
-          model: bflModel,
-          ...params,
-          useWebhook
-        }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        
-        if (res.status === 402) {
-          throw new Error('BFL credits exceeded. Please add credits to your account.');
-        }
-        if (res.status === 429) {
-          throw new Error('Rate limit reached. Too many active tasks. Please wait and try again.');
-        }
-        throw new Error(errorMessage);
-      }
-
-      const { id, pollingUrl } = await res.json();
-
-      setState(prev => ({
+  const generateImage = useCallback(
+    async (options: FluxImageGenerationOptions) => {
+      setState((prev) => ({
         ...prev,
-        jobStatus: 'processing',
-        progress: 'Job submitted, processing...',
+        isLoading: true,
+        error: null,
+        jobStatus: 'queued',
+        progress: 'Submitting request…',
       }));
 
-      // If using webhooks, we don't need to poll
-      if (useWebhook) {
-        // For webhook mode, we'll simulate the completion
-        // In a real app, you'd listen for webhook events or poll a status endpoint
-        const generatedImage: FluxGeneratedImage = {
-          url: '', // This would be set by the webhook handler
-          prompt,
-          model,
-          timestamp: new Date().toISOString(),
-          jobId: id,
-          references: references || undefined,
+      try {
+        if (!token) {
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: AUTH_ERROR_MESSAGE,
+            jobStatus: null,
+            progress: undefined,
+          }));
+          throw new Error(AUTH_ERROR_MESSAGE);
+        }
+
+        const { prompt, model, references, useWebhook = false, ...params } = options;
+        if (useWebhook) {
+          debugError('Flux webhook delivery is not supported in the backend integration.');
+        }
+
+        const resolvedModel =
+          model in FLUX_MODEL_MAP
+            ? FLUX_MODEL_MAP[model as FluxModelType]
+            : (model as FluxModel);
+
+        const providerOptions: Record<string, unknown> = {};
+        if (params.width !== undefined) providerOptions.width = params.width;
+        if (params.height !== undefined) providerOptions.height = params.height;
+        if (params.aspect_ratio !== undefined) providerOptions.aspect_ratio = params.aspect_ratio;
+        if (params.raw !== undefined) providerOptions.raw = params.raw;
+        if (params.image_prompt !== undefined) providerOptions.image_prompt = params.image_prompt;
+        if (params.image_prompt_strength !== undefined) providerOptions.image_prompt_strength = params.image_prompt_strength;
+        if (params.input_image !== undefined) providerOptions.input_image = params.input_image;
+        if (params.input_image_2 !== undefined) providerOptions.input_image_2 = params.input_image_2;
+        if (params.input_image_3 !== undefined) providerOptions.input_image_3 = params.input_image_3;
+        if (params.input_image_4 !== undefined) providerOptions.input_image_4 = params.input_image_4;
+        if (params.seed !== undefined) providerOptions.seed = params.seed;
+        if (params.output_format !== undefined) providerOptions.output_format = params.output_format;
+        if (params.prompt_upsampling !== undefined) providerOptions.prompt_upsampling = params.prompt_upsampling;
+        if (params.safety_tolerance !== undefined) providerOptions.safety_tolerance = params.safety_tolerance;
+
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            prompt,
+            model: resolvedModel,
+            references,
+            providerOptions,
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          const message =
+            (payload && typeof payload.error === 'string' && payload.error) ||
+            response.statusText ||
+            'Flux generation failed';
+          throw new Error(message);
+        }
+
+        const payload = (await response.json()) as {
+          dataUrl?: string;
+          dataUrls?: string[];
+          jobId?: string | null;
+          status?: string | null;
         };
-        
-        setState(prev => ({
+
+        const dataUrl =
+          typeof payload.dataUrl === 'string'
+            ? payload.dataUrl
+            : Array.isArray(payload.dataUrls) && typeof payload.dataUrls[0] === 'string'
+              ? payload.dataUrls[0]
+              : null;
+
+        if (!dataUrl) {
+          throw new Error('Flux generation did not return an image.');
+        }
+
+        const generatedImage: FluxGeneratedImage = {
+          url: dataUrl,
+          prompt,
+          model: resolvedModel,
+          timestamp: new Date().toISOString(),
+          jobId: payload.jobId ?? '',
+          references: references || undefined,
+          ownerId: user?.id,
+        };
+
+        setState((prev) => ({
           ...prev,
           isLoading: false,
-          jobStatus: 'completed',
-          progress: 'Job completed via webhook',
+          error: null,
           generatedImage,
+          jobStatus: (payload.status as FluxImageGenerationState['jobStatus']) ?? 'completed',
+          progress: undefined,
         }));
-        
+
         return generatedImage;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+          generatedImage: null,
+          jobStatus: 'failed',
+          progress: undefined,
+        }));
+        throw error;
       }
-
-      // Polling mode - check job status periodically
-      let attempts = 0;
-      const maxAttempts = 60; // 5 minutes max (5s intervals)
-      
-      debugLog('[flux] Starting polling for job:', id);
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-        attempts++;
-        
-        debugLog(`[flux] Polling attempt ${attempts}/${maxAttempts}`);
-        
-        try {
-          const pollRes = await fetch(getApiUrl(`/api/flux/result?pollingUrl=${encodeURIComponent(pollingUrl)}`));
-          
-          if (!pollRes.ok) {
-            throw new Error(`Polling failed: ${pollRes.status}`);
-          }
-
-          const result = await pollRes.json();
-          debugLog('[flux] Polling result:', result.status);
-          
-          if (result.status === 'Ready' && result.result?.sample) {
-            // Download the image via our server to avoid CORS issues
-            const downloadRes = await fetch(getApiUrl(`/api/flux/download?url=${encodeURIComponent(result.result.sample)}`));
-            if (!downloadRes.ok) {
-              throw new Error(`Failed to download image: ${downloadRes.status}`);
-            }
-            
-            const { dataUrl } = await downloadRes.json();
-
-            const generatedImage: FluxGeneratedImage = {
-              url: dataUrl,
-              prompt,
-              model,
-              timestamp: new Date().toISOString(),
-              jobId: id,
-              references: references || undefined,
-            };
-
-            setState(prev => ({
-              ...prev,
-              isLoading: false,
-              jobStatus: 'completed',
-              progress: 'Generation complete!',
-              generatedImage,
-              error: null,
-            }));
-
-            return generatedImage;
-          }
-          
-          if (result.status === 'Error' || result.status === 'Failed') {
-            throw new Error(`Generation failed: ${result.error || 'Unknown error'}`);
-          }
-          
-          // Update progress
-          setState(prev => ({
-            ...prev,
-            progress: `Processing... (${result.status})`,
-          }));
-          
-        } catch (pollError) {
-          debugError('Polling error:', pollError);
-          // If it's a download error, stop polling immediately
-          if (pollError instanceof Error && pollError.message.includes('Failed to download image')) {
-            throw pollError;
-          }
-          // Continue polling unless it's a critical error
-          if (attempts >= maxAttempts - 1) {
-            throw pollError;
-          }
-        }
-      }
-      
-      throw new Error('Generation timed out. Please try again.');
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        generatedImage: null,
-        jobStatus: 'failed',
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
+    },
+    [token, user?.id],
+  );
 
   const clearError = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       error: null,
     }));
   }, []);
 
   const clearGeneratedImage = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       generatedImage: null,
     }));

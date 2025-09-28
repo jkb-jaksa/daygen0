@@ -1,147 +1,17 @@
-import { useEffect, useRef } from "react";
-import { useAuth } from "../auth/useAuth";
-import { debugError, debugWarn } from "../utils/debug";
+import { buttons } from "../styles/designSystem";
 
-const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
-const GOOGLE_SCRIPT_ATTR = "data-daygen-google-client";
-
-let hasInitializedGoogleClient = false;
-
-type GoogleCredentialResponse = {
-  credential: string;
-};
-
-type GoogleIdConfiguration = {
-  client_id: string;
-  callback: (response: GoogleCredentialResponse) => void | Promise<void>;
-};
-
-type GoogleButtonConfiguration = {
-  theme?: string;
-  size?: string;
-  shape?: string;
-  text?: string;
-  width?: string | number;
-};
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: GoogleIdConfiguration) => void;
-          renderButton: (element: HTMLElement, config: GoogleButtonConfiguration) => void;
-          prompt: () => void;
-          disableAutoSelect: () => void;
-          revoke: (email: string, callback: () => void) => void;
-        };
-      };
-    };
-  } 
-}
-
-function decodeJwt(idToken: string): Record<string, unknown> {
-  const [, payload] = idToken.split(".");
-  const pad = "=".repeat((4 - (payload.length % 4)) % 4);
-  const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/") + pad);
-  const parsed: unknown = JSON.parse(json);
-  if (parsed && typeof parsed === "object") {
-    return parsed as Record<string, unknown>;
-  }
-
-  return {};
-}
-
-export default function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
-  const { signIn, signUp, updateProfile } = useAuth();
-  const btnRef = useRef<HTMLDivElement>(null);
-  const scriptAddedRef = useRef(false);
-
-  useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      debugWarn("Missing VITE_GOOGLE_CLIENT_ID");
-      return;
-    }
-
-    const initializeGoogle = () => {
-      if (!window.google?.accounts?.id) return;
-
-      if (!hasInitializedGoogleClient) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: async (resp: GoogleCredentialResponse) => {
-            try {
-              const payload = decodeJwt(resp.credential);
-              const email = typeof payload.email === "string" ? payload.email : undefined;
-              if (!email) {
-                throw new Error("Missing email in credential response");
-              }
-              const name = typeof payload.name === "string" ? payload.name : undefined;
-              const picture = typeof payload.picture === "string" ? payload.picture : undefined;
-
-              // Create or load the local user, then enrich profile
-              await signIn(email).catch(() => signUp(email, name));
-              if (name || picture) updateProfile({ name, profilePic: picture });
-              onSuccess?.();
-            } catch (e) {
-              debugError("Google sign-in failed", e);
-            }
-          },
-        });
-        hasInitializedGoogleClient = true;
-      }
-
-      if (btnRef.current) {
-        window.google.accounts.id.renderButton(btnRef.current, {
-          theme: "outline",
-          size: "large",
-          shape: "pill",
-          text: "signin_with",
-          width: "100%",
-        });
-      }
-
-      window.google.accounts.id.prompt();
-    };
-
-    if (window.google?.accounts?.id) {
-      initializeGoogle();
-      return;
-    }
-
-    const existingScript = document.querySelector<HTMLScriptElement>(`script[${GOOGLE_SCRIPT_ATTR}]`);
-    const handleLoad = () => {
-      initializeGoogle();
-    };
-
-    if (existingScript) {
-      existingScript.addEventListener("load", handleLoad);
-      return () => {
-        existingScript.removeEventListener("load", handleLoad);
-      };
-    }
-
-    const script = document.createElement("script");
-    script.src = GOOGLE_SCRIPT_SRC;
-    script.async = true;
-    script.defer = true;
-    script.setAttribute(GOOGLE_SCRIPT_ATTR, "true");
-    script.addEventListener("load", handleLoad);
-    document.head.appendChild(script);
-    scriptAddedRef.current = true;
-
-    return () => {
-      script.removeEventListener("load", handleLoad);
-      if (scriptAddedRef.current) {
-        script.remove();
-      }
-    };
-  }, [signIn, signUp, updateProfile, onSuccess]);
-
+function GoogleLogin({ onSuccess }: { onSuccess?: () => void }) {
   return (
-    <div className="w-full" aria-label="Continue with Google">
-      <div ref={btnRef} />
-    </div>
+    <button
+      type="button"
+      onClick={() => onSuccess?.()}
+      className={`${buttons.blockPrimary} w-full opacity-60 cursor-not-allowed`}
+      disabled
+      aria-disabled="true"
+    >
+      Google sign-in coming soon
+    </button>
   );
 }
+
+export default GoogleLogin;

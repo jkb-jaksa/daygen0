@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugError, debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -28,6 +29,7 @@ export interface ChatGPTImageGenerationOptions {
 }
 
 export const useChatGPTImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<ChatGPTImageGenerationState>({
     isLoading: false,
     error: null,
@@ -42,6 +44,16 @@ export const useChatGPTImageGeneration = () => {
     }));
 
     try {
+      if (!token) {
+        const message = 'Please sign in to generate images.';
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+        }));
+        throw new Error(message);
+      }
+
       const { prompt, n = 1, size = '1024x1024', quality = 'high', background = 'transparent' } = options;
 
       // Use the ChatGPT Image API endpoint
@@ -53,6 +65,7 @@ export const useChatGPTImageGeneration = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           prompt,
@@ -89,6 +102,7 @@ export const useChatGPTImageGeneration = () => {
         size,
         quality,
         background,
+        ownerId: user?.id,
       };
 
       setState(prev => ({
@@ -113,7 +127,7 @@ export const useChatGPTImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token, user?.id]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface SeedreamGeneratedImage {
   url: string;
@@ -8,7 +8,7 @@ export interface SeedreamGeneratedImage {
   model: string;
   timestamp: string;
   size: string;
-  ownerId?: string; // Optional user ID who generated the image
+  ownerId?: string;
 }
 
 export interface SeedreamImageGenerationState {
@@ -23,158 +23,119 @@ export interface SeedreamImageGenerationOptions {
   n?: number;
 }
 
-export interface SeedreamImageEditOptions {
-  prompt: string;
-  image: File;
-  mask?: File;
-  size?: string;
-  n?: number;
-}
+const AUTH_ERROR_MESSAGE = 'Please sign in to generate SeeDream images.';
+const UNSUPPORTED_MESSAGE = 'SeeDream image editing is not yet available in the backend integration.';
 
 export const useSeeDreamImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<SeedreamImageGenerationState>({
     isLoading: false,
     error: null,
     generatedImage: null,
   });
 
-  const generateImage = useCallback(async (options: SeedreamImageGenerationOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-    }));
-
-    try {
-      const { prompt, size = "1024x1024", n = 1 } = options;
-
-      debugLog('[seedream] Generating image with prompt:', `${prompt.substring(0, 100)}...`);
-      
-      const res = await fetch(getApiUrl('/api/unified-generate'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, size, n, model: 'seedream-3.0' }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { images } = await res.json();
-      
-      if (!images || images.length === 0) {
-        throw new Error('No images generated');
-      }
-
-      const generatedImage: SeedreamGeneratedImage = {
-        url: images[0], // images[0] is already a complete data URL
-        prompt,
-        model: 'seedream-3.0',
-        timestamp: new Date().toISOString(),
-        size,
-      };
-
-      setState(prev => ({
+  const generateImage = useCallback(
+    async (options: SeedreamImageGenerationOptions) => {
+      setState((prev) => ({
         ...prev,
-        isLoading: false,
-        generatedImage,
+        isLoading: true,
         error: null,
       }));
 
-      return generatedImage;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        generatedImage: null,
-      }));
+      try {
+        if (!token) {
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: AUTH_ERROR_MESSAGE,
+          }));
+          throw new Error(AUTH_ERROR_MESSAGE);
+        }
 
-      throw error;
-    }
-  }, []);
+        const size = options.size ?? '1024x1024';
+        const providerOptions: Record<string, unknown> = {
+          width: Number.parseInt(size.split('x')[0] ?? '1024', 10) || 1024,
+          height: Number.parseInt(size.split('x')[1] ?? '1024', 10) || 1024,
+          n: options.n ?? 1,
+        };
 
-  const editImage = useCallback(async (options: SeedreamImageEditOptions) => {
-    setState(prev => ({
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            prompt: options.prompt,
+            model: 'seedream-3.0',
+            providerOptions,
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          const message =
+            (payload && typeof payload.error === 'string' && payload.error) ||
+            response.statusText ||
+            'SeeDream generation failed';
+          throw new Error(message);
+        }
+
+        const payload = (await response.json()) as { images?: string[] };
+        const images = Array.isArray(payload.images) ? payload.images : [];
+        if (images.length === 0) {
+          throw new Error('SeeDream did not return any images.');
+        }
+
+        const generatedImage: SeedreamGeneratedImage = {
+          url: images[0],
+          prompt: options.prompt,
+          model: 'seedream-3.0',
+          timestamp: new Date().toISOString(),
+          size,
+          ownerId: user?.id,
+        };
+
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+          generatedImage: null,
+        }));
+        throw error;
+      }
+    },
+    [token, user?.id],
+  );
+
+  const editImage = useCallback(async () => {
+    setState((prev) => ({
       ...prev,
-      isLoading: true,
-      error: null,
+      isLoading: false,
+      error: UNSUPPORTED_MESSAGE,
     }));
-
-    try {
-      const { prompt, image, mask, size = "1024x1024", n = 1 } = options;
-
-      debugLog('[seedream] Editing image with prompt:', `${prompt.substring(0, 100)}...`);
-      
-      const formData = new FormData();
-      formData.append('prompt', prompt);
-      formData.append('size', size);
-      formData.append('n', String(n));
-      formData.append('image', image);
-      if (mask) {
-        formData.append('mask', mask);
-      }
-      
-      const res = await fetch(getApiUrl('/api/unified-generate'), {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { images } = await res.json();
-      
-      if (!images || images.length === 0) {
-        throw new Error('No images generated');
-      }
-
-      const generatedImage: SeedreamGeneratedImage = {
-        url: images[0], // images[0] is already a complete data URL
-        prompt,
-        model: 'seedream-3.0',
-        timestamp: new Date().toISOString(),
-        size,
-      };
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImage,
-        error: null,
-      }));
-
-      return generatedImage;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        generatedImage: null,
-      }));
-
-      throw error;
-    }
+    throw new Error(UNSUPPORTED_MESSAGE);
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       error: null,
     }));
   }, []);
 
   const clearGeneratedImage = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       generatedImage: null,
     }));

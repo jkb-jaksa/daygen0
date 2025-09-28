@@ -1,128 +1,237 @@
-import React, { useMemo, useCallback, useEffect, useState } from "react";
-import { AuthContext } from "./context";
-import type { AuthContextValue, User } from "./context";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import {
+  AuthContext,
+  type AuthContextValue,
+  type UpdateProfilePayload,
+  type User,
+} from './context';
+import { getApiUrl } from '../utils/api';
+import { debugError } from '../utils/debug';
 
-type GoogleAccountsId = {
-  disableAutoSelect: () => void;
-  revoke: (email: string, callback: () => void) => void;
+const TOKEN_STORAGE_KEY = 'daygen:authToken';
+
+type AuthSuccessPayload = {
+  accessToken: string;
+  user: BackendUser;
 };
 
-type GoogleGlobal = {
-  accounts?: {
-    id?: GoogleAccountsId;
-  };
+type BackendUser = {
+  id: string;
+  authUserId: string;
+  email: string;
+  displayName: string | null;
+  credits: number;
+  profileImage: string | null;
+  role: 'USER' | 'ADMIN';
+  createdAt: string | Date;
+  updatedAt: string | Date;
 };
 
-type GoogleWindow = Window & {
-  google?: GoogleGlobal;
+const normalizeIsoString = (value: string | Date | null | undefined): string => {
+  if (!value) {
+    return new Date().toISOString();
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  try {
+    return value.toISOString();
+  } catch (error) {
+    debugError('Failed to normalize ISO string', error);
+    return new Date().toISOString();
+  }
 };
 
-const LS_USERS = "daygen:users";
-const LS_CURRENT = "daygen:currentUserEmail";
+const normalizeUser = (payload: BackendUser): User => ({
+  id: payload.id,
+  authUserId: payload.authUserId,
+  email: payload.email,
+  displayName: payload.displayName ?? null,
+  credits: payload.credits ?? 0,
+  profileImage: payload.profileImage ?? null,
+  role: payload.role ?? 'USER',
+  createdAt: normalizeIsoString(payload.createdAt),
+  updatedAt: normalizeIsoString(payload.updatedAt),
+});
 
-function loadUsers(): User[] {
-  try { return JSON.parse(localStorage.getItem(LS_USERS) || "[]"); } catch { return []; }
-}
-function saveUsers(users: User[]) {
-  localStorage.setItem(LS_USERS, JSON.stringify(users));
-}
-function emailToId(email: string) {
-  const e = email.trim().toLowerCase();
-  // base64 without padding is fine for a local id
-  return "u_" + btoa(e).replace(/=+$/,"");
-}
-function randomColor() {
-  const colors = ["#f59e0b","#84cc16","#10b981","#06b6d4","#60a5fa","#a78bfa","#f472b6"];
-  return colors[Math.floor(Math.random()*colors.length)];
-}
+const extractErrorMessage = async (response: Response): Promise<string> => {
+  try {
+    const body: unknown = await response.json();
+    if (body && typeof body === 'object') {
+      const record = body as Record<string, unknown>;
+      const message = record.message ?? record.error;
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    }
+  } catch {
+    // Ignore JSON parse failures and fall back to status text
+  }
+  return response.statusText || 'Request failed';
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([]);
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleAuthSuccess = useCallback(
+    (payload: AuthSuccessPayload): User => {
+      const nextUser = normalizeUser(payload.user);
+      localStorage.setItem(TOKEN_STORAGE_KEY, payload.accessToken);
+      setToken(payload.accessToken);
+      setUser(nextUser);
+      return nextUser;
+    },
+  []);
+
+  const fetchProfile = useCallback(
+    async (authToken: string): Promise<User> => {
+      const response = await fetch(getApiUrl('/api/auth/me'), {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(await extractErrorMessage(response));
+      }
+
+      const payload = (await response.json()) as BackendUser;
+      const nextUser = normalizeUser(payload);
+      setUser(nextUser);
+      return nextUser;
+    },
+  []);
 
   useEffect(() => {
-    const u = loadUsers();
-    setUsers(u);
-    const current = localStorage.getItem(LS_CURRENT);
-    if (current) {
-      const found = u.find(x => x.email.toLowerCase() === current.toLowerCase()) || null;
-      setUser(found);
+    const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (!storedToken) {
+      setIsLoading(false);
+      return;
     }
-  }, []);
 
-  const persistCurrent = useCallback((u: User | null) => {
-    if (u) localStorage.setItem(LS_CURRENT, u.email);
-    else localStorage.removeItem(LS_CURRENT);
-  }, []);
+    setToken(storedToken);
+    void fetchProfile(storedToken).catch((error) => {
+      debugError('Failed to restore authenticated session', error);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      setToken(null);
+      setUser(null);
+    }).finally(() => {
+      setIsLoading(false);
+    });
+  }, [fetchProfile]);
 
-  const signIn = useCallback(async (email: string) => {
-    const id = emailToId(email);
-    let u = loadUsers();
-    let found = u.find(x => x.id === id);
-    if (!found) {
-      // dev convenience: auto-create on first sign-in if not found
-      found = { id, email, name: email.split("@")[0], color: randomColor() };
-      u = [...u, found];
-      saveUsers(u);
+  const signIn = useCallback<
+    AuthContextValue['signIn']
+  >(async (email, password) => {
+    const response = await fetch(getApiUrl('/api/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await extractErrorMessage(response));
     }
-    setUsers(u);
-    setUser(found);
-    persistCurrent(found);
-    return found!;
-  }, [persistCurrent]);
 
-  const signUp = useCallback(async (email: string, name?: string) => {
-    const id = emailToId(email);
-    let u = loadUsers();
-    let found = u.find(x => x.id === id);
-    if (!found) {
-      found = { id, email, name, color: randomColor() };
-      u = [...u, found];
-      saveUsers(u);
-    } else {
-      // update name on re-signup
-      if (name && !found.name) {
-        found = { ...found, name };
-        u = u.map(x => x.id === id ? found! : x);
-        saveUsers(u);
-      }
+    const payload = (await response.json()) as AuthSuccessPayload;
+    return handleAuthSuccess(payload);
+  }, [handleAuthSuccess]);
+
+  const signUp = useCallback<
+    AuthContextValue['signUp']
+  >(async (email, password, displayName) => {
+    const response = await fetch(getApiUrl('/api/auth/signup'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await extractErrorMessage(response));
     }
-    setUsers(u);
-    setUser(found);
-    persistCurrent(found);
-    return found!;
-  }, [persistCurrent]);
+
+    const payload = (await response.json()) as AuthSuccessPayload;
+    return handleAuthSuccess(payload);
+  }, [handleAuthSuccess]);
 
   const logOut = useCallback(() => {
-    // grab current before clearing
-    const current = user;
-    try {
-      // Revoke Google consent if available
-      const googleApi = (window as GoogleWindow).google?.accounts?.id;
-      if (googleApi) {
-        googleApi.disableAutoSelect();
-        if (current?.email) {
-          googleApi.revoke(current.email, () => {});
-        }
-      }
-    } catch (error) {
-      console.warn("Failed to revoke Google auth", error);
-    }
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    setToken(null);
     setUser(null);
-    persistCurrent(null);
-  }, [persistCurrent, user]);
+  }, []);
 
-  const updateProfile = useCallback((patch: Partial<User>) => {
-    if (!user) return;
-    const next = { ...user, ...patch };
-    setUser(next);
-    const all = loadUsers().map(x => x.id === user.id ? next : x);
-    saveUsers(all);
-    setUsers(all);
-  }, [user]);
+  const refreshUser = useCallback<
+    AuthContextValue['refreshUser']
+  >(async () => {
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+    return fetchProfile(token);
+  }, [fetchProfile, token]);
 
-  const storagePrefix = useMemo(() => `daygen:${user?.id ?? "guest"}:`, [user]);
+  const updateProfile = useCallback<
+    AuthContextValue['updateProfile']
+  >(async (patch: UpdateProfilePayload) => {
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
 
-  const value: AuthContextValue = { user, users, storagePrefix, signIn, signUp, logOut, updateProfile };
+    const response = await fetch(getApiUrl('/api/users/me'), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(patch),
+    });
+
+    if (!response.ok) {
+      throw new Error(await extractErrorMessage(response));
+    }
+
+    const payload = (await response.json()) as BackendUser;
+    const nextUser = normalizeUser(payload);
+    setUser(nextUser);
+    return nextUser;
+  }, [token]);
+
+  const storagePrefix = useMemo(
+    () => `daygen:${user?.id ?? 'guest'}:`,
+    [user?.id],
+  );
+
+  const value = useMemo<AuthContextValue>(() => ({
+    user,
+    token,
+    isLoading,
+    isAuthenticated: Boolean(token && user),
+    storagePrefix,
+    signIn,
+    signUp,
+    logOut,
+    refreshUser,
+    updateProfile,
+  }), [
+    isLoading,
+    logOut,
+    refreshUser,
+    signIn,
+    signUp,
+    storagePrefix,
+    token,
+    updateProfile,
+    user,
+  ]);
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+export type { BackendUser };

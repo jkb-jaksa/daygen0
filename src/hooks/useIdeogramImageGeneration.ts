@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface IdeogramGeneratedImage {
   url: string;
@@ -25,13 +25,13 @@ export interface IdeogramImageGenerationState {
 
 export interface IdeogramGenerateOptions {
   prompt: string;
-  aspect_ratio?: string;   // e.g. "16:9" (can't be used with resolution)
-  resolution?: string;     // e.g. "1024x1024"
-  rendering_speed?: "TURBO" | "DEFAULT" | "QUALITY";
-  num_images?: number;     // 1..8
+  aspect_ratio?: string;
+  resolution?: string;
+  rendering_speed?: 'TURBO' | 'DEFAULT' | 'QUALITY';
+  num_images?: number;
   seed?: number;
   style_preset?: string;
-  style_type?: "AUTO" | "GENERAL" | "REALISTIC" | "DESIGN" | "FICTION";
+  style_type?: 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION';
   negative_prompt?: string;
 }
 
@@ -39,17 +39,17 @@ export interface IdeogramEditOptions {
   image: File;
   mask: File;
   prompt: string;
-  rendering_speed?: "TURBO" | "DEFAULT" | "QUALITY";
+  rendering_speed?: 'TURBO' | 'DEFAULT' | 'QUALITY';
   seed?: number;
   num_images?: number;
   style_preset?: string;
-  style_type?: "AUTO" | "GENERAL" | "REALISTIC" | "DESIGN" | "FICTION";
+  style_type?: 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION';
 }
 
 export interface IdeogramReframeOptions {
   image: File;
   resolution: string;
-  rendering_speed?: "TURBO" | "DEFAULT" | "QUALITY";
+  rendering_speed?: 'TURBO' | 'DEFAULT' | 'QUALITY';
   seed?: number;
   num_images?: number;
   style_preset?: string;
@@ -58,7 +58,7 @@ export interface IdeogramReframeOptions {
 export interface IdeogramReplaceBgOptions {
   image: File;
   prompt: string;
-  rendering_speed?: "TURBO" | "DEFAULT" | "QUALITY";
+  rendering_speed?: 'TURBO' | 'DEFAULT' | 'QUALITY';
   seed?: number;
   num_images?: number;
   style_preset?: string;
@@ -73,10 +73,13 @@ export interface IdeogramUpscaleOptions {
 
 export interface IdeogramDescribeOptions {
   image: File;
-  model_version?: "V_2" | "V_3";
+  model_version?: 'V_2' | 'V_3';
 }
 
+const AUTH_ERROR_MESSAGE = 'Please sign in to generate Ideogram images.';
+
 export const useIdeogramImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<IdeogramImageGenerationState>({
     isLoading: false,
     error: null,
@@ -84,412 +87,164 @@ export const useIdeogramImageGeneration = () => {
     progress: undefined,
   });
 
-  const generateImage = useCallback(async (options: IdeogramGenerateOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Generating image with Ideogram...',
-    }));
-
-    try {
-      const apiUrl = getApiUrl('/api/unified-generate');
-      
-      debugLog('[ideogram] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...options, model: 'ideogram' }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { dataUrls } = await res.json();
-
-      const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url: string) => ({
-        url,
-        prompt: options.prompt,
-        timestamp: new Date().toISOString(),
-        model: 'ideogram',
-        aspectRatio: options.aspect_ratio,
-        resolution: options.resolution,
-        renderingSpeed: options.rendering_speed,
-        stylePreset: options.style_preset,
-        styleType: options.style_type,
-        negativePrompt: options.negative_prompt,
-      }));
-
-      setState(prev => ({
+  const generateImage = useCallback(
+    async (options: IdeogramGenerateOptions) => {
+      setState((prev) => ({
         ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, ...generatedImages],
-        progress: 'Generation complete!',
+        isLoading: true,
         error: null,
+        progress: 'Generating image with Ideogram…',
       }));
 
-      return generatedImages;
+      try {
+        if (!token) {
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: AUTH_ERROR_MESSAGE,
+            progress: undefined,
+          }));
+          throw new Error(AUTH_ERROR_MESSAGE);
+        }
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
+        const providerOptions: Record<string, unknown> = {};
+        if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
+        if (options.resolution) providerOptions.resolution = options.resolution;
+        if (options.rendering_speed) providerOptions.rendering_speed = options.rendering_speed;
+        if (options.num_images) providerOptions.num_images = options.num_images;
+        if (options.seed !== undefined) providerOptions.seed = options.seed;
+        if (options.style_preset) providerOptions.style_preset = options.style_preset;
+        if (options.style_type) providerOptions.style_type = options.style_type;
+        if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
 
-      throw error;
-    }
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            prompt: options.prompt,
+            model: 'ideogram',
+            providerOptions,
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          const message =
+            (payload && typeof payload.error === 'string' && payload.error) ||
+            response.statusText ||
+            'Ideogram generation failed';
+          throw new Error(message);
+        }
+
+        const payload = (await response.json()) as { dataUrls?: string[] };
+        const dataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
+        if (dataUrls.length === 0) {
+          throw new Error('Ideogram did not return any images.');
+        }
+
+        const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url) => ({
+          url,
+          prompt: options.prompt,
+          timestamp: new Date().toISOString(),
+          model: 'ideogram',
+          aspectRatio: options.aspect_ratio,
+          resolution: options.resolution,
+          renderingSpeed: options.rendering_speed,
+          stylePreset: options.style_preset,
+          styleType: options.style_type,
+          negativePrompt: options.negative_prompt,
+          ownerId: user?.id,
+        }));
+
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: null,
+          progress: 'Generation complete!',
+          generatedImages: [...prev.generatedImages, ...generatedImages],
+        }));
+
+        return generatedImages;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+          progress: undefined,
+        }));
+        throw error;
+      }
+    },
+    [token, user?.id],
+  );
+
+  const reportUnsupported = useCallback(async (feature: string) => {
+    const message = `${feature} is not yet supported in the backend integration.`;
+    setState((prev) => ({
+      ...prev,
+      isLoading: false,
+      error: message,
+      progress: undefined,
+    }));
+    throw new Error(message);
   }, []);
 
-  const editImage = useCallback(async (options: IdeogramEditOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Editing image with Ideogram...',
-    }));
+  const editImage = useCallback(
+    async (_options: IdeogramEditOptions): Promise<IdeogramGeneratedImage[]> => {
+      await reportUnsupported('Ideogram editing');
+      return [];
+    },
+    [reportUnsupported],
+  );
 
-    try {
-      const apiUrl = getApiUrl('/api/ideogram/edit');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      formData.append('mask', options.mask);
-      formData.append('prompt', options.prompt);
-      if (options.rendering_speed) formData.append('rendering_speed', options.rendering_speed);
-      if (options.seed !== undefined) formData.append('seed', String(options.seed));
-      if (options.num_images) formData.append('num_images', String(options.num_images));
-      if (options.style_preset) formData.append('style_preset', options.style_preset);
-      if (options.style_type) formData.append('style_type', options.style_type);
-      
-      debugLog('[ideogram] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
+  const reframeImage = useCallback(
+    async (_options: IdeogramReframeOptions): Promise<IdeogramGeneratedImage[]> => {
+      await reportUnsupported('Ideogram reframing');
+      return [];
+    },
+    [reportUnsupported],
+  );
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
+  const replaceBackground = useCallback(
+    async (_options: IdeogramReplaceBgOptions): Promise<IdeogramGeneratedImage[]> => {
+      await reportUnsupported('Ideogram background replacement');
+      return [];
+    },
+    [reportUnsupported],
+  );
 
-      const { dataUrls } = await res.json();
+  const upscaleImage = useCallback(
+    async (_options: IdeogramUpscaleOptions): Promise<IdeogramGeneratedImage[]> => {
+      await reportUnsupported('Ideogram upscaling');
+      return [];
+    },
+    [reportUnsupported],
+  );
 
-      const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url: string) => ({
-        url,
-        prompt: options.prompt,
-        timestamp: new Date().toISOString(),
-        model: 'ideogram',
-        renderingSpeed: options.rendering_speed,
-        stylePreset: options.style_preset,
-        styleType: options.style_type,
-      }));
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, ...generatedImages],
-        progress: 'Edit complete!',
-        error: null,
-      }));
-
-      return generatedImages;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
-
-  const reframeImage = useCallback(async (options: IdeogramReframeOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Reframing image with Ideogram...',
-    }));
-
-    try {
-      const apiUrl = getApiUrl('/api/ideogram/reframe');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      formData.append('resolution', options.resolution);
-      if (options.rendering_speed) formData.append('rendering_speed', options.rendering_speed);
-      if (options.seed !== undefined) formData.append('seed', String(options.seed));
-      if (options.num_images) formData.append('num_images', String(options.num_images));
-      if (options.style_preset) formData.append('style_preset', options.style_preset);
-      
-      debugLog('[ideogram] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { dataUrls } = await res.json();
-
-      const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url: string) => ({
-        url,
-        prompt: `Reframe to ${options.resolution}`,
-        timestamp: new Date().toISOString(),
-        model: 'ideogram',
-        resolution: options.resolution,
-        renderingSpeed: options.rendering_speed,
-        stylePreset: options.style_preset,
-      }));
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, ...generatedImages],
-        progress: 'Reframe complete!',
-        error: null,
-      }));
-
-      return generatedImages;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
-
-  const replaceBackground = useCallback(async (options: IdeogramReplaceBgOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Replacing background with Ideogram...',
-    }));
-
-    try {
-      const apiUrl = getApiUrl('/api/ideogram/replace-background');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      formData.append('prompt', options.prompt);
-      if (options.rendering_speed) formData.append('rendering_speed', options.rendering_speed);
-      if (options.seed !== undefined) formData.append('seed', String(options.seed));
-      if (options.num_images) formData.append('num_images', String(options.num_images));
-      if (options.style_preset) formData.append('style_preset', options.style_preset);
-      
-      debugLog('[ideogram] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { dataUrls } = await res.json();
-
-      const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url: string) => ({
-        url,
-        prompt: options.prompt,
-        timestamp: new Date().toISOString(),
-        model: 'ideogram',
-        renderingSpeed: options.rendering_speed,
-        stylePreset: options.style_preset,
-      }));
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, ...generatedImages],
-        progress: 'Background replacement complete!',
-        error: null,
-      }));
-
-      return generatedImages;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
-
-  const upscaleImage = useCallback(async (options: IdeogramUpscaleOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Upscaling image with Ideogram...',
-    }));
-
-    try {
-      const apiUrl = getApiUrl('/api/ideogram/upscale');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      if (options.resemblance !== undefined) formData.append('resemblance', String(options.resemblance));
-      if (options.detail !== undefined) formData.append('detail', String(options.detail));
-      if (options.prompt) formData.append('prompt', options.prompt);
-      
-      debugLog('[ideogram] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { dataUrls } = await res.json();
-
-      const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url: string) => ({
-        url,
-        prompt: options.prompt || 'Upscaled image',
-        timestamp: new Date().toISOString(),
-        model: 'ideogram',
-      }));
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, ...generatedImages],
-        progress: 'Upscale complete!',
-        error: null,
-      }));
-
-      return generatedImages;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
-
-  const describeImage = useCallback(async (options: IdeogramDescribeOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Describing image with Ideogram...',
-    }));
-
-    try {
-      const apiUrl = getApiUrl('/api/ideogram/describe');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      if (options.model_version) formData.append('model_version', options.model_version);
-      
-      debugLog('[ideogram] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { descriptions } = await res.json();
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        progress: 'Description complete!',
-        error: null,
-      }));
-
-      return descriptions;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
+  const describeImage = useCallback(
+    async (_options: IdeogramDescribeOptions): Promise<string[]> => {
+      await reportUnsupported('Ideogram describe');
+      return [];
+    },
+    [reportUnsupported],
+  );
 
   const clearError = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       error: null,
     }));
   }, []);
 
   const clearGeneratedImages = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       generatedImages: [],
     }));
-  }, []);
-
-  const reset = useCallback(() => {
-    setState({
-      isLoading: false,
-      error: null,
-      generatedImages: [],
-      progress: undefined,
-    });
   }, []);
 
   return {
@@ -502,6 +257,5 @@ export const useIdeogramImageGeneration = () => {
     describeImage,
     clearError,
     clearGeneratedImages,
-    reset,
   };
 };

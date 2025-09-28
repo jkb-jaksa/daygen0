@@ -372,7 +372,7 @@ const Create: React.FC = () => {
     </div>
   );
 
-  const { user, storagePrefix } = useAuth();
+  const { user, storagePrefix, token } = useAuth();
   const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
   const location = useLocation();
@@ -500,8 +500,6 @@ const Create: React.FC = () => {
   const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
   const [inspirations, setInspirations] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
-  const [isRunwayVideoGenerating, setIsRunwayVideoGenerating] = useState<boolean>(false);
-  const [runwayVideoPrompt, setRunwayVideoPrompt] = useState<string>('');
   const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState<number>(0);
@@ -1027,8 +1025,9 @@ const Create: React.FC = () => {
   const {
     status: runwayVideoStatus,
     error: runwayVideoError,
-    generate: generateVideo,
   } = useRunwayVideoGeneration();
+  const isRunwayVideoGenerating =
+    selectedModel === "runway-video-gen4" && runwayVideoStatus === 'running';
 
   const {
     error: seedreamError,
@@ -3525,95 +3524,7 @@ const handleGenerate = async () => {
         });
         img = runwayResult;
       } else if (isRunwayVideoModel) {
-        // Use Runway video generation (text-to-video)
-        debugLog('[Create] Starting Runway video generation');
-        
-        // Set video generation loading state
-        setIsRunwayVideoGenerating(true);
-        setRunwayVideoPrompt(trimmedPrompt);
-        
-        // Set button spinning state for video generation
-        if (spinnerTimeoutRef.current) {
-          clearTimeout(spinnerTimeoutRef.current);
-        }
-        setIsButtonSpinning(true);
-        spinnerTimeoutRef.current = setTimeout(() => {
-          debugLog('[Create] Spinner timeout reached, setting isButtonSpinning to false');
-          setIsButtonSpinning(false);
-          spinnerTimeoutRef.current = null;
-        }, 1000);
-        
-        const imageDataUrl = selectedReferenceImage || previewUrl;
-        debugLog('[Create] Image data URL:', imageDataUrl ? 'provided' : 'not provided');
-        
-        debugLog('[Create] Calling generateVideo with:', {
-          promptText: trimmedPrompt,
-          promptImage: imageDataUrl ? 'provided' : 'not provided',
-          options: {
-            model: 'gen4_turbo',
-            ratio: '1280:720',
-            duration: 5,
-          }
-        });
-        
-        let result;
-        try {
-          const videoParams: any = {
-            promptText: trimmedPrompt,
-            options: {
-              model: 'gen4_turbo',
-              ratio: '1280:720',
-              duration: 5,
-            },
-          };
-          
-          if (imageDataUrl) {
-            videoParams.promptImage = imageDataUrl;
-          }
-          
-          result = await generateVideo(videoParams);
-          
-          debugLog('[Create] Runway video generation result:', result);
-        } catch (error) {
-          debugLog('[Create] Runway video generation error:', error);
-          
-          // Clear video generation loading state on error
-          setIsRunwayVideoGenerating(false);
-          setRunwayVideoPrompt('');
-          
-          // Clear button spinning state on error
-          if (spinnerTimeoutRef.current) {
-            clearTimeout(spinnerTimeoutRef.current);
-            spinnerTimeoutRef.current = null;
-          }
-          setIsButtonSpinning(false);
-          
-          throw error; // Re-throw to be caught by outer try-catch
-        }
-
-        // Push into video gallery list
-        const newVideo: GalleryVideoLike = { 
-          url: result.url, 
-          prompt: trimmedPrompt, 
-          model: 'runway-video-gen4', 
-          timestamp: new Date().toISOString(),
-          type: 'video' as const
-        };
-        setVideoGallery((g) => [newVideo, ...g]);
-        
-        // Clear video generation loading state
-        setIsRunwayVideoGenerating(false);
-        setRunwayVideoPrompt('');
-        
-        // Clear button spinning state for video generation
-        if (spinnerTimeoutRef.current) {
-          clearTimeout(spinnerTimeoutRef.current);
-          spinnerTimeoutRef.current = null;
-        }
-        setIsButtonSpinning(false);
-        
-        // For video, we don't set img since it's handled in videoGallery
-        return; // Exit early since video is handled differently
+        throw new Error('Runway video generation is not yet supported in this backend integration.');
       } else if (isSeeDreamModel) {
         // Use Seedream generation
         const seedreamResult = await generateSeeDreamImage({
@@ -3642,19 +3553,26 @@ const handleGenerate = async () => {
         img = reveResult;
       } else if (isRecraftModel) {
         // Use Recraft generation via unified API with selected model variant
-        const response = await fetch('/api/unified-generate', {
+        if (!token) {
+          throw new Error('Please sign in to generate images.');
+        }
+
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            model: recraftModel,
             prompt: trimmedPrompt,
-            style: 'realistic_image',
-            size: '1024x1024',
-            n: 1,
-            response_format: 'url'
-          })
+            model: recraftModel,
+            providerOptions: {
+              style: 'realistic_image',
+              size: '1024x1024',
+              n: 1,
+              response_format: 'url',
+            },
+          }),
         });
 
         if (!response.ok) {
@@ -3663,17 +3581,17 @@ const handleGenerate = async () => {
         }
 
         const result = await response.json();
-        if (!result.data || result.data.length === 0) {
+        const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
+        if (!dataUrl) {
           throw new Error('No image returned from Recraft');
         }
 
-        // Convert Recraft response to our GeneratedImage format
         img = {
-          url: result.data[0].url,
+          url: dataUrl,
           prompt: trimmedPrompt,
           model: recraftModel,
           timestamp: new Date().toISOString(),
-          ownerId: user?.id
+          ownerId: user?.id,
         };
       } else if (isFluxModel) {
         // Use Flux generation with selected model from settings
@@ -3709,72 +3627,7 @@ const handleGenerate = async () => {
         }
         img = fluxResult;
       } else if (isLumaPhoton) {
-        // Use Luma Photon generation via unified API
-        debugLog('[Create] Using Luma Photon generation');
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'create',
-            model: lumaPhotonModel, // Use the selected model from settings
-            prompt: trimmedPrompt,
-            aspect_ratio: '16:9' // Default aspect ratio for Luma Photon
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Luma Photon API error: ${errorData.error || response.statusText}`);
-        }
-
-        const result = await response.json();
-        if (!result.id) {
-          throw new Error('No generation ID returned from Luma Photon');
-        }
-
-        // Poll for completion
-        let attempts = 0;
-        const maxAttempts = 60; // 5 minutes max
-        let lumaImg: GeneratedImage | undefined;
-        
-        while (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-          
-          const statusResponse = await fetch(getApiUrl('/api/unified-generate'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'status',
-              model: lumaPhotonModel,
-              id: result.id
-            })
-          });
-          if (!statusResponse.ok) {
-            throw new Error('Failed to check Luma Photon status');
-          }
-          
-          const statusResult = await statusResponse.json();
-          if (statusResult.state === 'completed' && statusResult.dataUrl) {
-            lumaImg = {
-              url: statusResult.dataUrl,
-              prompt: trimmedPrompt,
-              model: modelForGeneration,
-              timestamp: new Date().toISOString(),
-              ownerId: user?.id
-            };
-            break;
-          } else if (statusResult.state === 'failed') {
-            throw new Error(`Luma Photon generation failed: ${statusResult.failure_reason || 'Unknown error'}`);
-          }
-          
-          attempts++;
-        }
-
-        if (!lumaImg) {
-          throw new Error('Luma Photon generation timed out');
-        }
-        
-        img = lumaImg;
+        throw new Error('Luma Photon generation is not yet supported in this build.');
       } else {
         throw new Error('Unsupported model');
       }
@@ -5408,7 +5261,7 @@ const handleGenerate = async () => {
                               </div>
                               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
                                 <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
-                                  {runwayVideoPrompt}
+                                  {prompt}
                                 </p>
                               </div>
                             </div>
@@ -5919,7 +5772,6 @@ const handleGenerate = async () => {
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
-                    const isRunwayVideoGenerating = selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running';
                     const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
                     const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
                     const isLumaGenerating = isLumaRay && (lumaVideoLoading || lumaVideoPolling);

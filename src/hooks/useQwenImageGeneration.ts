@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface QwenGeneratedImage {
   url: string;
   prompt: string;
   timestamp: string;
-  model: 'qwen-image' | 'qwen-image-edit';
+  model: 'qwen-image';
   size?: string;
   seed?: number;
   negativePrompt?: string;
@@ -24,22 +24,18 @@ export interface QwenImageGenerationState {
 
 export interface QwenGenerateOptions {
   prompt: string;
-  size?: string; // e.g. "1328*1328", "1664*928", "1472*1140", "1140*1472", "928*1664"
+  size?: string;
   seed?: number;
   negative_prompt?: string;
   prompt_extend?: boolean;
   watermark?: boolean;
 }
 
-export interface QwenEditOptions {
-  image: File;
-  prompt: string;
-  negative_prompt?: string;
-  seed?: number;
-  watermark?: boolean;
-}
+const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
+const UNSUPPORTED_MESSAGE = 'Qwen image editing is not yet available in the backend integration.';
 
 export const useQwenImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<QwenImageGenerationState>({
     isLoading: false,
     error: null,
@@ -47,145 +43,115 @@ export const useQwenImageGeneration = () => {
     progress: undefined,
   });
 
-  const generateImage = useCallback(async (options: QwenGenerateOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Generating image with Qwen...',
-    }));
-
-    try {
-      const apiUrl = getApiUrl('/api/unified-generate');
-      
-      debugLog('[qwen] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...options, model: 'qwen-image' }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const { dataUrl } = await res.json();
-
-      const generatedImage: QwenGeneratedImage = {
-        url: dataUrl,
-        prompt: options.prompt,
-        timestamp: new Date().toISOString(),
-        model: 'qwen-image',
-        size: options.size,
-        seed: options.seed,
-        negativePrompt: options.negative_prompt,
-        promptExtend: options.prompt_extend,
-        watermark: options.watermark,
-      };
-
-      setState(prev => ({
+  const generateImage = useCallback(
+    async (options: QwenGenerateOptions) => {
+      setState((prev) => ({
         ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, generatedImage],
-        progress: 'Generation complete!',
+        isLoading: true,
         error: null,
+        progress: 'Generating image with Qwen…',
       }));
 
-      return [generatedImage];
+      try {
+        if (!token) {
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: AUTH_ERROR_MESSAGE,
+            progress: undefined,
+          }));
+          throw new Error(AUTH_ERROR_MESSAGE);
+        }
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
+        const providerOptions: Record<string, unknown> = {};
+        if (options.size) providerOptions.size = options.size;
+        if (options.seed !== undefined) providerOptions.seed = options.seed;
+        if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
+        if (options.prompt_extend !== undefined) providerOptions.prompt_extend = options.prompt_extend;
+        if (options.watermark !== undefined) providerOptions.watermark = options.watermark;
 
-      throw error;
-    }
-  }, []);
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            prompt: options.prompt,
+            model: 'qwen-image',
+            providerOptions,
+          }),
+        });
 
-  const editImage = useCallback(async (options: QwenEditOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      progress: 'Editing image with Qwen...',
-    }));
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          const message =
+            (payload && typeof payload.error === 'string' && payload.error) ||
+            response.statusText ||
+            'Qwen generation failed';
+          throw new Error(message);
+        }
 
-    try {
-      const apiUrl = getApiUrl('/api/qwen/image-edit');
-      
-      const formData = new FormData();
-      formData.append('image', options.image);
-      formData.append('prompt', options.prompt);
-      if (options.negative_prompt) formData.append('negative_prompt', options.negative_prompt);
-      if (options.seed !== undefined) formData.append('seed', String(options.seed));
-      formData.append('watermark', String(options.watermark || false));
-      
-      debugLog('[qwen] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
+        const payload = (await response.json()) as { dataUrl?: string };
+        if (!payload.dataUrl) {
+          throw new Error('Qwen did not return an image.');
+        }
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
+        const generatedImage: QwenGeneratedImage = {
+          url: payload.dataUrl,
+          prompt: options.prompt,
+          timestamp: new Date().toISOString(),
+          model: 'qwen-image',
+          size: options.size,
+          seed: options.seed,
+          negativePrompt: options.negative_prompt,
+          promptExtend: options.prompt_extend,
+          watermark: options.watermark,
+          ownerId: user?.id,
+        };
+
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          generatedImages: [...prev.generatedImages, generatedImage],
+          error: null,
+          progress: 'Generation complete!',
+        }));
+
+        return [generatedImage];
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+          progress: undefined,
+        }));
+        throw error;
       }
+    },
+    [token, user?.id],
+  );
 
-      const { dataUrl } = await res.json();
-
-      const generatedImage: QwenGeneratedImage = {
-        url: dataUrl,
-        prompt: options.prompt,
-        timestamp: new Date().toISOString(),
-        model: 'qwen-image-edit',
-        seed: options.seed,
-        negativePrompt: options.negative_prompt,
-        watermark: options.watermark,
-      };
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedImages: [...prev.generatedImages, generatedImage],
-        progress: 'Edit complete!',
-        error: null,
-      }));
-
-      return [generatedImage];
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: undefined,
-      }));
-
-      throw error;
-    }
+  const editImage = useCallback(async () => {
+    setState((prev) => ({
+      ...prev,
+      isLoading: false,
+      error: UNSUPPORTED_MESSAGE,
+      progress: undefined,
+    }));
+    throw new Error(UNSUPPORTED_MESSAGE);
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       error: null,
     }));
   }, []);
 
   const clearGeneratedImages = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       generatedImages: [],
     }));

@@ -9,7 +9,21 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, onClose, defaultMode = "login" }: AuthModalProps) {
-  const { mode, setMode, email, setEmail, name, setName, isSubmitting, error, handleSubmit } = useEmailAuthForm({
+  const {
+    mode,
+    setMode,
+    email,
+    setEmail,
+    name,
+    setName,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    isSubmitting,
+    error,
+    handleSubmit,
+  } = useEmailAuthForm({
     initialMode: defaultMode,
     onSuccess: onClose,
   });
@@ -60,16 +74,44 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   disabled={isSubmitting}
                 />
               </div>
+              <div className="space-y-2">
+                <label className="block text-sm text-d-text font-raleway">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className={inputs.base}
+                  placeholder="Enter your password"
+                  disabled={isSubmitting}
+                  minLength={8}
+                />
+              </div>
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <label className="block text-sm text-d-text font-raleway">Confirm password</label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    className={inputs.base}
+                    placeholder="Re-enter your password"
+                    disabled={isSubmitting}
+                    minLength={8}
+                  />
+                </div>
+              )}
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
               </div>
               <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
-                {isSubmitting ? "Please wait…" : "Continue"}
+                {isSubmitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
               </button>
             </form>
           </div>
         </div>
-        <p className="text-xs text-d-light text-center font-raleway">No password — this is a demo-only login to test flows.</p>
+        <p className="text-xs text-d-light text-center font-raleway">Your credentials are authenticated via the DayGen backend.</p>
       </div>
     </div>
   );

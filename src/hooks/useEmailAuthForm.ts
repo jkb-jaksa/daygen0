@@ -17,6 +17,10 @@ type UseEmailAuthFormReturn = {
   setEmail: (value: string) => void;
   name: string;
   setName: (value: string) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  confirmPassword: string;
+  setConfirmPassword: (value: string) => void;
   isSubmitting: boolean;
   error: string | null;
   handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -28,11 +32,15 @@ export function useEmailAuthForm(options: UseEmailAuthFormOptions = {}): UseEmai
   const [mode, setModeState] = useState<EmailAuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [name, setName] = useState(defaultName);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setError(null);
+    setPassword("");
+    setConfirmPassword("");
   }, [mode]);
 
   const setMode = useCallback((nextMode: EmailAuthMode) => {
@@ -49,24 +57,59 @@ export function useEmailAuthForm(options: UseEmailAuthFormOptions = {}): UseEmai
         return;
       }
 
+      const trimmedPassword = password.trim();
+      if (!trimmedPassword) {
+        setError("Enter a password to continue.");
+        return;
+      }
+
+      if (trimmedPassword.length < 8) {
+        setError("Password must be at least 8 characters long.");
+        return;
+      }
+
+      if (mode === "signup") {
+        if (!confirmPassword.trim()) {
+          setError("Confirm your password to continue.");
+          return;
+        }
+        if (trimmedPassword !== confirmPassword.trim()) {
+          setError("Passwords do not match.");
+          return;
+        }
+      }
+
       setIsSubmitting(true);
       setError(null);
 
       try {
         if (mode === "login") {
-          await signIn(trimmedEmail);
+          await signIn(trimmedEmail, trimmedPassword);
         } else {
-          await signUp(trimmedEmail, name.trim() || undefined);
+          await signUp(trimmedEmail, trimmedPassword, name.trim() || undefined);
         }
         onSuccess?.();
       } catch (err) {
         debugError("EmailAuthForm - failed to authenticate", err);
-        setError("Something went wrong. Please try again.");
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : "Something went wrong. Please try again.";
+        setError(message);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [email, mode, name, onSuccess, signIn, signUp],
+    [
+      confirmPassword,
+      email,
+      mode,
+      name,
+      onSuccess,
+      password,
+      signIn,
+      signUp,
+    ],
   );
 
   return useMemo(
@@ -77,11 +120,25 @@ export function useEmailAuthForm(options: UseEmailAuthFormOptions = {}): UseEmai
       setEmail,
       name,
       setName,
+      password,
+      setPassword,
+      confirmPassword,
+      setConfirmPassword,
       isSubmitting,
       error,
       handleSubmit,
     }),
-    [mode, setMode, email, name, isSubmitting, error, handleSubmit],
+    [
+      confirmPassword,
+      email,
+      error,
+      handleSubmit,
+      isSubmitting,
+      mode,
+      name,
+      password,
+      setMode,
+    ],
   );
 }
 

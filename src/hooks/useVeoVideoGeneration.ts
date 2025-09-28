@@ -1,6 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
-import { getApiUrl } from '../utils/api';
-import { debugLog, debugError } from '../utils/debug';
+import { useCallback, useState } from 'react';
 
 export interface GeneratedVideo {
   url: string;
@@ -31,218 +29,38 @@ export interface VideoGenerationOptions {
   imageMimeType?: string;
 }
 
+const INITIAL_STATE: VideoGenerationState = {
+  isLoading: false,
+  error: null,
+  generatedVideo: null,
+  operationName: null,
+  isPolling: false,
+};
+
+const UNSUPPORTED_MESSAGE = 'Veo video generation is not yet supported in this backend integration.';
+
 export const useVeoVideoGeneration = () => {
-  const [state, setState] = useState<VideoGenerationState>({
-    isLoading: false,
-    error: null,
-    generatedVideo: null,
-    operationName: null,
-    isPolling: false,
-  });
+  const [state, setState] = useState<VideoGenerationState>(INITIAL_STATE);
 
-  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const generationParamsRef = useRef<VideoGenerationOptions | null>(null);
-
-  const startGeneration = useCallback(async (options: VideoGenerationOptions) => {
-    // Store generation parameters for later use
-    generationParamsRef.current = options;
-    
-    setState(prev => ({
+  const startGeneration = useCallback(async (_options: VideoGenerationOptions) => {
+    setState((prev) => ({
       ...prev,
-      isLoading: true,
-      error: null,
+      isLoading: false,
+      isPolling: false,
+      error: UNSUPPORTED_MESSAGE,
       generatedVideo: null,
       operationName: null,
-      isPolling: false,
     }));
-
-    try {
-      const { prompt, model = 'veo-3.0-generate-001', aspectRatio = '16:9', negativePrompt, seed, imageBase64, imageMimeType } = options;
-
-      const apiUrl = getApiUrl('/api/unified-video');
-      debugLog('[video] POST', apiUrl);
-
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          provider: 'veo',
-          action: 'create',
-          prompt, 
-          model,
-          aspectRatio,
-          negativePrompt,
-          seed,
-          imageBase64,
-          imageMimeType
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      debugLog('[video] Operation started:', data.name);
-
-      setState(prev => ({
-        ...prev,
-        operationName: data.name,
-        isLoading: false,
-        isPolling: true,
-      }));
-
-      // Start polling
-      pollStatus(data.name);
-
-    } catch (error) {
-      debugError('[video] Generation failed:', error);
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        isPolling: false,
-      }));
-    }
-  }, []);
-
-  const pollStatus = useCallback(async (operationName: string) => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-    }
-
-    const poll = async () => {
-      try {
-        const search = new URLSearchParams({
-          provider: 'veo',
-          action: 'status',
-          operationName,
-        });
-        const apiUrl = getApiUrl(`/api/unified-video?${search.toString()}`);
-        debugLog('[video] Polling status:', apiUrl);
-        
-        const res = await fetch(apiUrl);
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => null);
-          throw new Error(errorData?.error || `HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        debugLog('[video] Status response:', data);
-
-        if (data.done) {
-          if (pollTimerRef.current) {
-            clearInterval(pollTimerRef.current);
-            pollTimerRef.current = null;
-          }
-
-          if (data.error) {
-            setState(prev => ({
-              ...prev,
-              isLoading: false,
-              error: data.error,
-              isPolling: false,
-            }));
-          } else {
-            // Video is ready, download it
-            downloadVideo(operationName);
-          }
-        }
-      } catch (error) {
-        debugError('[video] Polling failed:', error);
-        if (pollTimerRef.current) {
-          clearInterval(pollTimerRef.current);
-          pollTimerRef.current = null;
-        }
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Polling failed',
-          isPolling: false,
-        }));
-      }
-    };
-
-    // Poll every 10 seconds
-    pollTimerRef.current = setInterval(poll, 10000);
-    
-    // Initial poll
-    poll();
-  }, []);
-
-  const downloadVideo = useCallback(async (operationName: string) => {
-    try {
-      const search = new URLSearchParams({
-        provider: 'veo',
-        action: 'download',
-        operationName,
-      });
-      const apiUrl = getApiUrl(`/api/unified-video?${search.toString()}`);
-      debugLog('[video] Downloading video:', apiUrl);
-      
-      const res = await fetch(apiUrl);
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.error || `HTTP ${res.status}`);
-      }
-
-      // Convert response to blob and create object URL
-      const blob = await res.blob();
-      const videoUrl = URL.createObjectURL(blob);
-
-      const params = generationParamsRef.current;
-      const generatedVideo: GeneratedVideo = {
-        url: videoUrl,
-        prompt: params?.prompt || '',
-        model: params?.model || 'veo-3.0-generate-001',
-        timestamp: new Date().toISOString(),
-        jobId: operationName,
-        type: 'video',
-      };
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        generatedVideo,
-        isPolling: false,
-      }));
-
-    } catch (error) {
-      debugError('[video] Download failed:', error);
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Download failed',
-        isPolling: false,
-      }));
-    }
-  }, []);
-
-  const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    throw new Error(UNSUPPORTED_MESSAGE);
   }, []);
 
   const reset = useCallback(() => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-    setState({
-      isLoading: false,
-      error: null,
-      generatedVideo: null,
-      operationName: null,
-      isPolling: false,
-    });
+    setState(INITIAL_STATE);
   }, []);
 
   return {
     ...state,
     startGeneration,
-    clearError,
     reset,
   };
 };

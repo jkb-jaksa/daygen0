@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface GeneratedImage {
   url: string;
@@ -27,6 +28,7 @@ export interface ImageGenerationOptions {
 }
 
 export const useRunwayImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<ImageGenerationState>({
     isLoading: false,
     error: null,
@@ -41,6 +43,16 @@ export const useRunwayImageGeneration = () => {
     }));
 
     try {
+      if (!token) {
+        const message = 'Please sign in to generate images.';
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+        }));
+        throw new Error(message);
+      }
+
       const { prompt, uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
 
       // Use the Runway API endpoint
@@ -50,13 +62,18 @@ export const useRunwayImageGeneration = () => {
       
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ 
           prompt, 
           model: uiModel,
           references, 
-          ratio,
-          seed
+          providerOptions: {
+            ratio,
+            seed,
+          },
         }),
       });
 
@@ -91,6 +108,7 @@ export const useRunwayImageGeneration = () => {
         model: uiModel, // Use the UI model ID, not the internal API model
         timestamp: new Date().toISOString(),
         references: references || undefined,
+        ownerId: user?.id,
       };
 
       setState(prev => ({
@@ -113,7 +131,7 @@ export const useRunwayImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token, user?.id]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

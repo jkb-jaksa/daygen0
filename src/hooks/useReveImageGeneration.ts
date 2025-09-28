@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugError, debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface ReveGeneratedImage {
   url: string;
@@ -8,8 +8,8 @@ export interface ReveGeneratedImage {
   model: string;
   timestamp: string;
   jobId: string;
-  references?: string[]; // Base64 data URLs for reference images used
-  ownerId?: string; // Optional user ID who generated the image
+  references?: string[];
+  ownerId?: string;
 }
 
 export interface ReveImageGenerationState {
@@ -23,32 +23,22 @@ export interface ReveImageGenerationState {
 export interface ReveImageGenerationOptions {
   prompt: string;
   model?: string;
-  // Sizing options
   width?: number;
   height?: number;
   aspect_ratio?: string;
-  // Generation params
   negative_prompt?: string;
   guidance_scale?: number;
   steps?: number;
   seed?: number;
   batch_size?: number;
-  // Generation options
-  references?: string[]; // Base64 data URLs for reference images
+  references?: string[];
 }
 
-export interface ReveImageEditOptions {
-  prompt: string;
-  image: File; // Original image file
-  mask?: File; // Optional mask file
-  model?: string;
-  strength?: number;
-  width?: number;
-  height?: number;
-  seed?: number;
-}
+const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
+const UNSUPPORTED_MESSAGE = 'Reve image editing is not yet available in the backend integration.';
 
 export const useReveImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<ReveImageGenerationState>({
     isLoading: false,
     error: null,
@@ -57,419 +47,131 @@ export const useReveImageGeneration = () => {
     progress: undefined,
   });
 
-  const generateImage = useCallback(async (options: ReveImageGenerationOptions) => {
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      jobStatus: 'queued',
-      progress: 'Submitting job...',
-    }));
-
-    try {
-      const { prompt, model = "reve-image-1.0", references, ...params } = options;
-
-      // Submit the job
-      const apiUrl = getApiUrl('/api/unified-generate');
-
-      debugLog('[reve] POST', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt, 
-          model: 'reve-image',
-          ...params
-        }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const submission = await res.json();
-
-      const submissionImages: string[] = Array.isArray(submission?.images)
-        ? submission.images.filter((img: unknown): img is string => typeof img === 'string' && img.length > 0)
-        : [];
-      const directImage = submission?.image_url || submission?.image || submissionImages[0];
-      const submissionJobId: string | undefined = submission?.job_id || submission?.id || submission?.request_id;
-      const resolvedJobId = submissionJobId || (directImage ? `reve-direct-${Date.now()}` : undefined);
-
-      if (directImage && submission?.status === 'completed') {
-        const generatedImage: ReveGeneratedImage = {
-          url: directImage,
-          prompt,
-          model,
-          timestamp: new Date().toISOString(),
-          jobId: resolvedJobId!,
-          references: references || undefined,
-        };
-
-
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          jobStatus: 'completed',
-          progress: 'Generation complete!',
-          generatedImage,
-          error: null,
-        }));
-
-        return generatedImage;
-      }
-
-      if (directImage && !submissionJobId) {
-        const generatedImage: ReveGeneratedImage = {
-          url: directImage,
-          prompt,
-          model,
-          timestamp: new Date().toISOString(),
-          jobId: resolvedJobId!,
-          references: references || undefined,
-        };
-
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          jobStatus: 'completed',
-          progress: 'Generation complete!',
-          generatedImage,
-          error: null,
-        }));
-
-        return generatedImage;
-      }
-
-      if (!submissionJobId) {
-        throw new Error('Reve API did not return job information or image data.');
-      }
-
-      setState(prev => ({
+  const generateImage = useCallback(
+    async (options: ReveImageGenerationOptions) => {
+      setState((prev) => ({
         ...prev,
-        jobStatus: 'processing',
-        progress: 'Job submitted, processing...',
+        isLoading: true,
+        error: null,
+        jobStatus: 'queued',
+        progress: 'Submitting request…',
       }));
 
-      // Polling mode - check job status periodically
-      let attempts = 0;
-      const maxAttempts = 60; // 5 minutes max (5s intervals)
-      
-      debugLog('[reve] Starting polling for job:', submissionJobId);
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-        attempts++;
-        
-        debugLog(`[reve] Polling attempt ${attempts}/${maxAttempts}`);
-        
-        try {
-          const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
-          
-          if (!pollRes.ok) {
-            throw new Error(`Polling failed: ${pollRes.status}`);
-          }
-
-          const result = await pollRes.json();
-          debugLog('[reve] Polling result:', result.status);
-          
-          if (result.status === 'succeeded' && result.images && result.images.length > 0) {
-            const generatedImage: ReveGeneratedImage = {
-              url: result.images[0], // Use first image
-              prompt,
-              model,
-              timestamp: new Date().toISOString(),
-              jobId: submissionJobId,
-              references: references || undefined,
-            };
-
-            setState(prev => ({
-              ...prev,
-              isLoading: false,
-              jobStatus: 'completed',
-              progress: 'Generation complete!',
-              generatedImage,
-              error: null,
-            }));
-
-            return generatedImage;
-          }
-          
-          if (result.status === 'failed' || result.status === 'canceled') {
-            throw new Error(`Generation failed: ${result.error || 'Unknown error'}`);
-          }
-          
-          if (result.status === 'completed' && result.image_url) {
-            const generatedImage: ReveGeneratedImage = {
-              url: result.image_url,
-              prompt,
-              model,
-              timestamp: new Date().toISOString(),
-              jobId: submissionJobId,
-              references: references || undefined,
-            };
-
-            setState(prev => ({
-              ...prev,
-              isLoading: false,
-              jobStatus: 'completed',
-              progress: 'Generation complete!',
-              generatedImage,
-              error: null,
-            }));
-
-            return generatedImage;
-          }
-
-          // Update progress
-          setState(prev => ({
+      try {
+        if (!token) {
+          setState((prev) => ({
             ...prev,
-            progress: `Processing... (${result.status})`,
+            isLoading: false,
+            error: AUTH_ERROR_MESSAGE,
+            jobStatus: null,
+            progress: undefined,
           }));
-          
-        } catch (pollError) {
-          debugError('Polling error:', pollError);
-          // Continue polling unless it's a critical error
-          if (attempts >= maxAttempts - 1) {
-            throw pollError;
-          }
+          throw new Error(AUTH_ERROR_MESSAGE);
         }
+
+        const providerOptions: Record<string, unknown> = {};
+        if (options.width !== undefined) providerOptions.width = options.width;
+        if (options.height !== undefined) providerOptions.height = options.height;
+        if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
+        if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
+        if (options.guidance_scale !== undefined) providerOptions.guidance_scale = options.guidance_scale;
+        if (options.steps !== undefined) providerOptions.steps = options.steps;
+        if (options.seed !== undefined) providerOptions.seed = options.seed;
+        if (options.batch_size !== undefined) providerOptions.batch_size = options.batch_size;
+
+        const response = await fetch(getApiUrl('/api/unified-generate'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            prompt: options.prompt,
+            model: options.model ?? 'reve-image',
+            references: options.references,
+            providerOptions,
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          const message =
+            (payload && typeof payload.error === 'string' && payload.error) ||
+            response.statusText ||
+            'Reve generation failed';
+          throw new Error(message);
+        }
+
+        const payload = (await response.json()) as {
+          images?: string[];
+          dataUrl?: string;
+          jobId?: string | null;
+          status?: string | null;
+        };
+
+        const imageUrl =
+          (Array.isArray(payload.images) && payload.images.find((url): url is string => typeof url === 'string')) ||
+          (typeof payload.dataUrl === 'string' ? payload.dataUrl : null);
+
+        if (!imageUrl) {
+          throw new Error('Reve did not return an image.');
+        }
+
+        const generatedImage: ReveGeneratedImage = {
+          url: imageUrl,
+          prompt: options.prompt,
+          model: options.model ?? 'reve-image',
+          timestamp: new Date().toISOString(),
+          jobId: payload.jobId ?? `reve-${Date.now()}`,
+          references: options.references || undefined,
+          ownerId: user?.id,
+        };
+
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: null,
+          generatedImage,
+          jobStatus: (payload.status as ReveImageGenerationState['jobStatus']) ?? 'completed',
+          progress: 'Generation complete!',
+        }));
+
+        return generatedImage;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+          generatedImage: null,
+          jobStatus: 'failed',
+          progress: undefined,
+        }));
+        throw error;
       }
-      
-      throw new Error('Generation timed out. Please try again.');
+    },
+    [token, user?.id],
+  );
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        generatedImage: null,
-        jobStatus: 'failed',
-        progress: undefined,
-      }));
-
-      throw error;
-    }
-  }, []);
-
-  const editImage = useCallback(async (options: ReveImageEditOptions) => {
-    setState(prev => ({
+  const editImage = useCallback(async () => {
+    setState((prev) => ({
       ...prev,
-      isLoading: true,
-      error: null,
-      jobStatus: 'queued',
-      progress: 'Submitting edit job...',
+      isLoading: false,
+      error: UNSUPPORTED_MESSAGE,
+      progress: undefined,
     }));
-
-    try {
-      const { prompt, image, mask, model = "reve-image-1.0", ...params } = options;
-
-      // Create form data for multipart upload
-      const formData = new FormData();
-      formData.append('prompt', prompt);
-      formData.append('image', image);
-      if (mask) formData.append('mask', mask);
-      if (model) formData.append('model', model);
-      
-      // Add other parameters
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          formData.append(key, String(value));
-        }
-      });
-
-      // Submit the edit job
-      const apiUrl = '/api/reve/edit';
-
-      debugLog('[reve] POST edit', apiUrl);
-      
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const submission = await res.json();
-
-      const submissionImages: string[] = Array.isArray(submission?.images)
-        ? (submission.images as unknown[]).filter((img): img is string => typeof img === 'string' && img.length > 0)
-        : [];
-      const directImage = submission?.image_url || submission?.image || submissionImages[0];
-      const submissionJobId: string | undefined = submission?.job_id || submission?.id || submission?.request_id;
-      const resolvedJobId = submissionJobId || (directImage ? `reve-edit-${Date.now()}` : undefined);
-
-      if (directImage && submission?.status === 'completed') {
-        const generatedImage: ReveGeneratedImage = {
-          url: directImage,
-          prompt,
-          model,
-          timestamp: new Date().toISOString(),
-          jobId: resolvedJobId!,
-        };
-
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          jobStatus: 'completed',
-          progress: 'Edit complete!',
-          generatedImage,
-          error: null,
-        }));
-
-        return generatedImage;
-      }
-
-      if (directImage && !submissionJobId) {
-        const generatedImage: ReveGeneratedImage = {
-          url: directImage,
-          prompt,
-          model,
-          timestamp: new Date().toISOString(),
-          jobId: resolvedJobId!,
-        };
-
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          jobStatus: 'completed',
-          progress: 'Edit complete!',
-          generatedImage,
-          error: null,
-        }));
-
-        return generatedImage;
-      }
-
-      if (!submissionJobId) {
-        throw new Error('Reve API did not return job information or image data.');
-      }
-
-      setState(prev => ({
-        ...prev,
-        jobStatus: 'processing',
-        progress: 'Edit job submitted, processing...',
-      }));
-
-      // Polling mode - check job status periodically
-      let attempts = 0;
-      const maxAttempts = 60; // 5 minutes max (5s intervals)
-      
-      debugLog('[reve] Starting polling for edit job:', submissionJobId);
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-        attempts++;
-        
-        debugLog(`[reve] Edit polling attempt ${attempts}/${maxAttempts}`);
-        
-        try {
-          const pollRes = await fetch(`/api/reve/jobs/${submissionJobId}`);
-          
-          if (!pollRes.ok) {
-            throw new Error(`Polling failed: ${pollRes.status}`);
-          }
-
-          const result = await pollRes.json();
-          debugLog('[reve] Edit polling result:', result.status);
-          
-          if (result.status === 'succeeded' && result.images && result.images.length > 0) {
-            const generatedImage: ReveGeneratedImage = {
-              url: result.images[0], // Use first image
-              prompt,
-              model,
-              timestamp: new Date().toISOString(),
-              jobId: submissionJobId,
-            };
-
-            setState(prev => ({
-              ...prev,
-              isLoading: false,
-              jobStatus: 'completed',
-              progress: 'Edit complete!',
-              generatedImage,
-              error: null,
-            }));
-
-            return generatedImage;
-          }
-          
-          if (result.status === 'failed' || result.status === 'canceled') {
-            throw new Error(`Edit failed: ${result.error || 'Unknown error'}`);
-          }
-
-          if (result.status === 'completed' && result.image_url) {
-            const generatedImage: ReveGeneratedImage = {
-              url: result.image_url,
-              prompt,
-              model,
-              timestamp: new Date().toISOString(),
-              jobId: submissionJobId,
-            };
-
-            setState(prev => ({
-              ...prev,
-              isLoading: false,
-              jobStatus: 'completed',
-              progress: 'Edit complete!',
-              generatedImage,
-              error: null,
-            }));
-
-            return generatedImage;
-          }
-
-          // Update progress
-          setState(prev => ({
-            ...prev,
-            progress: `Processing edit... (${result.status})`,
-          }));
-          
-        } catch (pollError) {
-          debugError('Edit polling error:', pollError);
-          // Continue polling unless it's a critical error
-          if (attempts >= maxAttempts - 1) {
-            throw pollError;
-          }
-        }
-      }
-      
-      throw new Error('Edit timed out. Please try again.');
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        generatedImage: null,
-        jobStatus: 'failed',
-        progress: undefined,
-      }));
-
-      throw error;
-    }
+    throw new Error(UNSUPPORTED_MESSAGE);
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       error: null,
     }));
   }, []);
 
   const clearGeneratedImage = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       generatedImage: null,
     }));

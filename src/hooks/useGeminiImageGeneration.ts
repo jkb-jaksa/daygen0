@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
+import { useAuth } from '../auth/useAuth';
 
 export interface GeneratedImage {
   url: string;
@@ -28,6 +29,7 @@ export interface ImageGenerationOptions {
 }
 
 export const useGeminiImageGeneration = () => {
+  const { token, user } = useAuth();
   const [state, setState] = useState<ImageGenerationState>({
     isLoading: false,
     error: null,
@@ -42,6 +44,16 @@ export const useGeminiImageGeneration = () => {
     }));
 
     try {
+      if (!token) {
+        const message = 'Please sign in to generate images.';
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+        }));
+        throw new Error(message);
+      }
+
       const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
       // Use the new API endpoint structure
@@ -51,7 +63,10 @@ export const useGeminiImageGeneration = () => {
       
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ 
           prompt, 
           imageBase64: imageData, 
@@ -87,6 +102,7 @@ export const useGeminiImageGeneration = () => {
         model: model || 'gemini-2.5-flash-image-preview',
         timestamp: new Date().toISOString(),
         references: references || undefined,
+        ownerId: user?.id,
       };
 
       setState(prev => ({
@@ -109,7 +125,7 @@ export const useGeminiImageGeneration = () => {
 
       throw error;
     }
-  }, []);
+  }, [token, user?.id]);
 
   const clearError = useCallback(() => {
     setState(prev => ({
