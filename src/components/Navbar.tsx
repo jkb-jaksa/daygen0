@@ -222,14 +222,14 @@ export default function Navbar() {
                     `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
                   }
                   onMouseEnter={() => {
-                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit") {
+                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "avatars") {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
                     }
                   }}
                   onFocus={() => {
-                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit") {
+                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "avatars") {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
