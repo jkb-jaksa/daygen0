@@ -26,6 +26,7 @@ const FAQSection = lazy(() => import("./components/Faq"));
 const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
 const Avatars = lazy(() => import("./components/Avatars"));
+const ResetPasswordPage = lazy(() => import("./components/ResetPasswordPage"));
 
 function NavbarFallback() {
   return (
@@ -224,6 +225,7 @@ export default function App() {
                 )}
               />
               <Route path="/account" element={<Account />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

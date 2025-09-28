@@ -203,6 +203,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return nextUser;
   }, [token]);
 
+  const requestPasswordReset = useCallback<
+    AuthContextValue['requestPasswordReset']
+  >(async (email: string) => {
+    const response = await fetch(getApiUrl('/api/auth/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await extractErrorMessage(response));
+    }
+  }, []);
+
+  const resetPassword = useCallback<
+    AuthContextValue['resetPassword']
+  >(async (token: string, newPassword: string) => {
+    const response = await fetch(getApiUrl('/api/auth/reset-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await extractErrorMessage(response));
+    }
+  }, []);
+
   const storagePrefix = useMemo(
     () => `daygen:${user?.id ?? 'guest'}:`,
     [user?.id],
@@ -219,6 +247,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logOut,
     refreshUser,
     updateProfile,
+    requestPasswordReset,
+    resetPassword,
   }), [
     isLoading,
     logOut,
@@ -229,6 +259,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token,
     updateProfile,
     user,
+    requestPasswordReset,
+    resetPassword,
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

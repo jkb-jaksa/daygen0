@@ -1,6 +1,8 @@
 import GoogleLogin from "./GoogleLogin";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buttons, inputs } from "../styles/designSystem";
 import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
+import { useState } from "react";
 
 interface AuthModalProps {
   open: boolean;
@@ -9,6 +11,8 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, onClose, defaultMode = "login" }: AuthModalProps) {
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  
   const {
     mode,
     setMode,
@@ -108,11 +112,27 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
                 {isSubmitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
               </button>
+              {mode === "login" && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-xs text-d-light hover:text-d-text transition-colors font-raleway underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
         <p className="text-xs text-d-light text-center font-raleway">Your credentials are authenticated via the DayGen backend.</p>
       </div>
+      
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 }

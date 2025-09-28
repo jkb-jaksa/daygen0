@@ -57,6 +57,13 @@ export function useEmailAuthForm(options: UseEmailAuthFormOptions = {}): UseEmai
         return;
       }
 
+      // Basic email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+
       const trimmedPassword = password.trim();
       if (!trimmedPassword) {
         setError("Enter a password to continue.");
@@ -91,10 +98,23 @@ export function useEmailAuthForm(options: UseEmailAuthFormOptions = {}): UseEmai
         onSuccess?.();
       } catch (err) {
         debugError("EmailAuthForm - failed to authenticate", err);
-        const message =
-          err instanceof Error && err.message
-            ? err.message
-            : "Something went wrong. Please try again.";
+        
+        let message = "Something went wrong. Please try again.";
+        
+        if (err instanceof Error) {
+          if (err.message.includes("fetch")) {
+            message = "Network error. Please check your connection and try again.";
+          } else if (err.message.includes("Invalid email or password")) {
+            message = "Invalid email or password. Please check your credentials.";
+          } else if (err.message.includes("Email is already registered")) {
+            message = "An account with this email already exists. Try logging in instead.";
+          } else if (err.message.includes("Please enter a valid email address")) {
+            message = "Please enter a valid email address.";
+          } else if (err.message.trim()) {
+            message = err.message;
+          }
+        }
+        
         setError(message);
       } finally {
         setIsSubmitting(false);
