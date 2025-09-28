@@ -590,18 +590,25 @@ export default function Avatars() {
                               </div>
                             </form>
                           ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <p className="text-base font-raleway font-normal text-d-text">{avatar.name}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <p className="text-base font-raleway font-normal text-d-text">{avatar.name}</p>
+                                <button
+                                  type="button"
+                                  className="text-d-white/70 hover:text-d-text transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                                  onClick={() => startRenaming(avatar)}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                              </div>
                               {avatar.published && (
-                                <Globe className="h-3 w-3 text-d-white/70" />
+                                <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                                  <div className="flex items-center gap-1">
+                                    <Globe className="w-3 h-3 text-d-text" />
+                                    <span className="leading-none">Public</span>
+                                  </div>
+                                </div>
                               )}
-                              <button
-                                type="button"
-                                className="text-d-white/70 hover:text-d-text transition-colors duration-200 opacity-0 group-hover:opacity-100"
-                                onClick={() => startRenaming(avatar)}
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
                             </div>
                           )}
                         </div>

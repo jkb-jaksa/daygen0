@@ -2734,38 +2734,6 @@ const Create: React.FC = () => {
           }}
         />
 
-        {img.savedFrom && !isSelectMode && (
-          <div
-            className="absolute left-3 bottom-3 z-30 flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/80 px-3 py-2 text-xs text-d-white shadow-lg backdrop-blur"
-            onClick={event => event.stopPropagation()}
-          >
-            <div className="relative h-6 w-6 overflow-hidden rounded-full border border-white/10">
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${img.savedFrom.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
-                aria-hidden="true"
-              />
-              <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
-                {getInitials(img.savedFrom.name)}
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-col">
-              <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white/60">Saved inspiration</span>
-              <span className="truncate text-xs font-raleway text-d-white">{img.savedFrom.name}</span>
-            </div>
-            {img.savedFrom.profileUrl && (
-              <a
-                href={img.savedFrom.profileUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-d-dark/60 bg-d-black/60 text-d-white/80 transition-colors duration-200 hover:text-d-text"
-                onClick={event => event.stopPropagation()}
-                aria-label={`View ${img.savedFrom.name}'s profile`}
-              >
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </a>
-            )}
-          </div>
-        )}
 
         {img.prompt && !isSelectMode && (
           <div
@@ -2845,11 +2813,19 @@ const Create: React.FC = () => {
                 <Suspense fallback={null}>
                   <ModelBadge model={img.model ?? 'unknown'} size="md" />
                 </Suspense>
-                {img.isPublic && (
+                {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-d-text" />
                       <span className="leading-none">Public</span>
+                    </div>
+                  </div>
+                )}
+                {context === 'inspirations' && (
+                  <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                    <div className="flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-d-text" />
+                      <span className="leading-none">Inspiration</span>
                     </div>
                   </div>
                 )}
@@ -4851,38 +4827,6 @@ const handleGenerate = async () => {
                             }}>
                               <img src={img.url} alt={img.prompt || 'Generated image'} className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
 
-                              {img.savedFrom && !isSelectMode && (
-                                <div
-                                  className="absolute left-3 bottom-3 z-30 flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/80 px-3 py-2 text-xs text-d-white shadow-lg backdrop-blur"
-                                  onClick={event => event.stopPropagation()}
-                                >
-                                  <div className="relative h-6 w-6 overflow-hidden rounded-full border border-white/10">
-                                    <div
-                                      className={`absolute inset-0 bg-gradient-to-br ${img.savedFrom.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
-                                      aria-hidden="true"
-                                    />
-                                    <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
-                                      {getInitials(img.savedFrom.name)}
-                                    </span>
-                                  </div>
-                                  <div className="flex min-w-0 flex-col">
-                                    <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white/60">Saved inspiration</span>
-                                    <span className="truncate text-xs font-raleway text-d-white">{img.savedFrom.name}</span>
-                                  </div>
-                                  {img.savedFrom.profileUrl && (
-                                    <a
-                                      href={img.savedFrom.profileUrl}
-                                      target="_blank"
-                                      rel="noreferrer noopener"
-                                      className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-d-dark/60 bg-d-black/60 text-d-white/80 transition-colors duration-200 hover:text-d-text"
-                                      onClick={event => event.stopPropagation()}
-                                      aria-label={`View ${img.savedFrom.name}'s profile`}
-                                    >
-                                      <ArrowUpRight className="h-3.5 w-3.5" />
-                                    </a>
-                                  )}
-                                </div>
-                              )}
 
                               {/* Image info overlay */}
                               <div
@@ -5261,38 +5205,6 @@ const handleGenerate = async () => {
                             setIsFullSizeOpen(true);
                           }} />
 
-                          {img.savedFrom && (
-                            <div
-                              className="absolute left-3 bottom-3 z-30 flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/80 px-3 py-2 text-xs text-d-white shadow-lg backdrop-blur"
-                              onClick={event => event.stopPropagation()}
-                            >
-                              <div className="relative h-6 w-6 overflow-hidden rounded-full border border-white/10">
-                                <div
-                                  className={`absolute inset-0 bg-gradient-to-br ${img.savedFrom.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
-                                  aria-hidden="true"
-                                />
-                                <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
-                                  {getInitials(img.savedFrom.name)}
-                                </span>
-                              </div>
-                              <div className="flex min-w-0 flex-col">
-                                <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white/60">Saved inspiration</span>
-                                <span className="truncate text-xs font-raleway text-d-white">{img.savedFrom.name}</span>
-                              </div>
-                              {img.savedFrom.profileUrl && (
-                                <a
-                                  href={img.savedFrom.profileUrl}
-                                  target="_blank"
-                                  rel="noreferrer noopener"
-                                  className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-d-dark/60 bg-d-black/60 text-d-white/80 transition-colors duration-200 hover:text-d-text"
-                                  onClick={event => event.stopPropagation()}
-                                  aria-label={`View ${img.savedFrom.name}'s profile`}
-                                >
-                                  <ArrowUpRight className="h-3.5 w-3.5" />
-                                </a>
-                              )}
-                            </div>
-                          )}
 
                           {/* Hover prompt overlay */}
                           {img.prompt && (
@@ -6827,6 +6739,46 @@ const handleGenerate = async () => {
                   style={{ objectPosition: 'top' }}
                 />
                 
+                {/* Saved inspiration badge - positioned at top-left of image */}
+                {activeFullSizeImage && 'savedFrom' in activeFullSizeImage && (activeFullSizeImage as GalleryImageLike).savedFrom && (
+                  <div className="absolute top-4 left-4 pointer-events-auto">
+                     <div className="flex items-center gap-2 rounded-lg border border-d-dark/60 bg-d-black/60 px-2 py-1.5 backdrop-blur-sm">
+                      {(activeFullSizeImage as GalleryImageLike).savedFrom!.profileUrl ? (
+                        <a
+                          href={(activeFullSizeImage as GalleryImageLike).savedFrom!.profileUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="relative h-7 w-7 overflow-hidden rounded-full border border-white/10 transition-transform duration-200 hover:scale-105"
+                          onClick={event => event.stopPropagation()}
+                          aria-label={`View ${(activeFullSizeImage as GalleryImageLike).savedFrom!.name}'s profile`}
+                        >
+                          <div
+                            className={`absolute inset-0 bg-gradient-to-br ${(activeFullSizeImage as GalleryImageLike).savedFrom!.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                            aria-hidden="true"
+                          />
+                          <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                            {getInitials((activeFullSizeImage as GalleryImageLike).savedFrom!.name)}
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="relative h-7 w-7 overflow-hidden rounded-full border border-white/10">
+                          <div
+                            className={`absolute inset-0 bg-gradient-to-br ${(activeFullSizeImage as GalleryImageLike).savedFrom!.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                            aria-hidden="true"
+                          />
+                          <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                            {getInitials((activeFullSizeImage as GalleryImageLike).savedFrom!.name)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white">Inspiration</span>
+                        <span className="truncate text-xs font-raleway text-d-text">{(activeFullSizeImage as GalleryImageLike).savedFrom!.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
@@ -6908,7 +6860,7 @@ const handleGenerate = async () => {
                               size="md" 
                             />
                           </Suspense>
-                          {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && (
+                          {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                               <div className="flex items-center gap-1">
                                 <Globe className="w-3 h-3 text-d-text" />
