@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   Upload,
   Users,
@@ -9,6 +10,9 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   Check,
+  Edit,
+  Camera,
+  Globe,
 } from "lucide-react";
 import { layout, text, buttons, inputs, glass } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
@@ -37,6 +41,87 @@ type AvatarNavigationState = {
 const defaultSubtitle =
   "Craft a consistent look for your brand, team, or characters. Upload a portrait or reuse something you've already made.";
 
+// Portal component for avatar action menu
+const ImageActionMenuPortal: React.FC<{
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ anchorEl, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 220 });
+
+  useEffect(() => {
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(200, rect.width),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [anchorEl, open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !(anchorEl && anchorEl.contains(event.target as Node))
+      ) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [anchorEl, open, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: 'fixed',
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 1200,
+      }}
+      className={`${glass.promptDark} rounded-lg py-2`}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+};
+
 const deriveSuggestedName = (raw?: string) => {
   if (!raw) return "New avatar";
   const cleaned = raw.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
@@ -51,6 +136,10 @@ export default function Avatars() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const primaryActionButtonClass = `${buttons.glassPromptDarkCompact} ${glass.promptDark} border border-d-dark/70 text-d-white hover:border-d-mid`;
+  const secondaryActionButtonClass = `${buttons.glassPromptDarkCompact} ${glass.promptDark} border border-d-dark/70 text-d-white/70 hover:border-d-mid hover:text-d-text`;
+  const iconActionButtonClass = `${glass.promptDark} inline-flex items-center justify-center rounded-full border border-d-dark/70 p-2 text-d-white transition-colors duration-200 hover:border-d-mid hover:text-d-text parallax-large`;
+
   const [avatars, setAvatars] = useState<StoredAvatar[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImageLike[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -64,6 +153,11 @@ export default function Avatars() {
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
+  const [avatarToPublish, setAvatarToPublish] = useState<StoredAvatar | null>(null);
+  const [avatarActionMenu, setAvatarActionMenu] = useState<{
+    avatarId: string;
+    anchor: HTMLElement;
+  } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -226,7 +320,13 @@ export default function Avatars() {
     setAvatarToDelete(null);
   }, [avatarToDelete, editingAvatarId, persistAvatars]);
 
-  const handleNavigateToCreate = useCallback(
+  const confirmPublish = useCallback(() => {
+    if (!avatarToPublish) return;
+    // For now, just close the dialog - publish functionality can be implemented later
+    setAvatarToPublish(null);
+  }, [avatarToPublish]);
+
+  const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
       navigate("/create/image", {
         state: {
@@ -238,13 +338,35 @@ export default function Avatars() {
     [navigate],
   );
 
+  const handleNavigateToVideo = useCallback(
+    (avatar: StoredAvatar) => {
+      navigate("/create/video", {
+        state: {
+          avatarId: avatar.id,
+          focusPromptBar: true,
+        },
+      });
+    },
+    [navigate],
+  );
+
+  const toggleAvatarActionMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
+    setAvatarActionMenu(prev => 
+      prev?.avatarId === avatarId ? null : { avatarId, anchor }
+    );
+  }, []);
+
+  const closeAvatarActionMenu = useCallback(() => {
+    setAvatarActionMenu(null);
+  }, []);
+
   const hasGalleryImages = galleryImages.length > 0;
   const disableSave = !selection || !avatarName.trim();
   const subtitle = useMemo(() => defaultSubtitle, []);
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10 py-[calc(var(--nav-h,4rem)+2rem)]">
+      <div className="relative z-10 py-12 sm:py-16 lg:py-20">
         <section className={`${layout.container} flex flex-col gap-10`}>
           <header className="max-w-3xl space-y-4">
             <p className={text.eyebrow}>avatars</p>
@@ -265,105 +387,156 @@ export default function Avatars() {
             </button>
           </header>
 
-          <div className="space-y-6">
-            <h2 className="text-lg font-raleway uppercase tracking-[0.3em] text-d-white/60">
-              Your avatars
-            </h2>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-light font-raleway text-d-text">Saved avatars</h2>
+            </div>
             {avatars.length === 0 ? (
-              <div className="rounded-[28px] border border-d-dark bg-d-black/60 p-10 text-center">
-                <p className="text-d-white/70 font-raleway">
+              <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/70 p-10 text-center`}>
+                <p className={`${text.body} text-d-white/80`}>
                   You haven't saved any avatars yet. Click "Create avatar" to get started.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {avatars.map(avatar => (
                   <div
                     key={avatar.id}
-                    className="group overflow-hidden rounded-[28px] border border-d-dark bg-d-black/70 shadow-lg transition-colors duration-200"
+                    className="group flex flex-col overflow-hidden rounded-[24px] border border-d-dark bg-d-black/60 shadow-lg transition-colors duration-200 hover:border-d-mid parallax-small"
                   >
                     <div className="relative aspect-square overflow-hidden">
-                      <div className="absolute left-4 top-4 z-10 flex flex-col gap-2">
+                      <div className="absolute left-4 top-4 z-10">
                         <button
                           type="button"
-                          onClick={() => handleNavigateToCreate(avatar)}
-                          className={`${buttons.glassPromptDarkCompact} bg-d-black/70 hover:bg-d-text/20`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleAvatarActionMenu(avatar.id, event.currentTarget);
+                          }}
+                          className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                            avatarActionMenu?.avatarId === avatar.id
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                          title="Edit avatar"
+                          aria-label="Edit avatar"
                         >
-                          <ImageIcon className="h-4 w-4" />
-                          <span>Create image</span>
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <ImageActionMenuPortal
+                          anchorEl={avatarActionMenu?.avatarId === avatar.id ? avatarActionMenu?.anchor ?? null : null}
+                          open={avatarActionMenu?.avatarId === avatar.id}
+                          onClose={closeAvatarActionMenu}
+                        >
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleNavigateToImage(avatar);
+                              closeAvatarActionMenu();
+                            }}
+                          >
+                            <ImageIcon className="h-4 w-4" />
+                            Create image
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleNavigateToVideo(avatar);
+                              closeAvatarActionMenu();
+                            }}
+                          >
+                            <Camera className="h-4 w-4" />
+                            Make video
+                          </button>
+                        </ImageActionMenuPortal>
+                      </div>
+                      <div className="absolute right-4 top-4 z-10 flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                            avatarActionMenu?.avatarId === avatar.id
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                          onClick={() => setAvatarToPublish(avatar)}
+                          aria-label="Publish avatar"
+                        >
+                          <Globe className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
-                          className={`${buttons.glassPromptDarkCompact} bg-d-black/70 hover:bg-d-text/20`}
+                          className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                            avatarActionMenu?.avatarId === avatar.id
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                          onClick={() => setAvatarToDelete(avatar)}
+                          aria-label="Delete avatar"
                         >
-                          <VideoIcon className="h-4 w-4" />
-                          <span>Make video</span>
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <button
-                        type="button"
-                        className="absolute right-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-d-dark/70 bg-d-black/70 px-3 py-1 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-red-400 hover:text-red-300"
-                        onClick={() => setAvatarToDelete(avatar)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete avatar
-                      </button>
                       <img
                         src={avatar.imageUrl}
                         alt={avatar.name}
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />
-                    </div>
-                    <div className="px-6 py-5">
-                      {editingAvatarId === avatar.id ? (
-                        <form
-                          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
-                          onSubmit={submitRename}
-                        >
-                          <input
-                            className={inputs.compact}
-                            value={editingName}
-                            onChange={event => setEditingName(event.target.value)}
-                            onKeyDown={event => {
-                              if (event.key === "Escape") {
-                                event.preventDefault();
-                                cancelRenaming();
-                              }
-                            }}
-                            autoFocus
-                          />
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="submit"
-                              className={`${buttons.glassPromptDarkCompact} bg-d-black/60 hover:bg-d-text/20`}
+                      <div className="absolute bottom-0 left-0 right-0">
+                        <div className="PromptDescriptionBar rounded-b-[24px] px-6 py-4">
+                          {editingAvatarId === avatar.id ? (
+                            <form
+                              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+                              onSubmit={submitRename}
                             >
-                              <Check className="h-4 w-4" />
-                              <span>Save</span>
-                            </button>
-                            <button
-                              type="button"
-                              className={`${buttons.glassPromptDarkCompact} bg-d-black/60 hover:bg-d-text/20`}
-                              onClick={cancelRenaming}
-                            >
-                              <X className="h-4 w-4" />
-                              <span>Cancel</span>
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-lg font-raleway text-d-white">{avatar.name}</p>
-                          <button
-                            type="button"
-                            className={`${buttons.glassPromptDarkCompact} bg-d-black/60 hover:bg-d-text/20`}
-                            onClick={() => startRenaming(avatar)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            <span>Rename</span>
-                          </button>
+                              <input
+                                className={inputs.compact}
+                                value={editingName}
+                                onChange={event => setEditingName(event.target.value)}
+                                onKeyDown={event => {
+                                  if (event.key === "Escape") {
+                                    event.preventDefault();
+                                    cancelRenaming();
+                                  }
+                                }}
+                                autoFocus
+                              />
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="submit"
+                                  className={`${primaryActionButtonClass} items-center gap-2`}
+                                >
+                                  <Check className="h-4 w-4" />
+                                  <span>Save</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`${secondaryActionButtonClass} items-center gap-2`}
+                                  onClick={cancelRenaming}
+                                >
+                                  <X className="h-4 w-4" />
+                                  <span>Cancel</span>
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-base font-raleway font-medium text-d-text">{avatar.name}</p>
+                              <button
+                                type="button"
+                                className={`${primaryActionButtonClass} items-center gap-2`}
+                                onClick={() => startRenaming(avatar)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span>Rename</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -509,37 +682,63 @@ export default function Avatars() {
 
       {avatarToDelete && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
-          <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-d-dark bg-d-black/90 p-8 shadow-2xl">
-            <button
-              type="button"
-              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
-              onClick={() => setAvatarToDelete(null)}
-              aria-label="Close delete avatar dialog"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-raleway text-d-white">Delete avatar</h3>
-              <p className="text-sm font-raleway text-d-white/70">
-                Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
-              </p>
+          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+            <div className="space-y-4 text-center">
+              <div className="space-y-3">
+                <Trash2 className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway font-normal text-d-text">Delete avatar</h3>
+                <p className="text-base font-raleway font-light text-d-white">
+                  Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  className={buttons.ghost}
+                  onClick={() => setAvatarToDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={buttons.primary}
+                  onClick={confirmDelete}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                className={`${buttons.glassPromptDark} bg-d-black/60 hover:bg-d-text/20`}
-                onClick={() => setAvatarToDelete(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-red-500/60 bg-red-500/10 px-5 py-2 text-sm font-raleway font-medium text-red-200 transition-colors duration-200 hover:border-red-400 hover:text-red-100"
-                onClick={confirmDelete}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete avatar
-              </button>
+          </div>
+        </div>
+      )}
+
+      {avatarToPublish && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+            <div className="space-y-4 text-center">
+              <div className="space-y-3">
+                <Globe className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway font-normal text-d-text">Publish avatar</h3>
+                <p className="text-base font-raleway font-light text-d-white">
+                  Are you sure you want to publish "{avatarToPublish.name}"? It will be visible to other users.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  className={buttons.ghost}
+                  onClick={() => setAvatarToPublish(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={buttons.primary}
+                  onClick={confirmPublish}
+                >
+                  Publish
+                </button>
+              </div>
             </div>
           </div>
         </div>
