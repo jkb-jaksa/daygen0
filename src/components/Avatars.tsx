@@ -13,6 +13,7 @@ import {
   Edit,
   Camera,
   Globe,
+  MoreHorizontal,
 } from "lucide-react";
 import { layout, text, buttons, inputs, glass } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
@@ -30,6 +31,7 @@ type StoredAvatar = {
   createdAt: string;
   source: AvatarSource;
   sourceId?: string;
+  published: boolean;
 };
 
 type AvatarNavigationState = {
@@ -154,7 +156,11 @@ export default function Avatars() {
   const [editingName, setEditingName] = useState("");
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [avatarToPublish, setAvatarToPublish] = useState<StoredAvatar | null>(null);
-  const [avatarActionMenu, setAvatarActionMenu] = useState<{
+  const [avatarEditMenu, setAvatarEditMenu] = useState<{
+    avatarId: string;
+    anchor: HTMLElement;
+  } | null>(null);
+  const [avatarMoreMenu, setAvatarMoreMenu] = useState<{
     avatarId: string;
     anchor: HTMLElement;
   } | null>(null);
@@ -254,6 +260,7 @@ export default function Avatars() {
       createdAt: new Date().toISOString(),
       source: selection.source,
       sourceId: selection.sourceId,
+      published: false,
     };
 
     setAvatars(prev => {
@@ -322,9 +329,19 @@ export default function Avatars() {
 
   const confirmPublish = useCallback(() => {
     if (!avatarToPublish) return;
-    // For now, just close the dialog - publish functionality can be implemented later
+    
+    setAvatars(prev => {
+      const updated = prev.map(record =>
+        record.id === avatarToPublish.id 
+          ? { ...record, published: !record.published } 
+          : record
+      );
+      void persistAvatars(updated);
+      return updated;
+    });
+    
     setAvatarToPublish(null);
-  }, [avatarToPublish]);
+  }, [avatarToPublish, persistAvatars]);
 
   const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
@@ -350,14 +367,26 @@ export default function Avatars() {
     [navigate],
   );
 
-  const toggleAvatarActionMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
-    setAvatarActionMenu(prev => 
+  const toggleAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
+    setAvatarEditMenu(prev => 
       prev?.avatarId === avatarId ? null : { avatarId, anchor }
     );
+    setAvatarMoreMenu(null); // Close the other menu
   }, []);
 
-  const closeAvatarActionMenu = useCallback(() => {
-    setAvatarActionMenu(null);
+  const toggleAvatarMoreMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
+    setAvatarMoreMenu(prev => 
+      prev?.avatarId === avatarId ? null : { avatarId, anchor }
+    );
+    setAvatarEditMenu(null); // Close the other menu
+  }, []);
+
+  const closeAvatarEditMenu = useCallback(() => {
+    setAvatarEditMenu(null);
+  }, []);
+
+  const closeAvatarMoreMenu = useCallback(() => {
+    setAvatarMoreMenu(null);
   }, []);
 
   const hasGalleryImages = galleryImages.length > 0;
@@ -370,7 +399,7 @@ export default function Avatars() {
         <section className={`${layout.container} flex flex-col gap-10`}>
           <header className="max-w-3xl space-y-4">
             <p className={text.eyebrow}>avatars</p>
-            <h1 className={`${text.sectionHeading} text-white`}>Create your avatar.</h1>
+            <h1 className={`${text.sectionHeading} text-white`}>Create your Avatar.</h1>
             <p className={`${text.body} text-d-white/80`}>{subtitle}</p>
             <button
               type="button"
@@ -389,15 +418,9 @@ export default function Avatars() {
 
           <div className="space-y-5">
             <div className="space-y-2">
-              <h2 className="text-2xl font-light font-raleway text-d-text">Saved avatars</h2>
+              <h2 className="text-2xl font-light font-raleway text-d-text">Your Avatars</h2>
             </div>
-            {avatars.length === 0 ? (
-              <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/70 p-10 text-center`}>
-                <p className={`${text.body} text-d-white/80`}>
-                  You haven't saved any avatars yet. Click "Create avatar" to get started.
-                </p>
-              </div>
-            ) : (
+            {avatars.length > 0 && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {avatars.map(avatar => (
                   <div
@@ -405,15 +428,15 @@ export default function Avatars() {
                     className="group flex flex-col overflow-hidden rounded-[24px] border border-d-dark bg-d-black/60 shadow-lg transition-colors duration-200 hover:border-d-mid parallax-small"
                   >
                     <div className="relative aspect-square overflow-hidden">
-                      <div className="absolute left-4 top-4 z-10">
+                      <div className="absolute left-2 top-2 z-10">
                         <button
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            toggleAvatarActionMenu(avatar.id, event.currentTarget);
+                            toggleAvatarEditMenu(avatar.id, event.currentTarget);
                           }}
                           className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                            avatarActionMenu?.avatarId === avatar.id
+                            avatarEditMenu?.avatarId === avatar.id
                               ? 'opacity-100 pointer-events-auto'
                               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                           }`}
@@ -423,9 +446,9 @@ export default function Avatars() {
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <ImageActionMenuPortal
-                          anchorEl={avatarActionMenu?.avatarId === avatar.id ? avatarActionMenu?.anchor ?? null : null}
-                          open={avatarActionMenu?.avatarId === avatar.id}
-                          onClose={closeAvatarActionMenu}
+                          anchorEl={avatarEditMenu?.avatarId === avatar.id ? avatarEditMenu?.anchor ?? null : null}
+                          open={avatarEditMenu?.avatarId === avatar.id}
+                          onClose={closeAvatarEditMenu}
                         >
                           <button
                             type="button"
@@ -433,7 +456,7 @@ export default function Avatars() {
                             onClick={(event) => {
                               event.stopPropagation();
                               handleNavigateToImage(avatar);
-                              closeAvatarActionMenu();
+                              closeAvatarEditMenu();
                             }}
                           >
                             <ImageIcon className="h-4 w-4" />
@@ -445,7 +468,7 @@ export default function Avatars() {
                             onClick={(event) => {
                               event.stopPropagation();
                               handleNavigateToVideo(avatar);
-                              closeAvatarActionMenu();
+                              closeAvatarEditMenu();
                             }}
                           >
                             <Camera className="h-4 w-4" />
@@ -453,31 +476,53 @@ export default function Avatars() {
                           </button>
                         </ImageActionMenuPortal>
                       </div>
-                      <div className="absolute right-4 top-4 z-10 flex items-center gap-0.5">
+                      <div className="absolute right-2 top-2 z-10">
                         <button
                           type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleAvatarMoreMenu(avatar.id, event.currentTarget);
+                          }}
                           className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                            avatarActionMenu?.avatarId === avatar.id
+                            avatarMoreMenu?.avatarId === avatar.id
                               ? 'opacity-100 pointer-events-auto'
                               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                           }`}
-                          onClick={() => setAvatarToPublish(avatar)}
-                          aria-label="Publish avatar"
+                          title="More options"
+                          aria-label="More options"
                         >
-                          <Globe className="w-3.5 h-3.5" />
+                          <MoreHorizontal className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          type="button"
-                          className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                            avatarActionMenu?.avatarId === avatar.id
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          }`}
-                          onClick={() => setAvatarToDelete(avatar)}
-                          aria-label="Delete avatar"
+                        <ImageActionMenuPortal
+                          anchorEl={avatarMoreMenu?.avatarId === avatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                          open={avatarMoreMenu?.avatarId === avatar.id}
+                          onClose={closeAvatarMoreMenu}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setAvatarToPublish(avatar);
+                              closeAvatarMoreMenu();
+                            }}
+                          >
+                            <Globe className="h-4 w-4" />
+                            {avatar.published ? 'Unpublish' : 'Publish'}
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setAvatarToDelete(avatar);
+                              closeAvatarMoreMenu();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        </ImageActionMenuPortal>
                       </div>
                       <img
                         src={avatar.imageUrl}
@@ -486,7 +531,7 @@ export default function Avatars() {
                         loading="lazy"
                       />
                       <div className="absolute bottom-0 left-0 right-0">
-                        <div className="PromptDescriptionBar rounded-b-[24px] px-6 py-4">
+                        <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
                           {editingAvatarId === avatar.id ? (
                             <form
                               className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
@@ -507,31 +552,31 @@ export default function Avatars() {
                               <div className="flex items-center gap-2">
                                 <button
                                   type="submit"
-                                  className={`${primaryActionButtonClass} items-center gap-2`}
+                                  className="text-d-white/70 hover:text-d-text transition-colors duration-200"
                                 >
-                                  <Check className="h-4 w-4" />
-                                  <span>Save</span>
+                                  <Check className="h-3 w-3" />
                                 </button>
                                 <button
                                   type="button"
-                                  className={`${secondaryActionButtonClass} items-center gap-2`}
+                                  className="text-d-white/70 hover:text-d-text transition-colors duration-200"
                                   onClick={cancelRenaming}
                                 >
-                                  <X className="h-4 w-4" />
-                                  <span>Cancel</span>
+                                  <X className="h-3 w-3" />
                                 </button>
                               </div>
                             </form>
                           ) : (
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-base font-raleway font-medium text-d-text">{avatar.name}</p>
+                            <div className="flex items-center justify-center gap-2">
+                              <p className="text-base font-raleway font-normal text-d-text">{avatar.name}</p>
+                              {avatar.published && (
+                                <Globe className="h-3 w-3 text-d-white/70" />
+                              )}
                               <button
                                 type="button"
-                                className={`${primaryActionButtonClass} items-center gap-2`}
+                                className="text-d-white/70 hover:text-d-text transition-colors duration-200 opacity-0 group-hover:opacity-100"
                                 onClick={() => startRenaming(avatar)}
                               >
-                                <Pencil className="h-4 w-4" />
-                                <span>Rename</span>
+                                <Pencil className="w-3 h-3" />
                               </button>
                             </div>
                           )}
@@ -718,9 +763,14 @@ export default function Avatars() {
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Publish avatar</h3>
+                <h3 className="text-xl font-raleway font-normal text-d-text">
+                  {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
+                </h3>
                 <p className="text-base font-raleway font-light text-d-white">
-                  Are you sure you want to publish "{avatarToPublish.name}"? It will be visible to other users.
+                  {avatarToPublish.published 
+                    ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
+                    : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
+                  }
                 </p>
               </div>
               <div className="flex justify-center gap-3">
@@ -736,7 +786,7 @@ export default function Avatars() {
                   className={buttons.primary}
                   onClick={confirmPublish}
                 >
-                  Publish
+                  {avatarToPublish.published ? 'Unpublish' : 'Publish'}
                 </button>
               </div>
             </div>
