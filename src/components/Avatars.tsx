@@ -424,7 +424,7 @@ export default function Avatars() {
               <p className={text.eyebrow}>avatars</p>
             </div>
             <h1 className={`${text.sectionHeading} text-white`}>Create your Avatar.</h1>
-            <p className={`${text.body} text-d-white/80`}>{subtitle}</p>
+            <p className={`${text.body} text-d-white`}>{subtitle}</p>
             <button
               type="button"
               className={buttons.primary}
@@ -441,7 +441,7 @@ export default function Avatars() {
           </header>
 
           <div className="w-full max-w-6xl space-y-5">
-            <div className="space-y-2 text-center">
+            <div className="space-y-2 text-left">
               <h2 className="text-2xl font-light font-raleway text-d-text">Your Avatars</h2>
             </div>
             {avatars.length > 0 && (
