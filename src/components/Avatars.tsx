@@ -554,14 +554,14 @@ export default function Avatars() {
                                   type="submit"
                                   className="text-d-white/70 hover:text-d-text transition-colors duration-200"
                                 >
-                                  <Check className="h-3 w-3" />
+                                  <Check className="h-4 w-4" />
                                 </button>
                                 <button
                                   type="button"
                                   className="text-d-white/70 hover:text-d-text transition-colors duration-200"
                                   onClick={cancelRenaming}
                                 >
-                                  <X className="h-3 w-3" />
+                                  <X className="h-4 w-4" />
                                 </button>
                               </div>
                             </form>
