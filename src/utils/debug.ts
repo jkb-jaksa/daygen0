@@ -1,19 +1,16 @@
 const isDev = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
 
 export function debugLog(...args: unknown[]) {
-  if (isDev) {
-    console.log(...args);
-  }
+  // Always show debug logs for now to help with debugging
+  console.log('[DEBUG]', ...args);
 }
 
 export function debugWarn(...args: unknown[]) {
-  if (isDev) {
-    console.warn(...args);
-  }
+  // Always show debug warnings for now to help with debugging
+  console.warn('[WARN]', ...args);
 }
 
 export function debugError(...args: unknown[]) {
-  if (isDev) {
-    console.error(...args);
-  }
+  // Always show debug errors for now to help with debugging
+  console.error('[ERROR]', ...args);
 }
