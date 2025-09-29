@@ -1263,6 +1263,10 @@ const Create: React.FC = () => {
           setGallery(ownWorks);
         } else {
           debugLog('No gallery data found in client storage');
+          debugLog('Storage prefix:', storagePrefix);
+          debugLog('Checking localStorage for gallery data...');
+          const fallbackData = localStorage.getItem(`${storagePrefix}gallery`);
+          debugLog('Fallback localStorage data:', fallbackData ? 'found' : 'not found');
           setGallery([]);
         }
 
@@ -1525,7 +1529,9 @@ const Create: React.FC = () => {
     }
 
     const persistLean = async (data: GalleryImageLike[]) => {
+      debugLog('Attempting to save gallery to storage with', data.length, 'images');
       await setPersistedValue(storagePrefix, 'gallery', serializeGallery(data));
+      debugLog('Gallery data saved to storage successfully');
       await refreshStorageEstimate();
     };
     try {
