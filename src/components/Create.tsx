@@ -6159,7 +6159,7 @@ const handleGenerate = async () => {
                                     <img
                                       src={avatar.imageUrl}
                                       alt={avatar.name}
-                                      className="h-10 w-10 rounded-2xl object-cover"
+                                      className="h-10 w-10 rounded-lg object-cover"
                                     />
                                     <div className="min-w-0 flex-1 text-left">
                                       <p className="truncate text-sm font-raleway text-d-text">{avatar.name}</p>
@@ -6186,16 +6186,6 @@ const handleGenerate = async () => {
                           <div className="rounded-2xl border border-d-dark/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
                             You haven't saved any avatars yet. Visit the avatars page to create one.
                           </div>
-                        )}
-                        {selectedAvatar && (
-                          <button
-                            type="button"
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
-                            onClick={clearSelectedAvatar}
-                          >
-                            <X className="h-4 w-4" />
-                            Remove avatar
-                          </button>
                         )}
                         {!storedAvatars.length && (
                           <button
