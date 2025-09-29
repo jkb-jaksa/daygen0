@@ -266,6 +266,124 @@ const ModelMenuPortal: React.FC<{
   );
 };
 
+// Portal component for avatar picker to avoid clipping by parent containers
+const AvatarPickerPortal: React.FC<{
+  anchorRef: React.RefObject<HTMLElement | null>;
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ anchorRef, open, onClose, children }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 288, transform: 'translateY(0)' }); // w-72 = 288px
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>();
+
+  useEffect(() => {
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!anchorRef.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 400; // Approximate height with avatars
+
+      // Check if there's enough space above the trigger
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+
+      // Position above if there's more space above, otherwise position below
+      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
+
+      setPos({
+        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        left: rect.left,
+        width: 288, // w-72
+        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)'
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open, anchorRef]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (open && menuRef.current && 
+          !menuRef.current.contains(event.target as Node) && 
+          !anchorRef.current?.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      if (menuRef.current) {
+        menuRef.current.focus();
+      }
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose, anchorRef]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={(node) => {
+        menuRef.current = node;
+        setScrollableRef(node);
+      }}
+      tabIndex={-1}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 9999,
+        transform: pos.transform,
+        maxHeight: '400px',
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}
+      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-4 overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50`}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onFocus={() => {
+        if (menuRef.current) {
+          menuRef.current.focus();
+        }
+      }}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
+
 const ImageActionMenuPortal: React.FC<{
   anchorEl: HTMLElement | null;
   open: boolean;
@@ -387,7 +505,6 @@ const Create: React.FC = () => {
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
   const settingsRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
-  const avatarPickerRef = useRef<HTMLDivElement | null>(null);
   const persistentStorageRequested = useRef(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -397,6 +514,16 @@ const Create: React.FC = () => {
   const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
+  const [avatarCreationName, setAvatarCreationName] = useState("");
+  const [avatarCreationSelection, setAvatarCreationSelection] = useState<{
+    imageUrl: string;
+    source: "upload" | "gallery";
+    sourceId?: string;
+  } | null>(null);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
+  const [isAvatarDragging, setIsAvatarDragging] = useState(false);
+  const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
@@ -1416,34 +1543,6 @@ const Create: React.FC = () => {
       setIsAvatarPickerOpen(false);
     }
   }, [activeCategory, isAvatarPickerOpen]);
-
-  useEffect(() => {
-    if (!isAvatarPickerOpen) return;
-
-    const handleClick = (event: MouseEvent) => {
-      if (
-        avatarPickerRef.current &&
-        !avatarPickerRef.current.contains(event.target as Node) &&
-        !avatarButtonRef.current?.contains(event.target as Node)
-      ) {
-        setIsAvatarPickerOpen(false);
-      }
-    };
-
-    const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsAvatarPickerOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleKeydown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleKeydown);
-    };
-  }, [isAvatarPickerOpen]);
 
   useEffect(() => {
     if (gallery.length < 10 || persistentStorageRequested.current) return;
@@ -3052,6 +3151,109 @@ const Create: React.FC = () => {
     setPendingAvatarId(null);
     setIsAvatarPickerOpen(false);
   }, []);
+
+  const handleAvatarCreationUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        setAvatarUploadError("Please choose an image file.");
+        return;
+      }
+      setAvatarUploadError(null);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          setAvatarCreationSelection({ imageUrl: result, source: "upload" });
+        }
+      };
+      reader.onerror = () => {
+        setAvatarUploadError("We couldn't read that file. Try another image.");
+      };
+      reader.readAsDataURL(file);
+    },
+    [],
+  );
+
+  const handleAvatarCreationPaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          setAvatarUploadError(null);
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            if (typeof result === "string") {
+              setAvatarCreationSelection({ imageUrl: result, source: "upload" });
+            }
+          };
+          reader.onerror = () => {
+            setAvatarUploadError("We couldn't read that file. Try another image.");
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  }, []);
+
+  const handleSaveAvatarCreation = useCallback(async () => {
+    if (!avatarCreationSelection || !avatarCreationName.trim() || !storagePrefix) return;
+
+    const record: StoredAvatar = {
+      id: `avatar-${Date.now()}`,
+      name: avatarCreationName.trim(),
+      imageUrl: avatarCreationSelection.imageUrl,
+      createdAt: new Date().toISOString(),
+      source: avatarCreationSelection.source,
+      sourceId: avatarCreationSelection.sourceId,
+      published: false,
+    };
+
+    const updatedAvatars = [record, ...storedAvatars];
+    setStoredAvatars(updatedAvatars);
+    
+    try {
+      await setPersistedValue(storagePrefix, "avatars", updatedAvatars);
+    } catch (error) {
+      debugError("Failed to persist avatars", error);
+    }
+
+    setIsAvatarCreationModalOpen(false);
+    setAvatarCreationName("");
+    setAvatarCreationSelection(null);
+    setAvatarUploadError(null);
+  }, [avatarCreationName, avatarCreationSelection, storedAvatars, storagePrefix]);
+
+  const resetAvatarCreationPanel = useCallback(() => {
+    setIsAvatarCreationModalOpen(false);
+    setAvatarCreationName("");
+    setAvatarCreationSelection(null);
+    setAvatarUploadError(null);
+  }, []);
+
+  const confirmDeleteAvatar = useCallback(async () => {
+    if (!avatarToDelete || !storagePrefix) return;
+    
+    const updatedAvatars = storedAvatars.filter(record => record.id !== avatarToDelete.id);
+    setStoredAvatars(updatedAvatars);
+    
+    if (selectedAvatar?.id === avatarToDelete.id) {
+      setSelectedAvatar(null);
+    }
+    
+    try {
+      await setPersistedValue(storagePrefix, "avatars", updatedAvatars);
+    } catch (error) {
+      debugError("Failed to persist avatars", error);
+    }
+    
+    setAvatarToDelete(null);
+  }, [avatarToDelete, storedAvatars, selectedAvatar, storagePrefix]);
 
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleAddReferenceFiles(Array.from(event.target.files || []));
@@ -5899,93 +6101,118 @@ const handleGenerate = async () => {
                   <span className="text-sm font-raleway">Add reference</span>
                 </button>
                 {activeCategory === "image" && (
-                  <div className="relative">
+                  <>
                     <button
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} flex items-center gap-2 h-8 px-3 rounded-full text-d-white transition-colors duration-200 hover:bg-d-text/20 hover:text-d-text`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
                     >
-                      <Users className="w-4 h-4" />
-                      <span className="text-sm font-raleway">Select Avatar</span>
+                      <Users className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
+                      <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Select Avatar</span>
                     </button>
-                    {isAvatarPickerOpen && (
-                      <div
-                        ref={avatarPickerRef}
-                        className="absolute bottom-full left-0 z-50 mb-3 w-72 rounded-3xl border border-d-dark/70 bg-d-black/85 p-4 shadow-2xl"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-raleway text-d-white/70">Your avatars</p>
-                            <button
-                              type="button"
-                              className="inline-flex size-7 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
-                              onClick={() => setIsAvatarPickerOpen(false)}
-                              aria-label="Close avatar picker"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          {storedAvatars.length > 0 ? (
-                            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                              {storedAvatars.map(avatar => {
-                                const isActive = selectedAvatar?.id === avatar.id;
-                                return (
+                    <AvatarPickerPortal
+                      anchorRef={avatarButtonRef}
+                      open={isAvatarPickerOpen}
+                      onClose={() => setIsAvatarPickerOpen(false)}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAvatarPickerOpen(false);
+                              navigate('/avatars');
+                            }}
+                            className="text-base font-raleway text-d-white hover:text-d-text transition-colors duration-200 cursor-pointer"
+                          >
+                            Your Avatars
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex size-7 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+                            onClick={() => {
+                              setIsAvatarPickerOpen(false);
+                              setIsAvatarCreationModalOpen(true);
+                              setAvatarCreationName("New avatar");
+                            }}
+                            aria-label="Add new avatar"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        {storedAvatars.length > 0 ? (
+                          <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                            {storedAvatars.map(avatar => {
+                              const isActive = selectedAvatar?.id === avatar.id;
+                              return (
+                                <div className="flex w-full items-center gap-3 rounded-2xl border px-3 py-2 transition-colors duration-200 group hover:border-d-mid hover:bg-d-text/10">
                                   <button
-                                    key={avatar.id}
                                     type="button"
                                     onClick={() => handleAvatarSelect(avatar)}
-                                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 transition-colors duration-200 ${
+                                    className={`flex flex-1 items-center gap-3 ${
                                       isActive
-                                        ? 'border-d-light bg-d-text/10 text-d-text'
-                                        : 'border-d-dark/60 text-d-white hover:border-d-mid hover:bg-d-text/10'
+                                        ? 'text-d-text'
+                                        : 'text-white'
                                     }`}
                                   >
                                     <img
                                       src={avatar.imageUrl}
                                       alt={avatar.name}
-                                      className="h-12 w-12 rounded-2xl object-cover"
+                                      className="h-10 w-10 rounded-2xl object-cover"
                                     />
                                     <div className="min-w-0 flex-1 text-left">
-                                      <p className="truncate text-sm font-raleway">{avatar.name}</p>
+                                      <p className="truncate text-sm font-raleway text-d-text">{avatar.name}</p>
                                     </div>
                                     {isActive && <Check className="h-4 w-4 text-d-text" />}
                                   </button>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="rounded-2xl border border-d-dark/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
-                              You haven't saved any avatars yet. Visit the avatars page to create one.
-                            </div>
-                          )}
-                          {selectedAvatar && (
-                            <button
-                              type="button"
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
-                              onClick={clearSelectedAvatar}
-                            >
-                              <X className="h-4 w-4" />
-                              Remove avatar
-                            </button>
-                          )}
-                          {!storedAvatars.length && (
-                            <button
-                              type="button"
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
-                              onClick={() => {
-                                navigate('/avatars');
-                                setIsAvatarPickerOpen(false);
-                              }}
-                            >
-                              <Users className="h-4 w-4" />
-                              Go to avatars
-                            </button>
-                          )}
-                        </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAvatarToDelete(avatar);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
+                                    title="Delete avatar"
+                                    aria-label="Delete avatar"
+                                  >
+                                    <Trash2 className="h-3 w-3 text-d-white hover:text-d-text" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-d-dark/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
+                            You haven't saved any avatars yet. Visit the avatars page to create one.
+                          </div>
+                        )}
+                        {selectedAvatar && (
+                          <button
+                            type="button"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                            onClick={clearSelectedAvatar}
+                          >
+                            <X className="h-4 w-4" />
+                            Remove avatar
+                          </button>
+                        )}
+                        {!storedAvatars.length && (
+                          <button
+                            type="button"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                            onClick={() => {
+                              navigate('/avatars');
+                              setIsAvatarPickerOpen(false);
+                            }}
+                          >
+                            <Users className="h-4 w-4" />
+                            Go to avatars
+                          </button>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </AvatarPickerPortal>
+                  </>
                 )}
                 <div className="relative settings-dropdown">
                   <button
@@ -6819,6 +7046,221 @@ const handleGenerate = async () => {
           )}
 
         </div>
+
+        {/* Avatar Creation Modal */}
+        {isAvatarCreationModalOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+            <div className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl">
+              <button
+                type="button"
+                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+                onClick={resetAvatarCreationPanel}
+                aria-label="Close avatar creation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex flex-col gap-6 p-6 lg:p-8">
+                {/* Header Section */}
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-raleway text-d-text">Create Avatar</h2>
+                  <p className="text-sm font-raleway text-d-white">
+                    Pick an image and give your avatar a name. We'll save it here for quick use later.
+                  </p>
+                </div>
+
+                {/* Two Column Layout */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Left Column - Upload Image */}
+                  <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
+                        <Upload className="h-5 w-5 text-d-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-raleway text-d-text">Upload image</h3>
+                        <p className="text-sm font-raleway text-d-white">
+                          Upload an image to turn into a reusable avatar.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-48 mx-auto">
+                      {avatarCreationSelection ? (
+                        <div className="relative aspect-square overflow-hidden rounded-2xl border border-d-dark bg-d-black/50">
+                          <img src={avatarCreationSelection.imageUrl} alt="Selected avatar" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setAvatarCreationSelection(null)}
+                            className="absolute top-1.5 right-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
+                            aria-label="Remove selected image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => (document.querySelector('#avatar-creation-upload') as HTMLInputElement)?.click()}
+                            className="absolute bottom-1.5 left-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
+                            aria-label="Change image"
+                          >
+                            <Upload className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label 
+                          className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-d-white transition-colors duration-200 ${
+                            isAvatarDragging 
+                              ? 'border-brand bg-brand/10' 
+                              : 'border-d-white/30 bg-d-black/60 hover:border-d-text/50'
+                          }`}
+                          onDragOver={(e) => { e.preventDefault(); setIsAvatarDragging(true); }}
+                          onDragLeave={() => setIsAvatarDragging(false)}
+                          onDrop={(e) => { 
+                            e.preventDefault(); 
+                            setIsAvatarDragging(false);
+                            const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                            if (files.length > 0) {
+                              const file = files[0];
+                              setAvatarUploadError(null);
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                const result = reader.result;
+                                if (typeof result === "string") {
+                                  setAvatarCreationSelection({ imageUrl: result, source: "upload" });
+                                }
+                              };
+                              reader.onerror = () => {
+                                setAvatarUploadError("We couldn't read that file. Try another image.");
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          onPaste={handleAvatarCreationPaste}
+                        >
+                          <span className="font-medium">Select image</span>
+                          <span className="text-xs text-d-white/60">PNG, JPG, or WebP up to 50 MB</span>
+                          <span className="text-xs text-d-white/40">Click, drag & drop, or paste</span>
+                          <input id="avatar-creation-upload" type="file" accept="image/*" className="sr-only" onChange={handleAvatarCreationUpload} />
+                        </label>
+                      )}
+                    </div>
+                    {avatarUploadError && (
+                      <p className="mt-3 text-sm font-raleway text-red-400 text-center">{avatarUploadError}</p>
+                    )}
+                  </div>
+
+                  {/* Right Column - Choose from Gallery */}
+                  <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
+                        <Users className="h-5 w-5 text-d-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-raleway text-d-text">Choose from your creations</h3>
+                        <p className="text-sm font-raleway text-d-white">
+                          Pick from anything you've generated in the DayGen studio.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto pr-1">
+                      {gallery.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-3">
+                          {gallery.map(image => {
+                            const isSelected = avatarCreationSelection?.source === "gallery" && avatarCreationSelection.sourceId === image.url;
+                            return (
+                              <button
+                                type="button"
+                                key={image.url}
+                                className={`relative overflow-hidden rounded-2xl border ${
+                                  isSelected ? "border-d-light" : "border-d-dark"
+                                }`}
+                                onClick={() =>
+                                  setAvatarCreationSelection({
+                                    imageUrl: image.url,
+                                    source: "gallery",
+                                    sourceId: image.url,
+                                  })
+                                }
+                              >
+                                <img src={image.url} alt={image.prompt ?? "Gallery creation"} className="aspect-square w-full object-cover" />
+                                {isSelected && (
+                                  <div className="absolute inset-0 border-4 border-d-light pointer-events-none" aria-hidden="true" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="w-64 mx-auto rounded-2xl border border-d-dark/70 bg-d-black/50 p-6 text-center">
+                          <p className="text-sm font-raleway text-d-white/70">
+                            Generate an image in the studio to see it here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Section - Avatar Name and Save Button */}
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col items-center gap-6">
+                    <label className="flex flex-col space-y-2 w-fit">
+                      <span className="text-sm font-raleway text-d-white/70">Name</span>
+                      <input
+                        className={`${inputs.base} !w-64`}
+                        placeholder="e.g. Neon explorer"
+                        value={avatarCreationName}
+                        onChange={event => setAvatarCreationName(event.target.value)}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      className={`${buttons.primary} !w-fit ${!avatarCreationSelection || !avatarCreationName.trim() ? "pointer-events-none opacity-50" : ""}`}
+                      disabled={!avatarCreationSelection || !avatarCreationName.trim()}
+                      onClick={handleSaveAvatarCreation}
+                    >
+                      Save Avatar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Avatar Deletion Confirmation Modal */}
+        {avatarToDelete && (
+          <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+            <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+              <div className="space-y-4 text-center">
+                <div className="space-y-3">
+                  <Trash2 className="default-orange-icon mx-auto" />
+                  <h3 className="text-xl font-raleway font-normal text-d-text">Delete Avatar</h3>
+                  <p className="text-base font-raleway font-light text-d-white">
+                    Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button
+                    type="button"
+                    className={buttons.ghost}
+                    onClick={() => setAvatarToDelete(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={buttons.primary}
+                    onClick={confirmDeleteAvatar}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         
 
