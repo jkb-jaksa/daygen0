@@ -1866,6 +1866,13 @@ const Create: React.FC = () => {
   const handleDeleteConfirmed = () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
+      // Track counts so we only remove the exact number of requested images per URL.
+      const urlDeleteCounts = deleteConfirmation.imageUrls.reduce((map, url) => {
+        const nextCount = (map.get(url) ?? 0) + 1;
+        map.set(url, nextCount);
+        return map;
+      }, new Map<string, number>());
+      const totalDeleteRequests = deleteConfirmation.imageUrls.length;
       if (deleteConfirmation.source === 'inspirations') {
         let nextInspirations: GalleryImageLike[] = [];
         setInspirations(currentInspirations => {
@@ -1883,7 +1890,24 @@ const Create: React.FC = () => {
       } else {
         let nextGallery: GalleryImageLike[] = [];
         setGallery(currentGallery => {
-          const updated = currentGallery.filter(img => img && !urlsToDelete.has(img.url));
+          const deleteCounts = new Map(urlDeleteCounts);
+          const updated = currentGallery.filter(img => {
+            if (!img) return false;
+            if (!img.url) return true;
+            const remaining = deleteCounts.get(img.url);
+            if (remaining && remaining > 0) {
+              deleteCounts.set(img.url, remaining - 1);
+              return false;
+            }
+            return true;
+          });
+
+          if (updated.length === 0 && currentGallery.length > totalDeleteRequests) {
+            debugWarn('Delete request would have cleared gallery unexpectedly; preserving state');
+            nextGallery = currentGallery;
+            return currentGallery;
+          }
+
           nextGallery = updated;
           return updated;
         });
