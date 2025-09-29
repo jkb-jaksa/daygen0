@@ -1,5 +1,3 @@
-const isDev = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
-
 export function debugLog(...args: unknown[]) {
   // Always show debug logs for now to help with debugging
   console.log('[DEBUG]', ...args);
