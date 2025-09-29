@@ -173,6 +173,15 @@ export default function Avatars() {
     imageUrl: string;
     anchor: HTMLElement;
   } | null>(null);
+  const [galleryEditMenu, setGalleryEditMenu] = useState<{
+    imageUrl: string;
+    anchor: HTMLElement;
+  } | null>(null);
+  const [modalAvatarEditMenu, setModalAvatarEditMenu] = useState<{
+    avatarId: string;
+    anchor: HTMLElement;
+  } | null>(null);
+  const [imageToDelete, setImageToDelete] = useState<GalleryImageLike | null>(null);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
@@ -366,10 +375,15 @@ export default function Avatars() {
         return updated;
       });
 
+      // Update the modal avatar if it's currently open and matches the renamed avatar
+      if (creationsModalAvatar && creationsModalAvatar.id === editingAvatarId) {
+        setCreationsModalAvatar(prev => prev ? { ...prev, name: trimmed } : null);
+      }
+
       setEditingAvatarId(null);
       setEditingName("");
     },
-    [editingAvatarId, editingName, persistAvatars],
+    [editingAvatarId, editingName, persistAvatars, creationsModalAvatar],
   );
 
   const confirmDelete = useCallback(() => {
@@ -431,6 +445,9 @@ export default function Avatars() {
       prev?.avatarId === avatarId ? null : { avatarId, anchor }
     );
     setAvatarMoreMenu(null); // Close the other menu
+    setCreationMoreMenu(null); // Close the creation menu
+    setGalleryEditMenu(null); // Close the gallery edit menu
+    setModalAvatarEditMenu(null); // Close the modal avatar edit menu
   }, []);
 
   const toggleAvatarMoreMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
@@ -438,6 +455,8 @@ export default function Avatars() {
       prev?.avatarId === avatarId ? null : { avatarId, anchor }
     );
     setAvatarEditMenu(null); // Close the other menu
+    setGalleryEditMenu(null); // Close the gallery edit menu
+    setModalAvatarEditMenu(null); // Close the modal avatar edit menu
   }, []);
 
   const closeAvatarEditMenu = useCallback(() => {
@@ -452,10 +471,59 @@ export default function Avatars() {
     setCreationMoreMenu(prev => 
       prev?.imageUrl === imageUrl ? null : { imageUrl, anchor }
     );
+    setGalleryEditMenu(null); // Close the gallery edit menu
+    setModalAvatarEditMenu(null); // Close the modal avatar edit menu
   }, []);
 
   const closeCreationMoreMenu = useCallback(() => {
     setCreationMoreMenu(null);
+  }, []);
+
+  const toggleGalleryEditMenu = useCallback((imageUrl: string, anchor: HTMLElement) => {
+    setGalleryEditMenu(prev => 
+      prev?.imageUrl === imageUrl ? null : { imageUrl, anchor }
+    );
+    setAvatarEditMenu(null); // Close the avatar edit menu
+    setAvatarMoreMenu(null); // Close the avatar more menu
+    setCreationMoreMenu(null); // Close the creation more menu
+  }, []);
+
+  const closeGalleryEditMenu = useCallback(() => {
+    setGalleryEditMenu(null);
+  }, []);
+
+  const toggleModalAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
+    setModalAvatarEditMenu(prev => 
+      prev?.avatarId === avatarId ? null : { avatarId, anchor }
+    );
+    setAvatarEditMenu(null); // Close the main avatar edit menu
+    setAvatarMoreMenu(null); // Close the avatar more menu
+    setGalleryEditMenu(null); // Close the gallery edit menu
+    setCreationMoreMenu(null); // Close the creation more menu
+  }, []);
+
+  const closeModalAvatarEditMenu = useCallback(() => {
+    setModalAvatarEditMenu(null);
+  }, []);
+
+  const confirmDeleteImage = useCallback((image: GalleryImageLike) => {
+    setImageToDelete(image);
+  }, []);
+
+  const handleDeleteImageConfirmed = useCallback(() => {
+    if (!imageToDelete) return;
+    
+    setGalleryImages(prev => {
+      const updated = prev.filter(img => img.url !== imageToDelete.url);
+      void persistGalleryImages(updated);
+      return updated;
+    });
+    
+    setImageToDelete(null);
+  }, [imageToDelete, persistGalleryImages]);
+
+  const handleDeleteImageCancelled = useCallback(() => {
+    setImageToDelete(null);
   }, []);
 
   const handleDownloadImage = useCallback(async (imageUrl: string) => {
@@ -649,12 +717,20 @@ export default function Avatars() {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                toggleAvatarEditMenu(avatar.id, event.currentTarget);
+                if (disableModalTrigger) {
+                  toggleModalAvatarEditMenu(avatar.id, event.currentTarget);
+                } else {
+                  toggleAvatarEditMenu(avatar.id, event.currentTarget);
+                }
               }}
               className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                avatarEditMenu?.avatarId === avatar.id
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                disableModalTrigger 
+                  ? (modalAvatarEditMenu?.avatarId === avatar.id
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100')
+                  : (avatarEditMenu?.avatarId === avatar.id
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100')
               }`}
               title="Edit avatar"
               aria-label="Edit avatar"
@@ -662,9 +738,15 @@ export default function Avatars() {
               <Edit className="w-3.5 h-3.5" />
             </button>
             <ImageActionMenuPortal
-              anchorEl={avatarEditMenu?.avatarId === avatar.id ? avatarEditMenu?.anchor ?? null : null}
-              open={avatarEditMenu?.avatarId === avatar.id}
-              onClose={closeAvatarEditMenu}
+              anchorEl={disableModalTrigger 
+                ? (modalAvatarEditMenu?.avatarId === avatar.id ? modalAvatarEditMenu?.anchor ?? null : null)
+                : (avatarEditMenu?.avatarId === avatar.id ? avatarEditMenu?.anchor ?? null : null)
+              }
+              open={disableModalTrigger 
+                ? (modalAvatarEditMenu?.avatarId === avatar.id)
+                : (avatarEditMenu?.avatarId === avatar.id)
+              }
+              onClose={disableModalTrigger ? closeModalAvatarEditMenu : closeAvatarEditMenu}
               zIndex={creationsModalAvatar ? 10600 : 1200}
             >
               <button
@@ -673,7 +755,11 @@ export default function Avatars() {
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToImage(avatar);
-                  closeAvatarEditMenu();
+                  if (disableModalTrigger) {
+                    closeModalAvatarEditMenu();
+                  } else {
+                    closeAvatarEditMenu();
+                  }
                 }}
               >
                 <ImageIcon className="h-4 w-4" />
@@ -685,7 +771,11 @@ export default function Avatars() {
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToVideo(avatar);
-                  closeAvatarEditMenu();
+                  if (disableModalTrigger) {
+                    closeModalAvatarEditMenu();
+                  } else {
+                    closeAvatarEditMenu();
+                  }
                 }}
               >
                 <Camera className="h-4 w-4" />
@@ -693,7 +783,19 @@ export default function Avatars() {
               </button>
             </ImageActionMenuPortal>
           </div>
-          <div className="absolute right-2 top-2 z-10">
+          <div className="absolute right-2 top-2 z-10 flex gap-1">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setAvatarToDelete(avatar);
+              }}
+              className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+              title="Delete Avatar"
+              aria-label="Delete Avatar"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
             <button
               type="button"
               onClick={(event) => {
@@ -813,7 +915,11 @@ export default function Avatars() {
                     <p className="text-base font-raleway font-normal text-d-text">{avatar.name}</p>
                     <button
                       type="button"
-                      className="text-d-white/70 hover:text-d-text transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                      className={`text-d-white/70 hover:text-d-text transition-colors duration-200 ${
+                        disableModalTrigger 
+                          ? 'opacity-100' 
+                          : 'opacity-0 group-hover:opacity-100'
+                      }`}
                       onClick={() => startRenaming(avatar)}
                     >
                       <Pencil className="w-3 h-3" />
@@ -864,16 +970,69 @@ export default function Avatars() {
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              handleEditCreation(image);
+              toggleGalleryEditMenu(image.url, event.currentTarget);
             }}
-            className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+            className={`image-action-btn parallax-large transition-opacity duration-100 ${
+              galleryEditMenu?.imageUrl === image.url
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            }`}
             title="Edit image"
             aria-label="Edit image"
           >
-            <Pencil className="w-3.5 h-3.5" />
+            <Edit className="w-3.5 h-3.5" />
           </button>
+          <ImageActionMenuPortal
+            anchorEl={galleryEditMenu?.imageUrl === image.url ? galleryEditMenu?.anchor ?? null : null}
+            open={galleryEditMenu?.imageUrl === image.url}
+            onClose={closeGalleryEditMenu}
+            zIndex={creationsModalAvatar ? 10600 : 1200}
+          >
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleEditCreation(image);
+                closeGalleryEditMenu();
+              }}
+            >
+              <ImageIcon className="h-4 w-4" />
+              Edit image
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              onClick={(event) => {
+                event.stopPropagation();
+                // Navigate to video creation with the avatar
+                navigate("/create/video", {
+                  state: {
+                    avatarId: image.avatarId,
+                    focusPromptBar: true,
+                  },
+                });
+                closeGalleryEditMenu();
+              }}
+            >
+              <Camera className="h-4 w-4" />
+              Make video
+            </button>
+          </ImageActionMenuPortal>
         </div>
-        <div className="absolute right-2 top-2 z-10">
+        <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              confirmDeleteImage(image);
+            }}
+            className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+            title="Delete image"
+            aria-label="Delete image"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
           <button
             type="button"
             onClick={(event) => {
@@ -1453,7 +1612,7 @@ export default function Avatars() {
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Delete avatar</h3>
+                <h3 className="text-xl font-raleway font-normal text-d-text">Delete Avatar</h3>
                 <p className="text-base font-raleway font-light text-d-white">
                   Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                 </p>
@@ -1509,6 +1668,39 @@ export default function Avatars() {
                   onClick={confirmPublish}
                 >
                   {avatarToPublish.published ? 'Unpublish' : 'Publish'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete image confirmation dialog */}
+      {imageToDelete && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+            <div className="space-y-4 text-center">
+              <div className="space-y-3">
+                <Trash2 className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway font-normal text-d-text">Delete image</h3>
+                <p className="text-base font-raleway font-light text-d-white">
+                  Are you sure you want to delete this image? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  className={buttons.ghost}
+                  onClick={handleDeleteImageCancelled}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={buttons.primary}
+                  onClick={handleDeleteImageConfirmed}
+                >
+                  Delete
                 </button>
               </div>
             </div>
