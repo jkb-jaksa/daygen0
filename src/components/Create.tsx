@@ -1510,12 +1510,15 @@ const Create: React.FC = () => {
 
   // Backup function to persist gallery state
   const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+    debugLog('persistGallery called with', galleryData.length, 'images');
     const sanitizedData = galleryData.filter(item => !item.savedFrom);
+    debugLog('After filtering savedFrom, have', sanitizedData.length, 'images');
     if (sanitizedData.length !== galleryData.length) {
       debugWarn('Filtered saved inspirations out of gallery persistence payload');
     }
 
     // Don't persist empty galleries - this prevents race conditions
+    // But allow persistence if we have at least one valid image
     if (sanitizedData.length === 0) {
       debugWarn('Skipping persistence of empty gallery to prevent data loss');
       return sanitizedData;
@@ -3674,6 +3677,7 @@ const handleGenerate = async () => {
         });
 
         void (async () => {
+          debugLog('Attempting to persist gallery with', computedNext.length, 'images');
           const persisted = await persistGallery(computedNext);
           if (persisted.length !== computedNext.length) {
             // Only update if there's a significant difference
