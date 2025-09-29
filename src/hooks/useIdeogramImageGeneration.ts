@@ -14,6 +14,7 @@ export interface IdeogramGeneratedImage {
   styleType?: string;
   negativePrompt?: string;
   ownerId?: string;
+  avatarId?: string;
 }
 
 export interface IdeogramImageGenerationState {

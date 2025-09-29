@@ -10,6 +10,7 @@ export interface ReveGeneratedImage {
   jobId: string;
   references?: string[];
   ownerId?: string;
+  avatarId?: string;
 }
 
 export interface ReveImageGenerationState {

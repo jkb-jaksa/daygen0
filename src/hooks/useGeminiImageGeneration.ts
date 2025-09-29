@@ -10,6 +10,7 @@ export interface GeneratedImage {
   timestamp: string;
   references?: string[]; // Base64 data URLs for reference images used
   ownerId?: string; // Optional user ID who generated the image
+  avatarId?: string;
 }
 
 export interface ImageGenerationState {

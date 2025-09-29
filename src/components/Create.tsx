@@ -3670,11 +3670,12 @@ const handleGenerate = async () => {
         const compressedUrl = await compressDataUrl(img.url);
         
         // Add ownerId to the image and strip heavy references field
-        const imgWithOwner: GeneratedImage = { 
-          ...img, 
+        const imgWithOwner: GeneratedImage = {
+          ...img,
           url: compressedUrl,
           ownerId: user?.id,
-          references: undefined // strip heavy field
+          references: undefined, // strip heavy field
+          avatarId: selectedAvatar?.id ?? ("avatarId" in img ? img.avatarId : undefined),
         };
         // Use functional update to ensure we get the latest gallery state
         setGallery(currentGallery => {

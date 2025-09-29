@@ -13,6 +13,7 @@ export interface QwenGeneratedImage {
   promptExtend?: boolean;
   watermark?: boolean;
   ownerId?: string;
+  avatarId?: string;
 }
 
 export interface QwenImageGenerationState {

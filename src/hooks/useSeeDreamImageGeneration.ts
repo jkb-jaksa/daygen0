@@ -9,6 +9,7 @@ export interface SeedreamGeneratedImage {
   timestamp: string;
   size: string;
   ownerId?: string;
+  avatarId?: string;
 }
 
 export interface SeedreamImageGenerationState {

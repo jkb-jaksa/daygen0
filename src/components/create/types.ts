@@ -35,6 +35,7 @@ export type GalleryImageLike = {
   references?: string[];
   isPublic?: boolean;
   savedFrom?: SavedCreator;
+  avatarId?: string;
 };
 
 export type GalleryVideoLike = {
@@ -59,6 +60,7 @@ export type StoredGalleryImage = {
   jobId?: string;
   isPublic?: boolean;
   savedFrom?: SavedCreator;
+  avatarId?: string;
 };
 
 export type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string };

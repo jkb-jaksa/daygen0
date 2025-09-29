@@ -13,6 +13,7 @@ export interface FluxGeneratedImage {
   jobId: string;
   references?: string[];
   ownerId?: string;
+  avatarId?: string;
 }
 
 export interface FluxImageGenerationState {

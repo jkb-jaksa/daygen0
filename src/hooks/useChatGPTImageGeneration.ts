@@ -12,6 +12,7 @@ export interface ChatGPTGeneratedImage {
   quality: string;
   background: string;
   ownerId?: string; // Optional user ID who generated the image
+  avatarId?: string;
 }
 
 export interface ChatGPTImageGenerationState {
