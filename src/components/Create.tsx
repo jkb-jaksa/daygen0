@@ -36,6 +36,7 @@ import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
+import { useLumaImageGeneration } from "../hooks/useLumaImageGeneration";
 import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
 import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
@@ -1043,6 +1044,14 @@ const Create: React.FC = () => {
   } = useReveImageGeneration();
 
   const {
+    isLoading: lumaImageLoading,
+    error: lumaImageError,
+    generatedImage: lumaImage,
+    generateImage: generateLumaImage,
+    clearError: clearLumaImageError,
+  } = useLumaImageGeneration();
+
+  const {
     isLoading: seedanceLoading,
     error: seedanceError,
     video: seedanceVideo,
@@ -1210,8 +1219,8 @@ const Create: React.FC = () => {
   }, [klingGeneratedVideo, klingStatus, resetKlingVideo]);
 
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || seedanceError || wanError || hailuoError || lumaVideoError || klingError;
-  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || lumaImageError || seedanceError || wanError || hailuoError || lumaVideoError || klingError;
+  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage || lumaImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
   const activeFullSizeContext: 'gallery' | 'inspirations' =
     fullSizeContext === 'inspirations' ||
@@ -3636,7 +3645,21 @@ const handleGenerate = async () => {
         }
         img = fluxResult;
       } else if (isLumaPhoton) {
-        throw new Error('Luma Photon generation is not yet supported in this build.');
+        const resolvedLumaModel =
+          selectedModel === "luma-photon-flash-1"
+            ? "luma-photon-flash-1"
+            : lumaPhotonModel;
+
+        const lumaResult = await generateLumaImage({
+          prompt: trimmedPrompt,
+          model: resolvedLumaModel,
+        });
+
+        if (!lumaResult) {
+          throw new Error('Luma generation failed.');
+        }
+
+        img = lumaResult;
       } else {
         throw new Error('Unsupported model');
       }
@@ -3706,6 +3729,7 @@ const handleGenerate = async () => {
       clearIdeogramError();
       clearRunwayError();
       clearSeeDreamError();
+      clearLumaImageError();
     } finally {
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -5777,13 +5801,13 @@ const handleGenerate = async () => {
                     : ""}>
                 <button 
                   onClick={handleGenerate}
-                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
                     const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
-                    const isLumaGenerating = isLumaRay && (lumaVideoLoading || lumaVideoPolling);
+                    const isLumaGenerating = (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
                     const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
                     const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
                     debugLog('[Create] Button state:', { 
@@ -5800,6 +5824,7 @@ const handleGenerate = async () => {
                       klingStatus,
                       lumaVideoLoading,
                       lumaVideoPolling,
+                      lumaImageLoading,
                       showSpinner: showSpinner,
                       activeCategory: activeCategory,
                       selectedModel: selectedModel
@@ -6553,7 +6578,7 @@ const handleGenerate = async () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
                 <p className="font-raleway text-sm">{error || videoError}</p>
                 <button
-                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearSeeDreamError(); }}
+                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearSeeDreamError(); clearLumaImageError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss
