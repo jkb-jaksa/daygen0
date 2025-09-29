@@ -15,7 +15,7 @@ import {
   MoreHorizontal,
   Download,
   Copy,
-  Folder,
+  Folder as FolderIcon,
   FolderPlus,
   Lock,
 } from "lucide-react";
@@ -210,7 +210,8 @@ export default function Avatars() {
         if (storedFolders) {
           setFolders(storedFolders.map(folder => ({
             ...folder,
-            createdAt: new Date(folder.createdAt)
+            createdAt: new Date(folder.createdAt),
+            videoIds: folder.videoIds || []
           })));
         }
       } catch (error) {
@@ -569,6 +570,7 @@ export default function Avatars() {
           name: folder.name,
           createdAt: folder.createdAt.toISOString(),
           imageIds: folder.imageIds,
+          videoIds: folder.videoIds,
           customThumbnail: folder.customThumbnail
         }));
         await setPersistedValue(storagePrefix, "folders", serialised);
@@ -593,7 +595,7 @@ export default function Avatars() {
   const removeImageFromFolder = useCallback((imageUrl: string, folderId: string) => {
     const updatedFolders = folders.map(folder => {
       if (folder.id === folderId) {
-        return { ...folder, imageIds: folder.imageIds.filter(id => id !== imageUrl) };
+        return { ...folder, imageIds: folder.imageIds.filter((id: string) => id !== imageUrl) };
       }
       return folder;
     });
@@ -851,7 +853,7 @@ export default function Avatars() {
                   closeAvatarMoreMenu();
                 }}
               >
-                <Folder className="h-4 w-4" />
+                <FolderIcon className="h-4 w-4" />
                 Manage folders
               </button>
               <button
@@ -1088,7 +1090,7 @@ export default function Avatars() {
                 closeCreationMoreMenu();
               }}
             >
-              <Folder className="h-4 w-4" />
+              <FolderIcon className="h-4 w-4" />
               Manage folders
             </button>
             <button
@@ -1506,7 +1508,7 @@ export default function Avatars() {
               <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
-                    <Folder className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
+                    <FolderIcon className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
                     <p className="text-base text-d-white/50 mb-4">No folders available</p>
                     <p className="text-sm text-d-white/40">
                       Create folders in the gallery to organize your images.
@@ -1555,10 +1557,10 @@ export default function Avatars() {
                               </div>
                             ) : isInFolder ? (
                               <div className="w-5 h-5 bg-d-white/20 rounded-lg flex items-center justify-center">
-                                <Folder className="w-3 h-3 text-d-text" />
+                                <FolderIcon className="w-3 h-3 text-d-text" />
                               </div>
                             ) : (
-                              <Folder className="w-5 h-5 text-d-white/60" />
+                              <FolderIcon className="w-5 h-5 text-d-white/60" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
