@@ -1,68 +1,84 @@
 # DayGen
 
+## Architecture
+
+**DayGen** is a full-stack AI image and video generation platform consisting of:
+- **Frontend**: React + TypeScript + Vite (this repository)
+- **Backend**: NestJS + PostgreSQL + Prisma (deployed on Google Cloud)
+
+The frontend connects to a NestJS backend that handles:
+- User authentication and authorization (JWT)
+- Credit management system
+- Integration with 15+ AI providers
+- Image storage (Cloudflare R2)
+- Database operations (PostgreSQL)
+
 ## Environment Setup
 
-Create a `.env` file in the root directory with the following variables:
+The `.env` file has already been created for you with the backend URL. You only need to set:
 
 ```bash
-# Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
+# Backend API URL (already configured)
+VITE_API_BASE_URL=https://daygen-backend-365299591811.europe-central2.run.app
 
-# BFL API Configuration
-BFL_API_KEY=your_bfl_api_key_here
-BFL_API_BASE=https://api.bfl.ai
-BFL_WEBHOOK_SECRET=your_webhook_secret_here
-
-# OpenAI API Key for ChatGPT Image Generation
-OPENAI_API_KEY=sk-your_openai_api_key_here
-
-# Ideogram API Key for advanced image generation and editing
-IDEOGRAM_API_KEY=your_ideogram_api_key_here
-
-# Qwen Image API (Alibaba Cloud DashScope) for text-to-image and image editing
-DASHSCOPE_API_KEY=your_dashscope_api_key_here
-DASHSCOPE_BASE=https://dashscope-intl.aliyuncs.com/api/v1
-
-# Runway API Key for Gen-4 and Gen-4 Turbo models
-RUNWAY_API_KEY=your_runway_api_key_here
-
-# MiniMax Hailuo 02 Video Generation
-MINIMAX_API_KEY=your_minimax_api_key_here
-MINIMAX_GROUP_ID=your_minimax_group_id_here
-# MINIMAX_BASE_URL=https://api.minimax.io
-
-# Kling Video Generation (Text-to-Video)
-KLING_ACCESS_KEY=your_kling_access_key_here
-KLING_SECRET_KEY=your_kling_secret_key_here
-# KLING_API_BASE_URL=https://api-singapore.klingai.com
-
-# Seedream 3.0 API Key for high-quality image generation
-ARK_API_KEY=your_ark_api_key_here
-ARK_BASE=https://ark.ap-southeast.bytepluses.com/api/v3
-
-# Reve API Key for text-to-image and image editing
-REVE_API_KEY=your_reve_api_key_here
-REVE_BASE_URL=https://api.reve.com
-REVE_PROJECT_ID=your_reve_project_id_here
-REVE_WEBHOOK_SECRET=your_reve_webhook_secret_here
-
-# Recraft API Key for advanced image generation and editing
-VITE_RECRAFT_API_KEY=your_recraft_api_key_here
-VITE_RECRAFT_API_BASE=https://external.api.recraft.ai/v1
-
-# Client-side environment variables
-VITE_BFL_API_KEY=your_bfl_api_key_here
-VITE_BFL_API_BASE=https://api.bfl.ai
-VITE_BFL_WEBHOOK_SECRET=your_webhook_secret_here
+# Optional: Site password for development access
 VITE_SITE_PASSWORD=your_dev_password_here
-
-# Server Configuration
-PORT=3000
-NODE_ENV=development
-
-# Base URL for webhooks (update for production)
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
+
+**Note**: All AI provider API keys are now stored securely in the backend environment. The frontend does not need or expose any API keys (except for the optional site password for client-side access control).
+
+### Backend Configuration
+
+The backend (in `../daygen-backend` directory) is configured via its own `.env` file with all AI provider API keys. See `BACKEND_INTEGRATION.md` for complete details.
+
+## 🚀 Getting Started
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+```
+
+### Development
+
+```bash
+# Start the development server (connects to Google Cloud backend)
+npm run dev
+
+# The app will open at http://localhost:5173
+```
+
+### Testing the Backend Connection
+
+```bash
+# Run the backend connection test
+node test-backend-connection.js
+```
+
+This will verify:
+- ✅ Backend health endpoint is accessible
+- ✅ Authentication endpoints are working
+- ✅ User creation and JWT tokens work
+- ✅ Authenticated endpoints respond correctly
+
+### Build for Production
+
+```bash
+# Create optimized production build
+npm run build
+
+# Preview the production build
+npm run preview
+```
+
+### First Time Usage
+
+1. Start the development server: `npm run dev`
+2. Open your browser to the displayed URL (usually `http://localhost:5173`)
+3. Click "Sign Up" to create an account
+4. You'll receive 3 free credits automatically
+5. Start generating images with any of the 15+ AI models!
 
 ## 🎨 AI Generation Features
 
