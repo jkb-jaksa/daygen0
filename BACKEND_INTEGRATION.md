@@ -119,12 +119,20 @@ The frontend uses `src/utils/api.ts` to determine the API base URL:
    - Validates JWT and checks user credits
    - Deducts 1 credit
    - Routes request to appropriate AI provider
-   - Waits for generation
-   - Stores image in R2
-   - Creates file record in database
-   - Returns image data
-4. Frontend displays the generated image
-5. Image is saved to user's gallery
+   - Waits for generation (5-30 seconds depending on model)
+   - **Uploads image to Cloudflare R2** (persistent storage)
+   - Creates R2File record in database with metadata
+   - Returns R2 public URL (not base64 data)
+4. Frontend receives R2 URL and displays the generated image
+5. Image is saved to user's gallery with R2 URL
+6. Image remains accessible at R2 URL: `https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/generated-images/*`
+
+**Note**: Images are stored permanently in Cloudflare R2, not just as temporary data. This ensures:
+- Fast loading times (CDN-backed)
+- Persistent storage (images don't disappear)
+- Efficient API responses (URLs vs base64)
+- Shareable links
+- Gallery functionality across devices
 
 ## Supported AI Providers
 

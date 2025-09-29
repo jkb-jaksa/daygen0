@@ -56,8 +56,18 @@ All frontend hooks and components are already configured to use:
 │  - PostgreSQL + Prisma ORM          │
 │  - JWT Authentication               │
 │  - Credit System (3 free credits)   │
-│  - Cloudflare R2 Storage            │
+│  - Cloudflare R2 Storage ✅         │
 │  - 15+ AI Provider Integrations     │
+└─────────────┬───────────────────────┘
+              │
+              │ Uploads images
+              │
+┌─────────────▼───────────────────────┐
+│  Cloudflare R2 (Object Storage)     │
+│  - Persistent image storage         │
+│  - CDN-backed delivery              │
+│  - Public URL access                │
+│  - URL: pub-*.r2.dev/               │
 └─────────────────────────────────────┘
 ```
 
@@ -80,9 +90,13 @@ All frontend hooks and components are already configured to use:
    ↓
 8. Backend deducts credit and processes
    ↓
-9. Backend stores result in R2 + database
+9. Backend uploads image to Cloudflare R2 ✅
    ↓
-10. Backend returns result to frontend
+10. Backend creates R2File record in database
+   ↓
+11. Backend returns R2 public URL to frontend
+   ↓
+12. Frontend displays image from R2 URL
 ```
 
 ## Credit System
