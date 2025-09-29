@@ -6499,7 +6499,7 @@ const handleGenerate = async () => {
                                 className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity duration-200 cursor-pointer" 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate('/knowledge-base');
+                                  navigate('/learn/tools');
                                 }}
                               />
                             </div>

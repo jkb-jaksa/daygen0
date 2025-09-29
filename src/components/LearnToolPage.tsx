@@ -35,7 +35,7 @@ export default function LearnToolPage() {
       <section className="relative z-10 py-12 sm:py-16 lg:py-20">
         <div className={layout.container}>
           <Link
-            to="/knowledge-base"
+            to="/learn/tools"
             className="inline-flex items-center gap-2 text-sm font-raleway text-d-white/80 transition-colors duration-150 hover:text-d-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />

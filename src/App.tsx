@@ -5,7 +5,7 @@ import { useAuth } from "./auth/useAuth";
 import { useFooter } from "./contexts/useFooter";
 import { layout, text, buttons } from "./styles/designSystem";
 
-const UseCases = lazy(() => import("./components/UseCases"));
+const Understand = lazy(() => import("./components/Understand"));
 const ToolsSection = lazy(() => import("./components/ToolsSection"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
 const Prompts = lazy(() => import("./components/Prompts"));
@@ -182,20 +182,20 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/learn" element={<LearnLayout />}>
                 <Route index element={<Navigate to="use-cases" replace />} />
-                <Route path="use-cases" element={<UseCases />} />
-                <Route path="tools" element={<ToolsSection />} />
+                <Route path="use-cases" element={<Understand />} />
+                <Route path="tools" element={<KnowledgeBase />} />
                 <Route path="prompts" element={<Prompts />} />
                 <Route path="courses" element={<Courses />} />
               </Route>
               <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
-              <Route path="/tools" element={<Navigate to="/learn/tools" replace />} />
+              <Route path="/learn/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+              <Route path="/knowledge-base" element={<Navigate to="/learn/tools" replace />} />
               <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
               <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/ai-tools" element={<ToolsSection />} />
               <Route path="/ai-tools/:id" element={<Subpage />} />
-              <Route path="/knowledge-base" element={<KnowledgeBase />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
               <Route
                 path="/create/*"

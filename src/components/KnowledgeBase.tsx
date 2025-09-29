@@ -1,9 +1,16 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen, Music } from "lucide-react";
-import { layout, glass, text as textStyles } from "../styles/designSystem";
+import { Link, NavLink } from "react-router-dom";
+import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen, Music, Search } from "lucide-react";
+import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
 import { getToolLogo } from "../utils/toolLogos";
 import { getLearnToolByName, slugifyLearnTool } from "../data/learnTools";
+
+const LEARN_LINKS = [
+  { to: "/learn/use-cases", label: "Use cases" },
+  { to: "/learn/tools", label: "Tools" },
+  { to: "/learn/prompts", label: "Prompts" },
+  { to: "/learn/courses", label: "Courses" },
+];
 
 const CATEGORIES = [
   { id: "text", label: "text", Icon: Edit },
@@ -119,13 +126,44 @@ export default function KnowledgeBase() {
           <header className="mb-6">
             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-d-light font-raleway">
               <BookOpen className="h-4 w-4" />
-              Knowledge base
+              Learn
             </p>
-            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-d-text`}>Creative AI tools</h1>
+            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-d-text`}>Tools</h1>
             <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-d-white">
               Explore model guides, best practices, and tips for the creative AI tools you use every day.
             </p>
           </header>
+
+          {/* Navigation buttons */}
+          <nav className="mb-4 flex flex-wrap gap-2">
+            {LEARN_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  `${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
+                    isActive ? "text-d-text border border-d-mid" : "text-d-white/80 hover:text-d-text"
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Search bar */}
+          <div className="mb-8">
+            <div className="relative">
+              <Search
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white size-5"
+              />
+              <input
+                type="text"
+                placeholder="what do you want to do?"
+                className={`${inputs.pill} pl-12`}
+              />
+            </div>
+          </div>
 
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
