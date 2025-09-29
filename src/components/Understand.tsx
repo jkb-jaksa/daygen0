@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen, Music, Volume2, Search } from "lucide-react";
+import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
 import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
+import useParallaxHover from "../hooks/useParallaxHover";
 
 const LEARN_LINKS = [
   { to: "/learn/use-cases", label: "Use cases" },
@@ -15,9 +16,7 @@ const CATEGORIES = [
   { id: "image", label: "image", Icon: ImageIcon },
   { id: "video", label: "video", Icon: VideoIcon },
   { id: "avatars", label: "avatars", Icon: Users },
-  { id: "voice", label: "voice", Icon: Volume2 },
-  { id: "music", label: "music", Icon: Music },
-  { id: "3d", label: "3d", Icon: Box },
+  { id: "audio", label: "audio", Icon: Volume2 },
 ] as const;
 
 type CategoryId = (typeof CATEGORIES)[number]["id"];
@@ -78,8 +77,8 @@ const VIDEO_CASES: readonly UseCaseItem[] = [
   createUseCase("facial-animation", "facial animation", "drive expressions and lip movement", "edit"),
   createUseCase("extend-video", "extend video", "continue scenes forward or backward", "edit"),
   createUseCase("motion-control", "motion control", "manipulate trajectories, speed and easing", "edit"),
-  createUseCase("motion-presets-effects", "motion presets & effects", "apply stylized motion templates and FX", "edit"),
-  createUseCase("camera-control", "camera control", "set camera path, FOV and moves", "edit"),
+  createUseCase("motion-presets-effects", "motion presets & effects", "apply stylized motion templates and fx", "edit"),
+  createUseCase("camera-control", "camera control", "set camera path, fov and moves", "edit"),
   createUseCase("aspect-ratio-video", "aspect ratio", "reframe between formats cleanly", "edit"),
   createUseCase("dubbing-lipsync", "dubbing/lip-sync", "match voiceover to character lips", "edit"),
   createUseCase("captions", "captions", "auto-generate and style subtitles", "edit"),
@@ -123,12 +122,15 @@ const MUSIC_CASES: readonly UseCaseItem[] = [
 
 // TEXT use cases (placeholder)
 const TEXT_CASES: readonly UseCaseItem[] = [
-  createUseCase("text", "Text", "To be done", "create"),
+  createUseCase("text", "text", "to be done", "create"),
 ];
 
-// 3D use cases (placeholder)
-const THREED_CASES: readonly UseCaseItem[] = [
-  createUseCase("3d", "3D", "To be done", "create"),
+// AUDIO use cases (combining voice and music)
+const AUDIO_CASES: readonly UseCaseItem[] = [
+  // Voice cases
+  ...VOICE_CASES,
+  // Music cases
+  ...MUSIC_CASES,
 ];
 
 const CATEGORY_CASES: Record<CategoryId, readonly UseCaseItem[]> = {
@@ -136,19 +138,22 @@ const CATEGORY_CASES: Record<CategoryId, readonly UseCaseItem[]> = {
   image: IMAGE_CASES,
   video: VIDEO_CASES,
   avatars: AVATARS_CASES,
-  voice: VOICE_CASES,
-  music: MUSIC_CASES,
-  "3d": THREED_CASES,
+  audio: AUDIO_CASES,
 };
 
 function UseCaseCard({ useCase }: { useCase: UseCaseItem }) {
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLAnchorElement>();
+
   return (
     <Link
-      to={`/ai-tools/${useCase.slug}`}
-      className={`${glass.surface} group flex flex-col gap-2 rounded-3xl border-d-dark px-4 py-4 transition-colors duration-100 hover:border-d-mid parallax-small focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
+      to={`/learn/tools`}
+      className={`${glass.surface} group flex flex-col gap-2 rounded-3xl border-d-dark px-4 py-4 transition-colors duration-100 hover:border-d-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
       aria-label={`Open ${useCase.title}`}
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
     >
-      <h4 className="text-base font-raleway font-normal capitalize text-d-text">{useCase.title}</h4>
+      <h4 className="text-base font-raleway font-normal text-d-text">{useCase.title}</h4>
       <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
         {useCase.subtitle}
       </p>
@@ -159,7 +164,7 @@ function UseCaseCard({ useCase }: { useCase: UseCaseItem }) {
 export default function Understand() {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("image");
   const activeCases = CATEGORY_CASES[activeCategory];
-  const hasContent = activeCases.length > 0 && !(activeCategory === "text" || activeCategory === "3d");
+  const hasContent = activeCases.length > 0 && activeCategory !== "text";
 
   // Group cases by section
   const createCases = activeCases.filter(c => c.section === "create");
@@ -217,7 +222,7 @@ export default function Understand() {
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
             <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-d-dark p-4`}
-              aria-label="Use case categories">
+              aria-label="Use cases categories">
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {
                   const isActive = category.id === activeCategory;
@@ -249,7 +254,7 @@ export default function Understand() {
                     {/* Create section */}
                     {createCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-d-text">Create</h2>
+                        <h2 className="text-xl font-raleway font-light text-d-text">create</h2>
                         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                           {createCases.map((useCase) => (
                             <UseCaseCard key={useCase.slug} useCase={useCase} />
@@ -261,7 +266,7 @@ export default function Understand() {
                     {/* Edit section */}
                     {editCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-d-text">Edit</h2>
+                        <h2 className="text-xl font-raleway font-light text-d-text">edit</h2>
                         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                           {editCases.map((useCase) => (
                             <UseCaseCard key={useCase.slug} useCase={useCase} />
@@ -273,7 +278,7 @@ export default function Understand() {
                     {/* Personalize section */}
                     {personalizeCases.length > 0 && (
                       <div>
-                        <h2 className="text-xl font-raleway font-light text-d-text">Personalize</h2>
+                        <h2 className="text-xl font-raleway font-light text-d-text">personalize</h2>
                         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                           {personalizeCases.map((useCase) => (
                             <UseCaseCard key={useCase.slug} useCase={useCase} />
@@ -286,20 +291,16 @@ export default function Understand() {
                   <>
                     <h2 className="text-2xl font-raleway font-light text-d-text">
                       {activeCategory === "image" 
-                        ? "Image use cases" 
-                        : activeCategory === "3d" 
-                          ? "3D use cases"
-                          : activeCategory === "text"
-                            ? "Text use cases"
-                            : activeCategory === "video"
-                              ? "Video use cases"
-                              : activeCategory === "avatars"
-                                ? "Avatars use cases"
-                                : activeCategory === "voice"
-                                  ? "Voice use cases"
-                                  : activeCategory === "music"
-                                    ? "Music use cases"
-                                    : `${activeCategory} use cases`}
+                        ? "image use cases" 
+                        : activeCategory === "text"
+                          ? "text use cases"
+                          : activeCategory === "video"
+                            ? "video use cases"
+                            : activeCategory === "avatars"
+                              ? "avatars use cases"
+                              : activeCategory === "audio"
+                                ? "audio use cases"
+                                : `${activeCategory} use cases`}
                     </h2>
                     <p className="mt-2 text-sm font-raleway text-d-white">
                       Coming soon.

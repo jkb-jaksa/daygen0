@@ -1,4 +1,4 @@
-import { Edit, Image, Video, Users, Music, Volume2, Box, Search } from "lucide-react";
+import { Edit, Image, Video, Users, Volume2, Box, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -19,9 +19,7 @@ export function Grid() {
     { icon: <Image className="size-4" />, label: "image" },
     { icon: <Video className="size-4" />, label: "video" },
     { icon: <Users className="size-4" />, label: "avatars" },
-    { icon: <Volume2 className="size-4" />, label: "voice" },
-    { icon: <Music className="size-4" />, label: "music" },
-    { icon: <Box className="size-4" />, label: "3d" },
+    { icon: <Volume2 className="size-4" />, label: "audio" },
   ];
 
   // IMAGE → create
@@ -235,25 +233,15 @@ export function Grid() {
   const textEditCards: CardItem[] = [];
   const textPersonalizeCards: CardItem[] = [];
 
-  // 3D → create (placeholder)
-  const threeDCreateCards: CardItem[] = [
-    { slug: "3d", title: "3D", subtitle: "To be done", image: "/path-to-3d-1.jpg" },
-  ];
-  const threeDEditCards: CardItem[] = [];
-  const threeDPersonalizeCards: CardItem[] = [];
 
   const sets = active === "video"
     ? { create: videoCreateCards, edit: videoEditCards, personalize: videoPersonalizeCards }
     : active === "avatars"
     ? { create: avatarsCreateCards, edit: avatarsEditCards, personalize: avatarsPersonalizeCards }
-    : active === "voice"
-    ? { create: voiceCreateCards, edit: voiceEditCards, personalize: voicePersonalizeCards }
-    : active === "music"
-    ? { create: musicCreateCards, edit: musicEditCards, personalize: musicPersonalizeCards }
+    : active === "audio"
+    ? { create: [...voiceCreateCards, ...musicCreateCards], edit: [...voiceEditCards, ...musicEditCards], personalize: [...voicePersonalizeCards, ...musicPersonalizeCards] }
     : active === "text"
     ? { create: textCreateCards, edit: textEditCards, personalize: textPersonalizeCards }
-    : active === "3d"
-    ? { create: threeDCreateCards, edit: threeDEditCards, personalize: threeDPersonalizeCards }
     : { create: imageCreateCards, edit: imageEditCards, personalize: imagePersonalizeCards };
 
   return (
@@ -308,7 +296,7 @@ export function Grid() {
           {sets.create.map((card) => (
             <Link
               key={card.slug}
-              to={`/ai-tools/${card.slug}`}
+              to={`/learn/tools`}
               className="block"
               aria-label={`Open ${card.title}`}
             >
@@ -331,7 +319,7 @@ export function Grid() {
           {sets.edit.map((card) => (
             <Link
               key={card.slug}
-              to={`/ai-tools/${card.slug}`}
+              to={`/learn/tools`}
               className="block"
               aria-label={`Open ${card.title}`}
             >
@@ -354,7 +342,7 @@ export function Grid() {
           {sets.personalize.map((card) => (
             <Link
               key={card.slug}
-              to={`/ai-tools/${card.slug}`}
+              to={`/learn/tools`}
               className="block"
               aria-label={`Open ${card.title}`}
             >

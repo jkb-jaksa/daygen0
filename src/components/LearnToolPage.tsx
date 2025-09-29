@@ -14,7 +14,6 @@ const CATEGORY_LABELS: Record<LearnToolCategory, string> = {
   image: "Image",
   video: "Video",
   avatars: "Avatars",
-  "3d": "3D",
 };
 
 const sectionCardStyles = "rounded-2xl border border-d-dark/60 bg-d-black/35 p-6";

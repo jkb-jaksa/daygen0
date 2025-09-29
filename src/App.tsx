@@ -6,11 +6,9 @@ import { useFooter } from "./contexts/useFooter";
 import { layout, text, buttons } from "./styles/designSystem";
 
 const Understand = lazy(() => import("./components/Understand"));
-const ToolsSection = lazy(() => import("./components/ToolsSection"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
 const Prompts = lazy(() => import("./components/Prompts"));
 const Explore = lazy(() => import("./components/Explore"));
-const Subpage = lazy(() => import("./components/subpage/Subpage"));
 const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
@@ -194,8 +192,6 @@ export default function App() {
               <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
-              <Route path="/ai-tools" element={<ToolsSection />} />
-              <Route path="/ai-tools/:id" element={<Subpage />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
               <Route
                 path="/create/*"

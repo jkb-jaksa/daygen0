@@ -611,8 +611,8 @@ html, body {
 
 .mouse-glow::after {
   background: radial-gradient(200px 200px at var(--x) var(--y),
-      rgb(255 255 255 / calc(0.08 * var(--l) * var(--li))),
-      rgb(255 255 255 / calc(0.03 * var(--l) * var(--li))) 45%,
+      rgb(255 255 255 / calc(0.25 * var(--l) * var(--li))),
+      rgb(255 255 255 / calc(0.15 * var(--l) * var(--li))) 45%,
       rgb(255 255 255 / 0) 60%);
   content: "";
   filter: blur(80px);

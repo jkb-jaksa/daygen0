@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, Box, BookOpen, Music, Search } from "lucide-react";
+import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
 import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
 import { getToolLogo } from "../utils/toolLogos";
 import { getLearnToolByName, slugifyLearnTool } from "../data/learnTools";
+import useParallaxHover from "../hooks/useParallaxHover";
 
 const LEARN_LINKS = [
   { to: "/learn/use-cases", label: "Use cases" },
@@ -17,8 +18,7 @@ const CATEGORIES = [
   { id: "image", label: "image", Icon: ImageIcon },
   { id: "video", label: "video", Icon: VideoIcon },
   { id: "avatars", label: "avatars", Icon: Users },
-  { id: "3d", label: "3d", Icon: Box },
-  { id: "audio", label: "audio", Icon: Music },
+  { id: "audio", label: "audio", Icon: Volume2 },
 ] as const;
 
 type CategoryId = (typeof CATEGORIES)[number]["id"];
@@ -80,18 +80,21 @@ const CATEGORY_TOOLS: Record<CategoryId, readonly ToolResource[]> = {
   image: IMAGE_TOOLS,
   video: VIDEO_TOOLS,
   avatars: [],
-  "3d": [],
   audio: [],
 };
 
 function ToolCard({ tool }: { tool: ToolResource }) {
   const logo = useMemo(() => getToolLogo(tool.name), [tool.name]);
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLAnchorElement>();
 
   return (
     <Link
       to={`/learn/tools/${tool.slug}`}
-      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
+      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
       aria-label={`Open ${tool.name} guide`}
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
     >
       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
         {logo ? (
@@ -195,25 +198,23 @@ export default function KnowledgeBase() {
             <div className="flex-1">
               <div className={`${glass.surface} rounded-3xl border-d-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                 <h2 className="text-2xl font-raleway font-light text-d-text">
+                 <h2 className="text-xl font-raleway font-light text-d-text">
                    {activeCategory === "image" 
                      ? "Image generation" 
-                     : activeCategory === "3d" 
-                       ? "3D generation"
-                       : activeCategory === "text"
-                         ? "Text generation"
-                         : activeCategory === "video"
-                           ? "Video generation"
-                           : activeCategory === "avatars"
-                             ? "Avatars generation"
-                             : activeCategory === "audio"
-                               ? "Audio generation"
-                               : `${activeCategory} generation`}
+                     : activeCategory === "text"
+                       ? "Text generation"
+                       : activeCategory === "video"
+                         ? "Video generation"
+                         : activeCategory === "avatars"
+                           ? "Avatars generation"
+                           : activeCategory === "audio"
+                             ? "Audio generation"
+                             : `${activeCategory} generation`}
                  </h2>
                 <p className="mt-2 text-sm font-raleway text-d-white">
                   {hasContent
                     ? "Here are the tools you can use with DayGen."
-                    : (activeCategory === "text" || activeCategory === "avatars" || activeCategory === "3d" || activeCategory === "audio")
+                    : (activeCategory === "text" || activeCategory === "avatars" || activeCategory === "audio")
                       ? "Coming soon."
                       : "We're actively expanding this section. Check back soon for detailed guides."}
                 </p>
@@ -223,7 +224,7 @@ export default function KnowledgeBase() {
                       <ToolCard key={tool.name} tool={tool} />
                     ))}
                   </div>
-                ) : !(activeCategory === "text" || activeCategory === "avatars" || activeCategory === "3d" || activeCategory === "audio") ? (
+                ) : !(activeCategory === "text" || activeCategory === "avatars" || activeCategory === "audio") ? (
                   <div className="mt-8 flex flex-col gap-4 text-sm font-raleway text-d-white/70">
                     <p>
                       No resources are available for this category yet. Let us know what you'd like to see in the daygen community!
@@ -234,7 +235,7 @@ export default function KnowledgeBase() {
                 {/* Other tools subsection - only show for image category */}
                 {activeCategory === "image" && (
                   <div className="mt-12">
-                    <h3 className="text-2xl font-raleway font-light text-d-text">Other tools</h3>
+                    <h3 className="text-xl font-raleway font-light text-d-text">Other tools</h3>
                     <p className="mt-2 text-sm font-raleway text-d-white">
                       Here are other great tools to improve your DayGen workflows.
                     </p>
@@ -249,7 +250,7 @@ export default function KnowledgeBase() {
                 {/* Coming soon for video category */}
                 {activeCategory === "video" && (
                   <div className="mt-12">
-                    <h3 className="text-2xl font-raleway font-light text-d-text">Other tools</h3>
+                    <h3 className="text-xl font-raleway font-light text-d-text">Other tools</h3>
                     <p className="mt-2 text-sm font-raleway text-d-white">
                       Coming soon
                     </p>
