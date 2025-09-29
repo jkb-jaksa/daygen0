@@ -3611,24 +3611,77 @@ async function handleUnifiedRunway(req, res, { prompt, model, imageBase64, mimeT
 }
 
 // Unified Seedream handler
-async function handleUnifiedSeedream(req, res, { prompt, imageBase64, mimeType, references }) {
+async function handleUnifiedSeedream(
+  req,
+  res,
+  { prompt, providerOptions = {}, size, n, response_format, guidance_scale, seed, watermark, image },
+) {
   if (!process.env.ARK_API_KEY) {
     return res.status(500).json({ error: 'Seedream API key not configured' });
   }
 
-  const response = await fetch('https://ark.ap-southeast.bytepluses.com/api/v3/image/generate', {
+  const resolvedSize = (() => {
+    if (typeof size === 'string' && size.trim()) {
+      return size.trim();
+    }
+    const width = Number.parseInt(providerOptions.width ?? providerOptions.Width ?? '', 10);
+    const height = Number.parseInt(providerOptions.height ?? providerOptions.Height ?? '', 10);
+    if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+      return `${width}x${height}`;
+    }
+    return '1024x1024';
+  })();
+
+  const resolvedCount = (() => {
+    const source = n ?? providerOptions?.n ?? providerOptions?.num_images;
+    const parsed = typeof source === 'string' ? Number.parseInt(source, 10) : Number(source);
+    return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 1;
+  })();
+
+  const payload = {
+    model: SEEDREAM_MODEL_ID,
+    prompt,
+    size: resolvedSize,
+    n: resolvedCount,
+    response_format: response_format ?? providerOptions?.response_format ?? 'url',
+  };
+
+  const pickNumeric = (value) => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  };
+
+  const guidanceValue = pickNumeric(guidance_scale ?? providerOptions?.guidance_scale);
+  if (guidanceValue !== undefined) {
+    payload.guidance_scale = guidanceValue;
+  }
+
+  const seedValue = pickNumeric(seed ?? providerOptions?.seed);
+  if (seedValue !== undefined) {
+    payload.seed = seedValue;
+  }
+
+  const watermarkValue = watermark ?? providerOptions?.watermark;
+  if (typeof watermarkValue === 'boolean') {
+    payload.watermark = watermarkValue;
+  }
+
+  const imageValue = image ?? providerOptions?.image;
+  if (typeof imageValue === 'string') {
+    payload.image = imageValue;
+  }
+
+  const response = await fetch(`${ARK_BASE_URL}/images/generations`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.ARK_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: 'seedream-v3',
-      prompt,
-      width: 1024,
-      height: 1024,
-      num_images: 1
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {

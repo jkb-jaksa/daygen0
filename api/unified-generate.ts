@@ -71,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleRunway(req, res, { prompt: promptText, model, imageBase64, mimeType, references });
       
       case 'seedream-3.0':
-        return await handleSeedream(req, res, { prompt: promptText, imageBase64, mimeType, references });
+        return await handleSeedream(req, res, { prompt: promptText, ...otherParams });
       
       case 'chatgpt-image':
         return await handleChatGPT(req, res, { prompt: promptText, imageBase64, mimeType, references });
@@ -267,24 +267,78 @@ async function handleRunway(req: VercelRequest, res: VercelResponse, { prompt, m
 }
 
 // Seedream handler
-async function handleSeedream(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleSeedream(
+  req: VercelRequest,
+  res: VercelResponse,
+  { prompt, providerOptions = {}, size, n, response_format, guidance_scale, seed, watermark, image }: any,
+) {
   if (!process.env.ARK_API_KEY) {
     return res.status(500).json({ error: 'Seedream API key not configured' });
   }
 
-  const response = await fetch('https://ark.ap-southeast.bytepluses.com/api/v3/image/generate', {
+  const resolvedSize = (() => {
+    if (typeof size === 'string' && size.trim().length > 0) {
+      return size.trim();
+    }
+    if (providerOptions && typeof providerOptions === 'object') {
+      const width = Number.parseInt(providerOptions.width ?? providerOptions.Width ?? '', 10);
+      const height = Number.parseInt(providerOptions.height ?? providerOptions.Height ?? '', 10);
+      if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+        return `${width}x${height}`;
+      }
+    }
+    return '1024x1024';
+  })();
+
+  const resolvedCount = (() => {
+    const value = n ?? providerOptions?.n ?? providerOptions?.num_images;
+    const parsed = typeof value === 'string' ? Number.parseInt(value, 10) : Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 1;
+  })();
+
+  const payload: Record<string, unknown> = {
+    model: 'seedream-3-0-t2i-250415',
+    prompt,
+    size: resolvedSize,
+    n: resolvedCount,
+    response_format: response_format ?? providerOptions?.response_format ?? 'url',
+  };
+
+  if (guidance_scale ?? providerOptions?.guidance_scale) {
+    const value = guidance_scale ?? providerOptions.guidance_scale;
+    if (typeof value === 'number') {
+      payload.guidance_scale = value;
+    } else if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed)) payload.guidance_scale = parsed;
+    }
+  }
+
+  if (seed ?? providerOptions?.seed) {
+    const value = seed ?? providerOptions.seed;
+    if (typeof value === 'number') {
+      payload.seed = value;
+    } else if (typeof value === 'string') {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) payload.seed = parsed;
+    }
+  }
+
+  if (typeof (watermark ?? providerOptions?.watermark) === 'boolean') {
+    payload.watermark = watermark ?? providerOptions.watermark;
+  }
+
+  if (typeof (image ?? providerOptions?.image) === 'string') {
+    payload.image = image ?? providerOptions.image;
+  }
+
+  const response = await fetch('https://ark.ap-southeast.bytepluses.com/api/v3/images/generations', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.ARK_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: 'seedream-v3',
-      prompt,
-      width: 1024,
-      height: 1024,
-      num_images: 1
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
