@@ -1,4 +1,4 @@
-import { Edit, Image, Video, Users, Volume2, Box, Search } from "lucide-react";
+import { Edit, Image, Video, Users, Volume2, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState } from "react";
