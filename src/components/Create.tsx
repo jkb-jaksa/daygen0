@@ -3654,7 +3654,6 @@ const handleGenerate = async () => {
           references: undefined // strip heavy field
         };
         // Use functional update to ensure we get the latest gallery state
-        let computedNext: GalleryImageLike[] = [];
         setGallery(currentGallery => {
           debugLog('Adding new image to gallery. Current gallery size:', currentGallery.length);
           
@@ -3678,22 +3677,22 @@ const handleGenerate = async () => {
           const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
           debugLog('Final gallery size after dedup and slice:', next.length);
 
-          computedNext = next;
+          // Persist the gallery immediately with the correct state
+          void (async () => {
+            debugLog('Attempting to persist gallery with', next.length, 'images');
+            const persisted = await persistGallery(next);
+            if (persisted.length !== next.length) {
+              // Only update if there's a significant difference
+              debugWarn(`Gallery persistence mismatch: expected ${next.length}, got ${persisted.length}`);
+            }
+            // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
+            setTimeout(() => {
+              refreshStorageEstimate();
+            }, 100);
+          })();
+
           return next;
         });
-
-        void (async () => {
-          debugLog('Attempting to persist gallery with', computedNext.length, 'images');
-          const persisted = await persistGallery(computedNext);
-          if (persisted.length !== computedNext.length) {
-            // Only update if there's a significant difference
-            debugWarn(`Gallery persistence mismatch: expected ${computedNext.length}, got ${persisted.length}`);
-          }
-          // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
-          setTimeout(() => {
-            refreshStorageEstimate();
-          }, 100);
-        })();
         
         // Save prompt to history on successful generation
         addPrompt(trimmedPrompt);
