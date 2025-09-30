@@ -183,6 +183,7 @@ export default function Avatars() {
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [isAvatarFullSizeOpen, setIsAvatarFullSizeOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const state = location.state as AvatarNavigationState | null;
@@ -661,6 +662,14 @@ export default function Avatars() {
   const closeFullSizeView = useCallback(() => {
     setIsFullSizeOpen(false);
     setSelectedFullImage(null);
+  }, []);
+
+  const openAvatarFullSizeView = useCallback(() => {
+    setIsAvatarFullSizeOpen(true);
+  }, []);
+
+  const closeAvatarFullSizeView = useCallback(() => {
+    setIsAvatarFullSizeOpen(false);
   }, []);
 
 
@@ -1218,6 +1227,8 @@ export default function Avatars() {
       if (event.key === "Escape") {
         if (isFullSizeOpen) {
           closeFullSizeView();
+        } else if (isAvatarFullSizeOpen) {
+          closeAvatarFullSizeView();
         } else {
           closeCreationsModal();
         }
@@ -1231,7 +1242,7 @@ export default function Avatars() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage]);
+  }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView]);
 
   return (
     <div className={layout.page}>
@@ -1341,7 +1352,10 @@ export default function Avatars() {
 
               {/* Main Avatar Display */}
               <div className="flex justify-start">
-                <div className="w-full sm:w-1/3 lg:w-1/4">
+                <div 
+                  className="w-1/3 sm:w-1/5 lg:w-1/6 cursor-pointer"
+                  onClick={openAvatarFullSizeView}
+                >
                   {renderAvatarCard(creationsModalAvatar, { disableModalTrigger: true, keyPrefix: "modal-avatar" })}
                 </div>
               </div>
@@ -1361,6 +1375,175 @@ export default function Avatars() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-size avatar modal */}
+      {isAvatarFullSizeOpen && creationsModalAvatar && (
+        <div
+          className="fixed inset-0 z-[10600] bg-d-black/80 flex items-center justify-center p-4"
+          onClick={closeAvatarFullSizeView}
+        >
+          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={creationsModalAvatar.imageUrl} 
+              alt={creationsModalAvatar.name} 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+            />
+            
+            {/* Action buttons - only show on hover */}
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+              <div className={`pointer-events-auto ${
+                modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
+                  }}
+                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  title="Edit avatar"
+                  aria-label="Edit avatar"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
+                  open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
+                  onClose={closeModalAvatarEditMenu}
+                  zIndex={10700}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleNavigateToImage(creationsModalAvatar);
+                      closeModalAvatarEditMenu();
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Create image
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleNavigateToVideo(creationsModalAvatar);
+                      closeModalAvatarEditMenu();
+                    }}
+                  >
+                    <Camera className="h-4 w-4" />
+                    Make video
+                  </button>
+                </ImageActionMenuPortal>
+              </div>
+              <div className={`pointer-events-auto ${
+                avatarMoreMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
+                  }}
+                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  title="More options"
+                  aria-label="More options"
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                  open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
+                  onClose={closeAvatarMoreMenu}
+                  zIndex={10700}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDownloadImage(creationsModalAvatar.imageUrl);
+                      closeAvatarMoreMenu();
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleCopyLink(creationsModalAvatar.imageUrl);
+                      closeAvatarMoreMenu();
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy link
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleManageFolders(creationsModalAvatar.imageUrl);
+                      closeAvatarMoreMenu();
+                    }}
+                  >
+                    <FolderIcon className="h-4 w-4" />
+                    Manage folders
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setAvatarToPublish(creationsModalAvatar);
+                      closeAvatarMoreMenu();
+                    }}
+                  >
+                    <Globe className="h-4 w-4" />
+                    {creationsModalAvatar.published ? 'Unpublish' : 'Publish'}
+                  </button>
+                </ImageActionMenuPortal>
+              </div>
+            </div>
+            
+            {/* Info bar - only on hover */}
+            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-d-text transition-opacity duration-100 ${
+              avatarMoreMenu?.avatarId === creationsModalAvatar.id || modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}>
+              <div className="flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-base font-raleway leading-relaxed font-semibold">
+                    {creationsModalAvatar.name}
+                  </div>
+                  {creationsModalAvatar.published && (
+                    <div className="mt-2 flex justify-center">
+                      <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3 text-d-text" />
+                          <span className="leading-none">Public</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={closeAvatarFullSizeView}
+              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              aria-label="Close full size view"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
