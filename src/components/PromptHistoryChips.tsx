@@ -1,6 +1,6 @@
 import React from "react";
 import type { PromptEntry } from "../lib/promptHistory";
-import { Play, Bookmark, BookmarkPlus } from "lucide-react";
+import { RefreshCw, Bookmark, BookmarkPlus } from "lucide-react";
 
 type Props = {
   history: PromptEntry[];
@@ -74,11 +74,11 @@ export const PromptHistoryChips: React.FC<Props> = ({
                 <button
                   type="button"
                   className="px-3 py-2 text-sm text-d-white/60 hover:text-d-text hover:bg-d-black/40 transition-all duration-200 border-l border-d-mid flex items-center gap-1 flex-shrink-0"
-                  title="Run this prompt"
+                  title="Use this prompt"
                   onClick={() => onRun(e.text)}
                 >
-                  <Play className="w-3 h-3" />
-                  <span className="text-xs font-raleway">Rerun</span>
+                  <RefreshCw className="w-3 h-3" />
+                  <span className="text-xs font-raleway">Use the same prompt</span>
                 </button>
               )}
             </div>

@@ -2685,70 +2685,37 @@ const Create: React.FC = () => {
     closeImageActionMenu();
   };
 
-  const handleRerun = async () => {
-    if (!imageActionMenuImage) return;
-    
-    const image = imageActionMenuImage;
-    const originalModel = image.model;
-    const originalPrompt = image.prompt;
-    
-    // Set the prompt to the original prompt
-    setPrompt(originalPrompt);
-    
-    // Set the model to the original model used
-    setSelectedModel(originalModel ?? 'unknown');
-    
-    // Clear existing references and generated images
-    clearAllReferences();
-    clearGeminiImage();
-    clearFluxImage();
-    clearChatGPTImage();
-    
-    // If the image was created with an avatar, select that same avatar
-    if (image.avatarId) {
-      const originalAvatar = storedAvatars.find(avatar => avatar.id === image.avatarId);
-      if (originalAvatar) {
-        handleAvatarSelect(originalAvatar);
-      }
+  const applyPromptFromHistory = (promptText: string) => {
+    setPrompt(promptText ?? '');
+
+    const shouldSwitchToImage = activeCategory !== 'image';
+    if (shouldSwitchToImage) {
+      setActiveCategory('image');
     }
-    
-    // Close the menu
-    closeImageActionMenu();
-    
-    // Wait a bit for state to update, then trigger generation
-    setTimeout(async () => {
-      await handleGenerateImage();
-    }, 100);
+
+    // Focus the prompt bar immediately and again after any potential navigation.
+    focusPromptBar();
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        focusPromptBar();
+      }, shouldSwitchToImage ? 200 : 75);
+    }
   };
 
-  const handleRerunWithDifferentModel = async () => {
+  const handleUsePromptAgain = () => {
     if (!imageActionMenuImage) return;
-    
-    const image = imageActionMenuImage;
-    const originalPrompt = image.prompt;
-    
-    // Set the prompt to the original prompt
-    setPrompt(originalPrompt);
-    
-    // Clear existing references and generated images
-    clearAllReferences();
-    clearGeminiImage();
-    clearFluxImage();
-    clearChatGPTImage();
-    
-    // If the image was created with an avatar, select that same avatar
-    if (image.avatarId) {
-      const originalAvatar = storedAvatars.find(avatar => avatar.id === image.avatarId);
-      if (originalAvatar) {
-        handleAvatarSelect(originalAvatar);
-      }
+
+    const triggeredFromFullSize = imageActionMenu?.id?.startsWith('fullsize');
+
+    applyPromptFromHistory(imageActionMenuImage.prompt ?? '');
+
+    if (triggeredFromFullSize) {
+      setIsFullSizeOpen(false);
+      setSelectedFullImage(null);
+      setSelectedReferenceImage(null);
     }
-    
-    // Close the menu
+
     closeImageActionMenu();
-    
-    // Open the model selector
-    setIsModelSelectorOpen(true);
   };
 
   const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
@@ -2821,22 +2788,11 @@ const Create: React.FC = () => {
             className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
-              handleRerun();
+              handleUsePromptAgain();
             }}
           >
             <RefreshCw className="h-4 w-4" />
-            Rerun (same model)
-          </button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleRerunWithDifferentModel();
-            }}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Rerun (different model)
+            Use the same prompt
           </button>
           <button
             type="button"
@@ -6232,10 +6188,7 @@ const handleGenerate = async () => {
                 history={history}
                 onSelect={(text) => setPrompt(text)}
                 onRun={(text) => {
-                  setPrompt(text);
-                  handleGenerateImage().then(() => {
-                    // The addPrompt is already called in handleGenerateImage on success
-                  });
+                  applyPromptFromHistory(text);
                 }}
                 onClear={clear}
                 onSavePrompt={savePromptToLibrary}

@@ -22,8 +22,8 @@ describe('PromptHistoryPanel', () => {
     await user.click(promptButton);
     expect(onSelect).toHaveBeenCalledWith('Generate a sunrise over mountains');
 
-    const rerunButton = await screen.findByRole('button', { name: /rerun/i });
-    await user.click(rerunButton);
+    const usePromptButton = await screen.findByRole('button', { name: /use the same prompt/i });
+    await user.click(usePromptButton);
     expect(onRun).toHaveBeenCalledWith('Generate a sunrise over mountains');
 
     const clearButton = await screen.findByRole('button', { name: 'Clear' });
