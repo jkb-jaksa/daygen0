@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle, Bookmark, BookmarkIcon, BookmarkPlus } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -22,6 +22,8 @@ import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 import { usePromptHistory } from "../hooks/usePromptHistory";
+import { useSavedPrompts } from "../hooks/useSavedPrompts";
+import { PromptsDropdown } from "./PromptsDropdown";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const PromptHistoryPanel = lazy(() => import("./create/PromptHistoryPanel"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
@@ -502,7 +504,12 @@ const Create: React.FC = () => {
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
-  const { history, addPrompt, clear } = usePromptHistory(userKey, 20);
+  const { history, addPrompt, clear } = usePromptHistory(userKey, 10);
+  const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
+  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
+  const [unsavePromptText, setUnsavePromptText] = useState<string | null>(null);
+  const unsaveModalRef = useRef<HTMLDivElement>(null);
+  const promptsButtonRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refsInputRef = useRef<HTMLInputElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
@@ -1146,6 +1153,31 @@ const Create: React.FC = () => {
       clearTimeout(spinnerTimeoutRef.current);
     }
   }, []);
+
+  // Handle unsave modal click outside and escape key
+  useEffect(() => {
+    if (!unsavePromptText) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (unsaveModalRef.current && !unsaveModalRef.current.contains(e.target as Node)) {
+        setUnsavePromptText(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setUnsavePromptText(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [unsavePromptText]);
 
   
   // Use the Gemini image generation hook
@@ -2360,6 +2392,26 @@ const Create: React.FC = () => {
     }
   };
 
+  const savePromptToLibrary = async (promptText: string) => {
+    try {
+      // Check if already saved - if so, show unsave modal
+      if (isPromptSaved(promptText)) {
+        setUnsavePromptText(promptText);
+        return;
+      }
+      
+      const saved = savePrompt(promptText);
+      if (saved) {
+        setCopyNotification('Prompt saved!');
+        setTimeout(() => setCopyNotification(null), 2000);
+      }
+    } catch (err) {
+      debugError('Failed to save prompt:', err);
+      setCopyNotification('Failed to save prompt');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+  };
+
   // Gallery navigation functions
   const navigateGallery = (direction: 'prev' | 'next') => {
     const totalImages = gallery.length;
@@ -2990,6 +3042,31 @@ const Create: React.FC = () => {
                     >
                       <Copy className="w-3 h-3" />
                     </button>
+                    <button
+                      data-save-button="true"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        savePromptToLibrary(img.prompt);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip(`save-${tooltipId}`);
+                      }}
+                    >
+                      {isPromptSaved(img.prompt) ? (
+                        <Bookmark className="w-3 h-3 fill-current" />
+                      ) : (
+                        <BookmarkPlus className="w-3 h-3" />
+                      )}
+                    </button>
                   </p>
                 </div>
               </div>
@@ -3063,7 +3140,7 @@ const Create: React.FC = () => {
           </div>
         )}
 
-        {/* Tooltip positioned outside the hover overlay container */}
+        {/* Tooltips positioned outside the hover overlay container */}
         <div
           data-tooltip-for={tooltipId}
           className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
@@ -3074,6 +3151,17 @@ const Create: React.FC = () => {
           }}
         >
           Copy prompt
+        </div>
+        <div
+          data-tooltip-for={`save-${tooltipId}`}
+          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+          style={{
+            left: '50%',
+            transform: 'translateX(-50%) translateY(-100%)',
+            top: '-8px'
+          }}
+        >
+          {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
         </div>
 
         <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
@@ -4986,27 +5074,54 @@ const handleGenerate = async () => {
                                       <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                         {img.prompt && (
-                                          <button
-                                            data-copy-button="true"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              copyPromptToClipboard(img.prompt);
-                                            }}
-                                            onMouseDown={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                            }}
-                                            className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
-                                            onMouseEnter={(e) => {
-                                              showHoverTooltip(e.currentTarget, `folder-select-${folder.id}-${img.url}-${idx}`);
-                                            }}
-                                            onMouseLeave={() => {
-                                              hideHoverTooltip(`folder-select-${folder.id}-${img.url}-${idx}`);
-                                            }}
-                                          >
-                                            <Copy className="w-3 h-3" />
-                                          </button>
+                                          <>
+                                            <button
+                                              data-copy-button="true"
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                copyPromptToClipboard(img.prompt);
+                                              }}
+                                              onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                              }}
+                                              className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                              onMouseEnter={(e) => {
+                                                showHoverTooltip(e.currentTarget, `folder-select-${folder.id}-${img.url}-${idx}`);
+                                              }}
+                                              onMouseLeave={() => {
+                                                hideHoverTooltip(`folder-select-${folder.id}-${img.url}-${idx}`);
+                                              }}
+                                            >
+                                              <Copy className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              data-save-button="true"
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                savePromptToLibrary(img.prompt);
+                                              }}
+                                              onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                              }}
+                                              className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                              onMouseEnter={(e) => {
+                                                showHoverTooltip(e.currentTarget, `save-folder-select-${folder.id}-${img.url}-${idx}`);
+                                              }}
+                                              onMouseLeave={() => {
+                                                hideHoverTooltip(`save-folder-select-${folder.id}-${img.url}-${idx}`);
+                                              }}
+                                            >
+                                              {isPromptSaved(img.prompt) ? (
+                                                <Bookmark className="w-3 h-3 fill-current" />
+                                              ) : (
+                                                <BookmarkPlus className="w-3 h-3" />
+                                              )}
+                                            </button>
+                                          </>
                                         )}
                                       </p>
                                       {/* Model Badge and Public Indicator */}
@@ -5039,6 +5154,30 @@ const handleGenerate = async () => {
                                     </div>
                                   </div>
                                 </div>
+                              </div>
+
+                              {/* Tooltip positioned outside the hover overlay container */}
+                              <div 
+                                data-tooltip-for={`folder-select-${folder.id}-${img.url}-${idx}`}
+                                className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                                style={{ 
+                                  left: '50%', 
+                                  transform: 'translateX(-50%) translateY(-100%)',
+                                  top: '-8px'
+                                }}
+                              >
+                                Copy prompt
+                              </div>
+                              <div 
+                                data-tooltip-for={`save-folder-select-${folder.id}-${img.url}-${idx}`}
+                                className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                                style={{ 
+                                  left: '50%', 
+                                  transform: 'translateX(-50%) translateY(-100%)',
+                                  top: '-8px'
+                                }}
+                              >
+                                {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                               </div>
                               
                               <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
@@ -5399,6 +5538,31 @@ const handleGenerate = async () => {
                                       >
                                         <Copy className="w-3 h-3" />
                                       </button>
+                                      <button
+                                        data-save-button="true"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          savePromptToLibrary(img.prompt);
+                                        }}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                        onMouseEnter={(e) => {
+                                          showHoverTooltip(e.currentTarget, `save-folder-${folder?.id}-${img.url}-${idx}`);
+                                        }}
+                                        onMouseLeave={() => {
+                                          hideHoverTooltip(`save-folder-${folder?.id}-${img.url}-${idx}`);
+                                        }}
+                                      >
+                                        {isPromptSaved(img.prompt) ? (
+                                          <Bookmark className="w-3 h-3 fill-current" />
+                                        ) : (
+                                          <BookmarkPlus className="w-3 h-3" />
+                                        )}
+                                      </button>
                                     </p>
                                   </div>
                                 </div>
@@ -5452,6 +5616,17 @@ const handleGenerate = async () => {
                             }}
                           >
                             Copy prompt
+                          </div>
+                          <div 
+                            data-tooltip-for={`save-folder-${folder?.id}-${img.url}-${idx}`}
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            style={{ 
+                              left: '50%', 
+                              transform: 'translateX(-50%) translateY(-100%)',
+                              top: '-8px'
+                            }}
+                          >
+                            {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                           </div>
                           
                           <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
@@ -5809,6 +5984,31 @@ const handleGenerate = async () => {
                                       >
                                         <Copy className="w-3 h-3" />
                                       </button>
+                                      <button
+                                        data-save-button="true"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          savePromptToLibrary(img.prompt);
+                                        }}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                        onMouseEnter={(e) => {
+                                          showHoverTooltip(e.currentTarget, `save-${img.url}-${idx}`);
+                                        }}
+                                        onMouseLeave={() => {
+                                          hideHoverTooltip(`save-${img.url}-${idx}`);
+                                        }}
+                                      >
+                                        {isPromptSaved(img.prompt) ? (
+                                          <Bookmark className="w-3 h-3 fill-current" />
+                                        ) : (
+                                          <BookmarkPlus className="w-3 h-3" />
+                                        )}
+                                      </button>
                                     </p>
                                   </div>
                                 </div>
@@ -5889,6 +6089,17 @@ const handleGenerate = async () => {
                             }}
                           >
                             Copy prompt
+                          </div>
+                          <div 
+                            data-tooltip-for={`save-${img.url}-${idx}`}
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            style={{ 
+                              left: '50%', 
+                              transform: 'translateX(-50%) translateY(-100%)',
+                              top: '-8px'
+                            }}
+                          >
+                            {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                           </div>
                           
                         <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 ${
@@ -6155,6 +6366,15 @@ const handleGenerate = async () => {
                       <Users className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
                       <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Select Avatar</span>
                     </button>
+                    <button
+                      type="button"
+                      ref={promptsButtonRef}
+                      onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                    >
+                      <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
+                      <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Prompts</span>
+                    </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
                       open={isAvatarPickerOpen}
@@ -6246,6 +6466,19 @@ const handleGenerate = async () => {
                         )}
                       </div>
                     </AvatarPickerPortal>
+                    <PromptsDropdown
+                      isOpen={isPromptsDropdownOpen}
+                      onClose={() => setIsPromptsDropdownOpen(false)}
+                      anchorEl={promptsButtonRef.current}
+                      recentPrompts={history}
+                      savedPrompts={savedPrompts}
+                      onSelectPrompt={(text) => {
+                        setPrompt(text);
+                        promptTextareaRef.current?.focus();
+                      }}
+                      onRemoveSavedPrompt={removePrompt}
+                      onUpdateSavedPrompt={updatePrompt}
+                    />
                   </>
                 )}
                 <div className="relative settings-dropdown">
@@ -7014,15 +7247,32 @@ const handleGenerate = async () => {
                         <div className="text-sm font-raleway leading-relaxed">
                           {(selectedFullImage || generatedImage)?.prompt || 'Generated Image'}
                           {(selectedFullImage || generatedImage)?.prompt && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
-                              }}
-                              className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
+                                }}
+                                className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                title="Copy prompt"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  savePromptToLibrary((selectedFullImage || generatedImage)!.prompt);
+                                }}
+                                className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                title={isPromptSaved((selectedFullImage || generatedImage)!.prompt) ? "Prompt saved" : "Save prompt"}
+                              >
+                                {isPromptSaved((selectedFullImage || generatedImage)!.prompt) ? (
+                                  <Bookmark className="w-3 h-3 fill-current" />
+                                ) : (
+                                  <BookmarkPlus className="w-3 h-3" />
+                                )}
+                              </button>
+                            </>
                           )}
                         </div>
                         <div className="mt-2 flex justify-center items-center gap-2">
@@ -7150,6 +7400,48 @@ const handleGenerate = async () => {
               onUploadError={setAvatarUploadError}
             />
           </Suspense>
+        )}
+
+        {/* Unsave Prompt Confirmation Modal */}
+        {unsavePromptText && createPortal(
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-d-black/80 py-12">
+            <div ref={unsaveModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+              <div className="text-center space-y-4">
+                <div className="space-y-3">
+                  <Bookmark className="w-10 h-10 mx-auto text-d-text" />
+                  <h3 className="text-xl font-raleway font-normal text-d-text">
+                    Remove from Saved Prompts
+                  </h3>
+                  <p className="text-base font-raleway font-light text-d-white">
+                    Are you sure you want to remove this prompt from your saved prompts?
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => setUnsavePromptText(null)}
+                    className={`${buttons.ghost}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      const promptToRemove = savedPrompts.find(p => p.text === unsavePromptText);
+                      if (promptToRemove) {
+                        removePrompt(promptToRemove.id);
+                        setCopyNotification('Prompt removed!');
+                        setTimeout(() => setCopyNotification(null), 2000);
+                      }
+                      setUnsavePromptText(null);
+                    }}
+                    className={buttons.primary}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
         )}
 
         
