@@ -6377,7 +6377,7 @@ const handleGenerate = async () => {
                           </button>
                           <button
                             type="button"
-                            className="inline-flex size-7 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="inline-flex size-7 items-center justify-center rounded-full border border-d-mid/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
                             onClick={() => {
                               setIsAvatarPickerOpen(false);
                               setIsAvatarCreationModalOpen(true);
@@ -6393,7 +6393,7 @@ const handleGenerate = async () => {
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
                               return (
-                                <div className="flex w-full items-center gap-3 rounded-2xl border px-3 py-2 transition-colors duration-200 group hover:border-d-mid hover:bg-d-text/10">
+                                <div className="flex w-full items-center gap-3 rounded-2xl border border-d-mid px-3 py-2 transition-colors duration-200 group hover:border-d-mid hover:bg-d-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleAvatarSelect(avatar)}
@@ -6445,14 +6445,14 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-d-dark/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
+                          <div className="rounded-2xl border border-d-mid/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
                             You haven't saved any avatars yet. Visit the avatars page to create one.
                           </div>
                         )}
                         {!storedAvatars.length && (
                           <button
                             type="button"
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-mid/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
                             onClick={() => {
                               navigate('/create/avatars');
                               setIsAvatarPickerOpen(false);
@@ -6969,7 +6969,7 @@ const handleGenerate = async () => {
                             isSelected 
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : isComingSoon
-                              ? "bg-transparent border-d-dark opacity-60 cursor-not-allowed"
+                              ? "bg-transparent border-d-mid opacity-60 cursor-not-allowed"
                               : 'bg-transparent hover:bg-d-text/20 border-0'
                           }`}
                         >
