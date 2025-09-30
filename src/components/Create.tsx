@@ -2989,6 +2989,7 @@ const Create: React.FC = () => {
         <img
           src={img.url}
           alt={img.prompt || `Generated ${idx + 1}`}
+          loading="lazy"
           className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`}
           onClick={(event) => {
             // Check if the click came from a copy button
@@ -3090,6 +3091,7 @@ const Create: React.FC = () => {
                         <img
                           src={ref}
                           alt={`Reference ${refIdx + 1}`}
+                          loading="lazy"
                           className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -4563,9 +4565,10 @@ const handleGenerate = async () => {
                           <div className="flex-shrink-0">
                             {folder.customThumbnail ? (
                               <div className="w-5 h-5 rounded-lg overflow-hidden">
-                                <img 
-                                  src={folder.customThumbnail} 
+                                <img
+                                  src={folder.customThumbnail}
                                   alt={`${folder.name} thumbnail`}
+                                  loading="lazy"
                                   className="w-full h-full object-cover"
                                 />
                               </div>
@@ -4714,9 +4717,10 @@ const handleGenerate = async () => {
                   </div>
                   {folderThumbnailFile && (
                     <div className="flex justify-center">
-                      <img 
-                        src={URL.createObjectURL(folderThumbnailFile)} 
-                        alt="Preview" 
+                      <img
+                        src={URL.createObjectURL(folderThumbnailFile)}
+                        alt="Preview"
+                        loading="lazy"
                         className="w-20 h-20 object-cover rounded-lg"
                       />
                     </div>
@@ -4741,9 +4745,10 @@ const handleGenerate = async () => {
                           onClick={() => setFolderThumbnailConfirm({show: true, folderId: folder.id, imageUrl: img.url})}
                           className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-d-text transition-colors duration-200"
                         >
-                          <img 
-                            src={img.url} 
+                          <img
+                            src={img.url}
                             alt={`Option ${idx + 1}`}
+                            loading="lazy"
                             className="w-full h-full object-cover"
                           />
                         </button>
@@ -4793,9 +4798,10 @@ const handleGenerate = async () => {
               {/* Preview of selected image */}
               {folderThumbnailConfirm.imageUrl && (
                 <div className="flex justify-center">
-                  <img 
-                    src={folderThumbnailConfirm.imageUrl} 
-                    alt="Selected thumbnail" 
+                  <img
+                    src={folderThumbnailConfirm.imageUrl}
+                    alt="Selected thumbnail"
+                    loading="lazy"
                     className="w-32 h-32 object-cover rounded-lg border border-d-mid"
                   />
                 </div>
@@ -4909,10 +4915,10 @@ const handleGenerate = async () => {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
+                      <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
-                            <img src={upload.previewUrl} alt={upload.file.name} className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
+                            <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
                             
                             {/* Upload info overlay */}
                             <div
@@ -5020,7 +5026,7 @@ const handleGenerate = async () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -5037,7 +5043,7 @@ const handleGenerate = async () => {
                                 setIsFullSizeOpen(true); 
                               }
                             }}>
-                              <img src={img.url} alt={img.prompt || 'Generated image'} className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
+                              <img src={img.url} alt={img.prompt || 'Generated image'} loading="lazy" className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
 
 
                               {/* Image info overlay */}
@@ -5282,9 +5288,10 @@ const handleGenerate = async () => {
                           {folder.customThumbnail ? (
                             <div className="w-full h-full relative">
                               {/* Show custom thumbnail */}
-                              <img 
-                                src={folder.customThumbnail} 
+                              <img
+                                src={folder.customThumbnail}
                                 alt={`${folder.name} thumbnail`}
+                                loading="lazy"
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
@@ -5310,10 +5317,11 @@ const handleGenerate = async () => {
                               {folder.imageIds.length > 1 && (
                                 <div className="absolute top-2 left-2 bg-d-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
-                                    <img 
+                                    <img
                                       key={idx}
-                                      src={imageId} 
+                                      src={imageId}
                                       alt={`${folder.name} thumbnail ${idx + 2}`}
+                                      loading="lazy"
                                       className="w-6 h-6 rounded object-cover"
                                     />
                                   ))}
@@ -5328,9 +5336,10 @@ const handleGenerate = async () => {
                           ) : folder.imageIds.length > 0 ? (
                             <div className="w-full h-full relative">
                               {/* Show first image as thumbnail when no custom thumbnail */}
-                              <img 
-                                src={folder.imageIds[0]} 
+                              <img
+                                src={folder.imageIds[0]}
                                 alt={`${folder.name} thumbnail`}
+                                loading="lazy"
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
@@ -5356,10 +5365,11 @@ const handleGenerate = async () => {
                               {folder.imageIds.length > 1 && (
                                 <div className="absolute top-2 left-2 bg-d-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
-                                    <img 
+                                    <img
                                       key={idx}
-                                      src={imageId} 
+                                      src={imageId}
                                       alt={`${folder.name} thumbnail ${idx + 2}`}
+                                      loading="lazy"
                                       className="w-6 h-6 rounded object-cover"
                                     />
                                   ))}
@@ -5459,7 +5469,7 @@ const handleGenerate = async () => {
                       </div>
                     </div>
                     
-                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -5472,7 +5482,7 @@ const handleGenerate = async () => {
                         <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
                           imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
-                          <img src={img.url} alt={img.prompt || `Image ${idx+1}`} className="w-full aspect-square object-cover" onClick={(event) => {
+                          <img src={img.url} alt={img.prompt || `Image ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
                             // Check if the click came from a copy button
                             if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
                               return;
@@ -5552,9 +5562,10 @@ const handleGenerate = async () => {
                                     <div className="flex gap-1">
                                       {img.references.map((ref, refIdx) => (
                                         <div key={refIdx} className="relative">
-                                          <img 
-                                            src={ref} 
-                                            alt={`Reference ${refIdx + 1}`} 
+                                          <img
+                                            src={ref}
+                                            alt={`Reference ${refIdx + 1}`}
+                                            loading="lazy"
                                             className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -5699,7 +5710,7 @@ const handleGenerate = async () => {
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
                     
-                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
@@ -5885,7 +5896,7 @@ const handleGenerate = async () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'paint', isolation: 'isolate' }}>
+                    <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -5920,7 +5931,7 @@ const handleGenerate = async () => {
                         <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
-                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} className="w-full aspect-square object-cover" onClick={(event) => {
+                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
                             // Check if the click came from a copy button
                             if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
                               return;
@@ -5998,9 +6009,10 @@ const handleGenerate = async () => {
                                     <div className="flex gap-1">
                                       {img.references.map((ref, refIdx) => (
                                         <div key={refIdx} className="relative">
-                                          <img 
-                                            src={ref} 
-                                            alt={`Reference ${refIdx + 1}`} 
+                                          <img
+                                            src={ref}
+                                            alt={`Reference ${refIdx + 1}`}
+                                            loading="lazy"
                                             className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -6406,6 +6418,7 @@ const handleGenerate = async () => {
                                     <img
                                       src={avatar.imageUrl}
                                       alt={avatar.name}
+                                      loading="lazy"
                                       className="h-10 w-10 rounded-lg object-cover"
                                     />
                                     <div className="min-w-0 flex-1 text-left">
@@ -6647,9 +6660,10 @@ const handleGenerate = async () => {
                       const currentModel = getCurrentModel();
                       if (hasToolLogo(currentModel.name)) {
                         return (
-                          <img 
-                            src={getToolLogo(currentModel.name)!} 
+                          <img
+                            src={getToolLogo(currentModel.name)!}
                             alt={`${currentModel.name} logo`}
+                            loading="lazy"
                             className="w-5 h-5 object-contain rounded flex-shrink-0"
                           />
                         );
@@ -6682,9 +6696,10 @@ const handleGenerate = async () => {
                           }`}
                         >
                           {hasToolLogo("Veo 3") ? (
-                            <img 
-                              src={getToolLogo("Veo 3")!} 
+                            <img
+                              src={getToolLogo("Veo 3")!}
                               alt="Veo 3 logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6722,9 +6737,10 @@ const handleGenerate = async () => {
                           }`}
                         >
                           {hasToolLogo("Runway Gen-4") ? (
-                            <img 
-                              src={getToolLogo("Runway Gen-4")!} 
+                            <img
+                              src={getToolLogo("Runway Gen-4")!}
                               alt="Runway logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6760,9 +6776,10 @@ const handleGenerate = async () => {
                           }`}
                         >
                           {hasToolLogo("Hailuo 02") ? (
-                            <img 
-                              src={getToolLogo("Hailuo 02")!} 
+                            <img
+                              src={getToolLogo("Hailuo 02")!}
                               alt="Hailuo 02 logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6798,9 +6815,10 @@ const handleGenerate = async () => {
                           }`}
                         >
                           {hasToolLogo("Wan 2.2 Video") ? (
-                            <img 
-                              src={getToolLogo("Wan 2.2 Video")!} 
+                            <img
+                              src={getToolLogo("Wan 2.2 Video")!}
                               alt="Wan logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6839,6 +6857,7 @@ const handleGenerate = async () => {
                             <img
                               src={getToolLogo("Kling")!}
                               alt="Kling logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6879,6 +6898,7 @@ const handleGenerate = async () => {
                             <img
                               src={getToolLogo("Seedance 1.0 Pro (Video)")!}
                               alt="ByteDance logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6918,6 +6938,7 @@ const handleGenerate = async () => {
                             <img
                               src={getToolLogo("Luma Ray 2")!}
                               alt="Luma Ray 2 logo"
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -6974,9 +6995,10 @@ const handleGenerate = async () => {
                           }`}
                         >
                           {hasToolLogo(model.name) ? (
-                            <img 
-                              src={getToolLogo(model.name)!} 
+                            <img
+                              src={getToolLogo(model.name)!}
                               alt={`${model.name} logo`}
+                              loading="lazy"
                               className="w-5 h-5 flex-shrink-0 object-contain rounded"
                             />
                           ) : (
@@ -7022,6 +7044,7 @@ const handleGenerate = async () => {
                       <img
                         src={selectedAvatar.imageUrl}
                         alt={selectedAvatar.name}
+                        loading="lazy"
                         className="h-9 w-9 rounded-full border border-d-dark/70 object-cover"
                       />
                       <button
@@ -7045,10 +7068,11 @@ const handleGenerate = async () => {
                   <div className="flex items-center gap-1.5">
                     {referencePreviews.map((url, idx) => (
                       <div key={idx} className="relative group">
-                        <img 
-                          src={url} 
-                          alt={`Reference ${idx+1}`} 
-                          className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200" 
+                        <img
+                          src={url}
+                          alt={`Reference ${idx+1}`}
+                          loading="lazy"
+                          className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
                           onClick={() => {
                             setSelectedReferenceImage(url);
                             setIsFullSizeOpen(true);
@@ -7137,10 +7161,11 @@ const handleGenerate = async () => {
                   </>
                 )}
                 
-                <img 
-                  src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string} 
-                  alt="Full size" 
-                  className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+                <img
+                  src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string}
+                  alt="Full size"
+                  loading="lazy"
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
                   style={{ objectPosition: 'top' }}
                 />
                 
@@ -7325,9 +7350,10 @@ const handleGenerate = async () => {
           {previewUrl && (
             <div className="w-full max-w-lg mx-auto mb-8">
               <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
-                <img 
-                  src={previewUrl} 
-                  alt="Uploaded file preview" 
+                <img
+                  src={previewUrl}
+                  alt="Uploaded file preview"
+                  loading="lazy"
                   className="w-full h-32 object-cover"
                 />
                 <button
@@ -7411,9 +7437,10 @@ const handleGenerate = async () => {
                 <div className="flex justify-start">
                   <div className="w-1/3 sm:w-1/5 lg:w-1/6">
                     <div className="relative aspect-square rounded-2xl overflow-hidden border border-d-dark">
-                      <img 
-                        src={creationsModalAvatar.imageUrl} 
-                        alt={creationsModalAvatar.name} 
+                      <img
+                        src={creationsModalAvatar.imageUrl}
+                        alt={creationsModalAvatar.name}
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -7427,9 +7454,10 @@ const handleGenerate = async () => {
                     .filter(img => img.avatarId === creationsModalAvatar.id)
                     .map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-d-dark bg-d-black group">
-                        <img 
-                          src={img.url} 
-                          alt={img.prompt || 'Generated image'} 
+                        <img
+                          src={img.url}
+                          alt={img.prompt || 'Generated image'}
+                          loading="lazy"
                           className="w-full h-full object-cover cursor-pointer"
                           onClick={() => {
                             setSelectedFullImage(img);

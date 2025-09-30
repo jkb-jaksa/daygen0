@@ -621,6 +621,7 @@ const AvatarCard: React.FC<{
       <img
         src={item.imageUrl}
         alt={`${item.name} avatar preview`}
+        loading="lazy"
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div
@@ -2171,6 +2172,7 @@ const Explore: React.FC = () => {
                               <img
                                 src={getToolLogo(item.modelId)!}
                                 alt={`${getModelDisplayName(item.modelId, item.modelLabel)} logo`}
+                                loading="lazy"
                                 className="w-4 h-4 rounded-sm object-cover"
                               />
                             )}
@@ -2434,6 +2436,7 @@ const Explore: React.FC = () => {
                     <img
                       src={savePrompt.item.imageUrl}
                       alt={`Saved inspiration ${savePrompt.item.id}`}
+                      loading="lazy"
                       className="aspect-square w-full object-cover"
                     />
                   </div>
@@ -2503,9 +2506,10 @@ const Explore: React.FC = () => {
                                 <div className="flex-shrink-0">
                                   {folder.customThumbnail ? (
                                     <div className="w-8 h-8 rounded-lg overflow-hidden">
-                                      <img 
-                                        src={folder.customThumbnail} 
+                                      <img
+                                        src={folder.customThumbnail}
                                         alt={`${folder.name} thumbnail`}
+                                        loading="lazy"
                                         className="w-full h-full object-cover"
                                       />
                                     </div>
@@ -2600,10 +2604,11 @@ const Explore: React.FC = () => {
                 </>
               )}
               
-              <img 
-                src={selectedFullImage.imageUrl} 
-                alt={`Image by ${selectedFullImage.creator.name}`} 
-                className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+              <img
+                src={selectedFullImage.imageUrl}
+                alt={`Image by ${selectedFullImage.creator.name}`}
+                loading="lazy"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
                 style={{ objectPosition: 'top' }}
               />
               
@@ -2803,6 +2808,7 @@ const Explore: React.FC = () => {
                           <img
                             src={getToolLogo(selectedFullImage.modelId)!}
                             alt={`${getModelDisplayName(selectedFullImage.modelId, selectedFullImage.modelLabel)} logo`}
+                            loading="lazy"
                             className="w-4 h-4 rounded-sm object-cover"
                           />
                         )}

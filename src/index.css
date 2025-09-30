@@ -1036,7 +1036,7 @@ select option::-webkit-scrollbar-thumb:hover {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   height: fit-content;
-  contain: paint;
+  contain: layout style;
 }
 
 /* -------------------------------------------------------------
