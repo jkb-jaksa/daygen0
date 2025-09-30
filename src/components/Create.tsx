@@ -63,6 +63,8 @@ import type {
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { StoredAvatar, AvatarSelection } from "./avatars/types";
+import AvatarBadge from "./avatars/AvatarBadge";
+import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -522,6 +524,14 @@ const Create: React.FC = () => {
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+
+  const avatarMap = useMemo(() => {
+    const map = new Map<string, StoredAvatar>();
+    for (const avatar of storedAvatars) {
+      map.set(avatar.id, avatar);
+    }
+    return map;
+  }, [storedAvatars]);
   const [avatarName, setAvatarName] = useState("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
@@ -1504,7 +1514,21 @@ const Create: React.FC = () => {
       try {
         const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars");
         if (!isMounted) return;
-        setStoredAvatars(stored ?? []);
+
+        const normalized = normalizeStoredAvatars(stored ?? [], { ownerId: user?.id ?? undefined });
+        setStoredAvatars(normalized);
+
+        const needsPersist =
+          (stored?.length ?? 0) !== normalized.length ||
+          (stored ?? []).some((avatar, index) => {
+            const normalizedAvatar = normalized[index];
+            if (!normalizedAvatar) return true;
+            return avatar.slug !== normalizedAvatar.slug || avatar.ownerId !== normalizedAvatar.ownerId;
+          });
+
+        if (needsPersist) {
+          await setPersistedValue(storagePrefix, "avatars", normalized);
+        }
       } catch (error) {
         debugError("Failed to load stored avatars", error);
         if (isMounted) {
@@ -1518,7 +1542,7 @@ const Create: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [storagePrefix]);
+  }, [storagePrefix, user?.id]);
 
   useEffect(() => {
     if (!pendingAvatarId) return;
@@ -2837,6 +2861,7 @@ const Create: React.FC = () => {
     const tooltipId = `${context}-hist-${idx}-${img.url}`;
     const isMenuActive = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
     const shouldDim = (isSelectMode || hasSelection) && !isSelected;
+    const avatarForImage = img.avatarId ? avatarMap.get(img.avatarId) : undefined;
 
     return (
       <div
@@ -2955,9 +2980,18 @@ const Create: React.FC = () => {
               )}
               {/* Model Badge and Public Indicator */}
               <div className="flex justify-between items-center mt-2">
-                <Suspense fallback={null}>
-                  <ModelBadge model={img.model ?? 'unknown'} size="md" />
-                </Suspense>
+                <div className="flex items-center gap-2">
+                  <Suspense fallback={null}>
+                    <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                  </Suspense>
+                  {/* Avatar Badge */}
+                  {avatarForImage && (
+                    <AvatarBadge
+                      avatar={avatarForImage}
+                      onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                    />
+                  )}
+                </div>
                 {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
@@ -2993,26 +3027,28 @@ const Create: React.FC = () => {
         </div>
 
         <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleImageSelection(img.url, event);
-            }}
-            className={`image-action-btn parallax-large image-select-toggle ${
-              isSelected
-                ? 'image-select-toggle--active opacity-100 pointer-events-auto'
-                : isSelectMode
-                  ? 'opacity-100 pointer-events-auto'
-                  : isMenuActive
+          <div className="flex flex-col items-start gap-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleImageSelection(img.url, event);
+              }}
+              className={`image-action-btn parallax-large image-select-toggle ${
+                isSelected
+                  ? 'image-select-toggle--active opacity-100 pointer-events-auto'
+                  : isSelectMode
                     ? 'opacity-100 pointer-events-auto'
-                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-            }`}
-            aria-pressed={isSelected}
-            aria-label={isSelected ? 'Unselect image' : 'Select image'}
-          >
-            {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-          </button>
+                    : isMenuActive
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+              }`}
+              aria-pressed={isSelected}
+              aria-label={isSelected ? 'Unselect image' : 'Select image'}
+            >
+              {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+            </button>
+          </div>
           {!isSelectMode && (
             <div
               className={`ml-auto flex items-center gap-0.5 ${
@@ -3200,15 +3236,14 @@ const Create: React.FC = () => {
   const handleSaveNewAvatar = useCallback(async () => {
     if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
 
-    const record: StoredAvatar = {
-      id: `avatar-${Date.now()}`,
+    const record = createAvatarRecord({
       name: avatarName.trim(),
       imageUrl: avatarSelection.imageUrl,
-      createdAt: new Date().toISOString(),
       source: avatarSelection.source,
       sourceId: avatarSelection.sourceId,
-      published: false,
-    };
+      ownerId: user?.id ?? undefined,
+      existingAvatars: storedAvatars,
+    });
 
     const updatedAvatars = [record, ...storedAvatars];
     setStoredAvatars(updatedAvatars);
@@ -3224,7 +3259,7 @@ const Create: React.FC = () => {
     setAvatarSelection(null);
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
-  }, [avatarName, avatarSelection, storedAvatars, storagePrefix]);
+  }, [avatarName, avatarSelection, storedAvatars, storagePrefix, user?.id]);
 
   const resetAvatarCreationPanel = useCallback(() => {
     setIsAvatarCreationModalOpen(false);
@@ -4960,9 +4995,22 @@ const handleGenerate = async () => {
                                       </p>
                                       {/* Model Badge and Public Indicator */}
                                       <div className="flex justify-between items-center mt-2">
-                                        <Suspense fallback={null}>
-                                          <ModelBadge model={img.model ?? 'unknown'} size="md" />
-                                        </Suspense>
+                                        <div className="flex items-center gap-2">
+                                          <Suspense fallback={null}>
+                                            <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                          </Suspense>
+                                          {/* Avatar Badge */}
+                                          {(() => {
+                                            const avatarForImage = img.avatarId ? avatarMap.get(img.avatarId) : undefined;
+                                            if (!avatarForImage) return null;
+                                            return (
+                                              <AvatarBadge
+                                                avatar={avatarForImage}
+                                                onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                              />
+                                            );
+                                          })()}
+                                        </div>
                                         {img.isPublic && (
                                           <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
@@ -5785,9 +5833,22 @@ const handleGenerate = async () => {
                                 )}
                                 {/* Model Badge and Public Indicator */}
                                 <div className="flex justify-between items-center mt-2">
-                                  <Suspense fallback={null}>
-                                    <ModelBadge model={img.model ?? 'unknown'} size="md" />
-                                  </Suspense>
+                                  <div className="flex items-center gap-2">
+                                    <Suspense fallback={null}>
+                                      <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                    </Suspense>
+                                    {/* Avatar Badge */}
+                                    {(() => {
+                                      const avatarForImage = img.avatarId ? avatarMap.get(img.avatarId) : undefined;
+                                      if (!avatarForImage) return null;
+                                      return (
+                                        <AvatarBadge
+                                          avatar={avatarForImage}
+                                          onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                        />
+                                      );
+                                    })()}
+                                  </div>
                                   {img.isPublic && (
                                     <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                                       <div className="flex items-center gap-1">
@@ -6810,7 +6871,7 @@ const handleGenerate = async () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className={`${glass.prompt} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                      className={`${glass.promptDark} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -6818,7 +6879,7 @@ const handleGenerate = async () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className={`${glass.prompt} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                      className={`${glass.promptDark} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >
@@ -6949,12 +7010,26 @@ const handleGenerate = async () => {
                           )}
                         </div>
                         <div className="mt-2 flex justify-center items-center gap-2">
-                          <Suspense fallback={null}>
-                            <ModelBadge 
-                              model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
-                              size="md" 
-                            />
-                          </Suspense>
+                          <div className="flex items-center gap-2">
+                            <Suspense fallback={null}>
+                              <ModelBadge 
+                                model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
+                                size="md" 
+                              />
+                            </Suspense>
+                            {(() => {
+                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
+                              if (!img?.avatarId) return null;
+                              const avatarForImage = avatarMap.get(img.avatarId);
+                              if (!avatarForImage) return null;
+                              return (
+                                <AvatarBadge
+                                  avatar={avatarForImage}
+                                  onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                />
+                              );
+                            })()}
+                          </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                               <div className="flex items-center gap-1">

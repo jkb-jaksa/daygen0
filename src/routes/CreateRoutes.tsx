@@ -13,7 +13,10 @@ export default function CreateRoutes() {
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route index element={<Navigate to="image" replace />} />
-        <Route path="avatars" element={<Avatars />} />
+        <Route path="avatars">
+          <Route index element={<Avatars />} />
+          <Route path=":avatarSlug" element={<Avatars />} />
+        </Route>
         <Route path=":category" element={<Create />} />
         <Route path="*" element={<Navigate to="image" replace />} />
       </Routes>

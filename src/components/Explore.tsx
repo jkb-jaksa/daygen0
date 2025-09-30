@@ -2649,19 +2649,17 @@ const Explore: React.FC = () => {
                 <>
                   <button
                     onClick={() => navigateFullSizeImage('prev')}
-                    className={`nav-arrow-btn absolute left-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:scale-105`}
+                    className={`${glass.promptDark} absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-d-text`}
                     title="Previous image (←)"
                     aria-label="Previous image"
-                    style={{ width: "3rem", height: "3rem" }}
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
                   </button>
                   <button
                     onClick={() => navigateFullSizeImage('next')}
-                    className={`nav-arrow-btn absolute right-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:scale-105`}
+                    className={`${glass.promptDark} absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-d-text`}
                     title="Next image (→)"
                     aria-label="Next image"
-                    style={{ width: "3rem", height: "3rem" }}
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
