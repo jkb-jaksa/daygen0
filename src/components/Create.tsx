@@ -20,6 +20,7 @@ import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
+const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 import { usePromptHistory } from "../hooks/usePromptHistory";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const PromptHistoryPanel = lazy(() => import("./create/PromptHistoryPanel"));
@@ -61,7 +62,7 @@ import type {
   FolderThumbnailConfirmState,
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
-import type { StoredAvatar } from "./Avatars";
+import type { StoredAvatar, AvatarSelection } from "./avatars/types";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -76,7 +77,7 @@ const CATEGORY_TO_PATH: Record<string, string> = {
   inspirations: "/gallery/inspirations",
 };
 
-const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "avatars", "audio"]);
+const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio"]);
 
 const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
   public: "public",
@@ -514,17 +515,14 @@ const Create: React.FC = () => {
   const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
-  const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
-  const [avatarCreationName, setAvatarCreationName] = useState("");
-  const [avatarCreationSelection, setAvatarCreationSelection] = useState<{
-    imageUrl: string;
-    source: "upload" | "gallery";
-    sourceId?: string;
-  } | null>(null);
-  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
-  const [isAvatarDragging, setIsAvatarDragging] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
+  // Avatar creation modal state
+  const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
+  const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
+  const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [avatarName, setAvatarName] = useState("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
@@ -637,6 +635,13 @@ const Create: React.FC = () => {
   const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
 
   const setActiveCategory = useCallback((category: string, options?: { skipRoute?: boolean }) => {
+    if (category === "avatars") {
+      if (!options?.skipRoute && location.pathname !== "/create/avatars") {
+        navigate("/create/avatars");
+      }
+      return;
+    }
+
     setActiveCategoryState(category);
     if (options?.skipRoute) return;
 
@@ -653,7 +658,7 @@ const Create: React.FC = () => {
   
   // Control footer visibility based on activeCategory
   useEffect(() => {
-    const hideFooterSections = ['text', 'image', 'video', 'avatars', 'audio'];
+    const hideFooterSections = ['text', 'image', 'video', 'audio'];
     setFooterVisible(!hideFooterSections.includes(activeCategory));
     
     // Cleanup: show footer when component unmounts
@@ -2521,7 +2526,7 @@ const Create: React.FC = () => {
 
   const handleCreateAvatarFromMenu = (image: GalleryImageLike) => {
     closeImageActionMenu();
-    navigate('/avatars', {
+    navigate('/create/avatars', {
       state: {
         openAvatarCreator: true,
         selectedImageUrl: image.url,
@@ -2660,7 +2665,7 @@ const Create: React.FC = () => {
             }}
           >
             <Users className="h-4 w-4" />
-            Create avatar
+            Create Avatar
           </button>
           <button
             type="button"
@@ -3152,90 +3157,6 @@ const Create: React.FC = () => {
     setIsAvatarPickerOpen(false);
   }, []);
 
-  const handleAvatarCreationUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      event.target.value = "";
-      if (!file) return;
-      if (!file.type.startsWith("image/")) {
-        setAvatarUploadError("Please choose an image file.");
-        return;
-      }
-      setAvatarUploadError(null);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result;
-        if (typeof result === "string") {
-          setAvatarCreationSelection({ imageUrl: result, source: "upload" });
-        }
-      };
-      reader.onerror = () => {
-        setAvatarUploadError("We couldn't read that file. Try another image.");
-      };
-      reader.readAsDataURL(file);
-    },
-    [],
-  );
-
-  const handleAvatarCreationPaste = useCallback((e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (file) {
-          setAvatarUploadError(null);
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result;
-            if (typeof result === "string") {
-              setAvatarCreationSelection({ imageUrl: result, source: "upload" });
-            }
-          };
-          reader.onerror = () => {
-            setAvatarUploadError("We couldn't read that file. Try another image.");
-          };
-          reader.readAsDataURL(file);
-        }
-      }
-    }
-  }, []);
-
-  const handleSaveAvatarCreation = useCallback(async () => {
-    if (!avatarCreationSelection || !avatarCreationName.trim() || !storagePrefix) return;
-
-    const record: StoredAvatar = {
-      id: `avatar-${Date.now()}`,
-      name: avatarCreationName.trim(),
-      imageUrl: avatarCreationSelection.imageUrl,
-      createdAt: new Date().toISOString(),
-      source: avatarCreationSelection.source,
-      sourceId: avatarCreationSelection.sourceId,
-      published: false,
-    };
-
-    const updatedAvatars = [record, ...storedAvatars];
-    setStoredAvatars(updatedAvatars);
-    
-    try {
-      await setPersistedValue(storagePrefix, "avatars", updatedAvatars);
-    } catch (error) {
-      debugError("Failed to persist avatars", error);
-    }
-
-    setIsAvatarCreationModalOpen(false);
-    setAvatarCreationName("");
-    setAvatarCreationSelection(null);
-    setAvatarUploadError(null);
-  }, [avatarCreationName, avatarCreationSelection, storedAvatars, storagePrefix]);
-
-  const resetAvatarCreationPanel = useCallback(() => {
-    setIsAvatarCreationModalOpen(false);
-    setAvatarCreationName("");
-    setAvatarCreationSelection(null);
-    setAvatarUploadError(null);
-  }, []);
-
   const confirmDeleteAvatar = useCallback(async () => {
     if (!avatarToDelete || !storagePrefix) return;
     
@@ -3254,6 +3175,64 @@ const Create: React.FC = () => {
     
     setAvatarToDelete(null);
   }, [avatarToDelete, storedAvatars, selectedAvatar, storagePrefix]);
+
+  // Avatar creation modal handlers
+  const processAvatarImageFile = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setAvatarUploadError("Please choose an image file.");
+      return;
+    }
+
+    setAvatarUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setAvatarSelection({ imageUrl: result, source: "upload" });
+      }
+    };
+    reader.onerror = () => {
+      setAvatarUploadError("We couldn't read that file. Try another image.");
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleSaveNewAvatar = useCallback(async () => {
+    if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
+
+    const record: StoredAvatar = {
+      id: `avatar-${Date.now()}`,
+      name: avatarName.trim(),
+      imageUrl: avatarSelection.imageUrl,
+      createdAt: new Date().toISOString(),
+      source: avatarSelection.source,
+      sourceId: avatarSelection.sourceId,
+      published: false,
+    };
+
+    const updatedAvatars = [record, ...storedAvatars];
+    setStoredAvatars(updatedAvatars);
+
+    try {
+      await setPersistedValue(storagePrefix, "avatars", updatedAvatars);
+    } catch (error) {
+      debugError("Failed to persist avatars", error);
+    }
+
+    setIsAvatarCreationModalOpen(false);
+    setAvatarName("");
+    setAvatarSelection(null);
+    setAvatarUploadError(null);
+    setIsDraggingAvatar(false);
+  }, [avatarName, avatarSelection, storedAvatars, storagePrefix]);
+
+  const resetAvatarCreationPanel = useCallback(() => {
+    setIsAvatarCreationModalOpen(false);
+    setAvatarName("");
+    setAvatarSelection(null);
+    setAvatarUploadError(null);
+    setIsDraggingAvatar(false);
+  }, []);
 
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleAddReferenceFiles(Array.from(event.target.files || []));
@@ -5670,18 +5649,6 @@ const handleGenerate = async () => {
                   </div>
                 )}
 
-                {activeCategory === "avatars" && (
-                  <div className="w-full min-h-[400px] flex items-center justify-center" data-category="avatars">
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Users className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-raleway text-d-text mb-2">Avatar Generation Coming Soon</h3>
-                      <p className="text-base font-raleway text-d-white max-w-md">
-                        We're working on bringing you custom avatar generation. Stay tuned!
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {activeCategory === "audio" && (
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="audio">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -5993,7 +5960,7 @@ const handleGenerate = async () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "avatars" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
+          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div 
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 left-6 right-6 sm:left-8 sm:right-8 lg:left-[calc((100vw-85rem)/2+1.5rem)] lg:right-[calc((100vw-85rem)/2+1.5rem+6px)]`}
               style={{ 
@@ -6122,7 +6089,7 @@ const handleGenerate = async () => {
                             type="button"
                             onClick={() => {
                               setIsAvatarPickerOpen(false);
-                              navigate('/avatars');
+                              navigate('/create/avatars');
                             }}
                             className="text-base font-raleway text-d-white hover:text-d-text transition-colors duration-200 cursor-pointer"
                           >
@@ -6134,9 +6101,9 @@ const handleGenerate = async () => {
                             onClick={() => {
                               setIsAvatarPickerOpen(false);
                               setIsAvatarCreationModalOpen(true);
-                              setAvatarCreationName("New avatar");
+                              setAvatarName("");
                             }}
-                            aria-label="Add new avatar"
+                            aria-label="Create a new avatar"
                           >
                             <Plus className="h-3.5 w-3.5" />
                           </button>
@@ -6192,7 +6159,7 @@ const handleGenerate = async () => {
                             type="button"
                             className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-dark/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
                             onClick={() => {
-                              navigate('/avatars');
+                              navigate('/create/avatars');
                               setIsAvatarPickerOpen(false);
                             }}
                           >
@@ -7037,189 +7004,7 @@ const handleGenerate = async () => {
 
         </div>
 
-        {/* Avatar Creation Modal */}
-        {isAvatarCreationModalOpen && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-d-black/80 px-4 py-10">
-            <div className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl">
-              <button
-                type="button"
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
-                onClick={resetAvatarCreationPanel}
-                aria-label="Close avatar creation"
-              >
-                <X className="h-5 w-5" />
-              </button>
 
-              <div className="flex flex-col gap-6 p-6 lg:p-8">
-                {/* Header Section */}
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-raleway text-d-text">Create Avatar</h2>
-                  <p className="text-sm font-raleway text-d-white">
-                    Pick an image and give your avatar a name. We'll save it here for quick use later.
-                  </p>
-                </div>
-
-                {/* Two Column Layout */}
-                <div className="grid gap-6 md:grid-cols-2">
-                  {/* Left Column - Upload Image */}
-                  <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
-                        <Upload className="h-5 w-5 text-d-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-raleway text-d-text">Upload image</h3>
-                        <p className="text-sm font-raleway text-d-white">
-                          Upload an image to turn into a reusable avatar.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="w-48 mx-auto">
-                      {avatarCreationSelection ? (
-                        <div className="relative aspect-square overflow-hidden rounded-2xl border border-d-dark bg-d-black/50">
-                          <img src={avatarCreationSelection.imageUrl} alt="Selected avatar" className="h-full w-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setAvatarCreationSelection(null)}
-                            className="absolute top-1.5 right-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
-                            aria-label="Remove selected image"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => (document.querySelector('#avatar-creation-upload') as HTMLInputElement)?.click()}
-                            className="absolute bottom-1.5 left-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
-                            aria-label="Change image"
-                          >
-                            <Upload className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <label 
-                          className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-d-white transition-colors duration-200 ${
-                            isAvatarDragging 
-                              ? 'border-brand bg-brand/10' 
-                              : 'border-d-white/30 bg-d-black/60 hover:border-d-text/50'
-                          }`}
-                          onDragOver={(e) => { e.preventDefault(); setIsAvatarDragging(true); }}
-                          onDragLeave={() => setIsAvatarDragging(false)}
-                          onDrop={(e) => { 
-                            e.preventDefault(); 
-                            setIsAvatarDragging(false);
-                            const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
-                            if (files.length > 0) {
-                              const file = files[0];
-                              setAvatarUploadError(null);
-                              const reader = new FileReader();
-                              reader.onload = () => {
-                                const result = reader.result;
-                                if (typeof result === "string") {
-                                  setAvatarCreationSelection({ imageUrl: result, source: "upload" });
-                                }
-                              };
-                              reader.onerror = () => {
-                                setAvatarUploadError("We couldn't read that file. Try another image.");
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          onPaste={handleAvatarCreationPaste}
-                        >
-                          <span className="font-medium">Select image</span>
-                          <span className="text-xs text-d-white/60">PNG, JPG, or WebP up to 50 MB</span>
-                          <span className="text-xs text-d-white/40">Click, drag & drop, or paste</span>
-                          <input id="avatar-creation-upload" type="file" accept="image/*" className="sr-only" onChange={handleAvatarCreationUpload} />
-                        </label>
-                      )}
-                    </div>
-                    {avatarUploadError && (
-                      <p className="mt-3 text-sm font-raleway text-red-400 text-center">{avatarUploadError}</p>
-                    )}
-                  </div>
-
-                  {/* Right Column - Choose from Gallery */}
-                  <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
-                        <Users className="h-5 w-5 text-d-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-raleway text-d-text">Choose from your creations</h3>
-                        <p className="text-sm font-raleway text-d-white">
-                          Pick from anything you've generated in the DayGen studio.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="max-h-72 overflow-y-auto pr-1">
-                      {gallery.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-3">
-                          {gallery.map(image => {
-                            const isSelected = avatarCreationSelection?.source === "gallery" && avatarCreationSelection.sourceId === image.url;
-                            return (
-                              <button
-                                type="button"
-                                key={image.url}
-                                className={`relative overflow-hidden rounded-2xl border ${
-                                  isSelected ? "border-d-light" : "border-d-dark"
-                                }`}
-                                onClick={() =>
-                                  setAvatarCreationSelection({
-                                    imageUrl: image.url,
-                                    source: "gallery",
-                                    sourceId: image.url,
-                                  })
-                                }
-                              >
-                                <img src={image.url} alt={image.prompt ?? "Gallery creation"} className="aspect-square w-full object-cover" />
-                                {isSelected && (
-                                  <div className="absolute inset-0 border-4 border-d-light pointer-events-none" aria-hidden="true" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="w-64 mx-auto rounded-2xl border border-d-dark/70 bg-d-black/50 p-6 text-center">
-                          <p className="text-sm font-raleway text-d-white/70">
-                            Generate an image in the studio to see it here.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Section - Avatar Name and Save Button */}
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col items-center gap-6">
-                    <label className="flex flex-col space-y-2 w-fit">
-                      <span className="text-sm font-raleway text-d-white/70">Name</span>
-                      <input
-                        className={`${inputs.base} !w-64`}
-                        placeholder="e.g. Neon explorer"
-                        value={avatarCreationName}
-                        onChange={event => setAvatarCreationName(event.target.value)}
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      className={`${buttons.primary} !w-fit ${!avatarCreationSelection || !avatarCreationName.trim() ? "pointer-events-none opacity-50" : ""}`}
-                      disabled={!avatarCreationSelection || !avatarCreationName.trim()}
-                      onClick={handleSaveAvatarCreation}
-                    >
-                      Save Avatar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Avatar Deletion Confirmation Modal */}
         {avatarToDelete && (
           <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
             <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
@@ -7250,6 +7035,30 @@ const handleGenerate = async () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Avatar Creation Modal */}
+        {isAvatarCreationModalOpen && (
+          <Suspense fallback={null}>
+            <AvatarCreationModal
+              open={isAvatarCreationModalOpen}
+              selection={avatarSelection}
+              uploadError={avatarUploadError}
+              isDragging={isDraggingAvatar}
+              avatarName={avatarName}
+              disableSave={!avatarSelection || !avatarName.trim()}
+              galleryImages={gallery}
+              hasGalleryImages={gallery.length > 0}
+              onClose={resetAvatarCreationPanel}
+              onAvatarNameChange={setAvatarName}
+              onSave={handleSaveNewAvatar}
+              onSelectFromGallery={(imageUrl) => setAvatarSelection({ imageUrl, source: 'gallery', sourceId: imageUrl })}
+              onClearSelection={() => setAvatarSelection(null)}
+              onProcessFile={processAvatarImageFile}
+              onDragStateChange={setIsDraggingAvatar}
+              onUploadError={setAvatarUploadError}
+            />
+          </Suspense>
         )}
 
         

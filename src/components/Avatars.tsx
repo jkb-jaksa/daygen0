@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, useRef, type ChangeEvent, type FormEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
-  Upload,
   Users,
   X,
   Pencil,
@@ -21,23 +20,13 @@ import {
 } from "lucide-react";
 import { layout, text, buttons, inputs, glass } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
-import ModelBadge from "./ModelBadge";
+const ModelBadge = lazy(() => import("./ModelBadge"));
+const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
+import type { AvatarSelection, StoredAvatar } from "./avatars/types";
 import { debugError } from "../utils/debug";
-
-type AvatarSource = "upload" | "gallery";
-
-type StoredAvatar = {
-  id: string;
-  name: string;
-  imageUrl: string;
-  createdAt: string;
-  source: AvatarSource;
-  sourceId?: string;
-  published: boolean;
-};
 
 type AvatarNavigationState = {
   openAvatarCreator?: boolean;
@@ -150,11 +139,7 @@ export default function Avatars() {
   const [galleryImages, setGalleryImages] = useState<GalleryImageLike[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [avatarName, setAvatarName] = useState("");
-  const [selection, setSelection] = useState<{
-    imageUrl: string;
-    source: AvatarSource;
-    sourceId?: string;
-  } | null>(null);
+  const [selection, setSelection] = useState<AvatarSelection | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
@@ -270,53 +255,24 @@ export default function Avatars() {
     [storagePrefix],
   );
 
-  const handleUpload = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      event.target.value = "";
-      if (!file) return;
-      if (!file.type.startsWith("image/")) {
-        setUploadError("Please choose an image file.");
-        return;
-      }
-      setUploadError(null);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result;
-        if (typeof result === "string") {
-          setSelection({ imageUrl: result, source: "upload" });
-        }
-      };
-      reader.onerror = () => {
-        setUploadError("We couldn't read that file. Try another image.");
-      };
-      reader.readAsDataURL(file);
-    },
-    [],
-  );
-
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (file) {
-          setUploadError(null);
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result;
-            if (typeof result === "string") {
-              setSelection({ imageUrl: result, source: "upload" });
-            }
-          };
-          reader.onerror = () => {
-            setUploadError("We couldn't read that file. Try another image.");
-          };
-          reader.readAsDataURL(file);
-        }
-      }
+  const processImageFile = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please choose an image file.");
+      return;
     }
+
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setSelection({ imageUrl: result, source: "upload" });
+      }
+    };
+    reader.onerror = () => {
+      setUploadError("We couldn't read that file. Try another image.");
+    };
+    reader.readAsDataURL(file);
   }, []);
 
   const handleSaveAvatar = useCallback(() => {
@@ -342,6 +298,7 @@ export default function Avatars() {
     setAvatarName("");
     setSelection(null);
     setUploadError(null);
+    setIsDragging(false);
   }, [avatarName, persistAvatars, selection]);
 
   const resetPanel = useCallback(() => {
@@ -349,6 +306,7 @@ export default function Avatars() {
     setAvatarName("");
     setSelection(null);
     setUploadError(null);
+    setIsDragging(false);
   }, []);
 
   const startRenaming = useCallback((avatar: StoredAvatar) => {
@@ -1120,7 +1078,9 @@ export default function Avatars() {
                 {image.prompt || "Untitled creation"}
               </p>
               <div className="flex items-center justify-between text-xs font-raleway text-d-white/70">
-                <ModelBadge model={image.model ?? 'unknown'} size="sm" />
+                <Suspense fallback={null}>
+                  <ModelBadge model={image.model ?? 'unknown'} size="sm" />
+                </Suspense>
                 {image.isPublic && (
                   <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
@@ -1174,7 +1134,7 @@ export default function Avatars() {
               }}
             >
               <Users className="h-5 w-5" />
-              Create avatar
+              Create Avatar
             </button>
           </header>
 
@@ -1192,184 +1152,26 @@ export default function Avatars() {
       </div>
 
       {isPanelOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-d-black/80 px-4 py-10">
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl">
-            <button
-              type="button"
-              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
-              onClick={resetPanel}
-              aria-label="Close avatar creation"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex flex-col gap-6 p-6 lg:p-8">
-              {/* Header Section */}
-              <div className="space-y-2">
-                <h2 className="text-2xl font-raleway text-d-text">Create Avatar</h2>
-                <p className="text-sm font-raleway text-d-white">
-                  Pick an image and give your avatar a name. We'll save it here for quick use later.
-                </p>
-              </div>
-
-              {/* Two Column Layout */}
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Left Column - Upload Image */}
-                <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
-                      <Upload className="h-5 w-5 text-d-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-raleway text-d-text">Upload image</h3>
-                      <p className="text-sm font-raleway text-d-white">
-                        Upload an image to turn into a reusable avatar.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="w-48 mx-auto">
-                    {selection ? (
-                      <div className="relative aspect-square overflow-hidden rounded-2xl border border-d-dark bg-d-black/50">
-                        <img src={selection.imageUrl} alt="Selected avatar" className="h-full w-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setSelection(null)}
-                          className="absolute top-1.5 right-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
-                          aria-label="Remove selected image"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
-                          className="absolute bottom-1.5 left-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
-                          aria-label="Change image"
-                        >
-                          <Upload className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label 
-                        className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-d-white transition-colors duration-200 ${
-                          isDragging 
-                            ? 'border-brand bg-brand/10' 
-                            : 'border-d-white/30 bg-d-black/60 hover:border-d-text/50'
-                        }`}
-                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={(e) => { 
-                          e.preventDefault(); 
-                          setIsDragging(false);
-                          const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
-                          if (files.length > 0) {
-                            const file = files[0];
-                            setUploadError(null);
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const result = reader.result;
-                              if (typeof result === "string") {
-                                setSelection({ imageUrl: result, source: "upload" });
-                              }
-                            };
-                            reader.onerror = () => {
-                              setUploadError("We couldn't read that file. Try another image.");
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        onPaste={handlePaste}
-                      >
-                        <span className="font-medium">Select image</span>
-                        <span className="text-xs text-d-white/60">PNG, JPG, or WebP up to 50 MB</span>
-                        <span className="text-xs text-d-white/40">Click, drag & drop, or paste</span>
-                        <input type="file" accept="image/*" className="sr-only" onChange={handleUpload} />
-                      </label>
-                    )}
-                  </div>
-                  {uploadError && (
-                    <p className="mt-3 text-sm font-raleway text-red-400 text-center">{uploadError}</p>
-                  )}
-                </div>
-
-                {/* Right Column - Choose from Gallery */}
-                <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-6`}>
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
-                      <Users className="h-5 w-5 text-d-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-raleway text-d-text">Choose from your creations</h3>
-                      <p className="text-sm font-raleway text-d-white">
-                        Pick from anything you've generated in the DayGen studio.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="max-h-72 overflow-y-auto pr-1">
-                    {hasGalleryImages ? (
-                      <div className="grid grid-cols-3 gap-3">
-                        {galleryImages.map(image => {
-                          const isSelected = selection?.source === "gallery" && selection.sourceId === image.url;
-                          return (
-                            <button
-                              type="button"
-                              key={image.url}
-                              className={`relative overflow-hidden rounded-2xl border ${
-                                isSelected ? "border-d-light" : "border-d-dark"
-                              }`}
-                              onClick={() =>
-                                setSelection({
-                                  imageUrl: image.url,
-                                  source: "gallery",
-                                  sourceId: image.url,
-                                })
-                              }
-                            >
-                              <img src={image.url} alt={image.prompt ?? "Gallery creation"} className="aspect-square w-full object-cover" />
-                              {isSelected && (
-                                <div className="absolute inset-0 border-4 border-d-light pointer-events-none" aria-hidden="true" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="w-64 mx-auto rounded-2xl border border-d-dark/70 bg-d-black/50 p-6 text-center">
-                        <p className="text-sm font-raleway text-d-white/70">
-                          Generate an image in the studio to see it here.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Section - Avatar Name and Save Button */}
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col items-center gap-6">
-                  <label className="flex flex-col space-y-2 w-fit">
-                    <span className="text-sm font-raleway text-d-white/70">Name</span>
-                    <input
-                      className={`${inputs.base} !w-64`}
-                      placeholder="e.g. Neon explorer"
-                      value={avatarName}
-                      onChange={event => setAvatarName(event.target.value)}
-                    />
-                  </label>
-
-                  <button
-                    type="button"
-                    className={`${buttons.primary} !w-fit ${disableSave ? "pointer-events-none opacity-50" : ""}`}
-                    disabled={disableSave}
-                    onClick={handleSaveAvatar}
-                  >
-                    Save Avatar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={null}>
+          <AvatarCreationModal
+            open={isPanelOpen}
+            selection={selection}
+            uploadError={uploadError}
+            isDragging={isDragging}
+            avatarName={avatarName}
+            disableSave={disableSave}
+            galleryImages={galleryImages}
+            hasGalleryImages={hasGalleryImages}
+            onClose={resetPanel}
+            onAvatarNameChange={setAvatarName}
+            onSave={handleSaveAvatar}
+            onSelectFromGallery={(imageUrl) => setSelection({ imageUrl, source: 'gallery', sourceId: imageUrl })}
+            onClearSelection={() => setSelection(null)}
+            onProcessFile={processImageFile}
+            onDragStateChange={setIsDragging}
+            onUploadError={setUploadError}
+          />
+        </Suspense>
       )}
 
       {creationsModalAvatar && (

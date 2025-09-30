@@ -23,7 +23,6 @@ const Navbar = lazy(() => import("./components/Navbar"));
 const FAQSection = lazy(() => import("./components/Faq"));
 const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
-const Avatars = lazy(() => import("./components/Avatars"));
 const ResetPasswordPage = lazy(() => import("./components/ResetPasswordPage"));
 
 function NavbarFallback() {
@@ -204,14 +203,6 @@ export default function App() {
               <Route path="/gallery/*" element={<GalleryRoutes />} />
               <Route path="/upgrade" element={<Upgrade />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route
-                path="/avatars"
-                element={(
-                  <RequireAuth>
-                    <Avatars />
-                  </RequireAuth>
-                )}
-              />
               <Route
                 path="/edit"
                 element={(

@@ -18,7 +18,7 @@ type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
   { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
-  { label: "avatars", path: "/avatars" },
+  { label: "avatars", path: "/create/avatars" },
   { label: "learn", path: "/learn/use-cases" },
   { label: "explore", path: "/explore" },
   { label: "my works", path: "/gallery" },

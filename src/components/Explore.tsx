@@ -1121,7 +1121,7 @@ const Explore: React.FC = () => {
   );
 
   const handleNavigateToAvatars = useCallback(() => {
-    navigate('/avatars');
+    navigate('/create/avatars');
   }, [navigate]);
 
   const persistInspirations = useCallback(

@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { lazy, Suspense, useState } from "react";
+import { NavLink } from "react-router-dom";
 import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
 import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
-import useParallaxHover from "../hooks/useParallaxHover";
+import type { UseCaseItem } from "./learn/types";
+
+const UseCaseGrid = lazy(() => import("./learn/UseCaseGrid"));
 
 const LEARN_LINKS = [
   { to: "/learn/use-cases", label: "Use cases" },
@@ -21,15 +23,21 @@ const CATEGORIES = [
 
 type CategoryId = (typeof CATEGORIES)[number]["id"];
 
-type UseCaseItem = {
-  readonly slug: string;
-  readonly title: string;
-  readonly subtitle: string;
-  readonly section: "create" | "edit" | "personalize";
-};
-
 function createUseCase(slug: string, title: string, subtitle: string, section: "create" | "edit" | "personalize"): UseCaseItem {
   return { slug, title, subtitle, section };
+}
+
+function UseCaseGridFallback() {
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className="h-32 rounded-3xl border border-d-dark/60 bg-d-black/60 animate-pulse"
+        />
+      ))}
+    </div>
+  );
 }
 
 // IMAGE use cases
@@ -141,26 +149,6 @@ const CATEGORY_CASES: Record<CategoryId, readonly UseCaseItem[]> = {
   audio: AUDIO_CASES,
 };
 
-function UseCaseCard({ useCase }: { useCase: UseCaseItem }) {
-  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLAnchorElement>();
-
-  return (
-    <Link
-      to={`/learn/tools`}
-      className={`${glass.surface} group flex flex-col gap-2 rounded-3xl border-d-dark px-4 py-4 transition-colors duration-100 hover:border-d-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
-      aria-label={`Open ${useCase.title}`}
-      onPointerMove={onPointerMove}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-    >
-      <h4 className="text-base font-raleway font-normal text-d-text">{useCase.title}</h4>
-      <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
-        {useCase.subtitle}
-      </p>
-    </Link>
-  );
-}
-
 export default function Understand() {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("image");
   const activeCases = CATEGORY_CASES[activeCategory];
@@ -255,11 +243,9 @@ export default function Understand() {
                     {createCases.length > 0 && (
                       <div className="mb-8">
                         <h2 className="text-xl font-raleway font-light text-d-text">create</h2>
-                        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {createCases.map((useCase) => (
-                            <UseCaseCard key={useCase.slug} useCase={useCase} />
-                          ))}
-                        </div>
+                        <Suspense fallback={<UseCaseGridFallback />}>
+                          <UseCaseGrid items={createCases} />
+                        </Suspense>
                       </div>
                     )}
 
@@ -267,11 +253,9 @@ export default function Understand() {
                     {editCases.length > 0 && (
                       <div className="mb-8">
                         <h2 className="text-xl font-raleway font-light text-d-text">edit</h2>
-                        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {editCases.map((useCase) => (
-                            <UseCaseCard key={useCase.slug} useCase={useCase} />
-                          ))}
-                        </div>
+                        <Suspense fallback={<UseCaseGridFallback />}>
+                          <UseCaseGrid items={editCases} />
+                        </Suspense>
                       </div>
                     )}
 
@@ -279,11 +263,9 @@ export default function Understand() {
                     {personalizeCases.length > 0 && (
                       <div>
                         <h2 className="text-xl font-raleway font-light text-d-text">personalize</h2>
-                        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {personalizeCases.map((useCase) => (
-                            <UseCaseCard key={useCase.slug} useCase={useCase} />
-                          ))}
-                        </div>
+                        <Suspense fallback={<UseCaseGridFallback />}>
+                          <UseCaseGrid items={personalizeCases} />
+                        </Suspense>
                       </div>
                     )}
                   </>
