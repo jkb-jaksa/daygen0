@@ -4896,8 +4896,8 @@ const handleGenerate = async () => {
                 {/* Folder View */}
                 {activeCategory === "folder-view" && selectedFolder && (
                   <div className="w-full">
-                    {/* Back navigation and filters */}
-                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                    {/* Back navigation */}
+                    <div className="mb-6">
                       <button
                         onClick={() => { setActiveCategory("my-folders"); setSelectedFolder(null); }}
                         className="flex items-center gap-2 text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-base group"
@@ -4905,38 +4905,6 @@ const handleGenerate = async () => {
                         <ArrowLeft className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />
                         Back to folders
                       </button>
-
-                      <div className="flex items-center gap-3 text-xs font-raleway text-d-white/70">
-                        <span className="uppercase tracking-[0.24em] text-[10px]">Show</span>
-                        <div className="flex items-center gap-1 rounded-full border border-d-dark bg-d-black/40 p-1">
-                          {[
-                            { key: 'mine', label: 'My Creations' },
-                            { key: 'saved', label: 'Saved Inspirations' },
-                          ].map(option => (
-                            <button
-                              key={option.key}
-                              onClick={() => {
-                                setGalleryFilters(prev => {
-                                  const isSelected = prev.origins.includes(option.key);
-                                  if (isSelected) {
-                                    return { ...prev, origins: prev.origins.filter(o => o !== option.key) };
-                                  } else {
-                                    return { ...prev, origins: [...prev.origins, option.key] };
-                                  }
-                                });
-                              }}
-                              className={`rounded-full px-3 py-1 text-xs transition-colors duration-200 ${
-                                galleryFilters.origins.includes(option.key)
-                                  ? 'bg-d-white text-d-text shadow-lg shadow-d-white/10'
-                                  : 'text-d-white/70 hover:text-d-text'
-                              }`}
-                              type="button"
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                     
                     {/* Folder header */}
