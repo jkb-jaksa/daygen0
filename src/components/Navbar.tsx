@@ -15,11 +15,24 @@ import { safeNext } from "../utils/navigation";
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 
-const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
+type NavItem = {
+  label: MenuId;
+  path: string;
+  prefetch?: () => void;
+};
+
+let hasPrefetchedDigitalCopy = false;
+const prefetchDigitalCopy = () => {
+  if (hasPrefetchedDigitalCopy) return;
+  hasPrefetchedDigitalCopy = true;
+  void import("./DigitalCopy");
+};
+
+const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
   { label: "learn", path: "/learn/use-cases" },
-  { label: "digital copy", path: "/digital-copy" },
+  { label: "digital copy", path: "/digital-copy", prefetch: prefetchDigitalCopy },
   { label: "explore", path: "/explore" },
   { label: "my works", path: "/gallery" },
 ];
@@ -221,6 +234,7 @@ export default function Navbar() {
                     `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
                   }
                   onMouseEnter={() => {
+                    item.prefetch?.();
                     if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "digital copy") {
                       setActiveMenu(item.label);
                     } else {
@@ -228,6 +242,7 @@ export default function Navbar() {
                     }
                   }}
                   onFocus={() => {
+                    item.prefetch?.();
                     if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "digital copy") {
                       setActiveMenu(item.label);
                     } else {

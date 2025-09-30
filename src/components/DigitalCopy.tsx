@@ -143,10 +143,10 @@ export default function DigitalCopy() {
               <Copy className="size-4" />
               digital copy
             </span>
-            <h1 className={`${text.heroHeading} text-balance font-light text-d-text`}>Design yourself.</h1>
+            <h1 className={`${text.heroHeading} text-balance font-light text-d-text`}>Design your digital self.</h1>
             <p className="text-lg font-raleway text-d-white leading-relaxed">
               Build a digital representation of you across text, visuals, audio, and motion.
-              Each quest you complete makes your copy more expressive, more helpful, and more YOU.
+              Each quest you complete makes your copy more expressive, more helpful, and more you.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
@@ -178,7 +178,7 @@ export default function DigitalCopy() {
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {modalities.map(modality => (
                     <div key={modality.key} className="rounded-2xl border border-d-dark bg-d-mid/50 p-3 text-left">
-                      <p className="text-xs font-raleway uppercase tracking-[0.2em] text-d-light">{modality.title.split(" ")[0]}</p>
+                      <p className="text-xs font-raleway uppercase tracking-[0.2em] text-d-light">{modality.key}</p>
                       <p className="mt-1 text-sm font-raleway text-d-white">0/3 quests</p>
                       <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-d-dark">
                         <div className="h-full w-1/6 rounded-full bg-gradient-to-r from-brand/60 to-d-white/70" />
