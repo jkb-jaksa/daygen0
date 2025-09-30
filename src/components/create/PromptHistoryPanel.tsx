@@ -11,13 +11,22 @@ export interface PromptHistoryPanelProps {
   onSelect: (text: string) => void;
   onRun: (text: string) => void;
   onClear: () => void;
+  onSavePrompt?: (text: string) => void;
+  isPromptSaved?: (text: string) => boolean;
 }
 
-function PromptHistoryPanelComponent({ history, onSelect, onRun, onClear }: PromptHistoryPanelProps) {
+function PromptHistoryPanelComponent({ history, onSelect, onRun, onClear, onSavePrompt, isPromptSaved }: PromptHistoryPanelProps) {
   return (
     <div className="w-full pl-3">
       <Suspense fallback={<div className="h-9" />}>
-        <PromptHistoryChips history={history} onSelect={onSelect} onRun={onRun} onClear={onClear} />
+        <PromptHistoryChips 
+          history={history} 
+          onSelect={onSelect} 
+          onRun={onRun} 
+          onClear={onClear}
+          onSavePrompt={onSavePrompt}
+          isPromptSaved={isPromptSaved}
+        />
       </Suspense>
     </div>
   );

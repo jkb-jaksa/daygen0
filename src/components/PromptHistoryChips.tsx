@@ -1,6 +1,6 @@
 import React from "react";
 import type { PromptEntry } from "../lib/promptHistory";
-import { Play } from "lucide-react";
+import { Play, Bookmark, BookmarkPlus } from "lucide-react";
 
 type Props = {
   history: PromptEntry[];
@@ -8,6 +8,8 @@ type Props = {
   onSelect: (text: string) => void;     // fills the textarea
   onRun?: (text: string) => void;       // optional: immediately run
   onClear?: () => void;
+  onSavePrompt?: (text: string) => void; // optional: save prompt to library
+  isPromptSaved?: (text: string) => boolean; // optional: check if prompt is saved
 };
 
 export const PromptHistoryChips: React.FC<Props> = ({
@@ -16,6 +18,8 @@ export const PromptHistoryChips: React.FC<Props> = ({
   onSelect,
   onRun,
   onClear,
+  onSavePrompt,
+  isPromptSaved,
 }) => {
   if (!history?.length) return null;
   const visible = history.slice(0, maxVisible);
@@ -50,17 +54,34 @@ export const PromptHistoryChips: React.FC<Props> = ({
             >
               {e.text}
             </button>
-            {onRun && (
-              <button
-                type="button"
-                className="px-3 py-2 text-sm text-d-white/60 hover:text-d-text hover:bg-d-black/40 transition-all duration-200 border-l border-d-mid flex items-center gap-1 flex-shrink-0"
-                title="Run this prompt"
-                onClick={() => onRun(e.text)}
-              >
-                <Play className="w-3 h-3" />
-                <span className="text-xs font-raleway">Rerun</span>
-              </button>
-            )}
+            <div className="flex items-center">
+              {onSavePrompt && isPromptSaved && (
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm text-d-white/60 hover:text-d-text hover:bg-d-black/40 transition-all duration-200 border-l border-d-mid flex items-center gap-1 flex-shrink-0"
+                  title={isPromptSaved(e.text) ? "Prompt saved" : "Save prompt"}
+                  onClick={() => onSavePrompt(e.text)}
+                >
+                  {isPromptSaved(e.text) ? (
+                    <Bookmark className="w-3 h-3 fill-current" />
+                  ) : (
+                    <BookmarkPlus className="w-3 h-3" />
+                  )}
+                  <span className="text-xs font-raleway">Save</span>
+                </button>
+              )}
+              {onRun && (
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm text-d-white/60 hover:text-d-text hover:bg-d-black/40 transition-all duration-200 border-l border-d-mid flex items-center gap-1 flex-shrink-0"
+                  title="Run this prompt"
+                  onClick={() => onRun(e.text)}
+                >
+                  <Play className="w-3 h-3" />
+                  <span className="text-xs font-raleway">Rerun</span>
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

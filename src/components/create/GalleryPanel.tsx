@@ -468,7 +468,7 @@ export function GalleryPanel({
                 className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                   galleryFilters.liked
                     ? "text-d-text border-d-mid bg-d-white/10"
-                    : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
+                    : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
                 }`}
               >
                 <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
@@ -479,7 +479,7 @@ export function GalleryPanel({
                 className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                   galleryFilters.public
                     ? "text-d-text border-d-mid bg-d-white/10"
-                    : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
+                    : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
                 }`}
               >
                 <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-d-text" : "text-current"}`} />
@@ -634,7 +634,7 @@ export function GalleryPanel({
                   className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                     galleryFilters.origins.includes(option.key)
                       ? "text-d-text border-d-mid bg-d-white/10"
-                      : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
+                      : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
                   }`}
                   type="button"
                 >

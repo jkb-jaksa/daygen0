@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes, HelpCircle } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes, HelpCircle, BookmarkIcon, Bookmark } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -17,6 +17,10 @@ import { debugError } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import type { FluxModel, FluxModelType } from "../lib/bfl";
 import type { GalleryImageLike } from "./create/types";
+import { useAuth } from "../auth/useAuth";
+import { usePromptHistory } from "../hooks/usePromptHistory";
+import { useSavedPrompts } from "../hooks/useSavedPrompts";
+import { PromptsDropdown } from "./PromptsDropdown";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -178,9 +182,15 @@ const ModelMenuPortal: React.FC<{
 export default function Edit() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userKey = user?.id || user?.email || "anon";
+  const { history, addPrompt } = usePromptHistory(userKey, 10);
+  const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [unsavePromptText, setUnsavePromptText] = useState<string | null>(null);
+  const unsaveModalRef = useRef<HTMLDivElement>(null);
   
   // Prompt bar state
   const [prompt, setPrompt] = useState<string>("");
@@ -198,6 +208,7 @@ export default function Edit() {
     return items;
   }, [previewUrl, referencePreviews]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
@@ -224,6 +235,7 @@ export default function Edit() {
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const promptsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
@@ -345,6 +357,42 @@ export default function Edit() {
     else if (isReve) clearReveImage();
   };
 
+  // Handle unsave modal click outside and escape key
+  useEffect(() => {
+    if (!unsavePromptText) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (unsaveModalRef.current && !unsaveModalRef.current.contains(e.target as Node)) {
+        setUnsavePromptText(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setUnsavePromptText(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [unsavePromptText]);
+
+  const savePromptToLibrary = (promptText: string) => {
+    // Check if already saved - if so, show unsave modal
+    if (isPromptSaved(promptText)) {
+      setUnsavePromptText(promptText);
+      return;
+    }
+    
+    // Otherwise, save it
+    savePrompt(promptText);
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
@@ -367,7 +415,8 @@ export default function Edit() {
 
   // Prompt bar handlers
   const handleGenerateImage = async () => {
-    if (!prompt.trim() || !selectedFile) return;
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt || !selectedFile) return;
     setIsButtonSpinning(true);
 
     try {
@@ -392,7 +441,7 @@ export default function Edit() {
       // Generate image based on selected model
       if (isGemini) {
         await generateGeminiImage({
-          prompt,
+          prompt: trimmedPrompt,
           imageData: imageData,
           references: allReferences,
           model: selectedModel,
@@ -403,7 +452,7 @@ export default function Edit() {
       } else if (isFluxModelId(selectedModel)) {
         const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
         await generateFluxImage({
-          prompt,
+          prompt: trimmedPrompt,
           model: fluxModel,
           input_image: imageData,
           input_image_2: additionalReferences[0],
@@ -412,27 +461,27 @@ export default function Edit() {
         });
       } else if (isChatGPT) {
         await generateChatGPTImage({
-          prompt,
+          prompt: trimmedPrompt,
           size: '1024x1024',
           quality: 'high',
         });
       } else if (isIdeogram) {
         await generateIdeogramImage({
-          prompt,
+          prompt: trimmedPrompt,
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
         });
       } else if (isQwen) {
         await generateQwenImage({
-          prompt,
+          prompt: trimmedPrompt,
           size: '1024x1024',
           prompt_extend: true,
           watermark: false,
         });
       } else if (isRunway) {
         await generateRunwayImage({
-          prompt,
+          prompt: trimmedPrompt,
           model: selectedModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
           uiModel: selectedModel,
           references: allReferences,
@@ -440,19 +489,21 @@ export default function Edit() {
         });
       } else if (isSeeDream) {
         await generateSeeDreamImage({
-          prompt,
+          prompt: trimmedPrompt,
           size: "1024x1024",
           n: 1,
         });
       } else if (isReve) {
         await generateReveImage({
-          prompt,
+          prompt: trimmedPrompt,
           model: "reve-image-1.0",
           width: 1024,
           height: 1024,
           references: allReferences,
         });
       }
+
+      addPrompt(trimmedPrompt);
     } catch (error) {
       debugError('Error generating image:', error);
     } finally {
@@ -1475,7 +1526,33 @@ export default function Edit() {
               <Plus className="w-4 h-4" />
               <span className="text-sm font-raleway">Add more references</span>
             </button>
-            
+
+            <button
+              type="button"
+              ref={promptsButtonRef}
+              onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+            >
+              <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
+              <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Prompts</span>
+            </button>
+
+            <PromptsDropdown
+              isOpen={isPromptsDropdownOpen}
+              onClose={() => setIsPromptsDropdownOpen(false)}
+              anchorEl={promptsButtonRef.current}
+              recentPrompts={history}
+              savedPrompts={savedPrompts}
+              onSelectPrompt={(text) => {
+                setPrompt(text);
+                promptTextareaRef.current?.focus();
+              }}
+              onRemoveSavedPrompt={removePrompt}
+              onUpdateSavedPrompt={updatePrompt}
+              onAddSavedPrompt={savePrompt}
+              onSaveRecentPrompt={savePromptToLibrary}
+            />
+
             {/* Model Selector */}
             <div className="relative model-selector">
               <button
@@ -1634,7 +1711,7 @@ export default function Edit() {
         {isSettingsOpen && (
           <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50 p-4">
             <div className="space-y-4">
-              <div className="text-sm font-raleway text-d-text mb-3">Settings</div>
+              <div className="text-base font-raleway text-d-text mb-3">Settings</div>
               
               {/* Temperature */}
               <div className="space-y-2">
@@ -1726,6 +1803,46 @@ export default function Edit() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Unsave Prompt Confirmation Modal */}
+      {unsavePromptText && createPortal(
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-d-black/80 py-12">
+          <div ref={unsaveModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Bookmark className="w-10 h-10 mx-auto text-d-text" />
+                <h3 className="text-xl font-raleway font-normal text-d-text">
+                  Remove from Saved Prompts
+                </h3>
+                <p className="text-base font-raleway font-light text-d-white">
+                  Are you sure you want to remove this prompt from your saved prompts?
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setUnsavePromptText(null)}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const promptToRemove = savedPrompts.find(p => p.text === unsavePromptText);
+                    if (promptToRemove) {
+                      removePrompt(promptToRemove.id);
+                    }
+                    setUnsavePromptText(null);
+                  }}
+                  className={buttons.primary}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

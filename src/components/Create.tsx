@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle, Bookmark, BookmarkIcon, BookmarkPlus } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -75,7 +75,6 @@ const CATEGORY_TO_PATH: Record<string, string> = {
   avatars: "/create/avatars",
   audio: "/create/audio",
   gallery: "/gallery",
-  public: "/gallery/public",
   uploads: "/gallery/uploads",
   "my-folders": "/gallery/folders",
   inspirations: "/gallery/inspirations",
@@ -84,7 +83,7 @@ const CATEGORY_TO_PATH: Record<string, string> = {
 const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio"]);
 
 const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
-  public: "public",
+  public: "gallery",
   uploads: "uploads",
   folders: "my-folders",
   inspirations: "inspirations",
@@ -525,6 +524,7 @@ const Create: React.FC = () => {
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
+  const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
   const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
   // Avatar creation modal state
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
@@ -850,18 +850,6 @@ const Create: React.FC = () => {
     });
     return filtered;
   }, [videoGallery, galleryFilters, favorites, folders, storedAvatars]);
-  const publicGallery = useMemo(() => {
-    return gallery
-      .filter(item => item.isPublic && !item.savedFrom)
-      .sort((a, b) => {
-        const aTime = new Date(a.timestamp).getTime();
-        const bTime = new Date(b.timestamp).getTime();
-        if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
-        if (Number.isNaN(aTime)) return 1;
-        if (Number.isNaN(bTime)) return -1;
-        return bTime - aTime;
-      });
-  }, [gallery]);
   const inspirationsGallery = useMemo(() => {
     return inspirations
       .slice()
@@ -1007,7 +995,6 @@ const Create: React.FC = () => {
         'avatars',
         'audio',
         'gallery',
-        'public',
         'uploads',
         'my-folders'
       ].includes(normalized)) {
@@ -1178,6 +1165,23 @@ const Create: React.FC = () => {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [unsavePromptText]);
+
+  // Handle creations modal escape key
+  useEffect(() => {
+    if (!creationsModalAvatar) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setCreationsModalAvatar(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [creationsModalAvatar]);
 
   
   // Use the Gemini image generation hook
@@ -1662,7 +1666,6 @@ const Create: React.FC = () => {
   useEffect(() => {
     if (
       activeCategory !== 'gallery' &&
-      activeCategory !== 'public' &&
       activeCategory !== 'inspirations' &&
       selectedImages.size > 0
     ) {
@@ -1815,54 +1818,63 @@ const Create: React.FC = () => {
     }
   };
 
-  const selectRange = (startUrl: string, endUrl: string, currentGallery: GalleryImageLike[]) => {
+  const getRangeSelection = (startUrl: string, endUrl: string, currentGallery: GalleryImageLike[]) => {
     const startIndex = currentGallery.findIndex(img => img.url === startUrl);
     const endIndex = currentGallery.findIndex(img => img.url === endUrl);
-    
-    if (startIndex === -1 || endIndex === -1) return;
-    
+
+    if (startIndex === -1 || endIndex === -1) {
+      return [] as string[];
+    }
+
     const minIndex = Math.min(startIndex, endIndex);
     const maxIndex = Math.max(startIndex, endIndex);
-    
-    setSelectedImages(prev => {
-      const next = new Set(prev);
-      for (let i = minIndex; i <= maxIndex; i++) {
-        next.add(currentGallery[i].url);
-      }
-      return next;
-    });
+
+    const urls: string[] = [];
+    for (let i = minIndex; i <= maxIndex; i++) {
+      urls.push(currentGallery[i].url);
+    }
+    return urls;
   };
 
   const toggleImageSelection = (imageUrl: string, event?: React.MouseEvent) => {
     const isShiftClick = event?.shiftKey && lastSelectedImage;
-    
+
+    if (isShiftClick && lastSelectedImage) {
+      const rangeUrls = getRangeSelection(lastSelectedImage, imageUrl, filteredGallery);
+      if (rangeUrls.length === 0) {
+        return;
+      }
+      setSelectedImages(prev => {
+        const next = new Set(prev);
+        rangeUrls.forEach(url => next.add(url));
+        return next;
+      });
+      if (!isSelectMode) {
+        setIsSelectMode(true);
+      }
+      setLastSelectedImage(imageUrl);
+      return;
+    }
+
     setSelectedImages(prev => {
       const next = new Set(prev);
-      
-      if (isShiftClick && lastSelectedImage) {
-        // Range selection with Shift+click
-        selectRange(lastSelectedImage, imageUrl, filteredGallery);
-        setLastSelectedImage(imageUrl);
-        return next; // selectRange already updates the state
-      } else {
-        // Normal toggle behavior
-        if (next.has(imageUrl)) {
-          next.delete(imageUrl);
-          // If no images are selected after this removal, exit select mode
-          if (next.size === 0 && isSelectMode) {
-            setIsSelectMode(false);
-          }
-          setLastSelectedImage(null);
-        } else {
-          next.add(imageUrl);
-          // When selecting an individual image, activate select mode
-          if (!isSelectMode) {
-            setIsSelectMode(true);
-          }
-          setLastSelectedImage(imageUrl);
+
+      if (next.has(imageUrl)) {
+        next.delete(imageUrl);
+        // If no images are selected after this removal, exit select mode
+        if (next.size === 0 && isSelectMode) {
+          setIsSelectMode(false);
         }
-        return next;
+        setLastSelectedImage(null);
+      } else {
+        next.add(imageUrl);
+        // When selecting an individual image, activate select mode
+        if (!isSelectMode) {
+          setIsSelectMode(true);
+        }
+        setLastSelectedImage(imageUrl);
       }
+      return next;
     });
   };
 
@@ -2846,7 +2858,7 @@ const Create: React.FC = () => {
   const renderMoreButton = (
     menuId: string,
     image: GalleryImageLike,
-    context: 'gallery' | 'public' | 'inspirations',
+    context: 'gallery' | 'inspirations',
   ): React.JSX.Element => {
     const isOpen = moreActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
@@ -2956,7 +2968,7 @@ const Create: React.FC = () => {
   const renderLibraryGalleryItem = (
     img: GalleryImageLike,
     idx: number,
-    context: 'gallery' | 'public' | 'inspirations'
+    context: 'gallery' | 'inspirations'
   ): React.JSX.Element => {
     const isSelected = selectedImages.has(img.url);
     const menuId = `${context}-actions-${idx}-${img.url}`;
@@ -4866,37 +4878,6 @@ const handleGenerate = async () => {
                     />
                   </Suspense>
                 )}
-                {activeCategory === "public" && (
-                  <div className="w-full">
-                    {/* Share Gallery button */}
-                    <div className="mb-6 flex justify-end">
-                      <button
-                        onClick={() => {
-                          const galleryUrl = `${window.location.origin}${window.location.pathname}#public`;
-                          navigator.clipboard.writeText(galleryUrl);
-                          alert('Link copied!');
-                        }}
-                        className={buttons.primary}
-                      >
-                        <Share2 className="w-4 h-4" />
-                        Share Gallery
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2 w-full p-1">
-                      {publicGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'public'))}
-                      {publicGallery.length === 0 && (
-                        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                          <Globe className="default-orange-icon mb-4" />
-                          <h3 className="text-xl font-raleway text-d-text mb-2">No public creations yet</h3>
-                          <p className="text-base font-raleway text-d-white max-w-md">
-                            Publish your creations to see them here.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
                 {activeCategory === "inspirations" && (
                   <div className="w-full">
                     <div className="grid grid-cols-4 gap-2 w-full p-1">
@@ -6184,6 +6165,8 @@ const handleGenerate = async () => {
                   });
                 }}
                 onClear={clear}
+                onSavePrompt={savePromptToLibrary}
+                isPromptSaved={isPromptSaved}
               />
             </Suspense>
           )}
@@ -6388,7 +6371,7 @@ const handleGenerate = async () => {
                               setIsAvatarPickerOpen(false);
                               navigate('/create/avatars');
                             }}
-                            className="text-base font-raleway text-d-white hover:text-d-text transition-colors duration-200 cursor-pointer"
+                            className="text-base font-raleway text-d-text cursor-pointer"
                           >
                             Your Avatars
                           </button>
@@ -6426,22 +6409,37 @@ const handleGenerate = async () => {
                                       className="h-10 w-10 rounded-lg object-cover"
                                     />
                                     <div className="min-w-0 flex-1 text-left">
-                                      <p className="truncate text-sm font-raleway text-d-text">{avatar.name}</p>
+                                      <p className="truncate text-sm font-raleway text-d-white">{avatar.name}</p>
                                     </div>
                                     {isActive && <Check className="h-4 w-4 text-d-text" />}
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setAvatarToDelete(avatar);
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
-                                    title="Delete avatar"
-                                    aria-label="Delete avatar"
-                                  >
-                                    <Trash2 className="h-3 w-3 text-d-white hover:text-d-text" />
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCreationsModalAvatar(avatar);
+                                        setIsAvatarPickerOpen(false);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
+                                      title="View creations"
+                                      aria-label="View creations with this avatar"
+                                    >
+                                      <Info className="h-3 w-3 text-d-white hover:text-d-text" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAvatarToDelete(avatar);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
+                                      title="Delete avatar"
+                                      aria-label="Delete avatar"
+                                    >
+                                      <Trash2 className="h-3 w-3 text-d-white hover:text-d-text" />
+                                    </button>
+                                  </div>
                                 </div>
                               );
                             })}
@@ -6478,6 +6476,8 @@ const handleGenerate = async () => {
                       }}
                       onRemoveSavedPrompt={removePrompt}
                       onUpdateSavedPrompt={updatePrompt}
+                      onAddSavedPrompt={savePrompt}
+                      onSaveRecentPrompt={savePromptToLibrary}
                     />
                   </>
                 )}
@@ -7373,6 +7373,85 @@ const handleGenerate = async () => {
                     Delete
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Avatar Creations Modal */}
+        {creationsModalAvatar && (
+          <div
+            className="fixed inset-0 z-[10500] flex items-center justify-center bg-d-black/80 px-4 py-10"
+            onClick={() => setCreationsModalAvatar(null)}
+          >
+            <div
+              className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text z-10"
+                onClick={() => setCreationsModalAvatar(null)}
+                aria-label="Close avatar creations"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-2xl font-raleway text-d-text">
+                    Creations with {creationsModalAvatar.name}
+                  </h2>
+                  <p className="text-sm font-raleway text-d-white">
+                    Manage creations with your Avatar.
+                  </p>
+                </div>
+
+                {/* Main Avatar Display */}
+                <div className="flex justify-start">
+                  <div className="w-1/3 sm:w-1/5 lg:w-1/6">
+                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-d-dark">
+                      <img 
+                        src={creationsModalAvatar.imageUrl} 
+                        alt={creationsModalAvatar.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="mt-2 text-sm font-raleway text-d-white text-center truncate">{creationsModalAvatar.name}</p>
+                  </div>
+                </div>
+
+                {/* Creations Grid */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {gallery
+                    .filter(img => img.avatarId === creationsModalAvatar.id)
+                    .map((img, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-d-dark bg-d-black group">
+                        <img 
+                          src={img.url} 
+                          alt={img.prompt || 'Generated image'} 
+                          className="w-full h-full object-cover cursor-pointer"
+                          onClick={() => {
+                            setSelectedFullImage(img);
+                            setIsFullSizeOpen(true);
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-d-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="absolute bottom-0 left-0 right-0 p-2">
+                            <p className="text-xs font-raleway text-d-white line-clamp-2">{img.prompt}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
+                  <div className="rounded-[24px] border border-d-dark bg-d-black/70 p-6 text-center">
+                    <p className="text-sm font-raleway text-d-white/70">
+                      Generate a new image with this avatar to see it appear here.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
