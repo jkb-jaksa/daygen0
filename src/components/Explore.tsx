@@ -453,7 +453,7 @@ const ImageActionMenuPortal: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open || !anchorEl) return;
@@ -765,7 +765,7 @@ const CustomDropdown: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -884,7 +884,7 @@ const CustomMultiSelect: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -931,10 +931,7 @@ const CustomMultiSelect: React.FC<{
     } else {
       onChange([...values, optionValue]);
     }
-  };
-
-  const removeOption = (optionValue: string) => {
-    onChange(values.filter(v => v !== optionValue));
+    setIsOpen(false);
   };
 
   return (
@@ -946,30 +943,7 @@ const CustomMultiSelect: React.FC<{
         disabled={disabled}
         className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
-        <div className="flex flex-wrap gap-1.5 flex-1">
-          {values.length === 0 ? (
-            <span className="text-d-white/50">{placeholder || "Select..."}</span>
-          ) : (
-            values.map(value => {
-              const option = options.find(opt => opt.value === value);
-              return (
-                <div key={value} className="flex items-center gap-1 px-2 py-1 bg-d-orange-1/20 text-d-white rounded-md text-xs">
-                  <span>{option?.label || value}</span>
-                  <button
-                    type="button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      removeOption(value);
-                    }}
-                    className="hover:text-d-text transition-colors duration-200 ml-1 text-base font-bold"
-                  >
-                    ×
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <span className="text-d-white/50">{placeholder || "Select..."}</span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} flex-shrink-0`} />
       </button>
 
@@ -1054,7 +1028,7 @@ const Explore: React.FC = () => {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [avatarFavorites, setAvatarFavorites] = useState<Set<string>>(new Set());
   const [activeGalleryView, setActiveGalleryView] = useState<"creations" | "avatars">("creations");
-  const [avatarTagFilter, setAvatarTagFilter] = useState<string>("all");
+  const [avatarTagFilter, setAvatarTagFilter] = useState<string[]>([]);
 
   // Load favorites from storage
   useEffect(() => {
@@ -1259,7 +1233,7 @@ const Explore: React.FC = () => {
   const filteredAvatars = useMemo(
     () =>
       avatarLeaderboard.filter(item =>
-        avatarTagFilter === 'all' || item.tags.includes(avatarTagFilter),
+        avatarTagFilter.length === 0 || avatarTagFilter.some(tag => item.tags.includes(tag)),
       ),
     [avatarLeaderboard, avatarTagFilter],
   );
@@ -1956,48 +1930,93 @@ const Explore: React.FC = () => {
                         })}
                         placeholder="All models"
                       />
+                      {/* Selected Model Tags - appears right below the dropdown */}
+                      {galleryFilters.models.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {galleryFilters.models.map(modelId => {
+                            const model = AI_MODELS.find(m => m.id === modelId);
+                            return (
+                              <div
+                                key={modelId}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                              >
+                                <span>{model?.name || modelId}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setGalleryFilters(prev => ({
+                                    ...prev,
+                                    models: prev.models.filter(m => m !== modelId)
+                                  }))}
+                                  className="hover:text-d-text transition-colors duration-200"
+                                  aria-label={`Remove ${model?.name || modelId}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="mt-6 space-y-4">
-                <p className={`${text.body} max-w-3xl text-d-white`}>
+              <>
+                <p className={`${text.body} max-w-3xl text-d-white mt-6`}>
                   Spotlight community-made avatars that have been shared publicly. Filter by vibe, save the ones you love, and discover new creators to collaborate with.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTagFilter('all')}
-                    className={`px-4 py-2 rounded-full text-xs font-raleway transition-all duration-100 ${
-                      avatarTagFilter === 'all'
-                        ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
-                        : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
-                    }`}
-                    aria-pressed={avatarTagFilter === 'all'}
-                  >
-                    All avatars
-                  </button>
-                  {AVATAR_TAGS.map(tag => {
-                    const isActive = avatarTagFilter === tag;
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setAvatarTagFilter(tag)}
-                        className={`px-4 py-2 rounded-full text-xs font-raleway capitalize transition-all duration-100 ${
-                          isActive
-                            ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
-                            : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
-                        }`}
-                        aria-pressed={isActive}
-                      >
-                        #{tag}
-                      </button>
-                    );
-                  })}
+
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-raleway text-d-text">Filters</h4>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarTagFilter([])}
+                      className="text-xs text-d-white/70 hover:text-d-text transition-colors duration-200 font-raleway"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Avatar Tags Filter */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-d-white/70 font-raleway">Tags</label>
+                      <CustomMultiSelect
+                        values={avatarTagFilter}
+                        onChange={tags => setAvatarTagFilter(tags)}
+                        options={AVATAR_TAGS.map(tag => ({
+                          value: tag,
+                          label: `#${tag}`,
+                        }))}
+                        placeholder="All tags"
+                      />
+                      {/* Selected Avatar Tags - appears right below the dropdown */}
+                      {avatarTagFilter.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {avatarTagFilter.map(tag => (
+                            <div
+                              key={tag}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                            >
+                              <span>#{tag}</span>
+                              <button
+                                type="button"
+                                onClick={() => setAvatarTagFilter(prev => prev.filter(t => t !== tag))}
+                                className="hover:text-d-text transition-colors duration-200"
+                                aria-label={`Remove ${tag} tag`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
           </section>
@@ -2323,7 +2342,7 @@ const Explore: React.FC = () => {
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setAvatarTagFilter('all')}
+                    onClick={() => setAvatarTagFilter([])}
                     className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-4 py-2 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
                   >
                     Reset filters

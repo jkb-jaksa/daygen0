@@ -67,7 +67,7 @@ const ModelMenuPortal: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;

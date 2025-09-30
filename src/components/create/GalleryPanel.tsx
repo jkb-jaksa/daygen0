@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   Settings,
   Trash2,
+  X,
 } from "lucide-react";
 import type {
   BulkActionsMenuState,
@@ -41,7 +42,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -161,7 +162,7 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -210,11 +211,6 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
     }
   };
 
-  const selectedLabels = options
-    .filter(opt => values.includes(opt.value))
-    .map(opt => opt.label)
-    .join(", ");
-
   return (
     <div className="relative">
       <button
@@ -225,7 +221,7 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
         className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={values.length > 0 ? "text-d-white" : "text-d-white/50"}>
-          {values.length > 0 ? selectedLabels : placeholder || "Select..."}
+          {values.length > 0 ? `${values.length} selected` : placeholder || "Select..."}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
@@ -289,7 +285,7 @@ const BulkActionsMenuPortal: React.FC<BulkActionsMenuPortalProps> = ({ anchorEl,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -378,6 +374,7 @@ export interface GalleryPanelProps {
   aiModels: ReadonlyArray<{ id: string; name: string }>;
   getAvailableFolders: () => string[];
   folders: Folder[];
+  getAvailableAvatars: () => Array<{ id: string; name: string }>;
   toggleSelectMode: () => void;
   toggleSelectAllVisible: () => void;
   filteredGallery: GalleryImageLike[];
@@ -408,6 +405,7 @@ export function GalleryPanel({
   aiModels,
   getAvailableFolders,
   folders,
+  getAvailableAvatars,
   toggleSelectMode,
   toggleSelectAllVisible,
   filteredGallery,
@@ -435,6 +433,11 @@ export function GalleryPanel({
     return { value: modelId, label: model?.name || modelId };
   });
 
+  const avatarOptions = getAvailableAvatars().map(avatar => ({
+    value: avatar.id,
+    label: avatar.name,
+  }));
+
   const folderOptions = getAvailableFolders().map(folderId => {
     const folder = folders.find(f => f.id === folderId);
     return { value: folderId, label: folder?.name || folderId };
@@ -449,14 +452,14 @@ export function GalleryPanel({
             <h3 className="text-sm font-raleway text-d-white">Filters</h3>
           </div>
           <button
-            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], type: "all", folder: "all", origin: "all" })}
+            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", origins: [], avatar: "all" })}
             className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
           >
             Clear
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-d-white/70 font-raleway">Liked/Public</label>
             <div className="flex gap-1 flex-wrap">
@@ -464,7 +467,7 @@ export function GalleryPanel({
                 onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
                 className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                   galleryFilters.liked
-                    ? "text-d-text border-d-mid"
+                    ? "text-d-text border-d-mid bg-d-white/10"
                     : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
                 }`}
               >
@@ -475,7 +478,7 @@ export function GalleryPanel({
                 onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
                 className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                   galleryFilters.public
-                    ? "text-d-text border-d-mid"
+                    ? "text-d-text border-d-mid bg-d-white/10"
                     : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
                 }`}
               >
@@ -487,16 +490,16 @@ export function GalleryPanel({
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-d-white/70 font-raleway">Modality</label>
-            <CustomDropdown
-              value={galleryFilters.type}
-              onChange={value => {
-                const newType = value as "all" | "image" | "video";
-                setGalleryFilters(prev => ({ ...prev, type: newType, models: [] }));
+            <CustomMultiSelect
+              values={galleryFilters.types}
+              onChange={types => {
+                setGalleryFilters(prev => ({ ...prev, types, models: [] }));
               }}
               options={[
                 { value: "image", label: "Image" },
                 { value: "video", label: "Video" },
               ]}
+              placeholder="All modalities"
             />
           </div>
 
@@ -507,6 +510,17 @@ export function GalleryPanel({
               onChange={models => setGalleryFilters(prev => ({ ...prev, models }))}
               options={modelOptions}
               placeholder="All models"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-d-white/70 font-raleway">Avatar</label>
+            <CustomDropdown
+              value={galleryFilters.avatar}
+              onChange={value => setGalleryFilters(prev => ({ ...prev, avatar: value }))}
+              options={avatarOptions}
+              disabled={avatarOptions.length === 0}
+              placeholder={avatarOptions.length === 0 ? "No avatars available" : "All avatars"}
             />
           </div>
 
@@ -525,15 +539,23 @@ export function GalleryPanel({
             <label className="text-xs text-d-white/70 font-raleway">Origin</label>
             <div className="flex gap-1 flex-wrap">
               {[
-                { key: "all", label: "All" },
-                { key: "mine", label: "My creations" },
-                { key: "saved", label: "Saved" },
+                { key: "mine", label: "My Creations" },
+                { key: "saved", label: "Saved Inspirations" },
               ].map(option => (
                 <button
                   key={option.key}
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, origin: option.key as "all" | "mine" | "saved" }))}
+                  onClick={() => {
+                    setGalleryFilters(prev => {
+                      const isSelected = prev.origins.includes(option.key);
+                      if (isSelected) {
+                        return { ...prev, origins: prev.origins.filter(o => o !== option.key) };
+                      } else {
+                        return { ...prev, origins: [...prev.origins, option.key] };
+                      }
+                    });
+                  }}
                   className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                    galleryFilters.origin === option.key
+                    galleryFilters.origins.includes(option.key)
                       ? "text-d-text border-d-mid bg-d-white/10"
                       : "text-d-white border-d-dark hover:border-d-text hover:text-d-text"
                   }`}
@@ -545,6 +567,102 @@ export function GalleryPanel({
             </div>
           </div>
         </div>
+
+        {/* Active Filter Tags */}
+        {(galleryFilters.liked ||
+          galleryFilters.public ||
+          galleryFilters.types.length > 0 ||
+          galleryFilters.models.length > 0 ||
+          galleryFilters.avatar !== "all" ||
+          galleryFilters.folder !== "all" ||
+          galleryFilters.origins.length > 0) && (
+          <div className="mt-3 pt-3 border-t border-d-dark/50">
+            <div className="flex flex-wrap items-center gap-2">
+              {galleryFilters.liked && (
+                <button
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, liked: false }))}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                >
+                  <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                  <span>Liked</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
+              {galleryFilters.public && (
+                <button
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, public: false }))}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                >
+                  <Globe className="w-3 h-3" />
+                  <span>Public</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
+              {galleryFilters.types.map(type => (
+                <button
+                  key={type}
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== type), models: [] }))}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                >
+                  <span className="text-d-white/70">Modality:</span>
+                  <span>{type === "image" ? "Image" : "Video"}</span>
+                  <X className="w-3 h-3" />
+                </button>
+              ))}
+
+              {galleryFilters.models.map(modelId => {
+                const model = aiModels.find(m => m.id === modelId);
+                return (
+                  <button
+                    key={modelId}
+                    onClick={() => setGalleryFilters(prev => ({ ...prev, models: prev.models.filter(m => m !== modelId) }))}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                  >
+                    <span className="text-d-white/70">Model:</span>
+                    <span>{model?.name || modelId}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                );
+              })}
+
+              {galleryFilters.avatar !== "all" && (
+                <button
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, avatar: "all" }))}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                >
+                  <span className="text-d-white/70">Avatar:</span>
+                  <span>{getAvailableAvatars().find(a => a.id === galleryFilters.avatar)?.name || galleryFilters.avatar}</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
+              {galleryFilters.folder !== "all" && (
+                <button
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, folder: "all" }))}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                >
+                  <span className="text-d-white/70">Folder:</span>
+                  <span>{folders.find(f => f.id === galleryFilters.folder)?.name || galleryFilters.folder}</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
+              {galleryFilters.origins.map(origin => (
+                <button
+                  key={origin}
+                  onClick={() => setGalleryFilters(prev => ({ ...prev, origins: prev.origins.filter(o => o !== origin) }))}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                >
+                  <span className="text-d-white/70">Origin:</span>
+                  <span>{origin === "mine" ? "My Creations" : origin === "saved" ? "Saved Inspirations" : origin}</span>
+                  <X className="w-3 h-3" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={`${glass.promptDark} rounded-[20px] mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>

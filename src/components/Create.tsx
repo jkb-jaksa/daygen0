@@ -162,7 +162,7 @@ const ModelMenuPortal: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -284,7 +284,7 @@ const AvatarPickerPortal: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -401,7 +401,7 @@ const ImageActionMenuPortal: React.FC<{
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -682,7 +682,6 @@ const Create: React.FC = () => {
   const [activeGenerationQueue, setActiveGenerationQueue] = useState<Array<{ id: string; prompt: string; model: string }>>([]);
   const hasGenerationCapacity = activeGenerationQueue.length < MAX_PARALLEL_GENERATIONS;
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
-  const [shouldAutoGenerateAfterModelSelect, setShouldAutoGenerateAfterModelSelect] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [lastSelectedImage, setLastSelectedImage] = useState<string | null>(null);
@@ -718,24 +717,33 @@ const Create: React.FC = () => {
     liked: false,
     public: false,
     models: [],
-    type: 'all',
+    types: [],
     folder: 'all',
-    origin: 'all'
+    origins: [],
+    avatar: 'all'
   });
   const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
 
   const matchesOriginFilter = useCallback(
     (item: GalleryImageLike) => {
-      if (galleryFilters.origin === 'mine') {
-        return !item.savedFrom;
+      if (galleryFilters.origins.length === 0) {
+        return true; // No filter applied, show all
       }
-      if (galleryFilters.origin === 'saved') {
-        return Boolean(item.savedFrom);
+      
+      const isMine = !item.savedFrom;
+      const isSaved = Boolean(item.savedFrom);
+      
+      if (galleryFilters.origins.includes('mine') && isMine) {
+        return true;
       }
-      return true;
+      if (galleryFilters.origins.includes('saved') && isSaved) {
+        return true;
+      }
+      
+      return false;
     },
-    [galleryFilters.origin],
+    [galleryFilters.origins],
   );
 
   // Filter function for gallery
@@ -756,6 +764,13 @@ const Create: React.FC = () => {
         return false;
       }
       
+      // Avatar filter
+      if (galleryFilters.avatar !== 'all') {
+        if (item.avatarId !== galleryFilters.avatar) {
+          return false;
+        }
+      }
+      
       // Folder filter
       if (galleryFilters.folder !== 'all') {
         const selectedFolder = folders.find(f => f.id === galleryFilters.folder);
@@ -769,7 +784,7 @@ const Create: React.FC = () => {
       }
 
       // Type filter (for now, we'll assume all items are images)
-      if (galleryFilters.type !== 'all' && galleryFilters.type !== 'image') {
+      if (galleryFilters.types.length > 0 && !galleryFilters.types.includes('image')) {
         return false;
       }
 
@@ -794,6 +809,13 @@ const Create: React.FC = () => {
         return false;
       }
       
+      // Avatar filter
+      if (galleryFilters.avatar !== 'all') {
+        if (item.avatarId !== galleryFilters.avatar) {
+          return false;
+        }
+      }
+      
       // Folder filter
       if (galleryFilters.folder !== 'all') {
         const selectedFolder = folders.find(f => f.id === galleryFilters.folder);
@@ -803,7 +825,7 @@ const Create: React.FC = () => {
       }
       
       // Type filter - only show videos
-      if (galleryFilters.type !== 'all' && galleryFilters.type !== 'video') {
+      if (galleryFilters.types.length > 0 && !galleryFilters.types.includes('video')) {
         return false;
       }
       
@@ -811,7 +833,7 @@ const Create: React.FC = () => {
     });
   };
   
-  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders]);
+  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars]);
   const filteredVideoGallery = useMemo(() => {
     const filtered = filterVideoGalleryItems(videoGallery);
     debugLog('[Create] Video gallery state:', { 
@@ -820,7 +842,7 @@ const Create: React.FC = () => {
       videos: videoGallery.map(v => ({ url: v.url, prompt: v.prompt }))
     });
     return filtered;
-  }, [videoGallery, galleryFilters, favorites, folders]);
+  }, [videoGallery, galleryFilters, favorites, folders, storedAvatars]);
   const publicGallery = useMemo(() => {
     return gallery
       .filter(item => item.isPublic && !item.savedFrom)
@@ -873,37 +895,40 @@ const Create: React.FC = () => {
   
   // Helper functions for filters
   const getAvailableModels = () => {
-    if (galleryFilters.type === 'video') {
-      // Return video models
-      return AI_MODELS.filter(model => 
-        model.id === 'veo-3' || 
-        model.id === 'runway-video-gen4' ||
-        model.id === 'wan-video-2.2' ||
-        model.id === 'hailuo-02' ||
-        model.id === 'kling-video' ||
-        model.id === 'seedance-1.0-pro' ||
-        model.id === 'luma-ray-2'
-      ).map(model => model.id).sort();
-    } else if (galleryFilters.type === 'image') {
-      // Return image models (exclude video models and Photon Flash variant)
-      return AI_MODELS.filter(model => 
-        model.id !== 'veo-3' && 
-        model.id !== 'runway-video-gen4' &&
-        model.id !== 'wan-video-2.2' &&
-        model.id !== 'hailuo-02' &&
-        model.id !== 'kling-video' &&
-        model.id !== 'seedance-1.0-pro' &&
-        model.id !== 'luma-ray-2' &&
-        model.id !== 'luma-photon-flash-1'
-      ).map(model => model.id).sort();
-    } else {
-      // 'all' type - show all models
+    const videoModels = ['veo-3', 'runway-video-gen4', 'wan-video-2.2', 'hailuo-02', 'kling-video', 'seedance-1.0-pro', 'luma-ray-2'];
+    const excludedImageModels = [...videoModels, 'luma-photon-flash-1'];
+    
+    if (galleryFilters.types.length === 0) {
+      // No type filter - show all models
       return AI_MODELS.map(model => model.id).sort();
     }
+    
+    const includesImage = galleryFilters.types.includes('image');
+    const includesVideo = galleryFilters.types.includes('video');
+    
+    if (includesImage && includesVideo) {
+      // Both selected - show all models
+      return AI_MODELS.map(model => model.id).sort();
+    } else if (includesVideo) {
+      // Only video selected
+      return AI_MODELS.filter(model => videoModels.includes(model.id)).map(model => model.id).sort();
+    } else if (includesImage) {
+      // Only image selected
+      return AI_MODELS.filter(model => !excludedImageModels.includes(model.id)).map(model => model.id).sort();
+    }
+    
+    return AI_MODELS.map(model => model.id).sort();
   };
   
   const getAvailableFolders = () => {
     return folders.map(folder => folder.id);
+  };
+  
+  const getAvailableAvatars = () => {
+    return storedAvatars.map(avatar => ({
+      id: avatar.id,
+      name: avatar.name,
+    }));
   };
   
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -2609,6 +2634,20 @@ const Create: React.FC = () => {
     // Set the model to the original model used
     setSelectedModel(originalModel ?? 'unknown');
     
+    // Clear existing references and generated images
+    clearAllReferences();
+    clearGeminiImage();
+    clearFluxImage();
+    clearChatGPTImage();
+    
+    // If the image was created with an avatar, select that same avatar
+    if (image.avatarId) {
+      const originalAvatar = storedAvatars.find(avatar => avatar.id === image.avatarId);
+      if (originalAvatar) {
+        handleAvatarSelect(originalAvatar);
+      }
+    }
+    
     // Close the menu
     closeImageActionMenu();
     
@@ -2618,7 +2657,7 @@ const Create: React.FC = () => {
     }, 100);
   };
 
-  const handleRerunWithDifferentModel = () => {
+  const handleRerunWithDifferentModel = async () => {
     if (!imageActionMenuImage) return;
     
     const image = imageActionMenuImage;
@@ -2627,8 +2666,19 @@ const Create: React.FC = () => {
     // Set the prompt to the original prompt
     setPrompt(originalPrompt);
     
-    // Set flag to auto-generate after model selection
-    setShouldAutoGenerateAfterModelSelect(true);
+    // Clear existing references and generated images
+    clearAllReferences();
+    clearGeminiImage();
+    clearFluxImage();
+    clearChatGPTImage();
+    
+    // If the image was created with an avatar, select that same avatar
+    if (image.avatarId) {
+      const originalAvatar = storedAvatars.find(avatar => avatar.id === image.avatarId);
+      if (originalAvatar) {
+        handleAvatarSelect(originalAvatar);
+      }
+    }
     
     // Close the menu
     closeImageActionMenu();
@@ -2671,7 +2721,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -2682,7 +2732,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleCreateAvatarFromMenu(image);
@@ -2693,7 +2743,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -2704,7 +2754,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleRerun();
@@ -2715,7 +2765,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleRerunWithDifferentModel();
@@ -2726,7 +2776,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -2775,7 +2825,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -2801,7 +2851,7 @@ const Create: React.FC = () => {
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -2812,7 +2862,7 @@ const Create: React.FC = () => {
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -2825,7 +2875,7 @@ const Create: React.FC = () => {
           {context !== 'inspirations' && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleImagePublicStatus(image.url);
@@ -2993,7 +3043,7 @@ const Create: React.FC = () => {
                   )}
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
-                  <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                  <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-d-text" />
                       <span className="leading-none">Public</span>
@@ -3001,7 +3051,7 @@ const Create: React.FC = () => {
                   </div>
                 )}
                 {context === 'inspirations' && (
-                  <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                  <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-d-text" />
                       <span className="leading-none">Inspiration</span>
@@ -3997,17 +4047,6 @@ const handleGenerate = async () => {
     // Find model by name and get its ID
     const model = AI_MODELS.find(m => m.name === modelName);
     setSelectedModel(model?.id || "gemini-2.5-flash-image-preview");
-    
-    // If we should auto-generate after model selection, do it
-    if (shouldAutoGenerateAfterModelSelect) {
-      setShouldAutoGenerateAfterModelSelect(false);
-      // Close the model selector
-      setIsModelSelectorOpen(false);
-      // Wait a bit for state to update, then trigger generation
-      setTimeout(async () => {
-        await handleGenerateImage();
-      }, 100);
-    }
   };
 
   const toggleSettings = () => {
@@ -4714,6 +4753,7 @@ const handleGenerate = async () => {
                       aiModels={galleryModelOptions}
                       getAvailableFolders={getAvailableFolders}
                       folders={folders}
+                      getAvailableAvatars={getAvailableAvatars}
                       toggleSelectMode={toggleSelectMode}
                       toggleSelectAllVisible={toggleSelectAllVisible}
                       filteredGallery={filteredGallery}
@@ -4870,15 +4910,23 @@ const handleGenerate = async () => {
                         <span className="uppercase tracking-[0.24em] text-[10px]">Show</span>
                         <div className="flex items-center gap-1 rounded-full border border-d-dark bg-d-black/40 p-1">
                           {[
-                            { key: 'all', label: 'All' },
-                            { key: 'mine', label: 'My creations' },
-                            { key: 'saved', label: 'Saved' },
+                            { key: 'mine', label: 'My Creations' },
+                            { key: 'saved', label: 'Saved Inspirations' },
                           ].map(option => (
                             <button
                               key={option.key}
-                              onClick={() => setGalleryFilters(prev => ({ ...prev, origin: option.key as 'all' | 'mine' | 'saved' }))}
+                              onClick={() => {
+                                setGalleryFilters(prev => {
+                                  const isSelected = prev.origins.includes(option.key);
+                                  if (isSelected) {
+                                    return { ...prev, origins: prev.origins.filter(o => o !== option.key) };
+                                  } else {
+                                    return { ...prev, origins: [...prev.origins, option.key] };
+                                  }
+                                });
+                              }}
                               className={`rounded-full px-3 py-1 text-xs transition-colors duration-200 ${
-                                galleryFilters.origin === option.key
+                                galleryFilters.origins.includes(option.key)
                                   ? 'bg-d-white text-d-text shadow-lg shadow-d-white/10'
                                   : 'text-d-white/70 hover:text-d-text'
                               }`}
@@ -5012,7 +5060,7 @@ const handleGenerate = async () => {
                                           })()}
                                         </div>
                                         {img.isPublic && (
-                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                                          <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-text" />
                                               <span className="leading-none">Public</span>
@@ -5620,7 +5668,7 @@ const handleGenerate = async () => {
                                         <ModelBadge model={seedanceVideo.model} size="md" />
                                       </Suspense>
                                       <div className="flex items-center gap-2">
-                                        <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                                        <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                           <div className="flex items-center gap-1">
                                             <span className="leading-none">{seedanceVideo.duration}s</span>
                                           </div>
@@ -5658,7 +5706,7 @@ const handleGenerate = async () => {
                                       </Suspense>
                                       <div className="flex items-center gap-2">
                                         {video.isPublic && (
-                                          <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                                          <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
                                               <Globe className="w-3 h-3 text-d-text" />
                                               <span className="leading-none">Public</span>
@@ -5668,7 +5716,7 @@ const handleGenerate = async () => {
                                         {video.operationName && (
                                           <button
                                             onClick={() => handleDownloadVideo(video.operationName!)}
-                                            className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway hover:bg-d-dark/60 hover:text-d-text transition-colors duration-200`}
+                                            className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-d-dark/60 hover:text-d-text transition-colors duration-200`}
                                             title="Download video"
                                           >
                                             <Download className="w-3 h-3" />
@@ -5850,7 +5898,7 @@ const handleGenerate = async () => {
                                     })()}
                                   </div>
                                   {img.isPublic && (
-                                    <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                                    <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                       <div className="flex items-center gap-1">
                                         <Globe className="w-3 h-3 text-d-text" />
                                         <span className="leading-none">Public</span>
@@ -6426,7 +6474,7 @@ const handleGenerate = async () => {
                             setSelectedModel("veo-3");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "veo-3"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6466,7 +6514,7 @@ const handleGenerate = async () => {
                             debugLog('[Create] Selected model set to:', "runway-video-gen4");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "runway-video-gen4"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6504,7 +6552,7 @@ const handleGenerate = async () => {
                             setSelectedModel("hailuo-02");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "hailuo-02"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6542,7 +6590,7 @@ const handleGenerate = async () => {
                             setSelectedModel("wan-video-2.2");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "wan-video-2.2"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6580,7 +6628,7 @@ const handleGenerate = async () => {
                             setSelectedModel("kling-video");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "kling-video"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6620,7 +6668,7 @@ const handleGenerate = async () => {
                             debugLog('[Create] Selected model set to:', "seedance-1.0-pro");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "seedance-1.0-pro"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6659,7 +6707,7 @@ const handleGenerate = async () => {
                             setSelectedModel("luma-ray-2");
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "luma-ray-2"
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : 'bg-transparent hover:bg-d-text/20 border-0'
@@ -6716,7 +6764,7 @@ const handleGenerate = async () => {
                             handleModelSelect(model.name);
                             setIsModelSelectorOpen(false);
                           }}
-                          className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                          className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
                               ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
                               : isComingSoon
@@ -6898,7 +6946,7 @@ const handleGenerate = async () => {
                 {/* Saved inspiration badge - positioned at top-left of image */}
                 {activeFullSizeImage && 'savedFrom' in activeFullSizeImage && (activeFullSizeImage as GalleryImageLike).savedFrom && (
                   <div className="absolute top-4 left-4 pointer-events-auto">
-                     <div className="flex items-center gap-2 rounded-lg border border-d-dark/60 bg-d-black/60 px-2 py-1.5 backdrop-blur-sm">
+                     <div className="flex items-center gap-2 rounded-lg border border-d-dark/60 bg-d-black/60 px-2 py-2 backdrop-blur-sm">
                       {(activeFullSizeImage as GalleryImageLike).savedFrom!.profileUrl ? (
                         <a
                           href={(activeFullSizeImage as GalleryImageLike).savedFrom!.profileUrl}
@@ -7031,7 +7079,7 @@ const handleGenerate = async () => {
                             })()}
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
-                            <div className={`${glass.promptDark} text-d-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                            <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                               <div className="flex items-center gap-1">
                                 <Globe className="w-3 h-3 text-d-text" />
                                 <span className="leading-none">Public</span>

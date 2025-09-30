@@ -49,6 +49,7 @@ export type GalleryVideoLike = {
   isPublic?: boolean;
   type: "video";
   operationName?: string;
+  avatarId?: string; // Avatar ID for filtering
 };
 
 export type StoredGalleryImage = {
@@ -94,9 +95,10 @@ export type GalleryFilters = {
   liked: boolean;
   public: boolean;
   models: string[];
-  type: "all" | "image" | "video";
+  types: string[]; // Changed from 'type' to 'types' to support multiselect (values: 'image', 'video')
   folder: string;
-  origin: "all" | "mine" | "saved";
+  origins: string[]; // Changed from 'origin' to 'origins' to support multiselect (values: 'mine', 'saved')
+  avatar: string;
 };
 
 export type ImageActionMenuState = { id: string; anchor: HTMLElement | null } | null;

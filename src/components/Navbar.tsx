@@ -73,7 +73,7 @@ export default function Navbar() {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>();
+  } = useDropdownScrollLock<HTMLDivElement>(menuOpen);
 
   useLayoutEffect(() => {
     const measure = () => {
