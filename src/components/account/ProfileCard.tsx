@@ -14,7 +14,7 @@ export type ProfileCardProps = {
   isSavingProfile: boolean;
   isUploadingPic: boolean;
   uploadError: string | null;
-  fileInputRef: RefObject<HTMLInputElement>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   onProfilePicChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemoveProfilePic: () => void;
   onNameChange: (value: string) => void;
