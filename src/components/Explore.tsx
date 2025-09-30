@@ -68,18 +68,18 @@ const styleFilters = [
 
 // AI Model data for filtering
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image", id: "gemini-2.5-flash-image-preview" },
+  { name: "Gemini 2.5 Flash", id: "gemini-2.5-flash-image-preview" },
   { name: "Flux 1.1", id: "flux-1.1" },
   { name: "Ideogram 3.0", id: "ideogram" },
   { name: "Recraft", id: "recraft" },
-  { name: "Qwen Image", id: "qwen-image" },
+  { name: "Qwen", id: "qwen-image" },
   { name: "Runway Gen-4", id: "runway-gen4" },
   { name: "Runway Gen-4 (Video)", id: "runway-video-gen4" },
   { name: "Wan 2.2 Video", id: "wan-video-2.2" },
   { name: "Hailuo 02", id: "hailuo-02" },
   { name: "Kling", id: "kling-video" },
   { name: "Seedream 3.0", id: "seedream-3.0" },
-  { name: "ChatGPT Image", id: "chatgpt-image" },
+  { name: "ChatGPT", id: "chatgpt-image" },
   { name: "Veo 3", id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", id: "seedance-1.0-pro" },
   { name: "Luma Photon 1", id: "luma-photon-1" },

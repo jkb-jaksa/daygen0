@@ -123,19 +123,19 @@ const getInitials = (name: string) =>
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash Image", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
+  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
   { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue" as Accent, id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
   { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink" as Accent, id: "recraft" },
-  { name: "Qwen Image", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
+  { name: "Qwen", desc: "Great image editing.", Icon: Wand2, accent: "blue" as Accent, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet" as Accent, id: "runway-gen4" },
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, accent: "violet" as Accent, id: "runway-video-gen4" },
   { name: "Wan 2.2 Video", desc: "Alibaba's Wan 2.2 text-to-video model.", Icon: VideoIcon, accent: "blue" as Accent, id: "wan-video-2.2" },
   { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, accent: "cyan" as Accent, id: "hailuo-02" },
   { name: "Kling", desc: "ByteDance's cinematic video model.", Icon: VideoIcon, accent: "cyan" as Accent, id: "kling-video" },
   { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
-  { name: "ChatGPT Image", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
+  { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, accent: "emerald" as Accent, id: "seedance-1.0-pro" },
   { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan" as Accent, id: "luma-photon-1" },
@@ -3681,7 +3681,7 @@ const handleGenerate = async () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
+      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
       return;
     }
 
@@ -3782,7 +3782,7 @@ const handleGenerate = async () => {
           topP: topPForGeneration,
         });
       } else if (isChatGPTModel) {
-        // Use ChatGPT Image generation
+        // Use ChatGPT generation
         img = await generateChatGPTImage({
           prompt: trimmedPrompt,
           size: '1024x1024',
@@ -3802,7 +3802,7 @@ const handleGenerate = async () => {
         }
         img = ideogramResult[0]; // Take the first generated image
       } else if (isQwenModel) {
-        // Use Qwen Image generation
+        // Use Qwen generation
         const qwenResult = await generateQwenImage({
           prompt: trimmedPrompt,
           size: qwenSizeForGeneration,
@@ -6726,7 +6726,7 @@ const handleGenerate = async () => {
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash Image, Flux 1.1, ChatGPT Image, Ideogram, Qwen Image, Runway, Wan 2.2 Video, Hailuo 02, Seedream, Reve, Recraft, and Luma models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Seedream, Reve, Recraft, and Luma models are available.');
                               return;
                             }
                             handleModelSelect(model.name);

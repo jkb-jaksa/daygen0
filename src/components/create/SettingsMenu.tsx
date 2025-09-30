@@ -1002,7 +1002,7 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-sm font-raleway text-d-text mb-3">Qwen Image Settings</div>
+          <div className="text-sm font-raleway text-d-text mb-3">Qwen Settings</div>
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">

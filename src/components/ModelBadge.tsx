@@ -12,10 +12,10 @@ interface ModelBadgeProps {
 // Model configuration with display names and icons
 const MODEL_CONFIG = {
   'gemini-2.5-flash-image-preview': {
-    name: 'Gemini 2.5 Flash Image',
+    name: 'Gemini 2.5 Flash',
     shortName: 'G2.5',
     icon: '🤖',
-    description: 'Google Gemini 2.5 Flash Image - Best for image editing and multimodal tasks'
+    description: 'Google Gemini 2.5 Flash - Best for image editing and multimodal tasks'
   },
   'flux-pro-1.1': {
     name: 'FLUX Pro 1.1',
@@ -132,16 +132,16 @@ const MODEL_CONFIG = {
     description: 'Seedream 4.0'
   },
   'qwen-image': {
-    name: 'Qwen Image',
+    name: 'Qwen',
     shortName: 'QW',
     icon: '🧠',
-    description: 'Qwen Image - Great for image editing and generation'
+    description: 'Qwen - Great for image editing and generation'
   },
   'chatgpt-image': {
-    name: 'ChatGPT Image',
+    name: 'ChatGPT',
     shortName: 'GPT',
     icon: '💬',
-    description: 'ChatGPT Image - Popular image generation model'
+    description: 'ChatGPT - Popular image generation model'
   },
   'reve-image-1.0': {
     name: 'Reve',

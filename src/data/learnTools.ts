@@ -107,7 +107,7 @@ const tools: readonly LearnToolPage[] = [
       { label: "Gemini help centre", href: "https://support.google.com/gemini" },
       { label: "Google AI Studio", href: "https://aistudio.google.com" },
     ],
-    aliases: ["Gemini 2.5 Flash Image", "Imagen", "Imagen 2"],
+    aliases: ["Gemini 2.5 Flash", "Imagen", "Imagen 2"],
   },
   {
     slug: "higgsfield",
@@ -572,10 +572,10 @@ const tools: readonly LearnToolPage[] = [
   },
   {
     slug: "chatgpt-image",
-    name: "ChatGPT Image",
+    name: "ChatGPT",
     tagline: "Popular image model. Available in ChatGPT.",
     overview:
-      "ChatGPT Image generation combines OpenAI's image models with conversational workflows. Create, edit, and upscale visuals without leaving the ChatGPT interface.",
+      "ChatGPT combines OpenAI's image models with conversational workflows. Create, edit, and upscale visuals without leaving the ChatGPT interface.",
     categories: ["image"],
     pricing:
       "Included with ChatGPT Plus, Team, and Enterprise subscriptions. API usage is billed separately via OpenAI credits.",
@@ -610,7 +610,7 @@ const tools: readonly LearnToolPage[] = [
       { label: "ChatGPT help centre", href: "https://help.openai.com" },
       { label: "OpenAI platform", href: "https://platform.openai.com/docs/guides/images" },
     ],
-    aliases: ["ChatGPT", "DALL·E", "DALL-E", "ChatGPT Image"],
+    aliases: ["ChatGPT", "DALL·E", "DALL-E"],
   },
   {
     slug: "grok-image",
@@ -655,10 +655,10 @@ const tools: readonly LearnToolPage[] = [
   },
   {
     slug: "qwen-image",
-    name: "Qwen Image",
+    name: "Qwen",
     tagline: "Available in Qwen. Great for image editing.",
     overview:
-      "Qwen Image (Wan) from Alibaba Cloud delivers controllable text-to-image and video generation. It pairs diffusion models with enterprise-grade deployment options across Alibaba's ecosystem.",
+      "Qwen from Alibaba Cloud delivers controllable text-to-image and video generation. It pairs diffusion models with enterprise-grade deployment options across Alibaba's ecosystem.",
     categories: ["image", "video"],
     pricing:
       "Available through Alibaba Cloud's Model Studio with pay-as-you-go and subscription bundles. Enterprise licences include dedicated resource quotas.",
@@ -681,18 +681,18 @@ const tools: readonly LearnToolPage[] = [
       {
         title: "Cloud-scale deployment",
         description:
-          "Run Qwen Image inside Alibaba Cloud with monitoring, quotas, and enterprise compliance.",
+          "Run Qwen inside Alibaba Cloud with monitoring, quotas, and enterprise compliance.",
       },
     ],
     gettingStarted: [
       "Create an Alibaba Cloud account and enable Model Studio.",
-      "Choose the Wan/Qwen Image model and configure your workspace.",
+      "Choose the Wan/Qwen model and configure your workspace.",
       "Experiment with prompts, reference images, or API calls to automate generation.",
     ],
     resources: [
       { label: "Alibaba Cloud Model Studio", href: "https://modelscope.cn" },
     ],
-    aliases: ["Qwen", "Wan", "Wan 2.2 Video", "Qwen Image"],
+    aliases: ["Qwen", "Wan", "Wan 2.2 Video"],
   },
   {
     slug: "flair",

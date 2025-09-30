@@ -12,9 +12,9 @@ export interface ModelInfo {
 export const MODEL_INFO: Record<string, ModelInfo> = {
   'gemini-2.5-flash-image-preview': {
     id: 'gemini-2.5-flash-image-preview',
-    name: 'Gemini 2.5 Flash Image (Nano Banana)',
+    name: 'Gemini 2.5 Flash (Nano Banana)',
     shortName: 'Gemini 2.5',
-    description: 'Google Gemini 2.5 Flash Image Preview',
+    description: 'Google Gemini 2.5 Flash Preview',
     isAvailable: true
   },
   'flux-pro': {
@@ -61,16 +61,16 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
   },
   'qwen-image': {
     id: 'qwen-image',
-    name: 'Qwen Image',
+    name: 'Qwen',
     shortName: 'Qwen',
-    description: 'Qwen Image',
+    description: 'Qwen',
     isAvailable: true
   },
   'chatgpt-image': {
     id: 'chatgpt-image',
-    name: 'ChatGPT Image',
+    name: 'ChatGPT',
     shortName: 'ChatGPT',
-    description: 'ChatGPT Image',
+    description: 'ChatGPT',
     isAvailable: false
   },
   'ideogram': {

@@ -8,7 +8,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     logo: '/gemini logo.png',
     names: [
       'Gemini',
-      'Gemini 2.5 Flash Image',
+      'Gemini 2.5 Flash',
       'gemini-2.5-flash-image-preview',
       'Gemini Voice',
       'Imagen',
@@ -20,7 +20,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   },
   {
     logo: '/qwen logo.png',
-    names: ['Qwen', 'Qwen Image', 'Wan', 'Wan 2.2 Video'],
+    names: ['Qwen', 'Wan', 'Wan 2.2 Video'],
   },
   {
     logo: '/runway logo.jpg',
@@ -60,7 +60,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   },
   {
     logo: '/openai logo.jpg',
-    names: ['ChatGPT', 'ChatGPT Image', 'ChatGPT Voice', 'Sora'],
+    names: ['ChatGPT', 'ChatGPT Voice', 'Sora'],
   },
   {
     logo: '/grok logo.jpg',
