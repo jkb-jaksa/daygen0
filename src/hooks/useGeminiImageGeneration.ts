@@ -57,8 +57,8 @@ export const useGeminiImageGeneration = () => {
 
       const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
 
-      // Use the new API endpoint structure
-      const apiUrl = getApiUrl('/api/unified-generate');
+      const resolvedModel = model || 'gemini-2.5-flash-image-preview';
+      const apiUrl = getApiUrl('/api/image/gemini');
 
       debugLog('[image] POST', apiUrl);
       
@@ -72,7 +72,7 @@ export const useGeminiImageGeneration = () => {
           prompt, 
           imageBase64: imageData, 
           mimeType: "image/png",
-          model, 
+          model: resolvedModel, 
           references, 
           temperature, 
           outputLength, 
@@ -100,7 +100,7 @@ export const useGeminiImageGeneration = () => {
       const generatedImage: GeneratedImage = {
         url: `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`,
         prompt,
-        model: model || 'gemini-2.5-flash-image-preview',
+        model: resolvedModel,
         timestamp: new Date().toISOString(),
         references: references || undefined,
         ownerId: user?.id,

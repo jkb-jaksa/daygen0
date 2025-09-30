@@ -3984,7 +3984,7 @@ const handleGenerate = async () => {
           throw new Error('Please sign in to generate images.');
         }
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/recraft'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

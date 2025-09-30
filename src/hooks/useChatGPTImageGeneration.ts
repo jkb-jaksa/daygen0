@@ -58,7 +58,7 @@ export const useChatGPTImageGeneration = () => {
       const { prompt, n = 1, size = '1024x1024', quality = 'high', background = 'transparent' } = options;
 
       // Use the ChatGPT API endpoint
-      const apiUrl = getApiUrl('/api/unified-generate');
+      const apiUrl = getApiUrl('/api/image/chatgpt');
 
       debugLog('[chatgpt-image] POST', apiUrl);
       

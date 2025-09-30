@@ -83,9 +83,9 @@ VITE_RECRAFT_API_BASE=https://external.api.recraft.ai/v1
 
 Returns user credits and account information.
 
-## Unified API Integration
+## Backend API Integration
 
-Recraft is also integrated into the unified generation API at `/api/unified-generate`:
+Recraft is exposed through the dedicated backend endpoint at `/api/image/recraft`:
 
 **Supported Models:**
 - `recraft-v3` (default)

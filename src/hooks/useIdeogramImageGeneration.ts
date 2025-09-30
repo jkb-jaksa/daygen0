@@ -118,7 +118,7 @@ export const useIdeogramImageGeneration = () => {
         if (options.style_type) providerOptions.style_type = options.style_type;
         if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/ideogram'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

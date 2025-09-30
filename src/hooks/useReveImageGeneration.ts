@@ -80,7 +80,7 @@ export const useReveImageGeneration = () => {
         if (options.seed !== undefined) providerOptions.seed = options.seed;
         if (options.batch_size !== undefined) providerOptions.batch_size = options.batch_size;
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/reve'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -34,7 +34,7 @@ async function testR2Config() {
     
     // 2. Generate a simple image
     console.log('2️⃣ Generating test image (this costs 1 credit)...');
-    const genResp = await fetch(`${BACKEND_URL}/api/unified-generate`, {
+    const genResp = await fetch(`${BACKEND_URL}/api/image/gemini`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

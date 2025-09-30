@@ -40,30 +40,32 @@ This frontend is now connected to the NestJS backend deployed on Google Cloud:
   - Body: `{ displayName?, profileImage? }`
 
 ### Image Generation
-- `POST /api/unified-generate` - Generate images with any AI provider
-  - Headers: `Authorization: Bearer <token>`, `Content-Type: application/json`
-  - Body: 
-    ```json
-    {
-      "prompt": "string",
-      "model": "gemini-flash-2.5" | "runway-gen4" | "seedream-3.0" | "chatgpt-image" | "reve-image" | "qwen-image" | "ideogram" | "flux-pro" | ...,
-      "imageBase64": "data:image/png;base64,...", // optional
-      "references": ["base64..."], // optional
-      "providerOptions": {} // optional, provider-specific
-    }
-    ```
-  - Response: 
-    ```json
-    {
-      "imageBase64": "data:image/png;base64,...",
-      // OR
-      "dataUrl": "data:image/png;base64,...",
-      // OR
-      "images": ["url1", "url2"],
-      // OR
-      "dataUrls": ["url1", "url2"]
-    }
-    ```
+All image providers are now exposed via dedicated endpoints under `/api/image/<provider>`.
+
+- `POST /api/image/gemini` – Google Gemini 2.5 Flash Image
+- `POST /api/image/flux` – Flux Pro 1.1 / Flux Pro 1.1 Ultra / Flux Kontext Pro & Max
+- `POST /api/image/chatgpt` – OpenAI DALL·E 3 (ChatGPT Image)
+- `POST /api/image/ideogram` – Ideogram 3.0
+- `POST /api/image/qwen` – Alibaba Qwen Image
+- `POST /api/image/runway` – Runway Gen-4 & Gen-4 Turbo
+- `POST /api/image/seedream` – Seedream 3.0 (BytePlus ModelArk)
+- `POST /api/image/reve` – Rêve Image
+- `POST /api/image/recraft` – Recraft v3 / Recraft v2
+- `POST /api/image/luma` – Luma Photon 1 & Luma Photon Flash 1
+
+Common request fields:
+
+```json
+{
+  "prompt": "string",
+  "model": "specific-model-name",           // optional if endpoint already implies the default
+  "imageBase64": "data:image/png;base64,...", // optional image-to-image input
+  "references": ["data:image/png;base64,..."], // optional reference images
+  "providerOptions": { ... }                  // optional provider-specific options (size, quality, etc.)
+}
+```
+
+Each endpoint returns a payload containing either an R2 URL (`dataUrl`, `image`, etc.) or provider metadata. The backend normalises provider responses and uploads persistent assets to Cloudflare R2.
 
 ### Health Check
 - `GET /health` - Check backend status
@@ -114,7 +116,7 @@ The frontend uses `src/utils/api.ts` to determine the API base URL:
 
 ### Image Generation Flow
 1. User enters prompt and selects model
-2. Frontend calls `POST /api/unified-generate` with JWT token
+2. Frontend calls the corresponding `/api/image/<provider>` endpoint with the JWT token
 3. Backend:
    - Validates JWT and checks user credits
    - Deducts 1 credit
@@ -137,8 +139,8 @@ The frontend uses `src/utils/api.ts` to determine the API base URL:
 ## Supported AI Providers
 
 The backend integrates with these providers (configured via environment variables):
-- **Flux** (Black Forest Labs) - `flux-pro`, `flux-kontext-pro`, etc.
-- **Gemini 2.5 Flash** (Google) - `gemini-flash-2.5`
+- **Flux** (Black Forest Labs) - `flux-pro-1.1`, `flux-pro-1.1-ultra`, `flux-kontext-pro`, `flux-kontext-max`
+- **Gemini 2.5 Flash Image** (Google) - `gemini-2.5-flash-image-preview`
 - **Ideogram V3** - `ideogram`
 - **Qwen Image** (Alibaba) - `qwen-image`
 - **Runway Gen-4** - `runway-gen4`, `runway-gen4-turbo`
@@ -146,7 +148,7 @@ The backend integrates with these providers (configured via environment variable
 - **DALL-E 3** (OpenAI) - `chatgpt-image`
 - **Rêve** - `reve-image`
 - **Recraft** - `recraft-v3`, `recraft-v2`
-- **Luma AI** - `luma-dream-shaper`, `luma-realistic-vision`
+- **Luma Photon** - `luma-photon-1`, `luma-photon-flash-1`
 
 ## Development
 

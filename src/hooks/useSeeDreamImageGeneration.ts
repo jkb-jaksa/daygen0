@@ -60,7 +60,7 @@ export const useSeeDreamImageGeneration = () => {
           n: options.n ?? 1,
         };
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/seedream'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

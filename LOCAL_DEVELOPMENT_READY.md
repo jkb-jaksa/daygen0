@@ -48,7 +48,7 @@ http://localhost:5173
 ### 4. Verify API Calls
 Open browser DevTools → Network tab:
 - Should see calls to `localhost:3000/api/auth/signup`
-- Should see calls to `localhost:3000/api/unified-generate`
+- Should see calls to `localhost:3000/api/image/<provider>` (e.g. `/api/image/flux`)
 - Should see R2 URLs in responses
 
 ## 🔍 What's Different from Production

@@ -88,7 +88,7 @@ CLOUDFLARE_R2_PUBLIC_URL=https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev
 
 ## What Happens When User Generates Image
 
-1. **User Request**: Frontend sends prompt + model to `/api/unified-generate`
+1. **User Request**: Frontend sends prompt + model to the appropriate `/api/image/<provider>` endpoint (e.g. `/api/image/gemini`)
 2. **Auth Check**: Backend validates JWT token
 3. **Credit Check**: Backend verifies user has ≥1 credit
 4. **Credit Deduct**: Backend deducts 1 credit

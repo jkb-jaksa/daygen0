@@ -105,7 +105,7 @@ export const useFluxImageGeneration = () => {
         if (params.prompt_upsampling !== undefined) providerOptions.prompt_upsampling = params.prompt_upsampling;
         if (params.safety_tolerance !== undefined) providerOptions.safety_tolerance = params.safety_tolerance;
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/flux'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -89,7 +89,7 @@ export function useLumaImageGeneration() {
           providerOptions.callback_url = options.callbackUrl;
         }
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/luma'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

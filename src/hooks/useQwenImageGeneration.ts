@@ -71,7 +71,7 @@ export const useQwenImageGeneration = () => {
         if (options.prompt_extend !== undefined) providerOptions.prompt_extend = options.prompt_extend;
         if (options.watermark !== undefined) providerOptions.watermark = options.watermark;
 
-        const response = await fetch(getApiUrl('/api/unified-generate'), {
+        const response = await fetch(getApiUrl('/api/image/qwen'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

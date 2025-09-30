@@ -33,7 +33,7 @@ Your DayGen frontend has been successfully connected to the NestJS backend deplo
 All frontend hooks and components are already configured to use:
 - JWT Bearer authentication
 - `/api/auth/login` and `/api/auth/signup` for authentication
-- `/api/unified-generate` for all AI image generation
+- `/api/image/<provider>` endpoints for all AI image generation (Gemini, Flux, ChatGPT, Ideogram, Qwen, Runway, SeeDream, Rêve, Recraft, Luma)
 - `/api/auth/me` for user profile
 - `/api/users/me` for profile updates
 
