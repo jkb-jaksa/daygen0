@@ -119,9 +119,6 @@ function ModalityCard({ modality }: { modality: typeof modalities[0] }) {
           ))}
         </div>
         <div className="flex flex-wrap gap-3 parallax-isolate">
-          <button type="button" className={`${buttons.ghostCompact}`}>
-            Save for later
-          </button>
           <Link to={`/create/${modality.key}`} className={`${buttons.pillWarm}`}>
             Start Creating
           </Link>
