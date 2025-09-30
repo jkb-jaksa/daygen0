@@ -64,3 +64,19 @@ export function describePath(path?: string | null): string {
 
   return "DayGen";
 }
+
+export function getDestinationLabel(next?: string | null): string {
+  if (!next) return "DayGen";
+
+  const trimmed = next.trim();
+  if (!trimmed) {
+    return "DayGen";
+  }
+
+  try {
+    const decoded = decodeURIComponent(trimmed);
+    return describePath(decoded);
+  } catch {
+    return describePath(trimmed);
+  }
+}

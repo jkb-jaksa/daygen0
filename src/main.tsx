@@ -4,6 +4,7 @@ import './index.css'
 import PasswordGate from './components/PasswordGate'
 import { AuthProvider } from './auth/AuthContext'
 import { FooterProvider } from './contexts/FooterContext.tsx'
+import { ToastProvider } from './contexts/ToastProvider.tsx'
 
 const App = lazy(() => import('./App'))
 
@@ -25,9 +26,11 @@ createRoot(document.getElementById('root')!).render(
     <Suspense fallback={<RootFallback />}>
       <PasswordGate>
         <AuthProvider>
-          <FooterProvider>
-            <App />
-          </FooterProvider>
+          <ToastProvider>
+            <FooterProvider>
+              <App />
+            </FooterProvider>
+          </ToastProvider>
         </AuthProvider>
       </PasswordGate>
     </Suspense>

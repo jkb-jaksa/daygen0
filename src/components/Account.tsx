@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import { useAuth } from "../auth/useAuth";
-import { Upload, X, CheckCircle2, Lock } from "lucide-react";
+import { X, CheckCircle2, Lock } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
@@ -8,7 +9,10 @@ import { buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
 import GoogleLogin from "./GoogleLogin";
 import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
-import { describePath, safeNext } from "../utils/navigation";
+import { getDestinationLabel, safeNext } from "../utils/navigation";
+import { ProfileCard } from "./account/ProfileCard";
+import { AtAGlance } from "./account/AtAGlance";
+import { useToast } from "../hooks/useToast";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -221,6 +225,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
 
 export default function Account() {
   const { user, updateProfile, logOut, storagePrefix } = useAuth();
+  const { showToast } = useToast();
   const [name, setName] = useState(user?.displayName ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
@@ -228,7 +233,6 @@ export default function Account() {
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [showSaved, setShowSaved] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -250,7 +254,10 @@ export default function Account() {
     [decodedNextPath, normalizedRawNext],
   );
 
-  const destinationLabel = useMemo(() => describePath(sanitizedNextPath), [sanitizedNextPath]);
+  const destinationLabel = useMemo(
+    () => getDestinationLabel(decodedNextPath ?? sanitizedNextPath ?? normalizedRawNext),
+    [decodedNextPath, normalizedRawNext, sanitizedNextPath],
+  );
 
   // Keep the input in sync if user loads after first render, but don't override user input
   useEffect(() => {
@@ -310,7 +317,7 @@ export default function Account() {
     };
   }, [imageToCrop]);
 
-  const handleProfilePicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePicUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -334,35 +341,40 @@ export default function Account() {
     setCropModalOpen(true);
   };
 
-  const handleCropComplete = async (croppedImageBlob: Blob) => {
-    setIsUploadingPic(true);
-    setUploadError(null);
+  const handleCropComplete = useCallback(
+    async (croppedImageBlob: Blob) => {
+      setIsUploadingPic(true);
+      setUploadError(null);
 
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string) ?? "");
-        reader.onerror = () => reject(new Error("Failed to read cropped image"));
-        reader.readAsDataURL(croppedImageBlob);
-      });
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string) ?? "");
+          reader.onerror = () => reject(new Error("Failed to read cropped image"));
+          reader.readAsDataURL(croppedImageBlob);
+        });
 
       if (!dataUrl) {
         throw new Error("Empty cropped image data");
       }
 
-      await updateProfile({ profileImage: dataUrl });
-    } catch (error) {
-      debugError("Account - Failed to process cropped image", error);
-      setUploadError("We couldn't process that image. Please try again.");
-    } finally {
-      setIsUploadingPic(false);
-    }
-  };
+        await updateProfile({ profileImage: dataUrl });
+        showToast("Profile photo updated");
+      } catch (error) {
+        debugError("Account - Failed to process cropped image", error);
+        setUploadError("We couldn't process that image. Please try again.");
+      } finally {
+        setIsUploadingPic(false);
+      }
+    },
+    [showToast, updateProfile],
+  );
 
-  const handleRemoveProfilePic = async () => {
+  const handleRemoveProfilePic = useCallback(async () => {
     try {
       await updateProfile({ profileImage: null });
       setUploadError(null);
+      showToast("Profile photo removed");
     } catch (error) {
       debugError("Account - Failed to remove profile image", error);
       setUploadError("We could not remove that image. Please try again.");
@@ -370,7 +382,7 @@ export default function Account() {
       releasePreview();
       resetFileInput();
     }
-  };
+  }, [releasePreview, resetFileInput, showToast, updateProfile]);
 
   const trimmedName = useMemo(() => (name ?? "").trim(), [name]);
   const currentUserName = useMemo(() => (user?.displayName ?? "").trim(), [user?.displayName]);
@@ -379,13 +391,24 @@ export default function Account() {
   const canSaveProfile = isNameValid && !isSavingProfile;
   const nameErrorMessage = trimmedName.length === 0 ? "Display name is required." : "Display name must be 60 characters or fewer.";
 
-  useEffect(() => {
-    if (!showSaved) return undefined;
-    const timeout = setTimeout(() => setShowSaved(false), 3000);
-    return () => clearTimeout(timeout);
-  }, [showSaved]);
+  const handleNameChange = useCallback(
+    (value: string) => {
+      setName(value);
+      if (!nameTouched) {
+        setNameTouched(true);
+      }
+      if (saveError) {
+        setSaveError(null);
+      }
+    },
+    [nameTouched, saveError],
+  );
 
-  const handleSaveProfile = async () => {
+  const handleNameBlur = useCallback(() => {
+    setNameTouched(true);
+  }, []);
+
+  const handleSaveProfile = useCallback(async () => {
     setNameTouched(true);
 
     if (!isNameValid) {
@@ -394,8 +417,7 @@ export default function Account() {
     }
 
     if (!isNameChanged) {
-      // If name hasn't changed, just show success message
-      setShowSaved(true);
+      showToast("Profile saved");
       return;
     }
 
@@ -415,7 +437,7 @@ export default function Account() {
           navigate("/create", { replace: true });
         }
       } else {
-        setShowSaved(true);
+        showToast("Profile saved");
       }
     } catch (error) {
       debugError("Account - Failed to save profile", error);
@@ -427,7 +449,26 @@ export default function Account() {
     } finally {
       setIsSavingProfile(false);
     }
-  };
+  }, [
+    decodedNextPath,
+    isNameChanged,
+    isNameValid,
+    nameErrorMessage,
+    navigate,
+    normalizedRawNext,
+    showToast,
+    trimmedName,
+    updateProfile,
+  ]);
+
+  const handleLogOut = useCallback(() => {
+    logOut();
+    navigate("/");
+  }, [logOut, navigate]);
+
+  const handleProfileSubmit = useCallback(() => {
+    void handleSaveProfile();
+  }, [handleSaveProfile]);
 
   // Don't auto-redirect when user clicks "My account" - let them see the account page
   // The next parameter will be used when they explicitly choose to return
@@ -464,115 +505,30 @@ export default function Account() {
             <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors rounded-full" />
           </button>
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleProfilePicUpload}
-          className="hidden"
-        />
       </header>
 
       <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
-        <div className={`${glass.surface} p-5`}>
-          <h3 className="text-lg font-raleway mb-3 text-d-text">Profile</h3>
+        <ProfileCard
+          user={user}
+          name={name}
+          nameTouched={nameTouched}
+          isNameValid={isNameValid}
+          nameErrorMessage={nameErrorMessage}
+          saveError={saveError}
+          canSaveProfile={canSaveProfile}
+          isSavingProfile={isSavingProfile}
+          isUploadingPic={isUploadingPic}
+          uploadError={uploadError}
+          fileInputRef={fileInputRef}
+          onProfilePicChange={handleProfilePicUpload}
+          onRemoveProfilePic={handleRemoveProfilePic}
+          onNameChange={handleNameChange}
+          onNameBlur={handleNameBlur}
+          onSaveProfile={handleProfileSubmit}
+          onLogOut={handleLogOut}
+        />
 
-          <div className="mb-4">
-            <label className="block text-sm text-d-white mb-2 font-raleway">Picture</label>
-            <div className="flex items-center gap-3">
-              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                {user.profileImage ? (
-                  <img
-                    src={user.profileImage}
-                    alt="Profile"
-                    className="size-12 rounded-full object-cover border-2 border-d-dark group-hover:opacity-80 transition-opacity"
-                  />
-                ) : (
-                  <div
-                    className="size-12 rounded-full flex items-center justify-center text-d-text text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity bg-d-dark"
-                  >
-                    {(user.displayName || user.email)[0]?.toUpperCase()}
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-d-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                  <Upload className="size-4 text-d-text" />
-                </div>
-                {isUploadingPic && (
-                  <div className="absolute inset-0 bg-d-black/70 rounded-full flex items-center justify-center">
-                    <div className="text-d-text text-xs font-raleway">Uploading...</div>
-                  </div>
-                )}
-              </div>
-              {user.profileImage && (
-                <button
-                  onClick={() => { void handleRemoveProfilePic(); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
-                >
-                  <X className="w-4 h-4 rounded-full" />
-                  Remove
-                </button>
-              )}
-            </div>
-            {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
-            <p className="mt-2 text-xs font-raleway text-d-white/60">Profile pictures update immediately when you complete cropping.</p>
-          </div>
-
-          <label className="block text-sm text-d-white mb-1 font-raleway">Display name</label>
-          <input
-            className={inputs.base}
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              if (!nameTouched) {
-                setNameTouched(true);
-              }
-              if (saveError) {
-                setSaveError(null);
-              }
-              if (showSaved) {
-                setShowSaved(false);
-              }
-            }}
-            onBlur={() => setNameTouched(true)}
-            placeholder="Enter your display name"
-          />
-          {(saveError || (nameTouched && !isNameValid)) && (
-            <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
-          )}
-          <div className="flex gap-2 mt-3 items-center">
-            <button
-              className={buttons.ghost}
-              onClick={() => {
-                logOut();
-                navigate("/");
-              }}
-            >
-              Log out
-            </button>
-            <button
-              className={buttons.primary}
-              onClick={() => { void handleSaveProfile(); }}
-              disabled={!canSaveProfile}
-            >
-              {isSavingProfile ? "Saving…" : "Save"}
-            </button>
-            {showSaved && !normalizedRawNext && (
-              <span className="text-xs font-raleway text-emerald-300">Saved</span>
-            )}
-          </div>
-        </div>
-
-        <div className={`${glass.surface} p-5`}>
-          <h3 className="text-lg font-raleway mb-3 text-d-text">At a glance</h3>
-          <ul className="text-sm font-raleway text-d-white space-y-1">
-            <li>
-              Generated images: <strong>{gallery.length}</strong>
-            </li>
-            <li>
-              Credits remaining: <strong>{user.credits}</strong>
-            </li>
-          </ul>
-        </div>
+        <AtAGlance generatedCount={gallery.length} creditsRemaining={user.credits} />
       </section>
 
       <ProfileCropModal
