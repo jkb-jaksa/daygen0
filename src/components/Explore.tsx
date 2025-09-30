@@ -931,7 +931,6 @@ const CustomMultiSelect: React.FC<{
     } else {
       onChange([...values, optionValue]);
     }
-    setIsOpen(false);
   };
 
   return (
@@ -943,7 +942,9 @@ const CustomMultiSelect: React.FC<{
         disabled={disabled}
         className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
-        <span className="text-d-white/50">{placeholder || "Select..."}</span>
+        <span className={values.length > 0 ? "text-d-white" : "text-d-white/50"}>
+          {values.length > 0 ? `${values.length} selected` : placeholder || "Select..."}
+        </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} flex-shrink-0`} />
       </button>
 
@@ -994,11 +995,11 @@ const Explore: React.FC = () => {
   // Filter state
   const [galleryFilters, setGalleryFilters] = useState<{
     models: string[];
-    type: 'all' | 'image' | 'video';
+    types: string[];
     tags: string[];
   }>({
     models: [],
-    type: 'all',
+    types: [],
     tags: [],
   });
 
@@ -1632,8 +1633,19 @@ const Explore: React.FC = () => {
   };
 
   const getAvailableModels = () => {
-    if (galleryFilters.type === 'video') {
-      // Return video models
+    if (galleryFilters.types.length === 0) {
+      // No type filter - show all models
+      return AI_MODELS.map(model => model.id).sort();
+    }
+    
+    const includesImage = galleryFilters.types.includes('image');
+    const includesVideo = galleryFilters.types.includes('video');
+    
+    if (includesImage && includesVideo) {
+      // Both selected - show all models
+      return AI_MODELS.map(model => model.id).sort();
+    } else if (includesVideo) {
+      // Return video models only
       return AI_MODELS.filter(model => 
         model.id === 'veo-3' || 
         model.id === 'runway-video-gen4' ||
@@ -1643,7 +1655,7 @@ const Explore: React.FC = () => {
         model.id === 'seedance-1.0-pro' ||
         model.id === 'luma-ray-2'
       ).map(model => model.id).sort();
-    } else if (galleryFilters.type === 'image') {
+    } else if (includesImage) {
       // Return image models (exclude video models and Photon Flash variant)
       return AI_MODELS.filter(model => 
         model.id !== 'veo-3' && 
@@ -1655,10 +1667,9 @@ const Explore: React.FC = () => {
         model.id !== 'luma-ray-2' &&
         model.id !== 'luma-photon-flash-1'
       ).map(model => model.id).sort();
-    } else {
-      // Return all models
-      return AI_MODELS.map(model => model.id).sort();
     }
+    
+    return AI_MODELS.map(model => model.id).sort();
   };
 
   // Filter function for gallery
@@ -1670,7 +1681,7 @@ const Explore: React.FC = () => {
       }
       
       // Type filter
-      if (galleryFilters.type !== 'all') {
+      if (galleryFilters.types.length > 0) {
         const inferredVideo = item.modelId.includes('video') ||
           item.modelId === 'veo-3' ||
           item.modelId === 'runway-video-gen4' ||
@@ -1682,10 +1693,7 @@ const Explore: React.FC = () => {
 
         const itemType = item.mediaType ?? (inferredVideo ? 'video' : 'image');
 
-        if (galleryFilters.type === 'image' && itemType !== 'image') {
-          return false;
-        }
-        if (galleryFilters.type === 'video' && itemType !== 'video') {
+        if (!galleryFilters.types.includes(itemType)) {
           return false;
         }
       }
@@ -1886,7 +1894,7 @@ const Explore: React.FC = () => {
                       onClick={() =>
                         setGalleryFilters({
                           models: [],
-                          type: "all",
+                          types: [],
                           tags: [],
                         })
                       }
@@ -1900,13 +1908,12 @@ const Explore: React.FC = () => {
                     {/* Modality Filter */}
                     <div className="flex flex-col gap-1.5 md:col-span-2">
                       <label className="text-xs text-d-white/70 font-raleway">Modality</label>
-                      <CustomDropdown
-                        value={galleryFilters.type}
-                        onChange={value => {
-                          const newType = value as "all" | "image" | "video";
+                      <CustomMultiSelect
+                        values={galleryFilters.types}
+                        onChange={types => {
                           setGalleryFilters(prev => ({
                             ...prev,
-                            type: newType,
+                            types,
                             models: [],
                           }));
                         }}
@@ -1916,6 +1923,33 @@ const Explore: React.FC = () => {
                         ]}
                         placeholder="All modalities"
                       />
+                      {/* Selected Modality Tags - appears right below the dropdown */}
+                      {galleryFilters.types.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {galleryFilters.types.map(type => {
+                            return (
+                              <div
+                                key={type}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                              >
+                                <span>{type === 'image' ? 'Image' : 'Video'}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setGalleryFilters(prev => ({
+                                    ...prev,
+                                    types: prev.types.filter(t => t !== type),
+                                    models: []
+                                  }))}
+                                  className="hover:text-d-text transition-colors duration-200"
+                                  aria-label={`Remove ${type === 'image' ? 'Image' : 'Video'}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Model Filter */}

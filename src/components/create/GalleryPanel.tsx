@@ -501,6 +501,27 @@ export function GalleryPanel({
               ]}
               placeholder="All modalities"
             />
+            {/* Selected Modality Tags */}
+            {galleryFilters.types.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {galleryFilters.types.map(type => (
+                  <div
+                    key={type}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                  >
+                    <span>{type === "image" ? "Image" : "Video"}</span>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== type), models: [] }))}
+                      className="hover:text-d-text transition-colors duration-200"
+                      aria-label={`Remove ${type === "image" ? "Image" : "Video"}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -511,6 +532,30 @@ export function GalleryPanel({
               options={modelOptions}
               placeholder="All models"
             />
+            {/* Selected Model Tags */}
+            {galleryFilters.models.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {galleryFilters.models.map(modelId => {
+                  const model = aiModels.find(m => m.id === modelId);
+                  return (
+                    <div
+                      key={modelId}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                    >
+                      <span>{model?.name || modelId}</span>
+                      <button
+                        type="button"
+                        onClick={() => setGalleryFilters(prev => ({ ...prev, models: prev.models.filter(m => m !== modelId) }))}
+                        className="hover:text-d-text transition-colors duration-200"
+                        aria-label={`Remove ${model?.name || modelId}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -522,6 +567,22 @@ export function GalleryPanel({
               disabled={avatarOptions.length === 0}
               placeholder={avatarOptions.length === 0 ? "No avatars available" : "All avatars"}
             />
+            {/* Selected Avatar Tag */}
+            {galleryFilters.avatar !== "all" && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30">
+                  <span>{getAvailableAvatars().find(a => a.id === galleryFilters.avatar)?.name || galleryFilters.avatar}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGalleryFilters(prev => ({ ...prev, avatar: "all" }))}
+                    className="hover:text-d-text transition-colors duration-200"
+                    aria-label="Remove avatar filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -533,6 +594,22 @@ export function GalleryPanel({
               disabled={folderOptions.length === 0}
               placeholder={folderOptions.length === 0 ? "No folders available" : undefined}
             />
+            {/* Selected Folder Tag */}
+            {galleryFilters.folder !== "all" && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30">
+                  <span>{folders.find(f => f.id === galleryFilters.folder)?.name || galleryFilters.folder}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGalleryFilters(prev => ({ ...prev, folder: "all" }))}
+                    className="hover:text-d-text transition-colors duration-200"
+                    aria-label="Remove folder filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -568,13 +645,9 @@ export function GalleryPanel({
           </div>
         </div>
 
-        {/* Active Filter Tags */}
+        {/* Active Filter Tags - Only for filters without inline tags */}
         {(galleryFilters.liked ||
           galleryFilters.public ||
-          galleryFilters.types.length > 0 ||
-          galleryFilters.models.length > 0 ||
-          galleryFilters.avatar !== "all" ||
-          galleryFilters.folder !== "all" ||
           galleryFilters.origins.length > 0) && (
           <div className="mt-3 pt-3 border-t border-d-dark/50">
             <div className="flex flex-wrap items-center gap-2">
@@ -596,55 +669,6 @@ export function GalleryPanel({
                 >
                   <Globe className="w-3 h-3" />
                   <span>Public</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-
-              {galleryFilters.types.map(type => (
-                <button
-                  key={type}
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== type), models: [] }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
-                >
-                  <span className="text-d-white/70">Modality:</span>
-                  <span>{type === "image" ? "Image" : "Video"}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              ))}
-
-              {galleryFilters.models.map(modelId => {
-                const model = aiModels.find(m => m.id === modelId);
-                return (
-                  <button
-                    key={modelId}
-                    onClick={() => setGalleryFilters(prev => ({ ...prev, models: prev.models.filter(m => m !== modelId) }))}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
-                  >
-                    <span className="text-d-white/70">Model:</span>
-                    <span>{model?.name || modelId}</span>
-                    <X className="w-3 h-3" />
-                  </button>
-                );
-              })}
-
-              {galleryFilters.avatar !== "all" && (
-                <button
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, avatar: "all" }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
-                >
-                  <span className="text-d-white/70">Avatar:</span>
-                  <span>{getAvailableAvatars().find(a => a.id === galleryFilters.avatar)?.name || galleryFilters.avatar}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-
-              {galleryFilters.folder !== "all" && (
-                <button
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, folder: "all" }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
-                >
-                  <span className="text-d-white/70">Folder:</span>
-                  <span>{folders.find(f => f.id === galleryFilters.folder)?.name || galleryFilters.folder}</span>
                   <X className="w-3 h-3" />
                 </button>
               )}
