@@ -3,6 +3,7 @@ import type { PromptEntry } from "../lib/promptHistory";
 import {
   loadPromptHistory,
   addPrompt as addPromptRaw,
+  removePrompt as removePromptRaw,
   clearPromptHistory as clearRaw,
 } from "../lib/promptHistory";
 
@@ -30,10 +31,15 @@ export function usePromptHistory(userKey: string, limit = 20) {
     setHistory(loadPromptHistory(userKey, limit));
   }, [userKey, limit]);
 
+  const removePrompt = useCallback((text: string) => {
+    removePromptRaw(userKey, text);
+    setHistory(loadPromptHistory(userKey, limit));
+  }, [userKey, limit]);
+
   const clear = useCallback(() => {
     clearRaw(userKey);
     setHistory([]);
   }, [userKey]);
 
-  return { history, addPrompt, clear };
+  return { history, addPrompt, removePrompt, clear };
 }

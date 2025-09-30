@@ -130,12 +130,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     const params = new URLSearchParams();
-
-    const isCreateRoute = location.pathname.startsWith("/create");
     const isEditRoute = location.pathname.startsWith("/edit");
-
-    const requiresStudioRedirect = isCreateRoute || isEditRoute;
-    const nextPath = requiresStudioRedirect ? "/create/image" : location.pathname + location.search;
+    const nextPath = isEditRoute ? "/create/image" : location.pathname + location.search;
 
     params.set("next", nextPath);
 
@@ -194,14 +190,7 @@ export default function App() {
               <Route path="/explore" element={<Explore />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
               <Route path="/digital-copy" element={<DigitalCopy />} />
-              <Route
-                path="/create/*"
-                element={(
-                  <RequireAuth>
-                    <CreateRoutes />
-                  </RequireAuth>
-                )}
-              />
+              <Route path="/create/*" element={<CreateRoutes />} />
               <Route path="/gallery/*" element={<GalleryRoutes />} />
               <Route path="/upgrade" element={<Upgrade />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />

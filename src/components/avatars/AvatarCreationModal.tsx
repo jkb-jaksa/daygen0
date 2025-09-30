@@ -51,6 +51,27 @@ function AvatarCreationModalComponent({
     fileInputRef.current?.click();
   };
 
+  const validateAvatarFile = (file: File): string | null => {
+    // Check MIME type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return "Please choose a JPEG, PNG, or WebP image file.";
+    }
+
+    // Check file size (50MB limit as mentioned in UI)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      return "File size must be less than 50MB.";
+    }
+
+    // Check if file is empty
+    if (file.size === 0) {
+      return "The selected file is empty.";
+    }
+
+    return null; // No validation errors
+  };
+
   const handleFiles = (files: FileList | File[]) => {
     const list = Array.from(files);
     if (!list.length) return;
@@ -59,6 +80,14 @@ function AvatarCreationModalComponent({
       onUploadError("Please choose an image file.");
       return;
     }
+
+    // Pre-validate the file before processing
+    const validationError = validateAvatarFile(file);
+    if (validationError) {
+      onUploadError(validationError);
+      return;
+    }
+
     onProcessFile(file);
   };
 

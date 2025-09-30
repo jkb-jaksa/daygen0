@@ -13,6 +13,7 @@ type PromptsDropdownProps = {
   savedPrompts: SavedPrompt[];
   onSelectPrompt: (text: string) => void;
   onRemoveSavedPrompt: (id: string) => void;
+  onRemoveRecentPrompt?: (text: string) => void; // Handler for removing recent prompts
   onUpdateSavedPrompt: (id: string, newText: string) => void;
   onAddSavedPrompt: (text: string) => SavedPrompt | null;
   onSaveRecentPrompt?: (text: string) => void; // Handler for saving from recent tab (includes modal logic)
@@ -26,6 +27,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
   savedPrompts,
   onSelectPrompt,
   onRemoveSavedPrompt,
+  onRemoveRecentPrompt,
   onUpdateSavedPrompt,
   onAddSavedPrompt,
   onSaveRecentPrompt,
@@ -33,12 +35,14 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const editModalRef = useRef<HTMLDivElement>(null);
   const deleteModalRef = useRef<HTMLDivElement>(null);
+  const deleteRecentModalRef = useRef<HTMLDivElement>(null);
   const addModalRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 384, transform: 'translateY(0)' }); // w-96 = 384px
   const [activeTab, setActiveTab] = useState<'saved' | 'recent'>('recent');
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | null>(null);
   const [editText, setEditText] = useState('');
   const [deletePrompt, setDeletePrompt] = useState<SavedPrompt | null>(null);
+  const [deleteRecentPrompt, setDeleteRecentPrompt] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newPromptText, setNewPromptText] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
@@ -52,6 +56,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
       setEditingPrompt(null);
       setEditText('');
       setDeletePrompt(null);
+      setDeleteRecentPrompt(null);
       setIsAddModalOpen(false);
       setNewPromptText('');
       setAddError(null);
@@ -62,11 +67,14 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
     if (!isOpen) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      // Don't close if clicking inside the edit modal or delete modal
+      // Don't close if clicking inside any modal
       if (editModalRef.current && editModalRef.current.contains(e.target as Node)) {
         return;
       }
       if (deleteModalRef.current && deleteModalRef.current.contains(e.target as Node)) {
+        return;
+      }
+      if (deleteRecentModalRef.current && deleteRecentModalRef.current.contains(e.target as Node)) {
         return;
       }
       if (addModalRef.current && addModalRef.current.contains(e.target as Node)) {
@@ -93,6 +101,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
         // If delete modal is open, close it
         else if (deletePrompt) {
           setDeletePrompt(null);
+        }
+        // If delete recent prompt modal is open, close it
+        else if (deleteRecentPrompt) {
+          setDeleteRecentPrompt(null);
         } else if (isAddModalOpen) {
           setIsAddModalOpen(false);
           setNewPromptText('');
@@ -110,7 +122,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose, anchorEl, deletePrompt, editingPrompt, isAddModalOpen]);
+  }, [isOpen, onClose, anchorEl, deletePrompt, deleteRecentPrompt, editingPrompt, isAddModalOpen]);
 
   // Handle Enter key for delete confirmation modal
   useEffect(() => {
@@ -126,6 +138,21 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [deletePrompt, onRemoveSavedPrompt]);
+
+  // Handle Enter key for delete recent prompt confirmation modal
+  useEffect(() => {
+    if (!deleteRecentPrompt || !onRemoveRecentPrompt) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        onRemoveRecentPrompt(deleteRecentPrompt);
+        setDeleteRecentPrompt(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [deleteRecentPrompt, onRemoveRecentPrompt]);
 
   useEffect(() => {
     if (!isOpen || !anchorEl) return;
@@ -312,23 +339,38 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                     >
                       {prompt.text}
                     </button>
-                    {onSaveRecentPrompt && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSaveRecentPrompt(prompt.text);
-                        }}
-                        className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200 opacity-0 group-hover:opacity-100"
-                        aria-label={isSaved ? "Prompt saved" : "Save prompt"}
-                        title={isSaved ? "Prompt saved" : "Save prompt"}
-                      >
-                        {isSaved ? (
-                          <Bookmark className="h-3 w-3 fill-current" />
-                        ) : (
-                          <BookmarkPlus className="h-3 w-3" />
-                        )}
-                      </button>
-                    )}
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1">
+                      {onSaveRecentPrompt && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSaveRecentPrompt(prompt.text);
+                          }}
+                          className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
+                          aria-label={isSaved ? "Prompt saved" : "Save prompt"}
+                          title={isSaved ? "Prompt saved" : "Save prompt"}
+                        >
+                          {isSaved ? (
+                            <Bookmark className="h-3 w-3 fill-current" />
+                          ) : (
+                            <BookmarkPlus className="h-3 w-3" />
+                          )}
+                        </button>
+                      )}
+                      {onRemoveRecentPrompt && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteRecentPrompt(prompt.text);
+                          }}
+                          className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
+                          aria-label="Remove recent prompt"
+                          title="Remove recent prompt"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -432,6 +474,44 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
         </div>,
         document.body
       )}
+
+      {/* Delete Recent Prompt Confirmation Modal */}
+      {deleteRecentPrompt && createPortal(
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-d-black/80 py-12">
+          <div ref={deleteRecentModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Trash2 className="w-10 h-10 mx-auto text-d-text" />
+                <h3 className="text-xl font-raleway font-normal text-d-text">
+                  Delete Recent Prompt
+                </h3>
+                <p className="text-base font-raleway font-light text-d-white">
+                  Are you sure you want to delete this prompt from your recent prompts? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setDeleteRecentPrompt(null)}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    onRemoveRecentPrompt?.(deleteRecentPrompt);
+                    setDeleteRecentPrompt(null);
+                  }}
+                  className={buttons.primary}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {isAddModalOpen && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-d-black/80 py-12">
           <div ref={addModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-lg mx-4 py-8 px-6 transition-colors duration-200`}>

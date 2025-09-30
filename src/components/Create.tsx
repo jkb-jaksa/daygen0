@@ -503,7 +503,7 @@ const Create: React.FC = () => {
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
-  const { history, addPrompt, clear } = usePromptHistory(userKey, 10);
+  const { history, addPrompt, removePrompt: removeRecentPrompt, clear } = usePromptHistory(userKey, 10);
   const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
   const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
   const [unsavePromptText, setUnsavePromptText] = useState<string | null>(null);
@@ -3365,13 +3365,74 @@ const Create: React.FC = () => {
   }, [avatarToDelete, storedAvatars, selectedAvatar, storagePrefix]);
 
   // Avatar creation modal handlers
-  const processAvatarImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setAvatarUploadError("Please choose an image file.");
+  const validateAvatarFile = useCallback((file: File): string | null => {
+    // Check MIME type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return "Please choose a JPEG, PNG, or WebP image file.";
+    }
+
+    // Check file size (50MB limit as mentioned in UI)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      return "File size must be less than 50MB.";
+    }
+
+    // Check if file is empty
+    if (file.size === 0) {
+      return "The selected file is empty.";
+    }
+
+    return null; // No validation errors
+  }, []);
+
+  const getImageDimensions = useCallback((file: File): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = () => {
+        reject(new Error("Failed to load image"));
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  const processAvatarImageFile = useCallback(async (file: File) => {
+    // Pre-validate the file
+    const validationError = validateAvatarFile(file);
+    if (validationError) {
+      setAvatarUploadError(validationError);
       return;
     }
 
+    // Check image dimensions
+    try {
+      const { width, height } = await getImageDimensions(file);
+      
+      // Set reasonable dimension limits
+      const maxDimension = 8192; // 8K resolution
+      const minDimension = 64; // Minimum 64x64 pixels
+      
+      if (width > maxDimension || height > maxDimension) {
+        setAvatarUploadError(`Image dimensions (${width}x${height}) are too large. Maximum allowed: ${maxDimension}x${maxDimension}.`);
+        return;
+      }
+      
+      if (width < minDimension || height < minDimension) {
+        setAvatarUploadError(`Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`);
+        return;
+      }
+    } catch (error) {
+      setAvatarUploadError("We couldn't read the image dimensions. Please try another image.");
+      return;
+    }
+
+    // Clear any previous errors
     setAvatarUploadError(null);
+    
+    // Proceed with FileReader only after validation passes
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result;
@@ -3383,7 +3444,7 @@ const Create: React.FC = () => {
       setAvatarUploadError("We couldn't read that file. Try another image.");
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [validateAvatarFile, getImageDimensions]);
 
   const handleSaveNewAvatar = useCallback(async () => {
     if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
@@ -6488,6 +6549,7 @@ const handleGenerate = async () => {
                         promptTextareaRef.current?.focus();
                       }}
                       onRemoveSavedPrompt={removePrompt}
+                      onRemoveRecentPrompt={removeRecentPrompt}
                       onUpdateSavedPrompt={updatePrompt}
                       onAddSavedPrompt={savePrompt}
                       onSaveRecentPrompt={savePromptToLibrary}
@@ -7411,7 +7473,7 @@ const handleGenerate = async () => {
             onClick={() => setCreationsModalAvatar(null)}
           >
             <div
-              className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl"
+              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
               onClick={(event) => event.stopPropagation()}
             >
               <button

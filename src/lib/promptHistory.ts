@@ -45,6 +45,12 @@ export function addPrompt(userKey: string, text: string, opts?: { limit?: number
   savePromptHistory(userKey, deduped.slice(0, limit));
 }
 
+export function removePrompt(userKey: string, text: string) {
+  const list = loadPromptHistory(userKey, 1000); // Load all entries
+  const filtered = list.filter(e => e.text !== text);
+  savePromptHistory(userKey, filtered);
+}
+
 export function clearPromptHistory(userKey: string) {
   try {
     localStorage.removeItem(keyFor(userKey));
