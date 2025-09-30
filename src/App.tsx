@@ -24,6 +24,7 @@ const FAQSection = lazy(() => import("./components/Faq"));
 const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
 const ResetPasswordPage = lazy(() => import("./components/ResetPasswordPage"));
+const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
 
 function NavbarFallback() {
   return (
@@ -192,6 +193,7 @@ export default function App() {
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
+              <Route path="/digital-copy" element={<DigitalCopy />} />
               <Route
                 path="/create/*"
                 element={(

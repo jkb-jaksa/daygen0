@@ -607,15 +607,16 @@ html, body {
   --l: 0; /* glow strength toggled by JS */
   --fade-ms: 200ms; /* default fade duration */
   --li: 1; /* intensity multiplier */
+  --glow-rgb: 255, 255, 255; /* default white glow */
 }
 
 .mouse-glow::after {
-  background: radial-gradient(200px 200px at var(--x) var(--y),
-      rgb(255 255 255 / calc(0.25 * var(--l) * var(--li))),
-      rgb(255 255 255 / calc(0.15 * var(--l) * var(--li))) 45%,
-      rgb(255 255 255 / 0) 60%);
+  background: radial-gradient(250px 250px at var(--x) var(--y),
+      rgba(var(--glow-rgb), calc(0.25 * var(--l) * var(--li))),
+      rgba(var(--glow-rgb), calc(0.15 * var(--l) * var(--li))) 45%,
+      rgba(var(--glow-rgb), 0) 60%);
   content: "";
-  filter: blur(80px);
+  filter: blur(100px);
   inset: -2px;
   mix-blend-mode: screen;
   opacity: calc(0.0001 + var(--l));
