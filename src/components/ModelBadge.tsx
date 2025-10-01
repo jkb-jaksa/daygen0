@@ -224,13 +224,39 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   showIcon = true,
   className = '' 
 }) => {
-  const normalizedModel = normalizeModelId(model);
-  const config = MODEL_CONFIG[normalizedModel as keyof typeof MODEL_CONFIG] || {
-    name: 'Unknown',
-    shortName: '?',
-    icon: '❓',
-    description: 'Unknown Model'
-  };
+  // Clean and normalize the model string
+  const cleanModel = (model || '').trim();
+  const normalizedModel = normalizeModelId(cleanModel);
+  
+  
+  
+  // Get the config, with special handling for Reve models
+  let config = MODEL_CONFIG[normalizedModel as keyof typeof MODEL_CONFIG];
+  
+  // Special fallback for Reve models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('reve')) {
+    config = MODEL_CONFIG['reve-image-1.0'] || MODEL_CONFIG['reve-image'];
+  }
+  
+  // Special fallback for Recraft models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('recraft')) {
+    config = MODEL_CONFIG['recraft-v3'] || MODEL_CONFIG['recraft-v2'] || MODEL_CONFIG['recraft'];
+  }
+  
+  // Special fallback for Ideogram models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('ideogram')) {
+    config = MODEL_CONFIG['ideogram'];
+  }
+  
+  // Final fallback
+  if (!config) {
+    config = {
+      name: 'Unknown' as any,
+      shortName: '?' as any,
+      icon: '❓' as any,
+      description: 'Unknown Model' as any
+    };
+  }
 
   const sizeClasses = {
     sm: 'px-2 py-2 text-xs',

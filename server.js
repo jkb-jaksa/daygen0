@@ -1860,6 +1860,74 @@ app.post('/api/ideogram/describe', upload.single('image'), async (req, res) => {
   }
 });
 
+// Ideogram Image Generation endpoint (for frontend compatibility)
+app.post('/api/image/ideogram', async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      model = 'ideogram',
+      providerOptions = {}
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.IDEOGRAM_API_KEY) {
+      return res.status(500).json({ error: 'Ideogram API key not configured' });
+    }
+
+    // Extract options from providerOptions
+    const {
+      aspect_ratio,
+      resolution,
+      rendering_speed = 'DEFAULT',
+      num_images = 1,
+      seed,
+      style_preset,
+      style_type,
+      negative_prompt
+    } = providerOptions;
+
+    // Convert aspect ratio format from "16:9" to "16x9" for Ideogram
+    const ideogramAspectRatio = aspect_ratio ? aspect_ratio.replace(':', 'x') : undefined;
+    
+    const result = await ideogramGenerate({
+      prompt,
+      aspect_ratio: ideogramAspectRatio,
+      resolution,
+      rendering_speed,
+      num_images,
+      seed,
+      style_preset,
+      style_type,
+      negative_prompt
+    });
+
+    // Convert ephemeral URLs to base64 data URLs
+    const persistedUrls = [];
+    if (result.data) {
+      for (let i = 0; i < result.data.length; i++) {
+        const key = `ideogram/generate/${Date.now()}-${i}.png`;
+        const dataUrl = await persistIdeogramUrl(result.data[i].url);
+        persistedUrls.push(dataUrl);
+      }
+    }
+
+    res.json({ 
+      dataUrls: persistedUrls,
+      mimeType: 'image/png'
+    });
+
+  } catch (error) {
+    console.error('Ideogram Image Generation error:', error);
+    res.status(500).json({
+      error: 'Generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Runway API endpoints
 const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY;
 

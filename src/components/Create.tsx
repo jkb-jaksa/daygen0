@@ -642,7 +642,7 @@ const Create: React.FC = () => {
   const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<File | null>(null);
   const [seedanceLastFrame, setSeedanceLastFrame] = useState<File | null>(null);
   // Use the new gallery hook for backend-managed images
-  const { images: gallery, deleteImage: deleteGalleryImage } = useGalleryImages();
+  const { images: gallery, deleteImage: deleteGalleryImage, fetchGalleryImages } = useGalleryImages();
   const [inspirations, setInspirations] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
@@ -3873,10 +3873,9 @@ const handleGenerate = async () => {
         //   references: undefined, // strip heavy field
         //   avatarId: selectedAvatar?.id ?? ("avatarId" in img ? img.avatarId : undefined),
         // };
-        // TODO: Implement backend API for adding new images to gallery
-        // For now, the image will be added to the gallery via the backend API
-        // when the user refreshes the page or the gallery is refetched
-        debugLog('New image generated, will be added to gallery via backend API');
+        // Refresh gallery to show the new image immediately
+        debugLog('New image generated, refreshing gallery...');
+        await fetchGalleryImages();
         
         // Save prompt to history on successful generation
         addPrompt(trimmedPrompt);
