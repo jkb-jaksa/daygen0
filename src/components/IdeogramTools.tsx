@@ -4,7 +4,7 @@ import { debugError } from '../utils/debug';
 import { buttons, inputs, glass } from '../styles/designSystem';
 
 interface IdeogramToolsProps {
-  onImageGenerated?: (images: any[]) => void;
+  onImageGenerated?: (images: unknown[]) => void;
 }
 
 export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }) => {
@@ -165,10 +165,10 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
     try {
       const result = await describeImage({
-        image: selectedImage,
+        image: selectedImage!,
         model_version: 'V_3',
       });
-      setDescriptions(result.map((d: any) => d.text));
+      setDescriptions(result);
     } catch (err) {
       debugError('Describe failed:', err);
     }
@@ -195,7 +195,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as 'generate' | 'edit' | 'reframe' | 'replace' | 'upscale' | 'describe')}
             className={`px-4 py-2 rounded-full font-raleway text-sm transition-colors border border-d-dark ${
               activeTab === tab.id
                 ? 'bg-[color:var(--d-orange-1)] text-d-black shadow-[0_8px_24px_#b8c0c040]'
@@ -285,7 +285,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               </label>
               <select
                 value={renderingSpeed}
-                onChange={(e) => setRenderingSpeed(e.target.value as any)}
+                onChange={(e) => setRenderingSpeed(e.target.value as 'TURBO' | 'DEFAULT' | 'QUALITY')}
                 className={inputs.base}
               >
                 <option value="TURBO">Turbo (Fastest)</option>
@@ -317,7 +317,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               </label>
               <select
                 value={styleType}
-                onChange={(e) => setStyleType(e.target.value as any)}
+                onChange={(e) => setStyleType(e.target.value as 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION')}
                 className={inputs.base}
               >
                 <option value="AUTO">Auto</option>

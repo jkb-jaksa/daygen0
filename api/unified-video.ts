@@ -251,7 +251,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // Veo (Gemini) video handler
-async function handleVeo(req: VercelRequest, res: VercelResponse, action: string, params: any) {
+async function handleVeo(req: VercelRequest, res: VercelResponse, action: string, params: Record<string, unknown>) {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
     return res.status(500).json({ error: 'Gemini API key not configured' });
@@ -376,7 +376,7 @@ async function handleVeo(req: VercelRequest, res: VercelResponse, action: string
 }
 
 // Seedance video handler
-async function handleSeedance(req: VercelRequest, res: VercelResponse, action: string, params: any) {
+async function handleSeedance(req: VercelRequest, res: VercelResponse, action: string, params: Record<string, unknown>) {
   const ARK_API_KEY = process.env.ARK_API_KEY;
   if (!ARK_API_KEY) {
     return res.status(500).json({ error: 'ARK_API_KEY not configured' });
@@ -411,7 +411,7 @@ async function handleSeedance(req: VercelRequest, res: VercelResponse, action: s
       flags.push(`--seed ${seed}`);
     }
 
-    const content: any[] = [
+    const content: Array<{ type: string; text?: string; inlineData?: { mimeType: string; data: string } }> = [
       { type: 'text', text: `${prompt.trim()}  ${flags.join(' ')}` }
     ];
 
@@ -620,7 +620,7 @@ async function handleHailuo(req: VercelRequest, res: VercelResponse, action: str
       toOptionalString(process.env.MINIMAX_GROUPID) ||
       toOptionalString(process.env.MINIMAX_ACCOUNT_GROUP_ID);
 
-    let fileData: any = null;
+    let fileData: { buffer: Buffer; mimeType: string } | null = null;
     let retrieveError: string | undefined;
 
     if (normalizedStatus === 'success' && fileId && groupId) {
@@ -898,7 +898,7 @@ async function handleKling(
       return res.status(response.ok ? 502 : response.status).json({ error: message, details: json });
     }
 
-    const data = (json && typeof json === 'object' && 'data' in json) ? (json as any).data : json;
+    const data = (json && typeof json === 'object' && 'data' in json) ? (json as { data: unknown }).data : json;
     const taskId = toOptionalString(data?.task_id ?? data?.taskId);
 
     if (!taskId) {
@@ -934,7 +934,7 @@ async function handleKling(
       return res.status(response.ok ? 502 : response.status).json({ error: message, details: json });
     }
 
-    const data = (json && typeof json === 'object' && 'data' in json) ? (json as any).data : json;
+    const data = (json && typeof json === 'object' && 'data' in json) ? (json as { data: unknown }).data : json;
     const status = toOptionalString(data?.task_status ?? data?.status) || 'unknown';
     const message = toOptionalString(data?.task_status_msg ?? data?.task_msg ?? data?.message);
 
@@ -955,7 +955,7 @@ async function handleKling(
 }
 
 // Runway video handler
-async function handleRunway(req: VercelRequest, res: VercelResponse, params: any) {
+async function handleRunway(req: VercelRequest, res: VercelResponse, params: Record<string, unknown>) {
   const apiKey = process.env.RUNWAY_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'RUNWAY_API_KEY is not configured' });
@@ -1133,7 +1133,7 @@ async function handleLuma(req: VercelRequest, res: VercelResponse, action: strin
       payload.callback_url = callback.trim();
     }
 
-    const generation = await client.generations.create(payload as any);
+    const generation = await client.generations.create(payload as Record<string, unknown>);
 
     return res.status(200).json({
       id: generation.id,

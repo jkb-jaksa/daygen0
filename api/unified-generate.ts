@@ -104,7 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // Gemini 2.5 Flash Image handler
-async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: { prompt: string; imageBase64?: string; mimeType?: string; references?: unknown }) {
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({ error: 'Gemini API key not configured' });
   }
@@ -156,7 +156,7 @@ async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, i
 
   const result = await response.json();
   const candidateParts = result?.candidates?.[0]?.content?.parts ?? [];
-  const imgPart = candidateParts.find((p: any) => p.inlineData?.data);
+  const imgPart = candidateParts.find((p: { inlineData?: { data?: string } }) => p.inlineData?.data);
 
   if (!imgPart?.inlineData?.data) {
     return res.status(400).json({ error: 'No image returned from Gemini 2.5 Flash Image' });
@@ -171,7 +171,7 @@ async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, i
 }
 
 // Ideogram handler
-async function handleIdeogram(req: VercelRequest, res: VercelResponse, { prompt, ...params }: any) {
+async function handleIdeogram(req: VercelRequest, res: VercelResponse, { prompt, ...params }: { prompt: string; [key: string]: unknown }) {
   if (!process.env.IDEOGRAM_API_KEY) {
     return res.status(500).json({ error: 'Ideogram API key not configured' });
   }
@@ -199,7 +199,7 @@ async function handleIdeogram(req: VercelRequest, res: VercelResponse, { prompt,
 }
 
 // Qwen handler
-async function handleQwen(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleQwen(req: VercelRequest, res: VercelResponse, { prompt }: { prompt: string; imageBase64?: string; mimeType?: string; references?: unknown }) {
   if (!process.env.DASHSCOPE_API_KEY) {
     return res.status(500).json({ error: 'Qwen API key not configured' });
   }
@@ -239,7 +239,7 @@ async function handleQwen(req: VercelRequest, res: VercelResponse, { prompt, ima
 }
 
 // Runway handler
-async function handleRunway(req: VercelRequest, res: VercelResponse, { prompt, model, imageBase64, mimeType, references }: any) {
+async function handleRunway(req: VercelRequest, res: VercelResponse, { prompt, model }: { prompt: string; model?: string; imageBase64?: string; mimeType?: string; references?: unknown }) {
   if (!process.env.RUNWAY_API_KEY) {
     return res.status(500).json({ error: 'Runway API key not configured' });
   }
@@ -270,7 +270,7 @@ async function handleRunway(req: VercelRequest, res: VercelResponse, { prompt, m
 async function handleSeedream(
   req: VercelRequest,
   res: VercelResponse,
-  { prompt, providerOptions = {}, size, n, response_format, guidance_scale, seed, watermark, image }: any,
+  { prompt, providerOptions = {}, size, n, response_format, guidance_scale, seed, watermark, image }: { prompt: string; providerOptions?: Record<string, unknown>; size?: string; n?: number; response_format?: string; guidance_scale?: number; seed?: number; watermark?: boolean; image?: string },
 ) {
   if (!process.env.ARK_API_KEY) {
     return res.status(500).json({ error: 'Seedream API key not configured' });
@@ -351,7 +351,7 @@ async function handleSeedream(
 }
 
 // ChatGPT handler
-async function handleChatGPT(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleChatGPT(req: VercelRequest, res: VercelResponse, { prompt }: { prompt: string; imageBase64?: string; mimeType?: string; references?: unknown }) {
   if (!process.env.OPENAI_API_KEY) {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
@@ -380,7 +380,7 @@ async function handleChatGPT(req: VercelRequest, res: VercelResponse, { prompt, 
 }
 
 // Reve handler
-async function handleReve(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: any) {
+async function handleReve(req: VercelRequest, res: VercelResponse, { prompt }: { prompt: string; imageBase64?: string; mimeType?: string; references?: unknown }) {
   if (!process.env.REVE_API_KEY) {
     return res.status(500).json({ error: 'Reve API key not configured' });
   }
@@ -409,7 +409,7 @@ async function handleReve(req: VercelRequest, res: VercelResponse, { prompt, ima
 }
 
 // Recraft handler
-async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: any) {
+async function handleRecraft(req: VercelRequest, res: VercelResponse, { prompt, model, ...params }: { prompt: string; model?: string; [key: string]: unknown }) {
   console.log('Recraft handler called with model:', model);
   
   if (!process.env.RECRAFT_API_KEY) {
@@ -511,7 +511,7 @@ async function handleLumaImage(
       payload.callback_url = callback.trim();
     }
 
-    const generation = await luma.generations.image.create(payload as any);
+    const generation = await luma.generations.image.create(payload as Record<string, unknown>);
 
     return res.json({
       id: generation.id,
@@ -583,7 +583,7 @@ async function handleLumaVideo(
       payload.callback_url = callback.trim();
     }
 
-    const generation = await luma.generations.create(payload as any);
+    const generation = await luma.generations.create(payload as Record<string, unknown>);
 
     return res.json({
       id: generation.id,

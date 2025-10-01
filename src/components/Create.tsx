@@ -3167,7 +3167,7 @@ const Create: React.FC = () => {
         setAvatarUploadError(`Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`);
         return;
       }
-    } catch (error) {
+    } catch {
       setAvatarUploadError("We couldn't read the image dimensions. Please try another image.");
       return;
     }

@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // Generate handler
-async function handleGenerate(req: VercelRequest, res: VercelResponse, params: any) {
+async function handleGenerate(req: VercelRequest, res: VercelResponse, params: Record<string, string>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -222,7 +222,7 @@ async function handleWebhook(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const signature = req.headers['x-bfl-signature'];
+    // const signature = req.headers['x-bfl-signature'];
     const secret = process.env.BFL_WEBHOOK_SECRET;
     
     if (!secret) {

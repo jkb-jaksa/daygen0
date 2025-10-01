@@ -7,10 +7,10 @@ export function useDropdownScrollLock<T extends HTMLElement>(isOpen: boolean = f
   const setScrollableRef = useCallback((node: T | null) => {
     // Cleanup previous listeners if they exist
     if (elementRef.current) {
-      const cleanup = (elementRef.current as any)._scrollLockCleanup;
+      const cleanup = (elementRef.current as HTMLElement & { _scrollLockCleanup?: () => void })._scrollLockCleanup;
       if (cleanup) {
         cleanup();
-        delete (elementRef.current as any)._scrollLockCleanup;
+        delete (elementRef.current as HTMLElement & { _scrollLockCleanup?: () => void })._scrollLockCleanup;
       }
     }
 
@@ -77,7 +77,7 @@ export function useDropdownScrollLock<T extends HTMLElement>(isOpen: boolean = f
       node.addEventListener('touchend', handleTouchEndNative, { passive: false });
 
       // Store cleanup function
-      (node as any)._scrollLockCleanup = () => {
+      (node as HTMLElement & { _scrollLockCleanup?: () => void })._scrollLockCleanup = () => {
         node.removeEventListener('wheel', handleWheelNative);
         node.removeEventListener('touchstart', handleTouchStartNative);
         node.removeEventListener('touchmove', handleTouchMoveNative);
@@ -130,10 +130,10 @@ export function useDropdownScrollLock<T extends HTMLElement>(isOpen: boolean = f
   useEffect(() => {
     return () => {
       if (elementRef.current) {
-        const cleanup = (elementRef.current as any)._scrollLockCleanup;
+        const cleanup = (elementRef.current as HTMLElement & { _scrollLockCleanup?: () => void })._scrollLockCleanup;
         if (cleanup) {
           cleanup();
-          delete (elementRef.current as any)._scrollLockCleanup;
+          delete (elementRef.current as HTMLElement & { _scrollLockCleanup?: () => void })._scrollLockCleanup;
         }
       }
     };

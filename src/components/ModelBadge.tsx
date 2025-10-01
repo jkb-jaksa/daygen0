@@ -251,10 +251,10 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   // Final fallback
   if (!config) {
     config = {
-      name: 'Unknown' as any,
-      shortName: '?' as any,
-      icon: '❓' as any,
-      description: 'Unknown Model' as any
+      name: 'Gemini 2.5 Flash',
+      shortName: 'G2.5',
+      icon: '🤖',
+      description: 'Google Gemini 2.5 Flash - Best for image editing and multimodal tasks'
     };
   }
 
