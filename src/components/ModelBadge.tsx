@@ -1,6 +1,7 @@
 import React from 'react';
 import { getToolLogo, hasToolLogo } from '../utils/toolLogos';
 import { glass } from '../styles/designSystem';
+import { normalizeModelId } from '../utils/modelUtils';
 
 interface ModelBadgeProps {
   model: string;
@@ -190,6 +191,30 @@ const MODEL_CONFIG = {
     shortName: 'Wan',
     icon: '🎥',
     description: 'Wan 2.2 Video - Alibaba DashScope text-to-video model'
+  },
+  'kling-v2.1-master': {
+    name: 'Kling v2.1',
+    shortName: 'K2.1',
+    icon: '🎥',
+    description: 'Kling v2.1 Master - High-quality video generation'
+  },
+  'kling-v2-master': {
+    name: 'Kling v2',
+    shortName: 'K2',
+    icon: '🎥',
+    description: 'Kling v2 Master - Video generation'
+  },
+  'seedance-1.0-pro': {
+    name: 'Seedance 1.0 Pro',
+    shortName: 'SD1.0',
+    icon: '🎥',
+    description: 'Seedance 1.0 Pro - Video generation'
+  },
+  'seedance-1.0-pro-video': {
+    name: 'Seedance 1.0 Pro Video',
+    shortName: 'SD1.0V',
+    icon: '🎥',
+    description: 'Seedance 1.0 Pro Video - Video generation'
   }
 } as const;
 
@@ -199,7 +224,8 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   showIcon = true,
   className = '' 
 }) => {
-  const config = MODEL_CONFIG[model as keyof typeof MODEL_CONFIG] || {
+  const normalizedModel = normalizeModelId(model);
+  const config = MODEL_CONFIG[normalizedModel as keyof typeof MODEL_CONFIG] || {
     name: 'Unknown',
     shortName: '?',
     icon: '❓',

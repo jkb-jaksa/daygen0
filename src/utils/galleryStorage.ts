@@ -1,6 +1,7 @@
 import type { GalleryImageLike, StoredGalleryImage } from "../components/create/types";
 import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
 import type { ReveGeneratedImage } from "../hooks/useReveImageGeneration";
+import { normalizeModelId } from './modelUtils';
 
 const isJobBackedImage = (
   item: GalleryImageLike,
@@ -29,7 +30,7 @@ export const hydrateStoredGallery = (
     const base: GalleryImageLike = {
       url: item.url,
       prompt: item.prompt,
-      model: item.model ?? "unknown",
+      model: normalizeModelId(item.model ?? "unknown"),
       timestamp: item.timestamp,
       ownerId: item.ownerId,
       isPublic: item.isPublic ?? false,

@@ -53,6 +53,7 @@ import type {
   StoredGalleryImage,
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
+import { normalizeModelId } from '../utils/modelUtils';
 
 
 const styleFilters = [
@@ -594,8 +595,9 @@ const ImageActionMenuPortal: React.FC<{
 
 const getModelDisplayName = (modelId: string, label?: string) => {
   if (label) return label;
-  const model = AI_MODELS.find(m => m.id === modelId);
-  return model?.name || modelId;
+  const normalizedId = normalizeModelId(modelId);
+  const model = AI_MODELS.find(m => m.id === normalizedId);
+  return model?.name || normalizedId;
 };
 
 type AvatarCardVariant = "feature" | "spotlight" | "grid";

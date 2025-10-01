@@ -153,20 +153,73 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
 };
 
 /**
- * Get model information by model ID
+ * Normalize model ID to ensure consistent mapping
+ */
+export const normalizeModelId = (modelId: string): string => {
+  if (!modelId || modelId === 'unknown') return 'unknown';
+  
+  // Handle common model ID variations
+  const modelMappings: Record<string, string> = {
+    // Runway models
+    'gen4_image': 'runway-gen4',
+    'gen4_image_turbo': 'runway-gen4-turbo',
+    'gen4_turbo': 'runway-gen4-turbo',
+    'gen4_aleph': 'runway-gen4',
+    'act_two': 'runway-gen4',
+    
+    // Flux models
+    'flux-pro-1.1': 'flux-pro-1.1',
+    'flux-pro-1.1-ultra': 'flux-pro-1.1-ultra',
+    'flux-kontext-pro': 'flux-kontext-pro',
+    'flux-kontext-max': 'flux-kontext-max',
+    
+    // Reve models
+    'reve-image-1.0': 'reve-image-1.0',
+    'reve-image': 'reve-image-1.0',
+    
+    // Other models
+    'seedream-3.0': 'seedream-3.0',
+    'qwen-image': 'qwen-image',
+    'ideogram': 'ideogram',
+    'chatgpt-image': 'chatgpt-image',
+    'luma-photon-1': 'luma-photon-1',
+    'luma-photon-flash-1': 'luma-photon-flash-1',
+    'luma-ray-2': 'luma-ray-2',
+    'luma-ray-flash-2': 'luma-ray-flash-2',
+    'recraft': 'recraft',
+    'recraft-v3': 'recraft-v3',
+    'recraft-v2': 'recraft-v2',
+    'veo-3.0-generate-001': 'veo-3.0-generate-001',
+    'veo-3.0-fast-generate-001': 'veo-3.0-fast-generate-001',
+    'wan-video-2.2': 'wan-video-2.2',
+    'wan2.2-t2v-plus': 'wan-video-2.2',
+    'hailuo-02': 'hailuo-02',
+    'MiniMax-Hailuo-02': 'hailuo-02',
+    'kling-v2.1-master': 'kling-v2.1-master',
+    'kling-v2-master': 'kling-v2-master',
+    'seedance-1.0-pro': 'seedance-1.0-pro',
+    'seedance-1.0-pro-video': 'seedance-1.0-pro',
+  };
+  
+  return modelMappings[modelId] || modelId;
+};
+
+/**
+ * Get model information by model ID with normalization
  */
 export const getModelInfo = (modelId: string): ModelInfo => {
-  return MODEL_INFO[modelId] || {
-    id: modelId,
+  const normalizedId = normalizeModelId(modelId);
+  return MODEL_INFO[normalizedId] || {
+    id: normalizedId,
     name: 'Unknown Model',
-    shortName: 'Unknown',
+    shortName: '?',
     description: 'Unknown or legacy model',
     isAvailable: false
   };
 };
 
 /**
- * Get display name for a model
+ * Get display name for a model with normalization
  */
 export const getModelDisplayName = (modelId: string): string => {
   return getModelInfo(modelId).name;

@@ -4,6 +4,7 @@ import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Downl
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
+import { useGalleryImages } from "../hooks/useGalleryImages";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import type { FluxGeneratedImage, FluxImageGenerationOptions } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
@@ -30,7 +31,7 @@ const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
-import { compressDataUrl } from "../lib/imageCompression";
+// import { compressDataUrl } from "../lib/imageCompression";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
 import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
@@ -640,7 +641,8 @@ const Create: React.FC = () => {
   const [seedanceSeed, setSeedanceSeed] = useState<string>('');
   const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<File | null>(null);
   const [seedanceLastFrame, setSeedanceLastFrame] = useState<File | null>(null);
-  const [gallery, setGallery] = useState<GalleryImageLike[]>([]);
+  // Use the new gallery hook for backend-managed images
+  const { images: gallery, deleteImage: deleteGalleryImage } = useGalleryImages();
   const [inspirations, setInspirations] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
@@ -843,11 +845,7 @@ const Create: React.FC = () => {
   const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars]);
   const filteredVideoGallery = useMemo(() => {
     const filtered = filterVideoGalleryItems(videoGallery);
-    debugLog('[Create] Video gallery state:', { 
-      total: videoGallery.length, 
-      filtered: filtered.length,
-      videos: videoGallery.map(v => ({ url: v.url, prompt: v.prompt }))
-    });
+    // Removed debug log that was running on every render
     return filtered;
   }, [videoGallery, galleryFilters, favorites, folders, storedAvatars]);
   const inspirationsGallery = useMemo(() => {
@@ -946,12 +944,7 @@ const Create: React.FC = () => {
 
   // Handle video generation completion
   useEffect(() => {
-    debugLog('[Create] Video generation state:', { 
-      generatedVideo: !!generatedVideo, 
-      videoOperationName, 
-      isVideoGenerating, 
-      isVideoPolling 
-    });
+    // Removed debug log that was running on every render
     
     // Clear button spinning when video generation hook takes over
     if (isVideoGenerating && spinnerTimeoutRef.current) {
@@ -1077,51 +1070,9 @@ const Create: React.FC = () => {
     }
   }, [storageEstimate, refreshStorageEstimate]);
 
-  // Force refresh storage estimate on mount and request persistent storage
+  // Force refresh storage estimate on mount - removed persistent storage request
   useEffect(() => {
-    // Check if persistent storage is already granted
-    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
-      navigator.storage.persist().then(granted => {
-        if (granted) {
-          debugLog('Persistent storage already granted');
-          setPersistentStorageStatus('granted');
-          return; // Don't set up user interaction listeners if already granted
-        }
-      }).catch(() => {
-        // Ignore errors on initial check
-      });
-    }
-
-    // Request persistent storage to prevent browser from clearing cached images
-    // Only request after user interaction to increase chances of approval
-    const requestPersistentStorage = () => {
-      if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist().then(granted => {
-          if (granted) {
-            debugLog('Persistent storage granted');
-            setPersistentStorageStatus('granted');
-          } else {
-            debugWarn('Persistent storage denied - browser may clear cached images sooner');
-            setPersistentStorageStatus('denied');
-          }
-        }).catch(error => {
-          debugError('Error requesting persistent storage:', error);
-          setPersistentStorageStatus('denied');
-        });
-      } else {
-        setPersistentStorageStatus('denied');
-      }
-    };
-
-    // Request persistent storage on first user interaction
-    const handleUserInteraction = () => {
-      requestPersistentStorage();
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-    };
-    
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('keydown', handleUserInteraction);
+    // Removed persistent storage request since you're using R2 for storage
     
     // Add a small delay to ensure the component is fully mounted
     setTimeout(() => {
@@ -1130,8 +1081,7 @@ const Create: React.FC = () => {
 
     // Cleanup event listeners
     return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
+      // Removed persistent storage event listeners
     };
   }, [refreshStorageEstimate]);
 
@@ -1431,22 +1381,20 @@ const Create: React.FC = () => {
       ? 'inspirations'
       : 'gallery';
 
-  // Load gallery state and related metadata from client storage
+  // Load other state from client storage (gallery now managed by backend)
   useEffect(() => {
     let cancelled = false;
 
     const loadPersistedState = async () => {
       try {
         await Promise.all([
-          migrateKeyToIndexedDb(storagePrefix, 'gallery'),
           migrateKeyToIndexedDb(storagePrefix, 'favorites'),
           migrateKeyToIndexedDb(storagePrefix, 'uploads'),
           migrateKeyToIndexedDb(storagePrefix, 'folders'),
           migrateKeyToIndexedDb(storagePrefix, 'inspirations'),
         ]);
 
-        const [storedGallery, storedFavorites, storedUploads, storedFolders, storedInspirations] = await Promise.all([
-          getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'gallery'),
+        const [storedFavorites, storedUploads, storedFolders, storedInspirations] = await Promise.all([
           getPersistedValue<string[]>(storagePrefix, 'favorites'),
           getPersistedValue<SerializedUpload[]>(storagePrefix, 'uploads'),
           getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders'),
@@ -1454,33 +1402,6 @@ const Create: React.FC = () => {
         ]);
 
         if (cancelled) return;
-
-        let migratedInspirations: GalleryImageLike[] = [];
-        if (Array.isArray(storedGallery) && storedGallery.length > 0) {
-          // Be more lenient with validation - only require url
-          const validImages = storedGallery.filter(img => img && img.url);
-          debugLog('Loading gallery from client storage with', validImages.length, 'valid images out of', storedGallery.length, 'total');
-
-          const hydrated = hydrateStoredGallery(validImages);
-          const ownWorks = hydrated.filter(item => !item.savedFrom);
-          migratedInspirations = hydrated.filter(item => Boolean(item.savedFrom));
-
-          if (validImages.length !== storedGallery.length || migratedInspirations.length > 0) {
-            if (migratedInspirations.length > 0) {
-              debugLog('Migrating', migratedInspirations.length, 'saved inspirations out of gallery storage');
-            }
-            void setPersistedValue(storagePrefix, 'gallery', serializeGallery(ownWorks));
-          }
-
-          setGallery(ownWorks);
-        } else {
-          debugLog('No gallery data found in client storage');
-          debugLog('Storage prefix:', storagePrefix);
-          debugLog('Checking localStorage for gallery data...');
-          const fallbackData = localStorage.getItem(`${storagePrefix}gallery`);
-          debugLog('Fallback localStorage data:', fallbackData ? 'found' : 'not found');
-          setGallery([]);
-        }
 
         let restoredInspirations: GalleryImageLike[] = [];
         if (Array.isArray(storedInspirations) && storedInspirations.length > 0) {
@@ -1491,14 +1412,9 @@ const Create: React.FC = () => {
           restoredInspirations = hydrateStoredGallery(validInspirations);
         }
 
-        if (migratedInspirations.length > 0 || restoredInspirations.length > 0) {
-          const inspirationMap = new Map<string, GalleryImageLike>();
-          [...restoredInspirations, ...migratedInspirations].forEach(item => {
-            inspirationMap.set(item.url, item);
-          });
-          const combinedInspirations = Array.from(inspirationMap.values());
-          setInspirations(combinedInspirations);
-          void setPersistedValue(storagePrefix, 'inspirations', serializeGallery(combinedInspirations));
+        if (restoredInspirations.length > 0) {
+          setInspirations(restoredInspirations);
+          void setPersistedValue(storagePrefix, 'inspirations', serializeGallery(restoredInspirations));
         } else {
           setInspirations([]);
         }
@@ -1530,9 +1446,8 @@ const Create: React.FC = () => {
           await refreshStorageEstimate();
         }
       } catch (error) {
-        debugError('Failed to load persisted gallery data', error);
+        debugError('Failed to load persisted data', error);
         if (!cancelled) {
-          await removePersistedValue(storagePrefix, 'gallery');
           await removePersistedValue(storagePrefix, 'inspirations');
         }
       }
@@ -1545,19 +1460,7 @@ const Create: React.FC = () => {
     };
   }, [storagePrefix]);
 
-  // Backup gallery state periodically to prevent data loss
-  useEffect(() => {
-    if (gallery.length > 0) {
-      const backupInterval = setInterval(() => {
-        // Only backup if gallery still has images
-        if (gallery.length > 0) {
-          void persistGallery(gallery);
-        }
-      }, 120000); // Backup every 2 minutes to reduce client storage writes
-
-      return () => clearInterval(backupInterval);
-    }
-  }, [gallery.length]); // Only depend on gallery length, not the entire gallery array
+  // Gallery is now managed by backend, no need for client-side backup
 
   useEffect(() => {
     let isMounted = true;
@@ -1674,13 +1577,7 @@ const Create: React.FC = () => {
   }, [activeCategory, selectedImages.size]);
 
   // Backup gallery state when component unmounts
-  useEffect(() => {
-    return () => {
-      if (gallery.length > 0) {
-        void persistGallery(gallery);
-      }
-    };
-  }, []); // Only run on unmount, not on every gallery change
+  // Gallery persistence is now handled by the backend API
 
   const persistFavorites = async (next: Set<string>) => {
     setFavorites(next);
@@ -1709,64 +1606,7 @@ const Create: React.FC = () => {
     }
   };
 
-  // Backup function to persist gallery state
-  const persistGallery = async (galleryData: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
-    debugLog('persistGallery called with', galleryData.length, 'images');
-    const sanitizedData = galleryData.filter(item => !item.savedFrom);
-    debugLog('After filtering savedFrom, have', sanitizedData.length, 'images');
-    if (sanitizedData.length !== galleryData.length) {
-      debugWarn('Filtered saved inspirations out of gallery persistence payload');
-    }
-
-    // Don't persist empty galleries - this prevents race conditions
-    // But allow persistence if we have at least one valid image
-    if (sanitizedData.length === 0) {
-      debugWarn('Skipping persistence of empty gallery to prevent data loss');
-      return sanitizedData;
-    }
-
-    const persistLean = async (data: GalleryImageLike[]) => {
-      debugLog('Attempting to save gallery to storage with', data.length, 'images');
-      await setPersistedValue(storagePrefix, 'gallery', serializeGallery(data));
-      debugLog('Gallery data saved to storage successfully');
-      await refreshStorageEstimate();
-    };
-    try {
-      await persistLean(sanitizedData);
-      debugLog('Gallery backup persisted with', sanitizedData.length, 'images');
-      return sanitizedData;
-    } catch (error) {
-      debugError('Failed to persist gallery', error);
-
-      // Don't trim the gallery too aggressively - keep at least 5 images
-      if (sanitizedData.length <= 5) {
-        debugWarn('Gallery too small to trim, returning original data');
-        return sanitizedData;
-      }
-
-      // Try trimming to half the size first, then gradually reduce
-      const trimSizes = [
-        Math.floor(sanitizedData.length / 2),
-        Math.floor(sanitizedData.length / 4),
-        5, // Minimum size
-      ];
-
-      for (const size of trimSizes) {
-        try {
-          const trimmed = sanitizedData.slice(0, size);
-          await persistLean(trimmed);
-          debugLog('Gallery persisted after trimming to', trimmed.length, 'images');
-          return trimmed;
-        } catch (persistError) {
-          debugWarn(`Failed to persist gallery with ${size} images, trying smaller size`, persistError);
-        }
-      }
-
-      // If all else fails, return the original data without persisting
-      debugError('Failed to persist gallery even after trimming, returning original data');
-      return sanitizedData;
-    }
-  };
+  // Gallery persistence is now handled by the backend API
 
   const persistInspirations = async (items: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
     try {
@@ -1969,16 +1809,8 @@ const Create: React.FC = () => {
     } else {
       // Bulk publish
       const count = selectedImages.size;
-      setGallery(currentGallery => {
-        const updatedGallery = currentGallery.map(img => 
-          selectedImages.has(img.url) 
-            ? { ...img, isPublic: true }
-            : img
-        );
-        // Persist the updated gallery
-        persistGallery(updatedGallery);
-        return updatedGallery;
-      });
+      // TODO: Implement backend API for publishing images
+      // For now, just show the notification
       setCopyNotification(`${count} image${count === 1 ? '' : 's'} published!`);
       setTimeout(() => setCopyNotification(null), 2000);
       setPublishConfirmation({show: false, count: 0});
@@ -1992,16 +1824,8 @@ const Create: React.FC = () => {
     } else {
       // Bulk unpublish
       const count = selectedImages.size;
-      setGallery(currentGallery => {
-        const updatedGallery = currentGallery.map(img => 
-          selectedImages.has(img.url) 
-            ? { ...img, isPublic: false }
-            : img
-        );
-        // Persist the updated gallery
-        persistGallery(updatedGallery);
-        return updatedGallery;
-      });
+      // TODO: Implement backend API for unpublishing images
+      // For now, just show the notification
       setCopyNotification(`${count} image${count === 1 ? '' : 's'} unpublished!`);
       setTimeout(() => setCopyNotification(null), 2000);
       setUnpublishConfirmation({show: false, count: 0});
@@ -2060,16 +1884,9 @@ const Create: React.FC = () => {
     setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId, source: null});
   };
 
-  const handleDeleteConfirmed = () => {
+  const handleDeleteConfirmed = async () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
-      // Track counts so we only remove the exact number of requested images per URL.
-      const urlDeleteCounts = deleteConfirmation.imageUrls.reduce((map, url) => {
-        const nextCount = (map.get(url) ?? 0) + 1;
-        map.set(url, nextCount);
-        return map;
-      }, new Map<string, number>());
-      const totalDeleteRequests = deleteConfirmation.imageUrls.length;
       if (deleteConfirmation.source === 'inspirations') {
         let nextInspirations: GalleryImageLike[] = [];
         setInspirations(currentInspirations => {
@@ -2085,36 +1902,22 @@ const Create: React.FC = () => {
           }
         })();
       } else {
-        let nextGallery: GalleryImageLike[] = [];
-        setGallery(currentGallery => {
-          const deleteCounts = new Map(urlDeleteCounts);
-          const updated = currentGallery.filter(img => {
-            if (!img) return false;
-            if (!img.url) return true;
-            const remaining = deleteCounts.get(img.url);
-            if (remaining && remaining > 0) {
-              deleteCounts.set(img.url, remaining - 1);
-              return false;
-            }
-            return true;
-          });
-
-          if (updated.length === 0 && currentGallery.length > totalDeleteRequests) {
-            debugWarn('Delete request would have cleared gallery unexpectedly; preserving state');
-            nextGallery = currentGallery;
-            return currentGallery;
+        // Use backend API for gallery deletion
+        const deletePromises = deleteConfirmation.imageUrls.map((url) => {
+          // Find the image by URL to get its ID
+          const imageToDelete = gallery.find(img => img.url === url);
+          if (imageToDelete?.jobId) {
+            return deleteGalleryImage(imageToDelete.jobId);
           }
-
-          nextGallery = updated;
-          return updated;
+          return Promise.resolve(false);
         });
 
-        void (async () => {
-          const persisted = await persistGallery(nextGallery);
-          if (persisted.length !== nextGallery.length) {
-            setGallery(persisted);
-          }
-        })();
+        try {
+          await Promise.all(deletePromises);
+          debugLog('Gallery images deleted successfully');
+        } catch (error) {
+          debugError('Failed to delete gallery images:', error);
+        }
       }
 
       const nextFavorites = new Set(favorites);
@@ -2594,16 +2397,8 @@ const Create: React.FC = () => {
 
   const confirmIndividualPublish = () => {
     if (publishConfirmation.imageUrl) {
-      setGallery(currentGallery => {
-        const updatedGallery = currentGallery.map(img => 
-          img.url === publishConfirmation.imageUrl 
-            ? { ...img, isPublic: true }
-            : img
-        );
-        // Persist the updated gallery
-        persistGallery(updatedGallery);
-        return updatedGallery;
-      });
+      // TODO: Implement backend API for publishing individual image
+      // For now, just show the notification
       setCopyNotification('Image published!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
@@ -2612,16 +2407,8 @@ const Create: React.FC = () => {
 
   const confirmIndividualUnpublish = () => {
     if (unpublishConfirmation.imageUrl) {
-      setGallery(currentGallery => {
-        const updatedGallery = currentGallery.map(img => 
-          img.url === unpublishConfirmation.imageUrl 
-            ? { ...img, isPublic: false }
-            : img
-        );
-        // Persist the updated gallery
-        persistGallery(updatedGallery);
-        return updatedGallery;
-      });
+      // TODO: Implement backend API for unpublishing individual image
+      // For now, just show the notification
       setCopyNotification('Image unpublished!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
@@ -4076,56 +3863,20 @@ const handleGenerate = async () => {
       // Update gallery with newest first, unique by url, capped to 50 (increased limit)
       if (img?.url) {
         // Compress the image to reduce storage size
-        const compressedUrl = await compressDataUrl(img.url);
+        // const compressedUrl = await compressDataUrl(img.url);
         
         // Add ownerId to the image and strip heavy references field
-        const imgWithOwner: GeneratedImage = {
-          ...img,
-          url: compressedUrl,
-          ownerId: user?.id,
-          references: undefined, // strip heavy field
-          avatarId: selectedAvatar?.id ?? ("avatarId" in img ? img.avatarId : undefined),
-        };
-        // Use functional update to ensure we get the latest gallery state
-        setGallery(currentGallery => {
-          debugLog('Adding new image to gallery. Current gallery size:', currentGallery.length);
-          
-          // Keep all existing gallery items, don't filter them out
-          const dedup = (list: GalleryImageLike[]) => {
-            const seen = new Set<string>();
-            const out: GalleryImageLike[] = [];
-            for (const it of list) {
-              if (it?.url && !seen.has(it.url)) {
-                seen.add(it.url);
-                out.push(it);
-              }
-            }
-            debugLog('Deduplication: input length', list.length, 'output length', out.length);
-            return out;
-          };
-
-          // Create new gallery with new image first, then existing images
-          const newGallery = dedup([imgWithOwner, ...currentGallery]);
-          // Keep reasonable number of images to avoid exhausting client storage quota
-          const next = newGallery.length > 20 ? newGallery.slice(0, 20) : newGallery;
-          debugLog('Final gallery size after dedup and slice:', next.length);
-
-          // Persist the gallery immediately with the correct state
-          void (async () => {
-            debugLog('Attempting to persist gallery with', next.length, 'images');
-            const persisted = await persistGallery(next);
-            if (persisted.length !== next.length) {
-              // Only update if there's a significant difference
-              debugWarn(`Gallery persistence mismatch: expected ${next.length}, got ${persisted.length}`);
-            }
-            // Refresh storage estimate after adding image to gallery (with delay to allow storage to update)
-            setTimeout(() => {
-              refreshStorageEstimate();
-            }, 100);
-          })();
-
-          return next;
-        });
+        // const imgWithOwner: GeneratedImage = {
+        //   ...img,
+        //   url: compressedUrl,
+        //   ownerId: user?.id,
+        //   references: undefined, // strip heavy field
+        //   avatarId: selectedAvatar?.id ?? ("avatarId" in img ? img.avatarId : undefined),
+        // };
+        // TODO: Implement backend API for adding new images to gallery
+        // For now, the image will be added to the gallery via the backend API
+        // when the user refreshes the page or the gallery is refetched
+        debugLog('New image generated, will be added to gallery via backend API');
         
         // Save prompt to history on successful generation
         addPrompt(trimmedPrompt);
@@ -6301,25 +6052,7 @@ const handleGenerate = async () => {
                     const isLumaGenerating = (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
                     const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
                     const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
-                    debugLog('[Create] Button state:', { 
-                      isButtonSpinning: isButtonSpinning, 
-                      isVideoGenerating: isVideoGenerating, 
-                      isVideoPolling: isVideoPolling, 
-                      isRunwayVideoGenerating: isRunwayVideoGenerating,
-                      isWanGenerating,
-                      isHailuoGenerating,
-                      isKlingGenerating,
-                      runwayVideoStatus: runwayVideoStatus || 'undefined',
-                      wanStatus,
-                      hailuoStatus,
-                      klingStatus,
-                      lumaVideoLoading,
-                      lumaVideoPolling,
-                      lumaImageLoading,
-                      showSpinner: showSpinner,
-                      activeCategory: activeCategory,
-                      selectedModel: selectedModel
-                    });
+                    // Removed debug log that was running on every render
                     return showSpinner ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (

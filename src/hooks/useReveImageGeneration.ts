@@ -31,7 +31,6 @@ export interface ReveImageGenerationOptions {
   guidance_scale?: number;
   steps?: number;
   seed?: number;
-  batch_size?: number;
   references?: string[];
 }
 
@@ -78,7 +77,6 @@ export const useReveImageGeneration = () => {
         if (options.guidance_scale !== undefined) providerOptions.guidance_scale = options.guidance_scale;
         if (options.steps !== undefined) providerOptions.steps = options.steps;
         if (options.seed !== undefined) providerOptions.seed = options.seed;
-        if (options.batch_size !== undefined) providerOptions.batch_size = options.batch_size;
 
         const response = await fetch(getApiUrl('/api/image/reve'), {
           method: 'POST',
@@ -88,7 +86,7 @@ export const useReveImageGeneration = () => {
           },
           body: JSON.stringify({
             prompt: options.prompt,
-            model: options.model ?? 'reve-image',
+            model: options.model ?? 'reve-image-1.0',
             references: options.references,
             providerOptions,
           }),
@@ -121,7 +119,7 @@ export const useReveImageGeneration = () => {
         const generatedImage: ReveGeneratedImage = {
           url: imageUrl,
           prompt: options.prompt,
-          model: options.model ?? 'reve-image',
+          model: options.model ?? 'reve-image-1.0',
           timestamp: new Date().toISOString(),
           jobId: payload.jobId ?? `reve-${Date.now()}`,
           references: options.references || undefined,
