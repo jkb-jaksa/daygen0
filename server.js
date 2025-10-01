@@ -1928,6 +1928,91 @@ app.post('/api/image/ideogram', async (req, res) => {
   }
 });
 
+// Seedream Image Generation endpoint (for frontend compatibility)
+app.post('/api/image/seedream', async (req, res) => {
+  try {
+    const { 
+      prompt, 
+      model = 'seedream-4.0',
+      providerOptions = {}
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.ARK_API_KEY) {
+      return res.status(500).json({ error: 'Seedream API key not configured' });
+    }
+
+    console.log(`[seedream] Generating image with prompt: ${prompt.substring(0, 100)}...`);
+
+    const size = providerOptions.size || '1024x1024';
+    const n = providerOptions.n || 1;
+
+    const response = await fetch(`${ARK_BASE_URL}/v1/image/generate`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.ARK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: SEEDREAM_MODEL_ID,
+        prompt,
+        width: parseInt(size.split('x')[0]),
+        height: parseInt(size.split('x')[1]),
+        num_images: n,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[seedream] API error: ${response.status} - ${errorText}`);
+      return res.status(response.status).json({ 
+        error: `Seedream API error: ${errorText}` 
+      });
+    }
+
+    const json = await response.json();
+    
+    // Seedream 4.0 returns URLs, not base64 data, so we need to download and convert
+    const imageUrls = (json?.images || json?.data || []).map((x) => x.url || x);
+    
+    console.log(`[seedream] Generated ${imageUrls.length} image(s)`);
+    
+    // Download images and convert to base64
+    const images = [];
+    for (const url of imageUrls) {
+      try {
+        const imageResponse = await fetch(url);
+        if (imageResponse.ok) {
+          const buffer = await imageResponse.arrayBuffer();
+          const base64 = Buffer.from(buffer).toString('base64');
+          const mimeType = imageResponse.headers.get('content-type') || 'image/png';
+          images.push(`data:${mimeType};base64,${base64}`);
+        } else {
+          console.warn(`[seedream] Failed to download image from ${url}`);
+        }
+      } catch (error) {
+        console.error(`[seedream] Error downloading image from ${url}:`, error);
+      }
+    }
+
+    if (images.length === 0) {
+      return res.status(500).json({ error: 'Failed to download generated images' });
+    }
+
+    res.json({ images });
+
+  } catch (error) {
+    console.error('Seedream Image Generation error:', error);
+    res.status(500).json({
+      error: 'Generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Runway API endpoints
 const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY;
 
@@ -2745,10 +2830,10 @@ app.post('/api/flux/webhook', async (req, res) => {
   }
 });
 
-// Seedream 3.0 Image Generation API routes
+// Seedream 4.0 Image Generation API routes
 const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.ap-southeast.bytepluses.com/api/v3";
 const ARK_API_KEY = process.env.ARK_API_KEY;
-const SEEDREAM_MODEL_ID = "seedream-3-0-t2i-250415";
+const SEEDREAM_MODEL_ID = "seedream-4-0-t2i";
 
 // Reve API routes
 const REVE_BASE_URL = process.env.REVE_BASE_URL || "https://api.reve.com";

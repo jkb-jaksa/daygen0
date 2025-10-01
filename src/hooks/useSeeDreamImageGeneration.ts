@@ -68,7 +68,7 @@ export const useSeeDreamImageGeneration = () => {
           },
           body: JSON.stringify({
             prompt: options.prompt,
-            model: 'seedream-3.0',
+            model: 'seedream-4.0',
             providerOptions,
           }),
         });
@@ -91,7 +91,7 @@ export const useSeeDreamImageGeneration = () => {
         const generatedImage: SeedreamGeneratedImage = {
           url: images[0],
           prompt: options.prompt,
-          model: 'seedream-3.0',
+          model: 'seedream-4.0',
           timestamp: new Date().toISOString(),
           size,
           ownerId: user?.id,
