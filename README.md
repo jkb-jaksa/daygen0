@@ -1,339 +1,108 @@
 # DayGen
 
-## Architecture
+A modern AI-powered content generation platform featuring image and video generation capabilities.
 
-**DayGen** is a full-stack AI image and video generation platform consisting of:
-- **Frontend**: React + TypeScript + Vite (this repository)
-- **Backend**: NestJS + PostgreSQL + Prisma (deployed on Google Cloud)
+## 🚀 Features
 
-The frontend connects to a NestJS backend that handles:
-- User authentication and authorization (JWT)
-- Credit management system
-- Integration with 15+ AI providers
-- Image storage (Cloudflare R2)
-- Database operations (PostgreSQL)
+### Image Generation
+- **Gemini 2.0**: Google's latest text-to-image model with experimental preview support
+- **FLUX Models**: High-quality image generation with multiple variants (Pro 1.1, Ultra, Kontext)
+- **Ideogram V3**: Advanced text-to-image with turbo mode
+- **Recraft v2/v3**: Professional image generation with multiple styles
+- **Reve**: Fast image generation, editing, and remixing
+- **Qwen Image**: Alibaba's text-to-image generation via DashScope
+- **Runway Gen-4**: Professional image generation
+- **SeeDream**: BytePlus Ark image generation
+- **DALL·E**: OpenAI's image generation API
 
-## Environment Setup
+### Video Generation
+- **Veo 3**: Google's latest cinematic video generation
+- **Kling**: Advanced video generation with multiple models and camera controls
+- **Runway Gen-4 Video**: Professional video generation
+- **Wan 2.2**: Alibaba's text-to-video generation
+- **Hailuo 02**: MiniMax video generation with frame control
+- **Seedance 1.0 Pro**: High-quality video generation
+- **Luma Ray 2**: Professional video generation
 
-The `.env` file has already been created for you with the backend URL. You only need to set:
+### Additional Features
+- User authentication and profile management
+- Gallery system for saved generations
+- Prompt history and saved prompts
+- Digital avatar creation
+- Multiple aspect ratios and quality settings
+- Negative prompt support
+- Real-time generation status updates
 
-```bash
-# Backend API URL (already configured)
-VITE_API_BASE_URL=https://daygen-backend-365299591811.europe-central2.run.app
+## 🛠️ Tech Stack
 
-# Optional: Site password for development access
-VITE_SITE_PASSWORD=your_dev_password_here
-```
-
-**Note**: All AI provider API keys are now stored securely in the backend environment. The frontend does not need or expose any API keys (except for the optional site password for client-side access control).
-
-### Backend Configuration
-
-The backend (in `../daygen-backend` directory) is configured via its own `.env` file with all AI provider API keys. See `BACKEND_INTEGRATION.md` for complete details.
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS
+- **State Management**: React Context API
+- **Backend**: NestJS (separate repository)
+- **Database**: PostgreSQL with Prisma ORM
+- **Storage**: Cloudflare R2
+- **Deployment**: Vercel (Frontend), Google Cloud Run (Backend)
 
 ## 🚀 Getting Started
 
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+
 ### Installation
 
+1. Clone the repository:
 ```bash
-# Install dependencies
+git clone https://github.com/jkb-jaksa/daygen0.git
+cd daygen0
+```
+
+2. Install dependencies:
+```bash
 npm install
 ```
 
-### Development
-
+3. Set up environment variables:
 ```bash
-# Start the development server (connects to Google Cloud backend)
+cp .env.example .env
+# Add your API keys and configuration
+```
+
+4. Start the development server:
+```bash
 npm run dev
-
-# The app will open at http://localhost:5173
 ```
 
-### Testing the Backend Connection
+5. Open [http://localhost:5173](http://localhost:5173) in your browser
 
-```bash
-# Run the backend connection test
-node test-backend-connection.js
-```
+## 📝 Environment Variables
 
-This will verify:
-- ✅ Backend health endpoint is accessible
-- ✅ Authentication endpoints are working
-- ✅ User creation and JWT tokens work
-- ✅ Authenticated endpoints respond correctly
+See `.env.example` for required environment variables. You'll need API keys for the generation providers you want to use.
 
-### Build for Production
+## 🔗 Backend
 
-```bash
-# Create optimized production build
-npm run build
+The backend is in a separate repository: [daygen-backend](https://github.com/skrrrt-and-boom/daygen-backend)
 
-# Preview the production build
-npm run preview
-```
+## 📚 Documentation
 
-### First Time Usage
+- [Backend Integration Guide](./BACKEND_INTEGRATION.md)
+- [FLUX Integration Guide](./FLUX_INTEGRATION_GUIDE.md)
+- [Gemini Integration](./GEMINI_INTEGRATION.md)
+- [Ideogram Integration](./IDEOGRAM_INTEGRATION.md)
+- [Recraft Integration](./RECRAFT_INTEGRATION.md)
+- [Reve Integration](./REVE_INTEGRATION.md)
+- [Runway Integration](./RUNWAY_INTEGRATION.md)
+- [Quick Start Guide](./QUICK_START.md)
+- [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 
-1. Start the development server: `npm run dev`
-2. Open your browser to the displayed URL (usually `http://localhost:5173`)
-3. Click "Sign Up" to create an account
-4. You'll receive 3 free credits automatically
-5. Start generating images with any of the 15+ AI models!
+## 🌐 Live Demo
 
-## 🎨 AI Generation Features
+Visit [daygen0.vercel.app](https://daygen0.vercel.app)
 
-DayGen supports multiple AI models for both image and video generation:
+## 📄 License
 
-### 🖼️ Image Generation Models
-- **Gemini 2.5 Flash Image** - Best for image editing and manipulation
-- **FLUX Pro 1.1** - High-quality text-to-image generation
-- **FLUX Pro 1.1 Ultra** - Ultra-high quality 4MP+ generation
-- **FLUX Kontext Pro/Max** - Advanced image editing with text prompts
-- **ChatGPT Image** - Popular image generation model
-- **Ideogram 3.0** - Advanced image generation, editing, and enhancement
-- **Qwen Image** - Alibaba Cloud's text-to-image and image editing model
-- **Runway Gen-4** - Great image model with control & editing features
-- **Runway Gen-4 Turbo** - Fast Runway generation with reference images
-- **Seedream 3.0** - High-quality text-to-image generation with editing capabilities
-- **Reve Image** - Great text-to-image and image editing
-- **Recraft v3** - Advanced image generation with text layout and brand controls
-- **Recraft v2** - High-quality image generation and editing
-- **Luma Photon 1** - High-quality image generation with Photon
-- **Luma Photon Flash 1** - Fast image generation with Photon Flash
+This project is private and proprietary.
 
-### 🎬 Video Generation Models
-- **Veo 3** - Google's advanced video generation model with cinematic quality
-- **Runway Gen-4 (Video)** - Text-to-video using Gen-4 Turbo
-- **Wan 2.2 Video** - Alibaba's Wan 2.2 text-to-video model
-- **Hailuo 02** - MiniMax video with start & end frame control
-- **Kling** - ByteDance's cinematic video model with hyper-realistic motion
-- **Seedance 1.0 Pro (Video)** - Great quality text-to-video generation
-- **Luma Ray 2** - High-quality video generation with Ray 2
+## 🤝 Contributing
 
-### Gemini 2.5 Flash Image Features
-- **Generate**: Text-to-image generation from descriptions
-- **Edit**: Image-to-image editing with text prompts
-- **High Quality**: Professional-grade image generation
-- **Fast Processing**: Optimized for speed and efficiency
-- **Multiple Formats**: Support for various image formats
-- **Google Integration**: Seamless integration with Google AI services
-
-### Ideogram 3.0 Features
-- **Generate**: Text-to-image with aspect ratio control and style presets
-- **Edit**: Image editing with mask support
-- **Reframe**: Convert square images to any target resolution
-- **Replace Background**: Automatic subject detection and background replacement
-- **Upscale**: High-quality image upscaling with detail control
-- **Describe**: Automatic image captioning and alt text generation
-
-### Qwen Image Features
-- **Generate**: Text-to-image with multiple aspect ratios (1:1, 16:9, 4:3, 3:4, 9:16)
-- **Edit**: Image-to-image editing with text prompts
-- **Prompt Extend**: Automatic enhancement of short prompts
-- **Watermark Control**: Optional watermarking of generated images
-- **High Quality**: Professional-grade image generation up to 1664×928 resolution
-
-### Runway Gen-4 Features
-- **Generate**: High-quality text-to-image generation
-- **Edit**: Advanced image editing with precise control
-- **Reference Images**: Use reference images to guide generation
-- **Style Transfer**: Apply artistic styles to generated images
-- **High Resolution**: Generate images up to 4MP resolution
-
-### Seedream 3.0 Features
-- **Generate**: High-quality text-to-image generation
-- **Edit**: Image editing with text prompts
-- **Style Control**: Multiple artistic styles and presets
-- **Aspect Ratios**: Support for various aspect ratios
-- **Fast Generation**: Optimized for speed and quality
-
-### Reve Image Features
-- **Generate**: Text-to-image generation from descriptions
-- **Edit**: Modify existing images using text instructions
-- **Remix**: Combine text prompts with reference images
-- **Async Processing**: Jobs processed asynchronously with status polling
-- **Base64 Storage**: Images stored as base64 data URLs
-
-### FLUX Features
-- **FLUX Pro 1.1**: Standard high-quality text-to-image generation
-- **FLUX Pro 1.1 Ultra**: Ultra-high quality 4MP+ generation
-- **FLUX Kontext Pro/Max**: Advanced image editing with text prompts
-- **Custom Dimensions**: Support for custom width/height settings
-- **Aspect Ratio Control**: Flexible aspect ratio options
-- **Webhook Integration**: Asynchronous processing with status updates
-- **Multiple Models**: Choose between different FLUX model variants
-- **High Resolution**: Generate images up to 4MP resolution
-
-### Recraft Features
-- **Generate**: Text-to-image generation with multiple styles and controls
-- **Image-to-Image**: Transform existing images with text prompts
-- **Inpainting**: Edit specific regions of images using masks
-- **Text Layout**: Position text elements precisely in generated images (v3 only)
-- **Brand Controls**: Specify colors, artistic levels, and background colors
-- **Vectorization**: Convert images to vector graphics
-- **Background Removal**: Automatic subject detection and background removal
-- **Upscaling**: High-quality image enhancement and upscaling
-- **Multiple Styles**: Realistic, digital illustration, vector, and icon styles
-
-## 🎬 Video Generation Features
-
-### Veo 3 Features
-- **Text-to-Video**: Generate cinematic videos from text descriptions
-- **High Quality**: Professional-grade video generation up to 1080p
-- **Cinematic Motion**: Natural physics and realistic human motion
-- **Sound Integration**: Videos include synchronized audio
-- **Multiple Aspect Ratios**: Support for 16:9, 9:16, and 1:1 formats
-- **Negative Prompts**: Exclude unwanted elements from generation
-
-### Kling Features
-- **Text-to-Video**: Generate videos from text prompts
-- **Model Options**: Kling V2.1 Master (latest) and V2 Master
-- **Aspect Ratios**: 16:9, 9:16, and 1:1 support
-- **Duration Control**: 5 or 10 second videos
-- **Generation Modes**: Standard (720p/24fps) and Professional (1080p/48fps)
-- **Camera Movement**: Advanced camera control with preset movements
-- **CFG Scale**: Creativity control from 0-1
-- **Negative Prompts**: Fine-tune generation with exclusion prompts
-
-### Runway Gen-4 Video Features
-- **Text-to-Video**: Generate videos using Gen-4 Turbo
-- **High Quality**: Professional video generation
-- **Multiple Formats**: Support for various aspect ratios
-- **Fast Generation**: Optimized for speed and quality
-- **Style Control**: Apply artistic styles to generated videos
-
-### Wan 2.2 Video Features
-- **Text-to-Video**: Alibaba's advanced text-to-video generation
-- **High Quality**: 5-second high-quality clips
-- **Multiple Aspect Ratios**: Flexible format support
-- **Fast Processing**: Optimized generation pipeline
-
-### Hailuo 02 Features
-- **Text-to-Video**: MiniMax video generation with frame control
-- **Start/End Frame Control**: Specify first and last frames
-- **Resolution Options**: Multiple quality settings
-- **Duration Control**: Customizable video length
-- **Watermark Options**: Optional branding control
-
-### Seedance 1.0 Pro Video Features
-- **Text-to-Video**: High-quality text-to-video generation
-- **Multiple Formats**: Support for various aspect ratios
-- **Professional Quality**: High-resolution output
-- **Fast Generation**: Optimized processing
-
-### Luma Ray 2 Features
-- **Text-to-Video**: High-quality video generation with Ray 2
-- **Multiple Resolutions**: Support for various quality settings
-- **Duration Control**: Customizable video length
-- **Style Options**: Multiple generation presets
-
-For detailed integration documentation, see:
-- [GEMINI_INTEGRATION.md](./GEMINI_INTEGRATION.md)
-- [FLUX_INTEGRATION_GUIDE.md](./FLUX_INTEGRATION_GUIDE.md)
-- [IDEOGRAM_INTEGRATION.md](./IDEOGRAM_INTEGRATION.md)
-- [REVE_INTEGRATION.md](./REVE_INTEGRATION.md)
-- [RECRAFT_INTEGRATION.md](./RECRAFT_INTEGRATION.md)
-- [RUNWAY_INTEGRATION.md](./RUNWAY_INTEGRATION.md)
-
-## Site Password Protection
-
-This repo includes two layers of protection:
-
-- Server-side (Vercel Edge Basic Auth) – for production security.
-- Client-side gate – convenient for local/dev only.
-
-Client gate usage (dev only)
-- Run locally with: `VITE_SITE_PASSWORD=yourpassword npm run dev`
-- The gate is automatically DISABLED in production builds; only the server-side Basic Auth applies live.
-- The password is remembered for the tab session via `sessionStorage`. You can also unlock via `?pw=yourpassword`.
-
-Note: Use the edge Basic Auth for real protection in production. The client gate is only for lightweight dev gating.
-
-## Vercel Basic Auth (Edge)
-
-This repo includes an Edge Function to protect the whole site on Vercel via HTTP Basic Auth.
-
-- Files:
-  - `api/auth.ts:1` – Edge function that enforces Basic Auth and proxies the request.
-  - `api/create-intent.ts:1` – Stripe Node function for `/api/create-intent`.
-  - `vercel.json:1` – Routes all traffic through the Edge function; bypassed requests hit the original path.
-
-- Configure credentials using environment variables (set in Vercel Project Settings → Environment Variables):
-  - `BASIC_AUTH` in the form `username:password` (recommended), or
-  - `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` separately.
-
-- Deployment behavior:
-  - Only enforced on production: the Edge auth is bypassed for `VERCEL_ENV !== 'production'` (Preview and local dev).
-  - If no credentials are set, the Edge function allows all traffic (no-op).
-  - When credentials are set, production requests return `401` until the browser supplies valid Basic Auth credentials.
-  - Valid requests are internally re-fetched with an `x-auth-checked: 1` header to bypass re-checking.
-
-Tip: You can keep the client-side `VITE_SITE_PASSWORD` gate for local/dev while relying on Basic Auth in production.
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+This is a private project. Please contact the maintainers for contribution guidelines.
