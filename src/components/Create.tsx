@@ -6210,9 +6210,10 @@ const handleGenerate = async () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-200 gap-2`}
                 >
                   <Plus className="w-4 h-4" />
+                  <span className="hidden lg:inline font-raleway text-sm">Add reference</span>
                 </button>
                 {activeCategory === "image" && (
                   <>
@@ -6220,17 +6221,19 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
                       <Users className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm">Select Avatar</span>
                     </button>
                     <button
                       type="button"
                       ref={promptsButtonRef}
                       onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
                       <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
@@ -6257,7 +6260,7 @@ const handleGenerate = async () => {
                               setIsAvatarCreationModalOpen(true);
                               setAvatarName("");
                             }}
-                            aria-label="Create a new avatar"
+                            aria-label="Create a new Avatar"
                           >
                             <Plus className="h-3.5 w-3.5" />
                           </button>
@@ -6298,7 +6301,7 @@ const handleGenerate = async () => {
                                       }}
                                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
                                       title="View creations"
-                                      aria-label="View creations with this avatar"
+                                      aria-label="View creations with this Avatar"
                                     >
                                       <Info className="h-3 w-3 text-d-white hover:text-d-text" />
                                     </button>
@@ -6309,8 +6312,8 @@ const handleGenerate = async () => {
                                         setAvatarToDelete(avatar);
                                       }}
                                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
-                                      title="Delete avatar"
-                                      aria-label="Delete avatar"
+                                      title="Delete Avatar"
+                                      aria-label="Delete Avatar"
                                     >
                                       <Trash2 className="h-3 w-3 text-d-white hover:text-d-text" />
                                     </button>
@@ -6321,7 +6324,7 @@ const handleGenerate = async () => {
                           </div>
                         ) : (
                           <div className="rounded-2xl border border-d-mid/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
-                            You haven't saved any avatars yet. Visit the avatars page to create one.
+                            You haven't saved any Avatars yet. Visit the Avatars page to create one.
                           </div>
                         )}
                         {!storedAvatars.length && (
@@ -6334,7 +6337,7 @@ const handleGenerate = async () => {
                             }}
                           >
                             <Users className="h-4 w-4" />
-                            Go to avatars
+                            Go to Avatars
                           </button>
                         )}
                       </div>
@@ -6517,7 +6520,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 group gap-2`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -6535,6 +6538,7 @@ const handleGenerate = async () => {
                         return <Icon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />;
                       }
                     })()}
+                    <span className="hidden lg:inline font-raleway text-sm">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -6913,7 +6917,7 @@ const handleGenerate = async () => {
                         type="button"
                         onClick={clearSelectedAvatar}
                         className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-d-black/80 p-0.5 text-d-white transition-colors duration-200 hover:text-d-text"
-                        title="Remove avatar"
+                        title="Remove Avatar"
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -7301,7 +7305,7 @@ const handleGenerate = async () => {
                 type="button"
                 className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text z-10"
                 onClick={() => setCreationsModalAvatar(null)}
-                aria-label="Close avatar creations"
+                aria-label="Close Avatar creations"
               >
                 <X className="h-5 w-5" />
               </button>

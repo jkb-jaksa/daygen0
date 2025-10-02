@@ -125,9 +125,9 @@ const ImageActionMenuPortal: React.FC<{
 
 
 const deriveSuggestedName = (raw?: string) => {
-  if (!raw) return "New avatar";
+  if (!raw) return "New Avatar";
   const cleaned = raw.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
-  if (!cleaned) return "New avatar";
+  if (!cleaned) return "New Avatar";
   const words = cleaned.split(" ");
   const slice = words.slice(0, 4).join(" ");
   return slice.charAt(0).toUpperCase() + slice.slice(1);
@@ -798,8 +798,8 @@ export default function Avatars() {
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100')
               }`}
-              title="Edit avatar"
-              aria-label="Edit avatar"
+              title="Edit Avatar"
+              aria-label="Edit Avatar"
             >
               <Edit className="w-3.5 h-3.5" />
             </button>
@@ -1335,7 +1335,7 @@ export default function Avatars() {
               type="button"
               className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
               onClick={closeCreationsModal}
-              aria-label="Close avatar creations"
+              aria-label="Close Avatar creations"
             >
               <X className="h-5 w-5" />
             </button>
@@ -1404,8 +1404,8 @@ export default function Avatars() {
                     toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
                   }}
                   className={`image-action-btn parallax-large transition-opacity duration-100`}
-                  title="Edit avatar"
-                  aria-label="Edit avatar"
+                  title="Edit Avatar"
+                  aria-label="Edit Avatar"
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </button>

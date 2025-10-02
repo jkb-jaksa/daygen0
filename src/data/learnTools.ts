@@ -112,9 +112,9 @@ const tools: readonly LearnToolPage[] = [
   {
     slug: "higgsfield",
     name: "Higgsfield",
-    tagline: "High photorealism. Great for avatars and social media content.",
+    tagline: "High photorealism. Great for Avatars and social media content.",
     overview:
-      "Higgsfield specialises in lifelike portrait and avatar generation. Its diffusion pipelines are tuned for social-ready shots with consistent lighting, camera angles, and brand aesthetics.",
+      "Higgsfield specialises in lifelike portrait and Avatar generation. Its diffusion pipelines are tuned for social-ready shots with consistent lighting, camera angles, and brand aesthetics.",
     categories: ["image", "avatars"],
     pricing:
       "Offers credit-based plans for creators and teams with volume discounts for agencies. Contact Higgsfield sales for enterprise deployment.",
@@ -142,7 +142,7 @@ const tools: readonly LearnToolPage[] = [
     ],
     gettingStarted: [
       "Create a Higgsfield account and select a plan that fits your output needs.",
-      "Upload a set of high-quality reference photos to train your avatar base.",
+      "Upload a set of high-quality reference photos to train your Avatar base.",
       "Choose portrait presets or craft custom prompts to generate your campaign assets.",
     ],
     resources: [

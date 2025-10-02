@@ -21,7 +21,7 @@ export const CREATE_CATEGORIES: SidebarEntry[] = [
   { key: "text", label: "text", Icon: Edit },
   { key: "image", label: "image", Icon: ImageIcon },
   { key: "video", label: "video", Icon: VideoIcon },
-  { key: "avatars", label: "avatars", Icon: Users },
+  { key: "avatars", label: "Avatars", Icon: Users },
   { key: "audio", label: "audio", Icon: Volume2 },
 ];
 
