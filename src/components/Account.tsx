@@ -362,7 +362,7 @@ export default function Account() {
         showToast("Profile photo updated");
       } catch (error) {
         debugError("Account - Failed to process cropped image", error);
-        setUploadError("We couldn't process that image. Please try again.");
+        setUploadError("We couldn’t read that image. Re-upload or use a different format.");
       } finally {
         setIsUploadingPic(false);
       }

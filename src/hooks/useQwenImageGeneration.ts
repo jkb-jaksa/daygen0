@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
+import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface QwenGeneratedImage {
   url: string;
@@ -86,10 +87,16 @@ export const useQwenImageGeneration = () => {
 
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
-          const message =
+          const rawMessage =
             (payload && typeof payload.error === 'string' && payload.error) ||
-            response.statusText ||
-            'Qwen generation failed';
+            (payload && typeof payload.message === 'string' && payload.message) ||
+            null;
+          const message = resolveApiErrorMessage({
+            status: response.status,
+            message: rawMessage,
+            fallback: 'Qwen generation failed',
+            context: 'generation',
+          });
           throw new Error(message);
         }
 
@@ -121,14 +128,14 @@ export const useQwenImageGeneration = () => {
 
         return [generatedImage];
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        const message = resolveGenerationCatchError(error, 'Qwen couldn’t generate that image. Try again in a moment.');
         setState((prev) => ({
           ...prev,
           isLoading: false,
           error: message,
           progress: undefined,
         }));
-        throw error;
+        throw new Error(message);
       }
     },
     [token, user?.id],

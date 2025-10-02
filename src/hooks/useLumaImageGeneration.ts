@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { getApiUrl } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
+import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 import type { GeneratedImage } from './useGeminiImageGeneration';
 
 export interface LumaGeneratedImage extends GeneratedImage {
@@ -104,10 +105,16 @@ export function useLumaImageGeneration() {
 
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
-          const message =
+          const rawMessage =
             (payload && typeof payload.error === 'string' && payload.error) ||
-            response.statusText ||
-            'Luma generation failed';
+            (payload && typeof payload.message === 'string' && payload.message) ||
+            null;
+          const message = resolveApiErrorMessage({
+            status: response.status,
+            message: rawMessage,
+            fallback: 'Luma generation failed',
+            context: 'generation',
+          });
           throw new Error(message);
         }
 
@@ -169,7 +176,7 @@ export function useLumaImageGeneration() {
 
         return generatedImage;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        const message = resolveGenerationCatchError(error, 'Luma couldn’t generate that image. Try again in a moment.');
         setState({
           isLoading: false,
           error: message,
@@ -178,7 +185,7 @@ export function useLumaImageGeneration() {
           status: null,
           contentType: null,
         });
-        throw error;
+        throw new Error(message);
       }
     },
     [token, user?.id],

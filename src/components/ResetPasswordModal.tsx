@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { buttons, inputs } from "../styles/designSystem";
 import { debugError } from "../utils/debug";
+import { resolveAuthErrorMessage } from "../utils/errorMessages";
 
 interface ResetPasswordModalProps {
   open: boolean;
@@ -51,20 +52,7 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
     } catch (err) {
       debugError("ResetPasswordModal - failed to reset password", err);
       
-      let message = "Something went wrong. Please try again.";
-      
-      if (err instanceof Error) {
-        if (err.message.includes("fetch")) {
-          message = "Network error. Please check your connection and try again.";
-        } else if (err.message.includes("Invalid or expired reset token")) {
-          message = "This reset link is invalid or has expired. Please request a new one.";
-        } else if (err.message.includes("Password must be at least 8 characters long")) {
-          message = "Password must be at least 8 characters long.";
-        } else if (err.message.trim()) {
-          message = err.message;
-        }
-      }
-      
+      const message = resolveAuthErrorMessage(err, "reset-password");
       setError(message);
     } finally {
       setIsSubmitting(false);

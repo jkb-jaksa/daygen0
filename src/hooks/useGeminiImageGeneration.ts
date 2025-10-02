@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
+import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface GeneratedImage {
   url: string;
@@ -82,11 +83,19 @@ export const useGeminiImageGeneration = () => {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => null);
-        const errorMessage = errBody?.error || `Request failed with ${res.status}`;
-        
-        if (res.status === 429) {
-          throw new Error('Rate limit reached for the image API. Please wait a minute and try again.');
-        }
+        const rawMessage =
+          (errBody && typeof errBody.error === 'string' && errBody.error) ||
+          (errBody && typeof errBody.message === 'string' && errBody.message) ||
+          null;
+        const errorMessage =
+          res.status === 429
+            ? PLAN_LIMIT_MESSAGE
+            : resolveApiErrorMessage({
+                status: res.status,
+                message: rawMessage,
+                fallback: `Request failed with ${res.status}`,
+                context: 'generation',
+              });
         throw new Error(errorMessage);
       }
 
@@ -115,8 +124,8 @@ export const useGeminiImageGeneration = () => {
 
       return generatedImage;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+      const errorMessage = resolveGenerationCatchError(error, 'We couldn’t generate that image. Try again in a moment.');
+
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -124,7 +133,7 @@ export const useGeminiImageGeneration = () => {
         generatedImage: null,
       }));
 
-      throw error;
+      throw new Error(errorMessage);
     }
   }, [token, user?.id]);
 

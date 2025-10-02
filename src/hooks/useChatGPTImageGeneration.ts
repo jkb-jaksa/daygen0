@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugError, debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
+import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -82,7 +83,17 @@ export const useChatGPTImageGeneration = () => {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+        const rawMessage =
+          (typeof errorData.error === 'string' && errorData.error) ||
+          (typeof errorData.message === 'string' && errorData.message) ||
+          null;
+        const friendlyMessage = resolveApiErrorMessage({
+          status: res.status,
+          message: rawMessage,
+          fallback: `HTTP ${res.status}: ${res.statusText}`,
+          context: 'generation',
+        });
+        throw new Error(friendlyMessage);
       }
 
       const data = await res.json();
@@ -116,9 +127,9 @@ export const useChatGPTImageGeneration = () => {
       return generatedImage;
     } catch (error) {
       debugError('[chatgpt-image] Generation failed:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+
+      const errorMessage = resolveGenerationCatchError(error, 'ChatGPT couldn’t generate that image. Try again in a moment.');
+
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -126,7 +137,7 @@ export const useChatGPTImageGeneration = () => {
         generatedImage: null,
       }));
 
-      throw error;
+      throw new Error(errorMessage);
     }
   }, [token, user?.id]);
 

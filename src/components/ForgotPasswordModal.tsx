@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { buttons, inputs } from "../styles/designSystem";
 import { debugError } from "../utils/debug";
+import { resolveAuthErrorMessage } from "../utils/errorMessages";
 
 interface ForgotPasswordModalProps {
   open: boolean;
@@ -33,18 +34,7 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
     } catch (err) {
       debugError("ForgotPasswordModal - failed to request password reset", err);
       
-      let message = "Something went wrong. Please try again.";
-      
-      if (err instanceof Error) {
-        if (err.message.includes("fetch")) {
-          message = "Network error. Please check your connection and try again.";
-        } else if (err.message.includes("Please enter a valid email address")) {
-          message = "Please enter a valid email address.";
-        } else if (err.message.trim()) {
-          message = err.message;
-        }
-      }
-      
+      const message = resolveAuthErrorMessage(err, "forgot-password");
       setError(message);
     } finally {
       setIsSubmitting(false);

@@ -308,7 +308,7 @@ export default function Avatars() {
       }
     };
     reader.onerror = () => {
-      setUploadError("We couldn't read that file. Try another image.");
+      setUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
   }, []);

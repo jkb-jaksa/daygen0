@@ -1420,7 +1420,12 @@ export default function Edit() {
           {/* Error Display */}
           {currentError && (
             <div className="w-full max-w-lg mx-auto mt-4">
-              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-red-500/50">
+              <div
+                className="relative rounded-[32px] overflow-hidden bg-d-black border border-red-500/50"
+                role="status"
+                aria-live="assertive"
+                aria-atomic="true"
+              >
                 <button
                   onClick={() => clearCurrentError()}
                   className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5"
@@ -1428,7 +1433,7 @@ export default function Edit() {
                   <X className="w-4 h-4" />
                 </button>
                 <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
-                  Error: {currentError}
+                  {currentError}
                 </div>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { FLUX_MODEL_MAP } from '../lib/bfl';
 import { getApiUrl } from '../utils/api';
 import { debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
+import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -121,10 +122,16 @@ export const useFluxImageGeneration = () => {
 
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
-          const message =
+          const rawMessage =
             (payload && typeof payload.error === 'string' && payload.error) ||
-            response.statusText ||
-            'Flux generation failed';
+            (payload && typeof payload.message === 'string' && payload.message) ||
+            null;
+          const message = resolveApiErrorMessage({
+            status: response.status,
+            message: rawMessage,
+            fallback: 'Flux generation failed',
+            context: 'generation',
+          });
           throw new Error(message);
         }
 
@@ -167,7 +174,7 @@ export const useFluxImageGeneration = () => {
 
         return generatedImage;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        const message = resolveGenerationCatchError(error, 'Flux couldn’t generate that image. Try again in a moment.');
         setState((prev) => ({
           ...prev,
           isLoading: false,
@@ -176,7 +183,7 @@ export const useFluxImageGeneration = () => {
           jobStatus: 'failed',
           progress: undefined,
         }));
-        throw error;
+        throw new Error(message);
       }
     },
     [token, user?.id],

@@ -46,6 +46,8 @@ import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
 import { getApiUrl } from "../utils/api";
 import { useFooter } from "../contexts/useFooter";
+import useToast from "../hooks/useToast";
+import { DOWNLOAD_FAILURE_MESSAGE } from "../utils/errorMessages";
 import type {
   Accent,
   Folder,
@@ -496,6 +498,7 @@ const Create: React.FC = () => {
   );
 
   const { user, storagePrefix, token } = useAuth();
+  const { showToast } = useToast();
   const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
   const location = useLocation();
@@ -678,17 +681,20 @@ const Create: React.FC = () => {
   useEffect(() => {
     const hideFooterSections = ['text', 'image', 'video', 'audio'];
     setFooterVisible(!hideFooterSections.includes(activeCategory));
-    
+
     // Cleanup: show footer when component unmounts
     return () => {
       setFooterVisible(true);
     };
   }, [activeCategory, setFooterVisible]);
-  
+
   const MAX_PARALLEL_GENERATIONS = 5;
+  const LONG_POLL_THRESHOLD_MS = 90000;
+  const LONG_POLL_NOTICE_MINUTES = 2;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
-  const [activeGenerationQueue, setActiveGenerationQueue] = useState<Array<{ id: string; prompt: string; model: string }>>([]);
+  const [activeGenerationQueue, setActiveGenerationQueue] = useState<Array<{ id: string; prompt: string; model: string; startedAt: number }>>([]);
   const hasGenerationCapacity = activeGenerationQueue.length < MAX_PARALLEL_GENERATIONS;
+  const [longPollNotice, setLongPollNotice] = useState<{ jobId: string; startedAt: number } | null>(null);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
@@ -923,6 +929,7 @@ const Create: React.FC = () => {
     }));
   };
   
+  const longPollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
   const [storageUsage, setStorageUsage] = useState<StorageEstimateSnapshot | null>(null);
@@ -930,6 +937,51 @@ const Create: React.FC = () => {
   const [isCacheBarVisible, setIsCacheBarVisible] = useState(true);
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
+
+  useEffect(() => {
+    if (longPollTimerRef.current) {
+      clearTimeout(longPollTimerRef.current);
+      longPollTimerRef.current = null;
+    }
+
+    if (activeGenerationQueue.length === 0) {
+      setLongPollNotice(null);
+      return;
+    }
+
+    const [oldestJob] = activeGenerationQueue;
+    const elapsed = Date.now() - oldestJob.startedAt;
+
+    if (elapsed >= LONG_POLL_THRESHOLD_MS) {
+      setLongPollNotice({ jobId: oldestJob.id, startedAt: oldestJob.startedAt });
+      return;
+    }
+
+    longPollTimerRef.current = window.setTimeout(() => {
+      setLongPollNotice({ jobId: oldestJob.id, startedAt: oldestJob.startedAt });
+    }, LONG_POLL_THRESHOLD_MS - elapsed);
+
+    return () => {
+      if (longPollTimerRef.current) {
+        clearTimeout(longPollTimerRef.current);
+        longPollTimerRef.current = null;
+      }
+    };
+  }, [activeGenerationQueue, LONG_POLL_THRESHOLD_MS]);
+
+  const handleCancelLongPoll = useCallback(() => {
+    if (!longPollNotice) {
+      return;
+    }
+    setActiveGenerationQueue((prev) => prev.filter((job) => job.id !== longPollNotice.jobId));
+    setLongPollNotice(null);
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+      spinnerTimeoutRef.current = null;
+    }
+    setIsButtonSpinning(false);
+    showToast('Generation cancelled. Try another prompt when you’re ready.');
+  }, [longPollNotice, showToast]);
   
   // Video generation hook
   const {
@@ -1167,6 +1219,7 @@ const Create: React.FC = () => {
   const {
     error: qwenError,
     generateImage: generateQwenImage,
+    clearError: clearQwenError,
   } = useQwenImageGeneration();
 
   const {
@@ -1186,6 +1239,7 @@ const Create: React.FC = () => {
     error: reveError,
     generatedImage: reveImage,
     generateImage: generateReveImage,
+    clearError: clearReveError,
   } = useReveImageGeneration();
 
   const {
@@ -1201,6 +1255,7 @@ const Create: React.FC = () => {
     error: seedanceError,
     video: seedanceVideo,
     generateVideo: generateSeedanceVideo,
+    reset: resetSeedanceVideo,
   } = useSeedanceVideoGeneration();
 
   const {
@@ -1239,6 +1294,37 @@ const Create: React.FC = () => {
     generateVideo: generateKlingVideo,
     reset: resetKlingVideo,
   } = useKlingVideoGeneration();
+
+  const clearAllGenerationErrors = useCallback(() => {
+    clearGeminiError();
+    clearFluxError();
+    clearChatGPTError();
+    clearIdeogramError();
+    clearQwenError();
+    clearRunwayError();
+    clearLumaImageError();
+    clearReveError();
+    resetSeedanceVideo();
+    resetWanVideo();
+    resetHailuoVideo();
+    resetLumaVideo();
+    resetKlingVideo();
+    setLongPollNotice(null);
+  }, [
+    clearChatGPTError,
+    clearFluxError,
+    clearGeminiError,
+    clearIdeogramError,
+    clearLumaImageError,
+    clearQwenError,
+    clearReveError,
+    clearRunwayError,
+    resetHailuoVideo,
+    resetKlingVideo,
+    resetLumaVideo,
+    resetSeedanceVideo,
+    resetWanVideo,
+  ]);
 
   // Handle Seedance video generation
   useEffect(() => {
@@ -3160,7 +3246,7 @@ const Create: React.FC = () => {
         return;
       }
     } catch {
-      setAvatarUploadError("We couldn't read the image dimensions. Please try another image.");
+      setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
       return;
     }
 
@@ -3176,7 +3262,7 @@ const Create: React.FC = () => {
       }
     };
     reader.onerror = () => {
-      setAvatarUploadError("We couldn't read that file. Try another image.");
+    setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
   }, [validateAvatarFile, getImageDimensions]);
@@ -3567,6 +3653,7 @@ const handleGenerate = async () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Video download error:', error);
+      showToast(DOWNLOAD_FAILURE_MESSAGE);
     }
   };
 
@@ -3609,7 +3696,7 @@ const handleGenerate = async () => {
     const qwenPromptExtendForGeneration = qwenPromptExtend;
     const qwenWatermarkForGeneration = qwenWatermark;
 
-    const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration };
+    const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration, startedAt: Date.now() };
     
     // Only add to activeGenerationQueue if we're not handling video models that manage their own state
     if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"))) {
@@ -3866,12 +3953,7 @@ const handleGenerate = async () => {
     } catch (error) {
       debugError('Error generating image:', error);
       // Clear any previous errors from all hooks
-      clearGeminiError();
-      clearFluxError();
-      clearChatGPTError();
-      clearIdeogramError();
-      clearRunwayError();
-      clearLumaImageError();
+      clearAllGenerationErrors();
     } finally {
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -6896,12 +6978,33 @@ const handleGenerate = async () => {
           </div>
           
           {/* Error Display */}
+          {longPollNotice && (
+            <div className="w-full max-w-xl mx-auto mb-4" role="status" aria-live="polite">
+              <div className="bg-d-black/60 border border-d-mid/40 rounded-[32px] p-4 text-center text-d-white">
+                <p className="font-raleway text-sm text-d-text">
+                  Still working… this can take up to ~{LONG_POLL_NOTICE_MINUTES} min. We’ll notify you when it’s ready.
+                </p>
+                <button
+                  onClick={handleCancelLongPoll}
+                  className="mt-2 text-xs text-d-light underline hover:text-d-text"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           {(error || videoError) && (
             <div className="w-full max-w-xl mx-auto mb-6">
-              <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
+              <div
+                className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center"
+                role="status"
+                aria-live="assertive"
+                aria-atomic="true"
+              >
                 <p className="font-raleway text-sm">{error || videoError}</p>
                 <button
-                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearLumaImageError(); }}
+                  onClick={clearAllGenerationErrors}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss

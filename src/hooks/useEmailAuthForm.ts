@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { debugError } from "../utils/debug";
+import { resolveAuthErrorMessage } from "../utils/errorMessages";
 
 type EmailAuthMode = "login" | "signup";
 
@@ -99,22 +100,7 @@ export function useEmailAuthForm(options: UseEmailAuthFormOptions = {}): UseEmai
       } catch (err) {
         debugError("EmailAuthForm - failed to authenticate", err);
         
-        let message = "Something went wrong. Please try again.";
-        
-        if (err instanceof Error) {
-          if (err.message.includes("fetch")) {
-            message = "Network error. Please check your connection and try again.";
-          } else if (err.message.includes("Invalid email or password")) {
-            message = "Invalid email or password. Please check your credentials.";
-          } else if (err.message.includes("Email is already registered")) {
-            message = "An account with this email already exists. Try logging in instead.";
-          } else if (err.message.includes("Please enter a valid email address")) {
-            message = "Please enter a valid email address.";
-          } else if (err.message.trim()) {
-            message = err.message;
-          }
-        }
-        
+        const message = resolveAuthErrorMessage(err, mode === "login" ? "login" : "signup");
         setError(message);
       } finally {
         setIsSubmitting(false);
