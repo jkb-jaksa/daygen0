@@ -2133,9 +2133,9 @@ const Create: React.FC = () => {
   };
 
   const handleFolderThumbnailUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event.currentTarget.files?.[0];
     if (!file) return;
-    
+
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file');
       return;
@@ -2814,8 +2814,8 @@ const Create: React.FC = () => {
           className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`}
           onClick={(event) => {
             // Check if the click came from a copy button
-            const target = event.target as HTMLElement;
-            if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+            const target = event.target;
+            if (target instanceof Element && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
               return;
             }
             if (isSelectMode) {
@@ -3081,7 +3081,7 @@ const Create: React.FC = () => {
 
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event.currentTarget.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
       
@@ -3304,9 +3304,9 @@ const Create: React.FC = () => {
   }, []);
 
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    handleAddReferenceFiles(Array.from(event.target.files || []));
-    if (event.target) {
-      event.target.value = '';
+    handleAddReferenceFiles(Array.from(event.currentTarget.files || []));
+    if (event.currentTarget) {
+      event.currentTarget.value = '';
     }
   };
 
@@ -4916,16 +4916,16 @@ const handleGenerate = async () => {
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
-                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => { 
+                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
                               // Check if the click came from a copy button
-                              const target = event.target as HTMLElement;
-                              if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+                              const target = event.target;
+                              if (target instanceof Element && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
                                 return;
                               }
                               if (isSelectMode) {
                                 toggleImageSelection(img.url, event);
                               } else {
-                                setSelectedFullImage(img); 
+                                setSelectedFullImage(img);
                                 setIsFullSizeOpen(true); 
                               }
                             }}>

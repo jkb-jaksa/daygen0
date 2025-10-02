@@ -84,11 +84,11 @@
   --d-white: #A8B0B0;
   --d-white-rgb: 168 176 176;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
-  --d-light: #8E9393;
-  --d-light-rgb: 142 147 147;
+  --d-light: #969b9b;
+  --d-light-rgb: 150 155 155;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --d-mid: #282d2d;
-  --d-mid-rgb: 40 45 45;
+  --d-mid: #323737;
+  --d-mid-rgb: 50 55 55;
   --d-dark: #1a1c1c;
   --d-dark-rgb: 26 28 28;
   --d-black: #060806;
