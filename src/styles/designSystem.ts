@@ -9,7 +9,7 @@ export const layout = {
 };
 
 export const text = {
-  heroHeading: "font-light tracking-tight leading-[1.05] font-raleway text-[clamp(2.75rem,2.1rem+3.3vw,4.5rem)]",
+  heroHeading: "font-light tracking-tight leading-[1.05] font-raleway text-[clamp(2.35rem,1.9rem+2.4vw,3.8rem)]",
   subHeading: "font-light text-d-text font-raleway text-[clamp(1.8rem,1.4rem+2vw,2.8rem)]",
   sectionHeading: "font-light text-d-text font-raleway text-[clamp(2rem,1.6rem+1.8vw,3.25rem)]",
   eyebrow: "font-raleway font-medium uppercase tracking-[0.2em] text-[clamp(0.7rem,0.64rem+0.18vw,0.8rem)] text-d-white/60",

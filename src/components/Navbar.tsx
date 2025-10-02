@@ -1,4 +1,4 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -62,6 +62,7 @@ export default function Navbar() {
   const { user, logOut } = useAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const accountBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -161,7 +162,8 @@ export default function Navbar() {
     // Close all dropdowns before navigation
     setActiveMenu(null);
     setMenuOpen(false);
-    
+    setMobileNavOpen(false);
+
     if (location.pathname === "/") {
       scrollToTop(200);
     } else {
@@ -169,13 +171,43 @@ export default function Navbar() {
     }
   }, [location.pathname, navigate, scrollToTop]);
 
-  const closeMenu = useCallback(() => setActiveMenu(null), []);
+  const closeMenu = useCallback(() => {
+    setActiveMenu(null);
+    setMobileNavOpen(false);
+  }, []);
 
   // Close all dropdowns when location changes
   useEffect(() => {
     setActiveMenu(null);
     setMenuOpen(false);
+    setMobileNavOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileNavOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setMobileNavOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const emitNavigateToCategory = useCallback((category: string) => {
     if (typeof window === "undefined") return;
@@ -204,6 +236,8 @@ export default function Navbar() {
     emitNavigateToCategory(category);
   }, [navigate, closeMenu, emitNavigateToCategory]);
 
+  const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || user);
+
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
       <a
@@ -226,7 +260,7 @@ export default function Navbar() {
               className="parallax-large h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-raleway">
-              {NAV_ITEMS.filter(item => item.label !== "my works" || user).map((item) => (
+              {filteredNavItems.map((item) => (
                 <NavLink
                   key={item.label}
                   to={item.path}
@@ -258,6 +292,20 @@ export default function Navbar() {
                 </NavLink>
               ))}
             </div>
+            <button
+              type="button"
+              className={`md:hidden ${iconButtons.md}`}
+              onClick={() => {
+                setMobileNavOpen((open) => !open);
+                setActiveMenu(null);
+                setMenuOpen(false);
+              }}
+              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-nav-panel"
+            >
+              {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
           <div className="flex items-center gap-1 md:gap-2">
             {!user ? (
@@ -399,9 +447,9 @@ export default function Navbar() {
             <button aria-label="Search" className={iconButtons.md}>
               <Search className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-      </nav>
+      </div>
+    </div>
+  </nav>
 
       {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
       <div
@@ -459,6 +507,153 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-d-black/70"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <div
+            id="mobile-nav-panel"
+            className="absolute inset-x-0"
+            style={{ top: navH }}
+          >
+            <div className={`${glass.promptDark} border-t-0 px-6 pb-6 pt-4 space-y-6`}> 
+              <div className="space-y-2">
+                {filteredNavItems.map((item) => (
+                  <NavLink
+                    key={`mobile-${item.label}`}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `block rounded-lg px-3 py-2 text-base font-raleway transition-colors duration-200 ${
+                        isActive ? "bg-d-white/10 text-d-text" : "text-d-white hover:text-d-text"
+                      }`
+                    }
+                    onClick={() => {
+                      item.prefetch?.();
+                      setMobileNavOpen(false);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+
+              <div className="space-y-4 border-t border-d-dark/60 pt-4">
+                {user ? (
+                  <>
+                    <div className="flex items-center justify-between rounded-xl border border-d-dark px-3 py-2 text-sm text-d-white">
+                      <span className="font-raleway uppercase tracking-[0.18em] text-xs text-d-white/60">Credits</span>
+                      <span className="font-raleway text-base font-medium text-d-text">{user?.credits ?? 0}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setActiveMenu(null);
+                        setMenuOpen(false);
+                        setMobileNavOpen(false);
+                        navigate('/upgrade');
+                      }}
+                      className={`${buttons.primary} w-full justify-center`}
+                    >
+                      Upgrade
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveMenu(null);
+                        setMenuOpen(false);
+                        setMobileNavOpen(false);
+                        const shouldPreserveFlow =
+                          location.pathname.startsWith('/create') || location.pathname.startsWith('/edit');
+
+                        if (shouldPreserveFlow) {
+                          const params = new URLSearchParams();
+                          params.set('next', safeNext(`${location.pathname}${location.search}`));
+                          navigate(`/account?${params.toString()}`);
+                        } else {
+                          navigate('/account');
+                        }
+                      }}
+                      className={`${buttons.ghost} w-full justify-center`}
+                    >
+                      My account
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveMenu(null);
+                        setMenuOpen(false);
+                        setMobileNavOpen(false);
+                        logOut();
+                        navigate('/');
+                      }}
+                      className={`${buttons.ghostCompact} w-full justify-center`}
+                    >
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setActiveMenu(null);
+                        setMenuOpen(false);
+                        setMobileNavOpen(false);
+                        navigate('/upgrade');
+                      }}
+                      className={`${buttons.ghost} w-full justify-center`}
+                    >
+                      Pricing
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileNavOpen(false);
+                        setShowAuth('login');
+                      }}
+                      className={`${buttons.ghostCompact} w-full justify-center`}
+                    >
+                      Log In
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileNavOpen(false);
+                        setShowAuth('signup');
+                      }}
+                      className={`${buttons.primary} w-full justify-center`}
+                    >
+                      Sign Up
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  className={iconButtons.sm}
+                  onClick={() => window.open('https://discord.gg/daygen', '_blank')}
+                  aria-label="Discord"
+                >
+                  <DiscordIcon className="size-4" />
+                </button>
+                <button
+                  className={iconButtons.sm}
+                  onClick={() => window.open('https://x.com', '_blank')}
+                  aria-label="X"
+                >
+                  <XIcon className="size-4" />
+                </button>
+                <button
+                  className={iconButtons.sm}
+                  onClick={() => window.open('https://instagram.com', '_blank')}
+                  aria-label="Instagram"
+                >
+                  <InstagramIcon className="size-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auth modal */}
       <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />

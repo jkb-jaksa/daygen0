@@ -1,17 +1,6 @@
 import { memo } from "react";
-import {
-  Edit,
-  Grid3X3,
-  Image as ImageIcon,
-  Users,
-  Video as VideoIcon,
-  Volume2,
-  Upload,
-  Folder,
-  Sparkles,
-} from "lucide-react";
-
 import { glass } from "../../styles/designSystem";
+import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./sidebarData";
 
 export interface CreateSidebarProps {
   activeCategory: string;
@@ -19,31 +8,17 @@ export interface CreateSidebarProps {
   onOpenMyFolders: () => void;
 }
 
-const CREATE_CATEGORIES: Array<{ key: string; label: string; Icon: typeof Edit }> = [
-  { key: "text", label: "text", Icon: Edit },
-  { key: "image", label: "image", Icon: ImageIcon },
-  { key: "video", label: "video", Icon: VideoIcon },
-  { key: "avatars", label: "avatars", Icon: Users },
-  { key: "audio", label: "audio", Icon: Volume2 },
-];
-
-const LIBRARY_CATEGORIES: Array<{ key: string; label: string; Icon: typeof Grid3X3 }> = [
-  { key: "gallery", label: "gallery", Icon: Grid3X3 },
-  { key: "uploads", label: "uploads", Icon: Upload },
-  { key: "inspirations", label: "inspirations", Icon: Sparkles },
-];
-
-const sidebarPosition = {
-  top: "calc(var(--nav-h) + 0.25rem + 0.5rem)",
-  bottom: "calc(0.75rem + 8rem)",
-  left: "calc((100vw - 85rem) / 2 + 1.5rem)",
-} as const;
-
 function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFolders }: CreateSidebarProps) {
   return (
-    <div className="hidden md:block fixed z-30" style={sidebarPosition}>
-      <div className={`${glass.promptDark} rounded-[20px] flex h-full items-start overflow-auto pl-3 pr-5 py-4`}>
-        <aside className="flex flex-col gap-2 w-full mt-2">
+    <nav
+      aria-label="Create navigation"
+      className="hidden md:flex md:flex-col md:sticky md:top-[calc(var(--nav-h)+1rem)] md:self-start md:w-[228px] md:z-30"
+      style={{ maxHeight: "calc(100vh - var(--nav-h) - 2.5rem)" }}
+    >
+      <div
+        className={`${glass.promptDark} rounded-[20px] flex h-full max-h-full flex-col overflow-hidden px-3 py-4`}
+      >
+        <aside className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
           <div className="flex items-center px-2 text-[12px] text-d-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
             create
           </div>
@@ -102,18 +77,20 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
             type="button"
             onClick={onOpenMyFolders}
             className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-              activeCategory === "my-folders" ? "text-d-light hover:text-d-text" : "text-d-white hover:text-d-text"
+              activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                ? "text-d-light hover:text-d-text"
+                : "text-d-white hover:text-d-text"
             }`}
-            aria-pressed={activeCategory === "my-folders"}
+            aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
           >
             <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
-              <Folder className="size-3" />
+              <FOLDERS_ENTRY.Icon className="size-3" />
             </div>
-            <span>folders</span>
+            <span>{FOLDERS_ENTRY.label}</span>
           </button>
         </aside>
       </div>
-    </div>
+    </nav>
   );
 }
 

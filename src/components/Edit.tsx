@@ -1445,9 +1445,8 @@ export default function Edit() {
 
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
-        <div 
-          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
-          style={{ left: 'calc((100vw - 85rem) / 2 + 1.5rem)', right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', bottom: '0.75rem' }}
+        <div
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 lg:left-[calc((100vw-85rem)/2+1.5rem)] lg:right-[calc((100vw-85rem)/2+1.5rem+6px)] bottom-3 sm:bottom-4`}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => { 

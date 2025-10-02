@@ -67,6 +67,7 @@ import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage"
 import type { StoredAvatar, AvatarSelection } from "./avatars/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
+import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -649,6 +650,7 @@ const Create: React.FC = () => {
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [fullSizeContext, setFullSizeContext] = useState<'gallery' | 'inspirations'>('gallery');
   const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
+  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
 
   const setActiveCategory = useCallback((category: string, options?: { skipRoute?: boolean }) => {
     if (category === "avatars") {
@@ -4582,18 +4584,73 @@ const handleGenerate = async () => {
           {/* Removed "Create now" heading per request */}
           
           {/* Categories + Gallery row */}
-          <div className="mt-2 grid grid-cols-[1fr] gap-6 w-full text-left">
-            {/* Left menu (like homepage) - fixed centered, wrapped in glass container */}
-            <Suspense fallback={null}>
-              <CreateSidebar
-                activeCategory={activeCategory}
-                onSelectCategory={(category) => setActiveCategory(category)}
-                onOpenMyFolders={handleMyFoldersClick}
-              />
-            </Suspense>
-          {/* Gallery - compressed to avoid overlap with left menu */}
-          <div className="w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
-            <div className="w-full mb-4" ref={galleryRef}>
+          <div className="mt-6 w-full text-left">
+            <div className="md:hidden">
+              <nav aria-label="Create navigation" className="space-y-4">
+                <div>
+                  <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-d-white/70">
+                    create
+                  </div>
+                  <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-d-mid/40 scrollbar-track-transparent">
+                    {CREATE_CATEGORIES.map((item) => {
+                      const isActive = activeCategory === item.key;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setActiveCategory(item.key)}
+                          className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${
+                            isActive
+                              ? "border-d-light bg-d-white/10 text-d-text"
+                              : "border-d-dark text-d-white hover:text-d-text"
+                          }`}
+                          aria-pressed={isActive}
+                        >
+                          <item.Icon className="h-4 w-4" />
+                          <span className="capitalize">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-d-white/70">
+                    my works
+                  </div>
+                  <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-d-mid/40 scrollbar-track-transparent">
+                    {libraryNavItems.map((item) => {
+                      const isActive = activeCategory === item.key || (item.key === "my-folders" && activeCategory === "folder-view");
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setActiveCategory(item.key)}
+                          className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${
+                            isActive
+                              ? "border-d-light bg-d-white/10 text-d-text"
+                              : "border-d-dark text-d-white hover:text-d-text"
+                          }`}
+                          aria-pressed={isActive}
+                        >
+                          <item.Icon className="h-4 w-4" />
+                          <span className="capitalize">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </nav>
+            </div>
+
+            <div className="mt-4 grid w-full gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+              <Suspense fallback={null}>
+                <CreateSidebar
+                  activeCategory={activeCategory}
+                  onSelectCategory={(category) => setActiveCategory(category)}
+                  onOpenMyFolders={handleMyFoldersClick}
+                />
+              </Suspense>
+              <div className="w-full mb-4" ref={galleryRef}>
 
                 
                 {/* Gallery View */}
