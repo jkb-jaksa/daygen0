@@ -48,7 +48,6 @@ All image providers are now exposed via dedicated endpoints under `/api/image/<p
 - `POST /api/image/ideogram` – Ideogram 3.0
 - `POST /api/image/qwen` – Alibaba Qwen Image
 - `POST /api/image/runway` – Runway Gen-4 & Gen-4 Turbo
-- `POST /api/image/seedream` – Seedream 3.0 (BytePlus ModelArk)
 - `POST /api/image/reve` – Rêve Image
 - `POST /api/image/recraft` – Recraft v3 / Recraft v2
 - `POST /api/image/luma` – Luma Photon 1 & Luma Photon Flash 1
@@ -144,7 +143,6 @@ The backend integrates with these providers (configured via environment variable
 - **Ideogram V3** - `ideogram`
 - **Qwen Image** (Alibaba) - `qwen-image`
 - **Runway Gen-4** - `runway-gen4`, `runway-gen4-turbo`
-- **SeeDream 3.0** (BytePlus) - `seedream-3.0`
 - **DALL-E 3** (OpenAI) - `chatgpt-image`
 - **Rêve** - `reve-image`
 - **Recraft** - `recraft-v3`, `recraft-v2`

@@ -41,7 +41,6 @@ Open http://localhost:5173 in your browser.
 - **Runway Gen-4** - Professional grade
 - **Ideogram V3** - Great for text in images
 - **Qwen Image** - Alibaba's model
-- **SeeDream 3.0** - High fidelity
 - **Rêve** - Artistic style
 - **Recraft V3** - Brand and layout control
 - **Luma Photon** - Latest and fast

@@ -86,9 +86,6 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   {
     logo: '/bytedance logo.png',
     names: [
-      'Seedream',
-      'Seedream 3.0',
-      'Seedream 4.0',
       'Seedance',
       'Seedance 1.0 Pro (Video)',
       'Seedance 1.0 Pro',

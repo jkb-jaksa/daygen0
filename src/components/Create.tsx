@@ -16,7 +16,6 @@ import type { QwenGeneratedImage } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import type { GeneratedImage as RunwayGeneratedImage } from "../hooks/useRunwayImageGeneration";
 import { useRunwayVideoGeneration } from "../hooks/useRunwayVideoGeneration";
-import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
@@ -136,7 +135,6 @@ const AI_MODELS = [
   { name: "Wan 2.2 Video", desc: "Alibaba's Wan 2.2 text-to-video model.", Icon: VideoIcon, accent: "blue" as Accent, id: "wan-video-2.2" },
   { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, accent: "cyan" as Accent, id: "hailuo-02" },
   { name: "Kling", desc: "ByteDance's cinematic video model.", Icon: VideoIcon, accent: "cyan" as Accent, id: "kling-video" },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald" as Accent, id: "seedream-3.0" },
   { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, accent: "pink" as Accent, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, accent: "blue" as Accent, id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, accent: "emerald" as Accent, id: "seedance-1.0-pro" },
@@ -554,14 +552,13 @@ const Create: React.FC = () => {
   const isWanVideo = selectedModel === "wan-video-2.2";
   const isHailuoVideo = selectedModel === "hailuo-02";
   const isKlingVideo = selectedModel === "kling-video";
-  const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft";
   const isVeo = selectedModel === "veo-3";
   const isSeedance = selectedModel === "seedance-1.0-pro";
   const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
   const isLumaRay = selectedModel === "luma-ray-2";
-  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isWanVideo && !isHailuoVideo && !isKlingVideo && !isSeeDream && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
+  const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isWanVideo && !isHailuoVideo && !isKlingVideo && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -1184,13 +1181,6 @@ const Create: React.FC = () => {
     selectedModel === "runway-video-gen4" && runwayVideoStatus === 'running';
 
   const {
-    error: seedreamError,
-    generatedImage: seedreamImage,
-    generateImage: generateSeeDreamImage,
-    clearError: clearSeeDreamError,
-  } = useSeeDreamImageGeneration();
-
-  const {
     error: reveError,
     generatedImage: reveImage,
     generateImage: generateReveImage,
@@ -1372,8 +1362,8 @@ const Create: React.FC = () => {
   }, [klingGeneratedVideo, klingStatus, resetKlingVideo]);
 
   // Combined state for UI
-  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || seedreamError || reveError || lumaImageError || seedanceError || wanError || hailuoError || lumaVideoError || klingError;
-  const generatedImage = geminiImage || fluxImage || chatgptImage || seedreamImage || reveImage || lumaImage;
+  const error = geminiError || fluxError || chatgptError || ideogramError || qwenError || runwayError || runwayVideoError || reveError || lumaImageError || seedanceError || wanError || hailuoError || lumaVideoError || klingError;
+  const generatedImage = geminiImage || fluxImage || chatgptImage || reveImage || lumaImage;
   const activeFullSizeImage = selectedFullImage || generatedImage || null;
   const activeFullSizeContext: 'gallery' | 'inspirations' =
     fullSizeContext === 'inspirations' ||
@@ -3587,7 +3577,7 @@ const handleGenerate = async () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Seedream, Reve, Recraft, Veo, and Seedance models are available.');
+      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Reve, Recraft, Veo, and Seedance models are available.');
       return;
     }
 
@@ -3654,7 +3644,6 @@ const handleGenerate = async () => {
       const isRunwayVideoModel = modelForGeneration === "runway-video-gen4";
       const isWanVideoModel = modelForGeneration === "wan-video-2.2";
       const isHailuoVideoModel = modelForGeneration === "hailuo-02";
-      const isSeeDreamModel = modelForGeneration === "seedream-3.0";
       const isReveModel = modelForGeneration === "reve-image";
       
       debugLog('[Create] Model checks:', { 
@@ -3739,14 +3728,6 @@ const handleGenerate = async () => {
         img = runwayResult;
       } else if (isRunwayVideoModel) {
         throw new Error('Runway video generation is not yet supported in this backend integration.');
-      } else if (isSeeDreamModel) {
-        // Use Seedream generation
-        const seedreamResult = await generateSeeDreamImage({
-          prompt: trimmedPrompt,
-          size: "1024x1024",
-          n: 1,
-        });
-        img = seedreamResult;
       } else if (isReveModel) {
         // Use Reve generation
         const reveResult = await generateReveImage({
@@ -3888,7 +3869,6 @@ const handleGenerate = async () => {
       clearChatGPTError();
       clearIdeogramError();
       clearRunwayError();
-      clearSeeDreamError();
       clearLumaImageError();
     } finally {
       if (spinnerTimeoutRef.current) {
@@ -6720,14 +6700,14 @@ const handleGenerate = async () => {
                             true
                       ).map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "seedream-3.0" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
+                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
                       
                       return (
                         <button
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Seedream, Reve, Recraft, and Luma models are available.');
+                              alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
                               return;
                             }
                             handleModelSelect(model.name);
@@ -6868,7 +6848,7 @@ const handleGenerate = async () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-[32px] p-4 text-red-300 text-center">
                 <p className="font-raleway text-sm">{error || videoError}</p>
                 <button
-                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearSeeDreamError(); clearLumaImageError(); }}
+                  onClick={() => { clearGeminiError(); clearFluxError(); clearChatGPTError(); clearLumaImageError(); }}
                   className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
                 >
                   Dismiss

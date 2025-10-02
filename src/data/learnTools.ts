@@ -448,45 +448,45 @@ const tools: readonly LearnToolPage[] = [
     aliases: ["Magnific"],
   },
   {
-    slug: "seedream",
-    name: "Seedream",
-    tagline: "Great image model.",
+    slug: "seedance",
+    name: "Seedance",
+    tagline: "Cinematic video generation model.",
     overview:
-      "Seedream (and its video sibling Seedance) from ByteDance emphasises vibrant, cinematic imagery. It supports both text-to-image and reference-guided editing for campaign-ready visuals.",
-    categories: ["image", "video"],
+      "Seedance from ByteDance emphasises vibrant, cinematic video generation. It supports text-to-video and frame-guided video creation for campaign-ready visuals.",
+    categories: ["video"],
     pricing:
       "Currently offered through waitlists and partner integrations. Enterprise pricing is available through ByteDance partnerships.",
     useCases: [
-      "Lifestyle and fashion shoots with cinematic lighting",
-      "Dynamic video loops for social campaigns using Seedance",
-      "Image-to-image stylisation for maintaining brand look and feel",
+      "Dynamic video loops for social campaigns",
+      "Cinematic video content with professional lighting",
+      "Video-to-video stylisation for maintaining brand look and feel",
     ],
     features: [
       {
-        title: "Hybrid image and video pipeline",
+        title: "Advanced video generation",
         description:
-          "Move from still concepts to motion clips while retaining art direction.",
+          "Create high-quality video content from text prompts or reference frames.",
       },
       {
-        title: "Reference conditioning",
+        title: "Frame conditioning",
         description:
-          "Upload photos or sketches to guide the composition and style of new renders.",
+          "Upload reference frames to guide the composition and style of video generations.",
       },
       {
         title: "Cinematic presets",
         description:
-          "Apply curated lighting, colour grading, and lens effects across batches.",
+          "Apply curated lighting, colour grading, and lens effects to video content.",
       },
     ],
     gettingStarted: [
-      "Request access through the Seedream or Seedance waitlist.",
+      "Request access through the Seedance waitlist.",
       "Collect reference imagery or footage you want to build from.",
-      "Generate stills first, then extend them into motion with Seedance control settings.",
+      "Generate video content with Seedance control settings.",
     ],
     resources: [
-      { label: "Seedream announcement", href: "https://www.bytedance.com/en/news" },
+      { label: "ByteDance announcement", href: "https://www.bytedance.com/en/news" },
     ],
-    aliases: ["Seedream 3.0", "Seedream 4.0", "Seedance 1.0 Pro (Video)"],
+    aliases: ["Seedance 1.0 Pro (Video)", "Seedance 1.0 Pro"],
   },
   {
     slug: "reve",

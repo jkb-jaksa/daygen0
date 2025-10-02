@@ -79,7 +79,6 @@ const AI_MODELS = [
   { name: "Wan 2.2 Video", id: "wan-video-2.2" },
   { name: "Hailuo 02", id: "hailuo-02" },
   { name: "Kling", id: "kling-video" },
-  { name: "Seedream 3.0", id: "seedream-3.0" },
   { name: "ChatGPT", id: "chatgpt-image" },
   { name: "Veo 3", id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", id: "seedance-1.0-pro" },
@@ -361,8 +360,8 @@ const avatarGallery: AvatarGalleryItem[] = [
     likes: 668,
     publishedAgo: "5d ago",
     tags: ["gaming", "esports", "dynamic"],
-    modelId: "seedream-3.0",
-    modelLabel: "Seedream Studio",
+    modelId: "flux-pro-1.1",
+    modelLabel: "FLUX Pro 1.1",
     shareUrl: "https://www.daygen.ai/avatars/cobalt-runner",
     accentGradient: "from-cyan-500/70 via-blue-500/60 to-indigo-500/70",
     creator: {

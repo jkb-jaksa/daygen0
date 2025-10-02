@@ -33,7 +33,7 @@ Your DayGen frontend has been successfully connected to the NestJS backend deplo
 All frontend hooks and components are already configured to use:
 - JWT Bearer authentication
 - `/api/auth/login` and `/api/auth/signup` for authentication
-- `/api/image/<provider>` endpoints for all AI image generation (Gemini, Flux, ChatGPT, Ideogram, Qwen, Runway, SeeDream, Rêve, Recraft, Luma)
+- `/api/image/<provider>` endpoints for all AI image generation (Gemini, Flux, ChatGPT, Ideogram, Qwen, Runway, Rêve, Recraft, Luma)
 - `/api/auth/me` for user profile
 - `/api/users/me` for profile updates
 
@@ -117,9 +117,8 @@ Backend integrates with these providers (all configured with API keys in backend
 3. **Ideogram V3**
 4. **Qwen Image** (Alibaba)
 5. **Runway Gen-4** and Gen-4 Turbo
-6. **SeeDream 3.0** (BytePlus)
-7. **DALL-E 3** (OpenAI)
-8. **Rêve**
+6. **DALL-E 3** (OpenAI)
+7. **Rêve**
 9. **Recraft V2/V3**
 10. **Luma AI** (Photon, Photon Flash)
 
@@ -211,7 +210,6 @@ The `.env.production` file is already configured with the backend URL.
 - `src/hooks/useChatGPTImageGeneration.ts`
 - `src/hooks/useIdeogramImageGeneration.ts`
 - `src/hooks/useQwenImageGeneration.ts`
-- `src/hooks/useSeeDreamImageGeneration.ts`
 - `src/hooks/useReveImageGeneration.ts`
 - And more...
 

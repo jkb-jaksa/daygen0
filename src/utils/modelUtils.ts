@@ -80,13 +80,6 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     description: 'Advanced image generation, editing, and enhancement',
     isAvailable: true
   },
-  'seedream-3.0': {
-    id: 'seedream-3.0',
-    name: 'Seedream 3.0',
-    shortName: 'Seedream 3.0',
-    description: 'High-quality text-to-image generation with editing capabilities',
-    isAvailable: true
-  },
   'reve-image-1.0': {
     id: 'reve-image-1.0',
     name: 'Reve 1.0',
@@ -178,7 +171,6 @@ export const normalizeModelId = (modelId: string): string => {
     'reve-image': 'reve-image-1.0',
     
     // Other models
-    'seedream-3.0': 'seedream-3.0',
     'qwen-image': 'qwen-image',
     'ideogram': 'ideogram',
     'chatgpt-image': 'chatgpt-image',

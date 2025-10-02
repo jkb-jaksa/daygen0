@@ -48,7 +48,6 @@ const IMAGE_TOOLS: readonly ToolResource[] = [
   createToolResource("Qwen", "Alibaba Cloud's text-to-image and image editing model"),
   createToolResource("Runway Gen-4", "Great image model with control & editing features"),
   createToolResource("Runway Gen-4 Turbo", "Fast Runway generation with reference images"),
-  createToolResource("Seedream 3.0", "High-quality text-to-image generation with editing capabilities"),
   createToolResource("Reve Image", "Great text-to-image and image editing"),
   createToolResource("Recraft v3", "Advanced image generation with text layout and brand controls"),
   createToolResource("Recraft v2", "High-quality image generation and editing"),

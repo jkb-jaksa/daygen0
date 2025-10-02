@@ -9,7 +9,6 @@ import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
 import { useIdeogramImageGeneration } from "../hooks/useIdeogramImageGeneration";
 import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
-import { useSeeDreamImageGeneration } from "../hooks/useSeeDreamImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
@@ -31,7 +30,6 @@ const AI_MODELS = [
   { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink", id: "recraft" },
   { name: "Qwen", desc: "Great image editing.", Icon: Wand2, accent: "blue", id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet", id: "runway-gen4" },
-  { name: "Seedream 3.0", desc: "High-quality text-to-image generation with editing capabilities", Icon: Leaf, accent: "emerald", id: "seedream-3.0" },
   { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, accent: "pink", id: "chatgpt-image" },
   { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan", id: "luma-photon-1" },
   { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan", id: "luma-photon-flash-1" },
@@ -291,14 +289,6 @@ export default function Edit() {
   } = useRunwayImageGeneration();
 
   const {
-    error: seeDreamError,
-    generatedImage: seeDreamImage,
-    generateImage: generateSeeDreamImage,
-    clearError: clearSeeDreamError,
-    clearGeneratedImage: clearSeeDreamImage,
-  } = useSeeDreamImageGeneration();
-
-  const {
     error: reveError,
     generatedImage: reveImage,
     generateImage: generateReveImage,
@@ -313,7 +303,6 @@ export default function Edit() {
   const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
-  const isSeeDream = selectedModel === "seedream-3.0";
   const isReve = selectedModel === "reve-image";
 
   // Get the current error and generated image based on selected model
@@ -323,7 +312,6 @@ export default function Edit() {
                       isIdeogram ? ideogramError :
                       isQwen ? qwenError :
                       isRunway ? runwayError :
-                      isSeeDream ? seeDreamError :
                       isReve ? reveError : null;
 
   const currentGeneratedImage = isGemini ? geminiImage :
@@ -332,7 +320,6 @@ export default function Edit() {
                                isIdeogram ? (ideogramImages.length > 0 ? ideogramImages[0] : null) :
                                isQwen ? (qwenImages.length > 0 ? qwenImages[0] : null) :
                                isRunway ? runwayImage :
-                               isSeeDream ? seeDreamImage :
                                isReve ? reveImage : null;
 
   const clearCurrentError = () => {
@@ -342,7 +329,6 @@ export default function Edit() {
     else if (isIdeogram) clearIdeogramError();
     else if (isQwen) clearQwenError();
     else if (isRunway) clearRunwayError();
-    else if (isSeeDream) clearSeeDreamError();
     else if (isReve) clearReveError();
   };
 
@@ -353,7 +339,6 @@ export default function Edit() {
     else if (isIdeogram) clearIdeogramImages();
     else if (isQwen) clearQwenImages();
     else if (isRunway) clearRunwayImage();
-    else if (isSeeDream) clearSeeDreamImage();
     else if (isReve) clearReveImage();
   };
 
@@ -486,12 +471,6 @@ export default function Edit() {
           uiModel: selectedModel,
           references: allReferences,
           ratio: "1920:1080",
-        });
-      } else if (isSeeDream) {
-        await generateSeeDreamImage({
-          prompt: trimmedPrompt,
-          size: "1024x1024",
-          n: 1,
         });
       } else if (isReve) {
         await generateReveImage({
