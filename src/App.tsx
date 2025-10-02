@@ -79,7 +79,7 @@ function Home() {
           <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-0 right-0 z-20">
             <div className="container responsive-region">
               <div className="home-hero-logo text-left">
-                <div className={text.subHeading}>
+                <div className={text.logoText}>
                   <span className="text-white-gradient">day</span>
                   <span className="text-white-gradient">gen</span>
                 </div>

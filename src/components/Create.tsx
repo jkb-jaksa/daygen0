@@ -6207,7 +6207,7 @@ const handleGenerate = async () => {
               </div>
               
               {/* Buttons - second row */}
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 px-3">
                 {/* Left icons and controls */}
                 <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                 <button

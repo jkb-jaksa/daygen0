@@ -9,9 +9,10 @@ export const layout = {
 };
 
 export const text = {
-  heroHeading: "font-light tracking-tight leading-[1.05] font-raleway text-[clamp(2rem,1.6rem+1.8vw,3.2rem)]",
-  subHeading: "font-light text-d-text font-raleway text-[clamp(1.8rem,1.4rem+2vw,2.8rem)]",
-  sectionHeading: "font-light text-d-text font-raleway text-[clamp(2rem,1.6rem+1.8vw,3.25rem)]",
+  heroHeading: "font-light tracking-tight leading-[1.05] font-raleway text-[clamp(2rem,1.8rem+2vw,3.5rem)]",
+  subHeading: "font-light text-d-text font-raleway text-[clamp(1.8rem,1.4rem+2vw,3rem)]",
+  sectionHeading: "font-light text-d-text font-raleway text-[clamp(2rem,1.6rem+1.8vw,3.5rem)]",
+  logoText: "font-light text-d-text font-raleway text-[clamp(1.5rem,1.3rem+0.8vw,2rem)]",
   eyebrow: "font-raleway font-medium uppercase tracking-[0.2em] text-[clamp(0.7rem,0.64rem+0.18vw,0.8rem)] text-d-white/60",
   body: "text-d-white font-raleway font-light text-[clamp(0.95rem,0.9rem+0.3vw,1.125rem)] leading-relaxed",
   finePrint: "text-d-white/70 font-raleway font-light text-[clamp(0.85rem,0.8rem+0.2vw,0.95rem)]",

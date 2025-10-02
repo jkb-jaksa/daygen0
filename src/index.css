@@ -72,9 +72,9 @@
   --font-size-body: clamp(0.95rem, 0.9rem + 0.3vw, 1.125rem);
   --font-size-small: clamp(0.85rem, 0.8rem + 0.2vw, 0.95rem);
   --font-size-eyebrow: clamp(0.7rem, 0.64rem + 0.18vw, 0.8rem);
-  --font-size-heading-sm: clamp(1.5rem, 1.3rem + 1.6vw, 2.25rem);
-  --font-size-heading-md: clamp(2rem, 1.6rem + 2vw, 3rem);
-  --font-size-heading-lg: clamp(2.75rem, 2.1rem + 3.3vw, 4.5rem);
+  --font-size-heading-sm: clamp(1.5rem, 1.3rem + 1.6vw, 2.5rem);
+  --font-size-heading-md: clamp(2rem, 1.6rem + 2vw, 3.5rem);
+  --font-size-heading-lg: clamp(2rem, 1.8rem + 2vw, 3.5rem);
   --line-length-max: 72ch;
 
   /* Daygen dark palette */
@@ -283,7 +283,7 @@ body {
   line-height: 1.05;
   letter-spacing: -0.01em;
   margin-inline: auto;
-  max-inline-size: min(18ch, 100%);
+  white-space: nowrap;
 }
 
 .home-hero-description {
