@@ -1446,8 +1446,11 @@ export default function Edit() {
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
         <div
-          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 bottom-3 sm:bottom-4`}
-          style={{ transform: 'translateX(-50%) translateZ(0)' }}
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
+          style={{ 
+            bottom: '0.75rem',
+            transform: 'translateX(-50%) translateZ(0)' 
+          }}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => { 
@@ -1462,38 +1465,24 @@ export default function Edit() {
             } 
           }}
         >
-        <div>
-          <textarea
-            ref={promptTextareaRef}
-            placeholder="Describe what you want to create..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={onKeyDown}
-            onPaste={handlePaste}
-            rows={2}
-            className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
-          />
-        </div>
-        <div className="absolute right-4 bottom-4 flex items-center gap-2">
-          <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
-            <button 
-              onClick={handleGenerateImage}
-              disabled={!prompt.trim()}
-              className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
-            >
-              {isButtonSpinning ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Wand2 className="w-4 h-4" />
-              )}
-              Generate
-            </button>
-          </Tooltip>
-        </div>
-        {/* Left icons and references overlayed so they don't shift textarea left edge */}
-        <div className="absolute left-4 bottom-4 flex items-center gap-3 pointer-events-auto">
-          {/* Action buttons */}
-          <div className="flex items-center gap-1">
+          {/* Textarea - first row */}
+          <div className="mb-1">
+            <textarea
+              ref={promptTextareaRef}
+              placeholder="Describe what you want to create..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={onKeyDown}
+              onPaste={handlePaste}
+              rows={1}
+              className="w-full h-[36px] bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap"
+            />
+          </div>
+          
+          {/* Buttons - second row */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Left icons and controls */}
+            <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
             <button
               type="button"
               onClick={handleRefsClick}
@@ -1681,68 +1670,84 @@ export default function Edit() {
               </div>
             </div>
           )}
-        </div>
-        
-        {/* Settings Dropdown */}
-        {isSettingsOpen && (
-          <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50 p-4">
-            <div className="space-y-4">
-              <div className="text-base font-raleway text-d-text mb-3">Settings</div>
-              
-              {/* Temperature */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm text-d-white font-raleway">Temperature</label>
-                  <span className="text-xs text-d-text font-mono">{temperature}</span>
+            
+            {/* Generate button on right */}
+            <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
+              <button 
+                onClick={handleGenerateImage}
+                disabled={!prompt.trim()}
+                className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+              >
+                {isButtonSpinning ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                Generate
+              </button>
+            </Tooltip>
+          </div>
+          
+          {/* Settings Dropdown */}
+          {isSettingsOpen && (
+            <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50 p-4">
+              <div className="space-y-4">
+                <div className="text-base font-raleway text-d-text mb-3">Settings</div>
+                
+                {/* Temperature */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-d-white font-raleway">Temperature</label>
+                    <span className="text-xs text-d-text font-mono">{temperature}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.1}
+                    max={1.0}
+                    step={0.1}
+                    value={temperature}
+                    onChange={(e) => setTemperature(Number(e.target.value))}
+                    className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.1}
-                  value={temperature}
-                  onChange={(e) => setTemperature(Number(e.target.value))}
-                  className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              
-              {/* Top P */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm text-d-white font-raleway">Top P</label>
-                  <span className="text-xs text-d-text font-mono">{topP}</span>
+                
+                {/* Top P */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                      <label className="text-sm text-d-white font-raleway">Top P</label>
+                    <span className="text-xs text-d-text font-mono">{topP}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.1}
+                    max={1.0}
+                    step={0.05}
+                    value={topP}
+                    onChange={(e) => setTopP(Number(e.target.value))}
+                    className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.05}
-                  value={topP}
-                  onChange={(e) => setTopP(Number(e.target.value))}
-                  className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              
-              {/* Top K */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm text-d-white font-raleway">Top K</label>
-                  <span className="text-xs text-d-text font-mono">{topK}</span>
+                
+                {/* Top K */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-d-white font-raleway">Top K</label>
+                    <span className="text-xs text-d-text font-mono">{topK}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={topK}
+                    onChange={(e) => setTopK(Number(e.target.value))}
+                    className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={100}
-                  step={1}
-                  value={topK}
-                  onChange={(e) => setTopK(Number(e.target.value))}
-                  className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
-                />
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
 
       {/* Hidden file input for reference images */}

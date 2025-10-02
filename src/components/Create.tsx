@@ -6128,7 +6128,7 @@ const handleGenerate = async () => {
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
               style={{
                 bottom: '0.75rem',
                 transform: 'translateX(-50%) translateZ(0)',
@@ -6139,81 +6139,34 @@ const handleGenerate = async () => {
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []); if (files.length) { handleAddReferenceFiles(files); } }}
             >
-            <div>
-              <textarea
-                ref={promptTextareaRef}
-                placeholder="Describe what you want to create..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={onKeyDown}
-                onPaste={handlePaste}
-                rows={2}
-                className="w-full min-h-[80px] max-h-48 bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-lg pl-4 pr-80 pt-1 pb-3 leading-relaxed resize-none overflow-auto text-left"
-              />
-            </div>
-            <div className="absolute right-4 bottom-4 flex items-center gap-2">
-              <Tooltip text={!prompt.trim()
-                ? "Enter your prompt to generate"
-                : !hasGenerationCapacity
-                  ? `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`
-                  : isComingSoon
-                    ? "This model is coming soon!"
-                    : ""}>
-                <button 
-                  onClick={handleGenerate}
-                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  {(() => {
-                    const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
-                    const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
-                    const isLumaGenerating = (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
-                    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
-                    // Removed debug log that was running on every render
-                    return showSpinner ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="w-4 h-4" />
-                    );
-                  })()}
-                  {activeCategory === "video" ? 
-                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
-                      ? "Generating..."
-                      : selectedModel === "seedance-1.0-pro" && seedanceLoading
-                        ? "Generating..."
-                        : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
-                          ? "Generating..."
-                        : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
-                          ? "Generating..."
-                        : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
-                          ? "Generating..."
-                          : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
-                          ? "Generating..."
-                          : isVideoGenerating
-                            ? "Starting..."
-                            : isVideoPolling
-                              ? "Generating..."
-                              : "Generate") : 
-                    "Generate"
-                  }
-                </button>
-              </Tooltip>
-            </div>
-            {/* Left icons and references overlayed so they don't shift textarea left edge */}
-            <div className="absolute left-4 bottom-4 flex flex-wrap items-center gap-3 pointer-events-auto">
-              {/* Action buttons */}
-              <div className="flex items-center gap-1">
+              {/* Textarea - first row */}
+              <div className="mb-1">
+                <textarea
+                  ref={promptTextareaRef}
+                  placeholder="Describe what you want to create..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  onPaste={handlePaste}
+                  rows={1}
+                  className="w-full h-[36px] bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap"
+                />
+              </div>
+              
+              {/* Buttons - second row */}
+              <div className="flex items-center justify-between gap-2">
+                {/* Left icons and controls */}
+                <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                 <button
                   type="button"
                   onClick={isGemini ? handleRefsClick : undefined}
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-200 gap-2`}
+                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden lg:inline font-raleway text-sm">Add reference</span>
+                  <Plus className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Add reference</span>
                 </button>
                 {activeCategory === "image" && (
                   <>
@@ -6221,19 +6174,19 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
-                      <Users className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm">Select Avatar</span>
+                      <Users className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Select Avatar</span>
                     </button>
                     <button
                       type="button"
                       ref={promptsButtonRef}
                       onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
-                      <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm">Prompts</span>
+                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
@@ -6520,7 +6473,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 group gap-2`}
+                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -6535,10 +6488,10 @@ const handleGenerate = async () => {
                         );
                       } else {
                         const Icon = currentModel.Icon;
-                        return <Icon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />;
+                        return <Icon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="hidden lg:inline font-raleway text-sm">{getCurrentModel().name}</span>
+                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -6959,8 +6912,56 @@ const handleGenerate = async () => {
                   </div>
                 </div>
               )}
+              
+              {/* Generate button on right */}
+              <Tooltip text={!prompt.trim()
+                ? "Enter your prompt to generate"
+                : !hasGenerationCapacity
+                  ? `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`
+                  : isComingSoon
+                    ? "This model is coming soon!"
+                    : ""}>
+                <button 
+                  onClick={handleGenerate}
+                  disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
+                  className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  {(() => {
+                    const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
+                    const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
+                    const isLumaGenerating = (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
+                    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
+                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
+                    return showSpinner ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-4 h-4" />
+                    );
+                  })()}
+                  {activeCategory === "video" ? 
+                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
+                      ? "Generating..."
+                      : selectedModel === "seedance-1.0-pro" && seedanceLoading
+                        ? "Generating..."
+                        : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
+                          ? "Generating..."
+                        : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
+                          ? "Generating..."
+                        : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
+                          ? "Generating..."
+                          : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
+                          ? "Generating..."
+                          : isVideoGenerating
+                            ? "Starting..."
+                            : isVideoPolling
+                              ? "Generating..."
+                              : "Generate") : 
+                    "Generate"
+                  }
+                </button>
+              </Tooltip>
+              </div>
             </div>
-          </div>
           )}
           
           <div className="flex gap-4">
