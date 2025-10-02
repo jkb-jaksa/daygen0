@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { glass } from "../../styles/designSystem";
+import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH } from "./layoutConstants";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./sidebarData";
 
 export interface CreateSidebarProps {
@@ -15,16 +16,17 @@ function CreateSidebarComponent({
   onOpenMyFolders,
   reservedBottomSpace = 0,
 }: CreateSidebarProps) {
-  const topOffset = 16;
+  const topOffset = SIDEBAR_TOP_PADDING;
   const safeBottomSpace = Math.max(0, Math.round(reservedBottomSpace));
   const sidebarMaxHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${safeBottomSpace}px)`;
+  const sidebarTop = `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
 
   return (
-    <div className="hidden md:block md:w-[160px]">
+    <div className="hidden md:block" style={{ width: SIDEBAR_WIDTH }}>
       <nav
         aria-label="Create navigation"
-        className="md:flex md:flex-col md:fixed md:top-[calc(var(--nav-h)+16px)] md:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] md:w-[160px] md:z-30"
-        style={{ maxHeight: sidebarMaxHeight }}
+        className="md:flex md:flex-col md:fixed md:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] md:w-[160px] md:z-30"
+        style={{ maxHeight: sidebarMaxHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
       <div
         className={`${glass.promptDark} rounded-[20px] flex h-full max-h-full flex-col overflow-hidden px-3 py-4`}

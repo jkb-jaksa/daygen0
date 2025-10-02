@@ -70,6 +70,7 @@ import type { StoredAvatar, AvatarSelection } from "./avatars/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
+import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -91,6 +92,7 @@ const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
   folders: "my-folders",
   inspirations: "inspirations",
 };
+
 
 const deriveCategoryFromPath = (pathname: string): string => {
   const normalized = pathname.toLowerCase();
@@ -944,7 +946,7 @@ const Create: React.FC = () => {
 
     const rect = element.getBoundingClientRect();
     const bottomOffset = Math.max(0, window.innerHeight - rect.bottom);
-    const reserved = Math.max(0, Math.round(rect.height + bottomOffset + 8));
+    const reserved = Math.max(0, Math.round(rect.height + bottomOffset + SIDEBAR_PROMPT_GAP));
     setPromptBarReservedSpace(reserved);
   }, []);
 
@@ -4705,7 +4707,10 @@ const handleGenerate = async () => {
       
       
       {/* PLATFORM HERO */}
-      <header className={`relative z-10 ${layout.container} pt-[calc(var(--nav-h)+16px)] pb-48`}>
+      <header
+        className={`relative z-10 ${layout.container} pb-48`}
+        style={{ paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)` }}
+      >
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Removed "Create now" heading per request */}
@@ -4769,7 +4774,7 @@ const handleGenerate = async () => {
               </nav>
             </div>
 
-            <div className="mt-4 grid w-full gap-4 md:gap-2 md:grid-cols-[minmax(0,190px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,208px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+            <div className="mt-4 grid w-full grid-cols-1 gap-3 md:gap-2 md:grid-cols-[160px_minmax(0,1fr)]">
               <Suspense fallback={null}>
                 <CreateSidebar
                   activeCategory={activeCategory}
@@ -6114,7 +6119,7 @@ const handleGenerate = async () => {
 
           {/* Cache Usage - Below Recent Prompts */}
           {activeCategory === "image" && !selectedFolder && (
-            <div className="mt-4 w-full max-w-[calc(100%-150px)] lg:max-w-[calc(100%-150px)] md:max-w-[calc(100%-130px)] sm:max-w-full ml-auto md:ml-[150px] lg:ml-[150px]">
+            <div className="mt-4 w-full sm:max-w-full ml-auto md:ml-[168px] md:max-w-[calc(100%_-_168px)]">
               {isCacheBarVisible && (
                 <div className="mb-4 rounded-2xl border border-d-dark bg-d-black/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center justify-between text-xs font-raleway uppercase tracking-wide text-d-white/70">
