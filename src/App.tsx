@@ -73,11 +73,11 @@ function Home() {
 
       <div className="relative z-10">
         {/* Welcome Section */}
-        <section className="relative min-h-screen flex items-center justify-center pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
+        <section className="relative flex min-h-[100dvh] items-center justify-center pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
 
           {/* Logo section - positioned better */}
           <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-0 right-0 z-20">
-            <div className="mx-auto max-w-[85rem] px-6 lg:px-8">
+            <div className="container responsive-region">
               <div className="home-hero-logo text-left">
                 <div className={text.subHeading}>
                   <span className="text-white-gradient">day</span>
@@ -88,26 +88,15 @@ function Home() {
           </div>
 
           {/* Content */}
-          <div className={`${layout.container} relative z-10 flex flex-col gap-3 items-center justify-center`}>
-            {/* Main content */}
-            <div className="home-hero-copy text-center flex flex-col gap-3">
-              <h1 className={`${text.heroHeading} home-hero-title`}>
-                Your Daily AI Generations.
-              </h1>
-              <div className="home-hero-description text-xl text-d-white font-raleway font-light leading-relaxed">
-                Master all the best Creative AI Tools in one place.
-              </div>
+          <div className={`${layout.container} home-hero relative z-10`}>
+            <div className="home-hero-copy">
+              <h1 className={`${text.heroHeading} home-hero-title`}>Your Daily AI Generations.</h1>
+              <p className="home-hero-description">Master all the best Creative AI Tools in one place.</p>
               <div className="home-hero-actions">
-                <Link
-                  to="/learn/use-cases"
-                  className={buttons.ghost}
-                >
+                <Link to="/learn/use-cases" className={buttons.ghost}>
                   Learn
                 </Link>
-                <Link
-                  to="/create/image"
-                  className={buttons.primary}
-                >
+                <Link to="/create/image" className={buttons.primary}>
                   Create
                 </Link>
               </div>

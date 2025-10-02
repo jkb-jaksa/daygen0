@@ -245,28 +245,24 @@ export function Grid() {
     : { create: imageCreateCards, edit: imageEditCards, personalize: imagePersonalizeCards };
 
   return (
-    <div className="pb-16">
+    <div className="responsive-region space-y-[var(--space-6)] pb-[var(--space-6)]">
       {/* Search bar */}
-      <div className="grid grid-cols-[150px,1fr] gap-6 mb-2">
-        <div className="col-span-2">
-          <div className="relative">
-            <Search
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white size-5"
-            />
-            <input
-              type="text"
-              placeholder="what do you want to do?"
-              className={`${inputs.pill} pl-12`}
-            />
-          </div>
+      <div className="region-stack">
+        <div className="tool-search">
+          <Search className="tool-search__icon text-d-white size-5" />
+          <input
+            type="text"
+            placeholder="what do you want to do?"
+            className={`${inputs.pill} tool-search__input`}
+          />
         </div>
       </div>
 
       {/* create */}
-      <section className="grid grid-cols-[150px,1fr]">
-        <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">create</h3>
+      <section className="region-two-pane" aria-labelledby="create-heading">
+        <h3 id="create-heading" className="region-two-pane__title text-balance">create</h3>
 
-        <aside className="row-start-2 hidden md:flex flex-col gap-3">
+        <aside className="region-two-pane__sidebar" aria-label="Tool categories">
           {sidebarItems.map((item, index) => {
             const isActive = active === item.label;
             return (
@@ -274,8 +270,8 @@ export function Grid() {
                 key={index}
                 type="button"
                 onClick={() => setActive(item.label)}
-                className={`group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 ${
-                  isActive ? "text-d-text" : "text-d-white hover:text-d-text"
+                className={`group inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-light transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black ${
+                  isActive ? "bg-d-dark/60 text-d-text" : "text-d-white hover:text-d-text"
                 }`}
                 aria-pressed={isActive}
               >
@@ -292,12 +288,12 @@ export function Grid() {
           })}
         </aside>
 
-        <div className="row-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="region-two-pane__content card-grid">
           {sets.create.map((card) => (
             <Link
               key={card.slug}
               to={`/learn/tools`}
-              className="block"
+              className="block min-w-0"
               aria-label={`Open ${card.title}`}
             >
               <motion.div>
@@ -312,15 +308,15 @@ export function Grid() {
       </section>
 
       {/* edit */}
-      <section className="grid grid-cols-[150px,1fr]">
-        <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">edit</h3>
+      <section className="region-two-pane region-two-pane--simple" aria-labelledby="edit-heading">
+        <h3 id="edit-heading" className="region-two-pane__title text-balance">edit</h3>
 
-        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="region-two-pane__content card-grid">
           {sets.edit.map((card) => (
             <Link
               key={card.slug}
               to={`/learn/tools`}
-              className="block"
+              className="block min-w-0"
               aria-label={`Open ${card.title}`}
             >
               <motion.div>
@@ -335,15 +331,15 @@ export function Grid() {
       </section>
 
       {/* personalize */}
-      <section className="grid grid-cols-[150px,1fr]">
-        <h3 className="col-start-2 text-xl font-normal font-raleway text-d-text">personalize</h3>
+      <section className="region-two-pane region-two-pane--simple" aria-labelledby="personalize-heading">
+        <h3 id="personalize-heading" className="region-two-pane__title text-balance">personalize</h3>
 
-        <div className="row-start-2 col-start-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="region-two-pane__content card-grid">
           {sets.personalize.map((card) => (
             <Link
               key={card.slug}
               to={`/learn/tools`}
-              className="block"
+              className="block min-w-0"
               aria-label={`Open ${card.title}`}
             >
               <motion.div>

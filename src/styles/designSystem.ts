@@ -1,20 +1,20 @@
 export const layout = {
-  page: "relative min-h-screen text-d-text overflow-hidden bg-d-black-subtle",
+  page: "relative min-h-[100dvh] text-d-text overflow-hidden bg-d-black-subtle",
   backdrop: "orb-background absolute inset-0 z-0",
-  container: "mx-auto max-w-[85rem] px-6 lg:px-8",
+  container: "container responsive-region",
   heroPadding: "pt-0 pb-0",
-  sectionPadding: "py-16",
-  sectionPaddingTight: "py-12",
+  sectionPadding: "py-[var(--space-section)]",
+  sectionPaddingTight: "py-[var(--space-section-tight)]",
   sectionDivider: "relative w-full overflow-hidden bg-d-black-subtle border-b border-d-black",
 };
 
 export const text = {
-  heroHeading: "text-5xl font-light tracking-tight leading-[1.1] font-raleway",
-  subHeading: "text-4xl font-light text-d-text font-raleway",
-  sectionHeading: "text-4xl font-light text-d-text font-raleway",
-  eyebrow: "text-xs text-d-white/60 font-raleway font-medium uppercase tracking-[0.2em]",
-  body: "text-base text-d-white font-raleway font-light",
-  finePrint: "text-sm text-d-white/70 font-raleway font-light",
+  heroHeading: "font-light tracking-tight leading-[1.05] font-raleway text-[clamp(2.75rem,2.1rem+3.3vw,4.5rem)]",
+  subHeading: "font-light text-d-text font-raleway text-[clamp(1.8rem,1.4rem+2vw,2.8rem)]",
+  sectionHeading: "font-light text-d-text font-raleway text-[clamp(2rem,1.6rem+1.8vw,3.25rem)]",
+  eyebrow: "font-raleway font-medium uppercase tracking-[0.2em] text-[clamp(0.7rem,0.64rem+0.18vw,0.8rem)] text-d-white/60",
+  body: "text-d-white font-raleway font-light text-[clamp(0.95rem,0.9rem+0.3vw,1.125rem)] leading-relaxed",
+  finePrint: "text-d-white/70 font-raleway font-light text-[clamp(0.85rem,0.8rem+0.2vw,0.95rem)]",
 };
 
 export const cards = {

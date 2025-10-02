@@ -18,16 +18,16 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   return (
     <div
-      className="relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full cursor-pointer p-5 flex flex-col bg-d-black mouse-glow parallax-small"
+      className="relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200 group h-full min-w-0 cursor-pointer p-5 flex flex-col bg-d-black mouse-glow parallax-small"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >
       {/* No overlay */}
       <div className="relative z-10 flex items-center gap-2">
-        <div className="text-d-text text-xl font-normal font-raleway">{title}</div>
+        <div className="text-d-text text-xl font-normal font-raleway text-balance wrap-anywhere leading-tight">{title}</div>
       </div>
-      <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway">{subtitle}</p>
+      <p className="relative z-10 mt-1 text-d-white text-base font-normal font-raleway leading-relaxed break-words">{subtitle}</p>
       <div className="flex-1" />
       <div className="parallax-isolate">
         <button
