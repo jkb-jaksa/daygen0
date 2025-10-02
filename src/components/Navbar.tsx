@@ -8,7 +8,7 @@ import AuthModal from "./AuthModal";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
-import { buttons, glass, iconButtons } from "../styles/designSystem";
+import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeNext } from "../utils/navigation";
 
@@ -251,13 +251,13 @@ export default function Navbar() {
         ref={navRef}
         className={`relative ${glass.promptDark} border-t-0`}
       >
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-2 flex items-center justify-between text-base min-h-[3.5rem]">
+        <div className={`${layout.container} py-2 flex items-center justify-between text-base min-h-[3.5rem]`}>
           <div className="flex items-center gap-6 md:gap-8">
             <img
               src="/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-large h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 block m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-raleway">
               {filteredNavItems.map((item) => (
@@ -460,7 +460,7 @@ export default function Navbar() {
           className={`${glass.promptDark} border-t-0 transition-opacity duration-100`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
-          <div className="mx-auto max-w-[85rem] px-6 lg:px-8 py-6 min-h-[220px] text-base text-d-text">
+          <div className={`${layout.container} py-6 min-h-[220px] text-base text-d-text`}>
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-d-text">
                 <div className="text-base font-normal font-raleway mb-4">

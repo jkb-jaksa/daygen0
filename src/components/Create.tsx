@@ -4642,7 +4642,7 @@ const handleGenerate = async () => {
               </nav>
             </div>
 
-            <div className="mt-4 grid w-full gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+            <div className="mt-4 grid w-full gap-6 md:grid-cols-[minmax(0,190px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,208px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
               <Suspense fallback={null}>
                 <CreateSidebar
                   activeCategory={activeCategory}
@@ -4690,7 +4690,7 @@ const handleGenerate = async () => {
                 )}
                 {activeCategory === "inspirations" && (
                   <div className="w-full">
-                    <div className="grid grid-cols-4 gap-2 w-full p-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
                       {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
                       {inspirationsGallery.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
@@ -4719,7 +4719,7 @@ const handleGenerate = async () => {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -4830,7 +4830,7 @@ const handleGenerate = async () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -5085,7 +5085,7 @@ const handleGenerate = async () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-3 w-full p-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -5273,7 +5273,7 @@ const handleGenerate = async () => {
                       </div>
                     </div>
                     
-                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -5514,7 +5514,7 @@ const handleGenerate = async () => {
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
                     
-                        <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
@@ -5700,7 +5700,7 @@ const handleGenerate = async () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -6045,11 +6045,11 @@ const handleGenerate = async () => {
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
-            <div 
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 left-6 right-6 sm:left-8 sm:right-8 lg:left-[calc((100vw-85rem)/2+1.5rem)] lg:right-[calc((100vw-85rem)/2+1.5rem+6px)]`}
-              style={{ 
+            <div
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4`}
+              style={{
                 bottom: '0.75rem',
-                transform: 'translateZ(0)',
+                transform: 'translateX(-50%) translateZ(0)',
                 willChange: 'transform',
                 backfaceVisibility: 'hidden'
               }}
@@ -6128,10 +6128,9 @@ const handleGenerate = async () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-200`}
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="text-sm font-raleway">Add reference</span>
                 </button>
                 {activeCategory === "image" && (
                   <>
@@ -6139,19 +6138,17 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
                     >
                       <Users className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
-                      <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Select Avatar</span>
                     </button>
                     <button
                       type="button"
                       ref={promptsButtonRef}
                       onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
                     >
                       <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
-                      <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
@@ -6438,7 +6435,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -6448,15 +6445,14 @@ const handleGenerate = async () => {
                             src={getToolLogo(currentModel.name)!}
                             alt={`${currentModel.name} logo`}
                             loading="lazy"
-                            className="w-5 h-5 object-contain rounded flex-shrink-0"
+                            className="w-4 h-4 object-contain rounded flex-shrink-0"
                           />
                         );
                       } else {
                         const Icon = currentModel.Icon;
-                        return <Icon className="w-5 h-5 group-hover:text-d-text transition-colors duration-100" />;
+                        return <Icon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}

@@ -1291,7 +1291,7 @@ export default function Avatars() {
               <h2 className="text-2xl font-light font-raleway text-d-text">Your Avatars</h2>
             </div>
             {avatars.length > 0 && (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 justify-items-center">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
                 {avatars.map(avatar => renderAvatarCard(avatar))}
               </div>
             )}

@@ -1,6 +1,6 @@
 import { ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { glass } from "../styles/designSystem";
+import { glass, layout } from "../styles/designSystem";
 
 export default function Footer() {
   const scrollToTop = () => {
@@ -15,7 +15,7 @@ export default function Footer() {
     <footer>
       {/* Footer panel */}
       <section className="relative bg-d-black-subtle overflow-hidden border-t border-d-dark">
-        <div className="mx-auto max-w-[85rem] px-6 lg:px-8 pt-8 pb-40 relative z-0">
+        <div className={`${layout.container} pt-8 pb-40 relative z-0`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}
             <div className="pt-4">
@@ -36,20 +36,20 @@ export default function Footer() {
         </div>
 
         {/* Copyright bar - moved inside footer container */}
-        <div className={`${glass.promptDark} w-full mt-8 py-4 relative`}>
-          <div className="text-center">
-            <span className="text-b-white font-raleway font-light">
+        <div className={`${glass.promptDark} w-full mt-8 py-4`}>
+          <div className={`${layout.container} relative flex items-center justify-center`}>
+            <span className="text-b-white font-raleway font-light text-center">
               © <span className="font-light">2025</span> — <span className="text-b-text font-normal">daygen</span>
             </span>
+            {/* Back-to-top button - aligned with container edge */}
+            <button
+              onClick={scrollToTop}
+              aria-label="Back to top"
+              className="image-action-btn parallax-force-positioned absolute right-0 top-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black"
+            >
+              <ChevronUp className="size-4" />
+            </button>
           </div>
-          {/* Back-to-top button - centered within copyright bar */}
-          <button
-            onClick={scrollToTop}
-            aria-label="Back to top"
-            className="image-action-btn parallax-force-positioned absolute right-6 top-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black"
-          >
-            <ChevronUp className="size-4" />
-          </button>
         </div>
       </section>
     </footer>

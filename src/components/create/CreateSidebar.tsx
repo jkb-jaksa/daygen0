@@ -12,7 +12,7 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
   return (
     <nav
       aria-label="Create navigation"
-      className="hidden md:flex md:flex-col md:sticky md:top-[calc(var(--nav-h)+1rem)] md:self-start md:w-[228px] md:z-30"
+      className="hidden md:flex md:flex-col md:sticky md:top-[calc(var(--nav-h)+1rem)] md:self-start md:w-[160px] md:z-30"
       style={{ maxHeight: "calc(100vh - var(--nav-h) - 2.5rem)" }}
     >
       <div

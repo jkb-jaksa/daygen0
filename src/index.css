@@ -45,7 +45,8 @@
 
 :root {
   --nav-h: clamp(3.5rem, 2vw + 3.25rem, 4.5rem); /* Navbar height used for hero offset */
-  --container-max: 1200px;
+  --container-inline-padding: clamp(1rem, 5vw, 6rem);
+  --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(1rem, 5vw, 6rem)));
 
   /* Breakpoints */
   --bp-xs: 22.5rem; /* 360px */
@@ -172,9 +173,24 @@ body {
 }
 
 .container {
-  width: min(100%, var(--container-max, 1200px));
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   margin-inline: auto;
-  padding-inline: clamp(1rem, 4vw, 2rem);
+  padding-inline: var(--container-inline-padding, clamp(1rem, 5vw, 6rem));
+}
+
+.promptbar {
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--layout-inline-width);
+  max-width: var(--layout-inline-width);
+}
+
+.layout-inline-width {
+  width: var(--layout-inline-width);
+  max-width: var(--layout-inline-width);
+  margin-inline: auto;
 }
 
 .responsive-region {

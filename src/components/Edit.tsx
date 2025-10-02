@@ -1292,17 +1292,12 @@ export default function Edit() {
 
           {/* Mode Toggle Buttons - fixed positioned above prompt bar */}
           {previewUrl && (
-            <div className="fixed bottom-36 left-1/2 transform -translate-x-1/2 z-50 flex justify-center gap-2" style={{ 
-              left: 'calc((100vw - 85rem) / 2 + 1.5rem)', 
-              right: 'calc((100vw - 85rem) / 2 + 1.5rem + 6px)', 
-              transform: 'none',
-              width: 'auto'
-            }}>
+            <div className="layout-inline-width fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex justify-end gap-2 px-4">
               <button
                 onClick={toggleMoveMode}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
-                  isMoveMode 
-                    ? 'text-d-text border-d-text' 
+                  isMoveMode
+                    ? 'text-d-text border-d-text'
                     : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
                 }`}
                 title="Toggle move mode"
@@ -1446,7 +1441,8 @@ export default function Edit() {
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
         <div
-          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 lg:left-[calc((100vw-85rem)/2+1.5rem)] lg:right-[calc((100vw-85rem)/2+1.5rem+6px)] bottom-3 sm:bottom-4`}
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 pt-4 pb-4 bottom-3 sm:bottom-4`}
+          style={{ transform: 'translateX(-50%) translateZ(0)' }}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => { 
@@ -1499,20 +1495,18 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center gap-2 h-8 px-3 rounded-full transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-200`}
             >
               <Plus className="w-4 h-4" />
-              <span className="text-sm font-raleway">Add more references</span>
             </button>
 
             <button
               type="button"
               ref={promptsButtonRef}
               onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
             >
               <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
-              <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-100">Prompts</span>
             </button>
 
             <PromptsDropdown
@@ -1537,7 +1531,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-100 gap-2 group`}
+                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1546,15 +1540,14 @@ export default function Edit() {
                       <img 
                         src={getToolLogo(currentModel.name)!} 
                         alt={`${currentModel.name} logo`}
-                        className="w-5 h-5 object-contain rounded flex-shrink-0"
+                        className="w-4 h-4 object-contain rounded flex-shrink-0"
                       />
                     );
                   } else {
                     const Icon = currentModel.Icon;
-                    return <Icon className="w-5 h-5 group-hover:text-d-text transition-colors duration-200" />;
+                    return <Icon className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />;
                   }
                 })()}
-                <span className="text-sm font-raleway hidden sm:block text-d-white group-hover:text-d-text transition-colors duration-200">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}

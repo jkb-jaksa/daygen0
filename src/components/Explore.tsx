@@ -1787,7 +1787,7 @@ const Explore: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {/* Modality Filter */}
                     <div className="flex flex-col gap-1.5 md:col-span-2">
                       <label className="text-xs text-d-white/70 font-raleway">Modality</label>

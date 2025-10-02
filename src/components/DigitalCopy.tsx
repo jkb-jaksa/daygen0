@@ -175,7 +175,7 @@ export default function DigitalCopy() {
                   <p className="text-xs uppercase tracking-[0.3em] text-d-light font-raleway">current focus</p>
                   <p className="mt-3 text-lg font-raleway text-d-white">Complete one card in every modality to unlock the Expression tier.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {modalities.map(modality => (
                     <div key={modality.key} className="rounded-2xl border border-d-dark bg-d-mid/50 p-3 text-left">
                       <p className="text-xs font-raleway uppercase tracking-[0.2em] text-d-light">{modality.key}</p>
