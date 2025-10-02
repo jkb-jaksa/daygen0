@@ -17,15 +17,10 @@ function CreateSidebarComponent({
   reservedBottomSpace = 0,
 }: CreateSidebarProps) {
   const topOffset = SIDEBAR_TOP_PADDING;
-  
-  // Calculate sidebar height to end 8px above prompt bar
-  // Prompt bar is at bottom: 0.75rem (12px) + estimated height (0px) + 8px gap
-  const promptBarBottomMargin = 12; // 0.75rem
-  const estimatedPromptHeight = 0; // No estimate for prompt bar height
-  const gapAbovePrompt = SIDEBAR_PROMPT_GAP; // 8px
-  const totalSpaceForPrompt = promptBarBottomMargin + estimatedPromptHeight + gapAbovePrompt;
-  
-  const sidebarMaxHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${totalSpaceForPrompt}px)`;
+  const minimumReservedSpace = SIDEBAR_PROMPT_GAP + 12; // Preserve previous breathing room when no prompt bar
+  const effectiveReservedSpace = Math.max(reservedBottomSpace, minimumReservedSpace);
+
+  const sidebarHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${effectiveReservedSpace}px)`;
   const sidebarTop = `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
 
   return (
@@ -33,7 +28,7 @@ function CreateSidebarComponent({
       <nav
         aria-label="Create navigation"
         className="md:flex md:flex-col md:fixed md:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] md:w-[160px] md:z-30"
-        style={{ maxHeight: sidebarMaxHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
+        style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
       <div
         className={`${glass.promptDark} rounded-[20px] flex h-full max-h-full flex-col overflow-hidden px-3 py-4`}
