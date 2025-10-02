@@ -1475,7 +1475,7 @@ export default function Edit() {
               onKeyDown={onKeyDown}
               onPaste={handlePaste}
               rows={1}
-              className="w-full h-[36px] bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap"
+              className="w-full h-[36px] bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg"
             />
           </div>
           

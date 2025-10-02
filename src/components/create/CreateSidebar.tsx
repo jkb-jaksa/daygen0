@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { glass } from "../../styles/designSystem";
-import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH } from "./layoutConstants";
+import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_PROMPT_GAP } from "./layoutConstants";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./sidebarData";
 
 export interface CreateSidebarProps {
@@ -17,8 +17,15 @@ function CreateSidebarComponent({
   reservedBottomSpace = 0,
 }: CreateSidebarProps) {
   const topOffset = SIDEBAR_TOP_PADDING;
-  const safeBottomSpace = Math.max(0, Math.round(reservedBottomSpace));
-  const sidebarMaxHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${safeBottomSpace}px)`;
+  
+  // Calculate sidebar height to end 8px above prompt bar
+  // Prompt bar is at bottom: 0.75rem (12px) + estimated height (0px) + 8px gap
+  const promptBarBottomMargin = 12; // 0.75rem
+  const estimatedPromptHeight = 0; // No estimate for prompt bar height
+  const gapAbovePrompt = SIDEBAR_PROMPT_GAP; // 8px
+  const totalSpaceForPrompt = promptBarBottomMargin + estimatedPromptHeight + gapAbovePrompt;
+  
+  const sidebarMaxHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${totalSpaceForPrompt}px)`;
   const sidebarTop = `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
 
   return (

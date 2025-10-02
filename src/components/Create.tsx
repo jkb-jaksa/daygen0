@@ -945,8 +945,9 @@ const Create: React.FC = () => {
     }
 
     const rect = element.getBoundingClientRect();
-    const bottomOffset = Math.max(0, window.innerHeight - rect.bottom);
-    const reserved = Math.max(0, Math.round(rect.height + bottomOffset + SIDEBAR_PROMPT_GAP));
+    // Reserve space from bottom of screen to top of prompt bar + 8px gap
+    const distanceFromBottom = window.innerHeight - rect.top;
+    const reserved = Math.max(0, Math.round(distanceFromBottom + SIDEBAR_PROMPT_GAP));
     setPromptBarReservedSpace(reserved);
   }, []);
 
@@ -4716,7 +4717,7 @@ const handleGenerate = async () => {
           {/* Removed "Create now" heading per request */}
           
           {/* Categories + Gallery row */}
-          <div className="mt-6 w-full text-left">
+          <div className="mt-6 md:mt-0 w-full text-left">
             <div className="md:hidden">
               <nav aria-label="Create navigation" className="space-y-4">
                 <div>
@@ -4774,7 +4775,7 @@ const handleGenerate = async () => {
               </nav>
             </div>
 
-            <div className="mt-4 grid w-full grid-cols-1 gap-3 md:gap-2 md:grid-cols-[160px_minmax(0,1fr)]">
+            <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 md:gap-2 md:grid-cols-[160px_minmax(0,1fr)]">
               <Suspense fallback={null}>
                 <CreateSidebar
                   activeCategory={activeCategory}
@@ -6180,7 +6181,7 @@ const handleGenerate = async () => {
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div
               ref={promptBarRef}
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
+              className={`promptbar fixed z-40 rounded-[32px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
               style={{
                 bottom: '0.75rem',
                 transform: 'translateX(-50%) translateZ(0)',
@@ -6201,7 +6202,7 @@ const handleGenerate = async () => {
                   onKeyDown={onKeyDown}
                   onPaste={handlePaste}
                   rows={1}
-                  className="w-full h-[36px] bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap"
+                  className="w-full h-[36px] bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg"
                 />
               </div>
               
