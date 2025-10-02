@@ -1,5 +1,5 @@
 export const layout = {
-  page: "relative min-h-[100dvh] text-d-text overflow-hidden bg-d-black-subtle",
+  page: "relative min-h-[100dvh] text-d-text overflow-x-hidden bg-d-black-subtle",
   backdrop: "orb-background absolute inset-0 z-0",
   container: "container responsive-region",
   heroPadding: "pt-0 pb-0",

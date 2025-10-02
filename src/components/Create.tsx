@@ -931,6 +931,51 @@ const Create: React.FC = () => {
   
   const longPollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const promptBarRef = useRef<HTMLDivElement | null>(null);
+  const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
+  const updatePromptBarReservedSpace = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const element = promptBarRef.current;
+    if (!element) {
+      setPromptBarReservedSpace(0);
+      return;
+    }
+
+    const rect = element.getBoundingClientRect();
+    const bottomOffset = Math.max(0, window.innerHeight - rect.bottom);
+    const reserved = Math.max(0, Math.round(rect.height + bottomOffset + 8));
+    setPromptBarReservedSpace(reserved);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    updatePromptBarReservedSpace();
+
+    const handleResize = () => {
+      updatePromptBarReservedSpace();
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    const element = promptBarRef.current;
+    let resizeObserver: ResizeObserver | undefined;
+
+    if (element && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        updatePromptBarReservedSpace();
+      });
+      resizeObserver.observe(element);
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+      resizeObserver?.disconnect();
+    };
+  }, [updatePromptBarReservedSpace, activeCategory, selectedFolder]);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
   const [storageUsage, setStorageUsage] = useState<StorageEstimateSnapshot | null>(null);
   const [persistentStorageStatus, setPersistentStorageStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown');
@@ -4660,7 +4705,7 @@ const handleGenerate = async () => {
       
       
       {/* PLATFORM HERO */}
-      <header className={`relative z-10 ${layout.container} pt-[calc(var(--nav-h)+0.25rem)] pb-48`}>
+      <header className={`relative z-10 ${layout.container} pt-[calc(var(--nav-h)+16px)] pb-48`}>
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Removed "Create now" heading per request */}
@@ -4724,12 +4769,13 @@ const handleGenerate = async () => {
               </nav>
             </div>
 
-            <div className="mt-4 grid w-full gap-6 md:grid-cols-[minmax(0,190px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,208px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+            <div className="mt-4 grid w-full gap-4 md:gap-2 md:grid-cols-[minmax(0,190px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,208px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
               <Suspense fallback={null}>
                 <CreateSidebar
                   activeCategory={activeCategory}
                   onSelectCategory={(category) => setActiveCategory(category)}
                   onOpenMyFolders={handleMyFoldersClick}
+                  reservedBottomSpace={promptBarReservedSpace}
                 />
               </Suspense>
               <div className="w-full mb-4" ref={galleryRef}>
@@ -6128,6 +6174,7 @@ const handleGenerate = async () => {
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div
+              ref={promptBarRef}
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
               style={{
                 bottom: '0.75rem',

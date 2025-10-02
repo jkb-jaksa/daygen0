@@ -6,15 +6,26 @@ export interface CreateSidebarProps {
   activeCategory: string;
   onSelectCategory: (category: string) => void;
   onOpenMyFolders: () => void;
+  reservedBottomSpace?: number;
 }
 
-function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFolders }: CreateSidebarProps) {
+function CreateSidebarComponent({
+  activeCategory,
+  onSelectCategory,
+  onOpenMyFolders,
+  reservedBottomSpace = 0,
+}: CreateSidebarProps) {
+  const topOffset = 16;
+  const safeBottomSpace = Math.max(0, Math.round(reservedBottomSpace));
+  const sidebarMaxHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${safeBottomSpace}px)`;
+
   return (
-    <nav
-      aria-label="Create navigation"
-      className="hidden md:flex md:flex-col md:sticky md:top-[calc(var(--nav-h)+1rem)] md:self-start md:w-[160px] md:z-30"
-      style={{ maxHeight: "calc(100vh - var(--nav-h) - 2.5rem)" }}
-    >
+    <div className="hidden md:block md:w-[160px]">
+      <nav
+        aria-label="Create navigation"
+        className="md:flex md:flex-col md:fixed md:top-[calc(var(--nav-h)+16px)] md:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] md:w-[160px] md:z-30"
+        style={{ maxHeight: sidebarMaxHeight }}
+      >
       <div
         className={`${glass.promptDark} rounded-[20px] flex h-full max-h-full flex-col overflow-hidden px-3 py-4`}
       >
@@ -90,7 +101,8 @@ function CreateSidebarComponent({ activeCategory, onSelectCategory, onOpenMyFold
           </button>
         </aside>
       </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
 
