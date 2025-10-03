@@ -259,7 +259,7 @@ export default function Navbar() {
               onClick={handleLogoClick}
               className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden lg:flex items-center gap-4 lg:gap-6 text-base font-raleway">
+            <div className="hidden lg:flex items-center gap-2 xl:gap-4 text-base font-raleway">
               {filteredNavItems.map((item) => (
                 <NavLink
                   key={item.label}
@@ -293,7 +293,7 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-0.5 md:gap-1 xl:gap-2">
             {!user ? (
               <>
                 <button
@@ -390,7 +390,7 @@ export default function Navbar() {
                   }}
                 >
                   <Zap className="w-4 h-4" />
-                  <span className="hidden lg:inline">Upgrade</span>
+                  <span className="hidden sm:inline">Upgrade</span>
                 </button>
 
                 <div className="relative">
