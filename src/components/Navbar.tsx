@@ -298,21 +298,21 @@ export default function Navbar() {
               <>
                 <div className="flex items-center gap-0">
                   <button
-                    className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                    className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                     aria-label="Discord"
                   >
                     <DiscordIcon className="size-4" />
                   </button>
                   <button
-                    className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                    className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://x.com', '_blank')}
                     aria-label="X"
                   >
                     <XIcon className="size-4" />
                   </button>
                   <button
-                    className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                    className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://instagram.com', '_blank')}
                     aria-label="Instagram"
                   >
@@ -339,7 +339,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-0">
                   {/* Discord Button */}
                   <button
-                    className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                    className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                     aria-label="Discord"
                   >
@@ -348,7 +348,7 @@ export default function Navbar() {
                   
                   {/* X Button */}
                   <button
-                    className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                    className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://x.com', '_blank')}
                     aria-label="X"
                   >
@@ -357,7 +357,7 @@ export default function Navbar() {
                   
                   {/* Instagram Button */}
                   <button
-                    className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                    className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://instagram.com', '_blank')}
                     aria-label="Instagram"
                   >
@@ -427,7 +427,7 @@ export default function Navbar() {
             <div className="flex items-center gap-0">
               <button
                 type="button"
-                className={`lg:hidden ${iconButtons.md}`}
+                className={`lg:hidden ${iconButtons.lg} sm:${iconButtons.sm}`}
                 onClick={() => {
                   setMobileNavOpen((open) => !open);
                   setActiveMenu(null);
@@ -439,7 +439,7 @@ export default function Navbar() {
               >
                 {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <button aria-label="Search" className={iconButtons.md}>
+              <button aria-label="Search" className={`${iconButtons.lg} sm:${iconButtons.sm}`}>
                 <Search className="w-4 h-4" />
               </button>
             </div>
@@ -616,21 +616,21 @@ export default function Navbar() {
 
               <div className="flex items-center gap-0 pt-2">
                 <button
-                  className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                  className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                   onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                   aria-label="Discord"
                 >
                   <DiscordIcon className="size-4" />
                 </button>
                 <button
-                  className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                  className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                   onClick={() => window.open('https://x.com', '_blank')}
                   aria-label="X"
                 >
                   <XIcon className="size-4" />
                 </button>
                 <button
-                  className={`${iconButtons.md} sm:${iconButtons.sm}`}
+                  className={`${iconButtons.lg} sm:${iconButtons.sm}`}
                   onClick={() => window.open('https://instagram.com', '_blank')}
                   aria-label="Instagram"
                 >
