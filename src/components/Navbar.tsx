@@ -304,7 +304,7 @@ export default function Navbar() {
               aria-expanded={mobileNavOpen}
               aria-controls="mobile-nav-panel"
             >
-              {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
           <div className="flex items-center gap-1 md:gap-2">
@@ -398,10 +398,10 @@ export default function Navbar() {
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="hidden sm:inline font-raleway text-sm font-normal">
+                  <span className="hidden lg:inline font-raleway text-sm font-normal">
                     Credits: {user.credits}
                   </span>
-                  <span className="sm:hidden font-raleway text-sm font-normal">{user.credits}</span>
+                  <span className="lg:hidden font-raleway text-sm font-normal">{user.credits}</span>
                 </button>
                 
                 {/* Upgrade Button */}

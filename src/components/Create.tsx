@@ -4757,7 +4757,7 @@ const handleGenerate = async () => {
                           aria-pressed={isActive}
                         >
                           <item.Icon className="h-4 w-4" />
-                          <span className="capitalize">{item.label}</span>
+                          <span>{item.label}</span>
                         </button>
                       );
                     })}
@@ -4783,7 +4783,7 @@ const handleGenerate = async () => {
                           aria-pressed={isActive}
                         >
                           <item.Icon className="h-4 w-4" />
-                          <span className="capitalize">{item.label}</span>
+                          <span>{item.label}</span>
                         </button>
                       );
                     })}
