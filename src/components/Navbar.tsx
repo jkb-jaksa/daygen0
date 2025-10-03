@@ -583,7 +583,7 @@ export default function Navbar() {
                         logOut();
                         navigate('/');
                       }}
-                      className={`${buttons.ghostCompact} w-full justify-center`}
+                      className={`${buttons.ghost} w-full justify-center`}
                     >
                       Log out
                     </button>
