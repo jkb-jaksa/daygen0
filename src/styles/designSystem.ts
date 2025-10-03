@@ -62,6 +62,7 @@ export const iconButtons = {
   sm: `${iconButtonBase} rounded-full size-8`,
   md: `${iconButtonBase} rounded-full size-9`,
   lg: `${iconButtonBase} rounded-full size-10`,
+  xl: `${iconButtonBase} rounded-full size-12`,
   squareSm: `${iconButtonBase} rounded-lg size-8`,
 };
 
