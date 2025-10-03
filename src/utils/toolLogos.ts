@@ -9,7 +9,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     names: [
       'Gemini',
       'Gemini 2.5 Flash',
-      'gemini-2.5-flash-image-preview',
+      'gemini-2.5-flash-image',
       'Gemini Voice',
       'Imagen',
     ],

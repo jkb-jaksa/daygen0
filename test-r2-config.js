@@ -42,7 +42,7 @@ async function testR2Config() {
       },
       body: JSON.stringify({
         prompt: 'A simple red circle',
-        model: 'gemini-2.5-flash-image-preview'
+        model: 'gemini-2.5-flash-image'
       })
     });
     

@@ -12,7 +12,7 @@ interface ModelBadgeProps {
 
 // Model configuration with display names and icons
 const MODEL_CONFIG = {
-  'gemini-2.5-flash-image-preview': {
+  'gemini-2.5-flash-image': {
     name: 'Gemini 2.5 Flash',
     shortName: 'G2.5',
     icon: '🤖',

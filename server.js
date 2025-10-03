@@ -1058,6 +1058,8 @@ app.post('/api/generate-image', async (req, res) => {
       temperature,
       outputLength,
       topP,
+      providerOptions,
+      config: incomingConfig,
     } = req.body ?? {};
 
     const promptText = typeof prompt === 'string' ? prompt.trim() : '';
@@ -1072,7 +1074,65 @@ app.post('/api/generate-image', async (req, res) => {
     const targetModel =
       typeof model === 'string' && model.trim()
         ? model.trim()
-        : 'gemini-2.5-flash-image-preview';
+        : 'gemini-2.5-flash-image';
+
+    const normalizedProviderOptions =
+      providerOptions && typeof providerOptions === 'object' && !Array.isArray(providerOptions)
+        ? providerOptions
+        : null;
+
+    const normalizedConfig =
+      incomingConfig && typeof incomingConfig === 'object' && !Array.isArray(incomingConfig)
+        ? incomingConfig
+        : null;
+
+    const normalizedImageConfig =
+      normalizedConfig && typeof normalizedConfig.imageConfig === 'object' && !Array.isArray(normalizedConfig.imageConfig)
+        ? normalizedConfig.imageConfig
+        : null;
+
+    const requestConfig = normalizedConfig ? { ...normalizedConfig } : {};
+    if (normalizedImageConfig) {
+      requestConfig.imageConfig = { ...normalizedImageConfig };
+    }
+
+    const temperatureValue = parseNumeric(temperature);
+    if (temperatureValue !== undefined) requestConfig.temperature = temperatureValue;
+    const topPValue = parseNumeric(topP);
+    if (topPValue !== undefined) requestConfig.topP = topPValue;
+    const maxOutputTokensValue = parseNumeric(outputLength);
+    if (maxOutputTokensValue !== undefined) requestConfig.maxOutputTokens = maxOutputTokensValue;
+
+    const providerAspectRatio =
+      normalizedProviderOptions && typeof normalizedProviderOptions.aspectRatio === 'string'
+        ? normalizedProviderOptions.aspectRatio
+        : undefined;
+    const configAspectRatio =
+      normalizedImageConfig && typeof normalizedImageConfig.aspectRatio === 'string'
+        ? normalizedImageConfig.aspectRatio
+        : undefined;
+    const resolvedAspectRatio = providerAspectRatio || configAspectRatio;
+    if (resolvedAspectRatio) {
+      requestConfig.imageConfig = {
+        ...(requestConfig.imageConfig || {}),
+        aspectRatio: resolvedAspectRatio,
+      };
+    }
+
+    const providerModalities =
+      normalizedProviderOptions && Array.isArray(normalizedProviderOptions.responseModalities)
+        ? normalizedProviderOptions.responseModalities
+        : undefined;
+    const configModalities =
+      normalizedConfig && Array.isArray(normalizedConfig.responseModalities)
+        ? normalizedConfig.responseModalities
+        : undefined;
+    const resolvedModalities = providerModalities || configModalities;
+    if (resolvedModalities) {
+      requestConfig.responseModalities = resolvedModalities;
+    }
+
+    const hasConfig = Object.keys(requestConfig).length > 0;
 
     const primaryInline = normalizeInlineImage(imageBase64, mimeType || 'image/png');
     const referenceInlineParts = Array.isArray(references)
@@ -1088,6 +1148,7 @@ app.post('/api/generate-image', async (req, res) => {
       const response = await ai.models.generateContent({
         model: targetModel,
         contents: [{ text: promptText }],
+        ...(hasConfig ? { config: requestConfig } : {}),
       });
 
       const candidateParts = response?.candidates?.[0]?.content?.parts ?? [];
@@ -1116,14 +1177,6 @@ app.post('/api/generate-image', async (req, res) => {
       parts.push({ inlineData: { mimeType: ref.mimeType, data: ref.data } });
     }
 
-    const generationConfig = {};
-    const temperatureValue = parseNumeric(temperature);
-    if (temperatureValue !== undefined) generationConfig.temperature = temperatureValue;
-    const topPValue = parseNumeric(topP);
-    if (topPValue !== undefined) generationConfig.topP = topPValue;
-    const maxOutputTokensValue = parseNumeric(outputLength);
-    if (maxOutputTokensValue !== undefined) generationConfig.maxOutputTokens = maxOutputTokensValue;
-
     const requestPayload = {
       model: targetModel,
       contents: [
@@ -1134,8 +1187,8 @@ app.post('/api/generate-image', async (req, res) => {
       ],
     };
 
-    if (Object.keys(generationConfig).length > 0) {
-      requestPayload.config = generationConfig;
+    if (hasConfig) {
+      requestPayload.config = requestConfig;
     }
 
     const response = await ai.models.generateContent(requestPayload);
@@ -3307,7 +3360,7 @@ app.post('/api/unified-generate', async (req, res) => {
 
     // Route to appropriate handler based on model
     switch (model) {
-      case 'gemini-2.5-flash-image-preview':
+      case 'gemini-2.5-flash-image':
         return await handleUnifiedGemini(req, res, { prompt: promptText, imageBase64, mimeType, references });
       
       case 'ideogram':
@@ -3356,7 +3409,7 @@ async function handleUnifiedGemini(req, res, { prompt, imageBase64, mimeType, re
     return res.status(500).json({ error: 'Gemini API key not configured' });
   }
 
-  const targetModel = 'gemini-2.5-flash-image-preview';
+  const targetModel = 'gemini-2.5-flash-image';
   const apiKey = process.env.GEMINI_API_KEY;
 
   const parts = [{ text: prompt }];

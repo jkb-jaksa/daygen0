@@ -69,7 +69,7 @@ const styleFilters = [
 
 // AI Model data for filtering
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash", id: "gemini-2.5-flash-image-preview" },
+  { name: "Gemini 2.5 Flash", id: "gemini-2.5-flash-image" },
   { name: "Flux 1.1", id: "flux-1.1" },
   { name: "Ideogram 3.0", id: "ideogram" },
   { name: "Recraft", id: "recraft" },
@@ -215,7 +215,7 @@ const galleryItems: GalleryItem[] = [
       avatarColor: "from-blue-400/70 via-sky-300/70 to-cyan-400/70",
       location: "Oslo, NO",
     },
-    modelId: "gemini-2.5-flash-image-preview",
+    modelId: "gemini-2.5-flash-image",
     modelLabel: "Gemini Advanced",
     timeAgo: "1d ago",
     likes: 278,
@@ -318,7 +318,7 @@ const avatarGallery: AvatarGalleryItem[] = [
     likes: 744,
     publishedAgo: "2d ago",
     tags: ["lifestyle", "storyteller", "warm"],
-    modelId: "gemini-2.5-flash-image-preview",
+    modelId: "gemini-2.5-flash-image",
     modelLabel: "Gemini Portrait",
     shareUrl: "https://www.daygen.ai/avatars/solstice-echo",
     accentGradient: "from-amber-300/70 via-emerald-300/60 to-sky-300/70",

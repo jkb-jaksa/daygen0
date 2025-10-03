@@ -28,6 +28,7 @@ export interface ImageGenerationOptions {
   temperature?: number;
   outputLength?: number; // maps to maxOutputTokens
   topP?: number;
+  aspectRatio?: string;
 }
 
 export const useGeminiImageGeneration = () => {
@@ -56,9 +57,9 @@ export const useGeminiImageGeneration = () => {
         throw new Error(message);
       }
 
-      const { prompt, model, imageData, references, temperature, outputLength, topP } = options;
+      const { prompt, model, imageData, references, temperature, outputLength, topP, aspectRatio } = options;
 
-      const resolvedModel = model || 'gemini-2.5-flash-image-preview';
+      const resolvedModel = model || 'gemini-2.5-flash-image';
       const apiUrl = getApiUrl('/api/image/gemini');
 
       debugLog('[image] POST', apiUrl);
@@ -77,7 +78,8 @@ export const useGeminiImageGeneration = () => {
           references, 
           temperature, 
           outputLength, 
-          topP 
+          topP,
+          ...(aspectRatio ? { providerOptions: { aspectRatio } } : {}),
         }),
       });
 

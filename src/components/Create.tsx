@@ -129,7 +129,7 @@ const getInitials = (name: string) =>
 
 // AI Model data with icons and accent colors
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image-preview" },
+  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, accent: "yellow" as Accent, id: "gemini-2.5-flash-image" },
   { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue" as Accent, id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange" as Accent, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan" as Accent, id: "ideogram" },
@@ -150,6 +150,21 @@ const AI_MODELS = [
 
 const DEFAULT_REFERENCE_LIMIT = 3;
 const MAX_REFERENCES_WITH_AVATAR = 2;
+
+const GEMINI_ASPECT_RATIOS = [
+  '1:1',
+  '2:3',
+  '3:2',
+  '3:4',
+  '4:3',
+  '4:5',
+  '5:4',
+  '9:16',
+  '16:9',
+  '21:9',
+] as const;
+
+type GeminiAspectRatio = typeof GEMINI_ASPECT_RATIOS[number];
 
 // Portal component for model menu to avoid clipping by parent containers
 const ModelMenuPortal: React.FC<{
@@ -547,8 +562,8 @@ const Create: React.FC = () => {
   const [avatarName, setAvatarName] = useState("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image-preview");
-  const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
+  const isGemini = selectedModel === "gemini-2.5-flash-image";
   const isFlux = selectedModel === "flux-1.1";
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";
@@ -568,6 +583,7 @@ const Create: React.FC = () => {
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
+  const [geminiAspectRatio, setGeminiAspectRatio] = useState<GeminiAspectRatio>('1:1');
   
   // Qwen-specific state
   const [qwenSize, setQwenSize] = useState<string>('1328*1328');
@@ -1106,7 +1122,7 @@ const Create: React.FC = () => {
     if (activeCategory === "video" && !videoModels.includes(selectedModel)) {
       setSelectedModel("veo-3");
     } else if (activeCategory === "image" && videoModels.includes(selectedModel)) {
-      setSelectedModel("gemini-2.5-flash-image-preview");
+      setSelectedModel("gemini-2.5-flash-image");
     }
   }, [activeCategory, selectedModel]);
 
@@ -3772,7 +3788,7 @@ const handleGenerate = async () => {
 
       let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
-      const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image-preview";
+      const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image";
       const isFluxModel = modelForGeneration === "flux-1.1";
       const isChatGPTModel = modelForGeneration === "chatgpt-image";
       const isIdeogramModel = modelForGeneration === "ideogram";
@@ -3812,6 +3828,7 @@ const handleGenerate = async () => {
           temperature: temperatureForGeneration,
           outputLength: outputLengthForGeneration,
           topP: topPForGeneration,
+          aspectRatio: geminiAspectRatio,
         });
       } else if (isChatGPTModel) {
         // Use ChatGPT generation
@@ -4027,7 +4044,7 @@ const handleGenerate = async () => {
   const handleModelSelect = (modelName: string) => {
     // Find model by name and get its ID
     const model = AI_MODELS.find(m => m.name === modelName);
-    setSelectedModel(model?.id || "gemini-2.5-flash-image-preview");
+    setSelectedModel(model?.id || "gemini-2.5-flash-image");
   };
 
   const toggleSettings = () => {
@@ -6494,6 +6511,8 @@ const handleGenerate = async () => {
                           onOutputLengthChange: setOutputLength,
                           topP,
                           onTopPChange: setTopP,
+                          aspectRatio: geminiAspectRatio,
+                          onAspectRatioChange: setGeminiAspectRatio,
                         }}
                         qwen={{
                           enabled: isQwen,
@@ -6845,7 +6864,7 @@ const handleGenerate = async () => {
                             true
                       ).map((model) => {
                       const isSelected = selectedModel === model.id;
-                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image-preview" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
+                      const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
                       
                       return (
                         <button

@@ -57,8 +57,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Route to appropriate handler based on model
     switch (model) {
-      case 'gemini-2.5-flash-image-preview':
-        return await handleGemini(req, res, { prompt: promptText, imageBase64, mimeType, references });
+      case 'gemini-2.5-flash-image':
+        return await handleGemini(req, res, {
+          prompt: promptText,
+          imageBase64,
+          mimeType,
+          references,
+          temperature: otherParams.temperature,
+          outputLength: otherParams.outputLength,
+          topP: otherParams.topP,
+          providerOptions: otherParams.providerOptions,
+          config: otherParams.config,
+        });
       
       case 'ideogram':
         return await handleIdeogram(req, res, { prompt: promptText, ...otherParams });
@@ -101,12 +111,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // Gemini 2.5 Flash Image handler
-async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, imageBase64, mimeType, references }: { prompt: string; imageBase64?: string; mimeType?: string; references?: unknown }) {
+async function handleGemini(
+  req: VercelRequest,
+  res: VercelResponse,
+  {
+    prompt,
+    imageBase64,
+    mimeType,
+    references,
+    temperature,
+    outputLength,
+    topP,
+    providerOptions,
+    config,
+  }: {
+    prompt: string;
+    imageBase64?: string;
+    mimeType?: string;
+    references?: unknown;
+    temperature?: unknown;
+    outputLength?: unknown;
+    topP?: unknown;
+    providerOptions?: unknown;
+    config?: unknown;
+  },
+) {
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({ error: 'Gemini API key not configured' });
   }
 
-  const targetModel = 'gemini-2.5-flash-image-preview';
+  const targetModel = 'gemini-2.5-flash-image';
   const apiKey = process.env.GEMINI_API_KEY;
 
   const parts = [{ text: prompt }];
@@ -137,12 +171,84 @@ async function handleGemini(req: VercelRequest, res: VercelResponse, { prompt, i
     }
   }
 
+  const parseNumber = (value: unknown): number | undefined => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  };
+
+  const normalizedProviderOptions =
+    providerOptions && typeof providerOptions === 'object' && !Array.isArray(providerOptions)
+      ? (providerOptions as Record<string, unknown>)
+      : {};
+
+  const normalizedConfig =
+    config && typeof config === 'object' && !Array.isArray(config)
+      ? (config as Record<string, unknown>)
+      : {};
+
+  const normalizedImageConfig =
+    normalizedConfig.imageConfig &&
+    typeof normalizedConfig.imageConfig === 'object' &&
+    !Array.isArray(normalizedConfig.imageConfig)
+      ? (normalizedConfig.imageConfig as Record<string, unknown>)
+      : undefined;
+
+  const requestConfig: Record<string, unknown> = { ...normalizedConfig };
+  if (normalizedImageConfig) {
+    requestConfig.imageConfig = { ...normalizedImageConfig };
+  }
+
+  const temperatureValue = parseNumber(temperature);
+  if (temperatureValue !== undefined) requestConfig.temperature = temperatureValue;
+
+  const topPValue = parseNumber(topP);
+  if (topPValue !== undefined) requestConfig.topP = topPValue;
+
+  const maxOutputTokensValue = parseNumber(outputLength);
+  if (maxOutputTokensValue !== undefined) requestConfig.maxOutputTokens = maxOutputTokensValue;
+
+  const providerAspectRatio =
+    typeof normalizedProviderOptions.aspectRatio === 'string'
+      ? normalizedProviderOptions.aspectRatio
+      : undefined;
+  const configAspectRatio =
+    normalizedImageConfig && typeof normalizedImageConfig.aspectRatio === 'string'
+      ? (normalizedImageConfig.aspectRatio as string)
+      : undefined;
+  const resolvedAspectRatio = providerAspectRatio || configAspectRatio;
+  if (resolvedAspectRatio) {
+    requestConfig.imageConfig = {
+      ...(requestConfig.imageConfig as Record<string, unknown> | undefined),
+      aspectRatio: resolvedAspectRatio,
+    };
+  }
+
+  const providerModalities = Array.isArray(normalizedProviderOptions.responseModalities)
+    ? (normalizedProviderOptions.responseModalities as unknown[])
+    : undefined;
+  const configModalities = Array.isArray(normalizedConfig.responseModalities)
+    ? (normalizedConfig.responseModalities as unknown[])
+    : undefined;
+  const resolvedModalities = providerModalities || configModalities;
+  if (resolvedModalities) {
+    requestConfig.responseModalities = resolvedModalities;
+  }
+
+  const hasConfig = Object.keys(requestConfig).length > 0;
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts }] })
+      body: JSON.stringify({
+        contents: [{ parts }],
+        ...(hasConfig ? { config: requestConfig } : {}),
+      }),
     }
   );
 

@@ -10,8 +10,8 @@ export interface ModelInfo {
 
 // Model configuration - matches the existing model mapping in Create.tsx
 export const MODEL_INFO: Record<string, ModelInfo> = {
-  'gemini-2.5-flash-image-preview': {
-    id: 'gemini-2.5-flash-image-preview',
+  'gemini-2.5-flash-image': {
+    id: 'gemini-2.5-flash-image',
     name: 'Gemini 2.5 Flash (Nano Banana)',
     shortName: 'Gemini 2.5',
     description: 'Google Gemini 2.5 Flash Preview',

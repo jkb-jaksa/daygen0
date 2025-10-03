@@ -58,7 +58,7 @@ Generates an image using the Gemini API.
 ```json
 {
   "prompt": "A beautiful sunset over mountains",
-  "model": "gemini-2.5-flash-image-preview",
+  "model": "gemini-2.5-flash-image",
   "imageData": "data:image/jpeg;base64,..." // Optional for image-to-image
 }
 ```
@@ -70,7 +70,7 @@ Generates an image using the Gemini API.
   "image": {
     "url": "data:image/png;base64,...",
     "prompt": "A beautiful sunset over mountains",
-    "model": "gemini-2.5-flash-image-preview",
+    "model": "gemini-2.5-flash-image",
     "timestamp": "2024-01-01T00:00:00.000Z"
   }
 }

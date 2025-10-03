@@ -23,7 +23,7 @@ import { PromptsDropdown } from "./PromptsDropdown";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
-  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, accent: "yellow", id: "gemini-2.5-flash-image-preview" },
+  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, accent: "yellow", id: "gemini-2.5-flash-image" },
   { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue", id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange", id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan", id: "ideogram" },
@@ -211,7 +211,7 @@ export default function Edit() {
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
   const [topK, setTopK] = useState(64);
-  const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-2.5-flash-image-preview");
+  const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-2.5-flash-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
@@ -297,7 +297,7 @@ export default function Edit() {
   } = useReveImageGeneration();
 
   // Determine which model is selected and get the appropriate state
-  const isGemini = selectedModel === "gemini-2.5-flash-image-preview";
+  const isGemini = selectedModel === "gemini-2.5-flash-image";
   const isFlux = isFluxModelId(selectedModel);
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";

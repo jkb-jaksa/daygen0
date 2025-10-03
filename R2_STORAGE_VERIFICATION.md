@@ -170,7 +170,7 @@ CLOUDFLARE_R2_PUBLIC_URL=https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev
 {
   "dataUrl": "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/generated-images/ac09c855-5f90-45b5-bd4e-94e6df4ee90e.png",
   "contentType": "image/png",
-  "model": "gemini-2.5-flash-image-preview"
+  "model": "gemini-2.5-flash-image"
 }
 ```
 
@@ -179,7 +179,7 @@ CLOUDFLARE_R2_PUBLIC_URL=https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev
 {
   "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...[50KB+ of base64]",
   "contentType": "image/png",
-  "model": "gemini-2.5-flash-image-preview"
+  "model": "gemini-2.5-flash-image"
 }
 ```
 

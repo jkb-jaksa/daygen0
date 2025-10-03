@@ -6,6 +6,31 @@ import { useDropdownScrollLock } from "../../hooks/useDropdownScrollLock";
 
 type FluxModelOption = "flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max";
 
+type GeminiAspectRatio =
+  | '1:1'
+  | '2:3'
+  | '3:2'
+  | '3:4'
+  | '4:3'
+  | '4:5'
+  | '5:4'
+  | '9:16'
+  | '16:9'
+  | '21:9';
+
+const GEMINI_ASPECT_RATIOS: ReadonlyArray<GeminiAspectRatio> = [
+  '1:1',
+  '2:3',
+  '3:2',
+  '3:4',
+  '4:3',
+  '4:5',
+  '5:4',
+  '9:16',
+  '16:9',
+  '21:9',
+];
+
 interface FluxSettingsProps {
   enabled: boolean;
   model: FluxModelOption;
@@ -98,6 +123,8 @@ interface GeminiSettingsProps {
   onOutputLengthChange: (value: number) => void;
   topP: number;
   onTopPChange: (value: number) => void;
+  aspectRatio: GeminiAspectRatio;
+  onAspectRatioChange: (value: GeminiAspectRatio) => void;
 }
 
 interface QwenSettingsProps {
@@ -923,6 +950,28 @@ export function SettingsMenu({
         <div className="space-y-4">
           <div className="text-base font-raleway text-d-text mb-3">Gemini Settings</div>
           <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-raleway text-d-white/80 mb-2">Aspect Ratio</label>
+              <div className="grid grid-cols-3 gap-2">
+                {GEMINI_ASPECT_RATIOS.map((ratio) => {
+                  const isActive = gemini.aspectRatio === ratio;
+                  return (
+                    <button
+                      key={ratio}
+                      type="button"
+                      onClick={() => gemini.onAspectRatioChange(ratio)}
+                      className={`rounded-lg border px-2 py-1.5 text-xs font-raleway transition-colors duration-150 ${
+                        isActive
+                          ? 'border-d-text bg-d-text/10 text-d-text shadow-sm shadow-d-text/10'
+                          : 'border-d-mid bg-d-black text-d-white hover:border-d-text/60 hover:text-d-text'
+                      }`}
+                    >
+                      {ratio}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs text-d-white font-raleway">Temperature</label>

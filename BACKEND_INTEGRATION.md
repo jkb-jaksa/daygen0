@@ -139,7 +139,7 @@ The frontend uses `src/utils/api.ts` to determine the API base URL:
 
 The backend integrates with these providers (configured via environment variables):
 - **Flux** (Black Forest Labs) - `flux-pro-1.1`, `flux-pro-1.1-ultra`, `flux-kontext-pro`, `flux-kontext-max`
-- **Gemini 2.5 Flash Image** (Google) - `gemini-2.5-flash-image-preview`
+- **Gemini 2.5 Flash Image** (Google) - `gemini-2.5-flash-image`
 - **Ideogram V3** - `ideogram`
 - **Qwen Image** (Alibaba) - `qwen-image`
 - **Runway Gen-4** - `runway-gen4`, `runway-gen4-turbo`
