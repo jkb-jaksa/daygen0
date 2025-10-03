@@ -293,7 +293,7 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-0.5 md:gap-1 xl:gap-2">
+          <div className="flex items-center gap-0 md:gap-1 xl:gap-2">
             {!user ? (
               <>
                 <button
@@ -317,9 +317,9 @@ export default function Navbar() {
                 >
                   <InstagramIcon className="size-4" />
                 </button>
-                <div className="h-6 w-px bg-d-white/20"></div>
+                <div className="hidden sm:block h-6 w-px bg-d-white/20"></div>
                 <button 
-                  className="parallax-large text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-normal"
+                  className="hidden sm:block parallax-large text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -600,18 +600,9 @@ export default function Navbar() {
                         setMobileNavOpen(false);
                         setShowAuth('login');
                       }}
-                      className={`${buttons.ghostCompact} w-full justify-center`}
-                    >
-                      Log In
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMobileNavOpen(false);
-                        setShowAuth('signup');
-                      }}
                       className={`${buttons.primary} w-full justify-center`}
                     >
-                      Sign Up
+                      Sign In
                     </button>
                   </>
                 )}
