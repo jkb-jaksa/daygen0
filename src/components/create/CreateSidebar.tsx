@@ -24,10 +24,10 @@ function CreateSidebarComponent({
   const sidebarTop = `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
 
   return (
-    <div className="hidden md:block" style={{ width: SIDEBAR_WIDTH }}>
+    <div className="hidden lg:block" style={{ width: SIDEBAR_WIDTH }}>
       <nav
         aria-label="Create navigation"
-        className="md:flex md:flex-col md:fixed md:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] md:w-[160px] md:z-30"
+        className="lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] lg:z-30"
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
       <div

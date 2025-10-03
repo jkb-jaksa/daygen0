@@ -4735,7 +4735,7 @@ const handleGenerate = async () => {
           
           {/* Categories + Gallery row */}
           <div className="mt-6 md:mt-0 w-full text-left">
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <nav aria-label="Create navigation" className="space-y-4">
                 <div>
                   <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-d-white/70">
@@ -4792,7 +4792,7 @@ const handleGenerate = async () => {
               </nav>
             </div>
 
-            <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 md:gap-2 md:grid-cols-[160px_minmax(0,1fr)]">
+            <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
               <Suspense fallback={null}>
                 <CreateSidebar
                   activeCategory={activeCategory}
