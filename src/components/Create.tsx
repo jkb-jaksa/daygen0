@@ -2868,7 +2868,7 @@ const Create: React.FC = () => {
         className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-d-white bg-d-black hover:bg-d-dark'
-            : 'border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid'
+            : 'border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid'
         } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
       >
         <img
@@ -4872,7 +4872,7 @@ const handleGenerate = async () => {
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
-                          <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
+                          <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
                             
                             {/* Upload info overlay */}
@@ -4985,7 +4985,7 @@ const handleGenerate = async () => {
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
-                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
+                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
                               // Check if the click came from a copy button
                               const target = event.target;
                               if (target instanceof Element && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
@@ -5238,7 +5238,7 @@ const handleGenerate = async () => {
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
                         {folders.map((folder) => (
-                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
+                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
                           {folder.customThumbnail ? (
                             <div className="w-full h-full relative">
@@ -5434,7 +5434,7 @@ const handleGenerate = async () => {
                       );
                       
                       return folderImages.map((img, idx) => (
-                        <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
+                        <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
                           imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
                           <img src={img.url} alt={img.prompt || `Image ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
@@ -5738,7 +5738,7 @@ const handleGenerate = async () => {
                         // Show Seedance video if it exists
                         if (isSeedance && seedanceVideo && idx === 0) {
                           return (
-                            <div key="seedance-video" className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
+                            <div key="seedance-video" className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
                               <video src={seedanceVideo.url} className="w-full aspect-square object-cover" controls />
                               
                               {/* Hover prompt overlay */}
@@ -5775,7 +5775,7 @@ const handleGenerate = async () => {
                         if (!isPlaceholder) {
                           const video = filteredVideoGallery[idx] as GalleryVideoLike;
                           return (
-                            <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
+                            <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
                               <video src={video.url} className="w-full aspect-square object-cover" controls />
                               
                               {/* Hover prompt overlay */}
@@ -5823,7 +5823,7 @@ const handleGenerate = async () => {
                         
                         // Placeholder tile for videos
                         return (
-                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-dark bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                             <div className="flex flex-col items-center gap-2 text-center px-2">
                               <VideoIcon className="w-8 h-8 text-d-light" />
                               <div className="text-d-light font-raleway text-base">Create something amazing.</div>
@@ -5883,7 +5883,7 @@ const handleGenerate = async () => {
                     if (!isPlaceholder) {
                       const img = item as GalleryImageLike;
                       return (
-                        <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-black bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
+                        <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
                           <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
@@ -6104,7 +6104,7 @@ const handleGenerate = async () => {
                     }
                     // Placeholder tile
                     return (
-                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-black bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-dark bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="flex flex-col items-center gap-2 text-center px-2">
                           <ImageIcon className="w-8 h-8 text-d-light" />
                           <div className="text-d-light font-raleway text-base">Create something amazing.</div>
@@ -6198,7 +6198,7 @@ const handleGenerate = async () => {
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div
               ref={promptBarRef}
-              className={`promptbar fixed z-40 rounded-[32px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
               style={{
                 bottom: '0.75rem',
                 transform: 'translateX(-50%) translateZ(0)',
