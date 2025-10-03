@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
-import { debugLog, debugWarn } from '../utils/debug';
+import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
@@ -63,58 +63,32 @@ export const useGeminiImageGeneration = () => {
       const apiUrl = getApiUrl('/api/image/gemini');
 
       debugLog('[image] POST', apiUrl);
+      
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          prompt, 
+          imageBase64: imageData, 
+          mimeType: "image/png",
+          model: resolvedModel, 
+          references, 
+          temperature, 
+          outputLength, 
+          topP,
+          ...(aspectRatio ? { providerOptions: { aspectRatio } } : {}),
+        }),
+      });
 
-      const baseBody: Record<string, unknown> = {
-        prompt,
-        imageBase64: imageData,
-        mimeType: 'image/png',
-        references,
-        temperature,
-        outputLength,
-        topP,
-      };
-
-      if (aspectRatio) {
-        baseBody.providerOptions = { aspectRatio };
-        baseBody.config = {
-          imageConfig: { aspectRatio },
-        };
-      }
-
-      const performRequest = async (
-        modelToUse: string,
-        allowFallback: boolean,
-      ): Promise<{ payload: any; modelUsed: string }> => {
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...baseBody,
-            model: modelToUse,
-          }),
-        });
-
-        if (res.ok) {
-          return { payload: await res.json(), modelUsed: modelToUse };
-        }
-
+      if (!res.ok) {
         const errBody = await res.json().catch(() => null);
         const rawMessage =
           (errBody && typeof errBody.error === 'string' && errBody.error) ||
           (errBody && typeof errBody.message === 'string' && errBody.message) ||
           null;
-
-        if (allowFallback && res.status === 400) {
-          debugWarn(
-            '[image] Gemini 2.5 Flash returned 400, attempting preview fallback.',
-            { rawMessage },
-          );
-          return performRequest('gemini-2.5-flash-image-preview', false);
-        }
-
         const errorMessage =
           res.status === 429
             ? PLAN_LIMIT_MESSAGE
@@ -125,12 +99,9 @@ export const useGeminiImageGeneration = () => {
                 context: 'generation',
               });
         throw new Error(errorMessage);
-      };
+      }
 
-      const { payload, modelUsed } = await performRequest(
-        resolvedModel,
-        resolvedModel === 'gemini-2.5-flash-image',
-      );
+      const payload = await res.json();
 
       if (!payload?.imageBase64) {
         throw new Error('No image data returned from API');
@@ -140,7 +111,7 @@ export const useGeminiImageGeneration = () => {
       const generatedImage: GeneratedImage = {
         url: `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`,
         prompt,
-        model: modelUsed,
+        model: resolvedModel,
         timestamp: new Date().toISOString(),
         references: references || undefined,
         ownerId: user?.id,
