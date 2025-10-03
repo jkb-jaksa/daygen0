@@ -201,7 +201,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         setMobileNavOpen(false);
       }
     };
@@ -259,7 +259,7 @@ export default function Navbar() {
               onClick={handleLogoClick}
               className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden md:flex items-center gap-4 lg:gap-6 text-base font-raleway">
+            <div className="hidden lg:flex items-center gap-4 lg:gap-6 text-base font-raleway">
               {filteredNavItems.map((item) => (
                 <NavLink
                   key={item.label}
@@ -294,7 +294,7 @@ export default function Navbar() {
             </div>
             <button
               type="button"
-              className={`md:hidden ${iconButtons.md}`}
+              className={`lg:hidden ${iconButtons.md}`}
               onClick={() => {
                 setMobileNavOpen((open) => !open);
                 setActiveMenu(null);
@@ -509,7 +509,7 @@ export default function Navbar() {
       </div>
 
       {mobileNavOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true">
           <div
             className="absolute inset-0 bg-d-black/70"
             onClick={() => setMobileNavOpen(false)}
