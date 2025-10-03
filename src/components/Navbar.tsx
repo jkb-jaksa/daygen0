@@ -365,7 +365,7 @@ export default function Navbar() {
                   </button>
                 </div>
                 
-                <div className="h-6 w-px bg-d-white/20"></div>
+                <div className="hidden lg:block h-6 w-px bg-d-white/20"></div>
                 
                 {/* Credit Usage Button */}
                 <button 
@@ -374,7 +374,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-d-text transition-colors`}
+                  className={`hidden lg:flex parallax-large items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-d-text transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -386,7 +386,7 @@ export default function Navbar() {
                 
                 {/* Upgrade Button */}
                 <button 
-                  className={`${buttons.primary} btn-compact flex items-center gap-1.5`}
+                  className={`hidden lg:flex ${buttons.primary} btn-compact items-center gap-1.5`}
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -397,7 +397,7 @@ export default function Navbar() {
                   <span className="hidden sm:inline">Upgrade</span>
                 </button>
 
-                <div className="relative">
+                <div className="relative hidden lg:block">
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
