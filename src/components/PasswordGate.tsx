@@ -10,14 +10,14 @@ type PasswordGateEnv = ImportMetaEnv & {
 export default function PasswordGate({ children }: { children: ReactNode }) {
   const configuredPassword = (import.meta.env as PasswordGateEnv).VITE_SITE_PASSWORD;
 
-  // Read from sessionStorage to persist for the tab session.
+  // Read from localStorage to persist authentication across tabs and sessions.
   const [entered, setEntered] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("site:auth");
-    const authenticated = sessionStorage.getItem("authenticated");
+    const saved = localStorage.getItem("site:auth");
+    const authenticated = localStorage.getItem("authenticated");
     if (saved) setEntered(saved);
     if (authenticated === 'true') setEntered('authenticated');
   }, []);
@@ -27,7 +27,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     const url = new URL(window.location.href);
     const pw = url.searchParams.get("pw");
     if (pw) {
-      sessionStorage.setItem("site:auth", pw);
+      localStorage.setItem("site:auth", pw);
       setEntered(pw);
       // Remove the param to avoid leaking the value in subsequent copies
       url.searchParams.delete("pw");
@@ -37,7 +37,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
 
   const isUnlocked = useMemo(() => {
     // Check if authenticated via the auth page
-    if (sessionStorage.getItem("authenticated") === 'true') return true;
+    if (localStorage.getItem("authenticated") === 'true') return true;
     // If no password configured, do not block
     if (!configuredPassword) return true;
     return entered === configuredPassword;
@@ -51,7 +51,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
       return;
     }
     if (input === configuredPassword) {
-      sessionStorage.setItem("site:auth", input);
+      localStorage.setItem("site:auth", input);
       setEntered(input);
       setError(null);
     } else {

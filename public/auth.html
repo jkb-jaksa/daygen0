@@ -271,7 +271,7 @@
 
     <script>
         // Check if already authenticated
-        if (sessionStorage.getItem('authenticated') === 'true') {
+        if (localStorage.getItem('authenticated') === 'true') {
             window.location.href = '/';
         }
 
@@ -287,7 +287,7 @@
             
             // Check credentials (in a real app, this would be server-side)
             if (username === 'jaksa' && password === 'warsaw') {
-                sessionStorage.setItem('authenticated', 'true');
+                localStorage.setItem('authenticated', 'true');
                 window.location.href = '/';
             } else {
                 errorDiv.classList.add('show');

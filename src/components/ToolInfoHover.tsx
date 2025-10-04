@@ -1,11 +1,11 @@
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
 import { ArrowUpRight, HelpCircle } from "lucide-react";
 import { glass } from "../styles/designSystem";
 import {
   buildFallbackTool,
   getLearnToolByName,
+  slugifyLearnTool,
 } from "../data/learnTools";
 import { getToolLogo } from "../utils/toolLogos";
 
@@ -28,13 +28,23 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
-  const tool = useMemo(() => {
+  const { tool, matchedTool } = useMemo(() => {
     const match = getLearnToolByName(toolName);
-    return match ?? buildFallbackTool(toolName);
+    if (match) {
+      return { tool: match, matchedTool: match };
+    }
+
+    const fallbackSlug = toolName ? slugifyLearnTool(toolName) : "tool";
+    return { tool: buildFallbackTool(fallbackSlug), matchedTool: undefined };
   }, [toolName]);
 
-  const logo = useMemo(() => getToolLogo(tool.name), [tool.name]);
-  const knowledgeBasePath = `/learn/tools/${tool.slug}`;
+  const displayName = useMemo(() => toolName?.trim() || tool.name, [toolName, tool.name]);
+  const logo = useMemo(
+    () => getToolLogo(displayName) ?? getToolLogo(tool.name),
+    [displayName, tool.name],
+  );
+  const knowledgeBaseSlug = matchedTool?.slug ?? tool.slug;
+  const knowledgeBasePath = `/learn/tools/${knowledgeBaseSlug}`;
 
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current) {
@@ -170,7 +180,7 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
         className={`relative inline-flex items-center ${className ?? ""}`.trim()}
         tabIndex={0}
         role="button"
-        aria-label={`Learn more about ${tool.name}`}
+        aria-label={`Learn more about ${displayName}`}
         onMouseEnter={handleTriggerMouseEnter}
         onMouseLeave={handleTriggerMouseLeave}
         onFocus={handleTriggerFocus}
@@ -193,7 +203,6 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
               top: position.top,
               left: position.left,
               zIndex: 10000,
-              pointerEvents: "none",
             }}
           >
             <div
@@ -202,11 +211,17 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
               onMouseEnter={() => {
                 clearHideTimer();
               }}
-              onMouseLeave={scheduleClose}
+              onMouseLeave={(event) => {
+                // Only close if we're not moving to the button
+                const relatedTarget = event.relatedTarget as HTMLElement;
+                if (!relatedTarget || !cardRef.current?.contains(relatedTarget)) {
+                  scheduleClose();
+                }
+              }}
               onFocus={clearHideTimer}
               onBlur={scheduleClose}
               role="dialog"
-              aria-label={`${tool.name} overview`}
+              aria-label={`${displayName} overview`}
             >
               <div className="flex items-start gap-3">
                 {logo ? (
@@ -215,11 +230,11 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
                   </div>
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-d-dark/60 bg-d-black/60 text-sm font-semibold text-d-white/80">
-                    {tool.name.charAt(0)}
+                    {displayName.charAt(0)}
                   </div>
                 )}
                 <div className="space-y-0">
-                  <p className="font-raleway font-medium text-d-text" style={{ fontSize: '0.875rem' }}>{tool.name}</p>
+                  <p className="font-raleway font-medium text-d-text" style={{ fontSize: '0.875rem' }}>{displayName}</p>
                   <p className="font-raleway text-d-white" style={{ fontSize: '0.75rem' }}>{tool.tagline}</p>
                 </div>
               </div>
@@ -227,20 +242,31 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
                 {tool.overview}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Link
-                  to={knowledgeBasePath}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
                   className="inline-flex items-center gap-1 rounded-full border border-d-dark/60 bg-d-black/40 px-3 py-1 font-raleway text-d-white transition-colors duration-150 hover:border-d-mid hover:text-d-text"
-                  style={{ fontSize: '0.75rem' }}
+                  style={{ fontSize: '0.75rem', pointerEvents: 'auto', zIndex: 10001 }}
                   onClick={(event) => {
                     event.stopPropagation();
+                    
+                    // Create a temporary link and click it
+                    const link = document.createElement('a');
+                    link.href = knowledgeBasePath;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
                     setIsOpen(false);
+                  }}
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
                   }}
                 >
                   View full guide
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </Link>
+                </button>
               </div>
             </div>
           </div>,
