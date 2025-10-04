@@ -7,7 +7,7 @@ import {
   Mic,
   Sparkles,
   Compass,
-  Copy,
+  ScanFace,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useParallaxHover } from "../hooks/useParallaxHover";
@@ -140,7 +140,7 @@ export default function DigitalCopy() {
         <div className={`${layout.container} text-center flex flex-col items-center gap-10`}>
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
             <span className={`${text.eyebrow} text-d-light flex items-center justify-center gap-2`}>
-              <Copy className="size-4" />
+              <ScanFace className="size-4" />
               digital copy
             </span>
             <h1 className={`${text.heroHeading} text-balance font-light text-d-text`}>Create your Digital Copy.</h1>
