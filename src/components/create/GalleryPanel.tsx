@@ -452,42 +452,44 @@ export function GalleryPanel({
             <h3 className="text-sm font-raleway text-d-white">Filters</h3>
           </div>
           <button
-            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", origins: [], avatar: "all" })}
+            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", avatar: "all" })}
             className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
           >
             Clear
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-d-white/70 font-raleway">Liked/Public</label>
-            <div className="flex gap-1 flex-wrap">
-              <button
-                onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                  galleryFilters.liked
-                    ? "text-d-text border-d-mid bg-d-white/10"
-                    : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
-                }`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
-                <span>Liked</span>
-              </button>
-              <button
-                onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                  galleryFilters.public
-                    ? "text-d-text border-d-mid bg-d-white/10"
-                    : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
-                }`}
-              >
-                <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-d-text" : "text-current"}`} />
-                <span>Public</span>
-              </button>
-            </div>
+        {/* Liked/Public filters */}
+        <div className="mb-3">
+          <label className="text-xs text-d-white/70 font-raleway mb-1.5 block">Liked/Public</label>
+          <div className="flex gap-1 flex-wrap">
+            <button
+              onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
+                galleryFilters.liked
+                  ? "text-d-text border-d-mid bg-d-white/10"
+                  : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
+              <span>Liked</span>
+            </button>
+            <button
+              onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
+                galleryFilters.public
+                  ? "text-d-text border-d-mid bg-d-white/10"
+                  : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
+              }`}
+            >
+              <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-d-text" : "text-current"}`} />
+              <span>Public</span>
+            </button>
           </div>
+        </div>
 
+        {/* Main filter grid: Modality, Model, Avatar, Folder */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-d-white/70 font-raleway">Modality</label>
             <CustomMultiSelect
@@ -611,44 +613,11 @@ export function GalleryPanel({
               </div>
             )}
           </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-d-white/70 font-raleway">Origin</label>
-            <div className="flex gap-1 flex-wrap">
-              {[
-                { key: "mine", label: "My Creations" },
-                { key: "saved", label: "Saved Inspirations" },
-              ].map(option => (
-                <button
-                  key={option.key}
-                  onClick={() => {
-                    setGalleryFilters(prev => {
-                      const isSelected = prev.origins.includes(option.key);
-                      if (isSelected) {
-                        return { ...prev, origins: prev.origins.filter(o => o !== option.key) };
-                      } else {
-                        return { ...prev, origins: [...prev.origins, option.key] };
-                      }
-                    });
-                  }}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                    galleryFilters.origins.includes(option.key)
-                      ? "text-d-text border-d-mid bg-d-white/10"
-                      : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
-                  }`}
-                  type="button"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Active Filter Tags - Only for filters without inline tags */}
         {(galleryFilters.liked ||
-          galleryFilters.public ||
-          galleryFilters.origins.length > 0) && (
+          galleryFilters.public) && (
           <div className="mt-3 pt-3 border-t border-d-dark/50">
             <div className="flex flex-wrap items-center gap-2">
               {galleryFilters.liked && (
@@ -672,18 +641,6 @@ export function GalleryPanel({
                   <X className="w-3 h-3" />
                 </button>
               )}
-
-              {galleryFilters.origins.map(origin => (
-                <button
-                  key={origin}
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, origins: prev.origins.filter(o => o !== origin) }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
-                >
-                  <span className="text-d-white/70">Origin:</span>
-                  <span>{origin === "mine" ? "My Creations" : origin === "saved" ? "Saved Inspirations" : origin}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              ))}
             </div>
           </div>
         )}

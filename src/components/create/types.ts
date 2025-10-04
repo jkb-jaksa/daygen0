@@ -97,7 +97,6 @@ export type GalleryFilters = {
   models: string[];
   types: string[]; // Changed from 'type' to 'types' to support multiselect (values: 'image', 'video')
   folder: string;
-  origins: string[]; // Changed from 'origin' to 'origins' to support multiselect (values: 'mine', 'saved')
   avatar: string;
 };
 

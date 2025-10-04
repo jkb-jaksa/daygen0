@@ -756,32 +756,10 @@ const Create: React.FC = () => {
     models: [],
     types: [],
     folder: 'all',
-    origins: [],
     avatar: 'all'
   });
   const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
-
-  const matchesOriginFilter = useCallback(
-    (item: GalleryImageLike) => {
-      if (galleryFilters.origins.length === 0) {
-        return true; // No filter applied, show all
-      }
-      
-      const isMine = !item.savedFrom;
-      const isSaved = Boolean(item.savedFrom);
-      
-      if (galleryFilters.origins.includes('mine') && isMine) {
-        return true;
-      }
-      if (galleryFilters.origins.includes('saved') && isSaved) {
-        return true;
-      }
-      
-      return false;
-    },
-    [galleryFilters.origins],
-  );
 
   // Filter function for gallery
   const filterGalleryItems = (items: typeof gallery) => {
@@ -814,10 +792,6 @@ const Create: React.FC = () => {
         if (!selectedFolder || !selectedFolder.imageIds.includes(item.url)) {
           return false;
         }
-      }
-
-      if (!matchesOriginFilter(item)) {
-        return false;
       }
 
       // Type filter (for now, we'll assume all items are images)
@@ -4630,7 +4604,7 @@ const handleGenerate = async () => {
                       const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
                       if (!folder) return null;
                       const folderImages = combinedLibraryImages.filter(
-                        img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                        img => folder.imageIds.includes(img.url),
                       );
                       return folderImages.map((img, idx) => (
                         <button
@@ -4950,7 +4924,7 @@ const handleGenerate = async () => {
                           const folder = folders.find(f => f.id === selectedFolder);
                           if (!folder) return '0 images';
                       const folderImages = combinedLibraryImages.filter(
-                        img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                        img => folder.imageIds.includes(img.url),
                       );
                           return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
                         })()}
@@ -4962,7 +4936,7 @@ const handleGenerate = async () => {
                       if (!folder) return null;
                       
                       const folderImages = combinedLibraryImages.filter(
-                        img => folder.imageIds.includes(img.url) && matchesOriginFilter(img),
+                        img => folder.imageIds.includes(img.url),
                       );
                       
                       if (folderImages.length === 0) {
@@ -5413,7 +5387,7 @@ const handleGenerate = async () => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             if (!folder) return '0 images';
                             const folderImages = combinedLibraryImages.filter(
-                              img => folder?.imageIds.includes(img.url) && matchesOriginFilter(img),
+                              img => folder?.imageIds.includes(img.url),
                             );
                             return `${folderImages.length} ${folderImages.length === 1 ? 'image' : 'images'}`;
                           })()}
@@ -5427,7 +5401,7 @@ const handleGenerate = async () => {
                       if (!folder) return null;
                       
                       const folderImages = combinedLibraryImages.filter(
-                        img => folder?.imageIds.includes(img.url) && matchesOriginFilter(img),
+                        img => folder?.imageIds.includes(img.url),
                       );
                       
                       return folderImages.map((img, idx) => (

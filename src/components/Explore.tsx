@@ -23,7 +23,6 @@ import {
   Copy,
   Download,
   FolderPlus,
-  Globe,
   Heart,
   MoreHorizontal,
   Palette,
@@ -885,12 +884,10 @@ const Explore: React.FC = () => {
     models: string[];
     types: string[];
     tags: string[];
-    public: boolean;
   }>({
     models: [],
     types: [],
     tags: [],
-    public: false,
   });
 
   const navigate = useNavigate();
@@ -1565,11 +1562,6 @@ const Explore: React.FC = () => {
   // Filter function for gallery
   const filterGalleryItems = (items: typeof galleryItems) => {
     return items.filter(item => {
-      // Public filter
-      if (galleryFilters.public && !item.isPublic) {
-        return false;
-      }
-      
       // Model filter
       if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.modelId)) {
         return false;
@@ -1788,11 +1780,10 @@ const Explore: React.FC = () => {
                     <button
                       onClick={() =>
                         setGalleryFilters({
-                          models: [],
-                          types: [],
-                          tags: [],
-                          public: false,
-                        })
+                        models: [],
+                        types: [],
+                        tags: [],
+                      })
                       }
                       className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
                     >
@@ -1800,27 +1791,10 @@ const Explore: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {/* Public Filter */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-d-white/70 font-raleway">Visibility</label>
-                      <button
-                        type="button"
-                        onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-raleway transition-all duration-200 ${
-                          galleryFilters.public
-                            ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
-                            : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
-                        }`}
-                        aria-pressed={galleryFilters.public}
-                      >
-                        <Globe className="w-4 h-4" />
-                        Public only
-                      </button>
-                    </div>
-
+                  {/* Main filter grid: Modality and Model */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Modality Filter */}
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <div className="flex flex-col gap-1.5">
                       <label className="text-xs text-d-white/70 font-raleway">Modality</label>
                       <CustomMultiSelect
                         values={galleryFilters.types}
@@ -1867,7 +1841,7 @@ const Explore: React.FC = () => {
                     </div>
 
                     {/* Model Filter */}
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <div className="flex flex-col gap-1.5">
                       <label className="text-xs text-d-white/70 font-raleway">Model</label>
                       <CustomMultiSelect
                         values={galleryFilters.models}
