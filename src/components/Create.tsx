@@ -5671,7 +5671,7 @@ const handleGenerate = async () => {
                         if (isRunwayGenerating) {
                           return (
                             <div key="runway-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
-                              <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-d-white/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                              <div className="w-full aspect-square animate-gradient-colors"></div>
                               <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                                 <div className="text-center">
                                   <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
@@ -5692,7 +5692,7 @@ const handleGenerate = async () => {
                         if (isWanGeneratingGrid) {
                           return (
                             <div key="wan-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
-                              <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-sky-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                              <div className="w-full aspect-square animate-gradient-colors"></div>
                               <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                                 <div className="text-center">
                                   <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
@@ -5713,7 +5713,7 @@ const handleGenerate = async () => {
                         if (isHailuoGeneratingGrid) {
                           return (
                             <div key="hailuo-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
-                              <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-cyan-500/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                              <div className="w-full aspect-square animate-gradient-colors"></div>
                               <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                                 <div className="text-center">
                                   <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
@@ -5858,7 +5858,7 @@ const handleGenerate = async () => {
                       const pending = item as PendingGalleryItem;
                       return (
                         <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
-                          <div className="w-full aspect-square bg-gradient-to-br from-d-dark via-d-white/20 to-d-dark bg-[length:200%_200%] animate-gradient-x"></div>
+                          <div className="w-full aspect-square animate-gradient-colors"></div>
                           <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
                             <div className="text-center">
                               <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
