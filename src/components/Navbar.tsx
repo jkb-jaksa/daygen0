@@ -12,13 +12,14 @@ import { buttons, glass, iconButtons } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeNext } from "../utils/navigation";
 
-type MenuId = "create" | "edit" | "avatars" | "explore" | "learn" | "my works";
+type MenuId = "create" | "edit" | "avatars" | "digital copy" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
 
 const NAV_ITEMS: ReadonlyArray<{ label: MenuId; path: string }> = [
   { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
   { label: "avatars", path: "/avatars" },
+  { label: "digital copy", path: "/digital-copy" },
   { label: "learn", path: "/learn/use-cases" },
   { label: "explore", path: "/explore" },
   { label: "my works", path: "/gallery" },
@@ -222,14 +223,14 @@ export default function Navbar() {
                     `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
                   }
                   onMouseEnter={() => {
-                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "avatars") {
+                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "avatars" && item.label !== "digital copy") {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
                     }
                   }}
                   onFocus={() => {
-                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "avatars") {
+                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "avatars" && item.label !== "digital copy") {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);

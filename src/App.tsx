@@ -26,6 +26,7 @@ const FAQSection = lazy(() => import("./components/Faq"));
 const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
 const Avatars = lazy(() => import("./components/Avatars"));
+const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
 
 function NavbarFallback() {
   return (
@@ -220,6 +221,14 @@ export default function App() {
                 element={(
                   <RequireAuth>
                     <Edit />
+                  </RequireAuth>
+                )}
+              />
+              <Route
+                path="/digital-copy"
+                element={(
+                  <RequireAuth>
+                    <DigitalCopy />
                   </RequireAuth>
                 )}
               />
