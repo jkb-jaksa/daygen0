@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -25,14 +25,13 @@ import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
-const PromptHistoryPanel = lazy(() => import("./create/PromptHistoryPanel"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 // import { compressDataUrl } from "../lib/imageCompression";
 import { getPersistedValue, migrateKeyToIndexedDb, removePersistedValue, requestPersistentStorage, setPersistedValue } from "../lib/clientStorage";
-import { formatBytes, type StorageEstimateSnapshot, useStorageEstimate } from "../hooks/useStorageEstimate";
+import { useStorageEstimate } from "../hooks/useStorageEstimate";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
@@ -524,7 +523,7 @@ const Create: React.FC = () => {
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
-  const { history, addPrompt, removePrompt: removeRecentPrompt, clear } = usePromptHistory(userKey, 10);
+  const { history, addPrompt, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
   const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
   const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
   const [unsavePromptText, setUnsavePromptText] = useState<string | null>(null);
@@ -997,9 +996,6 @@ const Create: React.FC = () => {
     };
   }, [updatePromptBarReservedSpace, activeCategory, selectedFolder]);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
-  const [storageUsage, setStorageUsage] = useState<StorageEstimateSnapshot | null>(null);
-  const [persistentStorageStatus, setPersistentStorageStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown');
-  const [isCacheBarVisible, setIsCacheBarVisible] = useState(true);
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
 
@@ -1022,7 +1018,7 @@ const Create: React.FC = () => {
       return;
     }
 
-    longPollTimerRef.current = window.setTimeout(() => {
+    longPollTimerRef.current = setTimeout(() => {
       setLongPollNotice({ jobId: oldestJob.id, startedAt: oldestJob.startedAt });
     }, LONG_POLL_THRESHOLD_MS - elapsed);
 
@@ -1161,26 +1157,17 @@ const Create: React.FC = () => {
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
     if (!storage?.persisted) return;
-    let cancelled = false;
     void (async () => {
       try {
-        const persisted = await storage.persisted();
-        if (!cancelled && persisted) {
-          setPersistentStorageStatus('granted');
-        }
+        await storage.persisted();
       } catch {
         // ignore
       }
     })();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   useEffect(() => {
-    if (storageEstimate) {
-      setStorageUsage(storageEstimate);
-    } else {
+    if (!storageEstimate) {
       // If storage estimate is null, try to refresh it
       refreshStorageEstimate();
     }
@@ -1526,7 +1513,6 @@ const Create: React.FC = () => {
 
   // Load other state from client storage (gallery now managed by backend)
   useEffect(() => {
-    let cancelled = false;
 
     const loadPersistedState = async () => {
       try {
@@ -1544,7 +1530,6 @@ const Create: React.FC = () => {
           getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'inspirations'),
         ]);
 
-        if (cancelled) return;
 
         let restoredInspirations: GalleryImageLike[] = [];
         if (Array.isArray(storedInspirations) && storedInspirations.length > 0) {
@@ -1585,22 +1570,15 @@ const Create: React.FC = () => {
           setFolders(restoredFolders);
         }
 
-        if (!cancelled) {
-          await refreshStorageEstimate();
-        }
+        await refreshStorageEstimate();
       } catch (error) {
         debugError('Failed to load persisted data', error);
-        if (!cancelled) {
-          await removePersistedValue(storagePrefix, 'inspirations');
-        }
+        await removePersistedValue(storagePrefix, 'inspirations');
       }
     };
 
     void loadPersistedState();
 
-    return () => {
-      cancelled = true;
-    };
   }, [storagePrefix]);
 
   // Gallery is now managed by backend, no need for client-side backup
@@ -1685,8 +1663,7 @@ const Create: React.FC = () => {
     persistentStorageRequested.current = true;
 
     void (async () => {
-      const persisted = await requestPersistentStorage();
-      setPersistentStorageStatus(prev => prev === 'granted' ? 'granted' : (persisted ? 'granted' : 'denied'));
+      await requestPersistentStorage();
       await refreshStorageEstimate();
     })();
   }, [gallery.length, refreshStorageEstimate]);
@@ -2905,6 +2882,17 @@ const Create: React.FC = () => {
           }}
         />
 
+        {/* Always-visible Public Badge */}
+        {img.isPublic && context !== 'inspirations' && !isSelectMode && (
+          <div className="absolute top-2 left-2 z-20 pointer-events-none">
+            <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
+              <div className="flex items-center gap-1">
+                <Globe className="w-3 h-3 text-d-text" />
+                <span className="leading-none">Public</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {img.prompt && !isSelectMode && (
           <div
@@ -2985,7 +2973,7 @@ const Create: React.FC = () => {
                             setIsFullSizeOpen(true);
                           }}
                         />
-                        <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                        <div className="absolute -top-1 -right-1 bg-d-text text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                           {refIdx + 1}
                         </div>
                       </div>
@@ -4094,7 +4082,6 @@ const handleGenerate = async () => {
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   };
 
-  const storagePercentUsed = storageUsage ? Math.min(storageUsage.percentUsed, 1) : 0;
 
   // Cleanup object URL when component unmounts or file changes
   useEffect(() => {
@@ -5282,7 +5269,7 @@ const handleGenerate = async () => {
                                     />
                                   ))}
                                   {folder.imageIds.length > 4 && (
-                                    <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded bg-d-text/20 flex items-center justify-center">
                                       <span className="text-xs text-d-text font-bold font-raleway">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
@@ -5330,7 +5317,7 @@ const handleGenerate = async () => {
                                     />
                                   ))}
                                   {folder.imageIds.length > 4 && (
-                                    <div className="w-6 h-6 rounded bg-d-orange-1/20 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded bg-d-text/20 flex items-center justify-center">
                                       <span className="text-xs text-d-text font-bold font-raleway">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
@@ -5447,6 +5434,17 @@ const handleGenerate = async () => {
                             setIsFullSizeOpen(true);
                           }} />
 
+                          {/* Always-visible Public Badge */}
+                          {img.isPublic && (
+                            <div className="absolute top-2 left-2 z-20 pointer-events-none">
+                              <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
+                                <div className="flex items-center gap-1">
+                                  <Globe className="w-3 h-3 text-d-text" />
+                                  <span className="leading-none">Public</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Hover prompt overlay */}
                           {img.prompt && (
@@ -5529,7 +5527,7 @@ const handleGenerate = async () => {
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                                          <div className="absolute -top-1 -right-1 bg-d-text text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -5779,6 +5777,18 @@ const handleGenerate = async () => {
                             <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
                               <video src={video.url} className="w-full aspect-square object-cover" controls />
                               
+                              {/* Always-visible Public Badge */}
+                              {video.isPublic && (
+                                <div className="absolute top-2 left-2 z-20 pointer-events-none">
+                                  <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
+                                    <div className="flex items-center gap-1">
+                                      <Globe className="w-3 h-3 text-d-text" />
+                                      <span className="leading-none">Public</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Hover prompt overlay */}
                               {video.prompt && (
                                 <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 opacity-0 group-hover:opacity-100`}>
@@ -5895,6 +5905,18 @@ const handleGenerate = async () => {
                             openImageAtIndex(galleryIndex);
                           }} />
                           
+                          {/* Always-visible Public Badge */}
+                          {img.isPublic && (
+                            <div className="absolute top-2 left-2 z-20 pointer-events-none">
+                              <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
+                                <div className="flex items-center gap-1">
+                                  <Globe className="w-3 h-3 text-d-text" />
+                                  <span className="leading-none">Public</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
@@ -5976,7 +5998,7 @@ const handleGenerate = async () => {
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-orange-1 text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                                          <div className="absolute -top-1 -right-1 bg-d-text text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -6120,76 +6142,6 @@ const handleGenerate = async () => {
             </div>
           </div>
 
-          {/* Prompt History Chips - Below Gallery */}
-          {activeCategory === "image" && !selectedFolder && (
-            <Suspense fallback={<div className="w-full pl-3 h-9" />}>
-              <PromptHistoryPanel
-                history={history}
-                onSelect={(text) => setPrompt(text)}
-                onRun={(text) => {
-                  applyPromptFromHistory(text);
-                }}
-                onClear={clear}
-                onSavePrompt={savePromptToLibrary}
-                isPromptSaved={isPromptSaved}
-              />
-            </Suspense>
-          )}
-
-          {/* Cache Usage - Below Recent Prompts */}
-          {activeCategory === "image" && !selectedFolder && (
-            <div className="mt-4 w-full sm:max-w-full ml-auto md:ml-[168px] md:max-w-[calc(100%_-_168px)]">
-              {isCacheBarVisible && (
-                <div className="mb-4 rounded-2xl border border-d-dark bg-d-black/90 px-4 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
-                  <div className="flex items-center justify-between text-xs font-raleway uppercase tracking-wide text-d-white/70">
-                    <span>Cache usage</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-d-white/80 normal-case">
-                        {storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : '0 MB / —'}
-                      </span>
-                      <button 
-                        onClick={() => refreshStorageEstimate()}
-                        className="text-xs px-2 py-1 bg-d-mid hover:bg-d-dark/60 rounded text-d-white/60 hover:text-d-text transition-colors"
-                      >
-                        Refresh
-                      </button>
-                      <button 
-                        onClick={() => setIsCacheBarVisible(false)}
-                        className="text-xs p-1 hover:bg-d-dark/60 rounded text-d-white/60 hover:text-d-text transition-colors"
-                        title="Close cache bar"
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </div>
-                  </div>
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-d-dark">
-                  <div
-                    className="h-full rounded-full bg-warm-gradient transition-[width] duration-300"
-                    style={{ width: `${storageUsage ? storagePercentUsed * 100 : 0}%` }}
-                  />
-                </div>
-                  {persistentStorageStatus === 'denied' && (
-                    <div className="mt-3 flex items-center gap-2 text-xs font-raleway text-red-300">
-                      <span className="inline-flex size-2 flex-none rounded-full bg-red-400" aria-hidden />
-                      Browser may clear cached images sooner because persistent storage is disabled.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Show cache bar button when hidden */}
-              {!isCacheBarVisible && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => setIsCacheBarVisible(true)}
-                    className={`${glass.promptDark} rounded-lg text-xs px-3 py-2 font-raleway text-d-white transition-colors duration-200 hover:bg-d-text/20 hover:text-d-text`}
-                  >
-                    Show cache usage
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
           
 
@@ -6234,16 +6186,16 @@ const handleGenerate = async () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
                 >
-                  <Plus className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Add reference</span>
+                  <Plus className="w-4 h-4 flex-shrink-0 text-d-text" />
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Add reference</span>
                 </button>
 
                 {/* Reference images display - right next to Add reference button */}
                 {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="hidden lg:block text-sm text-d-white font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
+                    <div className="hidden lg:block text-sm text-d-text font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((url, idx) => (
                         <div key={idx} className="relative group">
@@ -6262,10 +6214,10 @@ const handleGenerate = async () => {
                               e.stopPropagation();
                               clearReference(idx);
                             }}
-                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-text hover:text-d-text rounded-full p-0.5 transition-all duration-200"
                             title="Remove reference"
                           >
-                            <X className="w-2.5 h-2.5" />
+                            <X className="w-2.5 h-2.5 text-d-text" />
                           </button>
                         </div>
                       ))}
@@ -6279,19 +6231,19 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
-                      <Users className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Select Avatar</span>
+                      <Users className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Select Avatar</span>
                     </button>
                     <button
                       type="button"
                       ref={promptsButtonRef}
                       onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
-                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Prompts</span>
+                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
@@ -6427,11 +6379,11 @@ const handleGenerate = async () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
-                        ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text` 
+                        ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text` 
                         : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
                     }`}
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-4 h-4 text-d-text" />
                   </button>
                   
                   {/* Settings Dropdown Portal */}
@@ -6580,7 +6532,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -6595,10 +6547,10 @@ const handleGenerate = async () => {
                         );
                       } else {
                         const Icon = currentModel.Icon;
-                        return <Icon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />;
+                        return <Icon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">{getCurrentModel().name}</span>
+                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -6977,10 +6929,10 @@ const handleGenerate = async () => {
                         className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-d-black/80 p-0.5 text-d-white transition-colors duration-200 hover:text-d-text"
                         title="Remove Avatar"
                       >
-                        <X className="w-2.5 h-2.5" />
+                        <X className="w-2.5 h-2.5 text-d-text" />
                       </button>
                     </div>
-                    <span className="max-w-[10rem] truncate text-sm font-raleway text-d-white/80">{selectedAvatar.name}</span>
+                    <span className="max-w-[10rem] truncate text-sm font-raleway text-d-text">{selectedAvatar.name}</span>
                   </div>
                 </div>
               )}
@@ -7005,31 +6957,33 @@ const handleGenerate = async () => {
                     const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
                     const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
                     return showSpinner ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-d-black" />
                     ) : (
-                      <Wand2 className="w-4 h-4" />
+                      <Wand2 className="w-4 h-4 text-d-black" />
                     );
                   })()}
-                  {activeCategory === "video" ? 
-                    (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
-                      ? "Generating..."
-                      : selectedModel === "seedance-1.0-pro" && seedanceLoading
+                  <span className="text-d-black">
+                    {activeCategory === "video" ? 
+                      (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
                         ? "Generating..."
-                        : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
+                        : selectedModel === "seedance-1.0-pro" && seedanceLoading
                           ? "Generating..."
-                        : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
-                          ? "Generating..."
-                        : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
-                          ? "Generating..."
-                          : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
-                          ? "Generating..."
-                          : isVideoGenerating
-                            ? "Starting..."
-                            : isVideoPolling
-                              ? "Generating..."
-                              : "Generate") : 
-                    "Generate"
-                  }
+                          : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
+                            ? "Generating..."
+                          : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
+                            ? "Generating..."
+                          : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
+                            ? "Generating..."
+                            : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
+                            ? "Generating..."
+                            : isVideoGenerating
+                              ? "Starting..."
+                              : isVideoPolling
+                                ? "Generating..."
+                                : "Generate") : 
+                      "Generate"
+                    }
+                  </span>
                 </button>
               </Tooltip>
               </div>

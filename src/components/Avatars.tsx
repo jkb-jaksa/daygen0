@@ -1179,6 +1179,17 @@ export default function Avatars() {
           className="h-full w-full object-cover"
           loading="lazy"
         />
+        {/* Always-visible Public Badge */}
+        {image.isPublic && (
+          <div className="absolute top-2 left-2 z-20 pointer-events-none">
+            <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
+              <div className="flex items-center gap-1">
+                <Globe className="w-3 h-3 text-d-text" />
+                <span className="leading-none">Public</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
           <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
             <div className="space-y-2">
