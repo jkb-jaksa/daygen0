@@ -13,6 +13,7 @@ import {
   text,
   glass,
   buttons,
+  headings,
 } from "../styles/designSystem";
 import {
   ArrowUpRight,
@@ -20,6 +21,7 @@ import {
   BookmarkPlus,
   Check,
   Clock,
+  Compass,
   Copy,
   Download,
   FolderPlus,
@@ -1681,14 +1683,19 @@ const Explore: React.FC = () => {
 
         <section className="relative pb-12 pt-[calc(var(--nav-h,4rem)+1rem)]">
           <div className={`${layout.container} space-y-1`}>
-            <header className="mb-6 flex flex-col gap-3">
-              <p className={`${text.eyebrow} text-d-white/70`}>Community</p>
-              <h1 className={`${text.sectionHeading} text-d-text`}>
-                Explore creations from our community.
-              </h1>
-              <p className={`${text.body} max-w-3xl text-d-white`}>
-                Get inspired by featured works from our community members, save your favorites, and recreate stand-out prompts across the best AI models.
-              </p>
+            <header className="mb-6">
+              <div className={headings.tripleHeading.container}>
+                <p className={headings.tripleHeading.eyebrow}>
+                  <Compass className="h-4 w-4" />
+                  Community
+                </p>
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>
+                  Explore creations from our community.
+                </h1>
+                <p className={headings.tripleHeading.description}>
+                  Get inspired by featured works from our community members, save your favorites, and recreate stand-out prompts across the best AI models.
+                </p>
+              </div>
             </header>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

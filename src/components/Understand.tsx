@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
-import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
+import { layout, glass, text as textStyles, inputs, headings } from "../styles/designSystem";
 import type { UseCaseItem } from "./learn/types";
 
 const UseCaseGrid = lazy(() => import("./learn/UseCaseGrid"));
@@ -166,14 +166,16 @@ export default function Understand() {
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-d-light font-raleway">
-              <BookOpen className="h-4 w-4" />
-              Learn
-            </p>
-            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-d-text`}>Use Cases</h1>
-            <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-d-white">
-              Explore what you can create, edit, and personalize with DayGen's AI tools.
-            </p>
+            <div className={headings.tripleHeading.container}>
+              <p className={headings.tripleHeading.eyebrow}>
+                <BookOpen className="h-4 w-4" />
+                Learn
+              </p>
+              <h1 className={`${textStyles.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>Use Cases</h1>
+              <p className={headings.tripleHeading.description}>
+                Explore what you can create, edit, and personalize with DayGen's AI tools.
+              </p>
+            </div>
           </header>
 
           {/* Navigation buttons */}

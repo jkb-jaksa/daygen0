@@ -18,6 +18,15 @@ export const text = {
   finePrint: "text-d-white/70 font-raleway font-light text-[clamp(0.85rem,0.8rem+0.2vw,0.95rem)]",
 };
 
+export const headings = {
+  tripleHeading: {
+    container: "flex flex-col gap-1",
+    eyebrow: "flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-d-light font-raleway",
+    mainHeading: "mt-1 text-[2rem] sm:text-[2.5rem]",
+    description: "mt-1 max-w-2xl text-base font-raleway font-light leading-relaxed text-d-white",
+  },
+};
+
 export const cards = {
   shell: "relative rounded-[28px] border border-d-dark hover:border-d-mid transition-all duration-200",
   panel: "relative rounded-[64px] overflow-hidden isolate",

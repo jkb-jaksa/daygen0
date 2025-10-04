@@ -97,16 +97,16 @@ function ModalityCard({ modality }: { modality: typeof modalities[0] }) {
     >
       <div className={`pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${modality.accent}`} />
       <div className="flex flex-col gap-4 relative h-full">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center gap-4">
           <div className="grid size-12 place-items-center rounded-2xl border border-white/10 bg-d-black/50">
             <modality.Icon className={`size-6 ${modality.iconColor}`} />
           </div>
-          <div>
+          <div className="text-center">
             <h3 className="text-2xl font-raleway text-d-text">{modality.title}</h3>
             <p className="text-sm font-raleway text-d-light">3 quests</p>
           </div>
         </div>
-        <p className="text-sm font-raleway text-d-white leading-relaxed">{modality.description}</p>
+        <p className="text-sm font-raleway text-d-white leading-relaxed text-left">{modality.description}</p>
         <div className="grid gap-2">
           {modality.prompts.map((prompt) => (
             <div
