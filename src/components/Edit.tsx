@@ -1513,7 +1513,7 @@ export default function Edit() {
                       />
                       {item.isPrimary ? (
                         <>
-                          <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-d-text">Base</span>
+                          <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-d-text">Base</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
