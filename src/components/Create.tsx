@@ -6238,6 +6238,40 @@ const handleGenerate = async () => {
                   <Plus className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Add reference</span>
                 </button>
+
+                {/* Reference images display - right next to Add reference button */}
+                {referencePreviews.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="hidden lg:block text-sm text-d-white font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
+                    <div className="flex items-center gap-1.5">
+                      {referencePreviews.map((url, idx) => (
+                        <div key={idx} className="relative group">
+                          <img
+                            src={url}
+                            alt={`Reference ${idx+1}`}
+                            loading="lazy"
+                            className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
+                            onClick={() => {
+                              setSelectedReferenceImage(url);
+                              setIsFullSizeOpen(true);
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearReference(idx);
+                            }}
+                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            title="Remove reference"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {activeCategory === "image" && (
                   <>
                     <button
@@ -6948,39 +6982,6 @@ const handleGenerate = async () => {
                       </button>
                     </div>
                     <span className="max-w-[10rem] truncate text-sm font-raleway text-d-white/80">{selectedAvatar.name}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Reference images display - to the right of buttons */}
-              {referencePreviews.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="text-sm text-d-white/80 font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
-                  <div className="flex items-center gap-1.5">
-                    {referencePreviews.map((url, idx) => (
-                      <div key={idx} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Reference ${idx+1}`}
-                          loading="lazy"
-                          className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
-                          onClick={() => {
-                            setSelectedReferenceImage(url);
-                            setIsFullSizeOpen(true);
-                          }}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearReference(idx);
-                          }}
-                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove reference"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}

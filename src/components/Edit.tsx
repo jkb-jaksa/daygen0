@@ -1235,7 +1235,7 @@ export default function Edit() {
               width: 'auto',
               bottom: '12rem'
             }}>
-              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.prompt}`} style={{ minWidth: '320px' }}>
+              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.promptDark}`} style={{ minWidth: '320px' }}>
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}
@@ -1292,7 +1292,7 @@ export default function Edit() {
 
           {/* Mode Toggle Buttons - fixed positioned above prompt bar */}
           {previewUrl && (
-            <div className="layout-inline-width fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex justify-end gap-2 px-4">
+            <div className="layout-inline-width fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex justify-center gap-2 px-4">
               <button
                 onClick={toggleMoveMode}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
@@ -1489,18 +1489,70 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-200`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Add reference</span>
             </button>
+
+            {/* Reference images display - right next to Add reference button */}
+            {referenceDisplayItems.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="hidden lg:block text-sm text-d-white font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
+                <div className="flex items-center gap-1.5">
+                  {referenceDisplayItems.map((item, idx) => (
+                    <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
+                      <img
+                        src={item.url}
+                        alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
+                        className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
+                        onClick={() => {
+                          setSelectedFullImage(item.url);
+                          setIsFullSizeOpen(true);
+                        }}
+                      />
+                      {item.isPrimary ? (
+                        <>
+                          <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-d-text">Base</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteImage();
+                            }}
+                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            title="Remove base reference"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (typeof item.index === 'number') {
+                              clearReference(item.index);
+                            }
+                          }}
+                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                          title="Remove reference"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
               ref={promptsButtonRef}
               onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
             >
-              <BookmarkIcon className="w-4 h-4 group-hover:text-d-text transition-colors duration-100" />
+              <BookmarkIcon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Prompts</span>
             </button>
 
             <PromptsDropdown
@@ -1519,13 +1571,27 @@ export default function Edit() {
               onSaveRecentPrompt={savePromptToLibrary}
             />
 
+            {/* Settings button */}
+            <div className="relative settings-dropdown">
+              <button
+                ref={settingsRef}
+                type="button"
+                onClick={toggleSettings}
+                title="Settings"
+                aria-label="Settings"
+                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
+
             {/* Model Selector */}
             <div className="relative model-selector">
               <button
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1539,9 +1605,10 @@ export default function Edit() {
                     );
                   } else {
                     const Icon = currentModel.Icon;
-                    return <Icon className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />;
+                    return <Icon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />;
                   }
                 })()}
+                <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}
@@ -1606,70 +1673,6 @@ export default function Edit() {
               </ModelMenuPortal>
             </div>
           </div>
-          
-          {/* Settings button - moved to the right of model selector */}
-          <div className="relative settings-dropdown">
-            <button
-              ref={settingsRef}
-              type="button"
-              onClick={toggleSettings}
-              title="Settings"
-              aria-label="Settings"
-              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-          
-          {/* Reference images display - to the right of buttons */}
-          {referenceDisplayItems.length > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="text-base text-d-white/80 font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
-              <div className="flex items-center gap-1.5">
-                {referenceDisplayItems.map((item, idx) => (
-                  <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
-                    <img
-                      src={item.url}
-                      alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
-                      className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
-                      onClick={() => {
-                        setSelectedFullImage(item.url);
-                        setIsFullSizeOpen(true);
-                      }}
-                    />
-                    {item.isPrimary ? (
-                      <>
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-xs font-raleway uppercase tracking-wide text-d-text">Base</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteImage();
-                          }}
-                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove base reference"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof item.index === 'number') {
-                            clearReference(item.index);
-                          }
-                        }}
-                        className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
-                        title="Remove reference"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
             
             {/* Generate button on right */}
             <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
