@@ -210,29 +210,29 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
             >
               <div className="flex items-start gap-3">
                 {logo ? (
-                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-d-dark/60 bg-d-black/60">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-d-dark/60 bg-d-black/60">
                     <img src={logo} alt="" className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-d-dark/60 bg-d-black/60 text-sm font-semibold text-d-white/80">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-d-dark/60 bg-d-black/60 text-sm font-semibold text-d-white/80">
                     {tool.name.charAt(0)}
                   </div>
                 )}
                 <div className="space-y-0">
-                  <p className="font-raleway font-medium text-d-text" style={{ fontSize: '1rem' }}>{tool.name}</p>
-                  <p className="font-raleway text-d-white" style={{ fontSize: '0.875rem' }}>{tool.tagline}</p>
+                  <p className="font-raleway font-medium text-d-text" style={{ fontSize: '0.875rem' }}>{tool.name}</p>
+                  <p className="font-raleway text-d-white" style={{ fontSize: '0.75rem' }}>{tool.tagline}</p>
                 </div>
               </div>
-              <p className="mt-2 font-raleway leading-relaxed text-d-light" style={{ fontSize: '0.875rem' }}>
+              <p className="mt-2 font-raleway leading-relaxed text-d-light" style={{ fontSize: '0.75rem' }}>
                 {tool.overview}
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Link
                   to={knowledgeBasePath}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 rounded-full border border-d-dark/60 bg-d-black/40 px-3 py-1 font-raleway text-d-white transition-colors duration-150 hover:border-d-mid hover:text-d-text"
-                  style={{ fontSize: '0.875rem' }}
+                  style={{ fontSize: '0.75rem' }}
                   onClick={(event) => {
                     event.stopPropagation();
                     setIsOpen(false);
