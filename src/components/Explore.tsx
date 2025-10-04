@@ -23,6 +23,7 @@ import {
   Copy,
   Download,
   FolderPlus,
+  Globe,
   Heart,
   MoreHorizontal,
   Palette,
@@ -104,6 +105,7 @@ type GalleryItem = {
   imageUrl: string;
   orientation: "portrait" | "landscape" | "square";
   mediaType?: "image" | "video";
+  isPublic?: boolean;
 };
 
 const galleryItems: GalleryItem[] = [
@@ -126,6 +128,7 @@ const galleryItems: GalleryItem[] = [
       "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
     orientation: "portrait",
     mediaType: "image",
+    isPublic: true,
   },
   {
     id: "desert-dream",
@@ -146,6 +149,7 @@ const galleryItems: GalleryItem[] = [
       "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80&sat=-20",
     orientation: "landscape",
     mediaType: "image",
+    isPublic: true,
   },
   {
     id: "velvet-astral",
@@ -166,6 +170,7 @@ const galleryItems: GalleryItem[] = [
       "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=900&q=80&sat=30",
     orientation: "square",
     mediaType: "image",
+    isPublic: true,
   },
   {
     id: "sonic-waves",
@@ -880,10 +885,12 @@ const Explore: React.FC = () => {
     models: string[];
     types: string[];
     tags: string[];
+    public: boolean;
   }>({
     models: [],
     types: [],
     tags: [],
+    public: false,
   });
 
   const navigate = useNavigate();
@@ -1558,6 +1565,11 @@ const Explore: React.FC = () => {
   // Filter function for gallery
   const filterGalleryItems = (items: typeof galleryItems) => {
     return items.filter(item => {
+      // Public filter
+      if (galleryFilters.public && !item.isPublic) {
+        return false;
+      }
+      
       // Model filter
       if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.modelId)) {
         return false;
@@ -1595,7 +1607,7 @@ const Explore: React.FC = () => {
     });
   };
 
-  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryFilters]);
+  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryItems, galleryFilters]);
 
   const initialBatchSize = useMemo(() => 9, []);
   const [visibleCount, setVisibleCount] = useState(initialBatchSize);
@@ -1779,6 +1791,7 @@ const Explore: React.FC = () => {
                           models: [],
                           types: [],
                           tags: [],
+                          public: false,
                         })
                       }
                       className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
@@ -1788,6 +1801,24 @@ const Explore: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {/* Public Filter */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-d-white/70 font-raleway">Visibility</label>
+                      <button
+                        type="button"
+                        onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-raleway transition-all duration-200 ${
+                          galleryFilters.public
+                            ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
+                            : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
+                        }`}
+                        aria-pressed={galleryFilters.public}
+                      >
+                        <Globe className="w-4 h-4" />
+                        Public only
+                      </button>
+                    </div>
+
                     {/* Modality Filter */}
                     <div className="flex flex-col gap-1.5 md:col-span-2">
                       <label className="text-xs text-d-white/70 font-raleway">Modality</label>
@@ -1813,7 +1844,7 @@ const Explore: React.FC = () => {
                             return (
                               <div
                                 key={type}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-text/20 text-d-white rounded-full text-xs font-raleway border border-d-text/30"
                               >
                                 <span>{type === 'image' ? 'Image' : 'Video'}</span>
                                 <button
@@ -1855,7 +1886,7 @@ const Explore: React.FC = () => {
                             return (
                               <div
                                 key={modelId}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-text/20 text-d-white rounded-full text-xs font-raleway border border-d-text/30"
                               >
                                 <span>{model?.name || modelId}</span>
                                 <button
@@ -1915,7 +1946,7 @@ const Explore: React.FC = () => {
                           {avatarTagFilter.map(tag => (
                             <div
                               key={tag}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-text/20 text-d-white rounded-full text-xs font-raleway border border-d-text/30"
                             >
                               <span>#{tag}</span>
                               <button

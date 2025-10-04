@@ -12,6 +12,7 @@ export interface R2FileResponse {
   mimeType?: string;
   prompt?: string;
   model?: string;
+  isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +40,7 @@ export const useGalleryImages = () => {
       timestamp: r2File.createdAt,
       ownerId: undefined, // Will be set by the backend
       jobId: r2File.id,
+      isPublic: r2File.isPublic ?? false,
     };
   }, []);
 
@@ -128,6 +130,20 @@ export const useGalleryImages = () => {
     }
   }, [token]);
 
+  const updateImages = useCallback((imageUrls: string[], updates: Partial<GalleryImageLike>) => {
+    if (imageUrls.length === 0) return;
+
+    const urlSet = new Set(imageUrls);
+    setState(prev => ({
+      ...prev,
+      images: prev.images.map(image =>
+        (image.url && urlSet.has(image.url))
+          ? { ...image, ...updates }
+          : image,
+      ),
+    }));
+  }, []);
+
   // Load images on mount and when token changes
   useEffect(() => {
     fetchGalleryImages();
@@ -137,5 +153,6 @@ export const useGalleryImages = () => {
     ...state,
     fetchGalleryImages,
     deleteImage,
+    updateImages,
   };
 };

@@ -661,7 +661,12 @@ const Create: React.FC = () => {
   const [seedanceFirstFrame, setSeedanceFirstFrame] = useState<File | null>(null);
   const [seedanceLastFrame, setSeedanceLastFrame] = useState<File | null>(null);
   // Use the new gallery hook for backend-managed images
-  const { images: gallery, deleteImage: deleteGalleryImage, fetchGalleryImages } = useGalleryImages();
+  const {
+    images: gallery,
+    deleteImage: deleteGalleryImage,
+    fetchGalleryImages,
+    updateImages: updateGalleryImages,
+  } = useGalleryImages();
   const [inspirations, setInspirations] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
@@ -1929,8 +1934,7 @@ const Create: React.FC = () => {
     } else {
       // Bulk publish
       const count = selectedImages.size;
-      // TODO: Implement backend API for publishing images
-      // For now, just show the notification
+      applyPublicStatusToImages(Array.from(selectedImages), true);
       setCopyNotification(`${count} image${count === 1 ? '' : 's'} published!`);
       setTimeout(() => setCopyNotification(null), 2000);
       setPublishConfirmation({show: false, count: 0});
@@ -1944,8 +1948,7 @@ const Create: React.FC = () => {
     } else {
       // Bulk unpublish
       const count = selectedImages.size;
-      // TODO: Implement backend API for unpublishing images
-      // For now, just show the notification
+      applyPublicStatusToImages(Array.from(selectedImages), false);
       setCopyNotification(`${count} image${count === 1 ? '' : 's'} unpublished!`);
       setTimeout(() => setCopyNotification(null), 2000);
       setUnpublishConfirmation({show: false, count: 0});
@@ -2505,7 +2508,7 @@ const Create: React.FC = () => {
   const toggleImagePublicStatus = (imageUrl: string) => {
     const image = gallery.find(img => img.url === imageUrl);
     if (!image) return;
-    
+
     if (image.isPublic) {
       // Show unpublish confirmation
       setUnpublishConfirmation({show: true, count: 1, imageUrl});
@@ -2515,10 +2518,20 @@ const Create: React.FC = () => {
     }
   };
 
+  const applyPublicStatusToImages = useCallback((imageUrls: string[], isPublic: boolean) => {
+    if (imageUrls.length === 0) return;
+
+    updateGalleryImages(imageUrls, { isPublic });
+    const urlSet = new Set(imageUrls);
+
+    setSelectedFullImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+    setImageActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+    setMoreActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+  }, [updateGalleryImages]);
+
   const confirmIndividualPublish = () => {
     if (publishConfirmation.imageUrl) {
-      // TODO: Implement backend API for publishing individual image
-      // For now, just show the notification
+      applyPublicStatusToImages([publishConfirmation.imageUrl], true);
       setCopyNotification('Image published!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
@@ -2527,8 +2540,7 @@ const Create: React.FC = () => {
 
   const confirmIndividualUnpublish = () => {
     if (unpublishConfirmation.imageUrl) {
-      // TODO: Implement backend API for unpublishing individual image
-      // For now, just show the notification
+      applyPublicStatusToImages([unpublishConfirmation.imageUrl], false);
       setCopyNotification('Image unpublished!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
