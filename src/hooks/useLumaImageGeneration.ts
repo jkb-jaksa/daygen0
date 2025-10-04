@@ -29,6 +29,7 @@ export interface LumaImageGenerationOptions {
   modifyImageRef?: unknown;
   format?: string;
   callbackUrl?: string;
+  avatarId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Luma images.';
@@ -163,6 +164,7 @@ export function useLumaImageGeneration() {
           generationId,
           state: status,
           contentType,
+          avatarId: options.avatarId,
         };
 
         setState({

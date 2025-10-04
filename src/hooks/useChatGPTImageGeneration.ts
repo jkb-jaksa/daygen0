@@ -28,6 +28,7 @@ export interface ChatGPTImageGenerationOptions {
   size?: '256x256' | '512x512' | '1024x1024' | '1024x1536' | '1536x1024';
   quality?: 'standard' | 'high';
   background?: 'transparent' | 'white' | 'black';
+  avatarId?: string;
 }
 
 export const useChatGPTImageGeneration = () => {
@@ -115,6 +116,7 @@ export const useChatGPTImageGeneration = () => {
         quality,
         background,
         ownerId: user?.id,
+        avatarId: options.avatarId,
       };
 
       setState(prev => ({

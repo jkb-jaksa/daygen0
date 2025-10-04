@@ -35,6 +35,7 @@ export interface IdeogramGenerateOptions {
   style_preset?: string;
   style_type?: 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION';
   negative_prompt?: string;
+  avatarId?: string;
 }
 
 export interface IdeogramEditOptions {
@@ -165,6 +166,7 @@ export const useIdeogramImageGeneration = () => {
           styleType: options.style_type,
           negativePrompt: options.negative_prompt,
           ownerId: user?.id,
+          avatarId: options.avatarId,
         }));
 
         setState((prev) => ({

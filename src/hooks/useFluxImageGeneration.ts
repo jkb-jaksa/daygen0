@@ -44,6 +44,7 @@ export interface FluxImageGenerationOptions {
   safety_tolerance?: number;
   useWebhook?: boolean;
   references?: string[];
+  avatarId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
@@ -161,6 +162,7 @@ export const useFluxImageGeneration = () => {
           jobId: payload.jobId ?? '',
           references: references || undefined,
           ownerId: user?.id,
+          avatarId: options.avatarId,
         };
 
         setState((prev) => ({

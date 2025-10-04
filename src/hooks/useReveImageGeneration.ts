@@ -33,6 +33,7 @@ export interface ReveImageGenerationOptions {
   steps?: number;
   seed?: number;
   references?: string[];
+  avatarId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
@@ -131,6 +132,7 @@ export const useReveImageGeneration = () => {
           jobId: payload.jobId ?? `reve-${Date.now()}`,
           references: options.references || undefined,
           ownerId: user?.id,
+          avatarId: options.avatarId,
         };
 
         setState((prev) => ({

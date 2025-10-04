@@ -3818,6 +3818,7 @@ const handleGenerate = async () => {
           outputLength: outputLengthForGeneration,
           topP: topPForGeneration,
           aspectRatio: geminiAspectRatio,
+          avatarId: selectedAvatar?.id,
         });
       } else if (isChatGPTModel) {
         // Use ChatGPT generation
@@ -3826,6 +3827,7 @@ const handleGenerate = async () => {
           size: '1024x1024',
           quality: 'high',
           background: 'transparent',
+          avatarId: selectedAvatar?.id,
         });
       } else if (isIdeogramModel) {
         // Use Ideogram generation
@@ -3834,6 +3836,7 @@ const handleGenerate = async () => {
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
+          avatarId: selectedAvatar?.id,
         });
         if (!ideogramResult || ideogramResult.length === 0) {
           throw new Error('Ideogram generation failed');
@@ -3846,6 +3849,7 @@ const handleGenerate = async () => {
           size: qwenSizeForGeneration,
           prompt_extend: qwenPromptExtendForGeneration,
           watermark: qwenWatermarkForGeneration,
+          avatarId: selectedAvatar?.id,
         });
         if (!qwenResult || qwenResult.length === 0) {
           throw new Error('Qwen generation failed');
@@ -3867,6 +3871,7 @@ const handleGenerate = async () => {
             return arr;
           })(),
           ratio: "1920:1080", // Default ratio, could be made configurable
+          avatarId: selectedAvatar?.id,
         });
         img = runwayResult;
       } else if (isRunwayVideoModel) {
@@ -3887,6 +3892,7 @@ const handleGenerate = async () => {
             })));
             return arr;
           })(),
+          avatarId: selectedAvatar?.id,
         });
         img = reveResult;
       } else if (isRecraftModel) {
@@ -3930,6 +3936,7 @@ const handleGenerate = async () => {
           model: recraftModel,
           timestamp: new Date().toISOString(),
           ownerId: user?.id,
+          avatarId: selectedAvatar?.id,
         };
       } else if (isFluxModel) {
         // Use Flux generation with selected model from settings
@@ -3939,6 +3946,7 @@ const handleGenerate = async () => {
           width: 1024,
           height: 1024,
           useWebhook: false, // Use polling for local development
+          avatarId: selectedAvatar?.id,
         };
 
         // Add input image for Kontext models
@@ -3973,6 +3981,7 @@ const handleGenerate = async () => {
         const lumaResult = await generateLumaImage({
           prompt: trimmedPrompt,
           model: resolvedLumaModel,
+          avatarId: selectedAvatar?.id,
         });
 
         if (!lumaResult) {

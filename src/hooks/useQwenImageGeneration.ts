@@ -31,6 +31,7 @@ export interface QwenGenerateOptions {
   negative_prompt?: string;
   prompt_extend?: boolean;
   watermark?: boolean;
+  avatarId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
@@ -116,6 +117,7 @@ export const useQwenImageGeneration = () => {
           promptExtend: options.prompt_extend,
           watermark: options.watermark,
           ownerId: user?.id,
+          avatarId: options.avatarId,
         };
 
         setState((prev) => ({

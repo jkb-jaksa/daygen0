@@ -29,6 +29,7 @@ export interface ImageGenerationOptions {
   outputLength?: number; // maps to maxOutputTokens
   topP?: number;
   aspectRatio?: string;
+  avatarId?: string;
 }
 
 export const useGeminiImageGeneration = () => {
@@ -144,6 +145,7 @@ export const useGeminiImageGeneration = () => {
         timestamp: new Date().toISOString(),
         references: references || undefined,
         ownerId: user?.id,
+        avatarId: options.avatarId,
       };
 
       setState(prev => ({

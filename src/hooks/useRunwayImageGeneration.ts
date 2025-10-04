@@ -27,6 +27,7 @@ export interface ImageGenerationOptions {
   references?: string[]; // Base64 data URLs for reference images
   ratio?: string; // Aspect ratio like "1920:1080"
   seed?: number; // Optional seed for reproducible results
+  avatarId?: string;
 }
 
 export const useRunwayImageGeneration = () => {
@@ -119,6 +120,7 @@ export const useRunwayImageGeneration = () => {
         timestamp: new Date().toISOString(),
         references: references || undefined,
         ownerId: user?.id,
+        avatarId: options.avatarId,
       };
 
       setState(prev => ({
