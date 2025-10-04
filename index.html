@@ -39,9 +39,20 @@
   <body>
     <div id="root"></div>
     <script>
-      // Check authentication before loading the app
-      if (sessionStorage.getItem('authenticated') !== 'true') {
-        window.location.href = '/auth.html';
+      const AUTH_FLAG_KEY = 'authenticated';
+
+      const isSessionAuthenticated = sessionStorage.getItem(AUTH_FLAG_KEY) === 'true';
+
+      if (!isSessionAuthenticated) {
+        const isLocalAuthenticated = localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+
+        if (isLocalAuthenticated) {
+          sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
+        } else {
+          const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+          const next = encodeURIComponent(target || '/');
+          window.location.href = `/auth.html?next=${next}`;
+        }
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>

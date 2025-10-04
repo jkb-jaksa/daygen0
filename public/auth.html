@@ -270,9 +270,36 @@
     </div>
 
     <script>
+        const AUTH_FLAG_KEY = 'authenticated';
+        const NEXT_PARAM = 'next';
+
+        const normalizeNext = () => {
+            const params = new URLSearchParams(window.location.search);
+            const raw = params.get(NEXT_PARAM);
+            if (!raw) return '/';
+
+            const trimmed = raw.trim();
+            if (!trimmed) return '/';
+            if (/^https?:\/\//i.test(trimmed)) return '/';
+            if (trimmed.startsWith('//')) return '/';
+            return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+        };
+
+        const redirectTo = (target) => {
+            window.location.href = target || '/';
+        };
+
+        const markAuthenticated = () => {
+            localStorage.setItem(AUTH_FLAG_KEY, 'true');
+            sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
+        };
+
+        const nextTarget = normalizeNext();
+
         // Check if already authenticated
-        if (localStorage.getItem('authenticated') === 'true') {
-            window.location.href = '/';
+        if (localStorage.getItem(AUTH_FLAG_KEY) === 'true') {
+            markAuthenticated();
+            redirectTo(nextTarget);
         }
 
         document.getElementById('authForm').addEventListener('submit', function(e) {
@@ -287,8 +314,8 @@
             
             // Check credentials (in a real app, this would be server-side)
             if (username === 'jaksa' && password === 'warsaw') {
-                localStorage.setItem('authenticated', 'true');
-                window.location.href = '/';
+                markAuthenticated();
+                redirectTo(nextTarget);
             } else {
                 errorDiv.classList.add('show');
             }

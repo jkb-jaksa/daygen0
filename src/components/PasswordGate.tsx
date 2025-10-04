@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { buttons, inputs } from "../styles/designSystem";
 
@@ -6,20 +6,45 @@ type PasswordGateEnv = ImportMetaEnv & {
   readonly VITE_SITE_PASSWORD?: string;
 };
 
+const SITE_AUTH_KEY = "site:auth";
+const AUTHENTICATED_FLAG_KEY = "authenticated";
+
+const readStoredGateState = (): string | null => {
+  if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
+    return null;
+  }
+
+  if (window.localStorage.getItem(AUTHENTICATED_FLAG_KEY) === "true") {
+    return "authenticated";
+  }
+
+  return window.localStorage.getItem(SITE_AUTH_KEY);
+};
+
 // Simple site-wide password gate. Note: client-side only; use server middleware for true protection.
 export default function PasswordGate({ children }: { children: ReactNode }) {
   const configuredPassword = (import.meta.env as PasswordGateEnv).VITE_SITE_PASSWORD;
 
   // Read from localStorage to persist authentication across tabs and sessions.
-  const [entered, setEntered] = useState<string | null>(null);
+  const [entered, setEntered] = useState<string | null>(() => readStoredGateState());
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("site:auth");
-    const authenticated = localStorage.getItem("authenticated");
-    if (saved) setEntered(saved);
-    if (authenticated === 'true') setEntered('authenticated');
+    if (typeof window === "undefined") return undefined;
+
+    const syncState = () => {
+      setEntered(readStoredGateState());
+    };
+
+    syncState();
+    window.addEventListener("storage", syncState);
+    window.addEventListener("focus", syncState);
+
+    return () => {
+      window.removeEventListener("storage", syncState);
+      window.removeEventListener("focus", syncState);
+    };
   }, []);
 
   // Allow quick unlock via query param (?pw=...)
@@ -27,7 +52,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     const url = new URL(window.location.href);
     const pw = url.searchParams.get("pw");
     if (pw) {
-      localStorage.setItem("site:auth", pw);
+      localStorage.setItem(SITE_AUTH_KEY, pw);
       setEntered(pw);
       // Remove the param to avoid leaking the value in subsequent copies
       url.searchParams.delete("pw");
@@ -35,13 +60,10 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const isUnlocked = useMemo(() => {
-    // Check if authenticated via the auth page
-    if (localStorage.getItem("authenticated") === 'true') return true;
-    // If no password configured, do not block
-    if (!configuredPassword) return true;
-    return entered === configuredPassword;
-  }, [entered, configuredPassword]);
+  const isAuthenticated =
+    typeof window !== "undefined" && window.localStorage.getItem(AUTHENTICATED_FLAG_KEY) === "true";
+
+  const isUnlocked = isAuthenticated || !configuredPassword || entered === configuredPassword;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +73,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
       return;
     }
     if (input === configuredPassword) {
-      localStorage.setItem("site:auth", input);
+      localStorage.setItem(SITE_AUTH_KEY, input);
       setEntered(input);
       setError(null);
     } else {

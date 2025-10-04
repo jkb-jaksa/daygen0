@@ -14,6 +14,7 @@ import { getApiUrl } from '../utils/api';
 import { debugError } from '../utils/debug';
 
 const TOKEN_STORAGE_KEY = 'daygen:authToken';
+const AUTHENTICATED_FLAG_KEY = 'authenticated';
 
 type AuthSuccessPayload = {
   accessToken: string;
@@ -80,15 +81,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const handleAuthSuccess = useCallback(
-    (payload: AuthSuccessPayload): User => {
-      const nextUser = normalizeUser(payload.user);
-      localStorage.setItem(TOKEN_STORAGE_KEY, payload.accessToken);
-      setToken(payload.accessToken);
-      setUser(nextUser);
-      return nextUser;
-    },
-  []);
+const handleAuthSuccess = useCallback(
+  (payload: AuthSuccessPayload): User => {
+    const nextUser = normalizeUser(payload.user);
+    localStorage.setItem(TOKEN_STORAGE_KEY, payload.accessToken);
+    localStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
+    sessionStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
+    setToken(payload.accessToken);
+    setUser(nextUser);
+    return nextUser;
+  },
+[]);
 
   const fetchProfile = useCallback(
     async (authToken: string): Promise<User> => {
@@ -105,6 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const payload = (await response.json()) as BackendUser;
       const nextUser = normalizeUser(payload);
+      localStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
+      sessionStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
       setUser(nextUser);
       return nextUser;
     },
@@ -121,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void fetchProfile(storedToken).catch((error) => {
       debugError('Failed to restore authenticated session', error);
       localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(AUTHENTICATED_FLAG_KEY);
+      sessionStorage.removeItem(AUTHENTICATED_FLAG_KEY);
       setToken(null);
       setUser(null);
     }).finally(() => {
@@ -164,6 +171,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logOut = useCallback(() => {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(AUTHENTICATED_FLAG_KEY);
+    sessionStorage.removeItem(AUTHENTICATED_FLAG_KEY);
     setToken(null);
     setUser(null);
   }, []);

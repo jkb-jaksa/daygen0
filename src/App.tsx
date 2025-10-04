@@ -114,8 +114,12 @@ function Home() {
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
 
   if (!user) {
     const params = new URLSearchParams();

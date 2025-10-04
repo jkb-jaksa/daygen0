@@ -224,7 +224,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
 }
 
 export default function Account() {
-  const { user, updateProfile, logOut, storagePrefix } = useAuth();
+  const { user, updateProfile, logOut, storagePrefix, isLoading } = useAuth();
   const { showToast } = useToast();
   const [name, setName] = useState(user?.displayName ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
@@ -469,6 +469,17 @@ export default function Account() {
   const handleProfileSubmit = useCallback(() => {
     void handleSaveProfile();
   }, [handleSaveProfile]);
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-d-black-subtle text-d-text">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-d-white/30 border-t-d-white" aria-hidden="true" />
+          <p className="font-raleway text-sm text-d-white/70">Restoring your account...</p>
+        </div>
+      </main>
+    );
+  }
 
   // Don't auto-redirect when user clicks "My account" - let them see the account page
   // The next parameter will be used when they explicitly choose to return
