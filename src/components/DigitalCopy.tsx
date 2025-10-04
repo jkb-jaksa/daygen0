@@ -164,9 +164,9 @@ export default function DigitalCopy() {
         </div>
       </section>
 
-      <section id="modalities" className="relative pt-12 pb-20">
+      <section id="modalities" className="relative pt-12 pb-12">
         <div className={`${layout.container} flex flex-col gap-14`}>
-          <div className="grid gap-6 lg:grid-cols-4 items-stretch">
+          <div className="grid gap-4 lg:grid-cols-4 items-stretch">
             {modalities.map((modality) => (
               <ModalityCard key={modality.key} modality={modality} />
             ))}
@@ -174,8 +174,7 @@ export default function DigitalCopy() {
         </div>
       </section>
 
-      <section className="relative pb-24 pt-16">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-d-white/10 to-transparent" />
+      <section className="relative pb-24">
         <div className={`${layout.container}`}>
           <div className={`${glass.surface} mx-auto max-w-5xl rounded-[40px] border border-d-dark px-10 py-12 text-center`}>
             <h2 className={`${text.sectionHeading} text-d-text`}>Ready to activate your copy?</h2>
