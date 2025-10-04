@@ -2894,18 +2894,6 @@ const Create: React.FC = () => {
           }}
         />
 
-        {/* Always-visible Public Badge */}
-        {img.isPublic && context !== 'inspirations' && !isSelectMode && (
-          <div className="absolute top-2 left-2 z-20 pointer-events-none">
-            <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
-              <div className="flex items-center gap-1">
-                <Globe className="w-3 h-3 text-d-text" />
-                <span className="leading-none">Public</span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {img.prompt && !isSelectMode && (
           <div
             className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
@@ -5446,18 +5434,6 @@ const handleGenerate = async () => {
                             setIsFullSizeOpen(true);
                           }} />
 
-                          {/* Always-visible Public Badge */}
-                          {img.isPublic && (
-                            <div className="absolute top-2 left-2 z-20 pointer-events-none">
-                              <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
-                                <div className="flex items-center gap-1">
-                                  <Globe className="w-3 h-3 text-d-text" />
-                                  <span className="leading-none">Public</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
@@ -5789,18 +5765,6 @@ const handleGenerate = async () => {
                             <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
                               <video src={video.url} className="w-full aspect-square object-cover" controls />
                               
-                              {/* Always-visible Public Badge */}
-                              {video.isPublic && (
-                                <div className="absolute top-2 left-2 z-20 pointer-events-none">
-                                  <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
-                                    <div className="flex items-center gap-1">
-                                      <Globe className="w-3 h-3 text-d-text" />
-                                      <span className="leading-none">Public</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
                               {/* Hover prompt overlay */}
                               {video.prompt && (
                                 <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 opacity-0 group-hover:opacity-100`}>
@@ -5917,18 +5881,6 @@ const handleGenerate = async () => {
                             openImageAtIndex(galleryIndex);
                           }} />
                           
-                          {/* Always-visible Public Badge */}
-                          {img.isPublic && (
-                            <div className="absolute top-2 left-2 z-20 pointer-events-none">
-                              <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
-                                <div className="flex items-center gap-1">
-                                  <Globe className="w-3 h-3 text-d-text" />
-                                  <span className="leading-none">Public</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div

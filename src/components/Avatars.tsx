@@ -421,20 +421,40 @@ export default function Avatars() {
   }, [avatarSlug, avatarToDelete, creationsModalAvatar, editingAvatarId, navigate, persistAvatars, persistGalleryImages]);
 
   const confirmPublish = useCallback(() => {
+    if (publishConfirmation.imageUrl) {
+      const imageUrl = publishConfirmation.imageUrl;
+
+      setGalleryImages(prev => {
+        const next = prev.map(image =>
+          image.url === imageUrl
+            ? { ...image, isPublic: true }
+            : image,
+        );
+        void persistGalleryImages(next);
+        return next;
+      });
+
+      setSelectedFullImage(prev => (prev && prev.url === imageUrl ? { ...prev, isPublic: true } : prev));
+      setCopyNotification("Image published!");
+      setTimeout(() => setCopyNotification(null), 2000);
+      setPublishConfirmation({ show: false, count: 0 });
+      return;
+    }
+
     if (!avatarToPublish) return;
-    
+
     setAvatars(prev => {
       const updated = prev.map(record =>
-        record.id === avatarToPublish.id 
-          ? { ...record, published: !record.published } 
+        record.id === avatarToPublish.id
+          ? { ...record, published: !record.published }
           : record
       );
       void persistAvatars(updated);
       return updated;
     });
-    
+
     setAvatarToPublish(null);
-  }, [avatarToPublish, persistAvatars]);
+  }, [avatarToPublish, persistAvatars, publishConfirmation.imageUrl, persistGalleryImages]);
 
   const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
@@ -677,13 +697,18 @@ export default function Avatars() {
     if (unpublishConfirmation.imageUrl) {
       setGalleryImages(prev => {
         const next = prev.map(image =>
-          image.url === unpublishConfirmation.imageUrl 
+          image.url === unpublishConfirmation.imageUrl
             ? { ...image, isPublic: false }
             : image,
         );
         void persistGalleryImages(next);
         return next;
       });
+      setSelectedFullImage(prev => (
+        prev && prev.url === unpublishConfirmation.imageUrl
+          ? { ...prev, isPublic: false }
+          : prev
+      ));
       setCopyNotification('Image unpublished!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
@@ -1179,17 +1204,6 @@ export default function Avatars() {
           className="h-full w-full object-cover"
           loading="lazy"
         />
-        {/* Always-visible Public Badge */}
-        {image.isPublic && (
-          <div className="absolute top-2 left-2 z-20 pointer-events-none">
-            <div className={`${glass.promptDark} text-d-white px-2 py-1.5 text-xs rounded-full font-medium font-raleway shadow-lg`}>
-              <div className="flex items-center gap-1">
-                <Globe className="w-3 h-3 text-d-text" />
-                <span className="leading-none">Public</span>
-              </div>
-            </div>
-          </div>
-        )}
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
           <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
             <div className="space-y-2">
