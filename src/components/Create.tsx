@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, HelpCircle, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Leaf, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -71,6 +71,7 @@ import AvatarBadge from "./avatars/AvatarBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
+import { ToolInfoHover } from "./ToolInfoHover";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -6936,12 +6937,10 @@ const handleGenerate = async () => {
                               isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-d-text'
                             }`}>
                               {model.name}
-                              <HelpCircle 
-                                className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity duration-200 cursor-pointer" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate('/learn/tools');
-                                }}
+                              <ToolInfoHover
+                                toolName={model.name}
+                                className="shrink-0"
+                                iconClassName={isComingSoon ? undefined : 'group-hover:opacity-100'}
                               />
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${

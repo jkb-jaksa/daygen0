@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes, HelpCircle, BookmarkIcon, Bookmark } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -20,6 +20,7 @@ import { useAuth } from "../auth/useAuth";
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
+import { ToolInfoHover } from "./ToolInfoHover";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -1650,12 +1651,10 @@ export default function Edit() {
                           isSelected ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
                         }`}>
                           {model.name}
-                          <HelpCircle 
-                            className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity duration-200 cursor-pointer" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate('/learn/tools');
-                            }}
+                          <ToolInfoHover
+                            toolName={model.name}
+                            className="shrink-0"
+                            iconClassName="group-hover:opacity-100"
                           />
                         </div>
                         <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
