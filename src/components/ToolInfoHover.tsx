@@ -9,7 +9,7 @@ import {
 } from "../data/learnTools";
 import { getToolLogo } from "../utils/toolLogos";
 
-const CARD_WIDTH = 320;
+const CARD_WIDTH = 480;
 const DEFAULT_CARD_HEIGHT = 240;
 const VIEWPORT_MARGIN = 16;
 const TRIGGER_SPACING = 12;
@@ -35,7 +35,6 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
 
   const logo = useMemo(() => getToolLogo(tool.name), [tool.name]);
   const knowledgeBasePath = `/learn/tools/${tool.slug}`;
-  const toolsPath = `/tools/${tool.slug}`;
 
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current) {
@@ -60,7 +59,18 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
     const width = cardRef.current?.offsetWidth ?? CARD_WIDTH;
     const height = cardRef.current?.offsetHeight ?? DEFAULT_CARD_HEIGHT;
 
-    let left = rect.left + scrollX + rect.width / 2 - width / 2;
+    // Check if the trigger is inside a dropdown menu by looking for common dropdown classes
+    const isInDropdown = triggerRef.current.closest('.model-selector, [role="menu"], [role="listbox"], .dropdown, .menu-portal');
+    
+    let left;
+    if (isInDropdown) {
+      // In dropdown context, position to the right of the trigger to avoid hiding other items
+      left = rect.right + scrollX + TRIGGER_SPACING;
+    } else {
+      // Default centering behavior for other contexts
+      left = rect.left + scrollX + rect.width / 2 - width / 2;
+    }
+    
     const minLeft = scrollX + VIEWPORT_MARGIN;
     const maxLeft = scrollX + window.innerWidth - width - VIEWPORT_MARGIN;
     if (left < minLeft) left = minLeft;
@@ -188,7 +198,7 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
           >
             <div
               ref={cardRef}
-              className={`${glass.surface} pointer-events-auto w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-d-dark/70 bg-d-black/80 p-4 shadow-xl shadow-d-black/50`}
+              className={`${glass.surface} pointer-events-auto w-[480px] max-w-[calc(100vw-2rem)] rounded-2xl border border-d-dark/70 bg-d-black/80 p-4 shadow-xl shadow-d-black/50`}
               onMouseEnter={() => {
                 clearHideTimer();
               }}
@@ -200,20 +210,20 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
             >
               <div className="flex items-start gap-3">
                 {logo ? (
-                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-d-dark/60 bg-d-black/60">
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-d-dark/60 bg-d-black/60">
                     <img src={logo} alt="" className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-d-dark/60 bg-d-black/60 text-sm font-semibold text-d-white/80">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-d-dark/60 bg-d-black/60 text-sm font-semibold text-d-white/80">
                     {tool.name.charAt(0)}
                   </div>
                 )}
-                <div className="space-y-1">
-                  <p className="text-sm font-raleway font-medium text-d-text">{tool.name}</p>
-                  <p className="text-xs font-raleway text-d-white/70">{tool.tagline}</p>
+                <div className="space-y-0">
+                  <p className="font-raleway font-medium text-d-text" style={{ fontSize: '1rem' }}>{tool.name}</p>
+                  <p className="font-raleway text-d-white" style={{ fontSize: '0.875rem' }}>{tool.tagline}</p>
                 </div>
               </div>
-              <p className="mt-3 text-xs font-raleway leading-relaxed text-d-white/80">
+              <p className="mt-2 font-raleway leading-relaxed text-d-light" style={{ fontSize: '0.875rem' }}>
                 {tool.overview}
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -221,7 +231,8 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
                   to={knowledgeBasePath}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-d-dark/60 bg-d-black/40 px-3 py-1 text-xs font-raleway text-d-white/80 transition-colors duration-150 hover:border-d-mid hover:text-d-text"
+                  className="inline-flex items-center gap-1 rounded-full border border-d-dark/60 bg-d-black/40 px-3 py-1 font-raleway text-d-white transition-colors duration-150 hover:border-d-mid hover:text-d-text"
+                  style={{ fontSize: '0.875rem' }}
                   onClick={(event) => {
                     event.stopPropagation();
                     setIsOpen(false);
@@ -230,19 +241,6 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
                   View full guide
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
-                <a
-                  href={toolsPath}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-transparent bg-transparent px-2 py-1 text-[11px] font-raleway uppercase tracking-[0.2em] text-d-white/50 transition-colors duration-150 hover:text-d-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setIsOpen(false);
-                  }}
-                >
-                  tools/{tool.slug}
-                  <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-                </a>
               </div>
             </div>
           </div>,
