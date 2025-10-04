@@ -21,7 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { layout, text, buttons, inputs, glass } from "../styles/designSystem";
+import { layout, text, buttons, inputs, glass, headings } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
@@ -1271,16 +1271,19 @@ export default function Avatars() {
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10 py-12 sm:py-16 lg:py-20">
+      <div className="relative z-10 pt-[calc(var(--nav-h,4rem)+2rem)] pb-12 sm:pb-16 lg:pb-20">
         <section className={`${layout.container} flex flex-col gap-10 items-center`}>
-          <header className="max-w-3xl space-y-4 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4 text-d-white/60" />
-              <p className={text.eyebrow}>avatars</p>
+          <header className="max-w-3xl text-center">
+            <div className={`${headings.tripleHeading.container} text-center`}>
+              <p className={`${headings.tripleHeading.eyebrow} justify-center`}>
+                <Users className="h-4 w-4 text-d-white/60" />
+                avatars
+              </p>
+              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>Create your Avatar.</h1>
+              <p className={headings.tripleHeading.description}>{subtitle}</p>
             </div>
-            <h1 className={`${text.sectionHeading} text-white`}>Create your Avatar.</h1>
-            <p className={`${text.body} text-d-white`}>{subtitle}</p>
-            <button
+            <div className="mt-8">
+              <button
               type="button"
               className={buttons.primary}
               onClick={() => {
@@ -1293,6 +1296,7 @@ export default function Avatars() {
               <Users className="h-5 w-5" />
               Create Avatar
             </button>
+            </div>
           </header>
 
           {missingAvatarSlug && (

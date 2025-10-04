@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { layout, text, glass, buttons } from "../styles/designSystem";
+import { layout, text, glass, buttons, headings } from "../styles/designSystem";
 import {
   PenLine,
   Image as ImageIcon,
@@ -136,18 +136,20 @@ export default function DigitalCopy() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(120,216,255,0.3),transparent_65%)]" />
       </div>
 
-      <section className="relative pt-[calc(var(--nav-h,4rem)+5rem)] pb-0">
+      <section className="relative pt-[calc(var(--nav-h,4rem)+2rem)] pb-0">
         <div className={`${layout.container} text-center flex flex-col items-center gap-10`}>
-          <div className="max-w-3xl mx-auto flex flex-col gap-6">
-            <span className={`${text.eyebrow} text-d-light flex items-center justify-center gap-2`}>
-              <Fingerprint className="size-4" />
-              digital copy
-            </span>
-            <h1 className={`${text.heroHeading} text-balance font-light text-d-text`}>Create your Digital Copy.</h1>
-            <p className="text-lg font-raleway text-d-white leading-relaxed">
-              Design your digital self.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="max-w-3xl mx-auto">
+            <div className={`${headings.tripleHeading.container} text-center`}>
+              <p className={`${headings.tripleHeading.eyebrow} justify-center`}>
+                <Fingerprint className="size-4" />
+                digital copy
+              </p>
+              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>Create your Digital Copy.</h1>
+              <p className={headings.tripleHeading.description}>
+                Design your digital self.
+              </p>
+            </div>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => {
                   document.getElementById('modalities')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -162,7 +164,7 @@ export default function DigitalCopy() {
         </div>
       </section>
 
-      <section id="modalities" className="relative py-20">
+      <section id="modalities" className="relative pt-12 pb-20">
         <div className={`${layout.container} flex flex-col gap-14`}>
           <div className="grid gap-6 lg:grid-cols-4 items-stretch">
             {modalities.map((modality) => (
