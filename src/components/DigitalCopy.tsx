@@ -143,10 +143,9 @@ export default function DigitalCopy() {
               <Copy className="size-4" />
               digital copy
             </span>
-            <h1 className={`${text.heroHeading} text-balance font-light text-d-text`}>Design your digital self.</h1>
+            <h1 className={`${text.heroHeading} text-balance font-light text-d-text`}>Create your Digital Copy.</h1>
             <p className="text-lg font-raleway text-d-white leading-relaxed">
-              Build a digital representation of you across text, visuals, audio, and motion.
-              Each quest you complete makes your copy more expressive, more helpful, and more you.
+              Design your digital self.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
