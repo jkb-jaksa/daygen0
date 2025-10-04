@@ -6145,7 +6145,7 @@ const handleGenerate = async () => {
                   onKeyDown={onKeyDown}
                   onPaste={handlePaste}
                   rows={1}
-                  className="w-full h-[36px] bg-transparent text-d-white placeholder-d-light border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg"
+                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-d-text' : 'text-d-white'} placeholder-d-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
                 />
               </div>
               
@@ -6209,6 +6209,33 @@ const handleGenerate = async () => {
                       <Users className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
                       <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Select Avatar</span>
                     </button>
+
+                    {/* Selected Avatar display - right next to Select Avatar button */}
+                    {selectedAvatar && (
+                      <div className="flex items-center gap-2">
+                        <div className="hidden lg:block text-sm text-d-text font-raleway">Avatar:</div>
+                        <div className="relative group">
+                          <img
+                            src={selectedAvatar.imageUrl}
+                            alt={selectedAvatar.name}
+                            loading="lazy"
+                            className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
+                            title={selectedAvatar.name}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearSelectedAvatar();
+                            }}
+                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-text hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            title="Remove avatar"
+                          >
+                            <X className="w-2.5 h-2.5 text-d-text" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <button
                       type="button"
                       ref={promptsButtonRef}
@@ -6884,31 +6911,6 @@ const handleGenerate = async () => {
                   </ModelMenuPortal>
                 </div>
               </div>
-
-              {selectedAvatar && (
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-raleway text-d-white/80">Avatar:</div>
-                  <div className="flex items-center gap-2">
-                    <div className="relative group">
-                      <img
-                        src={selectedAvatar.imageUrl}
-                        alt={selectedAvatar.name}
-                        loading="lazy"
-                        className="h-9 w-9 rounded-full border border-d-dark/70 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={clearSelectedAvatar}
-                        className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-d-black/80 p-0.5 text-d-white transition-colors duration-200 hover:text-d-text"
-                        title="Remove Avatar"
-                      >
-                        <X className="w-2.5 h-2.5 text-d-text" />
-                      </button>
-                    </div>
-                    <span className="max-w-[10rem] truncate text-sm font-raleway text-d-text">{selectedAvatar.name}</span>
-                  </div>
-                </div>
-              )}
               
               {/* Generate button on right */}
               <Tooltip text={!prompt.trim()
@@ -6932,10 +6934,10 @@ const handleGenerate = async () => {
                     return showSpinner ? (
                       <Loader2 className="w-4 h-4 animate-spin text-d-black" />
                     ) : (
-                      <Wand2 className="w-4 h-4 text-d-black" />
+                      <Sparkles className="w-4 h-4 text-d-black" />
                     );
                   })()}
-                  <span className="text-d-black">
+                  <span className="text-d-black hidden sm:inline">
                     {activeCategory === "video" ? 
                       (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
                         ? "Generating..."

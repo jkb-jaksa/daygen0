@@ -216,7 +216,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
         <h3 className="text-base font-raleway text-d-text">Prompts</h3>
         <button
           onClick={onClose}
-          className="flex items-center justify-center rounded-full p-1 text-d-white/70 hover:bg-d-text/10 hover:text-d-white transition-colors duration-200"
+          className="flex items-center justify-center rounded-full p-1 text-d-white hover:bg-d-text/10 hover:text-d-text transition-colors duration-200"
           aria-label="Close prompts menu"
         >
           <X className="h-4 w-4" />
@@ -231,7 +231,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-raleway font-medium transition-all duration-200 ${
               activeTab === 'recent'
                 ? 'bg-d-text/20 text-d-text border border-d-text/30'
-                : 'text-d-white/60 hover:text-d-white/90 hover:bg-d-text/10'
+                : 'text-d-white hover:text-d-text hover:bg-d-text/10'
             }`}
           >
             <Clock className="h-3.5 w-3.5" />
@@ -242,7 +242,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-raleway font-medium transition-all duration-200 ${
               activeTab === 'saved'
                 ? 'bg-d-text/20 text-d-text border border-d-text/30'
-                : 'text-d-white/60 hover:text-d-white/90 hover:bg-d-text/10'
+                : 'text-d-white hover:text-d-text hover:bg-d-text/10'
             }`}
           >
             <Bookmark className="h-3.5 w-3.5" />
@@ -256,7 +256,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
               setNewPromptText('');
               setAddError(null);
             }}
-            className="flex items-center justify-center rounded-full p-1.5 text-d-white/70 hover:bg-d-text/10 hover:text-d-text transition-colors duration-200"
+            className="flex items-center justify-center rounded-full p-1.5 text-d-white hover:bg-d-text/10 hover:text-d-text transition-colors duration-200"
             aria-label="Add saved prompt"
           >
             <Plus className="h-4 w-4" />
@@ -280,7 +280,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                       onSelectPrompt(prompt.text);
                       onClose();
                     }}
-                    className="flex-1 text-left text-sm text-d-white/90 hover:text-d-white line-clamp-2"
+                    className="flex-1 text-left text-sm text-d-white hover:text-d-text line-clamp-2"
                   >
                     {prompt.text}
                   </button>
@@ -291,7 +291,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                         setEditingPrompt(prompt);
                         setEditText(prompt.text);
                       }}
-                      className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
+                      className="flex-shrink-0 p-1 rounded-full text-d-white hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
                       aria-label="Edit prompt"
                       title="Edit prompt"
                     >
@@ -302,7 +302,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                         e.stopPropagation();
                         setDeletePrompt(prompt);
                       }}
-                      className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
+                      className="flex-shrink-0 p-1 rounded-full text-d-white hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
                       aria-label="Remove saved prompt"
                       title="Remove saved prompt"
                     >
@@ -314,9 +314,9 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             </div>
           ) : (
             <div className="px-4 py-6 text-center">
-              <Bookmark className="h-8 w-8 mx-auto mb-2 text-d-white/20" />
-              <p className="text-sm text-d-white/50 mb-1">No saved prompts yet</p>
-              <p className="text-xs text-d-white/40">Save prompts from your gallery to quickly reuse them</p>
+              <Bookmark className="h-8 w-8 mx-auto mb-2 text-d-white" />
+              <p className="text-sm text-d-white mb-1">No saved prompts yet</p>
+              <p className="text-xs text-d-white">Save prompts from your gallery to quickly reuse them</p>
             </div>
           )
         ) : (
@@ -335,7 +335,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                         onSelectPrompt(prompt.text);
                         onClose();
                       }}
-                      className="flex-1 text-left text-sm text-d-white/90 hover:text-d-white line-clamp-2"
+                      className="flex-1 text-left text-sm text-d-white hover:text-d-text line-clamp-2"
                     >
                       {prompt.text}
                     </button>
@@ -346,7 +346,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                             e.stopPropagation();
                             onSaveRecentPrompt(prompt.text);
                           }}
-                          className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
+                          className="flex-shrink-0 p-1 rounded-full text-d-white hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
                           aria-label={isSaved ? "Prompt saved" : "Save prompt"}
                           title={isSaved ? "Prompt saved" : "Save prompt"}
                         >
@@ -363,7 +363,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                             e.stopPropagation();
                             setDeleteRecentPrompt(prompt.text);
                           }}
-                          className="flex-shrink-0 p-1 rounded-full text-d-white/60 hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
+                          className="flex-shrink-0 p-1 rounded-full text-d-white hover:bg-d-text/10 hover:text-d-text transition-all duration-200"
                           aria-label="Remove recent prompt"
                           title="Remove recent prompt"
                         >
@@ -377,9 +377,9 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             </div>
           ) : (
             <div className="px-4 py-6 text-center">
-              <Clock className="h-8 w-8 mx-auto mb-2 text-d-white/20" />
-              <p className="text-sm text-d-white/50 mb-1">No recent prompts yet</p>
-              <p className="text-xs text-d-white/40">Start creating to see your recent prompts here</p>
+              <Clock className="h-8 w-8 mx-auto mb-2 text-d-white" />
+              <p className="text-sm text-d-white mb-1">No recent prompts yet</p>
+              <p className="text-xs text-d-white">Start creating to see your recent prompts here</p>
             </div>
           )
         )}
@@ -403,7 +403,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
               <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="w-full min-h-[120px] bg-d-black/40 text-d-white placeholder-d-white/50 border border-d-mid rounded-xl px-4 py-3 focus:outline-none focus:border-d-text transition-colors duration-200 font-raleway text-sm resize-none"
+                className="w-full min-h-[120px] bg-d-black/40 text-d-text placeholder-d-white border border-d-mid rounded-xl px-4 py-3 focus:outline-none focus:border-d-text transition-colors duration-200 font-raleway text-base resize-none"
                 placeholder="Enter your prompt..."
                 autoFocus
               />
@@ -534,7 +534,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                     setAddError(null);
                   }
                 }}
-                className="w-full min-h-[120px] bg-d-black/40 text-d-white placeholder-d-white/50 border border-d-mid rounded-xl px-4 py-3 focus:outline-none focus:border-d-text transition-colors duration-200 font-raleway text-sm resize-none"
+                className="w-full min-h-[120px] bg-d-black/40 text-d-text placeholder-d-white border border-d-mid rounded-xl px-4 py-3 focus:outline-none focus:border-d-text transition-colors duration-200 font-raleway text-base resize-none"
                 placeholder="Enter your prompt..."
                 autoFocus
               />

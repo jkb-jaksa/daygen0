@@ -1476,7 +1476,7 @@ export default function Edit() {
               onKeyDown={onKeyDown}
               onPaste={handlePaste}
               rows={1}
-              className="w-full h-[36px] bg-transparent text-d-white placeholder-d-white/60 border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg"
+              className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-d-text' : 'text-d-white'} placeholder-d-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
             />
           </div>
           
@@ -1492,14 +1492,14 @@ export default function Edit() {
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
               className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
             >
-              <Plus className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Add reference</span>
+              <Plus className="w-4 h-4 flex-shrink-0 text-d-text" />
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Add reference</span>
             </button>
 
             {/* Reference images display - right next to Add reference button */}
             {referenceDisplayItems.length > 0 && (
               <div className="flex items-center gap-2">
-                <div className="hidden lg:block text-sm text-d-white font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
+                <div className="hidden lg:block text-sm text-d-text font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
                 <div className="flex items-center gap-1.5">
                   {referenceDisplayItems.map((item, idx) => (
                     <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
@@ -1552,8 +1552,8 @@ export default function Edit() {
               onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
               className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
             >
-              <BookmarkIcon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">Prompts</span>
+              <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Prompts</span>
             </button>
 
             <PromptsDropdown
@@ -1582,7 +1582,7 @@ export default function Edit() {
                 aria-label="Settings"
                 className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-4 h-4 text-d-text" />
               </button>
             </div>
 
@@ -1606,10 +1606,10 @@ export default function Edit() {
                     );
                   } else {
                     const Icon = currentModel.Icon;
-                    return <Icon className="w-4 h-4 flex-shrink-0 group-hover:text-d-text transition-colors duration-100" />;
+                    return <Icon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />;
                   }
                 })()}
-                <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap">{getCurrentModel().name}</span>
+                <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}
@@ -1683,7 +1683,7 @@ export default function Edit() {
                 {isButtonSpinning ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Wand2 className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
                 )}
                 Generate
               </button>
