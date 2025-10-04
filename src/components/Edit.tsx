@@ -1493,7 +1493,7 @@ export default function Edit() {
               className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
             >
               <Plus className="w-4 h-4 flex-shrink-0 text-d-text" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Add reference</span>
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Add Reference</span>
             </button>
 
             {/* Reference images display - right next to Add reference button */}
