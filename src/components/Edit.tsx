@@ -1447,7 +1447,7 @@ export default function Edit() {
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
         <div
-          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-dark'} px-4 py-3`}
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-mid'} px-4 py-3`}
           style={{ 
             bottom: '0.75rem',
             transform: 'translateX(-50%) translateZ(0)' 
