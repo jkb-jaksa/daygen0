@@ -171,14 +171,14 @@
   /* Daygen palette – day (light) */
   --d-text: #020303;
   --d-text-rgb: 2 3 3;
-  --d-white: #1c2020;
-  --d-white-rgb: 28 32 32;
+  --d-white: #202424;
+  --d-white-rgb: 32 36 36;
   --d-light: #6c7373;
   --d-light-rgb: 108 115 115;
-  --d-mid: #d1d8d7;
-  --d-mid-rgb: 209 216 215;
-  --d-dark: #e8eeee;
-  --d-dark-rgb: 232 238 238;
+  --d-mid: #d8dfde;
+  --d-mid-rgb: 216 223 222;
+  --d-dark: #e1e7e7;
+  --d-dark-rgb: 225 231 231;
   --d-black: #f8fbfb;
   --d-black-rgb: 248 251 251;
 

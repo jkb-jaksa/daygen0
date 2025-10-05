@@ -254,7 +254,7 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
                   onClick={() => toggleValue(option.value)}
                   className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
-                      ? "bg-white border-white/70 shadow-lg shadow-white/30 text-theme-black"
+                      ? "bg-[color:var(--theme-text)] border-[color:var(--theme-text)]/70 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
                       : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
                   }`}
                 >
@@ -509,7 +509,7 @@ export function GalleryPanel({
                 {galleryFilters.types.map(type => (
                   <div
                     key={type}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                   >
                     <span>{type === "image" ? "Image" : "Video"}</span>
                     <button
@@ -542,7 +542,7 @@ export function GalleryPanel({
                   return (
                     <div
                       key={modelId}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                     >
                       <span>{model?.name || modelId}</span>
                       <button
@@ -572,7 +572,7 @@ export function GalleryPanel({
             {/* Selected Avatar Tag */}
             {galleryFilters.avatar !== "all" && (
               <div className="flex flex-wrap gap-2 mt-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
                   <span>{getAvailableAvatars().find(a => a.id === galleryFilters.avatar)?.name || galleryFilters.avatar}</span>
                   <button
                     type="button"
@@ -599,7 +599,7 @@ export function GalleryPanel({
             {/* Selected Folder Tag */}
             {galleryFilters.folder !== "all" && (
               <div className="flex flex-wrap gap-2 mt-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
                   <span>{folders.find(f => f.id === galleryFilters.folder)?.name || galleryFilters.folder}</span>
                   <button
                     type="button"
