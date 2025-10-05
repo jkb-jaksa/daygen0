@@ -685,6 +685,35 @@ html[data-theme="day"] .border-b.border-theme-black {
   --glass-prompt-border: var(--theme-dark);
 }
 
+html[data-theme="day"] .prompt-surface {
+  /* Force the prompt surface to keep the night palette tokens in day mode */
+  --theme-text: var(--n-text);
+  --theme-text-rgb: var(--n-text-rgb);
+  --theme-white: var(--n-white);
+  --theme-white-rgb: var(--n-white-rgb);
+  --theme-light: var(--n-light);
+  --theme-light-rgb: var(--n-light-rgb);
+  --theme-mid: var(--n-mid);
+  --theme-mid-rgb: var(--n-mid-rgb);
+  --theme-dark: var(--n-dark);
+  --theme-dark-rgb: var(--n-dark-rgb);
+  --theme-black: var(--n-black);
+  --theme-black-rgb: var(--n-black-rgb);
+  --theme-orange-1: var(--n-orange-1);
+  --theme-orange-1-rgb: var(--n-orange-1-rgb);
+  --theme-orange-2: var(--n-orange-2);
+  --theme-orange-2-rgb: var(--n-orange-2-rgb);
+  --glass-border: var(--n-dark);
+  --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
+  --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
+  --glass-tight-bg: var(--glass-base-bg);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.7);
+  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
+  --glass-prompt-text: var(--n-text);
+  --glass-prompt-text-rgb: var(--n-text-rgb);
+  --glass-prompt-border: var(--n-dark);
+}
+
 .promptbar {
   --theme-text: var(--n-text);
   --theme-text-rgb: var(--n-text-rgb);
