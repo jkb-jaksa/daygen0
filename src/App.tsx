@@ -46,7 +46,7 @@ function SectionFallback({ label }: { label: string }) {
   return (
     <div className="flex justify-center py-20">
       <div className="flex flex-col items-center gap-3 text-theme-white/70">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-theme-white/30 border-t-d-white" aria-hidden="true" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-theme-white/30 border-t-theme-white" aria-hidden="true" />
         <p className="font-raleway text-sm uppercase tracking-[0.3em]">Loading {label}…</p>
       </div>
     </div>
@@ -143,7 +143,7 @@ function RouteFallback() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
       <div
-        className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/40 border-t-d-white"
+        className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/40 border-t-theme-white"
         aria-hidden="true"
       />
       <span className="sr-only">Loading page…</span>

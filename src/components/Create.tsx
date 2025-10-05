@@ -4399,7 +4399,7 @@ const handleGenerate = async () => {
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
                             isFullyInFolder
-                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-d-white/20"
+                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
                               : isPartiallyInFolder
                                 ? "bg-theme-white/10 border-theme-white/70"
                                 : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
@@ -5648,7 +5648,7 @@ const handleGenerate = async () => {
                               <div className="w-full aspect-square animate-gradient-colors"></div>
                               <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                                 <div className="text-center">
-                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
                                   <div className="text-theme-white text-xs font-raleway animate-pulse">
                                     Generating...
                                   </div>
@@ -5669,7 +5669,7 @@ const handleGenerate = async () => {
                               <div className="w-full aspect-square animate-gradient-colors"></div>
                               <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                                 <div className="text-center">
-                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
                                   <div className="text-theme-white text-xs font-raleway animate-pulse">
                                     Generating...
                                   </div>
@@ -5690,7 +5690,7 @@ const handleGenerate = async () => {
                               <div className="w-full aspect-square animate-gradient-colors"></div>
                               <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                                 <div className="text-center">
-                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
                                   <div className="text-theme-white text-xs font-raleway animate-pulse">
                                     Generating...
                                   </div>
@@ -5835,7 +5835,7 @@ const handleGenerate = async () => {
                           <div className="w-full aspect-square animate-gradient-colors"></div>
                           <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                             <div className="text-center">
-                              <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                              <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
                               <div className="text-theme-white text-xs font-raleway animate-pulse">
                                 Generating...
                               </div>
@@ -6543,7 +6543,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "veo-3"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6584,7 +6584,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "runway-video-gen4"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6623,7 +6623,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "hailuo-02"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6662,7 +6662,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "wan-video-2.2"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6701,7 +6701,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "kling-video"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6742,7 +6742,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "seedance-1.0-pro"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6782,7 +6782,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "luma-ray-2"
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
@@ -6840,7 +6840,7 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
-                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
                               : isComingSoon
                               ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
                               : 'bg-transparent hover:bg-theme-text/20 border-0'

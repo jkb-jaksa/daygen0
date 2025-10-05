@@ -207,7 +207,7 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
           >
             <div
               ref={cardRef}
-              className={`${glass.surface} pointer-events-auto w-[480px] max-w-[calc(100vw-2rem)] rounded-2xl border border-theme-dark/70 bg-theme-black/80 p-4 shadow-xl shadow-d-black/50`}
+              className={`${glass.surface} pointer-events-auto w-[480px] max-w-[calc(100vw-2rem)] rounded-2xl border border-theme-dark/70 bg-theme-black/80 p-4 shadow-xl shadow-theme-black/50`}
               onMouseEnter={() => {
                 clearHideTimer();
               }}

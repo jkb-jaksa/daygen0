@@ -1915,7 +1915,7 @@ export default function Avatars() {
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
                             isInFolder
-                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-d-white/20"
+                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
                               : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
                           }`}
                         >

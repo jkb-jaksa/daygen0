@@ -1201,7 +1201,7 @@ export default function Edit() {
                         top: mousePosition.y - brushSize / 2,
                         width: brushSize,
                         height: brushSize,
-                        borderColor: 'rgba(var(--d-text-rgb), 1)',
+                        borderColor: 'rgba(var(--theme-text-rgb), 1)',
                         opacity: 0.8
                       }}
                     />
@@ -1631,7 +1631,7 @@ export default function Edit() {
                       }}
                       className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                         isSelected 
-                          ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                          ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                           : "bg-transparent hover:bg-theme-text/20 border-0"
                       }`}
                     >

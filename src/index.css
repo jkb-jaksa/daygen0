@@ -674,6 +674,18 @@ html[data-theme="day"] .border-b.border-theme-black {
 
 .prompt-surface {
   color: var(--glass-prompt-text);
+  --glass-border: var(--theme-dark);
+  --glass-base-bg: rgb(var(--theme-light-rgb) / 0.15);
+  --glass-surface-bg: rgb(var(--theme-black-rgb) / 0.15);
+  --glass-tight-bg: var(--glass-base-bg);
+  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.7);
+  --glass-prompt-bg: rgb(var(--theme-mid-rgb) / 0.85);
+  --glass-prompt-text: var(--theme-text);
+  --glass-prompt-text-rgb: var(--theme-text-rgb);
+  --glass-prompt-border: var(--theme-dark);
+}
+
+.promptbar {
   --theme-text: var(--n-text);
   --theme-text-rgb: var(--n-text-rgb);
   --theme-white: var(--n-white);

@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
     return (
       <div className={`${layout.page} flex items-center justify-center min-h-screen`}>
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/40 border-t-d-white mx-auto mb-4" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/40 border-t-theme-white mx-auto mb-4" />
           <p className={text.body}>Loading...</p>
         </div>
       </div>

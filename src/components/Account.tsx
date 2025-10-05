@@ -211,7 +211,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
             </div>
             <p className="mt-6 text-center text-[0.7rem] font-raleway text-theme-white/50">
               By continuing you agree to our{" "}
-              <Link to="/privacy-policy" className="text-theme-white hover:text-theme-text underline decoration-d-white/40 decoration-dotted underline-offset-4">
+              <Link to="/privacy-policy" className="text-theme-white hover:text-theme-text underline decoration-theme-white/40 decoration-dotted underline-offset-4">
                 Privacy Policy
               </Link>
               .
@@ -474,7 +474,7 @@ export default function Account() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-theme-black-subtle text-theme-text">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/30 border-t-d-white" aria-hidden="true" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/30 border-t-theme-white" aria-hidden="true" />
           <p className="font-raleway text-sm text-theme-white/70">Restoring your account...</p>
         </div>
       </main>

@@ -1708,7 +1708,7 @@ const Explore: React.FC = () => {
                     onClick={() => setActiveGalleryView('creations')}
                     className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
                       activeGalleryView === 'creations'
-                        ? 'bg-theme-white text-theme-black shadow-lg shadow-d-white/20'
+                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
                         : 'text-theme-white/70 hover:text-theme-text'
                     }`}
                   >
@@ -1720,7 +1720,7 @@ const Explore: React.FC = () => {
                     onClick={() => setActiveGalleryView('avatars')}
                     className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
                       activeGalleryView === 'avatars'
-                        ? 'bg-theme-white text-theme-black shadow-lg shadow-d-white/20'
+                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
                         : 'text-theme-white/70 hover:text-theme-text'
                     }`}
                   >
@@ -1766,7 +1766,7 @@ const Explore: React.FC = () => {
                           }}
                           className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${
                             isSelected
-                              ? 'bg-theme-white text-theme-black border border-theme-white shadow-lg shadow-d-white/20'
+                              ? 'bg-theme-white text-theme-black border border-theme-white shadow-lg shadow-theme-white/20'
                               : 'bg-theme-black/40 text-theme-white border border-theme-dark hover:border-theme-mid hover:text-theme-text'
                           }`}
                         >
@@ -2509,9 +2509,9 @@ const Explore: React.FC = () => {
                               disabled={isInspirationsFolder}
                               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${
                                 isInspirationsFolder
-                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-d-white/10 cursor-default'
+                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10 cursor-default'
                                   : isAssigned
-                                    ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-d-white/10'
+                                    ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10'
                                     : 'border-theme-dark bg-theme-black/30 text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
                               }`}
                             >

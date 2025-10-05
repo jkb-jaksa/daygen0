@@ -366,7 +366,7 @@ export function SettingsMenu({
                 value={veo.negativePrompt}
                 onChange={event => veo.onNegativePromptChange(event.target.value)}
                 placeholder="e.g., blurry, low quality"
-                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             <div>
@@ -379,7 +379,7 @@ export function SettingsMenu({
                   veo.onSeedChange(value ? parseInt(value, 10) : undefined);
                 }}
                 placeholder="e.g., 12345"
-                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
           </div>
@@ -545,7 +545,7 @@ export function SettingsMenu({
                 value={wan.negativePrompt}
                 onChange={event => wan.onNegativePromptChange(event.target.value)}
                 placeholder="e.g., blurry, low detail"
-                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -579,7 +579,7 @@ export function SettingsMenu({
                 value={wan.seed}
                 onChange={event => wan.onSeedChange(event.target.value)}
                 placeholder="e.g., 12345"
-                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
           </div>
@@ -668,7 +668,7 @@ export function SettingsMenu({
                 value={kling.negativePrompt}
                 onChange={event => kling.onNegativePromptChange(event.target.value)}
                 placeholder="e.g., low quality, noisy"
-                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             <div>
@@ -811,7 +811,7 @@ export function SettingsMenu({
                 value={seedance.seed}
                 onChange={event => seedance.onSeedChange(event.target.value)}
                 placeholder="e.g., 12345"
-                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             {(seedance.mode === "i2v-first" || seedance.mode === "i2v-first-last") && (
@@ -962,7 +962,7 @@ export function SettingsMenu({
                       onClick={() => gemini.onAspectRatioChange(ratio)}
                       className={`rounded-lg border px-2 py-1.5 text-xs font-raleway transition-colors duration-150 ${
                         isActive
-                          ? 'border-theme-text bg-theme-text/10 text-theme-text shadow-sm shadow-d-text/10'
+                          ? 'border-theme-text bg-theme-text/10 text-theme-text shadow-sm shadow-theme-text/10'
                           : 'border-theme-mid bg-theme-black text-theme-white hover:border-theme-text/60 hover:text-theme-text'
                       }`}
                     >

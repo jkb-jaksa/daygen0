@@ -72,15 +72,15 @@ export default function Navbar() {
       type="button"
       onClick={toggleTheme}
       className={`${iconButtons.xl} sm:${iconButtons.sm} ${className}`}
-      aria-label={isDay ? "Switch to night mode" : "Switch to light mode"}
-      title={isDay ? "Switch to night mode" : "Switch to light mode"}
+      aria-label={isDay ? "Switch to night mode" : "Switch to day mode"}
+      title={isDay ? "Switch to night mode" : "Switch to day mode"}
     >
       {isDay ? (
         <Moon className="w-4 h-4" aria-hidden="true" />
       ) : (
         <Sun className="w-4 h-4" aria-hidden="true" />
       )}
-      {showLabel && <span className="text-sm font-raleway">{isDay ? "Night" : "Light"}</span>}
+      {showLabel && <span className="text-sm font-raleway">{isDay ? "Night" : "Day"}</span>}
     </button>
   );
 
