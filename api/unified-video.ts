@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import RunwayML, { TaskFailedError } from '@runwayml/sdk';
 import { LumaAI } from 'lumaai';
 import crypto from 'crypto';
-import { downloadVideoToBase64 } from '../src/lib/luma.js';
+import { downloadVideoToBase64 } from '../src/lib/luma';
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/';
 const ARK_BASE = process.env.ARK_BASE || 'https://ark.ap-southeast.bytepluses.com/api/v3';

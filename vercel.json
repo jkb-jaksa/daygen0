@@ -8,6 +8,33 @@
     },
     "api/unified-flux.ts": {
       "maxDuration": 30
+    },
+    "api/image/gemini.ts": {
+      "maxDuration": 30
+    },
+    "api/image/flux.ts": {
+      "maxDuration": 30
+    },
+    "api/image/ideogram.ts": {
+      "maxDuration": 30
+    },
+    "api/image/qwen.ts": {
+      "maxDuration": 30
+    },
+    "api/image/runway.ts": {
+      "maxDuration": 30
+    },
+    "api/image/chatgpt.ts": {
+      "maxDuration": 30
+    },
+    "api/image/reve.ts": {
+      "maxDuration": 30
+    },
+    "api/image/recraft.ts": {
+      "maxDuration": 30
+    },
+    "api/image/luma.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

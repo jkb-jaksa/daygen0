@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getLuma, downloadImageToBase64, downloadVideoToBase64 } from '../src/lib/luma.js';
+import { getLuma, downloadImageToBase64, downloadVideoToBase64 } from '../src/lib/luma';
 
 type LumaGenerationState = 'queued' | 'dreaming' | 'completed' | 'failed';
 

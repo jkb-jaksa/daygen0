@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.15.0"
+  },
   "scripts": {
     "dev": "vite",
     "dev:server": "node server.js",
@@ -63,3 +66,5 @@
     "vitest": "^2.1.6"
   }
 }
+engines
+"engines": {"node": ">=22.15.0"},
