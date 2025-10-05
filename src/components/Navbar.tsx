@@ -459,7 +459,9 @@ export default function Navbar() {
               >
                 {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <ThemeToggleButton />
+              <div className="hidden lg:flex">
+                <ThemeToggleButton />
+              </div>
               <button aria-label="Search" className={`${iconButtons.xl} sm:${iconButtons.sm}`}>
                 <Search className="w-4 h-4" />
               </button>
