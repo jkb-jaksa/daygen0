@@ -308,7 +308,7 @@ html[data-theme="day"] {
   --glass-base-bg: rgb(var(--d-dark-rgb) / 0.65);
   --glass-surface-bg: rgb(var(--d-black-rgb) / 0.85);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--d-mid-rgb) / 0.45);
+  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.7);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
