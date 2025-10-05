@@ -62,6 +62,7 @@ export const glass = {
   prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
   promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[20px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[40px] border border-[color:var(--glass-border)] bg-[color:var(--glass-dark-bg)]`,
+  sidebarIcon: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-base-bg)] text-[color:var(--theme-text)]`,
 };
 
 const iconButtonFocus =

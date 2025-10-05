@@ -51,7 +51,7 @@ function CreateSidebarComponent({
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}
+                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.sidebarIcon} hover:border-theme-mid`}
                 >
                   <Icon className="size-3" />
                 </div>
@@ -79,7 +79,7 @@ function CreateSidebarComponent({
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}
+                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.sidebarIcon} hover:border-theme-mid`}
                 >
                   <Icon className="size-3" />
                 </div>
@@ -98,7 +98,7 @@ function CreateSidebarComponent({
             }`}
             aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
           >
-            <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
+            <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.sidebarIcon} hover:border-theme-mid`}>
               <FOLDERS_ENTRY.Icon className="size-3" />
             </div>
             <span>{FOLDERS_ENTRY.label}</span>

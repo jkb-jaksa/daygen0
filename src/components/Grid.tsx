@@ -276,7 +276,7 @@ export function Grid() {
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid ${
+                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.sidebarIcon} hover:border-theme-mid ${
                     isActive ? "border-theme-mid" : ""
                   }`}
                 >
