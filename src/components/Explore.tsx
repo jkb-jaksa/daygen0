@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
   useLayoutEffect,
+  Suspense,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -41,12 +42,9 @@ import {
   RefreshCw,
   Crown,
 } from "lucide-react";
-import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { debugError } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
-import XIcon from "./XIcon";
-import InstagramIcon from "./InstagramIcon";
 import { useAuth } from "../auth/useAuth";
 import type {
   Folder,
@@ -56,6 +54,7 @@ import type {
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import { normalizeModelId } from '../utils/modelUtils';
+import ModelBadge from './ModelBadge';
 
 
 const styleFilters = [
@@ -2136,116 +2135,50 @@ const Explore: React.FC = () => {
                     </div>
 
                     <div
-                      className={`absolute inset-x-4 bottom-4 flex flex-col gap-4 transition-opacity duration-100 ${
+                      className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
                         isMenuActive
-                          ? 'opacity-100 pointer-events-auto'
-                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                          ? 'opacity-100'
+                          : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                       }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
                     >
-                      <div className="glassprompt2">
-                        <div className="flex flex-wrap items-center gap-4">
-                          <div className="relative size-10 overflow-hidden rounded-full">
-                            <div className={`absolute inset-0 bg-gradient-to-br ${item.creator.avatarColor}`} aria-hidden="true" />
-                            <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
-                              {getInitials(item.creator.name)}
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate font-raleway text-sm text-theme-text">{item.creator.name}</p>
-                              <div className="flex items-center gap-1.5 text-theme-white/70">
-                                <a
-                                  href="https://x.com"
-                                  target="_blank"
-                                  rel="noreferrer noopener"
-                                  className="transition-colors duration-200 hover:text-theme-text"
-                                  onClick={(event) => event.stopPropagation()}
-                                  aria-label="View on X"
-                                >
-                                  <XIcon className="w-3.5 h-3.5" />
-                                </a>
-                                <a
-                                  href="https://instagram.com"
-                                  target="_blank"
-                                  rel="noreferrer noopener"
-                                  className="transition-colors duration-200 hover:text-theme-text"
-                                  onClick={(event) => event.stopPropagation()}
-                                  aria-label="View on Instagram"
-                                >
-                                  <InstagramIcon className="w-3.5 h-3.5" />
-                                </a>
-                              </div>
-                            </div>
-                            <p className="truncate text-xs text-theme-white">
-                              {item.creator.handle}
+                      <div className="w-full p-4">
+                        <div className="mb-2">
+                          <div className="relative">
+                            <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                              {item.prompt}
+                              <button
+                                data-copy-button="true"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void copyPromptToClipboard(item.prompt);
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                onMouseEnter={(e) => {
+                                  showHoverTooltip(e.currentTarget, `copy-${item.id}`);
+                                }}
+                                onMouseLeave={() => {
+                                  hideHoverTooltip(`copy-${item.id}`);
+                                }}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
                             </p>
                           </div>
-                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-theme-dark text-xs font-medium text-theme-white backdrop-blur">
-                            {hasToolLogo(item.modelId) && (
-                              <img
-                                src={getToolLogo(item.modelId)!}
-                                alt={`${getModelDisplayName(item.modelId, item.modelLabel)} logo`}
-                                loading="lazy"
-                                className="w-4 h-4 rounded-sm object-cover"
-                              />
-                            )}
-                            {getModelDisplayName(item.modelId, item.modelLabel)}
-                          </span>
                         </div>
-                        
-                        <div className="mt-3 flex items-start gap-2 text-sm text-theme-white">
-                          <p 
-                            className="flex-1 font-raleway leading-relaxed"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {item.prompt}
-                          </p>
-                          <button
-                            type="button"
-                            data-copy-button="true"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              void copyPromptToClipboard(item.prompt);
-                            }}
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                            className="text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            aria-label="Copy prompt"
-                            onMouseEnter={(event) => {
-                              showHoverTooltip(event.currentTarget, `copy-${item.id}`);
-                            }}
-                            onMouseLeave={() => {
-                              hideHoverTooltip(`copy-${item.id}`);
-                            }}
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="mt-3 mb-1 flex items-center justify-start text-xs text-theme-light">
-                          <div className="flex items-center gap-2">
-                            {item.tags.map((tag) => (
-                              <button
-                                key={tag}
-                                type="button"
-                                className={`rounded-full border border-theme-dark px-3 py-1 text-xs font-medium text-theme-white backdrop-blur transition-colors duration-200 hover:text-theme-text pointer-events-auto ${glass.promptDark}`}
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                #{tag}
-                              </button>
-                            ))}
-                          </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <Suspense fallback={null}>
+                            <ModelBadge model={item.modelId ?? 'unknown'} size="md" />
+                          </Suspense>
                         </div>
                       </div>
-
-
                     </div>
                   </div>
                   </article>
@@ -2775,100 +2708,30 @@ const Explore: React.FC = () => {
 
               {/* Image info overlay */}
               <div
-                className="absolute inset-x-0 bottom-0 gallery-prompt-gradient p-4 transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+                className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
+                  recreateActionMenu?.id === selectedFullImage.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                }`}
               >
-                <div className="pointer-events-auto">
-                  <div className="glassprompt2">
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="relative size-10 overflow-hidden rounded-full">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${selectedFullImage.creator.avatarColor}`} aria-hidden="true" />
-                        <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
-                          {getInitials(selectedFullImage.creator.name)}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate font-raleway text-sm text-theme-text">{selectedFullImage.creator.name}</p>
-                          <div className="flex items-center gap-1.5 text-theme-white/70">
-                            <a
-                              href="https://x.com"
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="transition-colors duration-200 hover:text-theme-text"
-                              onClick={(event) => event.stopPropagation()}
-                              aria-label="View on X"
-                            >
-                              <XIcon className="w-3.5 h-3.5" />
-                            </a>
-                            <a
-                              href="https://instagram.com"
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="transition-colors duration-200 hover:text-theme-text"
-                              onClick={(event) => event.stopPropagation()}
-                              aria-label="View on Instagram"
-                            >
-                              <InstagramIcon className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        </div>
-                        <p className="truncate text-xs text-theme-white">
-                          {selectedFullImage.creator.handle}
-                        </p>
-                      </div>
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-theme-dark text-xs font-medium text-theme-white backdrop-blur">
-                        {hasToolLogo(selectedFullImage.modelId) && (
-                          <img
-                            src={getToolLogo(selectedFullImage.modelId)!}
-                            alt={`${getModelDisplayName(selectedFullImage.modelId, selectedFullImage.modelLabel)} logo`}
-                            loading="lazy"
-                            className="w-4 h-4 rounded-sm object-cover"
-                          />
-                        )}
-                        {getModelDisplayName(selectedFullImage.modelId, selectedFullImage.modelLabel)}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 flex items-start gap-2 text-sm text-theme-white">
-                      <p className="flex-1 font-raleway leading-relaxed">{selectedFullImage.prompt}</p>
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-sm font-raleway leading-relaxed">
+                      {selectedFullImage.prompt}
                       <button
-                        type="button"
                         data-copy-button="true"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
+                        onClick={(e) => {
+                          e.stopPropagation();
                           void copyPromptToClipboard(selectedFullImage.prompt);
                         }}
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                        }}
-                        className="text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        aria-label="Copy prompt"
-                        onMouseEnter={(event) => {
-                          showHoverTooltip(event.currentTarget, `fullsize-copy-${selectedFullImage.id}`);
-                        }}
-                        onMouseLeave={() => {
-                          hideHoverTooltip(`fullsize-copy-${selectedFullImage.id}`);
-                        }}
+                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
+                        title="Copy prompt"
                       >
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-3 h-3" />
                       </button>
                     </div>
-
-                    <div className="mt-3 mb-1 flex items-center justify-start text-xs text-theme-light">
-                      <div className="flex items-center gap-2">
-                        {selectedFullImage.tags.map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            className="rounded-full border border-theme-dark px-3 py-1 text-xs font-medium text-theme-white backdrop-blur bg-black/40 transition-colors duration-200 hover:text-theme-text"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            #{tag}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="mt-2 flex justify-center items-center gap-2">
+                      <Suspense fallback={null}>
+                        <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
+                      </Suspense>
                     </div>
                   </div>
                 </div>
