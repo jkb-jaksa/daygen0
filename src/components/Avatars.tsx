@@ -965,7 +965,7 @@ export default function Avatars() {
             className="h-full w-full object-cover"
             loading="lazy"
           />
-          <div className="absolute bottom-0 left-0 right-0">
+          <div className="absolute bottom-0 left-0 right-0 hidden lg:block">
             <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
               {editingAvatarId === avatar.id ? (
                 <form
@@ -1204,7 +1204,7 @@ export default function Avatars() {
           className="h-full w-full object-cover"
           loading="lazy"
         />
-        <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+        <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100 hidden lg:block">
           <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
             <div className="space-y-2">
               <p className="text-sm font-raleway text-theme-white leading-relaxed line-clamp-3">

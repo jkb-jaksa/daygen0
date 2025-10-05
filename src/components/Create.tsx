@@ -2870,7 +2870,7 @@ const Create: React.FC = () => {
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
             onClick={(e) => {
@@ -4848,7 +4848,7 @@ const handleGenerate = async () => {
                             
                             {/* Upload info overlay */}
                             <div
-                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10"
+                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-none hidden lg:flex items-end z-10"
                             >
                               <div className="w-full p-4">
                                 <div className="mb-2">
@@ -4974,7 +4974,7 @@ const handleGenerate = async () => {
 
                               {/* Image info overlay */}
                               <div
-                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
                                   imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
                                 onClick={(e) => {
@@ -5420,7 +5420,7 @@ const handleGenerate = async () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
                                 imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               onClick={(e) => {
@@ -5713,7 +5713,7 @@ const handleGenerate = async () => {
                               
                               {/* Hover prompt overlay */}
                               {seedanceVideo.prompt && (
-                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 opacity-0 group-hover:opacity-100`}>
+                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none hidden lg:flex items-end z-10 opacity-0 group-hover:opacity-100`}>
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
@@ -5750,7 +5750,7 @@ const handleGenerate = async () => {
                               
                               {/* Hover prompt overlay */}
                               {video.prompt && (
-                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none flex items-end z-10 opacity-0 group-hover:opacity-100`}>
+                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none hidden lg:flex items-end z-10 opacity-0 group-hover:opacity-100`}>
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
@@ -5867,7 +5867,7 @@ const handleGenerate = async () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               onClick={(e) => {
