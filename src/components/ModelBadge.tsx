@@ -250,7 +250,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
     <div 
       className={`
         ${glass.promptDark} 
-        text-d-white 
+        text-theme-white 
         ${sizeClasses[size]} 
         rounded-full 
         font-medium font-raleway 

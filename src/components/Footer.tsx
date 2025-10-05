@@ -14,13 +14,13 @@ export default function Footer() {
   return (
     <footer>
       {/* Footer panel */}
-      <section className="relative bg-d-black-subtle overflow-hidden border-t border-d-dark">
+      <section className="relative bg-theme-black-subtle overflow-hidden border-t border-theme-dark">
         <div className={`${layout.container} pt-8 pb-40 relative z-0`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}
             <div className="pt-4">
               <div className="text-xl font-light tracking-tight font-raleway leading-[1.05] mb-2">
-                <span className="text-d-text">daygen</span>
+                <span className="text-theme-text">daygen</span>
               </div>
               <p className="text-base text-b-white mb-2 font-raleway font-light">next-gen ideas. every day.</p>
             </div>
@@ -28,8 +28,8 @@ export default function Footer() {
             {/* Right block: links */}
             <div className="md:justify-self-end pt-4">
               <nav className="flex flex-col gap-3 text-base font-raleway font-light">
-                <Link to="/privacy-policy" className="parallax-small text-b-white hover:text-d-text transition-colors">Privacy Policy</Link>
-                <Link to="/#faq" className="parallax-small text-b-white hover:text-d-text transition-colors">FAQ</Link>
+                <Link to="/privacy-policy" className="parallax-small text-b-white hover:text-theme-text transition-colors">Privacy Policy</Link>
+                <Link to="/#faq" className="parallax-small text-b-white hover:text-theme-text transition-colors">FAQ</Link>
               </nav>
             </div>
           </div>
@@ -45,7 +45,7 @@ export default function Footer() {
             <button
               onClick={scrollToTop}
               aria-label="Back to top"
-              className="image-action-btn parallax-force-positioned absolute right-0 top-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black"
+              className="image-action-btn parallax-force-positioned absolute right-0 top-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black"
             >
               <ChevronUp className="size-4" />
             </button>

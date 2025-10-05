@@ -14,14 +14,14 @@ const UseCaseCard = memo(({ useCase }: { useCase: UseCaseItem }) => {
   return (
     <Link
       to="/learn/tools"
-      className={`${glass.surface} group flex flex-col gap-2 rounded-3xl border-d-dark px-4 py-4 transition-colors duration-100 hover:border-d-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
+      className={`${glass.surface} group flex flex-col gap-2 rounded-3xl border-theme-dark px-4 py-4 transition-colors duration-100 hover:border-theme-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black`}
       aria-label={`Open ${useCase.title}`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >
-      <h4 className="text-base font-raleway font-normal text-d-text">{useCase.title}</h4>
-      <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+      <h4 className="text-base font-raleway font-normal text-theme-text">{useCase.title}</h4>
+      <p className="text-sm font-raleway font-light leading-relaxed text-theme-white">
         {useCase.subtitle}
       </p>
     </Link>

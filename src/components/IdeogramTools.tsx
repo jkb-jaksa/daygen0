@@ -186,8 +186,8 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
   return (
     <div className={`${glass.surface} w-full max-w-4xl mx-auto p-6 sm:p-8`}>
       <div className="mb-6 space-y-2">
-        <h2 className="text-2xl font-semibold text-d-text font-raleway">Ideogram AI Tools</h2>
-        <p className="text-d-white/70 font-raleway">Advanced image generation, editing, and enhancement powered by Ideogram 3.0</p>
+        <h2 className="text-2xl font-semibold text-theme-text font-raleway">Ideogram AI Tools</h2>
+        <p className="text-theme-white/70 font-raleway">Advanced image generation, editing, and enhancement powered by Ideogram 3.0</p>
       </div>
 
       {/* Tab Navigation */}
@@ -196,10 +196,10 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as 'generate' | 'edit' | 'reframe' | 'replace' | 'upscale' | 'describe')}
-            className={`px-4 py-2 rounded-full font-raleway text-sm transition-colors border border-d-dark ${
+            className={`px-4 py-2 rounded-full font-raleway text-sm transition-colors border border-theme-dark ${
               activeTab === tab.id
-                ? 'bg-[color:var(--d-orange-1)] text-d-black shadow-[0_8px_24px_#b8c0c040]'
-                : 'bg-d-dark/60 text-d-white/70 hover:text-d-text hover:bg-d-dark/80'
+                ? 'bg-[color:var(--d-orange-1)] text-theme-black shadow-[0_8px_24px_#b8c0c040]'
+                : 'bg-theme-dark/60 text-theme-white/70 hover:text-theme-text hover:bg-theme-dark/80'
             }`}
           >
             <span className="mr-2">{tab.icon}</span>
@@ -214,7 +214,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           <p className="text-[color:var(--brand-red)] font-raleway">{error}</p>
           <button
             onClick={clearError}
-            className="mt-2 text-sm font-raleway text-[color:var(--brand-red)] hover:text-d-text underline"
+            className="mt-2 text-sm font-raleway text-[color:var(--brand-red)] hover:text-theme-text underline"
           >
             Dismiss
           </button>
@@ -232,7 +232,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {activeTab === 'generate' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Prompt
             </label>
             <textarea
@@ -246,7 +246,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Aspect Ratio
               </label>
               <select
@@ -266,7 +266,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
             {aspectRatio === 'custom' && (
               <div>
-                <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+                <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                   Resolution
                 </label>
                 <input
@@ -280,7 +280,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             )}
 
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Rendering Speed
               </label>
               <select
@@ -295,7 +295,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Number of Images
               </label>
               <select
@@ -312,7 +312,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Style Type
               </label>
               <select
@@ -329,7 +329,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Style Preset (Optional)
               </label>
               <input
@@ -343,7 +343,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Negative Prompt (Optional)
             </label>
             <input
@@ -370,7 +370,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Image File
               </label>
               <input
@@ -381,14 +381,14 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
                 className={`${inputs.base} cursor-pointer`}
               />
               {selectedImage && (
-                <p className="mt-2 text-sm text-d-white/60 font-raleway">
+                <p className="mt-2 text-sm text-theme-white/60 font-raleway">
                   Selected: {selectedImage.name}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Mask File (Black areas will be edited)
               </label>
               <input
@@ -399,7 +399,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
                 className={`${inputs.base} cursor-pointer`}
               />
               {selectedMask && (
-                <p className="mt-2 text-sm text-d-white/60 font-raleway">
+                <p className="mt-2 text-sm text-theme-white/60 font-raleway">
                   Selected: {selectedMask.name}
                 </p>
               )}
@@ -407,7 +407,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Edit Prompt
             </label>
             <textarea
@@ -433,7 +433,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {activeTab === 'reframe' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Image File (Square image recommended)
             </label>
             <input
@@ -444,14 +444,14 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               className={`${inputs.base} cursor-pointer`}
             />
             {selectedImage && (
-              <p className="mt-2 text-sm text-d-white/60 font-raleway">
+              <p className="mt-2 text-sm text-theme-white/60 font-raleway">
                 Selected: {selectedImage.name}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Target Resolution
             </label>
             <input
@@ -477,7 +477,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {activeTab === 'replace' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Image File
             </label>
             <input
@@ -488,14 +488,14 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               className={`${inputs.base} cursor-pointer`}
             />
             {selectedImage && (
-              <p className="mt-2 text-sm text-d-white/60 font-raleway">
+              <p className="mt-2 text-sm text-theme-white/60 font-raleway">
                 Selected: {selectedImage.name}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Background Prompt
             </label>
             <textarea
@@ -521,7 +521,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {activeTab === 'upscale' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Image File
             </label>
             <input
@@ -532,7 +532,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               className={`${inputs.base} cursor-pointer`}
             />
             {selectedImage && (
-              <p className="mt-2 text-sm text-d-white/60 font-raleway">
+              <p className="mt-2 text-sm text-theme-white/60 font-raleway">
                 Selected: {selectedImage.name}
               </p>
             )}
@@ -540,7 +540,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Resemblance ({resemblance}%)
               </label>
               <input
@@ -554,7 +554,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+              <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
                 Detail ({detail}%)
               </label>
               <input
@@ -569,7 +569,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Enhancement Prompt (Optional)
             </label>
             <input
@@ -595,7 +595,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {activeTab === 'describe' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-d-white/80 mb-2 font-raleway">
+            <label className="block text-sm font-medium text-theme-white/80 mb-2 font-raleway">
               Image File
             </label>
             <input
@@ -606,7 +606,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               className={`${inputs.base} cursor-pointer`}
             />
             {selectedImage && (
-              <p className="mt-2 text-sm text-d-white/60 font-raleway">
+              <p className="mt-2 text-sm text-theme-white/60 font-raleway">
                 Selected: {selectedImage.name}
               </p>
             )}
@@ -622,9 +622,9 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
           {descriptions.length > 0 && (
             <div className={`mt-4 p-4 rounded-lg ${glass.base}`}>
-            <h3 className="text-lg font-semibold text-d-text mb-2 font-raleway">Descriptions:</h3>
+            <h3 className="text-lg font-semibold text-theme-text mb-2 font-raleway">Descriptions:</h3>
               {descriptions.map((desc, index) => (
-                <p key={index} className="text-d-white/80 mb-2 font-raleway">{desc}</p>
+                <p key={index} className="text-theme-white/80 mb-2 font-raleway">{desc}</p>
               ))}
             </div>
           )}
@@ -635,10 +635,10 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {generatedImages.length > 0 && (
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-d-text font-raleway">Generated Images</h3>
+            <h3 className="text-lg font-semibold text-theme-text font-raleway">Generated Images</h3>
             <button
               onClick={clearGeneratedImages}
-              className="text-sm text-d-white/60 hover:text-d-text underline font-raleway"
+              className="text-sm text-theme-white/60 hover:text-theme-text underline font-raleway"
             >
               Clear All
             </button>
@@ -652,8 +652,8 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-3">
-                  <p className="text-sm text-d-white/75 truncate font-raleway">{image.prompt}</p>
-                  <p className="text-xs text-d-white/50 mt-1 font-raleway">
+                  <p className="text-sm text-theme-white/75 truncate font-raleway">{image.prompt}</p>
+                  <p className="text-xs text-theme-white/50 mt-1 font-raleway">
                     {new Date(image.timestamp).toLocaleString()}
                   </p>
                 </div>

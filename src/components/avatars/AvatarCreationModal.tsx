@@ -92,11 +92,11 @@ function AvatarCreationModalComponent({
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-d-black/80 px-4 py-4">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-theme-black/80 px-4 py-4">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] border border-theme-dark bg-theme-black/90 shadow-2xl">
         <button
           type="button"
-          className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text z-10"
+          className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
           onClick={onClose}
           aria-label="Close avatar creation"
         >
@@ -105,28 +105,28 @@ function AvatarCreationModalComponent({
 
         <div className="flex flex-col gap-4 p-4 lg:p-6 overflow-y-auto max-h-full">
           <div className="space-y-2">
-            <h2 className="text-2xl font-raleway text-d-text">Create Avatar</h2>
-            <p className="text-sm font-raleway text-d-white">
+            <h2 className="text-2xl font-raleway text-theme-text">Create Avatar</h2>
+            <p className="text-sm font-raleway text-theme-white">
               Pick an image and give your avatar a name. We'll save it here for quick use later.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-4`}>
+            <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark/60 p-4`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
-                  <Upload className="h-5 w-5 text-d-white" />
+                <div className="flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
+                  <Upload className="h-5 w-5 text-theme-white" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-raleway text-d-text">Upload image</h3>
-                  <p className="text-sm font-raleway text-d-white">
+                  <h3 className="text-lg font-raleway text-theme-text">Upload image</h3>
+                  <p className="text-sm font-raleway text-theme-white">
                     Upload an image to turn into a reusable avatar.
                   </p>
                 </div>
               </div>
               <div className="w-48 mx-auto">
                 {selection ? (
-                  <div className="relative aspect-square overflow-hidden rounded-2xl border border-d-dark bg-d-black/50">
+                  <div className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50">
                     <img src={selection.imageUrl} alt="Selected avatar" className="h-full w-full object-cover" />
                     <button
                       type="button"
@@ -134,7 +134,7 @@ function AvatarCreationModalComponent({
                         onClearSelection();
                         onUploadError(null);
                       }}
-                      className="absolute top-1.5 right-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
+                      className="absolute top-1.5 right-1.5 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1"
                       aria-label="Remove selected image"
                     >
                       <X className="w-3 h-3" />
@@ -142,7 +142,7 @@ function AvatarCreationModalComponent({
                     <button
                       type="button"
                       onClick={triggerFileBrowse}
-                      className="absolute bottom-1.5 left-1.5 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1"
+                      className="absolute bottom-1.5 left-1.5 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1"
                       aria-label="Change image"
                     >
                       <Upload className="w-3 h-3" />
@@ -150,10 +150,10 @@ function AvatarCreationModalComponent({
                   </div>
                 ) : (
                   <label
-                    className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-d-white transition-colors duration-200 ${
+                    className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-theme-white transition-colors duration-200 ${
                       isDragging
                         ? "border-brand bg-brand/10"
-                        : "border-d-white/30 bg-d-black/60 hover:border-d-text/50"
+                        : "border-theme-white/30 bg-theme-black/60 hover:border-theme-text/50"
                     }`}
                     onDragOver={(event) => {
                       event.preventDefault();
@@ -174,8 +174,8 @@ function AvatarCreationModalComponent({
                     }}
                   >
                     <span className="font-medium">Select image</span>
-                    <span className="text-xs text-d-white/60">PNG, JPG, or WebP up to 50 MB</span>
-                    <span className="text-xs text-d-white/40">Click, drag & drop, or paste</span>
+                    <span className="text-xs text-theme-white/60">PNG, JPG, or WebP up to 50 MB</span>
+                    <span className="text-xs text-theme-white/40">Click, drag & drop, or paste</span>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -197,14 +197,14 @@ function AvatarCreationModalComponent({
               )}
             </div>
 
-            <div className={`${glass.promptDark} rounded-[28px] border border-d-dark/60 p-4`}>
+            <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark/60 p-4`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="flex size-10 items-center justify-center rounded-full border border-d-dark bg-d-black/70">
-                  <Users className="h-5 w-5 text-d-white" />
+                <div className="flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
+                  <Users className="h-5 w-5 text-theme-white" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-raleway text-d-text">Choose from your creations</h3>
-                  <p className="text-sm font-raleway text-d-white">
+                  <h3 className="text-lg font-raleway text-theme-text">Choose from your creations</h3>
+                  <p className="text-sm font-raleway text-theme-white">
                     Pick from anything you've generated in the DayGen studio.
                   </p>
                 </div>
@@ -220,7 +220,7 @@ function AvatarCreationModalComponent({
                           type="button"
                           key={image.url}
                           className={`relative overflow-hidden rounded-2xl border ${
-                            isSelected ? "border-d-light" : "border-d-dark"
+                            isSelected ? "border-theme-light" : "border-theme-dark"
                           }`}
                           onClick={() => {
                             onUploadError(null);
@@ -229,15 +229,15 @@ function AvatarCreationModalComponent({
                         >
                           <img src={image.url} alt={image.prompt ?? "Gallery creation"} className="aspect-square w-full object-cover" />
                           {isSelected && (
-                            <div className="absolute inset-0 border-4 border-d-light pointer-events-none" aria-hidden="true" />
+                            <div className="absolute inset-0 border-4 border-theme-light pointer-events-none" aria-hidden="true" />
                           )}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="w-64 mx-auto rounded-2xl border border-d-dark/70 bg-d-black/50 p-6 text-center">
-                    <p className="text-sm font-raleway text-d-white/70">
+                  <div className="w-64 mx-auto rounded-2xl border border-theme-dark/70 bg-theme-black/50 p-6 text-center">
+                    <p className="text-sm font-raleway text-theme-white/70">
                       Generate an image in the studio to see it here.
                     </p>
                   </div>
@@ -249,7 +249,7 @@ function AvatarCreationModalComponent({
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-6">
               <label className="flex flex-col space-y-2 w-fit">
-                <span className="text-sm font-raleway text-d-white/70">Name</span>
+                <span className="text-sm font-raleway text-theme-white/70">Name</span>
                 <input
                   className={`${inputs.base} !w-64`}
                   placeholder="Enter your Avatar name"

@@ -44,10 +44,10 @@ export function ProfileCard({
 }: ProfileCardProps) {
   return (
     <div className={`${glass.surface} p-5`}>
-      <h3 className="text-lg font-raleway mb-3 text-d-text">Profile</h3>
+      <h3 className="text-lg font-raleway mb-3 text-theme-text">Profile</h3>
 
       <div className="mb-4">
-        <label className="block text-sm text-d-white mb-2 font-raleway">Picture</label>
+        <label className="block text-sm text-theme-white mb-2 font-raleway">Picture</label>
         <input
           ref={fileInputRef}
           type="file"
@@ -66,19 +66,19 @@ export function ProfileCard({
               <img
                 src={user.profileImage}
                 alt="Profile"
-                className="size-12 rounded-full object-cover border-2 border-d-dark group-hover:opacity-80 transition-opacity"
+                className="size-12 rounded-full object-cover border-2 border-theme-dark group-hover:opacity-80 transition-opacity"
               />
             ) : (
-              <div className="size-12 rounded-full flex items-center justify-center text-d-text text-lg font-bold font-raleway border-2 border-d-dark group-hover:opacity-80 transition-opacity bg-d-dark">
+              <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-bold font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
                 {(user.displayName || user.email)[0]?.toUpperCase()}
               </div>
             )}
-            <div className="pointer-events-none absolute inset-0 bg-d-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-              <Upload className="size-4 text-d-text" />
+            <div className="pointer-events-none absolute inset-0 bg-theme-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+              <Upload className="size-4 text-theme-text" />
             </div>
             {isUploadingPic && (
-              <div className="pointer-events-none absolute inset-0 bg-d-black/70 rounded-full flex items-center justify-center">
-                <div className="text-d-text text-xs font-raleway">Uploading...</div>
+              <div className="pointer-events-none absolute inset-0 bg-theme-black/70 rounded-full flex items-center justify-center">
+                <div className="text-theme-text text-xs font-raleway">Uploading...</div>
               </div>
             )}
           </button>
@@ -88,7 +88,7 @@ export function ProfileCard({
               onClick={() => {
                 void onRemoveProfilePic();
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
             >
               <X className="w-4 h-4 rounded-full" />
               Remove
@@ -96,7 +96,7 @@ export function ProfileCard({
           )}
         </div>
         {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
-        <p className="mt-2 text-xs font-raleway text-d-white/60">Profile pictures update immediately when you complete cropping.</p>
+        <p className="mt-2 text-xs font-raleway text-theme-white/60">Profile pictures update immediately when you complete cropping.</p>
       </div>
 
       <form
@@ -107,7 +107,7 @@ export function ProfileCard({
         }}
       >
         <div>
-          <label className="block text-sm text-d-white mb-1 font-raleway" htmlFor="display-name">
+          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="display-name">
             Display name
           </label>
           <input

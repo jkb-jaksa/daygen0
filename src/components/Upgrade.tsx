@@ -26,7 +26,7 @@ export default function Upgrade() {
           <button
             onClick={handleClose}
             onMouseDown={(e) => e.preventDefault()}
-            className="group relative z-50 flex items-center justify-center w-8 h-8 rounded-full bg-d-dark/50 border border-d-dark hover:bg-d-dark/70 hover:border-d-mid transition-all duration-200 text-d-white hover:text-d-text cursor-pointer parallax-large focus:outline-none focus:ring-2 focus:ring-d-text/50 active:scale-95"
+            className="group relative z-50 flex items-center justify-center w-8 h-8 rounded-full bg-theme-dark/50 border border-theme-dark hover:bg-theme-dark/70 hover:border-theme-mid transition-all duration-200 text-theme-white hover:text-theme-text cursor-pointer parallax-large focus:outline-none focus:ring-2 focus:ring-theme-text/50 active:scale-95"
             aria-label="Close upgrade page"
             type="button"
             style={{ pointerEvents: 'auto' }}

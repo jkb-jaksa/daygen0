@@ -778,7 +778,7 @@ export default function Avatars() {
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[24px] border border-d-dark bg-d-black/60 shadow-lg transition-colors duration-200 hover:border-d-mid parallax-small${
+        className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
           disableModalTrigger ? "" : " cursor-pointer"
         }`}
         role={disableModalTrigger ? undefined : "button"}
@@ -842,7 +842,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToImage(avatar);
@@ -858,7 +858,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToVideo(avatar);
@@ -911,7 +911,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDownloadImage(avatar.imageUrl);
@@ -923,7 +923,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleCopyLink(avatar.imageUrl);
@@ -935,7 +935,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleManageFolders(avatar.imageUrl);
@@ -947,7 +947,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   setAvatarToPublish(avatar);
@@ -987,13 +987,13 @@ export default function Avatars() {
                   <div className="flex items-center gap-2">
                     <button
                       type="submit"
-                      className="text-d-white/70 hover:text-d-text transition-colors duration-200"
+                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
                     >
                       <Check className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      className="text-d-white/70 hover:text-d-text transition-colors duration-200"
+                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
                       onClick={cancelRenaming}
                     >
                       <X className="h-4 w-4" />
@@ -1003,10 +1003,10 @@ export default function Avatars() {
               ) : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-base font-raleway font-normal text-d-text">{avatar.name}</p>
+                    <p className="text-base font-raleway font-normal text-theme-text">{avatar.name}</p>
                     <button
                       type="button"
-                      className={`text-d-white/70 hover:text-d-text transition-colors duration-200 ${
+                      className={`text-theme-white/70 hover:text-theme-text transition-colors duration-200 ${
                         disableModalTrigger 
                           ? 'opacity-100' 
                           : 'opacity-0 group-hover:opacity-100'
@@ -1017,9 +1017,9 @@ export default function Avatars() {
                     </button>
                   </div>
                   {avatar.published && (
-                    <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                    <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                       <div className="flex items-center gap-1">
-                        <Globe className="w-3 h-3 text-d-text" />
+                        <Globe className="w-3 h-3 text-theme-text" />
                         <span className="leading-none">Public</span>
                       </div>
                     </div>
@@ -1053,7 +1053,7 @@ export default function Avatars() {
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
-      className="group flex flex-col overflow-hidden rounded-[24px] border border-d-dark bg-d-black/60 shadow-lg transition-colors duration-200 hover:border-d-mid parallax-small cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
       <div className="relative aspect-square overflow-hidden">
@@ -1083,7 +1083,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleEditCreation(image);
@@ -1095,7 +1095,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   navigate("/create/video", {
@@ -1150,7 +1150,7 @@ export default function Avatars() {
           >
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleDownloadImage(image.url);
@@ -1162,7 +1162,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleCopyLink(image.url);
@@ -1174,7 +1174,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleManageFolders(image.url);
@@ -1186,7 +1186,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleCreationPublish(image.url);
@@ -1207,10 +1207,10 @@ export default function Avatars() {
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
           <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
             <div className="space-y-2">
-              <p className="text-sm font-raleway text-d-white leading-relaxed line-clamp-3">
+              <p className="text-sm font-raleway text-theme-white leading-relaxed line-clamp-3">
                 {image.prompt || "Untitled creation"}
               </p>
-              <div className="flex items-center justify-between text-xs font-raleway text-d-white/70">
+              <div className="flex items-center justify-between text-xs font-raleway text-theme-white/70">
                 <div className="flex items-center gap-2">
                   <Suspense fallback={null}>
                     <ModelBadge model={image.model ?? 'unknown'} size="sm" />
@@ -1230,9 +1230,9 @@ export default function Avatars() {
                   })()}
                 </div>
                 {image.isPublic && (
-                  <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                  <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
-                      <Globe className="w-3 h-3 text-d-text" />
+                      <Globe className="w-3 h-3 text-theme-text" />
                       <span className="leading-none">Public</span>
                     </div>
                   </div>
@@ -1276,10 +1276,10 @@ export default function Avatars() {
           <header className="max-w-3xl text-center">
             <div className={`${headings.tripleHeading.container} text-center`}>
               <p className={`${headings.tripleHeading.eyebrow} justify-center`}>
-                <Users className="h-4 w-4 text-d-white/60" />
+                <Users className="h-4 w-4 text-theme-white/60" />
                 avatars
               </p>
-              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>Create your Avatar.</h1>
+              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Create your Avatar.</h1>
               <p className={headings.tripleHeading.description}>{subtitle}</p>
             </div>
             <div className="mt-8">
@@ -1300,13 +1300,13 @@ export default function Avatars() {
           </header>
 
           {missingAvatarSlug && (
-            <div className="w-full max-w-3xl rounded-[24px] border border-d-dark bg-d-black/70 p-5 text-left shadow-lg">
-              <p className="text-sm font-raleway text-d-white/80">
-                We couldn't find an avatar for <span className="font-semibold text-d-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
+            <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
+              <p className="text-sm font-raleway text-theme-white/80">
+                We couldn't find an avatar for <span className="font-semibold text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
               </p>
               <button
                 type="button"
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-d-dark bg-d-black px-4 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                className={`mt-4 ${buttons.glassPrompt}`}
                 onClick={() => navigate("/create/avatars", { replace: true })}
               >
                 <Users className="h-4 w-4" />
@@ -1317,7 +1317,7 @@ export default function Avatars() {
 
           <div className="w-full max-w-6xl space-y-5">
             <div className="space-y-2 text-left">
-              <h2 className="text-2xl font-light font-raleway text-d-text">Your Avatars</h2>
+              <h2 className="text-2xl font-light font-raleway text-theme-text">Your Avatars</h2>
             </div>
             {avatars.length > 0 && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
@@ -1353,16 +1353,16 @@ export default function Avatars() {
 
       {creationsModalAvatar && (
         <div
-          className="fixed inset-0 z-[10500] flex items-center justify-center bg-d-black/80 px-4 py-10"
+          className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
           onClick={closeCreationsModal}
         >
           <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-d-dark bg-d-black/90 shadow-2xl"
+            className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-theme-dark bg-theme-black/90 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
               type="button"
-              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={closeCreationsModal}
               aria-label="Close Avatar creations"
             >
@@ -1371,10 +1371,10 @@ export default function Avatars() {
 
             <div className="flex flex-col gap-6 p-6 lg:p-8">
               <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-raleway text-d-text">
+                <h2 className="text-2xl font-raleway text-theme-text">
                   Creations with {creationsModalAvatar.name}
                 </h2>
-                <p className="text-sm font-raleway text-d-white">
+                <p className="text-sm font-raleway text-theme-white">
                   Manage creations with your Avatar.
                 </p>
               </div>
@@ -1397,8 +1397,8 @@ export default function Avatars() {
               </div>
 
               {creationModalItems.filter(item => item.kind === "image").length === 0 && (
-                <div className="rounded-[24px] border border-d-dark bg-d-black/70 p-6 text-center">
-                  <p className="text-sm font-raleway text-d-white/70">
+                <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
+                  <p className="text-sm font-raleway text-theme-white/70">
                     Generate a new image with this avatar to see it appear here.
                   </p>
                 </div>
@@ -1411,7 +1411,7 @@ export default function Avatars() {
       {/* Full-size avatar modal */}
       {isAvatarFullSizeOpen && creationsModalAvatar && (
         <div
-          className="fixed inset-0 z-[10600] bg-d-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-center justify-center p-4"
           onClick={closeAvatarFullSizeView}
         >
           <div className="relative max-w-[95vw] max-h-[90vh] group flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -1446,7 +1446,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleNavigateToImage(creationsModalAvatar);
@@ -1458,7 +1458,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleNavigateToVideo(creationsModalAvatar);
@@ -1493,7 +1493,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDownloadImage(creationsModalAvatar.imageUrl);
@@ -1505,7 +1505,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleCopyLink(creationsModalAvatar.imageUrl);
@@ -1517,7 +1517,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleManageFolders(creationsModalAvatar.imageUrl);
@@ -1529,7 +1529,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       setAvatarToPublish(creationsModalAvatar);
@@ -1544,7 +1544,7 @@ export default function Avatars() {
             </div>
             
             {/* Info bar - only on hover */}
-            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-d-text transition-opacity duration-100 ${
+            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
               avatarMoreMenu?.avatarId === creationsModalAvatar.id || modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}>
               <div className="flex items-center justify-center">
@@ -1554,9 +1554,9 @@ export default function Avatars() {
                   </div>
                   {creationsModalAvatar.published && (
                     <div className="mt-2 flex justify-center">
-                      <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                         <div className="flex items-center gap-1">
-                          <Globe className="w-3 h-3 text-d-text" />
+                          <Globe className="w-3 h-3 text-theme-text" />
                           <span className="leading-none">Public</span>
                         </div>
                       </div>
@@ -1568,7 +1568,7 @@ export default function Avatars() {
             
             <button
               onClick={closeAvatarFullSizeView}
-              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />
@@ -1580,7 +1580,7 @@ export default function Avatars() {
       {/* Full-size image modal */}
       {isFullSizeOpen && selectedFullImage && creationsModalAvatar && (
         <div
-          className="fixed inset-0 z-[10600] bg-d-black/80 flex items-start justify-center p-4"
+          className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
           onClick={closeFullSizeView}
         >
           <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
@@ -1591,7 +1591,7 @@ export default function Avatars() {
                 <>
                   <button
                     onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.promptDark} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Previous image (←)"
                     aria-label="Previous image"
                   >
@@ -1599,7 +1599,7 @@ export default function Avatars() {
                   </button>
                   <button
                     onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.promptDark} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Next image (→)"
                     aria-label="Next image"
                   >
@@ -1641,7 +1641,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleEditCreation(selectedFullImage);
@@ -1653,7 +1653,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate("/create/video", {
@@ -1705,7 +1705,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDownloadImage(selectedFullImage.url);
@@ -1717,7 +1717,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleCopyLink(selectedFullImage.url);
@@ -1729,7 +1729,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleManageFolders(selectedFullImage.url);
@@ -1741,7 +1741,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       toggleCreationPublish(selectedFullImage.url);
@@ -1756,7 +1756,7 @@ export default function Avatars() {
             </div>
             
             {/* Prompt and metadata info - only on hover */}
-            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-d-text transition-opacity duration-100 ${
+            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
               galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}>
               <div className="flex items-center justify-center">
@@ -1775,7 +1775,7 @@ export default function Avatars() {
                             console.error('Failed to copy prompt:', error);
                           }
                         }}
-                        className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
                       >
                         <Copy className="w-3 h-3" />
                       </button>
@@ -1795,9 +1795,9 @@ export default function Avatars() {
                       />
                     </div>
                     {selectedFullImage.isPublic && (
-                      <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                         <div className="flex items-center gap-1">
-                          <Globe className="w-3 h-3 text-d-text" />
+                          <Globe className="w-3 h-3 text-theme-text" />
                           <span className="leading-none">Public</span>
                         </div>
                       </div>
@@ -1809,7 +1809,7 @@ export default function Avatars() {
             
             <button
               onClick={closeFullSizeView}
-              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />
@@ -1820,15 +1820,15 @@ export default function Avatars() {
 
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Publish Image
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to publish this image? It will be visible to other users.
                 </p>
               </div>
@@ -1853,15 +1853,15 @@ export default function Avatars() {
 
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Unpublish Image
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to unpublish this image? It will no longer be visible to other users.
                 </p>
               </div>
@@ -1886,13 +1886,13 @@ export default function Avatars() {
 
       {/* Add to folder dialog */}
       {addToFolderDialog && selectedImageForFolder && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Check folders to add or remove this item from.
                 </p>
               </div>
@@ -1900,9 +1900,9 @@ export default function Avatars() {
               <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
-                    <FolderIcon className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
-                    <p className="text-base text-d-white/50 mb-4">No folders available</p>
-                    <p className="text-sm text-d-white/40">
+                    <FolderIcon className="w-8 h-8 text-theme-white/30 mx-auto mb-2" />
+                    <p className="text-base text-theme-white/50 mb-4">No folders available</p>
+                    <p className="text-sm text-theme-white/40">
                       Create folders in the gallery to organize your images.
                     </p>
                   </div>
@@ -1915,8 +1915,8 @@ export default function Avatars() {
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
                             isInFolder
-                              ? "bg-d-white/10 border-d-white shadow-lg shadow-d-white/20"
-                              : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-d-white/20"
+                              : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
                           }`}
                         >
                           <input
@@ -1927,11 +1927,11 @@ export default function Avatars() {
                           />
                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                             isInFolder
-                              ? "border-d-white bg-d-white"
-                              : "border-d-mid hover:border-d-text/50"
+                              ? "border-theme-white bg-theme-white"
+                              : "border-theme-mid hover:border-theme-text/50"
                           }`}>
                             {isInFolder ? (
-                              <svg className="w-3 h-3 text-d-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
@@ -1948,21 +1948,21 @@ export default function Avatars() {
                                 />
                               </div>
                             ) : isInFolder ? (
-                              <div className="w-5 h-5 bg-d-white/20 rounded-lg flex items-center justify-center">
-                                <FolderIcon className="w-3 h-3 text-d-text" />
+                              <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
+                                <FolderIcon className="w-3 h-3 text-theme-text" />
                               </div>
                             ) : (
-                              <FolderIcon className="w-5 h-5 text-d-white/60" />
+                              <FolderIcon className="w-5 h-5 text-theme-white/60" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate ${
-                              isInFolder ? 'text-d-text' : 'text-d-text/80'
+                              isInFolder ? 'text-theme-text' : 'text-theme-text/80'
                             }`}>
                               {folder.name}
                             </div>
                             <div className={`text-xs ${
-                              isInFolder ? 'text-d-text/70' : 'text-d-white/50'
+                              isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
                             }`}>
                               {folder.imageIds.length} images
                               {isInFolder && " (added)"}
@@ -2001,13 +2001,13 @@ export default function Avatars() {
       )}
 
       {avatarToDelete && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
           <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Delete Avatar</h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                 </p>
               </div>
@@ -2033,15 +2033,15 @@ export default function Avatars() {
       )}
 
       {avatarToPublish && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
           <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {avatarToPublish.published 
                     ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
                     : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
@@ -2071,13 +2071,13 @@ export default function Avatars() {
 
       {/* Delete image confirmation dialog */}
       {imageToDelete && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
           <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Delete image</h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete image</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to delete this image? This action cannot be undone.
                 </p>
               </div>
@@ -2104,7 +2104,7 @@ export default function Avatars() {
 
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
           {copyNotification}
         </div>
       )}

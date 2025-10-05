@@ -310,14 +310,14 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Flux 1.1 Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Flux 1.1 Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Type</label>
               <select
                 value={flux.model}
                 onChange={event => flux.onModelChange(event.target.value as FluxModelOption)}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="flux-pro-1.1">Flux Pro 1.1 (Standard)</option>
                 <option value="flux-pro-1.1-ultra">Flux Pro 1.1 Ultra (4MP+)</option>
@@ -335,42 +335,42 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Veo 3 Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Veo 3 Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Aspect Ratio</label>
               <select
                 value={veo.aspectRatio}
                 onChange={event => veo.onAspectRatioChange(event.target.value as "16:9" | "9:16")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="16:9">16:9 (Landscape)</option>
                 <option value="9:16">9:16 (Portrait)</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Type</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Type</label>
               <select
                 value={veo.model}
                 onChange={event => veo.onModelChange(event.target.value as "veo-3.0-generate-001" | "veo-3.0-fast-generate-001")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="veo-3.0-generate-001">Veo 3.0 (Standard)</option>
                 <option value="veo-3.0-fast-generate-001">Veo 3.0 Fast</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Negative Prompt (Optional)</label>
               <input
                 type="text"
                 value={veo.negativePrompt}
                 onChange={event => veo.onNegativePromptChange(event.target.value)}
                 placeholder="e.g., blurry, low quality"
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Seed (Optional)</label>
               <input
                 type="number"
                 value={veo.seed ?? ""}
@@ -379,7 +379,7 @@ export function SettingsMenu({
                   veo.onSeedChange(value ? parseInt(value, 10) : undefined);
                 }}
                 placeholder="e.g., 12345"
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
           </div>
@@ -392,25 +392,25 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Hailuo 02 Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Hailuo 02 Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Duration</label>
               <select
                 value={hailuo.duration}
                 onChange={event => hailuo.onDurationChange(parseInt(event.target.value, 10))}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value={6}>6 seconds</option>
                 <option value={10}>10 seconds</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Resolution</label>
               <select
                 value={hailuo.resolution}
                 onChange={event => hailuo.onResolutionChange(event.target.value as "512P" | "768P" | "1080P")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="512P">512P</option>
                 <option value="768P">768P</option>
@@ -429,9 +429,9 @@ export function SettingsMenu({
                     hailuo.onFastPretreatmentChange(false);
                   }
                 }}
-                className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                className="w-4 h-4 text-theme-orange-1 bg-theme-black border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
               />
-              <label htmlFor="hailuoPromptOptimizer" className="text-xs font-raleway text-d-white/80">
+              <label htmlFor="hailuoPromptOptimizer" className="text-xs font-raleway text-theme-white/80">
                 Enable prompt optimizer
               </label>
             </div>
@@ -442,11 +442,11 @@ export function SettingsMenu({
                 checked={hailuo.fastPretreatment}
                 onChange={event => hailuo.onFastPretreatmentChange(event.target.checked)}
                 disabled={!hailuo.promptOptimizer}
-                className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2 disabled:opacity-50"
+                className="w-4 h-4 text-theme-orange-1 bg-theme-black border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2 disabled:opacity-50"
               />
               <label
                 htmlFor="hailuoFastPretreatment"
-                className={`text-xs font-raleway ${hailuo.promptOptimizer ? "text-d-white/80" : "text-d-white/30"}`}
+                className={`text-xs font-raleway ${hailuo.promptOptimizer ? "text-theme-white/80" : "text-theme-white/30"}`}
               >
                 Fast pretreatment (works with optimizer only)
               </label>
@@ -457,56 +457,56 @@ export function SettingsMenu({
                 id="hailuoWatermark"
                 checked={hailuo.watermark}
                 onChange={event => hailuo.onWatermarkChange(event.target.checked)}
-                className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                className="w-4 h-4 text-theme-orange-1 bg-theme-black border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
               />
-              <label htmlFor="hailuoWatermark" className="text-xs font-raleway text-d-white/80">
+              <label htmlFor="hailuoWatermark" className="text-xs font-raleway text-theme-white/80">
                 Add AI watermark
               </label>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">First Frame (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">First Frame (Optional)</label>
               <div className="flex items-center gap-2">
                 <input
                   type="file"
                   accept="image/*"
                   onChange={event => hailuo.onFirstFrameChange(event.target.files?.[0] ?? null)}
-                  className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-dark/40"
+                  className="block w-full text-xs text-theme-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-theme-mid file:px-2 file:py-1 file:text-xs file:text-theme-white hover:file:bg-theme-dark/40"
                 />
                 {hailuo.firstFrame && (
                   <button
                     type="button"
                     onClick={() => hailuo.onFirstFrameChange(null)}
-                    className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-dark/40 hover:text-d-text transition-colors"
+                    className="px-2 py-1 text-xs rounded bg-theme-mid text-theme-white/70 hover:bg-theme-dark/40 hover:text-theme-text transition-colors"
                   >
                     Clear
                   </button>
                 )}
               </div>
               {hailuo.firstFrame && (
-                <div className="mt-1 text-xs font-raleway text-d-white/60 truncate">{hailuo.firstFrame.name}</div>
+                <div className="mt-1 text-xs font-raleway text-theme-white/60 truncate">{hailuo.firstFrame.name}</div>
               )}
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Last Frame (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Last Frame (Optional)</label>
               <div className="flex items-center gap-2">
                 <input
                   type="file"
                   accept="image/*"
                   onChange={event => hailuo.onLastFrameChange(event.target.files?.[0] ?? null)}
-                  className="block w-full text-xs text-d-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-d-mid file:px-2 file:py-1 file:text-xs file:text-d-white hover:file:bg-d-dark/40"
+                  className="block w-full text-xs text-theme-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-theme-mid file:px-2 file:py-1 file:text-xs file:text-theme-white hover:file:bg-theme-dark/40"
                 />
                 {hailuo.lastFrame && (
                   <button
                     type="button"
                     onClick={() => hailuo.onLastFrameChange(null)}
-                    className="px-2 py-1 text-xs rounded bg-d-mid text-d-white/70 hover:bg-d-dark/40 hover:text-d-text transition-colors"
+                    className="px-2 py-1 text-xs rounded bg-theme-mid text-theme-white/70 hover:bg-theme-dark/40 hover:text-theme-text transition-colors"
                   >
                     Clear
                   </button>
                 )}
               </div>
               {hailuo.lastFrame && (
-                <div className="mt-1 text-xs font-raleway text-d-white/60 truncate">{hailuo.lastFrame.name}</div>
+                <div className="mt-1 text-xs font-raleway text-theme-white/60 truncate">{hailuo.lastFrame.name}</div>
               )}
             </div>
           </div>
@@ -519,14 +519,14 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Wan 2.2 Video Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Wan 2.2 Video Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Resolution</label>
               <select
                 value={wan.size}
                 onChange={event => wan.onSizeChange(event.target.value)}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="1920*1080">1920 × 1080 (1080p Landscape)</option>
                 <option value="1080*1920">1080 × 1920 (1080p Portrait)</option>
@@ -539,13 +539,13 @@ export function SettingsMenu({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Negative Prompt (Optional)</label>
               <input
                 type="text"
                 value={wan.negativePrompt}
                 onChange={event => wan.onNegativePromptChange(event.target.value)}
                 placeholder="e.g., blurry, low detail"
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -554,9 +554,9 @@ export function SettingsMenu({
                 id="wanPromptExtend"
                 checked={wan.promptExtend}
                 onChange={event => wan.onPromptExtendChange(event.target.checked)}
-                className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                className="w-4 h-4 text-theme-orange-1 bg-theme-black border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
               />
-              <label htmlFor="wanPromptExtend" className="text-xs font-raleway text-d-white/80">
+              <label htmlFor="wanPromptExtend" className="text-xs font-raleway text-theme-white/80">
                 Prompt extend (adds detail automatically)
               </label>
             </div>
@@ -566,20 +566,20 @@ export function SettingsMenu({
                 id="wanWatermark"
                 checked={wan.watermark}
                 onChange={event => wan.onWatermarkChange(event.target.checked)}
-                className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                className="w-4 h-4 text-theme-orange-1 bg-theme-black border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
               />
-              <label htmlFor="wanWatermark" className="text-xs font-raleway text-d-white/80">
+              <label htmlFor="wanWatermark" className="text-xs font-raleway text-theme-white/80">
                 Add AI watermark
               </label>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Seed (Optional)</label>
               <input
                 type="text"
                 value={wan.seed}
                 onChange={event => wan.onSeedChange(event.target.value)}
                 placeholder="e.g., 12345"
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
           </div>
@@ -592,14 +592,14 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Kling Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Kling Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
               <select
                 value={kling.model}
                 onChange={event => kling.onModelChange(event.target.value as "kling-v2.1-master" | "kling-v2-master")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="kling-v2.1-master">Kling V2.1 Master (latest)</option>
                 <option value="kling-v2-master">Kling V2 Master</option>
@@ -607,11 +607,11 @@ export function SettingsMenu({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+                <label className="block text-xs font-raleway text-theme-white/80 mb-1">Aspect Ratio</label>
                 <select
                   value={kling.aspectRatio}
                   onChange={event => kling.onAspectRatioChange(event.target.value as "16:9" | "9:16" | "1:1")}
-                  className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                  className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
                 >
                   <option value="16:9">16:9 Landscape</option>
                   <option value="9:16">9:16 Portrait</option>
@@ -619,11 +619,11 @@ export function SettingsMenu({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration</label>
+                <label className="block text-xs font-raleway text-theme-white/80 mb-1">Duration</label>
                 <select
                   value={kling.duration}
                   onChange={event => kling.onDurationChange(Number(event.target.value) === 10 ? 10 : 5)}
-                  className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                  className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
                 >
                   <option value={5}>5 seconds</option>
                   <option value={10}>10 seconds</option>
@@ -632,18 +632,18 @@ export function SettingsMenu({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-raleway text-d-white/80 mb-1">Generation Mode</label>
+                <label className="block text-xs font-raleway text-theme-white/80 mb-1">Generation Mode</label>
                 <select
                   value={kling.mode}
                   onChange={event => kling.onModeChange(event.target.value as "standard" | "professional")}
-                  className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                  className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
                 >
                   <option value="standard">Standard (720p / 24 FPS)</option>
                   <option value="professional">Professional (1080p / 48 FPS)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-raleway text-d-white/80 mb-1">CFG Scale</label>
+                <label className="block text-xs font-raleway text-theme-white/80 mb-1">CFG Scale</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="range"
@@ -654,29 +654,29 @@ export function SettingsMenu({
                     onChange={event => kling.onCfgScaleChange(Number(event.target.value))}
                     className="w-full"
                   />
-                  <span className="text-xs font-raleway text-d-white/70 w-10 text-right">{kling.cfgScale.toFixed(2)}</span>
+                  <span className="text-xs font-raleway text-theme-white/70 w-10 text-right">{kling.cfgScale.toFixed(2)}</span>
                 </div>
-                <div className="text-xs text-d-white/50 mt-1">
+                <div className="text-xs text-theme-white/50 mt-1">
                   Lower values add more creativity, higher values adhere closely to your prompt.
                 </div>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Negative Prompt (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Negative Prompt (Optional)</label>
               <input
                 type="text"
                 value={kling.negativePrompt}
                 onChange={event => kling.onNegativePromptChange(event.target.value)}
                 placeholder="e.g., low quality, noisy"
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Camera Movement</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Camera Movement</label>
               <select
                 value={kling.cameraType}
                 onChange={event => kling.onCameraTypeChange(event.target.value as KlingSettingsProps["cameraType"])}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="none">No camera movement</option>
                 <option value="simple">Simple custom movement</option>
@@ -698,7 +698,7 @@ export function SettingsMenu({
                     ["zoom", "Zoom"],
                   ] as const).map(([key, label]) => (
                     <div key={key}>
-                      <label className="block text-xs font-raleway text-d-white/70 mb-1">{label}</label>
+                      <label className="block text-xs font-raleway text-theme-white/70 mb-1">{label}</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="range"
@@ -711,16 +711,16 @@ export function SettingsMenu({
                           }
                           className="w-full"
                         />
-                        <span className="text-xs font-raleway text-d-white/60 w-8 text-right">{kling.cameraConfig[key] ?? 0}</span>
+                        <span className="text-xs font-raleway text-theme-white/60 w-8 text-right">{kling.cameraConfig[key] ?? 0}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="text-xs text-d-white/45">Adjust camera offsets between -10 and 10 to add motion.</div>
+                <div className="text-xs text-theme-white/45">Adjust camera offsets between -10 and 10 to add motion.</div>
               </div>
             )}
             {kling.statusMessage && (
-              <div className="text-xs font-raleway text-d-white/60 bg-d-black/60 border border-d-mid rounded-lg px-3 py-2">
+              <div className="text-xs font-raleway text-theme-white/60 bg-theme-black/60 border border-theme-mid rounded-lg px-3 py-2">
                 {kling.statusMessage}
               </div>
             )}
@@ -734,14 +734,14 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Seedance 1.0 Pro Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Seedance 1.0 Pro Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Mode</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Mode</label>
               <select
                 value={seedance.mode}
                 onChange={event => seedance.onModeChange(event.target.value as SeedanceSettingsProps["mode"])}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="t2v">Text to Video</option>
                 <option value="i2v-first">Image to Video (First Frame)</option>
@@ -749,11 +749,11 @@ export function SettingsMenu({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Aspect Ratio</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Aspect Ratio</label>
               <select
                 value={seedance.ratio}
                 onChange={event => seedance.onRatioChange(event.target.value as SeedanceSettingsProps["ratio"])}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="16:9">16:9 (Landscape)</option>
                 <option value="9:16">9:16 (Portrait)</option>
@@ -761,33 +761,33 @@ export function SettingsMenu({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Duration (seconds)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Duration (seconds)</label>
               <select
                 value={seedance.duration}
                 onChange={event => seedance.onDurationChange(parseInt(event.target.value, 10))}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value={5}>5 seconds</option>
                 <option value={10}>10 seconds</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Resolution</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Resolution</label>
               <select
                 value={seedance.resolution}
                 onChange={event => seedance.onResolutionChange(event.target.value as SeedanceSettingsProps["resolution"])}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="1080p">1080p</option>
                 <option value="720p">720p</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">FPS</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">FPS</label>
               <select
                 value={seedance.fps}
                 onChange={event => seedance.onFpsChange(parseInt(event.target.value, 10))}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value={24}>24 FPS</option>
               </select>
@@ -798,41 +798,41 @@ export function SettingsMenu({
                 id="seedanceCameraFixed"
                 checked={seedance.cameraFixed}
                 onChange={event => seedance.onCameraFixedChange(event.target.checked)}
-                className="w-4 h-4 text-d-orange-1 bg-d-black border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                className="w-4 h-4 text-theme-orange-1 bg-theme-black border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
               />
-              <label htmlFor="seedanceCameraFixed" className="text-xs font-raleway text-d-white/80">
+              <label htmlFor="seedanceCameraFixed" className="text-xs font-raleway text-theme-white/80">
                 Lock Camera Position
               </label>
             </div>
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Seed (Optional)</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Seed (Optional)</label>
               <input
                 type="text"
                 value={seedance.seed}
                 onChange={event => seedance.onSeedChange(event.target.value)}
                 placeholder="e.g., 12345"
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white placeholder-d-white/40 focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-d-white/40 focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               />
             </div>
             {(seedance.mode === "i2v-first" || seedance.mode === "i2v-first-last") && (
               <div>
-                <label className="block text-xs font-raleway text-d-white/80 mb-1">First Frame Image</label>
+                <label className="block text-xs font-raleway text-theme-white/80 mb-1">First Frame Image</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={event => seedance.onFirstFrameChange(event.target.files?.[0] ?? null)}
-                  className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-d-orange-1 file:text-d-black"
+                  className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-theme-orange-1 file:text-theme-black"
                 />
               </div>
             )}
             {seedance.mode === "i2v-first-last" && (
               <div>
-                <label className="block text-xs font-raleway text-d-white/80 mb-1">Last Frame Image</label>
+                <label className="block text-xs font-raleway text-theme-white/80 mb-1">Last Frame Image</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={event => seedance.onLastFrameChange(event.target.files?.[0] ?? null)}
-                  className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-d-orange-1 file:text-d-black"
+                  className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-theme-orange-1 file:text-theme-black"
                 />
               </div>
             )}
@@ -846,19 +846,19 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Recraft Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Recraft Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
               <select
                 value={recraft.model}
                 onChange={event => recraft.onModelChange(event.target.value as "recraft-v3" | "recraft-v2")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="recraft-v3">Recraft 3</option>
                 <option value="recraft-v2">Recraft 2</option>
               </select>
-              <div className="text-xs text-d-white/60 mt-1">
+              <div className="text-xs text-theme-white/60 mt-1">
                 {recraft.model === "recraft-v3"
                   ? "Advanced image generation with text layout and brand controls"
                   : "High-quality image generation and editing"}
@@ -874,19 +874,19 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Runway Gen-4 Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Runway Gen-4 Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
               <select
                 value={runway.model}
                 onChange={event => runway.onModelChange(event.target.value as "runway-gen4" | "runway-gen4-turbo")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="runway-gen4">Runway Gen-4</option>
                 <option value="runway-gen4-turbo">Runway Gen-4 Turbo</option>
               </select>
-              <div className="text-xs text-d-white/60 mt-1">
+              <div className="text-xs text-theme-white/60 mt-1">
                 {runway.model === "runway-gen4"
                   ? "Great image model. Great control & editing features"
                   : "Fast Runway generation with reference images"}
@@ -902,14 +902,14 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Luma Photon Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Luma Photon Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
               <select
                 value={lumaPhoton.model}
                 onChange={event => lumaPhoton.onModelChange(event.target.value as "luma-photon-1" | "luma-photon-flash-1")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="luma-photon-1">Luma Photon 1 (High Quality)</option>
                 <option value="luma-photon-flash-1">Luma Photon Flash 1 (Fast)</option>
@@ -925,14 +925,14 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Luma Ray Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Luma Ray Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-1">Model Version</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
               <select
                 value={lumaRay.variant}
                 onChange={event => lumaRay.onVariantChange(event.target.value as "luma-ray-2" | "luma-ray-flash-2")}
-                className="w-full p-2 text-sm bg-d-black border border-d-mid rounded-lg text-d-white focus:ring-2 focus:ring-d-orange-1 focus:border-transparent outline-none"
+                className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-orange-1 focus:border-transparent outline-none"
               >
                 <option value="luma-ray-2">Luma Ray 2</option>
                 <option value="luma-ray-flash-2">Luma Ray Flash 2</option>
@@ -948,10 +948,10 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Gemini Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Gemini Settings</div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-raleway text-d-white/80 mb-2">Aspect Ratio</label>
+              <label className="block text-xs font-raleway text-theme-white/80 mb-2">Aspect Ratio</label>
               <div className="grid grid-cols-3 gap-2">
                 {GEMINI_ASPECT_RATIOS.map((ratio) => {
                   const isActive = gemini.aspectRatio === ratio;
@@ -962,8 +962,8 @@ export function SettingsMenu({
                       onClick={() => gemini.onAspectRatioChange(ratio)}
                       className={`rounded-lg border px-2 py-1.5 text-xs font-raleway transition-colors duration-150 ${
                         isActive
-                          ? 'border-d-text bg-d-text/10 text-d-text shadow-sm shadow-d-text/10'
-                          : 'border-d-mid bg-d-black text-d-white hover:border-d-text/60 hover:text-d-text'
+                          ? 'border-theme-text bg-theme-text/10 text-theme-text shadow-sm shadow-d-text/10'
+                          : 'border-theme-mid bg-theme-black text-theme-white hover:border-theme-text/60 hover:text-theme-text'
                       }`}
                     >
                       {ratio}
@@ -974,8 +974,8 @@ export function SettingsMenu({
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-d-white font-raleway">Temperature</label>
-                <span className="text-xs text-d-orange-1 font-mono">{gemini.temperature}</span>
+                <label className="text-xs text-theme-white font-raleway">Temperature</label>
+                <span className="text-xs text-theme-orange-1 font-mono">{gemini.temperature}</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -994,15 +994,15 @@ export function SettingsMenu({
                   step={0.1}
                   value={gemini.temperature}
                   onChange={event => gemini.onTemperatureChange(parseFloat(event.target.value))}
-                  className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs font-raleway"
+                  className="w-16 bg-theme-mid border border-theme-mid rounded text-right px-2 py-1 text-theme-white text-xs font-raleway"
                 />
               </div>
-              <div className="text-xs text-d-white font-raleway">Creativity level (0 = focused, 2 = creative)</div>
+              <div className="text-xs text-theme-white font-raleway">Creativity level (0 = focused, 2 = creative)</div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-d-white font-raleway">Output Length</label>
-                <span className="text-xs text-d-orange-1 font-mono">{gemini.outputLength}</span>
+                <label className="text-xs text-theme-white font-raleway">Output Length</label>
+                <span className="text-xs text-theme-orange-1 font-mono">{gemini.outputLength}</span>
               </div>
               <input
                 type="number"
@@ -1010,14 +1010,14 @@ export function SettingsMenu({
                 step={1}
                 value={gemini.outputLength}
                 onChange={event => gemini.onOutputLengthChange(parseInt(event.target.value || "0", 10))}
-                className="w-full bg-d-mid border border-d-mid rounded px-3 py-2 text-d-white text-sm font-raleway"
+                className="w-full bg-theme-mid border border-theme-mid rounded px-3 py-2 text-theme-white text-sm font-raleway"
               />
-              <div className="text-xs text-d-white font-raleway">Maximum tokens in response</div>
+              <div className="text-xs text-theme-white font-raleway">Maximum tokens in response</div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-d-white font-raleway">Top P</label>
-                <span className="text-xs text-d-orange-1 font-mono">{gemini.topP}</span>
+                <label className="text-xs text-theme-white font-raleway">Top P</label>
+                <span className="text-xs text-theme-orange-1 font-mono">{gemini.topP}</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -1036,10 +1036,10 @@ export function SettingsMenu({
                   step={0.05}
                   value={gemini.topP}
                   onChange={event => gemini.onTopPChange(parseFloat(event.target.value))}
-                  className="w-16 bg-d-mid border border-d-mid rounded text-right px-2 py-1 text-d-white text-xs font-raleway"
+                  className="w-16 bg-theme-mid border border-theme-mid rounded text-right px-2 py-1 text-theme-white text-xs font-raleway"
                 />
               </div>
-              <div className="text-xs text-d-white font-raleway">Controls the diversity of the output</div>
+              <div className="text-xs text-theme-white font-raleway">Controls the diversity of the output</div>
             </div>
           </div>
         </div>
@@ -1051,16 +1051,16 @@ export function SettingsMenu({
     return (
       <SettingsPortal anchorRef={anchorRef} open={open} onClose={onClose}>
         <div className="space-y-4">
-          <div className="text-base font-raleway text-d-text mb-3">Qwen Settings</div>
+          <div className="text-base font-raleway text-theme-text mb-3">Qwen Settings</div>
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-d-white font-raleway">Image Size</label>
+                <label className="text-xs text-theme-white font-raleway">Image Size</label>
               </div>
               <select
                 value={qwen.size}
                 onChange={event => qwen.onSizeChange(event.target.value)}
-                className="w-full px-3 py-2 bg-d-dark border border-d-mid rounded-lg text-d-white text-sm focus:outline-none focus:border-d-orange-1"
+                className="w-full px-3 py-2 bg-theme-dark border border-theme-mid rounded-lg text-theme-white text-sm focus:outline-none focus:border-theme-orange-1"
               >
                 <option value="1328*1328">1328×1328 (1:1)</option>
                 <option value="1664*928">1664×928 (16:9)</option>
@@ -1068,31 +1068,31 @@ export function SettingsMenu({
                 <option value="1140*1472">1140×1472 (3:4)</option>
                 <option value="928*1664">928×1664 (9:16)</option>
               </select>
-              <div className="text-xs text-d-white font-raleway">Choose the aspect ratio for your generated image</div>
+              <div className="text-xs text-theme-white font-raleway">Choose the aspect ratio for your generated image</div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-d-white font-raleway">Prompt Extend</label>
+                <label className="text-xs text-theme-white font-raleway">Prompt Extend</label>
                 <input
                   type="checkbox"
                   checked={qwen.promptExtend}
                   onChange={event => qwen.onPromptExtendChange(event.target.checked)}
-                  className="w-4 h-4 text-d-orange-1 bg-d-dark border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                  className="w-4 h-4 text-theme-orange-1 bg-theme-dark border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
                 />
               </div>
-              <div className="text-xs text-d-white font-raleway">Automatically enhance short prompts (adds ~3-4s latency)</div>
+              <div className="text-xs text-theme-white font-raleway">Automatically enhance short prompts (adds ~3-4s latency)</div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-d-white font-raleway">Watermark</label>
+                <label className="text-xs text-theme-white font-raleway">Watermark</label>
                 <input
                   type="checkbox"
                   checked={qwen.watermark}
                   onChange={event => qwen.onWatermarkChange(event.target.checked)}
-                  className="w-4 h-4 text-d-orange-1 bg-d-dark border-d-mid rounded focus:ring-d-orange-1 focus:ring-2"
+                  className="w-4 h-4 text-theme-orange-1 bg-theme-dark border-theme-mid rounded focus:ring-theme-orange-1 focus:ring-2"
                 />
               </div>
-              <div className="text-xs text-d-white font-raleway">Add watermark to generated images</div>
+              <div className="text-xs text-theme-white font-raleway">Add watermark to generated images</div>
             </div>
           </div>
         </div>

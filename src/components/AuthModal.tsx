@@ -35,28 +35,28 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] bg-d-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-mid border-t border-r border-b border-l bg-d-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+    <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
+      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
-            <h3 className="text-d-text font-raleway font-normal text-xl">{mode === "login" ? "Log in" : "Sign up"}</h3>
-            <p className="text-d-light text-sm font-raleway font-light">Welcome to DayGen</p>
-            <button onClick={onClose} className="absolute top-6 right-6 text-d-light hover:text-d-text transition-colors">✕</button>
+            <h3 className="text-theme-text font-raleway font-normal text-xl">{mode === "login" ? "Log in" : "Sign up"}</h3>
+            <p className="text-theme-light text-sm font-raleway font-light">Welcome to DayGen</p>
+            <button onClick={onClose} className="absolute top-6 right-6 text-theme-light hover:text-theme-text transition-colors">✕</button>
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Login</button>
-            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-d-dark border-d-mid text-d-text":"bg-transparent border-d-dark text-d-light hover:border-d-mid hover:text-d-text"}`}>Sign up</button>
+            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Login</button>
+            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign up</button>
           </div>
 
           <div className="space-y-4">
             <GoogleLogin onSuccess={onClose} />
-            <div className="text-center text-xs text-d-light font-raleway">or continue with email</div>
+            <div className="text-center text-xs text-theme-light font-raleway">or continue with email</div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "signup" && (
                 <div className="space-y-2">
-                  <label className="block text-sm text-d-text font-raleway">Name</label>
+                  <label className="block text-sm text-theme-text font-raleway">Name</label>
                   <input
                     value={name}
                     onChange={(event) => setName(event.target.value)}
@@ -67,7 +67,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                 </div>
               )}
               <div className="space-y-2">
-                <label className="block text-sm text-d-text font-raleway">Email</label>
+                <label className="block text-sm text-theme-text font-raleway">Email</label>
                 <input
                   type="email"
                   required
@@ -79,7 +79,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-d-text font-raleway">Password</label>
+                <label className="block text-sm text-theme-text font-raleway">Password</label>
                 <input
                   type="password"
                   required
@@ -93,7 +93,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               </div>
               {mode === "signup" && (
                 <div className="space-y-2">
-                  <label className="block text-sm text-d-text font-raleway">Confirm password</label>
+                  <label className="block text-sm text-theme-text font-raleway">Confirm password</label>
                   <input
                     type="password"
                     required
@@ -117,7 +117,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
-                    className="text-xs text-d-light hover:text-d-text transition-colors font-raleway underline"
+                    className="text-xs text-theme-light hover:text-theme-text transition-colors font-raleway underline"
                   >
                     Forgot password?
                   </button>
@@ -126,7 +126,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
             </form>
           </div>
         </div>
-        <p className="text-xs text-d-light text-center font-raleway">Your credentials are authenticated via the DayGen backend.</p>
+        <p className="text-xs text-theme-light text-center font-raleway">Your credentials are authenticated via the DayGen backend.</p>
       </div>
       
       <ForgotPasswordModal

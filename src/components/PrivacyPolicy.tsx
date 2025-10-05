@@ -28,8 +28,8 @@ export default function PrivacyPolicy() {
     <main className={`${layout.page}`}> 
       <section className={`${layout.container} pt-[calc(var(--nav-h)+2.5rem)] pb-24`}> 
         <header className="max-w-3xl mb-12">
-          <h1 className={`${text.sectionHeading} text-d-white mb-4`}>Privacy Policy</h1>
-          <p className="text-d-white/70 font-raleway text-lg">
+          <h1 className={`${text.sectionHeading} text-theme-white mb-4`}>Privacy Policy</h1>
+          <p className="text-theme-white/70 font-raleway text-lg">
             Transparency matters. This summary explains how daygen handles data and keeps your creative work safe. Reach out if you need the full legal version.
           </p>
         </header>
@@ -40,8 +40,8 @@ export default function PrivacyPolicy() {
               key={section.id}
               className={`${cards.shell} ${glass.promptDark} flex flex-col gap-4 p-6 rounded-[24px] text-left`}
             >
-              <h2 className="font-raleway text-2xl font-medium text-d-white">{section.title}</h2>
-              <p className="text-sm text-d-white/70 font-raleway leading-relaxed">{section.copy}</p>
+              <h2 className="font-raleway text-2xl font-medium text-theme-white">{section.title}</h2>
+              <p className="text-sm text-theme-white/70 font-raleway leading-relaxed">{section.copy}</p>
             </article>
           ))}
         </div>

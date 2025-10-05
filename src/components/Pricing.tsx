@@ -151,12 +151,12 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className={`${cards.shell} ${isSelected ? 'border-d-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow`}
+      className={`${cards.shell} ${isSelected ? 'border-theme-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow`}
     >
       {/* Popular badge */}
       {tier.popular && (
         <div className="absolute top-4 right-6 z-10">
-          <div className="flex items-center gap-1.5 bg-brand-cyan text-d-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
+          <div className="flex items-center gap-1.5 bg-brand-cyan text-theme-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
             <Star className="w-4 h-4 fill-current" />
             Most Popular
           </div>
@@ -166,7 +166,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
       {/* Best Value badge */}
       {tier.bestValue && (
         <div className="absolute top-4 right-6 z-10">
-          <div className="flex items-center gap-1.5 bg-brand-red text-d-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
+          <div className="flex items-center gap-1.5 bg-brand-red text-theme-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
             <Crown className="w-4 h-4 fill-current" />
             Best Value
           </div>
@@ -181,7 +181,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
             tier.id === 'pro' ? 'text-cyan-lighter' : 
             'text-red-lighter'
           }`}>{tier.name}</h3>
-          <p className="text-sm text-d-text font-raleway">{tier.description}</p>
+          <p className="text-sm text-theme-text font-raleway">{tier.description}</p>
         </div>
 
         {/* Pricing */}
@@ -192,7 +192,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
               tier.id === 'pro' ? 'text-cyan-lighter' : 
               'text-red-lighter'
             }`}>{tier.price}</span>
-            <span className="text-d-text font-raleway">
+            <span className="text-theme-text font-raleway">
               /{tier.period.includes('month') || tier.period.includes('year') ? (
                 <>
                   {tier.period.split(' ')[0]} <span className="font-bold">{tier.period.split(' ')[1]}</span>
@@ -209,7 +209,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
           {tier.features.map((feature, index) => (
             <div key={index} className="flex items-start gap-3">
               <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-                tier.id === 'free' ? 'bg-d-orange-1/20' : 
+                tier.id === 'free' ? 'bg-theme-orange-1/20' : 
                 tier.id === 'pro' ? 'bg-brand-cyan/20' : 
                 'bg-brand-red/20'
               }`}>
@@ -219,7 +219,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
                   'text-red-lighter'
                 }`} />
               </div>
-              <span className="text-sm font-raleway text-d-text leading-relaxed">{feature}</span>
+              <span className="text-sm font-raleway text-theme-text leading-relaxed">{feature}</span>
             </div>
           ))}
         </div>
@@ -262,31 +262,31 @@ export default function Pricing() {
         {/* Header Section */}
         <section className={`${layout.container} pt-4 pb-16`}>
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-d-text">
+            <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-theme-text">
               Choose your plan.
             </h1>
-            <p className="mx-auto mb-6 max-w-2xl text-lg text-d-white font-raleway">
+            <p className="mx-auto mb-6 max-w-2xl text-lg text-theme-white font-raleway">
               Unlock the full potential of daily generations.
             </p>
 
             {/* Billing Toggle */}
             <div className="flex items-center justify-center gap-4 mb-6">
-              <span className={`text-base font-raleway transition-colors ${billingPeriod === 'monthly' ? 'text-d-text' : 'text-d-white'}`}>
+              <span className={`text-base font-raleway transition-colors ${billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white'}`}>
                 Monthly
               </span>
               <button
                 onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-                className="relative w-14 h-7 bg-d-dark rounded-full border border-d-mid transition-colors duration-200 hover:border-d-text parallax-large"
+                className="relative w-14 h-7 bg-theme-dark rounded-full border border-theme-mid transition-colors duration-200 hover:border-theme-text parallax-large"
               >
                 <div
-                  className={`absolute top-0.5 left-0.5 w-6 h-6 bg-d-white rounded-full transition-transform duration-200 ${
+                  className={`absolute top-0.5 left-0.5 w-6 h-6 bg-theme-white rounded-full transition-transform duration-200 ${
                     billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'
                   }`}
                 />
               </button>
-              <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-d-text' : 'text-d-white'}`}>
+              <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white'}`}>
                 Yearly
-                <span className="ml-1 text-xs text-d-white font-raleway">(Save 20%)</span>
+                <span className="ml-1 text-xs text-theme-white font-raleway">(Save 20%)</span>
               </span>
             </div>
           </div>
@@ -306,27 +306,27 @@ export default function Pricing() {
           {/* Additional Info */}
           <div className="mt-16 text-center">
             <div className={`${glass.surface} p-8 max-w-4xl mx-auto`}>
-              <h3 className="text-2xl font-raleway font-normal text-d-text mb-4">
+              <h3 className="text-2xl font-raleway font-normal text-theme-text mb-4">
                 All plans include
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-d-white/20 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-d-white" />
+                  <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-theme-white" />
                   </div>
-                  <span className="text-d-white font-raleway">Unlimited generations</span>
+                  <span className="text-theme-white font-raleway">Unlimited generations</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-d-white/20 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-d-white" />
+                  <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-theme-white" />
                   </div>
-                  <span className="text-d-white font-raleway">Commercial usage rights</span>
+                  <span className="text-theme-white font-raleway">Commercial usage rights</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-d-white/20 flex items-center justify-center">
-                    <Crown className="w-4 h-4 text-d-white" />
+                  <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-theme-white" />
                   </div>
-                  <span className="text-d-white font-raleway">Priority processing</span>
+                  <span className="text-theme-white font-raleway">Priority processing</span>
                 </div>
               </div>
             </div>

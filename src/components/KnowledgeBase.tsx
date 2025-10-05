@@ -89,24 +89,24 @@ function ToolCard({ tool }: { tool: ToolResource }) {
   return (
     <Link
       to={`/learn/tools/${tool.slug}`}
-      className={`${glass.surface} group flex gap-3 rounded-3xl border-d-dark px-3 py-3 transition-colors duration-100 hover:border-d-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black`}
+      className={`${glass.surface} group flex gap-3 rounded-3xl border-theme-dark px-3 py-3 transition-colors duration-100 hover:border-theme-mid parallax-small mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black`}
       aria-label={`Open ${tool.name} guide`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >
-      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-d-dark/40 bg-d-black/60">
+      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-theme-dark/40 bg-theme-black/60">
         {logo ? (
           <img src={logo} alt={`${tool.name} logo`} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-lg font-normal uppercase text-d-white/70">
+          <span className="text-lg font-normal uppercase text-theme-white/70">
             {tool.name.charAt(0)}
           </span>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-0.5">
-        <h4 className="text-base font-raleway font-normal capitalize text-d-text">{tool.name}</h4>
-        <p className="text-sm font-raleway font-light leading-relaxed text-d-white">
+        <h4 className="text-base font-raleway font-normal capitalize text-theme-text">{tool.name}</h4>
+        <p className="text-sm font-raleway font-light leading-relaxed text-theme-white">
           {tool.description}
         </p>
       </div>
@@ -126,12 +126,12 @@ export default function KnowledgeBase() {
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-d-light font-raleway">
+            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-theme-light font-raleway">
               <BookOpen className="h-4 w-4" />
               Learn
             </p>
-            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-d-text`}>Tools</h1>
-            <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-d-white">
+            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-theme-text`}>Tools</h1>
+            <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-theme-white">
               Explore model guides, best practices, and tips for the creative AI tools you use every day.
             </p>
           </header>
@@ -144,7 +144,7 @@ export default function KnowledgeBase() {
                 to={link.to}
                 className={({ isActive }) =>
                   `${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
-                    isActive ? "text-d-text border border-d-mid" : "text-d-white/80 hover:text-d-text"
+                    isActive ? "text-theme-text border border-theme-mid" : "text-theme-white/80 hover:text-theme-text"
                   }`
                 }
               >
@@ -157,7 +157,7 @@ export default function KnowledgeBase() {
           <div className="mb-8">
             <div className="relative">
               <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white size-5"
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-theme-white size-5"
               />
               <input
                 type="text"
@@ -169,7 +169,7 @@ export default function KnowledgeBase() {
 
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
-            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-d-dark p-4`}
+            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
               aria-label="Knowledge base categories">
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {
@@ -180,10 +180,10 @@ export default function KnowledgeBase() {
                       <button
                         type="button"
                         onClick={() => setActiveCategory(category.id)}
-                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black ${
+                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
                           isActive
-                            ? "border border-d-mid bg-d-white/10 text-d-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
-                            : "border border-transparent text-d-white hover:border-d-mid hover:text-d-text"
+                            ? "border border-theme-mid bg-theme-white/10 text-theme-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                            : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
                         }`}
                       >
                         <Icon className="h-4 w-4 flex-shrink-0 text-current" />
@@ -195,9 +195,9 @@ export default function KnowledgeBase() {
               </ul>
             </nav>
             <div className="flex-1">
-              <div className={`${glass.surface} rounded-3xl border-d-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
+              <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                 <h2 className="text-xl font-raleway font-light text-d-text">
+                 <h2 className="text-xl font-raleway font-light text-theme-text">
                    {activeCategory === "image" 
                      ? "Image generation" 
                      : activeCategory === "text"
@@ -210,7 +210,7 @@ export default function KnowledgeBase() {
                              ? "Audio generation"
                              : `${activeCategory} generation`}
                  </h2>
-                <p className="mt-2 text-sm font-raleway text-d-white">
+                <p className="mt-2 text-sm font-raleway text-theme-white">
                   {hasContent
                     ? "Here are the tools you can use with DayGen."
                     : (activeCategory === "text" || activeCategory === "avatars" || activeCategory === "audio")
@@ -224,7 +224,7 @@ export default function KnowledgeBase() {
                     ))}
                   </div>
                 ) : !(activeCategory === "text" || activeCategory === "avatars" || activeCategory === "audio") ? (
-                  <div className="mt-8 flex flex-col gap-4 text-sm font-raleway text-d-white/70">
+                  <div className="mt-8 flex flex-col gap-4 text-sm font-raleway text-theme-white/70">
                     <p>
                       No resources are available for this category yet. Let us know what you'd like to see in the daygen community!
                     </p>
@@ -234,8 +234,8 @@ export default function KnowledgeBase() {
                 {/* Other tools subsection - only show for image category */}
                 {activeCategory === "image" && (
                   <div className="mt-12">
-                    <h3 className="text-xl font-raleway font-light text-d-text">Other tools</h3>
-                    <p className="mt-2 text-sm font-raleway text-d-white">
+                    <h3 className="text-xl font-raleway font-light text-theme-text">Other tools</h3>
+                    <p className="mt-2 text-sm font-raleway text-theme-white">
                       Here are other great tools to improve your DayGen workflows.
                     </p>
                     <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -249,8 +249,8 @@ export default function KnowledgeBase() {
                 {/* Coming soon for video category */}
                 {activeCategory === "video" && (
                   <div className="mt-12">
-                    <h3 className="text-xl font-raleway font-light text-d-text">Other tools</h3>
-                    <p className="mt-2 text-sm font-raleway text-d-white">
+                    <h3 className="text-xl font-raleway font-light text-theme-text">Other tools</h3>
+                    <p className="mt-2 text-sm font-raleway text-theme-white">
                       Coming soon
                     </p>
                   </div>

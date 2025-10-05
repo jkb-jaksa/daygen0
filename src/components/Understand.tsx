@@ -33,7 +33,7 @@ function UseCaseGridFallback() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={index}
-          className="h-32 rounded-3xl border border-d-dark/60 bg-d-black/60 animate-pulse"
+          className="h-32 rounded-3xl border border-theme-dark/60 bg-theme-black/60 animate-pulse"
         />
       ))}
     </div>
@@ -171,7 +171,7 @@ export default function Understand() {
                 <BookOpen className="h-4 w-4" />
                 Learn
               </p>
-              <h1 className={`${textStyles.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>Use Cases</h1>
+              <h1 className={`${textStyles.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Use Cases</h1>
               <p className={headings.tripleHeading.description}>
                 Explore what you can create, edit, and personalize with DayGen's AI tools.
               </p>
@@ -186,7 +186,7 @@ export default function Understand() {
                 to={link.to}
                 className={({ isActive }) =>
                   `${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
-                    isActive ? "text-d-text border border-d-mid" : "text-d-white/80 hover:text-d-text"
+                    isActive ? "text-theme-text border border-theme-mid" : "text-theme-white/80 hover:text-theme-text"
                   }`
                 }
               >
@@ -199,7 +199,7 @@ export default function Understand() {
           <div className="mb-8">
             <div className="relative">
               <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-d-white size-5"
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-theme-white size-5"
               />
               <input
                 type="text"
@@ -211,7 +211,7 @@ export default function Understand() {
 
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
-            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-d-dark p-4`}
+            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
               aria-label="Use cases categories">
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {
@@ -222,10 +222,10 @@ export default function Understand() {
                       <button
                         type="button"
                         onClick={() => setActiveCategory(category.id)}
-                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-d-black ${
+                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
                           isActive
-                            ? "border border-d-mid bg-d-white/10 text-d-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
-                            : "border border-transparent text-d-white hover:border-d-mid hover:text-d-text"
+                            ? "border border-theme-mid bg-theme-white/10 text-theme-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                            : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
                         }`}
                       >
                         <Icon className="h-4 w-4 flex-shrink-0 text-current" />
@@ -237,14 +237,14 @@ export default function Understand() {
               </ul>
             </nav>
             <div className="flex-1">
-              <div className={`${glass.surface} rounded-3xl border-d-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
+              <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
                 {hasContent ? (
                   <>
                     {/* Create section */}
                     {createCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-d-text">create</h2>
+                        <h2 className="text-xl font-raleway font-light text-theme-text">create</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={createCases} />
                         </Suspense>
@@ -254,7 +254,7 @@ export default function Understand() {
                     {/* Edit section */}
                     {editCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-d-text">edit</h2>
+                        <h2 className="text-xl font-raleway font-light text-theme-text">edit</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={editCases} />
                         </Suspense>
@@ -264,7 +264,7 @@ export default function Understand() {
                     {/* Personalize section */}
                     {personalizeCases.length > 0 && (
                       <div>
-                        <h2 className="text-xl font-raleway font-light text-d-text">personalize</h2>
+                        <h2 className="text-xl font-raleway font-light text-theme-text">personalize</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={personalizeCases} />
                         </Suspense>
@@ -273,7 +273,7 @@ export default function Understand() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-raleway font-light text-d-text">
+                    <h2 className="text-2xl font-raleway font-light text-theme-text">
                       {activeCategory === "image" 
                         ? "image use cases" 
                         : activeCategory === "text"
@@ -286,7 +286,7 @@ export default function Understand() {
                                 ? "audio use cases"
                                 : `${activeCategory} use cases`}
                     </h2>
-                    <p className="mt-2 text-sm font-raleway text-d-white">
+                    <p className="mt-2 text-sm font-raleway text-theme-white">
                       Coming soon.
                     </p>
                   </>

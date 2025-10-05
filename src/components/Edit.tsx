@@ -156,7 +156,7 @@ const ModelMenuPortal: React.FC<{
         overflowY: 'auto',
         overflowX: 'hidden'
       }}
-      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50 ${
+      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 ${
         activeCategory === "video" ? "p-1" : "p-2"
       }`}
       onWheel={handleWheel}
@@ -1050,7 +1050,7 @@ export default function Edit() {
     <div className="relative inline-flex items-center group">
       {children}
       {text && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
           {text}
         </div>
       )}
@@ -1071,7 +1071,7 @@ export default function Edit() {
           {!previewUrl && (
             <div className="w-full max-w-md mx-auto">
               <div 
-                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-d-white/30 hover:border-d-text/50'}`}
+                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-theme-white/30 hover:border-theme-text/50'}`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
@@ -1092,8 +1092,8 @@ export default function Edit() {
                 onPaste={handleUploadPaste}
               >
                 <Upload className="default-orange-icon mx-auto mb-4" />
-                <p className="text-xl font-raleway text-d-text mb-2">Upload your image</p>
-                <p className="text-base font-raleway text-d-white mb-6">
+                <p className="text-xl font-raleway text-theme-text mb-2">Upload your image</p>
+                <p className="text-base font-raleway text-theme-white mb-6">
                   Click anywhere, drag and drop, or paste your image to get started
                 </p>
                 
@@ -1195,7 +1195,7 @@ export default function Edit() {
                   {/* Brush preview circle - only visible in precise edit mode and not in move mode */}
                   {isPreciseEditMode && !isMoveMode && showBrushPreview && (
                     <div
-                      className="absolute pointer-events-none z-30 border-2 border-d-text rounded-full"
+                      className="absolute pointer-events-none z-30 border-2 border-theme-text rounded-full"
                       style={{
                         left: mousePosition.x - brushSize / 2,
                         top: mousePosition.y - brushSize / 2,
@@ -1218,7 +1218,7 @@ export default function Edit() {
                   />
                   <button
                     onClick={handleDeleteImage}
-                    className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
+                    className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1240,7 +1240,7 @@ export default function Edit() {
                 <button
                   onClick={decreaseImageSize}
                   disabled={imageSize <= 1}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-text`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
                   title="Decrease size"
                 >
                   <Minus className="w-4 h-4" />
@@ -1248,12 +1248,12 @@ export default function Edit() {
                 
                 <div className="flex flex-col items-center gap-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-d-white text-sm font-raleway min-w-[3rem] text-center">
+                    <span className="text-theme-white text-sm font-raleway min-w-[3rem] text-center">
                       {imageSize}%
                     </span>
                     <button
                       onClick={resetImageToDefault}
-                      className="p-1 text-d-white hover:text-d-text transition-colors duration-200"
+                      className="p-1 text-theme-white hover:text-theme-text transition-colors duration-200"
                       title="Reset to default position and size"
                     >
                       <RotateCcw className="w-3 h-3" />
@@ -1266,7 +1266,7 @@ export default function Edit() {
                     step="10"
                     value={imageSize}
                     onChange={(e) => setImageSize(Number(e.target.value))}
-                    className="w-40 h-1 bg-d-white rounded-lg appearance-none cursor-pointer"
+                    className="w-40 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
                     style={{
                       background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                       WebkitAppearance: 'none',
@@ -1282,7 +1282,7 @@ export default function Edit() {
                 <button
                   onClick={increaseImageSize}
                   disabled={imageSize >= 500}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-d-white hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed border-d-dark hover:border-d-text`}
+                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
                   title="Increase size"
                 >
                   <Plus className="w-4 h-4" />
@@ -1298,8 +1298,8 @@ export default function Edit() {
                 onClick={toggleMoveMode}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isMoveMode
-                    ? 'text-d-text border-d-text'
-                    : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
+                    ? 'text-theme-text border-theme-text'
+                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
                 }`}
                 title="Toggle move mode"
               >
@@ -1310,8 +1310,8 @@ export default function Edit() {
                 onClick={togglePreciseEditMode}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
                   isPreciseEditMode 
-                    ? 'text-d-text border-d-text' 
-                    : 'text-d-white border-d-dark hover:border-d-text hover:text-d-text'
+                    ? 'text-theme-text border-theme-text' 
+                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
                 }`}
                 title="Draw a mask"
               >
@@ -1323,15 +1323,15 @@ export default function Edit() {
               {isPreciseEditMode && (
                 <>
                   {/* Brush size control */}
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-d-dark ${glass.prompt}`}>
-                    <span className="text-d-white text-xs font-raleway">Size:</span>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-theme-dark ${glass.prompt}`}>
+                    <span className="text-theme-white text-xs font-raleway">Size:</span>
                     <input
                       type="range"
                       min="2"
                       max="200"
                       value={brushSize}
                       onChange={(e) => setBrushSize(Number(e.target.value))}
-                      className="w-16 h-1 bg-d-white rounded-lg appearance-none cursor-pointer"
+                      className="w-16 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
                       style={{
                         background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                         WebkitAppearance: 'none',
@@ -1342,7 +1342,7 @@ export default function Edit() {
                       }}
                       title="Adjust brush size"
                     />
-                    <span className="text-d-white text-xs font-mono font-light min-w-[2rem] text-center">
+                    <span className="text-theme-white text-xs font-mono font-light min-w-[2rem] text-center">
                       {brushSize}px
                     </span>
                   </div>
@@ -1353,7 +1353,7 @@ export default function Edit() {
               <button
                 onClick={undoStroke}
                 disabled={allPaths.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Undo last stroke"
               >
                 <Undo2 className="w-4 h-4" />
@@ -1363,7 +1363,7 @@ export default function Edit() {
               <button
                 onClick={redoStroke}
                 disabled={redoStack.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:text-d-text disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Redo last stroke"
               >
                 <Redo2 className="w-4 h-4" />
@@ -1374,8 +1374,8 @@ export default function Edit() {
                 onClick={toggleEraseMode}
                 className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${
                   isEraseMode 
-                    ? 'text-d-text border-d-text bg-d-text/20' 
-                    : 'text-d-white border-d-dark hover:text-d-text'
+                    ? 'text-theme-text border-theme-text bg-theme-text/20' 
+                    : 'text-theme-white border-theme-dark hover:text-theme-text'
                 }`}
                 title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
               >
@@ -1386,7 +1386,7 @@ export default function Edit() {
               {isPreciseEditMode && maskData && (
                 <button
                   onClick={clearMask}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
                   title="Reset mask"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -1399,7 +1399,7 @@ export default function Edit() {
           {/* Generated Image Display */}
           {currentGeneratedImage && (
             <div className="w-full max-w-lg mx-auto mt-4">
-              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
+              <div className="relative rounded-[32px] overflow-hidden bg-theme-black border border-theme-mid">
                 <img 
                   src={currentGeneratedImage.url} 
                   alt="Generated image" 
@@ -1407,11 +1407,11 @@ export default function Edit() {
                 />
                 <button
                   onClick={() => clearCurrentGeneratedImage()}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5"
+                  className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <div className="px-4 py-3 bg-d-black/80 text-d-white text-base text-center">
+                <div className="px-4 py-3 bg-theme-black/80 text-theme-white text-base text-center">
                   Generated with {getCurrentModel().name}
                 </div>
               </div>
@@ -1422,14 +1422,14 @@ export default function Edit() {
           {currentError && (
             <div className="w-full max-w-lg mx-auto mt-4">
               <div
-                className="relative rounded-[32px] overflow-hidden bg-d-black border border-red-500/50"
+                className="relative rounded-[32px] overflow-hidden bg-theme-black border border-red-500/50"
                 role="status"
                 aria-live="assertive"
                 aria-atomic="true"
               >
                 <button
                   onClick={() => clearCurrentError()}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-d-text transition-colors duration-200 rounded-full p-1.5"
+                  className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1447,7 +1447,7 @@ export default function Edit() {
       {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
       {selectedFile && (
         <div
-          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-d-mid'} px-4 py-3`}
+          className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
           style={{ 
             bottom: '0.75rem',
             transform: 'translateX(-50%) translateZ(0)' 
@@ -1476,7 +1476,7 @@ export default function Edit() {
               onKeyDown={onKeyDown}
               onPaste={handlePaste}
               rows={1}
-              className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-d-text' : 'text-d-white'} placeholder-d-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
+              className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
             />
           </div>
           
@@ -1490,23 +1490,23 @@ export default function Edit() {
               title="Add reference image"
               aria-label="Add reference image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-d-black/20 text-d-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-n-black/20 text-n-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
             >
-              <Plus className="w-4 h-4 flex-shrink-0 text-d-text" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Add Reference</span>
+              <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Add Reference</span>
             </button>
 
             {/* Reference images display - right next to Add reference button */}
             {referenceDisplayItems.length > 0 && (
               <div className="flex items-center gap-2">
-                <div className="hidden lg:block text-sm text-d-text font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
+                <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
                 <div className="flex items-center gap-1.5">
                   {referenceDisplayItems.map((item, idx) => (
                     <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
                       <img
                         src={item.url}
                         alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
-                        className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
+                        className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
                         onClick={() => {
                           setSelectedFullImage(item.url);
                           setIsFullSizeOpen(true);
@@ -1514,13 +1514,13 @@ export default function Edit() {
                       />
                       {item.isPrimary ? (
                         <>
-                          <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-d-text">Base</span>
+                          <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-n-text">Base</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteImage();
                             }}
-                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
                             title="Remove base reference"
                           >
                             <X className="w-2.5 h-2.5" />
@@ -1534,7 +1534,7 @@ export default function Edit() {
                               clearReference(item.index);
                             }
                           }}
-                          className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-white hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
                           title="Remove reference"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -1550,10 +1550,10 @@ export default function Edit() {
               type="button"
               ref={promptsButtonRef}
               onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-              className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+              className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
             >
-              <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Prompts</span>
+              <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Prompts</span>
             </button>
 
             <PromptsDropdown
@@ -1580,9 +1580,9 @@ export default function Edit() {
                 onClick={toggleSettings}
                 title="Settings"
                 aria-label="Settings"
-                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
               >
-                <Settings className="w-4 h-4 text-d-text" />
+                <Settings className="w-4 h-4 text-n-text" />
               </button>
             </div>
 
@@ -1592,7 +1592,7 @@ export default function Edit() {
                 ref={modelSelectorRef}
                 type="button"
                 onClick={toggleModelSelector}
-                className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-white hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
               >
                 {(() => {
                   const currentModel = getCurrentModel();
@@ -1606,10 +1606,10 @@ export default function Edit() {
                     );
                   } else {
                     const Icon = currentModel.Icon;
-                    return <Icon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />;
+                    return <Icon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />;
                   }
                 })()}
-                <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">{getCurrentModel().name}</span>
+                <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
               </button>
               
               {/* Model Dropdown Portal */}
@@ -1631,8 +1631,8 @@ export default function Edit() {
                       }}
                       className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                         isSelected 
-                          ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                          : "bg-transparent hover:bg-d-text/20 border-0"
+                          ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                          : "bg-transparent hover:bg-theme-text/20 border-0"
                       }`}
                     >
                       {hasToolLogo(model.name) ? (
@@ -1643,12 +1643,12 @@ export default function Edit() {
                         />
                       ) : (
                         <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                          isSelected ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                          isSelected ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                         }`} />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${
-                          isSelected ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                          isSelected ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                         }`}>
                           {model.name}
                           <ToolInfoHover
@@ -1658,13 +1658,13 @@ export default function Edit() {
                           />
                         </div>
                         <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                          isSelected ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                          isSelected ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                         }`}>
                           {model.desc}
                         </div>
                       </div>
                       {isSelected && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                       )}
                     </button>
                   );
@@ -1678,29 +1678,29 @@ export default function Edit() {
               <button 
                 onClick={handleGenerateImage}
                 disabled={!prompt.trim()}
-                className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+                className={`btn btn-night font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 {isButtonSpinning ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin text-n-black" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-n-black" />
                 )}
-                Generate
+                <span className="text-n-black">Generate</span>
               </button>
             </Tooltip>
           </div>
           
           {/* Settings Dropdown */}
           {isSettingsOpen && (
-            <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-d-mid bg-d-dark shadow-lg z-50 p-4">
+            <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-theme-mid bg-theme-dark shadow-lg z-50 p-4">
               <div className="space-y-4">
-                <div className="text-base font-raleway text-d-text mb-3">Settings</div>
+                <div className="text-base font-raleway text-theme-text mb-3">Settings</div>
                 
                 {/* Temperature */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm text-d-white font-raleway">Temperature</label>
-                    <span className="text-xs text-d-text font-mono">{temperature}</span>
+                    <label className="text-sm text-theme-white font-raleway">Temperature</label>
+                    <span className="text-xs text-theme-text font-mono">{temperature}</span>
                   </div>
                   <input
                     type="range"
@@ -1709,15 +1709,15 @@ export default function Edit() {
                     step={0.1}
                     value={temperature}
                     onChange={(e) => setTemperature(Number(e.target.value))}
-                    className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
                 
                 {/* Top P */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                      <label className="text-sm text-d-white font-raleway">Top P</label>
-                    <span className="text-xs text-d-text font-mono">{topP}</span>
+                      <label className="text-sm text-theme-white font-raleway">Top P</label>
+                    <span className="text-xs text-theme-text font-mono">{topP}</span>
                   </div>
                   <input
                     type="range"
@@ -1726,15 +1726,15 @@ export default function Edit() {
                     step={0.05}
                     value={topP}
                     onChange={(e) => setTopP(Number(e.target.value))}
-                    className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
                 
                 {/* Top K */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm text-d-white font-raleway">Top K</label>
-                    <span className="text-xs text-d-text font-mono">{topK}</span>
+                    <label className="text-sm text-theme-white font-raleway">Top K</label>
+                    <span className="text-xs text-theme-text font-mono">{topK}</span>
                   </div>
                   <input
                     type="range"
@@ -1743,7 +1743,7 @@ export default function Edit() {
                     step={1}
                     value={topK}
                     onChange={(e) => setTopK(Number(e.target.value))}
-                    className="w-full h-2 bg-d-black rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
               </div>
@@ -1766,7 +1766,7 @@ export default function Edit() {
       {/* Full-size image modal */}
       {isFullSizeOpen && selectedFullImage && (
         <div
-          className="fixed inset-0 z-[60] bg-d-black/80 flex items-start justify-center p-4"
+          className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
           onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
         >
           <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
@@ -1779,7 +1779,7 @@ export default function Edit() {
             
             <button
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
-              className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />
@@ -1790,15 +1790,15 @@ export default function Edit() {
 
       {/* Unsave Prompt Confirmation Modal */}
       {unsavePromptText && createPortal(
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-theme-black/80 py-12">
           <div ref={unsaveModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
-                <Bookmark className="w-10 h-10 mx-auto text-d-text" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Remove from Saved Prompts
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to remove this prompt from your saved prompts?
                 </p>
               </div>

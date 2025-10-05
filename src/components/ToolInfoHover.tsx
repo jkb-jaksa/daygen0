@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUpRight, HelpCircle } from "lucide-react";
-import { glass } from "../styles/designSystem";
+import { glass, buttons } from "../styles/designSystem";
 import {
   buildFallbackTool,
   getLearnToolByName,
@@ -207,7 +207,7 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
           >
             <div
               ref={cardRef}
-              className={`${glass.surface} pointer-events-auto w-[480px] max-w-[calc(100vw-2rem)] rounded-2xl border border-d-dark/70 bg-d-black/80 p-4 shadow-xl shadow-d-black/50`}
+              className={`${glass.surface} pointer-events-auto w-[480px] max-w-[calc(100vw-2rem)] rounded-2xl border border-theme-dark/70 bg-theme-black/80 p-4 shadow-xl shadow-d-black/50`}
               onMouseEnter={() => {
                 clearHideTimer();
               }}
@@ -225,26 +225,26 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
             >
               <div className="flex items-start gap-3">
                 {logo ? (
-                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-d-dark/60 bg-d-black/60">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-theme-dark/60 bg-theme-black/60">
                     <img src={logo} alt="" className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-d-dark/60 bg-d-black/60 text-sm font-semibold text-d-white/80">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-theme-dark/60 bg-theme-black/60 text-sm font-semibold text-theme-white/80">
                     {displayName.charAt(0)}
                   </div>
                 )}
                 <div className="space-y-0">
-                  <p className="font-raleway font-medium text-d-text" style={{ fontSize: '0.875rem' }}>{displayName}</p>
-                  <p className="font-raleway text-d-white" style={{ fontSize: '0.75rem' }}>{tool.tagline}</p>
+                  <p className="font-raleway font-medium text-theme-text" style={{ fontSize: '0.875rem' }}>{displayName}</p>
+                  <p className="font-raleway text-theme-white" style={{ fontSize: '0.75rem' }}>{tool.tagline}</p>
                 </div>
               </div>
-              <p className="mt-2 font-raleway leading-relaxed text-d-light" style={{ fontSize: '0.75rem' }}>
+              <p className="mt-2 font-raleway leading-relaxed text-theme-light" style={{ fontSize: '0.75rem' }}>
                 {tool.overview}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 rounded-full border border-d-dark/60 bg-d-black/40 px-3 py-1 font-raleway text-d-white transition-colors duration-150 hover:border-d-mid hover:text-d-text"
+                  className={buttons.glassPromptCompact}
                   style={{ fontSize: '0.75rem', pointerEvents: 'auto', zIndex: 10001 }}
                   onClick={(event) => {
                     event.stopPropagation();

@@ -89,7 +89,7 @@ function ModalityCard({ modality }: { modality: typeof modalities[0] }) {
 
   return (
     <article
-      className={`${glass.surface} relative overflow-hidden rounded-[32px] border border-d-dark hover:border-d-mid p-8 parallax-small mouse-glow transition-colors duration-200 h-full`}
+      className={`${glass.surface} relative overflow-hidden rounded-[32px] border border-theme-dark hover:border-theme-mid p-8 parallax-small mouse-glow transition-colors duration-200 h-full`}
       style={{ '--glow-rgb': modality.glowColor } as React.CSSProperties}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
@@ -98,23 +98,23 @@ function ModalityCard({ modality }: { modality: typeof modalities[0] }) {
       <div className={`pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${modality.accent}`} />
       <div className="flex flex-col gap-4 relative h-full">
         <div className="flex flex-col items-center gap-4">
-          <div className="grid size-12 place-items-center rounded-2xl border border-white/10 bg-d-black/50">
+          <div className="grid size-12 place-items-center rounded-2xl border border-white/10 bg-theme-black/50">
             <modality.Icon className={`size-6 ${modality.iconColor}`} />
           </div>
           <div className="text-center">
-            <h3 className="text-2xl font-raleway text-d-text">{modality.title}</h3>
-            <p className="text-sm font-raleway text-d-light">3 quests</p>
+            <h3 className="text-2xl font-raleway text-theme-text">{modality.title}</h3>
+            <p className="text-sm font-raleway text-theme-light">3 quests</p>
           </div>
         </div>
-        <p className="text-sm font-raleway text-d-white leading-relaxed text-left">{modality.description}</p>
+        <p className="text-sm font-raleway text-theme-white leading-relaxed text-left">{modality.description}</p>
         <div className="grid gap-2">
           {modality.prompts.map((prompt) => (
             <div
               key={prompt}
-              className="flex items-center gap-3 rounded-2xl border border-d-dark bg-d-black/40 px-4 py-3 text-left"
+              className="flex items-center gap-3 rounded-2xl border border-theme-dark bg-theme-black/40 px-4 py-3 text-left"
             >
               <Compass className={`size-4 ${modality.iconColor}`} />
-              <p className="text-sm font-raleway text-d-text">{prompt}</p>
+              <p className="text-sm font-raleway text-theme-text">{prompt}</p>
             </div>
           ))}
         </div>
@@ -144,7 +144,7 @@ export default function DigitalCopy() {
                 <Fingerprint className="size-4" />
                 digital copy
               </p>
-              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>Create your Digital Copy.</h1>
+              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Create your Digital Copy.</h1>
               <p className={headings.tripleHeading.description}>
                 Design your digital self.
               </p>
@@ -176,9 +176,9 @@ export default function DigitalCopy() {
 
       <section className="relative pb-24">
         <div className={`${layout.container}`}>
-          <div className={`${glass.surface} mx-auto max-w-5xl rounded-[40px] border border-d-dark px-10 py-12 text-center`}>
-            <h2 className={`${text.sectionHeading} text-d-text`}>Ready to activate your copy?</h2>
-            <p className="mt-4 text-base font-raleway text-d-white">
+          <div className={`${glass.surface} mx-auto max-w-5xl rounded-[40px] border border-theme-dark px-10 py-12 text-center`}>
+            <h2 className={`${text.sectionHeading} text-theme-text`}>Ready to activate your copy?</h2>
+            <p className="mt-4 text-base font-raleway text-theme-white">
               Keep everything private until you are ready. When you publish, you decide how your digital copy collaborates, creates, or continues your story.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

@@ -75,25 +75,25 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
   );
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-d-black-subtle text-d-text">
+    <main className="relative min-h-screen overflow-hidden bg-theme-black-subtle text-theme-text">
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pt-[calc(var(--nav-h)+2.5rem)] pb-16 lg:flex-row lg:items-stretch lg:justify-between lg:gap-20 lg:px-8">
         <section className="flex w-full flex-col justify-start gap-8 lg:max-w-xl mt-2">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-d-mid/40 bg-d-black/40 px-4 py-2 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-d-white/70">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-theme-mid/40 bg-theme-black/40 px-4 py-2 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-theme-white/70">
             Login required
           </span>
           <div className="space-y-4 -mt-4">
-            <h1 className="text-4xl font-light leading-tight text-d-text font-raleway sm:text-5xl">{heading}</h1>
-            <p className="max-w-xl text-base font-raleway leading-relaxed text-d-white">{subheading}</p>
+            <h1 className="text-4xl font-light leading-tight text-theme-text font-raleway sm:text-5xl">{heading}</h1>
+            <p className="max-w-xl text-base font-raleway leading-relaxed text-theme-white">{subheading}</p>
           </div>
           <ul className="space-y-4">
             {highlights.map((item) => (
               <li key={item.title} className="flex items-start gap-3">
-                <span className="mt-1 inline-flex size-7 items-center justify-center rounded-full bg-d-white/10 text-d-text">
+                <span className="mt-1 inline-flex size-7 items-center justify-center rounded-full bg-theme-white/10 text-theme-text">
                   <CheckCircle2 className="h-4 w-4" />
                 </span>
                 <div className="space-y-1">
-                  <p className="font-raleway text-base font-medium text-d-text">{item.title}</p>
-                  <p className="text-sm font-raleway leading-relaxed text-d-white">{item.description}</p>
+                  <p className="font-raleway text-base font-medium text-theme-text">{item.title}</p>
+                  <p className="text-sm font-raleway leading-relaxed text-theme-white">{item.description}</p>
                 </div>
               </li>
             ))}
@@ -102,23 +102,23 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
         <section className="w-full lg:max-w-md">
           <div className={`${glass.promptDark} rounded-[28px] p-8 shadow-[0_24px_80px_rgba(8,5,24,0.45)]`}>
             <div className="space-y-3 text-center">
-              <h2 className="text-2xl font-raleway font-normal text-d-text">Enter the studio</h2>
-              <p className="text-sm font-raleway text-d-white">Log in below to get full access to DayGen.</p>
+              <h2 className="text-2xl font-raleway font-normal text-theme-text">Enter the studio</h2>
+              <p className="text-sm font-raleway text-theme-white">Log in below to get full access to DayGen.</p>
             </div>
             <div className="mt-6 space-y-5">
               <GoogleLogin />
-              <div className="flex rounded-full border border-d-dark bg-d-black/40 p-1 text-sm font-raleway">
+              <div className="flex rounded-full border border-theme-dark bg-theme-black/40 p-1 text-sm font-raleway">
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className={`flex-1 rounded-full px-4 py-2 transition-colors duration-200 ${mode === "login" ? "bg-d-white/10 text-d-text" : "text-d-white/70 hover:text-d-text"}`}
+                  className={`flex-1 rounded-full px-4 py-2 transition-colors duration-200 ${mode === "login" ? "bg-theme-white/10 text-theme-text" : "text-theme-white/70 hover:text-theme-text"}`}
                 >
                   Log in
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
-                  className={`flex-1 rounded-full px-4 py-2 transition-colors duration-200 ${mode === "signup" ? "bg-d-white/10 text-d-text" : "text-d-white/70 hover:text-d-text"}`}
+                  className={`flex-1 rounded-full px-4 py-2 transition-colors duration-200 ${mode === "signup" ? "bg-theme-white/10 text-theme-text" : "text-theme-white/70 hover:text-theme-text"}`}
                 >
                   Sign up
                 </button>
@@ -126,7 +126,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
               <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === "signup" && (
                   <div className="space-y-1">
-                    <label htmlFor="auth-name" className="block text-sm font-raleway text-d-white/80">
+                    <label htmlFor="auth-name" className="block text-sm font-raleway text-theme-white/80">
                       Name
                     </label>
                     <input
@@ -142,7 +142,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                   </div>
                 )}
                 <div className="space-y-1">
-                  <label htmlFor="auth-email" className="block text-sm font-raleway text-d-white/80">
+                  <label htmlFor="auth-email" className="block text-sm font-raleway text-theme-white/80">
                     Email
                   </label>
                   <input
@@ -158,7 +158,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                   />
                 </div>
                 <div className="space-y-1">
-                  <label htmlFor="auth-password" className="block text-sm font-raleway text-d-white/80">
+                  <label htmlFor="auth-password" className="block text-sm font-raleway text-theme-white/80">
                     Password
                   </label>
                   <input
@@ -176,7 +176,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                 </div>
                 {mode === "signup" && (
                   <div className="space-y-1">
-                    <label htmlFor="auth-confirm" className="block text-sm font-raleway text-d-white/80">
+                    <label htmlFor="auth-confirm" className="block text-sm font-raleway text-theme-white/80">
                       Confirm password
                     </label>
                     <input
@@ -204,14 +204,14 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                   {isSubmitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
                 </button>
               </form>
-              <p className="flex items-center justify-center gap-2 text-xs font-raleway text-d-white/60">
+              <p className="flex items-center justify-center gap-2 text-xs font-raleway text-theme-white/60">
                 <Lock className="h-3.5 w-3.5" />
                 Passwords are handled securely by the DayGen backend with JWT-based sessions.
               </p>
             </div>
-            <p className="mt-6 text-center text-[0.7rem] font-raleway text-d-white/50">
+            <p className="mt-6 text-center text-[0.7rem] font-raleway text-theme-white/50">
               By continuing you agree to our{" "}
-              <Link to="/privacy-policy" className="text-d-white hover:text-d-text underline decoration-d-white/40 decoration-dotted underline-offset-4">
+              <Link to="/privacy-policy" className="text-theme-white hover:text-theme-text underline decoration-d-white/40 decoration-dotted underline-offset-4">
                 Privacy Policy
               </Link>
               .
@@ -472,10 +472,10 @@ export default function Account() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-d-black-subtle text-d-text">
+      <main className="flex min-h-screen items-center justify-center bg-theme-black-subtle text-theme-text">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-d-white/30 border-t-d-white" aria-hidden="true" />
-          <p className="font-raleway text-sm text-d-white/70">Restoring your account...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/30 border-t-d-white" aria-hidden="true" />
+          <p className="font-raleway text-sm text-theme-white/70">Restoring your account...</p>
         </div>
       </main>
     );
@@ -492,7 +492,7 @@ export default function Account() {
   const showReturnButton = user && normalizedRawNext && decodedNextPath;
 
   return (
-    <main className="min-h-screen text-d-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+    <main className="min-h-screen text-theme-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
       <header className="max-w-5xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -502,7 +502,7 @@ export default function Account() {
                   const target = safeNext(decodedNextPath);
                   navigate(target, { replace: true });
                 }}
-                className="px-4 py-2 bg-d-primary text-d-black rounded-lg hover:bg-d-primary/90 transition-colors font-raleway text-sm"
+                className="px-4 py-2 bg-theme-primary text-theme-black rounded-lg hover:bg-theme-primary/90 transition-colors font-raleway text-sm"
               >
                 Return to {destinationLabel}
               </button>
@@ -510,10 +510,10 @@ export default function Account() {
           </div>
           <button
             onClick={() => navigate(sanitizedNextPath ?? "/create")}
-            className="p-2 hover:bg-d-dark/50 rounded-lg transition-colors group"
+            className="p-2 hover:bg-theme-dark/50 rounded-lg transition-colors group"
             title="Close account"
           >
-            <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors rounded-full" />
+            <X className="w-5 h-5 text-theme-white group-hover:text-theme-text transition-colors rounded-full" />
           </button>
         </div>
       </header>

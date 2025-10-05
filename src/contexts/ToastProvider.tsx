@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           {toasts.map((toast) => (
             <div
               key={toast.id}
-              className="rounded-xl bg-d-black/80 px-4 py-3 text-center text-sm font-raleway text-d-text shadow-[0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur"
+              className="rounded-xl bg-theme-black/80 px-4 py-3 text-center text-sm font-raleway text-theme-text shadow-[0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur"
               role="status"
               aria-live="assertive"
             >

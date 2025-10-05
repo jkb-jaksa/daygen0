@@ -4,7 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 const Create = lazy(() => import("../components/Create"));
 
 const Loading = () => (
-  <div className="flex min-h-[40vh] items-center justify-center text-d-white">Loading…</div>
+  <div className="flex min-h-[40vh] items-center justify-center text-theme-white">Loading…</div>
 );
 
 export default function GalleryRoutes() {

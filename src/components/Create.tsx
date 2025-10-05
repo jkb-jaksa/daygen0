@@ -268,7 +268,7 @@ const ModelMenuPortal: React.FC<{
         overflowY: 'auto',
         overflowX: 'hidden'
       }}
-      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50 ${
+      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 ${
         activeCategory === "video" ? "p-1" : "p-2"
       }`}
       onWheel={handleWheel}
@@ -389,7 +389,7 @@ const AvatarPickerPortal: React.FC<{
         overflowY: 'auto',
         overflowX: 'hidden'
       }}
-      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-4 overscroll-contain scrollbar-thin scrollbar-thumb-d-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-d-mid/50`}
+      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-4 overscroll-contain scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -507,7 +507,7 @@ const Create: React.FC = () => {
     <div className="relative inline-flex items-center group">
       {children}
       {text && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
           {text}
         </div>
       )}
@@ -2645,7 +2645,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -2656,7 +2656,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleCreateAvatarFromMenu(image);
@@ -2667,7 +2667,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -2678,7 +2678,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUsePromptAgain();
@@ -2689,7 +2689,7 @@ const Create: React.FC = () => {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -2738,7 +2738,7 @@ const Create: React.FC = () => {
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -2764,7 +2764,7 @@ const Create: React.FC = () => {
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -2775,7 +2775,7 @@ const Create: React.FC = () => {
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -2788,7 +2788,7 @@ const Create: React.FC = () => {
           {context !== 'inspirations' && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleImagePublicStatus(image.url);
@@ -2831,8 +2831,8 @@ const Create: React.FC = () => {
         key={`${context}-${img.url}-${idx}`}
         className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
-            ? 'border-d-white bg-d-black hover:bg-d-dark'
-            : 'border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid'
+            ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
+            : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
         } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
       >
         <img
@@ -2880,7 +2880,7 @@ const Create: React.FC = () => {
             <div className="w-full p-4">
               <div className="mb-2">
                 <div className="relative">
-                  <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                  <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                     {img.prompt}
                     <button
                       data-copy-button="true"
@@ -2893,7 +2893,7 @@ const Create: React.FC = () => {
                         e.preventDefault();
                         e.stopPropagation();
                       }}
-                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, tooltipId);
                       }}
@@ -2914,7 +2914,7 @@ const Create: React.FC = () => {
                         e.preventDefault();
                         e.stopPropagation();
                       }}
-                      className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                      className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
                       }}
@@ -2940,14 +2940,14 @@ const Create: React.FC = () => {
                           src={ref}
                           alt={`Reference ${refIdx + 1}`}
                           loading="lazy"
-                          className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
+                          className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedReferenceImage(ref);
                             setIsFullSizeOpen(true);
                           }}
                         />
-                        <div className="absolute -top-1 -right-1 bg-d-text text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                        <div className="absolute -top-1 -right-1 bg-theme-text text-theme-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                           {refIdx + 1}
                         </div>
                       </div>
@@ -2961,7 +2961,7 @@ const Create: React.FC = () => {
                       link.target = '_blank';
                       link.click();
                     }}
-                    className="text-xs font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                    className="text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   >
                     View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                   </button>
@@ -2982,17 +2982,17 @@ const Create: React.FC = () => {
                   )}
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
-                  <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                  <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
-                      <Globe className="w-3 h-3 text-d-text" />
+                      <Globe className="w-3 h-3 text-theme-text" />
                       <span className="leading-none">Public</span>
                     </div>
                   </div>
                 )}
                 {context === 'inspirations' && (
-                  <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                  <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                     <div className="flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-d-text" />
+                      <Sparkles className="w-3 h-3 text-theme-text" />
                       <span className="leading-none">Inspiration</span>
                     </div>
                   </div>
@@ -3005,7 +3005,7 @@ const Create: React.FC = () => {
         {/* Tooltips positioned outside the hover overlay container */}
         <div
           data-tooltip-for={tooltipId}
-          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
           style={{
             left: '50%',
             transform: 'translateX(-50%) translateY(-100%)',
@@ -3016,7 +3016,7 @@ const Create: React.FC = () => {
         </div>
         <div
           data-tooltip-for={`save-${tooltipId}`}
-          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
           style={{
             left: '50%',
             transform: 'translateX(-50%) translateY(-100%)',
@@ -4118,19 +4118,19 @@ const handleGenerate = async () => {
     <div className={layout.page}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
           {copyNotification}
         </div>
       )}
 
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -4139,7 +4139,7 @@ const handleGenerate = async () => {
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -4170,13 +4170,13 @@ const handleGenerate = async () => {
 
       {/* New folder dialog */}
       {newFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Create New Folder</h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Create New Folder</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -4184,11 +4184,11 @@ const handleGenerate = async () => {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className={`${inputs.base} text-d-text ${
+                  className={`${inputs.base} text-theme-text ${
                     folders.some(folder =>
                       folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                     ) && newFolderName.trim()
-                      ? 'border-d-white focus:border-d-white'
+                      ? 'border-theme-white focus:border-theme-white'
                       : 'border-b-mid'
                   }`}
                   autoFocus
@@ -4209,7 +4209,7 @@ const handleGenerate = async () => {
                 {folders.some(folder => 
                   folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                 ) && newFolderName.trim() && (
-                  <p className="text-d-text text-sm font-raleway">
+                  <p className="text-theme-text text-sm font-raleway">
                     A folder with this name already exists
                   </p>
                 )}
@@ -4246,15 +4246,15 @@ const handleGenerate = async () => {
 
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : (publishConfirmation.count === 1 
@@ -4283,15 +4283,15 @@ const handleGenerate = async () => {
 
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : (unpublishConfirmation.count === 1 
@@ -4320,15 +4320,15 @@ const handleGenerate = async () => {
 
       {/* Download confirmation dialog */}
       {downloadConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Download className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {downloadConfirmation.count === 1 
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download ${downloadConfirmation.count} images?`}
@@ -4355,13 +4355,13 @@ const handleGenerate = async () => {
 
       {/* Add to folder dialog */}
       {addToFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-d-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-light text-d-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
@@ -4369,8 +4369,8 @@ const handleGenerate = async () => {
               <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
-                    <FolderIcon className="w-8 h-8 text-d-white/30 mx-auto mb-2" />
-                    <p className="text-base text-d-white/50 mb-4">No folders available</p>
+                    <FolderIcon className="w-8 h-8 text-theme-white/30 mx-auto mb-2" />
+                    <p className="text-base text-theme-white/50 mb-4">No folders available</p>
                     <button
                       onClick={() => {
                         setReturnToFolderDialog(true);
@@ -4399,10 +4399,10 @@ const handleGenerate = async () => {
                           key={folder.id}
                           className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
                             isFullyInFolder
-                              ? "bg-d-white/10 border-d-white shadow-lg shadow-d-white/20"
+                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-d-white/20"
                               : isPartiallyInFolder
-                                ? "bg-d-white/10 border-d-white/70"
-                                : "bg-transparent border-d-dark hover:bg-d-dark/40 hover:border-d-mid"
+                                ? "bg-theme-white/10 border-theme-white/70"
+                                : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
                           }`}
                         >
                           <input
@@ -4414,17 +4414,17 @@ const handleGenerate = async () => {
                           />
                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                             isFullyInFolder
-                              ? "border-d-white bg-d-white"
+                              ? "border-theme-white bg-theme-white"
                               : isPartiallyInFolder
-                                ? "border-d-white bg-d-white/30"
-                                : "border-d-mid hover:border-d-text/50"
+                                ? "border-theme-white bg-theme-white/30"
+                                : "border-theme-mid hover:border-theme-text/50"
                           }`}>
                             {isFullyInFolder ? (
-                              <svg className="w-3 h-3 text-d-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : isPartiallyInFolder ? (
-                              <Minus className="w-3 h-3 text-d-text" strokeWidth={3} />
+                              <Minus className="w-3 h-3 text-theme-text" strokeWidth={3} />
                             ) : (
                               <div className="w-2 h-2 bg-transparent rounded"></div>
                             )}
@@ -4440,21 +4440,21 @@ const handleGenerate = async () => {
                                 />
                               </div>
                             ) : isFullyInFolder ? (
-                              <div className="w-5 h-5 bg-d-white/20 rounded-lg flex items-center justify-center">
-                                <FolderIcon className="w-3 h-3 text-d-text" />
+                              <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
+                                <FolderIcon className="w-3 h-3 text-theme-text" />
                               </div>
                             ) : (
-                              <FolderIcon className="w-5 h-5 text-d-white/60" />
+                              <FolderIcon className="w-5 h-5 text-theme-white/60" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate ${
-                              isFullyInFolder ? 'text-d-text' : 'text-d-text/80'
+                              isFullyInFolder ? 'text-theme-text' : 'text-theme-text/80'
                             }`}>
                               {folder.name}
                             </div>
                             <div className={`text-xs ${
-                              isFullyInFolder || isPartiallyInFolder ? 'text-d-text/70' : 'text-d-white/50'
+                              isFullyInFolder || isPartiallyInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
                             }`}>
                               {folder.imageIds.length} images
                               {totalSelected > 1 && (
@@ -4525,13 +4525,13 @@ const handleGenerate = async () => {
 
       {/* Folder thumbnail selection dialog */}
       {folderThumbnailDialog.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
                 <FolderIcon className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">Set Folder Thumbnail</h3>
-                <p className="text-base font-raleway text-d-white">
+                <h3 className="text-xl font-raleway text-theme-text">Set Folder Thumbnail</h3>
+                <p className="text-base font-raleway text-theme-white">
                   Choose a custom thumbnail for this folder.
                 </p>
                 {(() => {
@@ -4544,7 +4544,7 @@ const handleGenerate = async () => {
                           setFolderThumbnailDialog({show: false, folderId: null});
                           setFolderThumbnailFile(null);
                         }}
-                        className="absolute top-0 right-0 w-8 h-8 rounded-full bg-d-mid/20 hover:bg-d-text/30 text-d-text hover:text-d-text flex items-center justify-center transition-colors duration-200"
+                        className="absolute top-0 right-0 w-8 h-8 rounded-full bg-theme-mid/20 hover:bg-theme-text/30 text-theme-text hover:text-theme-text flex items-center justify-center transition-colors duration-200"
                         title="Remove current thumbnail"
                       >
                         <X className="w-4 h-4" />
@@ -4558,7 +4558,7 @@ const handleGenerate = async () => {
               <div className="mb-6 space-y-4">
                 {/* Upload new image */}
                 <div className="space-y-3">
-                  <label className="block text-sm font-raleway text-d-text">
+                  <label className="block text-sm font-raleway text-theme-text">
                     Upload New Image
                   </label>
                   <div className="flex items-center justify-center gap-3">
@@ -4577,7 +4577,7 @@ const handleGenerate = async () => {
                       Choose file
                     </label>
                     {folderThumbnailFile && (
-                      <span className="text-sm text-d-white/80 font-raleway">
+                      <span className="text-sm text-theme-white/80 font-raleway">
                         {folderThumbnailFile.name}
                       </span>
                     )}
@@ -4596,7 +4596,7 @@ const handleGenerate = async () => {
 
                 {/* Select from existing images */}
                 <div className="space-y-3">
-                  <label className="block text-sm font-raleway text-d-text">
+                  <label className="block text-sm font-raleway text-theme-text">
                     Or select from Folder Images.
                   </label>
                   <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
@@ -4610,7 +4610,7 @@ const handleGenerate = async () => {
                         <button
                           key={idx}
                           onClick={() => setFolderThumbnailConfirm({show: true, folderId: folder.id, imageUrl: img.url})}
-                          className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-d-text transition-colors duration-200"
+                          className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-theme-text transition-colors duration-200"
                         >
                           <img
                             src={img.url}
@@ -4651,13 +4651,13 @@ const handleGenerate = async () => {
 
       {/* Folder thumbnail confirmation dialog */}
       {folderThumbnailConfirm.show && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-d-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
                 <FolderIcon className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway text-d-text">Thumbnail</h3>
-                <p className="text-base font-raleway text-d-white">
+                <h3 className="text-xl font-raleway text-theme-text">Thumbnail</h3>
+                <p className="text-base font-raleway text-theme-white">
                   Do you want to use this image as thumbnail?
                 </p>
               </div>
@@ -4669,7 +4669,7 @@ const handleGenerate = async () => {
                     src={folderThumbnailConfirm.imageUrl}
                     alt="Selected thumbnail"
                     loading="lazy"
-                    className="w-32 h-32 object-cover rounded-lg border border-d-mid"
+                    className="w-32 h-32 object-cover rounded-lg border border-theme-mid"
                   />
                 </div>
               )}
@@ -4709,10 +4709,10 @@ const handleGenerate = async () => {
             <div className="lg:hidden">
               <nav aria-label="Create navigation" className="space-y-4">
                 <div>
-                  <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-d-white/70">
+                  <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-theme-white/70">
                     create
                   </div>
-                  <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-d-mid/40 scrollbar-track-transparent">
+                  <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
                     {CREATE_CATEGORIES.map((item) => {
                       const isActive = activeCategory === item.key;
                       return (
@@ -4722,8 +4722,8 @@ const handleGenerate = async () => {
                           onClick={() => setActiveCategory(item.key)}
                           className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${
                             isActive
-                              ? "border-d-light bg-d-white/10 text-d-text"
-                              : "border-d-dark text-d-white hover:text-d-text"
+                              ? "border-theme-light bg-theme-white/10 text-theme-text"
+                              : "border-theme-dark text-theme-white hover:text-theme-text"
                           }`}
                           aria-pressed={isActive}
                         >
@@ -4735,10 +4735,10 @@ const handleGenerate = async () => {
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-d-white/70">
+                  <div className="mb-2 px-1 text-[12px] font-raleway uppercase tracking-[0.2em] text-theme-white/70">
                     my works
                   </div>
-                  <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-d-mid/40 scrollbar-track-transparent">
+                  <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
                     {libraryNavItems.map((item) => {
                       const isActive = activeCategory === item.key || (item.key === "my-folders" && activeCategory === "folder-view");
                       return (
@@ -4748,8 +4748,8 @@ const handleGenerate = async () => {
                           onClick={() => setActiveCategory(item.key)}
                           className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${
                             isActive
-                              ? "border-d-light bg-d-white/10 text-d-text"
-                              : "border-d-dark text-d-white hover:text-d-text"
+                              ? "border-theme-light bg-theme-white/10 text-theme-text"
+                              : "border-theme-dark text-theme-white hover:text-theme-text"
                           }`}
                           aria-pressed={isActive}
                         >
@@ -4817,8 +4817,8 @@ const handleGenerate = async () => {
                       {inspirationsGallery.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                           <Sparkles className="default-orange-icon mb-4" />
-                          <h3 className="text-xl font-raleway text-d-text mb-2">No inspirations yet</h3>
-                          <p className="text-base font-raleway text-d-white max-w-md">
+                          <h3 className="text-xl font-raleway text-theme-text mb-2">No inspirations yet</h3>
+                          <p className="text-base font-raleway text-theme-white max-w-md">
                             Explore the community gallery and save images you love to see them here.
                           </p>
                         </div>
@@ -4835,15 +4835,15 @@ const handleGenerate = async () => {
                       /* Empty state for uploads */
                       <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
                         <Upload className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-d-text mb-2">No uploads yet</h3>
-                        <p className="text-base font-raleway text-d-white max-w-md">
+                        <h3 className="text-xl font-raleway text-theme-text mb-2">No uploads yet</h3>
+                        <p className="text-base font-raleway text-theme-white max-w-md">
                           Here you will see all your uploaded reference images that were used to create a new image or video.
                         </p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
-                          <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large">
+                          <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
                             
                             {/* Upload info overlay */}
@@ -4853,10 +4853,10 @@ const handleGenerate = async () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
+                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
                                       {upload.file.name}
                                     </p>
-                                    <p className="text-d-white/60 text-xs font-raleway mt-1">
+                                    <p className="text-theme-white/60 text-xs font-raleway mt-1">
                                       Uploaded {upload.uploadDate.toLocaleDateString()}
                                     </p>
                                   </div>
@@ -4901,9 +4901,9 @@ const handleGenerate = async () => {
                     <div className="mb-6">
                       <button
                         onClick={() => { setActiveCategory("my-folders"); setSelectedFolder(null); }}
-                        className="flex items-center gap-2 text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-base group"
+                        className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway text-base group"
                       >
-                        <ArrowLeft className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />
+                        <ArrowLeft className="w-4 h-4 group-hover:text-theme-text transition-colors duration-200" />
                         Back to folders
                       </button>
                     </div>
@@ -4911,15 +4911,15 @@ const handleGenerate = async () => {
                     {/* Folder header */}
                     <div className="text-center mb-6">
                       <div className="flex items-center justify-center gap-2 mb-2">
-                        <FolderIcon className="w-6 h-6 text-d-text" />
-                        <h2 className="text-2xl font-raleway text-d-text">
+                        <FolderIcon className="w-6 h-6 text-theme-text" />
+                        <h2 className="text-2xl font-raleway text-theme-text">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             return folder ? folder.name : 'Unknown folder';
                           })()}
                         </h2>
                       </div>
-                      <p className="text-d-white/60 font-raleway text-sm">
+                      <p className="text-theme-white/60 font-raleway text-sm">
                         {(() => {
                           const folder = folders.find(f => f.id === selectedFolder);
                           if (!folder) return '0 images';
@@ -4943,8 +4943,8 @@ const handleGenerate = async () => {
                         return (
                           <div className="flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
                             <FolderIcon className="default-orange-icon mb-4" />
-                            <h3 className="text-xl font-raleway text-d-text mb-2">Folder is empty</h3>
-                            <p className="text-base font-raleway text-d-white max-w-md">
+                            <h3 className="text-xl font-raleway text-theme-text mb-2">Folder is empty</h3>
+                            <p className="text-base font-raleway text-theme-white max-w-md">
                               Add images to this folder to see them here.
                             </p>
                           </div>
@@ -4956,7 +4956,7 @@ const handleGenerate = async () => {
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
-                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
+                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
                               // Check if the click came from a copy button
                               const target = event.target;
                               if (target instanceof Element && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
@@ -4984,7 +4984,7 @@ const handleGenerate = async () => {
                                 <div className="w-full p-4">
                                   <div className="mb-2">
                                     <div className="relative">
-                                      <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
+                                      <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                         {img.prompt && (
                                           <>
@@ -4999,7 +4999,7 @@ const handleGenerate = async () => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
                                               }}
-                                              className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                              className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                               onMouseEnter={(e) => {
                                                 showHoverTooltip(e.currentTarget, `folder-select-${folder.id}-${img.url}-${idx}`);
                                               }}
@@ -5020,7 +5020,7 @@ const handleGenerate = async () => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
                                               }}
-                                              className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                              className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                               onMouseEnter={(e) => {
                                                 showHoverTooltip(e.currentTarget, `save-folder-select-${folder.id}-${img.url}-${idx}`);
                                               }}
@@ -5056,9 +5056,9 @@ const handleGenerate = async () => {
                                           })()}
                                         </div>
                                         {img.isPublic && (
-                                          <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                                          <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
-                                              <Globe className="w-3 h-3 text-d-text" />
+                                              <Globe className="w-3 h-3 text-theme-text" />
                                               <span className="leading-none">Public</span>
                                             </div>
                                           </div>
@@ -5072,7 +5072,7 @@ const handleGenerate = async () => {
                               {/* Tooltip positioned outside the hover overlay container */}
                               <div 
                                 data-tooltip-for={`folder-select-${folder.id}-${img.url}-${idx}`}
-                                className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                                className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
                                 style={{ 
                                   left: '50%', 
                                   transform: 'translateX(-50%) translateY(-100%)',
@@ -5083,7 +5083,7 @@ const handleGenerate = async () => {
                               </div>
                               <div 
                                 data-tooltip-for={`save-folder-select-${folder.id}-${img.url}-${idx}`}
-                                className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                                className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
                                 style={{ 
                                   left: '50%', 
                                   transform: 'translateX(-50%) translateY(-100%)',
@@ -5194,8 +5194,8 @@ const handleGenerate = async () => {
                     {folders.length === 0 ? (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                         <FolderIcon className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-d-text mb-2">No folders yet</h3>
-                        <p className="text-base font-raleway text-d-white max-w-md mb-4">
+                        <h3 className="text-xl font-raleway text-theme-text mb-2">No folders yet</h3>
+                        <p className="text-base font-raleway text-theme-white max-w-md mb-4">
                           Create your first folder to organize your images.
                         </p>
                         <button
@@ -5209,7 +5209,7 @@ const handleGenerate = async () => {
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
                         {folders.map((folder) => (
-                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
+                      <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
                           {folder.customThumbnail ? (
                             <div className="w-full h-full relative">
@@ -5221,10 +5221,10 @@ const handleGenerate = async () => {
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
-                              <div className="absolute inset-0 bg-d-black/60 group-hover:bg-d-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
+                              <div className="absolute inset-0 bg-theme-black/60 group-hover:bg-theme-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
                                 <FolderIcon className="default-orange-icon mb-2" />
-                                <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
-                                <p className="text-sm text-d-white font-raleway text-center">
+                                <h3 className="text-xl font-raleway text-theme-text mb-2 text-center">{folder.name}</h3>
+                                <p className="text-sm text-theme-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                                 </p>
                               </div>
@@ -5235,13 +5235,13 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-theme-white hover:text-theme-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
                               {/* Show additional thumbnails if more than 1 image */}
                               {folder.imageIds.length > 1 && (
-                                <div className="absolute top-2 left-2 bg-d-black/80 rounded-lg p-1 flex gap-1">
+                                <div className="absolute top-2 left-2 bg-theme-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
                                     <img
                                       key={idx}
@@ -5252,8 +5252,8 @@ const handleGenerate = async () => {
                                     />
                                   ))}
                                   {folder.imageIds.length > 4 && (
-                                    <div className="w-6 h-6 rounded bg-d-text/20 flex items-center justify-center">
-                                      <span className="text-xs text-d-text font-bold font-raleway">+{folder.imageIds.length - 4}</span>
+                                    <div className="w-6 h-6 rounded bg-theme-text/20 flex items-center justify-center">
+                                      <span className="text-xs text-theme-text font-bold font-raleway">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
                                 </div>
@@ -5269,10 +5269,10 @@ const handleGenerate = async () => {
                                 className="w-full h-full object-cover"
                               />
                               {/* Overlay with folder info */}
-                              <div className="absolute inset-0 bg-d-black/60 group-hover:bg-d-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
+                              <div className="absolute inset-0 bg-theme-black/60 group-hover:bg-theme-black/30 flex flex-col items-center justify-center p-4 opacity-100 transition-all duration-200">
                                 <FolderIcon className="default-orange-icon mb-2" />
-                                <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
-                                <p className="text-sm text-d-white font-raleway text-center">
+                                <h3 className="text-xl font-raleway text-theme-text mb-2 text-center">{folder.name}</h3>
+                                <p className="text-sm text-theme-white font-raleway text-center">
                                   {folder.imageIds.length} {folder.imageIds.length === 1 ? 'image' : 'images'}
                                 </p>
                               </div>
@@ -5283,13 +5283,13 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-theme-white hover:text-theme-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
                               {/* Show additional thumbnails if more than 1 image */}
                               {folder.imageIds.length > 1 && (
-                                <div className="absolute top-2 left-2 bg-d-black/80 rounded-lg p-1 flex gap-1">
+                                <div className="absolute top-2 left-2 bg-theme-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
                                     <img
                                       key={idx}
@@ -5300,8 +5300,8 @@ const handleGenerate = async () => {
                                     />
                                   ))}
                                   {folder.imageIds.length > 4 && (
-                                    <div className="w-6 h-6 rounded bg-d-text/20 flex items-center justify-center">
-                                      <span className="text-xs text-d-text font-bold font-raleway">+{folder.imageIds.length - 4}</span>
+                                    <div className="w-6 h-6 rounded bg-theme-text/20 flex items-center justify-center">
+                                      <span className="text-xs text-theme-text font-bold font-raleway">+{folder.imageIds.length - 4}</span>
                                     </div>
                                   )}
                                 </div>
@@ -5310,8 +5310,8 @@ const handleGenerate = async () => {
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
                               <FolderIcon className="default-orange-icon mb-3" />
-                              <h3 className="text-xl font-raleway text-d-text mb-2 text-center">{folder.name}</h3>
-                              <p className="text-sm text-d-white font-raleway text-center">
+                              <h3 className="text-xl font-raleway text-theme-text mb-2 text-center">{folder.name}</h3>
+                              <p className="text-sm text-theme-white font-raleway text-center">
                                 No images yet
                               </p>
                               
@@ -5321,7 +5321,7 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   setFolderThumbnailDialog({show: true, folderId: folder.id});
                                 }}
-                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-d-white hover:text-d-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
+                                className={`${glass.promptDark} parallax-large absolute bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 text-theme-white hover:text-theme-text text-xs font-raleway rounded-lg transition-colors duration-200 cursor-pointer opacity-0 group-hover:opacity-100 z-10`}
                               >
                                 Set Thumbnail
                               </button>
@@ -5358,15 +5358,15 @@ const handleGenerate = async () => {
                       <div className="flex items-center justify-between mb-4">
                         <button
                           onClick={() => setSelectedFolder(null)}
-                          className="flex items-center gap-2 text-d-white hover:text-d-text transition-colors duration-200 font-raleway text-base group"
+                          className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway text-base group"
                         >
-                          <ArrowLeft className="w-4 h-4 group-hover:text-d-text transition-colors duration-200" />
+                          <ArrowLeft className="w-4 h-4 group-hover:text-theme-text transition-colors duration-200" />
                           Back to folders
                         </button>
                         
                         <div className="flex items-center gap-2">
-                          <FolderIcon className="w-5 h-5 text-d-text" />
-                          <span className="text-d-white font-raleway text-sm">
+                          <FolderIcon className="w-5 h-5 text-theme-text" />
+                          <span className="text-theme-white font-raleway text-sm">
                             {(() => {
                               const folder = folders.find(f => f.id === selectedFolder);
                               return folder?.name || 'Unknown folder';
@@ -5376,13 +5376,13 @@ const handleGenerate = async () => {
                       </div>
                       
                       <div className="text-center">
-                        <h2 className="text-2xl font-raleway text-d-text mb-2">
+                        <h2 className="text-2xl font-raleway text-theme-text mb-2">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             return folder?.name || 'Unknown folder';
                           })()}
                         </h2>
-                        <p className="text-d-white/60 font-raleway text-sm">
+                        <p className="text-theme-white/60 font-raleway text-sm">
                           {(() => {
                             const folder = folders.find(f => f.id === selectedFolder);
                             if (!folder) return '0 images';
@@ -5405,7 +5405,7 @@ const handleGenerate = async () => {
                       );
                       
                       return folderImages.map((img, idx) => (
-                        <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large ${
+                        <div key={`folder-${folder?.id}-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large ${
                           imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
                           <img src={img.url} alt={img.prompt || `Image ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
@@ -5431,7 +5431,7 @@ const handleGenerate = async () => {
                               <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         data-copy-button="true"
@@ -5444,7 +5444,7 @@ const handleGenerate = async () => {
                                           e.preventDefault();
                                           e.stopPropagation();
                                         }}
-                                        className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
@@ -5465,7 +5465,7 @@ const handleGenerate = async () => {
                                           e.preventDefault();
                                           e.stopPropagation();
                                         }}
-                                        className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                        className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `save-folder-${folder?.id}-${img.url}-${idx}`);
                                         }}
@@ -5491,14 +5491,14 @@ const handleGenerate = async () => {
                                             src={ref}
                                             alt={`Reference ${refIdx + 1}`}
                                             loading="lazy"
-                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
+                                            className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setSelectedReferenceImage(ref);
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-text text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                                          <div className="absolute -top-1 -right-1 bg-theme-text text-theme-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -5512,7 +5512,7 @@ const handleGenerate = async () => {
                                         link.target = '_blank';
                                         link.click();
                                       }}
-                                      className="text-xs font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                                      className="text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                     >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -5525,7 +5525,7 @@ const handleGenerate = async () => {
                           {/* Tooltip positioned outside the hover overlay container */}
                           <div 
                             data-tooltip-for={`folder-${folder?.id}-${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
                               transform: 'translateX(-50%) translateY(-100%)',
@@ -5536,7 +5536,7 @@ const handleGenerate = async () => {
                           </div>
                           <div 
                             data-tooltip-for={`save-folder-${folder?.id}-${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
                               transform: 'translateX(-50%) translateY(-100%)',
@@ -5606,8 +5606,8 @@ const handleGenerate = async () => {
                         return (
                           <div className="col-span-full flex flex-col items-center justify-start pt-32 text-center min-h-[400px]">
                             <FolderIcon className="default-orange-icon mb-4" />
-                            <h3 className="text-xl font-raleway text-d-text mb-2">Folder is empty</h3>
-                            <p className="text-base font-raleway text-d-white max-w-md">
+                            <h3 className="text-xl font-raleway text-theme-text mb-2">Folder is empty</h3>
+                            <p className="text-base font-raleway text-theme-white max-w-md">
                               This folder doesn't contain any images yet.
                             </p>
                           </div>
@@ -5624,8 +5624,8 @@ const handleGenerate = async () => {
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="text">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Edit className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-raleway text-d-text mb-2">Text Generation Coming Soon</h3>
-                      <p className="text-base font-raleway text-d-white max-w-md">
+                      <h3 className="text-xl font-raleway text-theme-text mb-2">Text Generation Coming Soon</h3>
+                      <p className="text-base font-raleway text-theme-white max-w-md">
                         We're working on bringing you powerful text generation capabilities. Stay tuned!
                       </p>
                     </div>
@@ -5644,18 +5644,18 @@ const handleGenerate = async () => {
 
                         if (isRunwayGenerating) {
                           return (
-                            <div key="runway-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                            <div key="runway-generating" className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse">
                               <div className="w-full aspect-square animate-gradient-colors"></div>
-                              <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                              <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                                 <div className="text-center">
-                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
-                                  <div className="text-d-white text-xs font-raleway animate-pulse">
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="text-theme-white text-xs font-raleway animate-pulse">
                                     Generating...
                                   </div>
                                 </div>
                               </div>
-                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
-                                <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                              <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+                                <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
                                   {prompt}
                                 </p>
                               </div>
@@ -5665,18 +5665,18 @@ const handleGenerate = async () => {
 
                         if (isWanGeneratingGrid) {
                           return (
-                            <div key="wan-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                            <div key="wan-generating" className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse">
                               <div className="w-full aspect-square animate-gradient-colors"></div>
-                              <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                              <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                                 <div className="text-center">
-                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
-                                  <div className="text-d-white text-xs font-raleway animate-pulse">
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="text-theme-white text-xs font-raleway animate-pulse">
                                     Generating...
                                   </div>
                                 </div>
                               </div>
-                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
-                                <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                              <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+                                <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
                                   {wanVideoPrompt}
                                 </p>
                               </div>
@@ -5686,18 +5686,18 @@ const handleGenerate = async () => {
 
                         if (isHailuoGeneratingGrid) {
                           return (
-                            <div key="hailuo-generating" className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                            <div key="hailuo-generating" className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse">
                               <div className="w-full aspect-square animate-gradient-colors"></div>
-                              <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                              <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                                 <div className="text-center">
-                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
-                                  <div className="text-d-white text-xs font-raleway animate-pulse">
+                                  <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                                  <div className="text-theme-white text-xs font-raleway animate-pulse">
                                     Generating...
                                   </div>
                                 </div>
                               </div>
-                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
-                                <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                              <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+                                <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
                                   {prompt}
                                 </p>
                               </div>
@@ -5708,7 +5708,7 @@ const handleGenerate = async () => {
                         // Show Seedance video if it exists
                         if (isSeedance && seedanceVideo && idx === 0) {
                           return (
-                            <div key="seedance-video" className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
+                            <div key="seedance-video" className={`relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
                               <video src={seedanceVideo.url} className="w-full aspect-square object-cover" controls />
                               
                               {/* Hover prompt overlay */}
@@ -5717,7 +5717,7 @@ const handleGenerate = async () => {
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
-                                        <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                        <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                           {seedanceVideo.prompt}
                                         </p>
                                       </div>
@@ -5728,7 +5728,7 @@ const handleGenerate = async () => {
                                         <ModelBadge model={seedanceVideo.model} size="md" />
                                       </Suspense>
                                       <div className="flex items-center gap-2">
-                                        <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                           <div className="flex items-center gap-1">
                                             <span className="leading-none">{seedanceVideo.duration}s</span>
                                           </div>
@@ -5745,7 +5745,7 @@ const handleGenerate = async () => {
                         if (!isPlaceholder) {
                           const video = filteredVideoGallery[idx] as GalleryVideoLike;
                           return (
-                            <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
+                            <div key={`${video.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large group`} style={{ willChange: 'opacity' }}>
                               <video src={video.url} className="w-full aspect-square object-cover" controls />
                               
                               {/* Hover prompt overlay */}
@@ -5754,7 +5754,7 @@ const handleGenerate = async () => {
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
-                                        <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                        <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                           {video.prompt}
                                         </p>
                                       </div>
@@ -5766,9 +5766,9 @@ const handleGenerate = async () => {
                                       </Suspense>
                                       <div className="flex items-center gap-2">
                                         {video.isPublic && (
-                                          <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                                          <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                             <div className="flex items-center gap-1">
-                                              <Globe className="w-3 h-3 text-d-text" />
+                                              <Globe className="w-3 h-3 text-theme-text" />
                                               <span className="leading-none">Public</span>
                                             </div>
                                           </div>
@@ -5776,7 +5776,7 @@ const handleGenerate = async () => {
                                         {video.operationName && (
                                           <button
                                             onClick={() => handleDownloadVideo(video.operationName!)}
-                                            className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-d-dark/60 hover:text-d-text transition-colors duration-200`}
+                                            className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-theme-dark/60 hover:text-theme-text transition-colors duration-200`}
                                             title="Download video"
                                           >
                                             <Download className="w-3 h-3" />
@@ -5793,10 +5793,10 @@ const handleGenerate = async () => {
                         
                         // Placeholder tile for videos
                         return (
-                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-dark bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                          <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200" onClick={focusPromptBar}>
                             <div className="flex flex-col items-center gap-2 text-center px-2">
-                              <VideoIcon className="w-8 h-8 text-d-light" />
-                              <div className="text-d-light font-raleway text-base">Create something amazing.</div>
+                              <VideoIcon className="w-8 h-8 text-theme-light" />
+                              <div className="text-theme-light font-raleway text-base">Create something amazing.</div>
                             </div>
                           </div>
                         );
@@ -5809,8 +5809,8 @@ const handleGenerate = async () => {
                   <div className="w-full min-h-[400px] flex items-center justify-center" data-category="audio">
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <Volume2 className="default-orange-icon mb-4" />
-                      <h3 className="text-xl font-raleway text-d-text mb-2">Audio Generation Coming Soon</h3>
-                      <p className="text-base font-raleway text-d-white max-w-md">
+                      <h3 className="text-xl font-raleway text-theme-text mb-2">Audio Generation Coming Soon</h3>
+                      <p className="text-base font-raleway text-theme-white max-w-md">
                         We're working on bringing you audio generation capabilities. Stay tuned!
                       </p>
                     </div>
@@ -5831,18 +5831,18 @@ const handleGenerate = async () => {
                     if (isPending) {
                       const pending = item as PendingGalleryItem;
                       return (
-                        <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black animate-pulse">
+                        <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse">
                           <div className="w-full aspect-square animate-gradient-colors"></div>
-                          <div className="absolute inset-0 flex items-center justify-center bg-d-black/50 backdrop-blur-sm">
+                          <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
                             <div className="text-center">
-                              <div className="mx-auto mb-3 w-8 h-8 border-2 border-d-white/30 border-t-d-white rounded-full animate-spin"></div>
-                              <div className="text-d-white text-xs font-raleway animate-pulse">
+                              <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-d-white rounded-full animate-spin"></div>
+                              <div className="text-theme-white text-xs font-raleway animate-pulse">
                                 Generating...
                               </div>
                             </div>
                           </div>
-                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-d-black/90 to-transparent">
-                            <p className="text-d-text text-xs font-raleway line-clamp-2 opacity-75">
+                          <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+                            <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
                               {pending.prompt}
                             </p>
                           </div>
@@ -5853,7 +5853,7 @@ const handleGenerate = async () => {
                     if (!isPlaceholder) {
                       const img = item as GalleryImageLike;
                       return (
-                        <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-d-dark bg-d-black hover:bg-d-dark hover:border-d-mid transition-colors duration-100 parallax-large group ${
+                        <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
                           <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
@@ -5878,7 +5878,7 @@ const handleGenerate = async () => {
                               <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-d-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         data-copy-button="true"
@@ -5891,7 +5891,7 @@ const handleGenerate = async () => {
                                           e.preventDefault();
                                           e.stopPropagation();
                                         }}
-                                      className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                       onMouseEnter={(e) => {
                                         showHoverTooltip(e.currentTarget, `${img.url}-${idx}`);
                                       }}
@@ -5912,7 +5912,7 @@ const handleGenerate = async () => {
                                           e.preventDefault();
                                           e.stopPropagation();
                                         }}
-                                        className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-30 align-middle pointer-events-auto"
+                                        className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                         onMouseEnter={(e) => {
                                           showHoverTooltip(e.currentTarget, `save-${img.url}-${idx}`);
                                         }}
@@ -5938,14 +5938,14 @@ const handleGenerate = async () => {
                                             src={ref}
                                             alt={`Reference ${refIdx + 1}`}
                                             loading="lazy"
-                                            className="w-6 h-6 rounded object-cover border border-d-mid cursor-pointer hover:border-d-text transition-colors duration-200"
+                                            className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setSelectedReferenceImage(ref);
                                               setIsFullSizeOpen(true);
                                             }}
                                           />
-                                          <div className="absolute -top-1 -right-1 bg-d-text text-d-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                                          <div className="absolute -top-1 -right-1 bg-theme-text text-theme-text text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
                                             {refIdx + 1}
                                           </div>
                                         </div>
@@ -5959,7 +5959,7 @@ const handleGenerate = async () => {
                                       link.target = '_blank';
                                       link.click();
                                     }}
-                                    className="text-xs font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                                    className="text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                   >
                                       View reference{img.references.length > 1 ? 's' : ''} ({img.references.length})
                                     </button>
@@ -5984,9 +5984,9 @@ const handleGenerate = async () => {
                                     })()}
                                   </div>
                                   {img.isPublic && (
-                                    <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                                    <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                       <div className="flex items-center gap-1">
-                                        <Globe className="w-3 h-3 text-d-text" />
+                                        <Globe className="w-3 h-3 text-theme-text" />
                                         <span className="leading-none">Public</span>
                                       </div>
                                     </div>
@@ -5999,7 +5999,7 @@ const handleGenerate = async () => {
                           {/* Tooltip positioned outside the hover overlay container */}
                           <div 
                             data-tooltip-for={`${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
                               transform: 'translateX(-50%) translateY(-100%)',
@@ -6010,7 +6010,7 @@ const handleGenerate = async () => {
                           </div>
                           <div 
                             data-tooltip-for={`save-${img.url}-${idx}`}
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-d-black border border-d-mid px-2 py-1 text-xs text-d-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
                             style={{ 
                               left: '50%', 
                               transform: 'translateX(-50%) translateY(-100%)',
@@ -6074,10 +6074,10 @@ const handleGenerate = async () => {
                     }
                     // Placeholder tile
                     return (
-                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-d-dark bg-d-dark grid place-items-center aspect-square cursor-pointer hover:bg-d-mid hover:border-d-mid transition-colors duration-200" onClick={focusPromptBar}>
+                      <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="flex flex-col items-center gap-2 text-center px-2">
-                          <ImageIcon className="w-8 h-8 text-d-light" />
-                          <div className="text-d-light font-raleway text-base">Create something amazing.</div>
+                          <ImageIcon className="w-8 h-8 text-theme-light" />
+                          <div className="text-theme-light font-raleway text-base">Create something amazing.</div>
                         </div>
                       </div>
                     );
@@ -6098,7 +6098,7 @@ const handleGenerate = async () => {
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
             <div
               ref={promptBarRef}
-              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-d-mid'} px-4 py-3`}
+              className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
               style={{
                 bottom: '0.75rem',
                 transform: 'translateX(-50%) translateZ(0)',
@@ -6119,7 +6119,7 @@ const handleGenerate = async () => {
                   onKeyDown={onKeyDown}
                   onPaste={handlePaste}
                   rows={1}
-                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-d-text' : 'text-d-white'} placeholder-d-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-d-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
+                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
                 />
               </div>
               
@@ -6133,16 +6133,16 @@ const handleGenerate = async () => {
                   title="Add reference image"
                   aria-label="Add reference image"
                   disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text` : 'bg-d-black/20 text-d-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
                 >
-                  <Plus className="w-4 h-4 flex-shrink-0 text-d-text" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Add Reference</span>
+                  <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Add Reference</span>
                 </button>
 
                 {/* Reference images display - right next to Add reference button */}
                 {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="hidden lg:block text-sm text-d-text font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
+                    <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((url, idx) => (
                         <div key={idx} className="relative group">
@@ -6150,7 +6150,7 @@ const handleGenerate = async () => {
                             src={url}
                             alt={`Reference ${idx+1}`}
                             loading="lazy"
-                            className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
+                            className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
                             onClick={() => {
                               setSelectedReferenceImage(url);
                               setIsFullSizeOpen(true);
@@ -6161,10 +6161,10 @@ const handleGenerate = async () => {
                               e.stopPropagation();
                               clearReference(idx);
                             }}
-                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-text hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
                             title="Remove reference"
                           >
-                            <X className="w-2.5 h-2.5 text-d-text" />
+                            <X className="w-2.5 h-2.5 text-n-text" />
                           </button>
                         </div>
                       ))}
@@ -6178,22 +6178,22 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
-                      <Users className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Select Avatar</span>
+                      <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Select Avatar</span>
                     </button>
 
                     {/* Selected Avatar display - right next to Select Avatar button */}
                     {selectedAvatar && (
                       <div className="flex items-center gap-2">
-                        <div className="hidden lg:block text-sm text-d-text font-raleway">Avatar:</div>
+                        <div className="hidden lg:block text-sm text-n-text font-raleway">Avatar:</div>
                         <div className="relative group">
                           <img
                             src={selectedAvatar.imageUrl}
                             alt={selectedAvatar.name}
                             loading="lazy"
-                            className="w-9 h-9 rounded-lg object-cover border border-d-mid cursor-pointer hover:bg-d-light transition-colors duration-200"
+                            className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
                             title={selectedAvatar.name}
                           />
                           <button
@@ -6201,10 +6201,10 @@ const handleGenerate = async () => {
                               e.stopPropagation();
                               clearSelectedAvatar();
                             }}
-                            className="absolute -top-1 -right-1 bg-d-black hover:bg-d-dark text-d-text hover:text-d-text rounded-full p-0.5 transition-all duration-200"
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
                             title="Remove avatar"
                           >
-                            <X className="w-2.5 h-2.5 text-d-text" />
+                            <X className="w-2.5 h-2.5 text-n-text" />
                           </button>
                         </div>
                       </div>
@@ -6214,10 +6214,10 @@ const handleGenerate = async () => {
                       type="button"
                       ref={promptsButtonRef}
                       onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
-                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">Prompts</span>
+                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
@@ -6232,13 +6232,13 @@ const handleGenerate = async () => {
                               setIsAvatarPickerOpen(false);
                               navigate('/create/avatars');
                             }}
-                            className="text-base font-raleway text-d-text cursor-pointer"
+                            className="text-base font-raleway text-theme-text cursor-pointer"
                           >
                             Your Avatars
                           </button>
                           <button
                             type="button"
-                            className="inline-flex size-7 items-center justify-center rounded-full border border-d-mid/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={() => {
                               setIsAvatarPickerOpen(false);
                               setIsAvatarCreationModalOpen(true);
@@ -6254,13 +6254,13 @@ const handleGenerate = async () => {
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
                               return (
-                                <div className="flex w-full items-center gap-3 rounded-2xl border border-d-mid px-3 py-2 transition-colors duration-200 group hover:border-d-mid hover:bg-d-text/10">
+                                <div className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleAvatarSelect(avatar)}
                                     className={`flex flex-1 items-center gap-3 ${
                                       isActive
-                                        ? 'text-d-text'
+                                        ? 'text-theme-text'
                                         : 'text-white'
                                     }`}
                                   >
@@ -6271,9 +6271,9 @@ const handleGenerate = async () => {
                                       className="h-10 w-10 rounded-lg object-cover"
                                     />
                                     <div className="min-w-0 flex-1 text-left">
-                                      <p className="truncate text-sm font-raleway text-d-white">{avatar.name}</p>
+                                      <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
                                     </div>
-                                    {isActive && <Check className="h-4 w-4 text-d-text" />}
+                                    {isActive && <Check className="h-4 w-4 text-theme-text" />}
                                   </button>
                                   <div className="flex items-center gap-1">
                                     <button
@@ -6283,11 +6283,11 @@ const handleGenerate = async () => {
                                         setCreationsModalAvatar(avatar);
                                         setIsAvatarPickerOpen(false);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
                                       title="View creations"
                                       aria-label="View creations with this Avatar"
                                     >
-                                      <Info className="h-3 w-3 text-d-white hover:text-d-text" />
+                                      <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
                                     </button>
                                     <button
                                       type="button"
@@ -6295,11 +6295,11 @@ const handleGenerate = async () => {
                                         e.stopPropagation();
                                         setAvatarToDelete(avatar);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-d-text/10 rounded-full"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
                                       title="Delete Avatar"
                                       aria-label="Delete Avatar"
                                     >
-                                      <Trash2 className="h-3 w-3 text-d-white hover:text-d-text" />
+                                      <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                                     </button>
                                   </div>
                                 </div>
@@ -6307,14 +6307,14 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-d-mid/60 bg-d-black/60 p-4 text-sm font-raleway text-d-white/70">
+                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
                             You haven't saved any Avatars yet. Visit the Avatars page to create one.
                           </div>
                         )}
                         {!storedAvatars.length && (
                           <button
                             type="button"
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-d-mid/70 bg-d-black/60 px-3 py-2 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:border-d-mid hover:text-d-text"
+                            className={`w-full ${buttons.glassPromptCompact}`}
                             onClick={() => {
                               navigate('/create/avatars');
                               setIsAvatarPickerOpen(false);
@@ -6353,11 +6353,11 @@ const handleGenerate = async () => {
                     aria-label="Settings"
                     className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
                       (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
-                        ? `${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text` 
-                        : "bg-d-black/20 text-d-white/40 border border-d-mid/40 cursor-not-allowed"
+                        ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` 
+                        : "bg-n-black/20 text-n-white/40 border border-n-mid/40 cursor-not-allowed"
                     }`}
                   >
-                    <Settings className="w-4 h-4 text-d-text" />
+                    <Settings className="w-4 h-4 text-n-text" />
                   </button>
                   
                   {/* Settings Dropdown Portal */}
@@ -6506,7 +6506,7 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-d-text/20 text-d-text hover:text-d-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -6521,10 +6521,10 @@ const handleGenerate = async () => {
                         );
                       } else {
                         const Icon = currentModel.Icon;
-                        return <Icon className="w-4 h-4 flex-shrink-0 text-d-text group-hover:text-d-text transition-colors duration-100" />;
+                        return <Icon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-d-text">{getCurrentModel().name}</span>
+                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -6543,8 +6543,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "veo-3"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Veo 3") ? (
@@ -6556,23 +6556,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Veo 3
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "veo-3" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Best video model. Great cinematic quality with sound output.
                             </div>
                           </div>
                           {selectedModel === "veo-3" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6584,8 +6584,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "runway-video-gen4"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Runway Gen-4") ? (
@@ -6597,23 +6597,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Runway Gen-4
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "runway-video-gen4" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Good video model. Great editing with Runway Aleph.
                             </div>
                           </div>
                           {selectedModel === "runway-video-gen4" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6623,8 +6623,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "hailuo-02"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Hailuo 02") ? (
@@ -6636,23 +6636,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Hailuo 02
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "hailuo-02" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Great text-to-image.
                             </div>
                           </div>
                           {selectedModel === "hailuo-02" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6662,8 +6662,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "wan-video-2.2"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Wan 2.2 Video") ? (
@@ -6675,23 +6675,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Wan 2.2 Video
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "wan-video-2.2" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Great text-to-image.
                             </div>
                           </div>
                           {selectedModel === "wan-video-2.2" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6701,8 +6701,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "kling-video"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Kling") ? (
@@ -6714,23 +6714,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Kling
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "kling-video" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Great text-to-image.
                             </div>
                           </div>
                           {selectedModel === "kling-video" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                         <button
@@ -6742,8 +6742,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "seedance-1.0-pro"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Seedance 1.0 Pro (Video)") ? (
@@ -6755,23 +6755,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Seedance 1.0 Pro
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "seedance-1.0-pro" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Great quality text-to-image.
                             </div>
                           </div>
                           {selectedModel === "seedance-1.0-pro" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                       </button>
                         <button
@@ -6782,8 +6782,8 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             selectedModel === "luma-ray-2"
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo("Luma Ray 2") ? (
@@ -6795,23 +6795,23 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-text group-hover:text-d-text'
+                              selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               Luma Ray 2
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              selectedModel === "luma-ray-2" ? 'text-d-text' : 'text-d-white group-hover:text-d-text'
+                              selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               Cinematic 4K video with detailed camera control.
                             </div>
                           </div>
                           {selectedModel === "luma-ray-2" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                       </>
@@ -6840,10 +6840,10 @@ const handleGenerate = async () => {
                           }}
                           className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
                             isSelected 
-                              ? 'bg-d-text/10 border-d-text/20 shadow-lg shadow-d-text/5' 
+                              ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-d-text/5' 
                               : isComingSoon
-                              ? "bg-transparent border-d-mid opacity-60 cursor-not-allowed"
-                              : 'bg-transparent hover:bg-d-text/20 border-0'
+                              ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
+                              : 'bg-transparent hover:bg-theme-text/20 border-0'
                           }`}
                         >
                           {hasToolLogo(model.name) ? (
@@ -6855,12 +6855,12 @@ const handleGenerate = async () => {
                             />
                           ) : (
                             <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-d-text'
+                              isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
                             }`} />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${
-                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-text group-hover:text-d-text'
+                              isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
                             }`}>
                               {model.name}
                               <ToolInfoHover
@@ -6870,13 +6870,13 @@ const handleGenerate = async () => {
                               />
                             </div>
                             <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                              isSelected ? 'text-d-text' : isComingSoon ? 'text-d-light' : 'text-d-white group-hover:text-d-text'
+                              isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'
                             }`}>
                               {isComingSoon ? 'Coming soon.' : model.desc}
                             </div>
                           </div>
                           {isSelected && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-d-text flex-shrink-0 shadow-sm"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                           )}
                         </button>
                       );
@@ -6897,7 +6897,7 @@ const handleGenerate = async () => {
                 <button 
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`btn btn-night font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
@@ -6906,12 +6906,12 @@ const handleGenerate = async () => {
                     const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
                     const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
                     return showSpinner ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-d-black" />
+                      <Loader2 className="w-4 h-4 animate-spin text-n-black" />
                     ) : (
-                      <Sparkles className="w-4 h-4 text-d-black" />
+                      <Sparkles className="w-4 h-4 text-n-black" />
                     );
                   })()}
-                  <span className="text-d-black hidden sm:inline">
+                  <span className="text-n-black hidden sm:inline">
                     {activeCategory === "video" ? 
                       (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
                         ? "Generating..."
@@ -6960,13 +6960,13 @@ const handleGenerate = async () => {
           {/* Error Display */}
           {longPollNotice && (
             <div className="w-full max-w-xl mx-auto mb-4" role="status" aria-live="polite">
-              <div className="bg-d-black/60 border border-d-mid/40 rounded-[32px] p-4 text-center text-d-white">
-                <p className="font-raleway text-sm text-d-text">
+              <div className="bg-theme-black/60 border border-theme-mid/40 rounded-[32px] p-4 text-center text-theme-white">
+                <p className="font-raleway text-sm text-theme-text">
                   Still working… this can take up to ~{LONG_POLL_NOTICE_MINUTES} min. We’ll notify you when it’s ready.
                 </p>
                 <button
                   onClick={handleCancelLongPoll}
-                  className="mt-2 text-xs text-d-light underline hover:text-d-text"
+                  className="mt-2 text-xs text-theme-light underline hover:text-theme-text"
                 >
                   Cancel
                 </button>
@@ -6997,7 +6997,7 @@ const handleGenerate = async () => {
           {/* Full-size image modal */}
           {isFullSizeOpen && (selectedFullImage || generatedImage || selectedReferenceImage) && (
             <div
-              className="fixed inset-0 z-[60] bg-d-black/80 flex items-start justify-center p-4"
+              className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
             >
               <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
@@ -7007,7 +7007,7 @@ const handleGenerate = async () => {
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className={`${glass.promptDark} hover:border-d-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                      className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -7015,7 +7015,7 @@ const handleGenerate = async () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className={`${glass.promptDark} hover:border-d-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-d-text`}
+                      className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >
@@ -7035,7 +7035,7 @@ const handleGenerate = async () => {
                 {/* Saved inspiration badge - positioned at top-left of image */}
                 {activeFullSizeImage && 'savedFrom' in activeFullSizeImage && (activeFullSizeImage as GalleryImageLike).savedFrom && (
                   <div className="absolute top-4 left-4 pointer-events-auto">
-                     <div className="flex items-center gap-2 rounded-lg border border-d-dark/60 bg-d-black/60 px-2 py-2 backdrop-blur-sm">
+                     <div className="flex items-center gap-2 rounded-lg border border-theme-dark/60 bg-theme-black/60 px-2 py-2 backdrop-blur-sm">
                       {(activeFullSizeImage as GalleryImageLike).savedFrom!.profileUrl ? (
                         <a
                           href={(activeFullSizeImage as GalleryImageLike).savedFrom!.profileUrl}
@@ -7046,7 +7046,7 @@ const handleGenerate = async () => {
                           aria-label={`View ${(activeFullSizeImage as GalleryImageLike).savedFrom!.name}'s profile`}
                         >
                           <div
-                            className={`absolute inset-0 bg-gradient-to-br ${(activeFullSizeImage as GalleryImageLike).savedFrom!.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                            className={`absolute inset-0 bg-gradient-to-br ${(activeFullSizeImage as GalleryImageLike).savedFrom!.avatarColor ?? 'from-theme-white/40 via-theme-white/10 to-theme-dark/40'}`}
                             aria-hidden="true"
                           />
                           <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
@@ -7056,7 +7056,7 @@ const handleGenerate = async () => {
                       ) : (
                         <div className="relative h-7 w-7 overflow-hidden rounded-full border border-white/10">
                           <div
-                            className={`absolute inset-0 bg-gradient-to-br ${(activeFullSizeImage as GalleryImageLike).savedFrom!.avatarColor ?? 'from-d-white/40 via-d-white/10 to-d-dark/40'}`}
+                            className={`absolute inset-0 bg-gradient-to-br ${(activeFullSizeImage as GalleryImageLike).savedFrom!.avatarColor ?? 'from-theme-white/40 via-theme-white/10 to-theme-dark/40'}`}
                             aria-hidden="true"
                           />
                           <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
@@ -7065,8 +7065,8 @@ const handleGenerate = async () => {
                         </div>
                       )}
                       <div className="flex min-w-0 flex-col gap-0.5">
-                        <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-d-white">Inspiration</span>
-                        <span className="truncate text-xs font-raleway text-d-text">{(activeFullSizeImage as GalleryImageLike).savedFrom!.name}</span>
+                        <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-theme-white">Inspiration</span>
+                        <span className="truncate text-xs font-raleway text-theme-text">{(activeFullSizeImage as GalleryImageLike).savedFrom!.name}</span>
                       </div>
                     </div>
                   </div>
@@ -7127,7 +7127,7 @@ const handleGenerate = async () => {
                 
                 {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-d-text transition-opacity duration-100 ${
+                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
                     imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}>
                     <div className="flex items-center justify-center">
@@ -7141,7 +7141,7 @@ const handleGenerate = async () => {
                                   e.stopPropagation();
                                   copyPromptToClipboard((selectedFullImage || generatedImage)!.prompt);
                                 }}
-                                className="ml-2 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
                                 title="Copy prompt"
                               >
                                 <Copy className="w-3 h-3" />
@@ -7151,7 +7151,7 @@ const handleGenerate = async () => {
                                   e.stopPropagation();
                                   savePromptToLibrary((selectedFullImage || generatedImage)!.prompt);
                                 }}
-                                className="ml-1.5 inline cursor-pointer text-d-white transition-colors duration-200 hover:text-d-text relative z-20 align-middle pointer-events-auto"
+                                className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
                                 title={isPromptSaved((selectedFullImage || generatedImage)!.prompt) ? "Prompt saved" : "Save prompt"}
                               >
                                 {isPromptSaved((selectedFullImage || generatedImage)!.prompt) ? (
@@ -7185,9 +7185,9 @@ const handleGenerate = async () => {
                             })()}
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
-                            <div className={`${glass.promptDark} text-d-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                            <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                               <div className="flex items-center gap-1">
-                                <Globe className="w-3 h-3 text-d-text" />
+                                <Globe className="w-3 h-3 text-theme-text" />
                                 <span className="leading-none">Public</span>
                               </div>
                             </div>
@@ -7200,7 +7200,7 @@ const handleGenerate = async () => {
                 
                 <button
                   onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
-                  className="absolute -top-3 -right-3 bg-d-black/70 hover:bg-d-black text-d-white hover:text-d-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+                  className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
                   aria-label="Close full size view"
                 >
                   <X className="w-4 h-4" />
@@ -7212,7 +7212,7 @@ const handleGenerate = async () => {
           {/* Uploaded Image Preview */}
           {previewUrl && (
             <div className="w-full max-w-lg mx-auto mb-8">
-              <div className="relative rounded-[32px] overflow-hidden bg-d-black border border-d-mid">
+              <div className="relative rounded-[32px] overflow-hidden bg-theme-black border border-theme-mid">
                 <img
                   src={previewUrl}
                   alt="Uploaded file preview"
@@ -7221,11 +7221,11 @@ const handleGenerate = async () => {
                 />
                 <button
                   onClick={handleDeleteImage}
-                  className="absolute top-2 right-2 bg-d-black/80 hover:bg-d-black text-d-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
+                  className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-red-400 transition-colors duration-200 rounded-full p-1.5"
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <div className="px-4 py-3 bg-d-black/80 text-d-white text-sm text-center">
+                <div className="px-4 py-3 bg-theme-black/80 text-theme-white text-sm text-center">
                   {selectedFile?.name}
                 </div>
               </div>
@@ -7236,13 +7236,13 @@ const handleGenerate = async () => {
 
 
         {avatarToDelete && (
-          <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-d-black/80 px-4 py-10">
+          <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
             <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
               <div className="space-y-4 text-center">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-d-text">Delete Avatar</h3>
-                  <p className="text-base font-raleway font-light text-d-white">
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -7270,7 +7270,7 @@ const handleGenerate = async () => {
         {/* Avatar Creations Modal */}
         {creationsModalAvatar && (
           <div
-            className="fixed inset-0 z-[10500] flex items-center justify-center bg-d-black/80 px-4 py-10"
+            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
             onClick={() => setCreationsModalAvatar(null)}
           >
             <div
@@ -7279,7 +7279,7 @@ const handleGenerate = async () => {
             >
               <button
                 type="button"
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-d-dark/70 bg-d-black/60 text-d-white transition-colors duration-200 hover:text-d-text z-10"
+                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
                 onClick={() => setCreationsModalAvatar(null)}
                 aria-label="Close Avatar creations"
               >
@@ -7288,10 +7288,10 @@ const handleGenerate = async () => {
 
               <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
                 <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-raleway text-d-text">
+                  <h2 className="text-2xl font-raleway text-theme-text">
                     Creations with {creationsModalAvatar.name}
                   </h2>
-                  <p className="text-sm font-raleway text-d-white">
+                  <p className="text-sm font-raleway text-theme-white">
                     Manage creations with your Avatar.
                   </p>
                 </div>
@@ -7299,7 +7299,7 @@ const handleGenerate = async () => {
                 {/* Main Avatar Display */}
                 <div className="flex justify-start">
                   <div className="w-1/3 sm:w-1/5 lg:w-1/6">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-d-dark">
+                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
                       <img
                         src={creationsModalAvatar.imageUrl}
                         alt={creationsModalAvatar.name}
@@ -7307,7 +7307,7 @@ const handleGenerate = async () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="mt-2 text-sm font-raleway text-d-white text-center truncate">{creationsModalAvatar.name}</p>
+                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalAvatar.name}</p>
                   </div>
                 </div>
 
@@ -7316,7 +7316,7 @@ const handleGenerate = async () => {
                   {gallery
                     .filter(img => img.avatarId === creationsModalAvatar.id)
                     .map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-d-dark bg-d-black group">
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
                         <img
                           src={img.url}
                           alt={img.prompt || 'Generated image'}
@@ -7327,9 +7327,9 @@ const handleGenerate = async () => {
                             setIsFullSizeOpen(true);
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-d-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <div className="absolute bottom-0 left-0 right-0 p-2">
-                            <p className="text-xs font-raleway text-d-white line-clamp-2">{img.prompt}</p>
+                            <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
                           </div>
                         </div>
                       </div>
@@ -7337,8 +7337,8 @@ const handleGenerate = async () => {
                 </div>
 
                 {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
-                  <div className="rounded-[24px] border border-d-dark bg-d-black/70 p-6 text-center">
-                    <p className="text-sm font-raleway text-d-white/70">
+                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
+                    <p className="text-sm font-raleway text-theme-white/70">
                       Generate a new image with this avatar to see it appear here.
                     </p>
                   </div>
@@ -7374,15 +7374,15 @@ const handleGenerate = async () => {
 
         {/* Unsave Prompt Confirmation Modal */}
         {unsavePromptText && createPortal(
-          <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-d-black/80 py-12">
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-theme-black/80 py-12">
             <div ref={unsaveModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
               <div className="text-center space-y-4">
                 <div className="space-y-3">
-                  <Bookmark className="w-10 h-10 mx-auto text-d-text" />
-                  <h3 className="text-xl font-raleway font-normal text-d-text">
+                  <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">
                     Remove from Saved Prompts
                   </h3>
-                  <p className="text-base font-raleway font-light text-d-white">
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to remove this prompt from your saved prompts?
                   </p>
                 </div>

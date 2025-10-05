@@ -5,7 +5,7 @@ const Create = lazy(() => import("../components/Create"));
 const Avatars = lazy(() => import("../components/Avatars"));
 
 const Loading = () => (
-  <div className="flex min-h-[40vh] items-center justify-center text-d-white">Loading…</div>
+  <div className="flex min-h-[40vh] items-center justify-center text-theme-white">Loading…</div>
 );
 
 export default function CreateRoutes() {

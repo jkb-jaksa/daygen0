@@ -121,12 +121,12 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
     <div className={`fixed inset-0 z-[120] ${glass.promptDark} flex items-center justify-center py-12`}>
       <div className="rounded-[20px] py-12 px-6 max-w-2xl w-full min-w-[28rem] max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-raleway font-normal text-d-text">Crop Profile Picture</h3>
+          <h3 className="text-xl font-raleway font-normal text-theme-text">Crop Profile Picture</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-d-dark/40 rounded-full transition-colors group"
+            className="p-2 hover:bg-theme-dark/40 rounded-full transition-colors group"
           >
-            <X className="w-5 h-5 text-d-white group-hover:text-d-text transition-colors" />
+            <X className="w-5 h-5 text-theme-white group-hover:text-theme-text transition-colors" />
           </button>
         </div>
 
@@ -134,7 +134,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
           {/* Controls */}
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-d-white font-raleway">Scale:</label>
+              <label className="text-sm text-theme-white font-raleway">Scale:</label>
               <input
                 type="range"
                 min="0.5"
@@ -142,18 +142,18 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
                 step="0.1"
                 value={scale}
                 onChange={(e) => setScale(Number(e.target.value))}
-                className="w-20 h-1 bg-d-white rounded-lg appearance-none cursor-pointer"
+                className="w-20 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
                 style={{
                   background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${((scale - 0.5) / 1.5) * 100}%, rgba(184, 192, 192, 0.3) ${((scale - 0.5) / 1.5) * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                   WebkitAppearance: 'none',
                   appearance: 'none',
                 }}
               />
-              <span className="text-xs text-d-white font-raleway">{Math.round(scale * 100)}%</span>
+              <span className="text-xs text-theme-white font-raleway">{Math.round(scale * 100)}%</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="text-sm text-d-white font-raleway">Rotate:</label>
+              <label className="text-sm text-theme-white font-raleway">Rotate:</label>
               <input
                 type="range"
                 min="-180"
@@ -161,19 +161,19 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
                 step="1"
                 value={rotate}
                 onChange={(e) => setRotate(Number(e.target.value))}
-                className="w-20 h-1 bg-d-white rounded-lg appearance-none cursor-pointer"
+                className="w-20 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
                 style={{
                   background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${((rotate + 180) / 360) * 100}%, rgba(184, 192, 192, 0.3) ${((rotate + 180) / 360) * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                   WebkitAppearance: 'none',
                   appearance: 'none',
                 }}
               />
-              <span className="text-xs text-d-white font-raleway">{rotate}°</span>
+              <span className="text-xs text-theme-white font-raleway">{rotate}°</span>
             </div>
 
             <button
               onClick={resetCrop}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-d-white border-d-dark hover:border-d-text hover:text-d-text font-raleway text-sm`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
             >
               <RotateCcw className="w-4 h-4" />
               Reset
@@ -207,7 +207,7 @@ export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComp
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-6 border-t border-d-dark">
+          <div className="flex justify-end gap-4 pt-6 border-t border-theme-dark">
             <button
               onClick={onClose}
               className={buttons.ghost}

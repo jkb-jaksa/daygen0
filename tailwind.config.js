@@ -8,7 +8,18 @@ const withOpacityValue = (variable) => {
   };
 };
 
-const daygenPalette = {
+const nightPalette = {
+  text: withOpacityValue('--n-text-rgb'),
+  white: withOpacityValue('--n-white-rgb'),
+  light: withOpacityValue('--n-light-rgb'),
+  mid: withOpacityValue('--n-mid-rgb'),
+  dark: withOpacityValue('--n-dark-rgb'),
+  black: withOpacityValue('--n-black-rgb'),
+  orange: withOpacityValue('--n-orange-1-rgb'),
+  'orange-1': withOpacityValue('--n-orange-1-rgb'),
+};
+
+const dayPalette = {
   text: withOpacityValue('--d-text-rgb'),
   white: withOpacityValue('--d-white-rgb'),
   light: withOpacityValue('--d-light-rgb'),
@@ -19,31 +30,44 @@ const daygenPalette = {
   'orange-1': withOpacityValue('--d-orange-1-rgb'),
 };
 
+const themePalette = {
+  text: withOpacityValue('--theme-text-rgb'),
+  white: withOpacityValue('--theme-white-rgb'),
+  light: withOpacityValue('--theme-light-rgb'),
+  mid: withOpacityValue('--theme-mid-rgb'),
+  dark: withOpacityValue('--theme-dark-rgb'),
+  black: withOpacityValue('--theme-black-rgb'),
+  orange: withOpacityValue('--theme-orange-1-rgb'),
+  'orange-1': withOpacityValue('--theme-orange-1-rgb'),
+};
+
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Daygen palette
-        d: daygenPalette,
+        // Theme palettes
+        n: nightPalette,
+        d: dayPalette,
+        theme: themePalette,
         // Brand color
         brand: '#B8C0C0',
         'brand-cyan': 'var(--brand-cyan)',
         'brand-red': 'var(--brand-red)',
         // Alias palette for testing (maps to d- tokens)
-        b: { ...daygenPalette },
+        b: { ...themePalette },
         // Back-compat aliases (optional)
-        text: { DEFAULT: daygenPalette.text },
+        text: { DEFAULT: themePalette.text },
         border: {
-          white: daygenPalette.white,
-          light: daygenPalette.light,
-          mid: daygenPalette.mid,
-          dark: daygenPalette.dark,
-          black: daygenPalette.black,
+          white: themePalette.white,
+          light: themePalette.light,
+          mid: themePalette.mid,
+          dark: themePalette.dark,
+          black: themePalette.black,
         }
       },
       borderColor: {
-        DEFAULT: 'rgb(var(--d-dark-rgb))'
+        DEFAULT: 'rgb(var(--theme-dark-rgb))'
       },
       fontFamily: {
         sans: ['"Raleway"', "sans-serif"],

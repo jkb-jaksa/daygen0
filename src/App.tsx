@@ -28,15 +28,15 @@ const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
 
 function NavbarFallback() {
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-d-black/40 backdrop-blur">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-theme-black/40 backdrop-blur">
       <div className={`${layout.container} flex h-[var(--nav-h,4rem)] items-center justify-between py-3`}>
-        <div className="h-6 w-24 animate-pulse rounded bg-d-white/10" />
+        <div className="h-6 w-24 animate-pulse rounded bg-theme-white/10" />
         <div className="hidden items-center gap-3 md:flex">
-          <div className="h-4 w-16 animate-pulse rounded bg-d-white/10" />
-          <div className="h-4 w-16 animate-pulse rounded bg-d-white/10" />
-          <div className="h-4 w-16 animate-pulse rounded bg-d-white/10" />
+          <div className="h-4 w-16 animate-pulse rounded bg-theme-white/10" />
+          <div className="h-4 w-16 animate-pulse rounded bg-theme-white/10" />
+          <div className="h-4 w-16 animate-pulse rounded bg-theme-white/10" />
         </div>
-        <div className="h-9 w-24 animate-pulse rounded-full bg-d-white/10" />
+        <div className="h-9 w-24 animate-pulse rounded-full bg-theme-white/10" />
       </div>
     </div>
   );
@@ -45,8 +45,8 @@ function NavbarFallback() {
 function SectionFallback({ label }: { label: string }) {
   return (
     <div className="flex justify-center py-20">
-      <div className="flex flex-col items-center gap-3 text-d-white/70">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-d-white/30 border-t-d-white" aria-hidden="true" />
+      <div className="flex flex-col items-center gap-3 text-theme-white/70">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-theme-white/30 border-t-d-white" aria-hidden="true" />
         <p className="font-raleway text-sm uppercase tracking-[0.3em]">Loading {label}…</p>
       </div>
     </div>
@@ -143,7 +143,7 @@ function RouteFallback() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
       <div
-        className="h-8 w-8 animate-spin rounded-full border-2 border-d-white/40 border-t-d-white"
+        className="h-8 w-8 animate-spin rounded-full border-2 border-theme-white/40 border-t-d-white"
         aria-hidden="true"
       />
       <span className="sr-only">Loading page…</span>

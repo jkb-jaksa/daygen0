@@ -35,6 +35,18 @@
     />
     <meta name="twitter:image" content="https://daygen.ai/daygen-color-nobg.png" />
     <title>DayGen - Your Daily AI Generations</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('daygen-theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = stored === 'day' || stored === 'night' ? stored : prefersDark ? 'night' : 'day';
+          document.documentElement.dataset.theme = theme;
+        } catch (error) {
+          document.documentElement.dataset.theme = 'night';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

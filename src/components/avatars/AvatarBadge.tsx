@@ -17,10 +17,10 @@ export default function AvatarBadge({ avatar, onClick, className }: AvatarBadgeP
         event.stopPropagation();
         onClick?.(event);
       }}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-raleway text-d-white shadow-lg transition-colors duration-200 hover:border-d-mid hover:text-d-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-d-orange-1 ${glass.promptDark} ${className ?? ""}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-orange-1 ${glass.promptDark} ${className ?? ""}`}
       aria-label={`View creations for ${avatar.name}`}
     >
-      <span className="relative inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-d-mid bg-d-black/60">
+      <span className="relative inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
         <img
           src={avatar.imageUrl}
           alt=""

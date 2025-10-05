@@ -136,7 +136,7 @@ const galleryItems: GalleryItem[] = [
     creator: {
       name: "Rafael Sol",
       handle: "@rafael.sol",
-      avatarColor: "from-d-white/70 via-slate-300/70 to-stone-400/70",
+      avatarColor: "from-theme-white/70 via-slate-300/70 to-stone-400/70",
       location: "Lisbon, PT",
     },
     modelId: "luma-photon-1",
@@ -623,7 +623,7 @@ const AvatarCard: React.FC<{
 
   return (
     <article
-      className={`relative overflow-hidden border border-d-dark/70 bg-d-black/40 ${radius} ${minHeight}`}
+      className={`relative overflow-hidden border border-theme-dark/70 bg-theme-black/40 ${radius} ${minHeight}`}
     >
       <img
         src={item.imageUrl}
@@ -636,7 +636,7 @@ const AvatarCard: React.FC<{
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-t from-d-black/80 via-d-black/40 to-d-black/5"
+        className="absolute inset-0 card-overlay-gradient"
         aria-hidden="true"
       />
 
@@ -829,9 +829,9 @@ const CustomMultiSelect: React.FC<{
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
+        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-theme-white font-raleway text-sm focus:outline-none focus:border-theme-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
-        <span className={values.length > 0 ? "text-d-white" : "text-d-white/50"}>
+        <span className={values.length > 0 ? "text-theme-white" : "text-theme-white/50"}>
           {values.length > 0 ? `${values.length} selected` : placeholder || "Select..."}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} flex-shrink-0`} />
@@ -865,8 +865,8 @@ const CustomMultiSelect: React.FC<{
                   onClick={() => toggleOption(option.value)}
                   className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
-                      ? "bg-white border-white/70 shadow-lg shadow-white/30 text-d-black"
-                      : "bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text"
+                      ? "bg-white border-white/70 shadow-lg shadow-white/30 text-theme-black"
+                      : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
                   }`}
                 >
                   {option.label}
@@ -1673,7 +1673,7 @@ const Explore: React.FC = () => {
     <div className={`${layout.page} explore-page`}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-d-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
           {copyNotification}
         </div>
       )}
@@ -1689,7 +1689,7 @@ const Explore: React.FC = () => {
                   <Compass className="h-4 w-4" />
                   Community
                 </p>
-                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-d-text`}>
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
                   Explore creations from our community.
                 </h1>
                 <p className={headings.tripleHeading.description}>
@@ -1700,16 +1700,16 @@ const Explore: React.FC = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-d-white/60">View</span>
-                <div className="inline-flex rounded-full border border-d-dark/70 bg-d-black/40 p-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-theme-white/60">View</span>
+                <div className="inline-flex rounded-full border border-theme-dark/70 bg-theme-black/40 p-1">
                   <button
                     type="button"
                     aria-pressed={activeGalleryView === 'creations'}
                     onClick={() => setActiveGalleryView('creations')}
                     className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
                       activeGalleryView === 'creations'
-                        ? 'bg-d-white text-d-black shadow-lg shadow-d-white/20'
-                        : 'text-d-white/70 hover:text-d-text'
+                        ? 'bg-theme-white text-theme-black shadow-lg shadow-d-white/20'
+                        : 'text-theme-white/70 hover:text-theme-text'
                     }`}
                   >
                     Creations
@@ -1720,8 +1720,8 @@ const Explore: React.FC = () => {
                     onClick={() => setActiveGalleryView('avatars')}
                     className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
                       activeGalleryView === 'avatars'
-                        ? 'bg-d-white text-d-black shadow-lg shadow-d-white/20'
-                        : 'text-d-white/70 hover:text-d-text'
+                        ? 'bg-theme-white text-theme-black shadow-lg shadow-d-white/20'
+                        : 'text-theme-white/70 hover:text-theme-text'
                     }`}
                   >
                     Avatars
@@ -1732,7 +1732,7 @@ const Explore: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleNavigateToAvatars}
-                  className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1.5 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
+                  className={buttons.glassPromptCompact}
                 >
                   Launch avatar studio
                   <ArrowUpRight className="size-4" aria-hidden="true" />
@@ -1766,8 +1766,8 @@ const Explore: React.FC = () => {
                           }}
                           className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${
                             isSelected
-                              ? 'bg-d-white text-d-black border border-d-white shadow-lg shadow-d-white/20'
-                              : 'bg-d-black/40 text-d-white border border-d-dark hover:border-d-mid hover:text-d-text'
+                              ? 'bg-theme-white text-theme-black border border-theme-white shadow-lg shadow-d-white/20'
+                              : 'bg-theme-black/40 text-theme-white border border-theme-dark hover:border-theme-mid hover:text-theme-text'
                           }`}
                         >
                           #{tag}
@@ -1781,8 +1781,8 @@ const Explore: React.FC = () => {
                 <div className={`mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Settings className="w-4 h-4 text-d-text" />
-                      <h3 className="text-sm font-raleway text-d-white">Filters</h3>
+                      <Settings className="w-4 h-4 text-theme-text" />
+                      <h3 className="text-sm font-raleway text-theme-white">Filters</h3>
                     </div>
                     <button
                       onClick={() =>
@@ -1792,7 +1792,7 @@ const Explore: React.FC = () => {
                         tags: [],
                       })
                       }
-                      className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
+                      className="px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway"
                     >
                       Clear
                     </button>
@@ -1802,7 +1802,7 @@ const Explore: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Modality Filter */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-d-white/70 font-raleway">Modality</label>
+                      <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
                       <CustomMultiSelect
                         values={galleryFilters.types}
                         onChange={types => {
@@ -1825,7 +1825,7 @@ const Explore: React.FC = () => {
                             return (
                               <div
                                 key={type}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-text/20 text-d-white rounded-full text-xs font-raleway border border-d-text/30"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                               >
                                 <span>{type === 'image' ? 'Image' : 'Video'}</span>
                                 <button
@@ -1835,7 +1835,7 @@ const Explore: React.FC = () => {
                                     types: prev.types.filter(t => t !== type),
                                     models: []
                                   }))}
-                                  className="hover:text-d-text transition-colors duration-200"
+                                  className="hover:text-theme-text transition-colors duration-200"
                                   aria-label={`Remove ${type === 'image' ? 'Image' : 'Video'}`}
                                 >
                                   <X className="w-3 h-3" />
@@ -1849,7 +1849,7 @@ const Explore: React.FC = () => {
 
                     {/* Model Filter */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-d-white/70 font-raleway">Model</label>
+                      <label className="text-xs text-theme-white/70 font-raleway">Model</label>
                       <CustomMultiSelect
                         values={galleryFilters.models}
                         onChange={models => setGalleryFilters(prev => ({ ...prev, models }))}
@@ -1867,7 +1867,7 @@ const Explore: React.FC = () => {
                             return (
                               <div
                                 key={modelId}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-text/20 text-d-white rounded-full text-xs font-raleway border border-d-text/30"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                               >
                                 <span>{model?.name || modelId}</span>
                                 <button
@@ -1876,7 +1876,7 @@ const Explore: React.FC = () => {
                                     ...prev,
                                     models: prev.models.filter(m => m !== modelId)
                                   }))}
-                                  className="hover:text-d-text transition-colors duration-200"
+                                  className="hover:text-theme-text transition-colors duration-200"
                                   aria-label={`Remove ${model?.name || modelId}`}
                                 >
                                   <X className="w-3 h-3" />
@@ -1892,17 +1892,17 @@ const Explore: React.FC = () => {
               </>
             ) : (
               <>
-                <p className={`${text.body} max-w-3xl text-d-white mt-6`}>
+                <p className={`${text.body} max-w-3xl text-theme-white mt-6`}>
                   Spotlight community-made avatars that have been shared publicly. Filter by vibe, save the ones you love, and discover new creators to collaborate with.
                 </p>
 
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-raleway text-d-text">Filters</h4>
+                    <h4 className="text-lg font-raleway text-theme-text">Filters</h4>
                     <button
                       type="button"
                       onClick={() => setAvatarTagFilter([])}
-                      className="text-xs text-d-white/70 hover:text-d-text transition-colors duration-200 font-raleway"
+                      className="text-xs text-theme-white/70 hover:text-theme-text transition-colors duration-200 font-raleway"
                     >
                       Clear
                     </button>
@@ -1911,7 +1911,7 @@ const Explore: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Avatar Tags Filter */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-d-white/70 font-raleway">Tags</label>
+                      <label className="text-xs text-theme-white/70 font-raleway">Tags</label>
                       <CustomMultiSelect
                         values={avatarTagFilter}
                         onChange={tags => setAvatarTagFilter(tags)}
@@ -1927,13 +1927,13 @@ const Explore: React.FC = () => {
                           {avatarTagFilter.map(tag => (
                             <div
                               key={tag}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-text/20 text-d-white rounded-full text-xs font-raleway border border-d-text/30"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                             >
                               <span>#{tag}</span>
                               <button
                                 type="button"
                                 onClick={() => setAvatarTagFilter(prev => prev.filter(t => t !== tag))}
-                                className="hover:text-d-text transition-colors duration-200"
+                                className="hover:text-theme-text transition-colors duration-200"
                                 aria-label={`Remove ${tag} tag`}
                               >
                                 <X className="w-3 h-3" />
@@ -1960,7 +1960,7 @@ const Explore: React.FC = () => {
                 return (
                   <article
                     key={item.id}
-                    className="group relative overflow-hidden rounded-[28px] border border-d-dark hover:border-d-mid transition-colors duration-200 bg-d-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                    className="group relative overflow-hidden rounded-[28px] border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
                     onClick={(event) => {
                       // Check if the click came from a copy button
                       const target = event.target as HTMLElement;
@@ -2006,7 +2006,7 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2018,7 +2018,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2030,7 +2030,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2062,7 +2062,7 @@ const Explore: React.FC = () => {
                           }
                         }}
                         className={`image-action-btn image-action-btn--labelled parallax-large ${
-                          isSaved ? 'border-d-white/50 bg-d-white/10 text-d-text' : ''
+                          isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''
                         }`}
                         aria-pressed={isSaved}
                         aria-label={isSaved ? 'Remove from your gallery' : 'Save to your gallery'}
@@ -2111,7 +2111,7 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await copyImageLink(item);
@@ -2122,7 +2122,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await downloadImage(item);
@@ -2152,13 +2152,13 @@ const Explore: React.FC = () => {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="truncate font-raleway text-sm text-d-text">{item.creator.name}</p>
-                              <div className="flex items-center gap-1.5 text-d-white/70">
+                              <p className="truncate font-raleway text-sm text-theme-text">{item.creator.name}</p>
+                              <div className="flex items-center gap-1.5 text-theme-white/70">
                                 <a
                                   href="https://x.com"
                                   target="_blank"
                                   rel="noreferrer noopener"
-                                  className="transition-colors duration-200 hover:text-d-text"
+                                  className="transition-colors duration-200 hover:text-theme-text"
                                   onClick={(event) => event.stopPropagation()}
                                   aria-label="View on X"
                                 >
@@ -2168,7 +2168,7 @@ const Explore: React.FC = () => {
                                   href="https://instagram.com"
                                   target="_blank"
                                   rel="noreferrer noopener"
-                                  className="transition-colors duration-200 hover:text-d-text"
+                                  className="transition-colors duration-200 hover:text-theme-text"
                                   onClick={(event) => event.stopPropagation()}
                                   aria-label="View on Instagram"
                                 >
@@ -2176,11 +2176,11 @@ const Explore: React.FC = () => {
                                 </a>
                               </div>
                             </div>
-                            <p className="truncate text-xs text-d-white">
+                            <p className="truncate text-xs text-theme-white">
                               {item.creator.handle}
                             </p>
                           </div>
-                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-d-dark text-xs font-medium text-d-white backdrop-blur">
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-theme-dark text-xs font-medium text-theme-white backdrop-blur">
                             {hasToolLogo(item.modelId) && (
                               <img
                                 src={getToolLogo(item.modelId)!}
@@ -2193,7 +2193,7 @@ const Explore: React.FC = () => {
                           </span>
                         </div>
                         
-                        <div className="mt-3 flex items-start gap-2 text-sm text-d-white">
+                        <div className="mt-3 flex items-start gap-2 text-sm text-theme-white">
                           <p 
                             className="flex-1 font-raleway leading-relaxed"
                             style={{
@@ -2217,7 +2217,7 @@ const Explore: React.FC = () => {
                               event.preventDefault();
                               event.stopPropagation();
                             }}
-                            className="text-d-white transition-colors duration-200 hover:text-d-text"
+                            className="text-theme-white transition-colors duration-200 hover:text-theme-text"
                             aria-label="Copy prompt"
                             onMouseEnter={(event) => {
                               showHoverTooltip(event.currentTarget, `copy-${item.id}`);
@@ -2229,13 +2229,13 @@ const Explore: React.FC = () => {
                             <Copy className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="mt-3 mb-1 flex items-center justify-start text-xs text-d-light">
+                        <div className="mt-3 mb-1 flex items-center justify-start text-xs text-theme-light">
                           <div className="flex items-center gap-2">
                             {item.tags.map((tag) => (
                               <button
                                 key={tag}
                                 type="button"
-                                className={`rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur transition-colors duration-200 hover:text-d-text pointer-events-auto ${glass.promptDark}`}
+                                className={`rounded-full border border-theme-dark px-3 py-1 text-xs font-medium text-theme-white backdrop-blur transition-colors duration-200 hover:text-theme-text pointer-events-auto ${glass.promptDark}`}
                                 onClick={(event) => event.stopPropagation()}
                               >
                                 #{tag}
@@ -2254,7 +2254,7 @@ const Explore: React.FC = () => {
               <div ref={loadMoreRef} aria-hidden />
             </div>
             {visibleGallery.length < filteredGallery.length && (
-              <div className="flex justify-center py-4 text-xs font-raleway text-d-white/60" aria-live="polite">
+              <div className="flex justify-center py-4 text-xs font-raleway text-theme-white/60" aria-live="polite">
                 Loading more inspiration…
               </div>
             )}
@@ -2264,16 +2264,16 @@ const Explore: React.FC = () => {
         <section className="relative pb-12 -mt-6">
           <div className={`${layout.container} space-y-8`}>
             {filteredAvatars.length === 0 ? (
-              <div className={`rounded-[28px] border border-d-dark/70 bg-d-black/40 p-10 text-center text-d-white/80 ${glass.promptDark}`}>
-                <p className="text-lg font-raleway text-d-white">No public avatars match this vibe yet.</p>
-                <p className="mt-2 text-sm text-d-white/70">
+              <div className={`rounded-[28px] border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
+                <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
+                <p className="mt-2 text-sm text-theme-white/70">
                   Publish one from the avatars studio or adjust your filters to explore more community styles.
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => setAvatarTagFilter([])}
-                    className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-4 py-2 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
+                    className={buttons.glassPrompt}
                   >
                     Reset filters
                     <RefreshCw className="size-4" aria-hidden="true" />
@@ -2281,7 +2281,7 @@ const Explore: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleNavigateToAvatars}
-                    className={`inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-4 py-2 text-xs font-raleway text-d-white transition-colors duration-200 hover:border-d-text hover:text-d-text ${glass.promptDark}`}
+                    className={buttons.glassPrompt}
                   >
                     Create an avatar
                     <ArrowUpRight className="size-4" aria-hidden="true" />
@@ -2344,78 +2344,78 @@ const Explore: React.FC = () => {
           <div className={`${layout.container}`}>
             <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl space-y-6">
-                <p className={`${text.eyebrow} text-d-white/70`}>Community</p>
+                <p className={`${text.eyebrow} text-theme-white/70`}>Community</p>
                 <div className="space-y-4">
-                  <h2 className="text-balance font-raleway text-4xl font-light text-d-white sm:text-5xl md:text-6xl">
+                  <h2 className="text-balance font-raleway text-4xl font-light text-theme-white sm:text-5xl md:text-6xl">
                     Discover the daygen community gallery
                   </h2>
-                  <p className="max-w-xl font-raleway text-lg text-d-white/75">
+                  <p className="max-w-xl font-raleway text-lg text-theme-white/75">
                     Browse the newest drops from creators mastering the latest AI tooling. Filter by style, model, and mood to follow your next creative spark.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                  <button type="button" className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs text-d-white border-d-dark hover:border-d-text hover:text-d-text`}>
+                  <button type="button" className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text`}>
                     Share your creation
                     <ArrowUpRight className="size-4" aria-hidden="true" />
                   </button>
-                  <button type="button" className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs text-d-white border-d-dark hover:border-d-text hover:text-d-text`}>
+                  <button type="button" className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text`}>
                     View submission guide
                   </button>
                 </div>
               </div>
 
-              <div className="grid gap-4 text-left text-sm font-raleway text-d-white/80 sm:grid-cols-2">
-                <div className={`${glass.surface} border border-d-dark/70 bg-d-black/40 p-5`}> 
-                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-d-white/60">
+              <div className="grid gap-4 text-left text-sm font-raleway text-theme-white/80 sm:grid-cols-2">
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
+                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Sparkles className="size-4" aria-hidden="true" />
                     Trending
                   </div>
-                  <p className="mt-3 text-3xl font-light text-d-white">3.2K+</p>
-                  <p className="text-xs text-d-white/60">new images shared this week</p>
+                  <p className="mt-3 text-3xl font-light text-theme-white">3.2K+</p>
+                  <p className="text-xs text-theme-white/60">new images shared this week</p>
                 </div>
-                <div className={`${glass.surface} border border-d-dark/70 bg-d-black/40 p-5`}>
-                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-d-white/60">
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
+                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Users className="size-4" aria-hidden="true" />
                     Creators
                   </div>
-                  <p className="mt-3 text-3xl font-light text-d-white">870</p>
-                  <p className="text-xs text-d-white/60">featured artists this month</p>
+                  <p className="mt-3 text-3xl font-light text-theme-white">870</p>
+                  <p className="text-xs text-theme-white/60">featured artists this month</p>
                 </div>
-                <div className={`${glass.surface} border border-d-dark/70 bg-d-black/40 p-5`}> 
-                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-d-white/60">
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
+                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Clock className="size-4" aria-hidden="true" />
                     Live feed
                   </div>
-                  <ul className="mt-4 space-y-3 text-xs text-d-white/70">
+                  <ul className="mt-4 space-y-3 text-xs text-theme-white/70">
                     {recentActivity.map((item) => (
                       <li
                         key={`${item.creator}-${item.timeAgo}`}
                         className="flex items-start justify-between gap-3"
                       >
                         <div className="min-w-0 space-y-0.5">
-                          <p className="font-medium text-d-white">{item.creator}</p>
-                          <p className="text-d-white/60">{item.action}</p>
+                          <p className="font-medium text-theme-white">{item.creator}</p>
+                          <p className="text-theme-white/60">{item.action}</p>
                         </div>
-                        <span className="whitespace-nowrap text-d-white/50">{item.timeAgo}</span>
+                        <span className="whitespace-nowrap text-theme-white/50">{item.timeAgo}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className={`${glass.surface} border border-d-dark/70 bg-d-black/40 p-5`}> 
-                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-d-white/60">
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
+                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Palette className="size-4" aria-hidden="true" />
                     Styles
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-d-white/70">
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-theme-white/70">
                     {styleFilters.slice(0, 5).map((filter) => (
                       <span
                         key={filter}
-                        className="rounded-full border border-d-dark/70 px-3 py-1 text-d-white/70"
+                        className="rounded-full border border-theme-dark/70 px-3 py-1 text-theme-white/70"
                       >
                         {filter}
                       </span>
                     ))}
-                    <span className="rounded-full border border-d-dark/70 px-3 py-1 text-d-white/60">
+                    <span className="rounded-full border border-theme-dark/70 px-3 py-1 text-theme-white/60">
                       +{styleFilters.length - 5}
                     </span>
                   </div>
@@ -2427,17 +2427,17 @@ const Explore: React.FC = () => {
 
         {savePrompt.open && savePrompt.item && (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-d-black/80 px-4 py-8"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 px-4 py-8"
             onClick={closeSavePrompt}
           >
             <div
-              className={`${glass.promptDark} relative w-full max-w-3xl rounded-[28px] border border-d-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+              className={`${glass.promptDark} relative w-full max-w-3xl rounded-[28px] border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
               onClick={event => event.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={closeSavePrompt}
-                className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-d-dark/60 text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-theme-dark/60 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
                 aria-label="Close save dialog"
               >
                 <X className="size-4" />
@@ -2445,7 +2445,7 @@ const Explore: React.FC = () => {
 
               <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-[24px] border border-d-dark/70 w-1/2">
+                  <div className="overflow-hidden rounded-[24px] border border-theme-dark/70 w-1/2">
                     <img
                       src={savePrompt.item.imageUrl}
                       alt={`Saved inspiration ${savePrompt.item.id}`}
@@ -2453,10 +2453,10 @@ const Explore: React.FC = () => {
                       className="aspect-square w-full object-cover"
                     />
                   </div>
-                  <div className="space-y-3 rounded-[20px] border border-d-dark/70 bg-d-black/40 p-4">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-d-white/60">
+                  <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-theme-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-theme-white/60">
                       Save inspiration
-                      {savePrompt.alreadySaved && <span className="rounded-full bg-d-white/10 px-2 py-0.5 text-[10px] font-semibold text-d-text">updated</span>}
+                      {savePrompt.alreadySaved && <span className="rounded-full bg-theme-white/10 px-2 py-0.5 text-[10px] font-semibold text-theme-text">updated</span>}
                     </span>
                     <div className="flex items-center gap-3">
                       <div className="relative size-8 overflow-hidden rounded-full">
@@ -2466,34 +2466,34 @@ const Explore: React.FC = () => {
                         </span>
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-raleway text-d-white">{savePrompt.item.creator.name}</p>
-                        <p className="truncate text-xs text-d-white/60">{savePrompt.item.creator.handle}</p>
+                        <p className="truncate text-sm font-raleway text-theme-white">{savePrompt.item.creator.name}</p>
+                        <p className="truncate text-xs text-theme-white/60">{savePrompt.item.creator.handle}</p>
                       </div>
                       <a
                         href={buildCreatorProfileUrl(savePrompt.item.creator)}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="ml-auto inline-flex items-center gap-2 rounded-full border border-d-dark/70 px-3 py-1 text-xs font-raleway text-d-white/70 transition-colors duration-200 hover:text-d-text"
+                        className={`ml-auto ${buttons.glassPromptCompact}`}
                       >
                         View profile
                         <ArrowUpRight className="size-3.5" />
                       </a>
                     </div>
-                    <p className="text-sm font-raleway leading-relaxed text-d-white">{savePrompt.item.prompt}</p>
+                    <p className="text-sm font-raleway leading-relaxed text-theme-white">{savePrompt.item.prompt}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-6">
                   <div className="space-y-3">
-                    <h3 className="text-xl font-raleway font-normal text-d-text">Add to a folder</h3>
-                    <p className="text-sm text-d-white">
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">Add to a folder</h3>
+                    <p className="text-sm text-theme-white">
                       Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
                     </p>
                     <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
                       {folders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-d-dark/70 bg-d-black/30 py-8 text-center text-d-white/70">
-                          <FolderPlus className="size-8 text-d-white/50" />
-                          <p className="max-w-xs text-sm font-raleway text-d-white/70">
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/30 py-8 text-center text-theme-white/70">
+                          <FolderPlus className="size-8 text-theme-white/50" />
+                          <p className="max-w-xs text-sm font-raleway text-theme-white/70">
                             You don’t have any folders yet. Create one to organise your saved inspirations.
                           </p>
                         </div>
@@ -2509,10 +2509,10 @@ const Explore: React.FC = () => {
                               disabled={isInspirationsFolder}
                               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${
                                 isInspirationsFolder
-                                  ? 'border-d-white/70 bg-d-white/10 text-d-text shadow-lg shadow-d-white/10 cursor-default'
+                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-d-white/10 cursor-default'
                                   : isAssigned
-                                    ? 'border-d-white/70 bg-d-white/10 text-d-text shadow-lg shadow-d-white/10'
-                                    : 'border-d-dark bg-d-black/30 text-d-white/80 hover:border-d-mid hover:text-d-text'
+                                    ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-d-white/10'
+                                    : 'border-theme-dark bg-theme-black/30 text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
                               }`}
                             >
                               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -2527,19 +2527,19 @@ const Explore: React.FC = () => {
                                       />
                                     </div>
                                   ) : (
-                                    <div className="w-8 h-8 rounded-lg bg-d-dark/50 flex items-center justify-center">
-                                      <FolderPlus className="w-4 h-4 text-d-white/50" />
+                                    <div className="w-8 h-8 rounded-lg bg-theme-dark/50 flex items-center justify-center">
+                                      <FolderPlus className="w-4 h-4 text-theme-white/50" />
                                     </div>
                                   )}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-raleway">{folder.name}</p>
-                                  <p className="text-xs text-d-white/60">{folder.imageIds.length} saved</p>
+                                  <p className="text-xs text-theme-white/60">{folder.imageIds.length} saved</p>
                                 </div>
                               </div>
                               <span
                                 className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${
-                                  (isAssigned || isInspirationsFolder) ? 'border-d-text bg-d-text text-b-black' : 'border-d-mid text-d-white/50'
+                                  (isAssigned || isInspirationsFolder) ? 'border-theme-text bg-theme-text text-b-black' : 'border-theme-mid text-theme-white/50'
                                 }`}
                               >
                                 {(isAssigned || isInspirationsFolder) && <Check className="h-3.5 w-3.5" />}
@@ -2591,7 +2591,7 @@ const Explore: React.FC = () => {
         {/* Full-size image modal */}
         {isFullSizeOpen && selectedFullImage && (
           <div
-            className="fixed inset-0 z-[60] bg-d-black/80 flex items-start justify-center p-4"
+            className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
             onClick={closeFullSizeView}
           >
             <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
@@ -2600,7 +2600,7 @@ const Explore: React.FC = () => {
                 <>
                   <button
                     onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.promptDark} absolute left-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-d-text`}
+                    className={`${glass.promptDark} absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
                     title="Previous image (←)"
                     aria-label="Previous image"
                   >
@@ -2608,7 +2608,7 @@ const Explore: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.promptDark} absolute right-4 top-1/2 -translate-y-1/2 z-20 text-d-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-d-text`}
+                    className={`${glass.promptDark} absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
                     title="Next image (→)"
                     aria-label="Next image"
                   >
@@ -2654,7 +2654,7 @@ const Explore: React.FC = () => {
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2666,7 +2666,7 @@ const Explore: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2678,7 +2678,7 @@ const Explore: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2739,7 +2739,7 @@ const Explore: React.FC = () => {
                       >
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                           onClick={async (event) => {
                             event.stopPropagation();
                             await copyImageLink(selectedFullImage);
@@ -2750,7 +2750,7 @@ const Explore: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-d-white transition-colors duration-200 hover:text-d-text"
+                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                           onClick={async (event) => {
                             event.stopPropagation();
                             await downloadImage(selectedFullImage);
@@ -2775,7 +2775,7 @@ const Explore: React.FC = () => {
 
               {/* Image info overlay */}
               <div
-                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+                className="absolute inset-x-0 bottom-0 gallery-prompt-gradient p-4 transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
               >
                 <div className="pointer-events-auto">
                   <div className="glassprompt2">
@@ -2788,13 +2788,13 @@ const Explore: React.FC = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate font-raleway text-sm text-d-text">{selectedFullImage.creator.name}</p>
-                          <div className="flex items-center gap-1.5 text-d-white/70">
+                          <p className="truncate font-raleway text-sm text-theme-text">{selectedFullImage.creator.name}</p>
+                          <div className="flex items-center gap-1.5 text-theme-white/70">
                             <a
                               href="https://x.com"
                               target="_blank"
                               rel="noreferrer noopener"
-                              className="transition-colors duration-200 hover:text-d-text"
+                              className="transition-colors duration-200 hover:text-theme-text"
                               onClick={(event) => event.stopPropagation()}
                               aria-label="View on X"
                             >
@@ -2804,7 +2804,7 @@ const Explore: React.FC = () => {
                               href="https://instagram.com"
                               target="_blank"
                               rel="noreferrer noopener"
-                              className="transition-colors duration-200 hover:text-d-text"
+                              className="transition-colors duration-200 hover:text-theme-text"
                               onClick={(event) => event.stopPropagation()}
                               aria-label="View on Instagram"
                             >
@@ -2812,11 +2812,11 @@ const Explore: React.FC = () => {
                             </a>
                           </div>
                         </div>
-                        <p className="truncate text-xs text-d-white">
+                        <p className="truncate text-xs text-theme-white">
                           {selectedFullImage.creator.handle}
                         </p>
                       </div>
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-d-dark text-xs font-medium text-d-white backdrop-blur">
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-theme-dark text-xs font-medium text-theme-white backdrop-blur">
                         {hasToolLogo(selectedFullImage.modelId) && (
                           <img
                             src={getToolLogo(selectedFullImage.modelId)!}
@@ -2829,7 +2829,7 @@ const Explore: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="mt-3 flex items-start gap-2 text-sm text-d-white">
+                    <div className="mt-3 flex items-start gap-2 text-sm text-theme-white">
                       <p className="flex-1 font-raleway leading-relaxed">{selectedFullImage.prompt}</p>
                       <button
                         type="button"
@@ -2843,7 +2843,7 @@ const Explore: React.FC = () => {
                           event.preventDefault();
                           event.stopPropagation();
                         }}
-                        className="text-d-white transition-colors duration-200 hover:text-d-text"
+                        className="text-theme-white transition-colors duration-200 hover:text-theme-text"
                         aria-label="Copy prompt"
                         onMouseEnter={(event) => {
                           showHoverTooltip(event.currentTarget, `fullsize-copy-${selectedFullImage.id}`);
@@ -2856,13 +2856,13 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="mt-3 mb-1 flex items-center justify-start text-xs text-d-light">
+                    <div className="mt-3 mb-1 flex items-center justify-start text-xs text-theme-light">
                       <div className="flex items-center gap-2">
                         {selectedFullImage.tags.map((tag) => (
                           <button
                             key={tag}
                             type="button"
-                            className="rounded-full border border-d-dark px-3 py-1 text-xs font-medium text-d-white backdrop-blur bg-black/40 transition-colors duration-200 hover:text-d-text"
+                            className="rounded-full border border-theme-dark px-3 py-1 text-xs font-medium text-theme-white backdrop-blur bg-black/40 transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => event.stopPropagation()}
                           >
                             #{tag}
@@ -2880,7 +2880,7 @@ const Explore: React.FC = () => {
         {/* Unsave confirmation modal */}
         {unsaveConfirm.open && unsaveConfirm.item && (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-d-black/80 py-12"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 py-12"
             onClick={closeUnsaveConfirm}
           >
             <div
@@ -2890,8 +2890,8 @@ const Explore: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-d-text">Remove from gallery?</h3>
-                  <p className="text-base font-raleway font-light text-d-white">
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Remove from gallery?</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     This will remove the image from your saved gallery and any folders it's in.
                   </p>
                 </div>

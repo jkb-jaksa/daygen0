@@ -1,4 +1,4 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X } from "lucide-react";
+import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, Sun, Moon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -11,6 +11,7 @@ import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeNext } from "../utils/navigation";
+import { useTheme } from "../contexts/ThemeContext";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };
@@ -63,6 +64,25 @@ export default function Navbar() {
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const isDay = theme === "day";
+
+  const ThemeToggleButton = ({ showLabel = false, className = "" }: { showLabel?: boolean; className?: string }) => (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className={`${iconButtons.xl} sm:${iconButtons.sm} ${className}`}
+      aria-label={isDay ? "Switch to night mode" : "Switch to light mode"}
+      title={isDay ? "Switch to night mode" : "Switch to light mode"}
+    >
+      {isDay ? (
+        <Moon className="w-4 h-4" aria-hidden="true" />
+      ) : (
+        <Sun className="w-4 h-4" aria-hidden="true" />
+      )}
+      {showLabel && <span className="text-sm font-raleway">{isDay ? "Night" : "Light"}</span>}
+    </button>
+  );
 
   const accountBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -242,7 +262,7 @@ export default function Navbar() {
     <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[10000] focus:rounded focus:bg-d-white focus:px-4 focus:py-2 focus:text-d-black"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[10000] focus:rounded focus:bg-theme-white focus:px-4 focus:py-2 focus:text-theme-black"
       >
         Skip to main content
       </a>
@@ -265,7 +285,7 @@ export default function Navbar() {
                   key={item.label}
                   to={item.path}
                   className={({ isActive }) =>
-                    `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-d-text" : "text-d-white hover:text-d-text"}`
+                    `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
@@ -319,9 +339,9 @@ export default function Navbar() {
                     <InstagramIcon className="size-4" />
                   </button>
                 </div>
-                <div className="hidden sm:block h-6 w-px bg-d-white/20"></div>
+                <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
                 <button 
-                  className="hidden sm:block parallax-large text-d-white hover:text-d-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-normal"
+                  className="hidden sm:block parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -365,7 +385,7 @@ export default function Navbar() {
                   </button>
                 </div>
                 
-                <div className="hidden lg:block h-6 w-px bg-d-white/20"></div>
+                <div className="hidden lg:block h-6 w-px bg-theme-white/20"></div>
                 
                 {/* Credit Usage Button */}
                 <button 
@@ -374,7 +394,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`hidden lg:flex parallax-large items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-3 py-1.5 hover:text-d-text transition-colors`}
+                  className={`hidden lg:flex parallax-large items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-3 py-1.5 hover:text-theme-text transition-colors`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -401,7 +421,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-d-white px-2.5 py-1 hover:text-d-text transition-colors`}
+                    className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-2.5 py-1 hover:text-theme-text transition-colors`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -414,7 +434,7 @@ export default function Navbar() {
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-d-black text-xs font-bold font-raleway bg-d-white/90"
+                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90"
                       >
                         {(user.displayName || user.email)[0]?.toUpperCase()}
                       </span>
@@ -439,6 +459,7 @@ export default function Navbar() {
               >
                 {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
+              <ThemeToggleButton />
               <button aria-label="Search" className={`${iconButtons.xl} sm:${iconButtons.sm}`}>
                 <Search className="w-4 h-4" />
               </button>
@@ -456,9 +477,9 @@ export default function Navbar() {
           className={`${glass.promptDark} border-t-0 transition-opacity duration-100`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
-          <div className={`${layout.container} py-6 min-h-[220px] text-base text-d-text`}>
+          <div className={`${layout.container} py-6 min-h-[220px] text-base text-theme-text`}>
             {activeMenu && (
-              <div key={activeMenu} className="fade-in-200 text-d-text">
+              <div key={activeMenu} className="fade-in-200 text-theme-text">
                 <div className="text-base font-normal font-raleway mb-4">
                   {activeMenu}
                 </div>
@@ -468,9 +489,9 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
+                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <category.Icon className="w-4 h-4" />
                         </div>
                         <span>{category.label}</span>
@@ -478,7 +499,7 @@ export default function Navbar() {
                     ))}
                   </div>
                 ) : activeMenu === "explore" ? (
-                  <div className="text-base font-raleway text-d-white/85">Coming soon.</div>
+                  <div className="text-base font-raleway text-theme-white/85">Coming soon.</div>
                 ) : activeMenu === "learn" ? (
                   <div className="flex flex-col gap-1.5">
                     {LEARN_MENU_LINKS.map((item) => (
@@ -486,9 +507,9 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-d-white hover:text-d-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-d-mid`}>
+                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <item.Icon className="w-4 h-4" />
                         </div>
                         <span>{item.label}</span>
@@ -496,7 +517,7 @@ export default function Navbar() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-base font-raleway text-d-white/85">Coming soon.</div>
+                  <div className="text-base font-raleway text-theme-white/85">Coming soon.</div>
                 )}
               </div>
             )}
@@ -507,7 +528,7 @@ export default function Navbar() {
       {mobileNavOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true">
           <div
-            className="absolute inset-0 bg-d-black/70"
+            className="absolute inset-0 bg-theme-black/70"
             onClick={() => setMobileNavOpen(false)}
           />
           <div
@@ -515,7 +536,8 @@ export default function Navbar() {
             className="absolute inset-x-0"
             style={{ top: navH }}
           >
-            <div className={`${glass.promptDark} border-t-0 px-6 pb-6 pt-4 space-y-6`}> 
+            <div className={`${glass.promptDark} border-t-0 px-6 pb-6 pt-4 space-y-6`}>
+              <ThemeToggleButton showLabel={true} className="w-full justify-center gap-2" />
               <div className="space-y-2">
                 {filteredNavItems.map((item) => (
                   <NavLink
@@ -523,7 +545,7 @@ export default function Navbar() {
                     to={item.path}
                     className={({ isActive }) =>
                       `block rounded-lg px-3 py-2 text-base font-raleway transition-colors duration-200 ${
-                        isActive ? "bg-d-white/10 text-d-text" : "text-d-white hover:text-d-text"
+                        isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text"
                       }`
                     }
                     onClick={() => {
@@ -537,12 +559,12 @@ export default function Navbar() {
                 ))}
               </div>
 
-              <div className="space-y-4 border-t border-d-dark/60 pt-4">
+              <div className="space-y-4 border-t border-theme-dark/60 pt-4">
                 {user ? (
                   <>
-                    <div className="flex items-center justify-between rounded-xl border border-d-dark px-3 py-2 text-sm text-d-white">
-                      <span className="font-raleway uppercase tracking-[0.18em] text-xs text-d-white/60">Credits</span>
-                      <span className="font-raleway text-base font-medium text-d-text">{user?.credits ?? 0}</span>
+                    <div className="flex items-center justify-between rounded-xl border border-theme-dark px-3 py-2 text-sm text-theme-white">
+                      <span className="font-raleway uppercase tracking-[0.18em] text-xs text-theme-white/60">Credits</span>
+                      <span className="font-raleway text-base font-medium text-theme-text">{user?.credits ?? 0}</span>
                     </div>
                     <button
                       onClick={() => {
@@ -660,7 +682,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-d-text shadow-xl transition-colors duration-200 py-2`}
+            className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-theme-text shadow-xl transition-colors duration-200 py-2`}
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -682,7 +704,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               My account
@@ -694,7 +716,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               My works
@@ -706,7 +728,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 text-d-white hover:text-d-text transition-colors font-raleway font-light"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               Log out

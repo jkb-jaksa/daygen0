@@ -70,26 +70,26 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] bg-d-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-mid border-t border-r border-b border-l bg-d-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+    <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
+      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
-            <h3 className="text-d-text font-raleway font-normal text-xl">
+            <h3 className="text-theme-text font-raleway font-normal text-xl">
               {success ? "Password updated" : "Set new password"}
             </h3>
-            <p className="text-d-light text-sm font-raleway font-light">
+            <p className="text-theme-light text-sm font-raleway font-light">
               {success 
                 ? "Your password has been successfully updated." 
                 : "Enter your new password below."
               }
             </p>
-            <button onClick={handleClose} className="absolute top-6 right-6 text-d-light hover:text-d-text transition-colors">✕</button>
+            <button onClick={handleClose} className="absolute top-6 right-6 text-theme-light hover:text-theme-text transition-colors">✕</button>
           </div>
 
           {!success ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-sm text-d-text font-raleway">New password</label>
+                <label className="block text-sm text-theme-text font-raleway">New password</label>
                 <input
                   type="password"
                   required
@@ -102,7 +102,7 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-d-text font-raleway">Confirm new password</label>
+                <label className="block text-sm text-theme-text font-raleway">Confirm new password</label>
                 <input
                   type="password"
                   required
@@ -124,7 +124,7 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
           ) : (
             <div className="space-y-4">
               <div className="text-center">
-                <p className="text-d-text text-sm font-raleway">
+                <p className="text-theme-text text-sm font-raleway">
                   You can now log in with your new password.
                 </p>
               </div>

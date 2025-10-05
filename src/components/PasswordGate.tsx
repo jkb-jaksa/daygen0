@@ -84,12 +84,12 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
   if (isUnlocked) return <>{children}</>;
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-d-black/80 flex items-center justify-center py-12">
-      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-d-mid border-t border-r border-b border-l bg-d-black-subtle rounded-[20px] py-12 px-6 max-w-sm min-w-[28rem] w-full`}>
+    <div className="fixed inset-0 z-[1000] bg-theme-black/80 flex items-center justify-center py-12">
+      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] py-12 px-6 max-w-sm min-w-[28rem] w-full`}>
         <div className="text-center space-y-6">
           <div className="space-y-6">
-            <h1 className="text-lg font-raleway text-d-text">Enter Password</h1>
-            <p className="text-sm text-d-white font-raleway">
+            <h1 className="text-lg font-raleway text-theme-text">Enter Password</h1>
+            <p className="text-sm text-theme-white font-raleway">
               Enter the password to access this site.
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
                 Unlock
               </button>
             </div>
-            <p className="text-xs text-d-white/60 font-raleway">
+            <p className="text-xs text-theme-white/60 font-raleway">
               Dev-only: set VITE_SITE_PASSWORD locally. Disabled in production.
             </p>
           </form>

@@ -92,9 +92,9 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
+        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-theme-white font-raleway text-sm focus:outline-none focus:border-theme-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
-        <span className={selectedOption ? "text-d-white" : "text-d-white/50"}>
+        <span className={selectedOption ? "text-theme-white" : "text-theme-white/50"}>
           {selectedOption?.label || placeholder || "Select..."}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
@@ -129,8 +129,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
                 }}
                 className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                   option.value === value
-                    ? "bg-white border-white/70 shadow-lg shadow-white/30 text-d-black"
-                    : "bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text"
+                    ? "bg-white border-white/70 shadow-lg shadow-white/30 text-theme-black"
+                    : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
                 }`}
               >
                 {option.label}
@@ -218,9 +218,9 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-d-white font-raleway text-sm focus:outline-none focus:border-d-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
+        className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-theme-white font-raleway text-sm focus:outline-none focus:border-theme-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
-        <span className={values.length > 0 ? "text-d-white" : "text-d-white/50"}>
+        <span className={values.length > 0 ? "text-theme-white" : "text-theme-white/50"}>
           {values.length > 0 ? `${values.length} selected` : placeholder || "Select..."}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
@@ -254,8 +254,8 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
                   onClick={() => toggleValue(option.value)}
                   className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
-                      ? "bg-white border-white/70 shadow-lg shadow-white/30 text-d-black"
-                      : "bg-transparent hover:bg-d-text/20 border-0 text-d-white hover:text-d-text"
+                      ? "bg-white border-white/70 shadow-lg shadow-white/30 text-theme-black"
+                      : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
                   }`}
                 >
                   {option.label}
@@ -448,12 +448,12 @@ export function GalleryPanel({
       <div className={`mb-4 p-3 ${glass.promptDark} rounded-[20px]`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-d-text" />
-            <h3 className="text-sm font-raleway text-d-white">Filters</h3>
+            <Settings className="w-4 h-4 text-theme-text" />
+            <h3 className="text-sm font-raleway text-theme-white">Filters</h3>
           </div>
           <button
             onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", avatar: "all" })}
-            className="px-2.5 py-1 text-xs text-d-white hover:text-d-text transition-colors duration-200 font-raleway"
+            className="px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway"
           >
             Clear
           </button>
@@ -461,14 +461,14 @@ export function GalleryPanel({
 
         {/* Liked/Public filters */}
         <div className="mb-3">
-          <label className="text-xs text-d-white/70 font-raleway mb-1.5 block">Liked/Public</label>
+          <label className="text-xs text-theme-white/70 font-raleway mb-1.5 block">Liked/Public</label>
           <div className="flex gap-1 flex-wrap">
             <button
               onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                 galleryFilters.liked
-                  ? "text-d-text border-d-mid bg-d-white/10"
-                  : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
+                  ? "text-theme-text border-theme-mid bg-theme-white/10"
+                  : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
               }`}
             >
               <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
@@ -478,11 +478,11 @@ export function GalleryPanel({
               onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                 galleryFilters.public
-                  ? "text-d-text border-d-mid bg-d-white/10"
-                  : "text-d-white border-d-dark hover:border-d-mid hover:text-d-text"
+                  ? "text-theme-text border-theme-mid bg-theme-white/10"
+                  : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
               }`}
             >
-              <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-d-text" : "text-current"}`} />
+              <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-theme-text" : "text-current"}`} />
               <span>Public</span>
             </button>
           </div>
@@ -491,7 +491,7 @@ export function GalleryPanel({
         {/* Main filter grid: Modality, Model, Avatar, Folder */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-d-white/70 font-raleway">Modality</label>
+            <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
             <CustomMultiSelect
               values={galleryFilters.types}
               onChange={types => {
@@ -509,13 +509,13 @@ export function GalleryPanel({
                 {galleryFilters.types.map(type => (
                   <div
                     key={type}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30"
                   >
                     <span>{type === "image" ? "Image" : "Video"}</span>
                     <button
                       type="button"
                       onClick={() => setGalleryFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== type), models: [] }))}
-                      className="hover:text-d-text transition-colors duration-200"
+                      className="hover:text-theme-text transition-colors duration-200"
                       aria-label={`Remove ${type === "image" ? "Image" : "Video"}`}
                     >
                       <X className="w-3 h-3" />
@@ -527,7 +527,7 @@ export function GalleryPanel({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-d-white/70 font-raleway">Model</label>
+            <label className="text-xs text-theme-white/70 font-raleway">Model</label>
             <CustomMultiSelect
               values={galleryFilters.models}
               onChange={models => setGalleryFilters(prev => ({ ...prev, models }))}
@@ -542,13 +542,13 @@ export function GalleryPanel({
                   return (
                     <div
                       key={modelId}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30"
                     >
                       <span>{model?.name || modelId}</span>
                       <button
                         type="button"
                         onClick={() => setGalleryFilters(prev => ({ ...prev, models: prev.models.filter(m => m !== modelId) }))}
-                        className="hover:text-d-text transition-colors duration-200"
+                        className="hover:text-theme-text transition-colors duration-200"
                         aria-label={`Remove ${model?.name || modelId}`}
                       >
                         <X className="w-3 h-3" />
@@ -561,7 +561,7 @@ export function GalleryPanel({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-d-white/70 font-raleway">Avatar</label>
+            <label className="text-xs text-theme-white/70 font-raleway">Avatar</label>
             <CustomDropdown
               value={galleryFilters.avatar}
               onChange={value => setGalleryFilters(prev => ({ ...prev, avatar: value }))}
@@ -572,12 +572,12 @@ export function GalleryPanel({
             {/* Selected Avatar Tag */}
             {galleryFilters.avatar !== "all" && (
               <div className="flex flex-wrap gap-2 mt-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30">
                   <span>{getAvailableAvatars().find(a => a.id === galleryFilters.avatar)?.name || galleryFilters.avatar}</span>
                   <button
                     type="button"
                     onClick={() => setGalleryFilters(prev => ({ ...prev, avatar: "all" }))}
-                    className="hover:text-d-text transition-colors duration-200"
+                    className="hover:text-theme-text transition-colors duration-200"
                     aria-label="Remove avatar filter"
                   >
                     <X className="w-3 h-3" />
@@ -588,7 +588,7 @@ export function GalleryPanel({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-d-white/70 font-raleway">Folder</label>
+            <label className="text-xs text-theme-white/70 font-raleway">Folder</label>
             <CustomDropdown
               value={galleryFilters.folder}
               onChange={value => setGalleryFilters(prev => ({ ...prev, folder: value }))}
@@ -599,12 +599,12 @@ export function GalleryPanel({
             {/* Selected Folder Tag */}
             {galleryFilters.folder !== "all" && (
               <div className="flex flex-wrap gap-2 mt-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-d-orange-1/20 text-d-white rounded-full text-xs font-raleway border border-d-orange-1/30">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-orange-1/20 text-theme-white rounded-full text-xs font-raleway border border-theme-orange-1/30">
                   <span>{folders.find(f => f.id === galleryFilters.folder)?.name || galleryFilters.folder}</span>
                   <button
                     type="button"
                     onClick={() => setGalleryFilters(prev => ({ ...prev, folder: "all" }))}
-                    className="hover:text-d-text transition-colors duration-200"
+                    className="hover:text-theme-text transition-colors duration-200"
                     aria-label="Remove folder filter"
                   >
                     <X className="w-3 h-3" />
@@ -618,12 +618,12 @@ export function GalleryPanel({
         {/* Active Filter Tags - Only for filters without inline tags */}
         {(galleryFilters.liked ||
           galleryFilters.public) && (
-          <div className="mt-3 pt-3 border-t border-d-dark/50">
+          <div className="mt-3 pt-3 border-t border-theme-dark/50">
             <div className="flex flex-wrap items-center gap-2">
               {galleryFilters.liked && (
                 <button
                   onClick={() => setGalleryFilters(prev => ({ ...prev, liked: false }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-theme-white/10 hover:bg-theme-white/20 border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200"
                 >
                   <Heart className="w-3 h-3 fill-red-500 text-red-500" />
                   <span>Liked</span>
@@ -634,7 +634,7 @@ export function GalleryPanel({
               {galleryFilters.public && (
                 <button
                   onClick={() => setGalleryFilters(prev => ({ ...prev, public: false }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-d-white/10 hover:bg-d-white/20 border border-d-mid/30 text-d-white text-xs font-raleway transition-colors duration-200"
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-theme-white/10 hover:bg-theme-white/20 border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200"
                 >
                   <Globe className="w-3 h-3" />
                   <span>Public</span>
@@ -651,8 +651,8 @@ export function GalleryPanel({
           <button
             type="button"
             onClick={toggleSelectMode}
-            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal ${
-              isSelectMode ? "!bg-d-mid/20 !text-d-text !border-d-mid/40" : ""
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal ${
+              isSelectMode ? "!bg-theme-mid/20 !text-theme-text !border-theme-mid/40" : ""
             }`}
           >
             {isSelectMode ? "Done" : "Select"}
@@ -661,7 +661,7 @@ export function GalleryPanel({
             type="button"
             onClick={toggleSelectAllVisible}
             disabled={filteredGallery.length === 0}
-            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {allVisibleSelected ? "Unselect all" : "Select all"}
           </button>
@@ -669,7 +669,7 @@ export function GalleryPanel({
             type="button"
             onClick={clearImageSelection}
             disabled={!hasSelection}
-            className={`${buttons.subtle} !h-8 !text-d-white hover:!text-d-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Clear selection
           </button>
@@ -677,19 +677,19 @@ export function GalleryPanel({
         {hasSelection && (
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 mr-2">
-              <span className="text-sm font-raleway text-d-white">{selectedImages.size}</span>
-              <span className="text-xs font-raleway text-d-white">
+              <span className="text-sm font-raleway text-theme-white">{selectedImages.size}</span>
+              <span className="text-xs font-raleway text-theme-white">
                 {selectedImages.size === 1 ? "item selected" : "items selected"}
               </span>
               {selectedImages.size !== visibleSelectedCount && (
-                <span className="text-xs font-raleway text-d-white">({visibleSelectedCount} visible)</span>
+                <span className="text-xs font-raleway text-theme-white">({visibleSelectedCount} visible)</span>
               )}
             </div>
             <div className="relative">
               <button
                 type="button"
                 onClick={event => toggleBulkActionsMenu(event.currentTarget)}
-                className={`${buttons.subtle} !h-8 gap-1.5 text-d-white !font-normal`}
+                className={`${buttons.subtle} !h-8 gap-1.5 text-theme-white !font-normal`}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
                 <span>Actions</span>
@@ -708,7 +708,7 @@ export function GalleryPanel({
                     handleBulkLike();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <Heart className="h-4 w-4" />
                   <span>Like</span>
@@ -720,7 +720,7 @@ export function GalleryPanel({
                     handleBulkUnlike();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <HeartOff className="h-4 w-4" />
                   <span>Unlike</span>
@@ -732,7 +732,7 @@ export function GalleryPanel({
                     handleBulkPublish();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <Globe className="h-4 w-4" />
                   <span>Publish</span>
@@ -744,7 +744,7 @@ export function GalleryPanel({
                     handleBulkUnpublish();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <Lock className="h-4 w-4" />
                   <span>Unpublish</span>
@@ -756,7 +756,7 @@ export function GalleryPanel({
                     handleBulkAddToFolder();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <FolderPlus className="h-4 w-4" />
                   <span>Manage folders</span>
@@ -768,7 +768,7 @@ export function GalleryPanel({
                     handleBulkDownload();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <Download className="h-4 w-4" />
                   <span>Download</span>
@@ -780,7 +780,7 @@ export function GalleryPanel({
                     handleBulkDelete();
                     closeBulkActionsMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-d-white hover:bg-d-text/10 hover:text-d-text flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-theme-white hover:bg-theme-text/10 hover:text-theme-text flex items-center gap-3"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Delete</span>
@@ -797,8 +797,8 @@ export function GalleryPanel({
         {gallery.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
             <Grid3X3 className="default-orange-icon mb-4" />
-            <h3 className="text-xl font-raleway text-d-text mb-2">No gallery yet</h3>
-            <p className="text-base font-raleway text-d-white max-w-md">
+            <h3 className="text-xl font-raleway text-theme-text mb-2">No gallery yet</h3>
+            <p className="text-base font-raleway text-theme-white max-w-md">
               Your generation gallery will appear here once you start creating images.
             </p>
           </div>
@@ -807,8 +807,8 @@ export function GalleryPanel({
         {gallery.length > 0 && filteredGallery.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
             <Settings className="default-orange-icon mb-4" />
-            <h3 className="text-xl font-raleway text-d-text mb-2">No results found</h3>
-            <p className="text-base font-raleway text-d-white max-w-md">Try adjusting your filters to see more results.</p>
+            <h3 className="text-xl font-raleway text-theme-text mb-2">No results found</h3>
+            <p className="text-base font-raleway text-theme-white max-w-md">Try adjusting your filters to see more results.</p>
           </div>
         )}
       </div>
