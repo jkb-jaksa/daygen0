@@ -1640,26 +1640,26 @@ select option::-webkit-scrollbar-thumb:hover {
 /* Prompt Description Bar Effect */
 .PromptDescriptionBar {
   background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.75) 10%,
-    rgba(0, 0, 0, 0.65) 25%,
-    rgba(0, 0, 0, 0.55) 40%,
-    rgba(0, 0, 0, 0.35) 60%,
-    rgba(0, 0, 0, 0.25) 80%,
-    rgba(0, 0, 0, 0.1) 95%,
-    rgba(0, 0, 0, 0.0) 100%
+    to bottom,
+    rgba(0, 0, 0, 0.86) 0%,
+    rgba(0, 0, 0, 0.81) 10%,
+    rgba(0, 0, 0, 0.71) 25%,
+    rgba(0, 0, 0, 0.62) 40%,
+    rgba(0, 0, 0, 0.43) 60%,
+    rgba(0, 0, 0, 0.29) 80%,
+    rgba(0, 0, 0, 0.14) 95%,
+    rgba(0, 0, 0, 0.095) 100%
   );
   background: linear-gradient(
-    to top,
-    rgb(var(--theme-black-rgb) / 0.8) 0%,
-    rgb(var(--theme-black-rgb) / 0.75) 10%,
-    rgb(var(--theme-black-rgb) / 0.65) 25%,
-    rgb(var(--theme-black-rgb) / 0.55) 40%,
-    rgb(var(--theme-black-rgb) / 0.35) 60%,
-    rgb(var(--theme-black-rgb) / 0.25) 80%,
-    rgb(var(--theme-black-rgb) / 0.1) 95%,
-    rgb(var(--theme-black-rgb) / 0.0) 100%
+    to bottom,
+    rgb(var(--theme-black-rgb) / 0.86) 0%,
+    rgb(var(--theme-black-rgb) / 0.81) 10%,
+    rgb(var(--theme-black-rgb) / 0.71) 25%,
+    rgb(var(--theme-black-rgb) / 0.62) 40%,
+    rgb(var(--theme-black-rgb) / 0.43) 60%,
+    rgb(var(--theme-black-rgb) / 0.29) 80%,
+    rgb(var(--theme-black-rgb) / 0.14) 95%,
+    rgb(var(--theme-black-rgb) / 0.095) 100%
   );
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
