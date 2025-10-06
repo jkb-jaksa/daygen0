@@ -66,5 +66,3 @@
     "vitest": "^2.1.6"
   }
 }
-engines
-"engines": {"node": ">=22.15.0"},
