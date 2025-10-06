@@ -87,6 +87,75 @@
   animation: gradient-colors 3s ease-in-out infinite;
 }
 
+/* Day mode keyframe for gradient-colors animation - ensure 100% opacity */
+@keyframes gradient-colors-day {
+  0% {
+    background: linear-gradient(135deg, 
+      #1f2937 0%, 
+      rgba(251, 191, 36, 1) 20%, 
+      rgba(239, 68, 68, 1) 40%, 
+      rgba(59, 130, 246, 1) 60%, 
+      rgba(34, 211, 238, 1) 80%, 
+      #1f2937 100%
+    );
+    background-size: 400% 400%;
+    background-position: 0% 50%;
+  }
+  25% {
+    background: linear-gradient(135deg, 
+      #1f2937 0%, 
+      rgba(251, 191, 36, 1) 20%, 
+      rgba(239, 68, 68, 1) 40%, 
+      rgba(59, 130, 246, 1) 60%, 
+      rgba(34, 211, 238, 1) 80%, 
+      #1f2937 100%
+    );
+    background-size: 400% 400%;
+    background-position: 100% 50%;
+  }
+  50% {
+    background: linear-gradient(135deg, 
+      #1f2937 0%, 
+      rgba(251, 191, 36, 1) 20%, 
+      rgba(239, 68, 68, 1) 40%, 
+      rgba(59, 130, 246, 1) 60%, 
+      rgba(34, 211, 238, 1) 80%, 
+      #1f2937 100%
+    );
+    background-size: 400% 400%;
+    background-position: 0% 50%;
+  }
+  75% {
+    background: linear-gradient(135deg, 
+      #1f2937 0%, 
+      rgba(251, 191, 36, 1) 20%, 
+      rgba(239, 68, 68, 1) 40%, 
+      rgba(59, 130, 246, 1) 60%, 
+      rgba(34, 211, 238, 1) 80%, 
+      #1f2937 100%
+    );
+    background-size: 400% 400%;
+    background-position: 100% 50%;
+  }
+  100% {
+    background: linear-gradient(135deg, 
+      #1f2937 0%, 
+      rgba(251, 191, 36, 1) 20%, 
+      rgba(239, 68, 68, 1) 40%, 
+      rgba(59, 130, 246, 1) 60%, 
+      rgba(34, 211, 238, 1) 80%, 
+      #1f2937 100%
+    );
+    background-size: 400% 400%;
+    background-position: 0% 50%;
+  }
+}
+
+/* Day mode override for gradient-colors animation */
+html[data-theme="day"] .animate-gradient-colors {
+  animation: gradient-colors-day 3s ease-in-out infinite;
+}
+
 /* Custom scrollbar styles */
 .custom-scrollbar {
   scrollbar-width: thin;
@@ -155,8 +224,8 @@
   --n-light: #969b9b;
   --n-light-rgb: 150 155 155;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --n-mid: #323737;
-  --n-mid-rgb: 50 55 55;
+  --n-mid: #3a4141;
+  --n-mid-rgb: 58 65 65;
   --n-dark: #1a1c1c;
   --n-dark-rgb: 26 28 28;
   --n-black: #060806;
@@ -175,8 +244,8 @@
   --d-white-rgb: 32 36 36;
   --d-light: #6c7373;
   --d-light-rgb: 108 115 115;
-  --d-mid: #d8dfde;
-  --d-mid-rgb: 216 223 222;
+  --d-mid: #a8b3b2;
+  --d-mid-rgb: 168 179 178;
   --d-dark: #e1e7e7;
   --d-dark-rgb: 225 231 231;
   --d-black: #f8fbfb;
