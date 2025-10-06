@@ -26,11 +26,9 @@ const modalities: Array<{
     key: "text",
     title: "Text",
     description:
-      "Capture your philosophies, stories, and the way you think. Each prompt deepens how your digital copy writes and responds.",
+      "Capture your writing.",
     prompts: [
-      "Daily journal reflections",
-      "Signature phrases & micro-stories",
-      "Answer a deep question of the week",
+      "placeholder",
     ],
     Icon: PenLine,
     accent: "from-amber-300 via-amber-400 to-orange-500",
@@ -41,46 +39,40 @@ const modalities: Array<{
     key: "image",
     title: "Image",
     description:
-      "Upload portraits, moods, and textures that feel like you. Curate how your presence should look across worlds.",
+      "Capture your image.",
     prompts: [
-      "Facial reference set",
-      "Style moodboard",
-      "Everyday moments & rituals",
+      "placeholder",
     ],
     Icon: ImageIcon,
-    accent: "from-cyan-300 via-cyan-400 to-cyan-500",
-    iconColor: "text-cyan-400",
-    glowColor: "34, 211, 238",
-  },
-  {
-    key: "video",
-    title: "Video",
-    description:
-      "Short clips capture your expressions, posture, and the way you occupy space. Show the world how you move.",
-    prompts: [
-      "30 second intro walk-and-talk",
-      "Reaction montage",
-      "Hands, gestures, and signature moves",
-    ],
-    Icon: Video,
     accent: "from-red-400 via-red-500 to-red-600",
     iconColor: "text-red-500",
     glowColor: "239, 68, 68",
   },
   {
-    key: "audio",
-    title: "Voice",
+    key: "video",
+    title: "Video",
     description:
-      "Collect a library of tones—from calm explanations to animated storytelling—so your copy can speak for you.",
+      "Capture your motion.",
     prompts: [
-      "Voice warmup & hello",
-      "Explain a passion in 60s",
-      "Tell a childhood memory",
+      "placeholder",
     ],
-    Icon: Mic,
+    Icon: Video,
     accent: "from-blue-400 via-blue-500 to-blue-600",
     iconColor: "text-blue-500",
     glowColor: "59, 130, 246",
+  },
+  {
+    key: "audio",
+    title: "Voice",
+    description:
+      "Capture your voice.",
+    prompts: [
+      "placeholder",
+    ],
+    Icon: Mic,
+    accent: "from-cyan-300 via-cyan-400 to-cyan-500",
+    iconColor: "text-cyan-400",
+    glowColor: "34, 211, 238",
   },
 ];
 
@@ -106,7 +98,7 @@ function ModalityCard({ modality }: { modality: typeof modalities[0] }) {
             <p className="text-sm font-raleway text-theme-light">3 quests</p>
           </div>
         </div>
-        <p className="text-sm font-raleway text-theme-white leading-relaxed text-left">{modality.description}</p>
+        <p className="text-sm font-raleway text-theme-white leading-relaxed text-center">{modality.description}</p>
         <div className="grid gap-2">
           {modality.prompts.map((prompt) => (
             <div
