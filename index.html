@@ -47,28 +47,18 @@
         }
       })();
     </script>
+    <!-- Cloudflare Web Analytics -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "239d66d6461243a7b44dd1bfb3781d37", "spa": true, "respectDNT": true}'></script>
+    <!-- End Cloudflare Web Analytics -->
     <script>
-      // Handle Cloudflare analytics errors gracefully
+      // Global error handler to catch any remaining beacon errors gracefully
       window.addEventListener('error', function(e) {
         if (e.message && e.message.includes('beacon.min.js')) {
           console.log('Analytics blocked by browser extension - this is normal');
           e.preventDefault();
+          return false;
         }
       });
-      
-      // Check if analytics are blocked and log a helpful message
-      setTimeout(() => {
-        if (window.performance && window.performance.getEntriesByType) {
-          const resources = window.performance.getEntriesByType('resource');
-          const blockedBeacon = resources.some(resource => 
-            resource.name.includes('beacon.min.js') && resource.transferSize === 0
-          );
-          
-          if (blockedBeacon) {
-            console.log('Analytics blocked - this is normal with ad blockers');
-          }
-        }
-      }, 2000);
     </script>
   </head>
   <body>
