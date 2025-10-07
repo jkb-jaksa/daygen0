@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useAuth } from "./auth/useAuth";
 import { useFooter } from "./contexts/useFooter";
 import { layout, text, buttons, headings } from "./styles/designSystem";
+import useParallaxHover from "./hooks/useParallaxHover";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -64,8 +65,15 @@ function UseCaseCard({
   imageUrl: string;
   imageAlt: string;
 }) {
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
+
   return (
-    <div className="flex flex-col gap-4 parallax-small border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] p-4">
+    <div 
+      className="flex flex-col gap-4 parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] p-4"
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+    >
       <div className="relative overflow-hidden rounded-[1.5rem]">
         <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
       </div>
