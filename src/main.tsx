@@ -7,6 +7,25 @@ import { FooterProvider } from './contexts/FooterContext.tsx'
 import { ToastProvider } from './contexts/ToastProvider.tsx'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
 
+// Handle Cloudflare analytics errors that are blocked by ad blockers
+window.addEventListener('unhandledrejection', (event) => {
+  // Suppress Cloudflare analytics errors that are blocked by ad blockers
+  if (event.reason?.message?.includes('cloudflareinsights.com') || 
+      event.reason?.message?.includes('beacon.min.js')) {
+    event.preventDefault();
+    return;
+  }
+});
+
+// Also handle fetch errors
+window.addEventListener('error', (event) => {
+  if (event.message?.includes('cloudflareinsights.com') || 
+      event.message?.includes('beacon.min.js')) {
+    event.preventDefault();
+    return;
+  }
+});
+
 const App = lazy(() => import('./App'))
 
 export function RootFallback() {
