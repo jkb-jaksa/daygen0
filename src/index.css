@@ -485,9 +485,9 @@ body {
 .home-hero {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-4);
-  text-align: center;
+  text-align: left;
   container: hero / inline-size;
 }
 
@@ -502,7 +502,7 @@ body {
   font-size: var(--font-size-heading-lg);
   line-height: 1.05;
   letter-spacing: -0.01em;
-  margin-inline: auto;
+  margin-inline: 0;
   white-space: nowrap;
 }
 
@@ -510,14 +510,14 @@ body {
   font-size: clamp(1.05rem, 0.95rem + 0.8vw, 1.35rem);
   color: var(--theme-white);
   font-weight: 300;
-  margin-inline: auto;
+  margin-inline: 0;
   max-inline-size: min(var(--line-length-max), 100%);
 }
 
 .home-hero-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--space-3);
 }
 
@@ -537,7 +537,7 @@ picture {
 
 @container hero (width >= 48rem) {
   .home-hero-actions {
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-4);
   }
 
@@ -1821,9 +1821,9 @@ html[data-theme="day"] .home-page {
 .home-hero-copy {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(0.75rem, 2.5vw, 1.25rem);
-  text-align: center;
+  text-align: left;
 }
 
 .home-hero-title-wrapper {
@@ -1852,25 +1852,21 @@ html[data-theme="day"] .home-page {
   text-shadow: 0 8px 32px rgba(184, 192, 192, 0.3);
 }
 
-.home-hero-subheading .text-theme-orange {
-  /* Animation removed */
-}
-
-/* Pulse glow animations removed */
+/* Animation and pulse glow animations removed */
 
 .home-hero-description {
   color: rgba(var(--theme-white-rgb), 1);
   line-height: 1.2;
   max-width: 32rem;
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .home-hero-actions {
   display: grid;
   grid-auto-flow: row;
   gap: 0.75rem;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .home-hero-actions .btn {
@@ -1887,6 +1883,7 @@ html[data-theme="day"] .home-page {
     grid-auto-flow: column;
     grid-auto-columns: max-content;
     gap: 1rem;
+    justify-content: flex-start;
   }
 }
 

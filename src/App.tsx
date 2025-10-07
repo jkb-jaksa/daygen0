@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/useAuth";
 import { useFooter } from "./contexts/useFooter";
-import { layout, text, buttons } from "./styles/designSystem";
+import { layout, text, buttons, headings } from "./styles/designSystem";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -53,6 +53,30 @@ function SectionFallback({ label }: { label: string }) {
   );
 }
 
+function UseCaseCard({
+  title,
+  description,
+  imageUrl,
+  imageAlt,
+}: {
+  title: string;
+  description: string;
+  imageUrl: string;
+  imageAlt: string;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="relative overflow-hidden rounded-[1.5rem]">
+        <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
+      </div>
+      <div className="flex flex-col gap-3 font-raleway">
+        <h2 className="text-2xl font-semibold tracking-tight text-theme-white">{title}</h2>
+        <p className="text-base leading-relaxed text-theme-white/80">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 function Home() {
   const location = useLocation();
 
@@ -73,32 +97,47 @@ function Home() {
 
       <div className="relative z-10">
         {/* Welcome Section */}
-        <section className="relative flex min-h-[100dvh] items-center justify-center pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
-
-          {/* Logo section - positioned better */}
-          <div className="absolute top-[calc(var(--nav-h)+0.5rem)] left-0 right-0 z-20">
-            <div className="container responsive-region">
-              <div className="home-hero-logo text-left">
-                <div className={text.logoText}>
-                  <span className="text-white-gradient">day</span>
-                  <span className="text-white-gradient">gen</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
 
           {/* Content */}
           <div className={`${layout.container} home-hero relative z-10`}>
-            <div className="home-hero-copy">
-              <h1 className={`${text.heroHeading} home-hero-title`}>Your Daily AI Generations.</h1>
-              <p className="home-hero-description">Master all the best Creative AI Tools in one place.</p>
-              <div className="home-hero-actions">
-                <Link to="/learn/use-cases" className={buttons.ghost}>
-                  Learn
-                </Link>
-                <Link to="/create/image" className={buttons.primary}>
-                  Create
-                </Link>
+            <div className="home-hero-copy flex max-w-5xl flex-col gap-10">
+              <div className="flex flex-col gap-3 lg:max-w-xl">
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>Your Daily AI Generations.</h1>
+                <p className={`${headings.tripleHeading.description} text-left mt-0`}>
+                  Master all the best Creative AI Tools in one place.
+                </p>
+                <div className="home-hero-actions flex flex-wrap gap-3">
+                  <Link to="/learn/use-cases" className={buttons.ghost}>
+                    Learn
+                  </Link>
+                  <Link to="/create/image" className={buttons.primary}>
+                    Create
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full flex justify-center mt-10">
+              <div className="grid gap-6 lg:grid-cols-3 max-w-6xl">
+                <UseCaseCard
+                  title="Lifestyle Images"
+                  description="Create inviting scenes for social media, marketing, and everyday storytelling."
+                  imageUrl="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80"
+                  imageAlt="Friends enjoying coffee at a cozy cafe table"
+                />
+                <UseCaseCard
+                  title="Business Images"
+                  description="Design professional visuals for presentations, ads, and polished brand assets."
+                  imageUrl="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80"
+                  imageAlt="Modern office meeting with laptops and charts"
+                />
+                <UseCaseCard
+                  title="Artistic Images"
+                  description="Experiment with bold concepts, surreal styles, and expressive compositions."
+                  imageUrl="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80"
+                  imageAlt="Abstract colorful digital art installation"
+                />
               </div>
             </div>
           </div>
