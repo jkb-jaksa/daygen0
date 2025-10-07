@@ -1252,8 +1252,8 @@ html[data-theme="day"] .card-overlay-gradient {
 
 .mouse-glow::after {
   background: radial-gradient(250px 250px at var(--x) var(--y),
-      rgba(var(--glow-rgb), calc(0.25 * var(--l) * var(--li))),
-      rgba(var(--glow-rgb), calc(0.15 * var(--l) * var(--li))) 45%,
+      rgba(var(--glow-rgb), calc(0.15 * var(--l) * var(--li))),
+      rgba(var(--glow-rgb), calc(0.08 * var(--l) * var(--li))) 45%,
       rgba(var(--glow-rgb), 0) 60%);
   content: "";
   filter: blur(100px);
