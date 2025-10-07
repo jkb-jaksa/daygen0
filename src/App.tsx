@@ -65,13 +65,13 @@ function UseCaseCard({
   imageAlt: string;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 parallax-small border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] p-4">
       <div className="relative overflow-hidden rounded-[1.5rem]">
         <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
       </div>
-      <div className="flex flex-col gap-3 font-raleway">
-        <h2 className="text-2xl font-semibold tracking-tight text-theme-white">{title}</h2>
-        <p className="text-base leading-relaxed text-theme-white/80">{description}</p>
+      <div className="flex flex-col gap-1 font-raleway">
+        <h2 className="text-[20px] font-light tracking-tight text-theme-text">{title}</h2>
+        <p className="text-base font-light leading-relaxed text-theme-white">{description}</p>
       </div>
     </div>
   );
@@ -118,13 +118,13 @@ function Home() {
               </div>
             </div>
 
-            <div className="w-full flex justify-center mt-10">
-              <div className="grid gap-6 lg:grid-cols-3 max-w-6xl">
+            <div className="w-full mt-4">
+              <div className="grid gap-6 lg:grid-cols-3">
                 <UseCaseCard
                   title="Lifestyle Images"
                   description="Create inviting scenes for social media, marketing, and everyday storytelling."
-                  imageUrl="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80"
-                  imageAlt="Friends enjoying coffee at a cozy cafe table"
+                  imageUrl="/lifestyle images.png"
+                  imageAlt="Lifestyle images example"
                 />
                 <UseCaseCard
                   title="Business Images"
@@ -135,8 +135,8 @@ function Home() {
                 <UseCaseCard
                   title="Artistic Images"
                   description="Experiment with bold concepts, surreal styles, and expressive compositions."
-                  imageUrl="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80"
-                  imageAlt="Abstract colorful digital art installation"
+                  imageUrl="/artistic images.png"
+                  imageAlt="Artistic images example"
                 />
               </div>
             </div>
