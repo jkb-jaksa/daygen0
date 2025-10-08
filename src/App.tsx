@@ -235,7 +235,7 @@ function Home() {
                           imageAlt="Lifestyle images example"
                         />
                         <UseCaseCard
-                          title="business images"
+                          title="formal images"
                           description="Design professional visuals for presentations, ads, and polished brand assets."
                           imageUrl="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80"
                           imageAlt="Modern office meeting with laptops and charts"
