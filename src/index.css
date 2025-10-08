@@ -238,8 +238,8 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-orange-2-rgb: 184 192 192;
 
   /* Daygen palette – day (light) */
-  --d-text: #020303;
-  --d-text-rgb: 2 3 3;
+  --d-text: #010202;
+  --d-text-rgb: 1 2 2;
   --d-white: #202424;
   --d-white-rgb: 32 36 36;
   --d-light: #6c7373;
@@ -979,8 +979,8 @@ html[data-theme="day"] .prompt-surface {
     background: linear-gradient(
       150deg,
       rgba(255,255,255,0.95) 0%,
-      rgba(255,255,255,0.88) 40%,
-      rgba(255,255,255,0.78) 100%
+      rgba(255,255,255,0.90) 40%,
+      rgba(255,255,255,0.82) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -1002,8 +1002,8 @@ html[data-theme="day"] .text-white-gradient {
     background: linear-gradient(
       150deg,
       rgba(0,0,0,0.95) 0%,
-      rgba(0,0,0,0.88) 40%,
-      rgba(0,0,0,0.78) 100%
+      rgba(0,0,0,0.90) 40%,
+      rgba(0,0,0,0.82) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -1707,9 +1707,12 @@ select option::-webkit-scrollbar-thumb:hover {
 }
 
 /* Prompt Description Bar Effect */
-.PromptDescriptionBar {
+.PromptDescriptionBar,
+.PromptDescriptionBarTop {
+  --prompt-bar-gradient-direction: to top;
+  --prompt-bar-color-rgb: var(--theme-black-rgb);
   background: linear-gradient(
-    to bottom,
+    var(--prompt-bar-gradient-direction),
     rgba(0, 0, 0, 0.86) 0%,
     rgba(0, 0, 0, 0.81) 10%,
     rgba(0, 0, 0, 0.71) 25%,
@@ -1720,15 +1723,15 @@ select option::-webkit-scrollbar-thumb:hover {
     rgba(0, 0, 0, 0.095) 100%
   );
   background: linear-gradient(
-    to bottom,
-    rgb(var(--theme-black-rgb) / 0.86) 0%,
-    rgb(var(--theme-black-rgb) / 0.81) 10%,
-    rgb(var(--theme-black-rgb) / 0.71) 25%,
-    rgb(var(--theme-black-rgb) / 0.62) 40%,
-    rgb(var(--theme-black-rgb) / 0.43) 60%,
-    rgb(var(--theme-black-rgb) / 0.29) 80%,
-    rgb(var(--theme-black-rgb) / 0.14) 95%,
-    rgb(var(--theme-black-rgb) / 0.095) 100%
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 0.86) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.81) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.71) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.62) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.43) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.29) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.095) 100%
   );
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -1736,33 +1739,14 @@ select option::-webkit-scrollbar-thumb:hover {
   contain: layout style;
 }
 
-.PromptDescriptionBarTop {
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.86) 0%,
-    rgba(0, 0, 0, 0.81) 10%,
-    rgba(0, 0, 0, 0.71) 25%,
-    rgba(0, 0, 0, 0.62) 40%,
-    rgba(0, 0, 0, 0.43) 60%,
-    rgba(0, 0, 0, 0.29) 80%,
-    rgba(0, 0, 0, 0.14) 95%,
-    rgba(0, 0, 0, 0.095) 100%
-  );
-  background: linear-gradient(
-    to top,
-    rgb(var(--theme-black-rgb) / 0.86) 0%,
-    rgb(var(--theme-black-rgb) / 0.81) 10%,
-    rgb(var(--theme-black-rgb) / 0.71) 25%,
-    rgb(var(--theme-black-rgb) / 0.62) 40%,
-    rgb(var(--theme-black-rgb) / 0.43) 60%,
-    rgb(var(--theme-black-rgb) / 0.29) 80%,
-    rgb(var(--theme-black-rgb) / 0.14) 95%,
-    rgb(var(--theme-black-rgb) / 0.095) 100%
-  );
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  height: fit-content;
-  contain: layout style;
+html[data-theme="night"] .PromptDescriptionBar,
+html[data-theme="night"] .PromptDescriptionBarTop {
+  --prompt-bar-gradient-direction: to top;
+}
+
+html[data-theme="day"] .PromptDescriptionBar,
+html[data-theme="day"] .PromptDescriptionBarTop {
+  --prompt-bar-gradient-direction: to bottom;
 }
 
 /* -------------------------------------------------------------
