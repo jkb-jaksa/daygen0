@@ -69,16 +69,16 @@ function UseCaseCard({
 
   return (
     <div 
-      className="flex flex-col gap-3 parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] overflow-hidden"
+      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] overflow-hidden"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >
-      <div className="relative">
-        <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
-      </div>
-      <div className="flex flex-col gap-1 font-raleway px-4 pb-2">
-        <h2 className="text-[20px] font-light tracking-tight text-theme-text">{title}</h2>
+      <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
+      <div className="absolute bottom-2 left-2 right-2 flex items-end">
+        <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
+          <h2 className="text-[18px] font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+        </div>
       </div>
     </div>
   );
@@ -126,7 +126,7 @@ function Home() {
             </div>
 
             <div className="w-full mt-4">
-              <div className="grid gap-4 lg:grid-cols-4">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 <UseCaseCard
                   title="lifestyle images"
                   description="Create inviting scenes for social media, marketing, and everyday storytelling."

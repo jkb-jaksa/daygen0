@@ -1736,6 +1736,35 @@ select option::-webkit-scrollbar-thumb:hover {
   contain: layout style;
 }
 
+.PromptDescriptionBarTop {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.86) 0%,
+    rgba(0, 0, 0, 0.81) 10%,
+    rgba(0, 0, 0, 0.71) 25%,
+    rgba(0, 0, 0, 0.62) 40%,
+    rgba(0, 0, 0, 0.43) 60%,
+    rgba(0, 0, 0, 0.29) 80%,
+    rgba(0, 0, 0, 0.14) 95%,
+    rgba(0, 0, 0, 0.095) 100%
+  );
+  background: linear-gradient(
+    to top,
+    rgb(var(--theme-black-rgb) / 0.86) 0%,
+    rgb(var(--theme-black-rgb) / 0.81) 10%,
+    rgb(var(--theme-black-rgb) / 0.71) 25%,
+    rgb(var(--theme-black-rgb) / 0.62) 40%,
+    rgb(var(--theme-black-rgb) / 0.43) 60%,
+    rgb(var(--theme-black-rgb) / 0.29) 80%,
+    rgb(var(--theme-black-rgb) / 0.14) 95%,
+    rgb(var(--theme-black-rgb) / 0.095) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  height: fit-content;
+  contain: layout style;
+}
+
 /* -------------------------------------------------------------
    Homepage hero redesign
    ------------------------------------------------------------- */
