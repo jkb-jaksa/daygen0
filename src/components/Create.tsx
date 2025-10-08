@@ -6354,7 +6354,6 @@ const handleGenerate = async () => {
                       className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
                       <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
