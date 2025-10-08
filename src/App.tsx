@@ -69,7 +69,7 @@ function UseCaseCard({
 
   return (
     <div 
-      className="flex flex-col gap-4 parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] overflow-hidden"
+      className="flex flex-col gap-3 parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] overflow-hidden"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -77,7 +77,7 @@ function UseCaseCard({
       <div className="relative">
         <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
       </div>
-      <div className="flex flex-col gap-1 font-raleway px-4 pb-4">
+      <div className="flex flex-col gap-1 font-raleway px-4 pb-2">
         <h2 className="text-[20px] font-light tracking-tight text-theme-text">{title}</h2>
       </div>
     </div>
