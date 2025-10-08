@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/useAuth";
 import { useFooter } from "./contexts/useFooter";
-import { layout, text, buttons, headings } from "./styles/designSystem";
+import { layout, text, buttons, headings, glass } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
+import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -84,8 +85,31 @@ function UseCaseCard({
   );
 }
 
+const HOME_CATEGORIES = [
+  { id: "text", label: "text", Icon: EditIcon },
+  { id: "image", label: "image", Icon: ImageIcon },
+  { id: "video", label: "video", Icon: VideoIcon },
+  { id: "avatars", label: "avatars", Icon: Users },
+  { id: "audio", label: "audio", Icon: Volume2 },
+] as const;
+
+type HomeCategoryId = (typeof HOME_CATEGORIES)[number]["id"];
+
+function ComingSoonPanel({ label, className }: { label: string; className?: string }) {
+  const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+  return (
+    <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""}`}>
+      <h2 className="text-xl font-raleway font-light text-theme-text">{formattedLabel}</h2>
+      <p className="mt-2 text-sm font-raleway text-theme-white">Coming soon.</p>
+    </div>
+  );
+}
+
 function Home() {
   const location = useLocation();
+  const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (location.hash === "#faq" && typeof window !== "undefined") {
@@ -99,82 +123,165 @@ function Home() {
     return undefined;
   }, [location.hash]);
 
+  const activeCategoryInfo = HOME_CATEGORIES.find((category) => category.id === activeCategory);
+  const activeCategoryLabel = activeCategoryInfo ? activeCategoryInfo.label : activeCategory;
+  const isImageCategory = activeCategory === "image";
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const sidebar = sidebarRef.current;
+    const content = contentRef.current;
+
+    if (!sidebar || !content) {
+      return undefined;
+    }
+
+    const updateHeight = () => {
+      if (window.innerWidth < 1024) {
+        sidebar.style.removeProperty("minHeight");
+        return;
+      }
+      sidebar.style.minHeight = `${content.offsetHeight}px`;
+    };
+
+    updateHeight();
+
+    let resizeObserver: ResizeObserver | undefined;
+
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        updateHeight();
+      });
+      resizeObserver.observe(content);
+    }
+
+    window.addEventListener("resize", updateHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      sidebar.style.removeProperty("minHeight");
+    };
+  }, [activeCategory]);
+
   return (
     <div className={`${layout.page} home-page`}>
-
       <div className="relative z-10">
-        {/* Welcome Section */}
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
-
-          {/* Content */}
-          <div className={`${layout.container} home-hero relative z-10`}>
-            <div className="home-hero-copy flex max-w-5xl flex-col gap-10">
-              <div className="flex flex-col gap-3 lg:max-w-xl">
-                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>Your Daily AI Generations.</h1>
-                <p className={`${headings.tripleHeading.description} text-left mt-0`}>
-                  Master all the best Creative AI Tools in one place.
-                </p>
-                <div className="home-hero-actions flex flex-wrap gap-3">
-                  <Link to="/learn/use-cases" className={buttons.ghost}>
-                    Learn
-                  </Link>
-                  <Link to="/create/image" className={buttons.primary}>
-                    Create
-                  </Link>
+          <div className={`${layout.container}`}>
+            <div className="flex flex-col gap-8">
+              <div className="home-hero relative z-10">
+                <div className="home-hero-copy flex max-w-5xl flex-col gap-2">
+                    <div className="flex flex-col gap-2 lg:max-w-xl">
+                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
+                      Your Daily AI Generations.
+                    </h1>
+                    <p className={`${headings.tripleHeading.description} text-left mt-0`}>
+                      Master all the best Creative AI Tools in one place.
+                    </p>
+                    <div className="home-hero-actions flex flex-wrap gap-3">
+                      <Link to="/learn/use-cases" className={buttons.ghost}>
+                        Learn
+                      </Link>
+                      <Link to="/create/image" className={buttons.primary}>
+                        Create
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="w-full mt-4">
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                <UseCaseCard
-                  title="lifestyle images"
-                  description="Create inviting scenes for social media, marketing, and everyday storytelling."
-                  imageUrl="/lifestyle images.png"
-                  imageAlt="Lifestyle images example"
-                />
-                <UseCaseCard
-                  title="business images"
-                  description="Design professional visuals for presentations, ads, and polished brand assets."
-                  imageUrl="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80"
-                  imageAlt="Modern office meeting with laptops and charts"
-                />
-                <UseCaseCard
-                  title="artistic images"
-                  description="Experiment with bold concepts, surreal styles, and expressive compositions."
-                  imageUrl="/artistic images.png"
-                  imageAlt="Artistic images example"
-                />
-                <UseCaseCard
-                  title="product visualizations"
-                  description="Render photorealistic product shots to showcase every angle and finish with ease."
-                  imageUrl="/product visualizations.png"
-                  imageAlt="Product visualizations example"
-                />
-                <UseCaseCard
-                  title="virtual try-on"
-                  description="Simulate outfits, accessories, and cosmetics on lifelike models for instant previews."
-                  imageUrl="/virtual try-on.png"
-                  imageAlt="Virtual try-on example"
-                />
-                <UseCaseCard
-                  title="brand identity kits"
-                  description="Develop cohesive logos, palettes, and collateral that keep every touchpoint on-brand."
-                  imageUrl="/brand identity.png"
-                  imageAlt="Brand identity example"
-                />
-                <UseCaseCard
-                  title="infographics"
-                  description="Turn complex data into clear, compelling visuals for decks, reports, and social posts."
-                  imageUrl="/infographics.png"
-                  imageAlt="Infographics example"
-                />
-                <UseCaseCard
-                  title="upscaling"
-                  description="Enhance resolution and detail to breathe new life into legacy or low-res assets."
-                  imageUrl="/upscaling.png"
-                  imageAlt="Upscaling example"
-                />
+              <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:items-stretch">
+                <nav
+                  className={`${glass.surface} flex flex-col rounded-3xl border-theme-dark p-4 lg:h-full`}
+                  ref={sidebarRef}
+                  aria-label="Modality categories"
+                >
+                  <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
+                    {HOME_CATEGORIES.map((category) => {
+                      const isActive = category.id === activeCategory;
+                      const Icon = category.Icon;
+                      return (
+                        <li key={category.id}>
+                          <button
+                            type="button"
+                            onClick={() => setActiveCategory(category.id)}
+                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
+                              isActive
+                                ? "border border-theme-mid bg-theme-white/10 text-theme-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                                : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 flex-shrink-0 text-current" aria-hidden="true" />
+                            {category.label}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
+                <div className="flex-1 lg:h-full" ref={contentRef}>
+                  {isImageCategory ? (
+                    <div className="w-full">
+                      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                        <UseCaseCard
+                          title="lifestyle images"
+                          description="Create inviting scenes for social media, marketing, and everyday storytelling."
+                          imageUrl="/lifestyle images.png"
+                          imageAlt="Lifestyle images example"
+                        />
+                        <UseCaseCard
+                          title="business images"
+                          description="Design professional visuals for presentations, ads, and polished brand assets."
+                          imageUrl="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80"
+                          imageAlt="Modern office meeting with laptops and charts"
+                        />
+                        <UseCaseCard
+                          title="artistic images"
+                          description="Experiment with bold concepts, surreal styles, and expressive compositions."
+                          imageUrl="/artistic images.png"
+                          imageAlt="Artistic images example"
+                        />
+                        <UseCaseCard
+                          title="product visualizations"
+                          description="Render photorealistic product shots to showcase every angle and finish with ease."
+                          imageUrl="/product visualizations.png"
+                          imageAlt="Product visualizations example"
+                        />
+                        <UseCaseCard
+                          title="virtual try-on"
+                          description="Simulate outfits, accessories, and cosmetics on lifelike models for instant previews."
+                          imageUrl="/virtual try-on.png"
+                          imageAlt="Virtual try-on example"
+                        />
+                        <UseCaseCard
+                          title="brand identity kits"
+                          description="Develop cohesive logos, palettes, and collateral that keep every touchpoint on-brand."
+                          imageUrl="/brand identity.png"
+                          imageAlt="Brand identity example"
+                        />
+                        <UseCaseCard
+                          title="infographics"
+                          description="Turn complex data into clear, compelling visuals for decks, reports, and social posts."
+                          imageUrl="/infographics.png"
+                          imageAlt="Infographics example"
+                        />
+                        <UseCaseCard
+                          title="upscaling"
+                          description="Enhance resolution and detail to breathe new life into legacy or low-res assets."
+                          imageUrl="/upscaling.png"
+                          imageAlt="Upscaling example"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <ComingSoonPanel label={activeCategoryLabel} className="lg:h-full" />
+                  )}
+                </div>
               </div>
             </div>
           </div>
