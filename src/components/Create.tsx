@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -562,11 +562,11 @@ const Create: React.FC = () => {
   const [avatarName, setAvatarName] = useState("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
-  const isGemini = selectedModel === "gemini-2.5-flash-image";
-  const isFlux = selectedModel === "flux-1.1";
-  const isChatGPT = selectedModel === "chatgpt-image";
-  const isIdeogram = selectedModel === "ideogram";
+const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
+const isGemini = selectedModel === "gemini-2.5-flash-image";
+const isFlux = selectedModel === "flux-1.1";
+const isChatGPT = selectedModel === "chatgpt-image";
+const isIdeogram = selectedModel === "ideogram";
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4";
   const isRunwayVideo = selectedModel === "runway-video-gen4";
@@ -576,9 +576,10 @@ const Create: React.FC = () => {
   const isReve = selectedModel === "reve-image";
   const isRecraft = selectedModel === "recraft";
   const isVeo = selectedModel === "veo-3";
-  const isSeedance = selectedModel === "seedance-1.0-pro";
-  const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
-  const isLumaRay = selectedModel === "luma-ray-2";
+const isSeedance = selectedModel === "seedance-1.0-pro";
+const isLumaPhoton = selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
+const isLumaRay = selectedModel === "luma-ray-2";
+const [batchSize, setBatchSize] = useState<number>(1);
   const isComingSoon = !isGemini && !isFlux && !isChatGPT && !isIdeogram && !isQwen && !isRunway && !isRunwayVideo && !isWanVideo && !isHailuoVideo && !isKlingVideo && !isReve && !isRecraft && !isVeo && !isSeedance && !isLumaPhoton && !isLumaRay;
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
@@ -3705,7 +3706,7 @@ const handleGenerate = async () => {
 
     const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const modelForGeneration = selectedModel;
-    debugLog('[Create] handleGenerateImage called with model:', modelForGeneration);
+  debugLog('[Create] handleGenerateImage called', { model: modelForGeneration, batchSize: effectiveBatchSize });
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
     if (selectedAvatar) {
@@ -3719,11 +3720,12 @@ const handleGenerate = async () => {
     const temperatureForGeneration = temperature;
     const outputLengthForGeneration = outputLength;
     const topPForGeneration = topP;
-    const qwenSizeForGeneration = qwenSize;
-    const qwenPromptExtendForGeneration = qwenPromptExtend;
-    const qwenWatermarkForGeneration = qwenWatermark;
+  const qwenSizeForGeneration = qwenSize;
+  const qwenPromptExtendForGeneration = qwenPromptExtend;
+  const qwenWatermarkForGeneration = qwenWatermark;
+  const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
 
-    const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration, startedAt: Date.now() };
+  const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration, startedAt: Date.now() };
     
     // Only add to activeGenerationQueue if we're not handling video models that manage their own state
     if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"))) {
@@ -3739,17 +3741,23 @@ const handleGenerate = async () => {
     }, 1000);
 
     try {
-      // Convert uploaded image to base64 if available
-      let imageData: string | undefined;
-      if (fileForGeneration) {
-        imageData = await new Promise<string>((resolve) => {
+      const fileToDataUrl = (file: File) =>
+        new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(fileForGeneration);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
         });
+
+      let imageData: string | undefined;
+      if (fileForGeneration) {
+        imageData = await fileToDataUrl(fileForGeneration);
       }
 
-      let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
+      const referenceFilesForGeneration = referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT);
+      const referenceDataUrls = referenceFilesForGeneration.length
+        ? await Promise.all(referenceFilesForGeneration.map(fileToDataUrl))
+        : [];
 
       const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image";
       const isFluxModel = modelForGeneration === "flux-1.1";
@@ -3761,7 +3769,9 @@ const handleGenerate = async () => {
       const isWanVideoModel = modelForGeneration === "wan-video-2.2";
       const isHailuoVideoModel = modelForGeneration === "hailuo-02";
       const isReveModel = modelForGeneration === "reve-image";
-      
+      const isRecraftModel = modelForGeneration === "recraft";
+      const isLumaPhotonModel = modelForGeneration === "luma-photon-1" || modelForGeneration === "luma-photon-flash-1";
+
       debugLog('[Create] Model checks:', { 
         modelForGeneration, 
         isRunwayVideoModel, 
@@ -3771,221 +3781,193 @@ const handleGenerate = async () => {
         isFluxModel, 
         isChatGPTModel 
       });
-      const isRecraftModel = modelForGeneration === "recraft";
 
-      if (isGeminiModel) {
-        // Use Gemini generation
-        img = await generateGeminiImage({
-          prompt: trimmedPrompt,
-          model: modelForGeneration,
-          imageData,
-          references: await (async () => {
-            if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result as string);
-              r.readAsDataURL(f);
-            })));
-            return arr;
-          })(),
-          temperature: temperatureForGeneration,
-          outputLength: outputLengthForGeneration,
-          topP: topPForGeneration,
-          aspectRatio: geminiAspectRatio,
-          avatarId: selectedAvatar?.id,
-        });
-      } else if (isChatGPTModel) {
-        // Use ChatGPT generation
-        img = await generateChatGPTImage({
-          prompt: trimmedPrompt,
-          size: '1024x1024',
-          quality: 'high',
-          background: 'transparent',
-          avatarId: selectedAvatar?.id,
-        });
-      } else if (isIdeogramModel) {
-        // Use Ideogram generation
-        const ideogramResult = await generateIdeogramImage({
-          prompt: trimmedPrompt,
-          aspect_ratio: '1:1',
-          rendering_speed: 'DEFAULT',
-          num_images: 1,
-          avatarId: selectedAvatar?.id,
-        });
-        if (!ideogramResult || ideogramResult.length === 0) {
-          throw new Error('Ideogram generation failed');
-        }
-        img = ideogramResult[0]; // Take the first generated image
-      } else if (isQwenModel) {
-        // Use Qwen generation
-        const qwenResult = await generateQwenImage({
-          prompt: trimmedPrompt,
-          size: qwenSizeForGeneration,
-          prompt_extend: qwenPromptExtendForGeneration,
-          watermark: qwenWatermarkForGeneration,
-          avatarId: selectedAvatar?.id,
-        });
-        if (!qwenResult || qwenResult.length === 0) {
-          throw new Error('Qwen generation failed');
-        }
-        img = qwenResult[0]; // Take the first generated image
-      } else if (isRunwayModel) {
-        // Use Runway generation with selected model variant
-        const runwayResult = await generateRunwayImage({
-          prompt: trimmedPrompt,
-          model: runwayModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
-          uiModel: runwayModel, // Pass the UI model ID for display
-          references: await (async () => {
-            if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result as string);
-              r.readAsDataURL(f);
-            })));
-            return arr;
-          })(),
-          ratio: "1920:1080", // Default ratio, could be made configurable
-          avatarId: selectedAvatar?.id,
-        });
-        img = runwayResult;
-      } else if (isRunwayVideoModel) {
-        throw new Error('Runway video generation is not yet supported in this backend integration.');
-      } else if (isReveModel) {
-        // Use Reve generation
-        const reveResult = await generateReveImage({
-          prompt: trimmedPrompt,
-          model: "reve-image-1.0",
-          width: 1024,
-          height: 1024,
-          references: await (async () => {
-            if (referencesForGeneration.length === 0) return undefined;
-            const arr = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result as string);
-              r.readAsDataURL(f);
-            })));
-            return arr;
-          })(),
-          avatarId: selectedAvatar?.id,
-        });
-        img = reveResult;
-      } else if (isRecraftModel) {
-        // Use Recraft generation via unified API with selected model variant
-        if (!token) {
-          throw new Error('Please sign in to generate images.');
-        }
+      const runSingleGeneration = async () => {
+        let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
-        const response = await fetch(getApiUrl('/api/image/recraft'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
+        if (isGeminiModel) {
+          img = await generateGeminiImage({
+            prompt: trimmedPrompt,
+            model: modelForGeneration,
+            imageData,
+            references: referenceDataUrls.length ? referenceDataUrls : undefined,
+            temperature: temperatureForGeneration,
+            outputLength: outputLengthForGeneration,
+            topP: topPForGeneration,
+            aspectRatio: geminiAspectRatio,
+            avatarId: selectedAvatar?.id,
+          });
+        } else if (isFluxModel) {
+          const fluxParams: FluxImageGenerationOptions = {
+            prompt: trimmedPrompt,
+            model: fluxModel as FluxModel,
+            width: 1024,
+            height: 1024,
+            useWebhook: false,
+            references: referenceDataUrls.length ? referenceDataUrls : undefined,
+            avatarId: selectedAvatar?.id,
+          };
+
+          if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && imageData) {
+            fluxParams.input_image = imageData;
+          }
+
+          if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && referenceDataUrls.length > 0) {
+            if (referenceDataUrls[0]) fluxParams.input_image_2 = referenceDataUrls[0];
+            if (referenceDataUrls[1]) fluxParams.input_image_3 = referenceDataUrls[1];
+            if (referenceDataUrls[2]) fluxParams.input_image_4 = referenceDataUrls[2];
+          }
+
+          const fluxResult = await generateFluxImage(fluxParams);
+          if (!fluxResult) {
+            throw new Error('Flux generation failed');
+          }
+          img = fluxResult;
+        } else if (isChatGPTModel) {
+          img = await generateChatGPTImage({
+            prompt: trimmedPrompt,
+            size: '1024x1024',
+            quality: 'high',
+            background: 'transparent',
+            avatarId: selectedAvatar?.id,
+          });
+        } else if (isIdeogramModel) {
+          const ideogramResult = await generateIdeogramImage({
+            prompt: trimmedPrompt,
+            aspect_ratio: '1:1',
+            rendering_speed: 'DEFAULT',
+            num_images: 1,
+            avatarId: selectedAvatar?.id,
+          });
+          if (!ideogramResult || ideogramResult.length === 0) {
+            throw new Error('Ideogram generation failed');
+          }
+          img = ideogramResult[0];
+        } else if (isQwenModel) {
+          const qwenResult = await generateQwenImage({
+            prompt: trimmedPrompt,
+            size: qwenSizeForGeneration,
+            prompt_extend: qwenPromptExtendForGeneration,
+            watermark: qwenWatermarkForGeneration,
+            avatarId: selectedAvatar?.id,
+          });
+          if (!qwenResult || qwenResult.length === 0) {
+            throw new Error('Qwen generation failed');
+          }
+          img = qwenResult[0];
+        } else if (isRunwayModel) {
+          const runwayResult = await generateRunwayImage({
+            prompt: trimmedPrompt,
+            model: runwayModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
+            uiModel: runwayModel,
+            references: referenceDataUrls.length ? referenceDataUrls : undefined,
+            ratio: "1920:1080",
+            avatarId: selectedAvatar?.id,
+          });
+          img = runwayResult;
+        } else if (isRunwayVideoModel) {
+          throw new Error('Runway video generation is not yet supported in this backend integration.');
+        } else if (isReveModel) {
+          const reveResult = await generateReveImage({
+            prompt: trimmedPrompt,
+            model: "reve-image-1.0",
+            width: 1024,
+            height: 1024,
+            references: referenceDataUrls.length ? referenceDataUrls : undefined,
+            avatarId: selectedAvatar?.id,
+          });
+          img = reveResult;
+        } else if (isRecraftModel) {
+          if (!token) {
+            throw new Error('Please sign in to generate images.');
+          }
+
+          const response = await fetch(getApiUrl('/api/image/recraft'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              prompt: trimmedPrompt,
+              model: recraftModel,
+              providerOptions: {
+                style: 'realistic_image',
+                size: '1024x1024',
+                n: 1,
+                response_format: 'url',
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Recraft API error: ${errorData.error || response.statusText}`);
+          }
+
+          const result = await response.json();
+          const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
+          if (!dataUrl) {
+            throw new Error('No image returned from Recraft');
+          }
+
+          img = {
+            url: dataUrl,
             prompt: trimmedPrompt,
             model: recraftModel,
-            providerOptions: {
-              style: 'realistic_image',
-              size: '1024x1024',
-              n: 1,
-              response_format: 'url',
-            },
-          }),
-        });
+            timestamp: new Date().toISOString(),
+            ownerId: user?.id,
+            avatarId: selectedAvatar?.id,
+          };
+        } else if (isLumaPhotonModel) {
+          const resolvedLumaModel =
+            modelForGeneration === "luma-photon-flash-1"
+              ? "luma-photon-flash-1"
+              : lumaPhotonModel;
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Recraft API error: ${errorData.error || response.statusText}`);
+          const lumaResult = await generateLumaImage({
+            prompt: trimmedPrompt,
+            model: resolvedLumaModel,
+            avatarId: selectedAvatar?.id,
+          });
+
+          if (!lumaResult) {
+            throw new Error('Luma generation failed.');
+          }
+
+          img = lumaResult;
+        } else if (isWanVideoModel) {
+          throw new Error('Wan video generation is not supported in image mode.');
+        } else if (isHailuoVideoModel) {
+          throw new Error('Hailuo video generation is not supported in image mode.');
+        } else {
+          throw new Error('Unsupported model');
         }
 
-        const result = await response.json();
-        const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
-        if (!dataUrl) {
-          throw new Error('No image returned from Recraft');
+        return img;
+      };
+
+      let successfulGenerations = 0;
+      let promptSaved = false;
+
+      for (let iteration = 0; iteration < effectiveBatchSize; iteration += 1) {
+        debugLog('[Create] Starting batch item', { iteration: iteration + 1, total: effectiveBatchSize, model: modelForGeneration });
+        const img = await runSingleGeneration();
+        if (img?.url) {
+          successfulGenerations += 1;
+          debugLog('New image generated, refreshing gallery...');
+          await fetchGalleryImages();
+
+          if (!promptSaved) {
+            addPrompt(trimmedPrompt);
+            promptSaved = true;
+          }
         }
-
-        img = {
-          url: dataUrl,
-          prompt: trimmedPrompt,
-          model: recraftModel,
-          timestamp: new Date().toISOString(),
-          ownerId: user?.id,
-          avatarId: selectedAvatar?.id,
-        };
-      } else if (isFluxModel) {
-        // Use Flux generation with selected model from settings
-        const fluxParams: FluxImageGenerationOptions = {
-          prompt: trimmedPrompt,
-          model: fluxModel as FluxModel,
-          width: 1024,
-          height: 1024,
-          useWebhook: false, // Use polling for local development
-          avatarId: selectedAvatar?.id,
-        };
-
-        // Add input image for Kontext models
-        if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && imageData) {
-          fluxParams.input_image = imageData;
-        }
-
-        // Add reference images as additional input images for Kontext
-        if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && referencesForGeneration.length > 0) {
-          const referenceImages = await Promise.all(referencesForGeneration.slice(0, DEFAULT_REFERENCE_LIMIT).map(f => new Promise<string>((resolve) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result as string);
-            r.readAsDataURL(f);
-          })));
-          
-          if (referenceImages[0]) fluxParams.input_image_2 = referenceImages[0];
-          if (referenceImages[1]) fluxParams.input_image_3 = referenceImages[1];
-          if (referenceImages[2]) fluxParams.input_image_4 = referenceImages[2];
-        }
-
-        const fluxResult = await generateFluxImage(fluxParams);
-        if (!fluxResult) {
-          throw new Error('Flux generation failed');
-        }
-        img = fluxResult;
-      } else if (isLumaPhoton) {
-        const resolvedLumaModel =
-          selectedModel === "luma-photon-flash-1"
-            ? "luma-photon-flash-1"
-            : lumaPhotonModel;
-
-        const lumaResult = await generateLumaImage({
-          prompt: trimmedPrompt,
-          model: resolvedLumaModel,
-          avatarId: selectedAvatar?.id,
-        });
-
-        if (!lumaResult) {
-          throw new Error('Luma generation failed.');
-        }
-
-        img = lumaResult;
-      } else {
-        throw new Error('Unsupported model');
       }
 
-      // Update gallery with newest first, unique by url, capped to 50 (increased limit)
-      if (img?.url) {
-        // Compress the image to reduce storage size
-        // const compressedUrl = await compressDataUrl(img.url);
-        
-        // Add ownerId to the image and strip heavy references field
-        // const imgWithOwner: GeneratedImage = {
-        //   ...img,
-        //   url: compressedUrl,
-        //   ownerId: user?.id,
-        //   references: undefined, // strip heavy field
-        //   avatarId: selectedAvatar?.id ?? ("avatarId" in img ? img.avatarId : undefined),
-        // };
-        // Refresh gallery to show the new image immediately
-        debugLog('New image generated, refreshing gallery...');
-        await fetchGalleryImages();
-        
-        // Save prompt to history on successful generation
-        addPrompt(trimmedPrompt);
+      if (successfulGenerations > 1) {
+        setCopyNotification(`${successfulGenerations} images generated!`);
+        setTimeout(() => setCopyNotification(null), 2000);
       }
     } catch (error) {
       debugError('Error generating image:', error);
@@ -6348,14 +6330,10 @@ const handleGenerate = async () => {
                   <button
                     ref={settingsRef}
                     type="button"
-                    onClick={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? toggleSettings : () => alert('Settings are only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Kling, Hailuo 02, Seedance, Recraft, and Luma models.')}
-                    title={(isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay) ? "Settings" : "Settings only available for Gemini, Flux, Veo, Runway, Wan 2.2 Video, Kling, Hailuo 02, Seedance, Recraft, and Luma models"}
+                    onClick={toggleSettings}
+                    title="Settings"
                     aria-label="Settings"
-                    className={`grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 ${
-                      (isGemini || isFlux || isVeo || isRunway || isWanVideo || isHailuoVideo || isKlingVideo || isSeedance || isRecraft || isLumaPhoton || isLumaRay)
-                        ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` 
-                        : "bg-n-black/20 text-n-white/40 border border-n-mid/40 cursor-not-allowed"
-                    }`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
                   >
                     <Settings className="w-4 h-4 text-n-text" />
                   </button>
@@ -6367,6 +6345,12 @@ const handleGenerate = async () => {
                         anchorRef={settingsRef}
                         open={isSettingsOpen}
                         onClose={() => setIsSettingsOpen(false)}
+                        common={{
+                          batchSize,
+                          onBatchSizeChange: value => setBatchSize(value),
+                          min: 1,
+                          max: 4,
+                        }}
                         flux={{
                           enabled: isFlux,
                           model: fluxModel,
@@ -6501,7 +6485,7 @@ const handleGenerate = async () => {
                 </div>
 
                 {/* Model Selector */}
-                <div className="relative model-selector">
+                <div className="relative model-selector flex-shrink-0">
                   <button
                     ref={modelSelectorRef}
                     type="button"
@@ -6524,7 +6508,7 @@ const handleGenerate = async () => {
                         return <Icon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />;
                       }
                     })()}
-                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
+                    <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
                   </button>
                   
                   {/* Model Dropdown Portal */}
@@ -6883,6 +6867,50 @@ const handleGenerate = async () => {
                     })
                     )}
                   </ModelMenuPortal>
+                </div>
+                <div className="relative batch-size-selector hidden lg:flex flex-shrink-0">
+                  <div
+                    role="group"
+                    aria-label="Batch size"
+                    className={`${glass.promptBorderless} flex items-center gap-1 h-8 px-2 rounded-full text-n-text`}
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(e.currentTarget, 'batch-size-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('batch-size-tooltip');
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setBatchSize(prev => Math.max(1, prev - 1))}
+                      disabled={batchSize === 1}
+                      aria-label="Decrease batch size"
+                      title="Decrease batch size"
+                      className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
+                      {batchSize}/4
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setBatchSize(prev => Math.min(4, prev + 1))}
+                      disabled={batchSize === 4}
+                      aria-label="Increase batch size"
+                      title="Increase batch size"
+                      className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div
+                    data-tooltip-for="batch-size-tooltip"
+                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '-8px' }}
+                  >
+                    Batch size
+                  </div>
                 </div>
               </div>
               
