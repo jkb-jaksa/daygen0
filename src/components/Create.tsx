@@ -6872,7 +6872,7 @@ const handleGenerate = async () => {
                   <div
                     role="group"
                     aria-label="Batch size"
-                    className={`${glass.promptBorderless} flex items-center gap-1 h-8 px-2 rounded-full text-n-text`}
+                    className={`${glass.promptBorderless} flex items-center gap-0 h-8 px-2 rounded-full text-n-text`}
                     onMouseEnter={(e) => {
                       showHoverTooltip(e.currentTarget, 'batch-size-tooltip');
                     }}
@@ -6891,7 +6891,7 @@ const handleGenerate = async () => {
                       <Minus className="h-3.5 w-3.5" />
                     </button>
                     <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
-                      {batchSize}/4
+                      {batchSize}
                     </span>
                     <button
                       type="button"
