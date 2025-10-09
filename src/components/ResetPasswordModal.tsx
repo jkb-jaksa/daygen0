@@ -77,7 +77,7 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
             <h3 className="text-theme-text font-raleway font-normal text-xl">
               {success ? "Password updated" : "Set new password"}
             </h3>
-            <p className="text-theme-light text-sm font-raleway font-light">
+            <p className="text-theme-light text-sm font-raleway font-normal">
               {success 
                 ? "Your password has been successfully updated." 
                 : "Enter your new password below."

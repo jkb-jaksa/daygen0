@@ -45,7 +45,7 @@ function CreateSidebarComponent({
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                   isActive ? "text-theme-light hover:text-theme-text" : "text-theme-white hover:text-theme-text"
                 }`}
                 aria-pressed={isActive}
@@ -73,7 +73,7 @@ function CreateSidebarComponent({
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
                   isActive ? "text-theme-light hover:text-theme-text" : "text-theme-white hover:text-theme-text"
                 }`}
                 aria-pressed={isActive}
@@ -91,7 +91,7 @@ function CreateSidebarComponent({
           <button
             type="button"
             onClick={onOpenMyFolders}
-            className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+            className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-normal appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
               activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
                 ? "text-theme-light hover:text-theme-text"
                 : "text-theme-white hover:text-theme-text"

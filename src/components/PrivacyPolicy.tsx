@@ -26,7 +26,7 @@ const POLICY_SECTIONS = [
 export default function PrivacyPolicy() {
   return (
     <main className={`${layout.page}`}> 
-      <section className={`${layout.container} pt-[calc(var(--nav-h)+2.5rem)] pb-24`}> 
+      <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24`}> 
         <header className="max-w-3xl mb-12">
           <h1 className={`${text.sectionHeading} text-theme-white mb-4`}>Privacy Policy</h1>
           <p className="text-theme-white/70 font-raleway text-lg">

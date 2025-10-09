@@ -76,13 +76,13 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-theme-black-subtle text-theme-text">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pt-[calc(var(--nav-h)+2.5rem)] pb-16 lg:flex-row lg:items-stretch lg:justify-between lg:gap-20 lg:px-8">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pt-[calc(var(--nav-h,4rem)+16px)] pb-16 lg:flex-row lg:items-stretch lg:justify-between lg:gap-20 lg:px-8">
         <section className="flex w-full flex-col justify-start gap-8 lg:max-w-xl mt-2">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-theme-mid/40 bg-theme-black/40 px-4 py-2 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-theme-white/70">
             Login required
           </span>
           <div className="space-y-4 -mt-4">
-            <h1 className="text-4xl font-light leading-tight text-theme-text font-raleway sm:text-5xl">{heading}</h1>
+            <h1 className="text-4xl font-normal leading-tight text-theme-text font-raleway sm:text-5xl">{heading}</h1>
             <p className="max-w-xl text-base font-raleway leading-relaxed text-theme-white">{subheading}</p>
           </div>
           <ul className="space-y-4">
@@ -492,7 +492,7 @@ export default function Account() {
   const showReturnButton = user && normalizedRawNext && decodedNextPath;
 
   return (
-    <main className="min-h-screen text-theme-text px-6 lg:px-8 pt-[calc(var(--nav-h)+0.5rem)] pb-8">
+    <main className="min-h-screen text-theme-text px-6 lg:px-8 pt-[calc(var(--nav-h,4rem)+16px)] pb-8">
       <header className="max-w-5xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

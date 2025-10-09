@@ -32,7 +32,7 @@ export default function LearnToolPage() {
   return (
     <div className={layout.page}>
       <div className={layout.backdrop} aria-hidden />
-      <section className="relative z-10 py-12 sm:py-16 lg:py-20">
+      <section className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
         <div className={layout.container}>
           <Link
             to="/learn/tools"
@@ -58,10 +58,10 @@ export default function LearnToolPage() {
                   <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-theme-white/60 font-raleway">
                     Learn · Tool guide
                   </p>
-                  <h1 className="text-3xl font-raleway font-light text-theme-text sm:text-4xl">
+                  <h1 className="text-3xl font-raleway font-normal text-theme-text sm:text-4xl">
                     {toolContent.name}
                   </h1>
-                  <p className="text-base font-raleway font-light text-theme-white sm:text-lg">
+                  <p className="text-base font-raleway font-normal text-theme-white sm:text-lg">
                     {toolContent.tagline}
                   </p>
                 </div>

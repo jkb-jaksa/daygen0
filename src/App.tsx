@@ -99,7 +99,7 @@ function ComingSoonPanel({ label, className }: { label: string; className?: stri
   const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
   return (
     <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""}`}>
-      <h2 className="text-xl font-raleway font-light text-theme-text">{formattedLabel}</h2>
+      <h2 className="text-xl font-raleway font-normal text-theme-text">{formattedLabel}</h2>
       <p className="mt-2 text-sm font-raleway text-theme-white">Coming soon.</p>
     </div>
   );
@@ -172,7 +172,7 @@ function Home() {
   return (
     <div className={`${layout.page} home-page`}>
       <div className="relative z-10">
-        <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
+        <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
             <div className="flex flex-col gap-4">
               <div className="home-hero relative z-10">

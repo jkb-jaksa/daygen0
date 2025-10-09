@@ -325,7 +325,7 @@ export function SettingsMenu({
       <div className="text-base font-raleway text-theme-text">Generation Settings</div>
       <div className="space-y-2">
         <label className="block text-xs font-raleway text-theme-white/80">Batch size (images per generation)</label>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => adjustBatchSize(-1)}
@@ -335,7 +335,7 @@ export function SettingsMenu({
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
-          <span className="min-w-[3.5rem] text-center text-sm font-raleway text-theme-white/90">
+          <span className="min-w-[2.5rem] text-center text-sm font-raleway text-theme-white/90">
             {batchSize}/{max}
           </span>
           <button

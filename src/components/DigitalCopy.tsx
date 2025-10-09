@@ -221,7 +221,7 @@ export default function DigitalCopy() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(120,216,255,0.3),transparent_65%)]" />
       </div>
 
-      <section className="relative pt-[calc(var(--nav-h,4rem)+2rem)] pb-0">
+      <section className="relative pt-[calc(var(--nav-h,4rem)+16px)] pb-0">
         <div className={`${layout.container} text-center flex flex-col items-center gap-10`}>
           <div className="max-w-3xl mx-auto">
             <div className={`${headings.tripleHeading.container} text-center`}>

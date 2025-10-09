@@ -4124,7 +4124,7 @@ const handleGenerate = async () => {
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -4161,7 +4161,7 @@ const handleGenerate = async () => {
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Create New Folder</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -4239,7 +4239,7 @@ const handleGenerate = async () => {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : (publishConfirmation.count === 1 
@@ -4276,7 +4276,7 @@ const handleGenerate = async () => {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : (unpublishConfirmation.count === 1 
@@ -4313,7 +4313,7 @@ const handleGenerate = async () => {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {downloadConfirmation.count === 1 
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download ${downloadConfirmation.count} images?`}
@@ -4346,7 +4346,7 @@ const handleGenerate = async () => {
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
@@ -7053,7 +7053,7 @@ const handleGenerate = async () => {
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </button>
-                    <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
+                    <span className="min-w-[1.25rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
                       {batchSize}
                     </span>
                     <button
@@ -7433,7 +7433,7 @@ const handleGenerate = async () => {
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
                   <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -7465,7 +7465,7 @@ const handleGenerate = async () => {
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
                   <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Product</h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Are you sure you want to delete "{productToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -7605,7 +7605,7 @@ const handleGenerate = async () => {
                   <h3 className="text-xl font-raleway font-normal text-theme-text">
                     Remove from Saved Prompts
                   </h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Are you sure you want to remove this prompt from your saved prompts?
                   </p>
                 </div>

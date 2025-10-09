@@ -58,7 +58,7 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
             <h3 className="text-theme-text font-raleway font-normal text-xl">
               {success ? "Check your email" : "Reset password"}
             </h3>
-            <p className="text-theme-light text-sm font-raleway font-light">
+            <p className="text-theme-light text-sm font-raleway font-normal">
               {success 
                 ? "We've sent you a link to reset your password." 
                 : "Enter your email address and we'll send you a link to reset your password."
