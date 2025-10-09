@@ -50,6 +50,32 @@ const scheduleTimeout = (callback: () => void, delay: number) => {
   return window.setTimeout(callback, delay);
 };
 
+const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
+  if (typeof document === 'undefined') return;
+  const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+  if (!tooltip) return;
+  const ownerCard = target.closest('.group') as HTMLElement | null;
+  if (ownerCard) {
+    const triggerRect = target.getBoundingClientRect();
+    const cardRect = ownerCard.getBoundingClientRect();
+    const relativeTop = triggerRect.top - cardRect.top;
+    const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
+    tooltip.style.top = `${relativeTop - 8}px`;
+    tooltip.style.left = `${relativeLeft}px`;
+    tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+  }
+  tooltip.classList.remove('opacity-0');
+  tooltip.classList.add('opacity-100');
+};
+
+const hideHoverTooltip = (tooltipId: string) => {
+  if (typeof document === 'undefined') return;
+  const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+  if (!tooltip) return;
+  tooltip.classList.remove('opacity-100');
+  tooltip.classList.add('opacity-0');
+};
+
 const REFERENCE_LIMIT = 3;
 
 type ImageModelOption = {
@@ -813,7 +839,7 @@ const ChatMode: React.FC = () => {
   };
 
   return (
-    <div className={`${layout.page} pt-24`}>
+    <div className={`${layout.page} pt-20`}>
       {(isCreateModalOpen || chatToRename || chatToDelete) && (
         <div
           className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black py-12"
@@ -902,8 +928,8 @@ const ChatMode: React.FC = () => {
         </div>
       )}
       <div className={`${layout.container} pb-6`}>
-        <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-6">
-          <aside className="hidden h-full w-48 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
+        <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-3">
+          <aside className="hidden h-full w-40 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />
@@ -1041,14 +1067,29 @@ const ChatMode: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between gap-2 px-3">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => navigate("/create/image")}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
-                        aria-label="Platform mode"
-                      >
-                        <LayoutDashboard className="h-3 w-3" />
-                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => navigate("/create/image")}
+                          className={`${glass.promptBorderless} flex h-8 items-center justify-center rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                          aria-label="Platform mode"
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(e.currentTarget, 'platform-mode-tooltip');
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip('platform-mode-tooltip');
+                          }}
+                        >
+                          <LayoutDashboard className="h-3 w-3" />
+                        </button>
+                        <div
+                          data-tooltip-for="platform-mode-tooltip"
+                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                          style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                        >
+                          Platform Mode
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={handleReferenceClick}
@@ -1553,30 +1594,45 @@ const ChatMode: React.FC = () => {
                           })}
                         </div>
                       </AvatarPickerPortal>
-                      <div
-                        role="group"
-                        aria-label="Batch size"
-                        className={`${glass.promptBorderless} hidden h-8 items-center gap-0 rounded-full px-2 text-n-text lg:flex`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setBatchSize(prev => Math.max(1, prev - 1))}
-                          disabled={batchSize === 1}
-                          aria-label="Decrease batch size"
-                          className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      <div className="relative hidden lg:block">
+                        <div
+                          role="group"
+                          aria-label="Batch size"
+                          className={`${glass.promptBorderless} flex h-8 items-center gap-0 rounded-full px-2 text-n-text`}
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(e.currentTarget, 'batch-size-tooltip-chat');
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip('batch-size-tooltip-chat');
+                          }}
                         >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text">{batchSize}</span>
-                        <button
-                          type="button"
-                          onClick={() => setBatchSize(prev => Math.min(4, prev + 1))}
-                          disabled={batchSize === 4}
-                          aria-label="Increase batch size"
-                          className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                          <button
+                            type="button"
+                            onClick={() => setBatchSize(prev => Math.max(1, prev - 1))}
+                            disabled={batchSize === 1}
+                            aria-label="Decrease batch size"
+                            className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text">{batchSize}</span>
+                          <button
+                            type="button"
+                            onClick={() => setBatchSize(prev => Math.min(4, prev + 1))}
+                            disabled={batchSize === 4}
+                            aria-label="Increase batch size"
+                            className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div
+                          data-tooltip-for="batch-size-tooltip-chat"
+                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
+                          Batch size
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
