@@ -73,9 +73,21 @@ export const useGalleryImages = () => {
       debugLog('[gallery] Fetched images:', data);
 
       const galleryImages = data.items?.map(convertR2FileToGalleryImage) || [];
-      
+      const seen = new Set<string>();
+      const dedupedImages = galleryImages.filter((image) => {
+        const key = image.jobId || image.url;
+        if (!key) {
+          return true;
+        }
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
+
       setState({
-        images: galleryImages,
+        images: dedupedImages,
         isLoading: false,
         error: null,
       });

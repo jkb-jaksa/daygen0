@@ -12,6 +12,7 @@ export interface GeneratedImage {
   references?: string[]; // Base64 data URLs for reference images used
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
+  r2FileId?: string;
 }
 
 export interface ImageGenerationState {
@@ -46,10 +47,20 @@ export const useGeminiImageGeneration = () => {
     model: string,
     references: string[] | undefined,
     avatarId: string | undefined,
-    ownerId: string | undefined
+    ownerId: string | undefined,
   ): Promise<GeneratedImage> => {
-    const maxAttempts = 60; // 5 minutes with 5-second intervals
+    const pollIntervalMs = 3000;
+    const maxAttempts = Math.ceil((5 * 60 * 1000) / pollIntervalMs);
     let attempts = 0;
+
+    const pickString = (value: unknown): string | undefined =>
+      typeof value === 'string' && value.trim().length > 0
+        ? value.trim()
+        : undefined;
+    const asRecord = (value: unknown): Record<string, unknown> | null =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
 
     while (attempts < maxAttempts) {
       try {
@@ -64,32 +75,58 @@ export const useGeminiImageGeneration = () => {
         }
 
         const job = await response.json();
-        
-        if (job.status === 'COMPLETED' && job.resultUrl) {
+        const metadata = asRecord(job.metadata);
+        const metadataFileUrl = metadata
+          ? pickString(metadata['fileUrl'])
+          : undefined;
+        const metadataR2FileUrl = metadata
+          ? pickString(metadata['r2FileUrl'])
+          : undefined;
+        const metadataUrl = metadata ? pickString(metadata['url']) : undefined;
+        const metadataResults = metadata ? metadata['results'] : undefined;
+        const firstResultUrl = Array.isArray(metadataResults)
+          ? metadataResults
+              .map((item) => pickString(item))
+              .find((value): value is string => Boolean(value))
+          : undefined;
+        const resolvedUrl =
+          pickString(job.resultUrl) ??
+          metadataFileUrl ??
+          metadataR2FileUrl ??
+          metadataUrl ??
+          firstResultUrl;
+        const r2FileId = metadata
+          ? pickString(metadata['r2FileId'])
+          : undefined;
+
+        if (job.status === 'COMPLETED') {
+          if (!resolvedUrl) {
+            throw new Error('Job completed but no result URL was provided.');
+          }
+
           return {
-            url: job.resultUrl,
+            url: resolvedUrl,
             prompt,
             model,
             timestamp: new Date().toISOString(),
             references: references || undefined,
             ownerId,
             avatarId,
+            r2FileId,
           };
-        } else if (job.status === 'FAILED') {
-          throw new Error(job.error || 'Job failed');
         }
 
-        // Wait 5 seconds before next poll
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        attempts++;
+        if (job.status === 'FAILED') {
+          throw new Error(job.error || 'Job failed');
+        }
       } catch (error) {
         if (attempts === maxAttempts - 1) {
-          throw error;
+          throw error instanceof Error ? error : new Error(String(error));
         }
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        attempts++;
       }
+
+      attempts += 1;
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
 
     throw new Error('Job polling timeout');
