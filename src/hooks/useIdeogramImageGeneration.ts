@@ -90,6 +90,81 @@ export const useIdeogramImageGeneration = () => {
     progress: undefined,
   });
 
+  const pollForJobCompletion = useCallback(
+    async (
+      jobId: string,
+      prompt: string,
+      model: string,
+      aspectRatio: string | undefined,
+      resolution: string | undefined,
+      renderingSpeed: string | undefined,
+      stylePreset: string | undefined,
+      styleType: string | undefined,
+      negativePrompt: string | undefined,
+      avatarId: string | undefined,
+      ownerId: string | undefined,
+    ): Promise<IdeogramGeneratedImage[]> => {
+      const maxAttempts = 60; // 5 minutes with 5-second intervals
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to check job status: ${response.status}`);
+          }
+
+          const job = await response.json();
+
+          if (job.status === 'COMPLETED' && job.resultUrl) {
+            return [
+              {
+                url: job.resultUrl,
+                prompt,
+                timestamp: new Date().toISOString(),
+                model,
+                aspectRatio,
+                resolution,
+                renderingSpeed,
+                stylePreset,
+                styleType,
+                negativePrompt,
+                ownerId,
+                avatarId,
+              },
+            ];
+          } else if (job.status === 'FAILED') {
+            throw new Error(job.error || 'Job failed');
+          }
+
+          setState((prev) => ({
+            ...prev,
+            progress: job.progress ? `${job.progress}%` : 'Processing...',
+          }));
+
+          // Wait 5 seconds before next poll
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          attempts++;
+        } catch (error) {
+          if (attempts === maxAttempts - 1) {
+            throw error;
+          }
+          // Wait before retry
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          attempts++;
+        }
+      }
+
+      throw new Error('Job polling timeout');
+    },
+    [token],
+  );
+
   const generateImage = useCallback(
     async (options: IdeogramGenerateOptions) => {
       setState((prev) => ({
@@ -148,7 +223,37 @@ export const useIdeogramImageGeneration = () => {
           throw new Error(message);
         }
 
-        const payload = (await response.json()) as { dataUrls?: string[] };
+        const payload = (await response.json()) as {
+          jobId?: string;
+          dataUrls?: string[];
+        };
+
+        if (payload.jobId) {
+          const generatedImages = await pollForJobCompletion(
+            payload.jobId,
+            options.prompt,
+            'ideogram',
+            options.aspect_ratio,
+            options.resolution,
+            options.rendering_speed,
+            options.style_preset,
+            options.style_type,
+            options.negative_prompt,
+            options.avatarId,
+            user?.id,
+          );
+
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: null,
+            progress: 'Generation complete!',
+            generatedImages: [...prev.generatedImages, ...generatedImages],
+          }));
+
+          return generatedImages;
+        }
+
         const dataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
         if (dataUrls.length === 0) {
           throw new Error('Ideogram did not return any images.');
@@ -189,7 +294,7 @@ export const useIdeogramImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id],
+    [token, user?.id, pollForJobCompletion],
   );
 
   const reportUnsupported = useCallback(async (feature: string) => {
@@ -204,7 +309,7 @@ export const useIdeogramImageGeneration = () => {
   }, []);
 
   const editImage = useCallback(
-    async (_options: IdeogramEditOptions): Promise<IdeogramGeneratedImage[]> => {
+    async (): Promise<IdeogramGeneratedImage[]> => {
       await reportUnsupported('Ideogram editing');
       return [];
     },
@@ -212,7 +317,7 @@ export const useIdeogramImageGeneration = () => {
   );
 
   const reframeImage = useCallback(
-    async (_options: IdeogramReframeOptions): Promise<IdeogramGeneratedImage[]> => {
+    async (): Promise<IdeogramGeneratedImage[]> => {
       await reportUnsupported('Ideogram reframing');
       return [];
     },
@@ -220,7 +325,7 @@ export const useIdeogramImageGeneration = () => {
   );
 
   const replaceBackground = useCallback(
-    async (_options: IdeogramReplaceBgOptions): Promise<IdeogramGeneratedImage[]> => {
+    async (): Promise<IdeogramGeneratedImage[]> => {
       await reportUnsupported('Ideogram background replacement');
       return [];
     },
@@ -228,7 +333,7 @@ export const useIdeogramImageGeneration = () => {
   );
 
   const upscaleImage = useCallback(
-    async (_options: IdeogramUpscaleOptions): Promise<IdeogramGeneratedImage[]> => {
+    async (): Promise<IdeogramGeneratedImage[]> => {
       await reportUnsupported('Ideogram upscaling');
       return [];
     },
@@ -236,7 +341,7 @@ export const useIdeogramImageGeneration = () => {
   );
 
   const describeImage = useCallback(
-    async (_options: IdeogramDescribeOptions): Promise<string[]> => {
+    async (): Promise<string[]> => {
       await reportUnsupported('Ideogram describe');
       return [];
     },
@@ -257,6 +362,15 @@ export const useIdeogramImageGeneration = () => {
     }));
   }, []);
 
+  const reset = useCallback(() => {
+    setState({
+      isLoading: false,
+      error: null,
+      generatedImages: [],
+      progress: undefined,
+    });
+  }, []);
+
   return {
     ...state,
     generateImage,
@@ -267,5 +381,6 @@ export const useIdeogramImageGeneration = () => {
     describeImage,
     clearError,
     clearGeneratedImages,
+    reset,
   };
 };

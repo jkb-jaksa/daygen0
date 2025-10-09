@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
@@ -151,20 +153,7 @@ const AI_MODELS = [
 const DEFAULT_REFERENCE_LIMIT = 3;
 const MAX_REFERENCES_WITH_AVATAR = 2;
 
-const GEMINI_ASPECT_RATIOS = [
-  '1:1',
-  '2:3',
-  '3:2',
-  '3:4',
-  '4:3',
-  '4:5',
-  '5:4',
-  '9:16',
-  '16:9',
-  '21:9',
-] as const;
-
-type GeminiAspectRatio = typeof GEMINI_ASPECT_RATIOS[number];
+type GeminiAspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
 
 // Portal component for model menu to avoid clipping by parent containers
 const ModelMenuPortal: React.FC<{
@@ -1286,7 +1275,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     isLoading: seedanceLoading,
     error: seedanceError,
     video: seedanceVideo,
-    generateVideo: generateSeedanceVideo,
+    generateVideo: generateSeedanceVideo, // Kept for future backend integration
     reset: resetSeedanceVideo,
   } = useSeedanceVideoGeneration();
 
@@ -1295,7 +1284,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     error: wanError,
     video: wanGeneratedVideo,
     isPolling: wanIsPolling,
-    generateVideo: generateWanVideo,
+    generateVideo: generateWanVideo, // Kept for future backend integration
     reset: resetWanVideo,
   } = useWanVideoGeneration();
 
@@ -1304,7 +1293,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     error: hailuoError,
     video: hailuoGeneratedVideo,
     isPolling: hailuoIsPolling,
-    generateVideo: generateHailuoVideo,
+    generateVideo: generateHailuoVideo, // Kept for future backend integration
     reset: resetHailuoVideo,
   } = useHailuoVideoGeneration();
 
@@ -1313,7 +1302,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     isPolling: lumaVideoPolling,
     error: lumaVideoError,
     video: lumaGeneratedVideo,
-    generate: generateLumaVideo,
+    generate: generateLumaVideo, // Kept for future backend integration
     reset: resetLumaVideo,
   } = useLumaVideoGeneration();
 
@@ -1323,7 +1312,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     video: klingGeneratedVideo,
     isPolling: klingIsPolling,
     statusMessage: klingStatusMessage,
-    generateVideo: generateKlingVideo,
+    generateVideo: generateKlingVideo, // Kept for future backend integration
     reset: resetKlingVideo,
   } = useKlingVideoGeneration();
 
@@ -2612,7 +2601,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     closeImageActionMenu();
   };
 
-  const renderHoverPrimaryActions = (_menuId: string, _image: GalleryImageLike): React.JSX.Element => {
+  const renderHoverPrimaryActions = (): React.JSX.Element => {
     return <div />;
   };
 
@@ -3058,7 +3047,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
               }`}
             >
-              {renderHoverPrimaryActions(menuId, img)}
+              {renderHoverPrimaryActions()}
               <div className="flex items-center gap-0.5">
                 {renderEditButton(menuId, img)}
                 <button
@@ -3443,13 +3432,30 @@ const handleGenerate = async () => {
     }, 1000);
     
     try {
-      await startVideoGeneration({
-        prompt: prompt.trim(),
-        model: videoModel,
-        aspectRatio: videoAspectRatio,
-        negativePrompt: videoNegativePrompt.trim() || undefined,
-        seed: videoSeed,
-      });
+      // Call the appropriate video generation handler based on selected model
+      if (selectedModel === "veo-3") {
+        await startVideoGeneration();
+      } else if (selectedModel === "runway-video-gen4") {
+        // TODO: Implement Runway video generation handler
+        // await handleGenerateRunwayVideo();
+        
+        // Temporary: Runway video generation not yet implemented
+        console.log('Runway video generation not yet implemented');
+        setIsButtonSpinning(false);
+      } else if (selectedModel === "wan-video-2.2") {
+        await handleGenerateWanVideo();
+      } else if (selectedModel === "hailuo-02") {
+        await handleGenerateHailuoVideo();
+      } else if (selectedModel === "kling-video") {
+        await handleGenerateKlingVideo();
+      } else if (selectedModel === "seedance-1.0-pro") {
+        await handleGenerateSeedanceVideo();
+      } else if (selectedModel === "luma-ray-2") {
+        await handleGenerateLumaVideo();
+      } else {
+        debugLog('[Create] Unknown video model, using default generation');
+        await handleGenerateImage();
+      }
     } catch (error) {
       console.error('Video generation error:', error);
       // Clear spinner on error
@@ -3481,7 +3487,7 @@ const handleGenerate = async () => {
     try {
       resetWanVideo();
 
-      let parsedSeed: number | undefined;
+      let parsedSeed: number | undefined; // Kept for future backend integration
       if (wanSeed.trim()) {
         const seedNumber = Number.parseInt(wanSeed.trim(), 10);
         if (Number.isFinite(seedNumber)) {
@@ -3489,15 +3495,19 @@ const handleGenerate = async () => {
         }
       }
 
-      await generateWanVideo({
-        prompt: trimmedPrompt,
-        model: 'wan2.2-t2v-plus',
-        size: wanSize,
-        negativePrompt: wanNegativePrompt.trim() || undefined,
-        promptExtend: wanPromptExtend,
-        watermark: wanWatermark,
-        seed: parsedSeed,
-      });
+      // TODO: Uncomment when Wan video generation backend integration is ready
+      // await generateWanVideo({
+      //   prompt: trimmedPrompt,
+      //   model: 'wan2.2-t2v-plus',
+      //   size: wanSize,
+      //   negativePrompt: wanNegativePrompt.trim() || undefined,
+      //   promptExtend: wanPromptExtend,
+      //   watermark: wanWatermark,
+      //   seed: parsedSeed,
+      // });
+      
+      // Temporary: Wan video generation not yet implemented in backend
+      throw new Error('Wan video generation is not yet supported in this backend integration.');
     } catch (error) {
       console.error('Wan 2.2 video generation error:', error);
       if (spinnerTimeoutRef.current) {
@@ -3527,17 +3537,22 @@ const handleGenerate = async () => {
 
     try {
       resetHailuoVideo();
-      await generateHailuoVideo({
-        prompt: trimmedPrompt || undefined,
-        model: 'MiniMax-Hailuo-02',
-        duration: hailuoDuration,
-        resolution: hailuoResolution,
-        promptOptimizer: hailuoPromptOptimizer,
-        fastPretreatment: hailuoFastPretreatment,
-        watermark: hailuoWatermark,
-        firstFrameFile: hailuoFirstFrame || undefined,
-        lastFrameFile: hailuoLastFrame || undefined,
-      });
+      
+      // TODO: Uncomment when Hailuo video generation backend integration is ready
+      // await generateHailuoVideo({
+      //   prompt: trimmedPrompt || undefined,
+      //   model: 'MiniMax-Hailuo-02',
+      //   duration: hailuoDuration,
+      //   resolution: hailuoResolution,
+      //   promptOptimizer: hailuoPromptOptimizer,
+      //   fastPretreatment: hailuoFastPretreatment,
+      //   watermark: hailuoWatermark,
+      //   firstFrameFile: hailuoFirstFrame || undefined,
+      //   lastFrameFile: hailuoLastFrame || undefined,
+      // });
+      
+      // Temporary: Hailuo video generation not yet implemented in backend
+      throw new Error('Hailuo video generation is not yet supported in this backend integration.');
     } catch (error) {
       console.error('Hailuo 02 video generation error:', error);
       if (spinnerTimeoutRef.current) {
@@ -3564,21 +3579,25 @@ const handleGenerate = async () => {
     try {
       resetKlingVideo();
 
-      await generateKlingVideo({
-        prompt: trimmedPrompt,
-        negativePrompt: klingNegativePrompt.trim() || undefined,
-        model: klingModel,
-        aspectRatio: klingAspectRatio,
-        duration: klingDuration,
-        cfgScale: klingCfgScale,
-        mode: klingMode,
-        cameraControl: klingCameraType === 'none'
-          ? null
-          : {
-              type: klingCameraType === 'simple' ? 'simple' : klingCameraType,
-              config: klingCameraType === 'simple' ? klingCameraConfig : undefined,
-            },
-      });
+      // TODO: Uncomment when Kling video generation backend integration is ready
+      // await generateKlingVideo({
+      //   prompt: trimmedPrompt,
+      //   negativePrompt: klingNegativePrompt.trim() || undefined,
+      //   model: klingModel,
+      //   aspectRatio: klingAspectRatio,
+      //   duration: klingDuration,
+      //   cfgScale: klingCfgScale,
+      //   mode: klingMode,
+      //   cameraControl: klingCameraType === 'none'
+      //     ? null
+      //     : {
+      //         type: klingCameraType === 'simple' ? 'simple' : klingCameraType,
+      //         config: klingCameraType === 'simple' ? klingCameraConfig : undefined,
+      //       },
+      // });
+      
+      // Temporary: Kling video generation not yet implemented in backend
+      throw new Error('Kling video generation is not yet supported in this backend integration.');
     } catch (error) {
       console.error('Kling video generation error:', error);
       if (spinnerTimeoutRef.current) {
@@ -3606,18 +3625,22 @@ const handleGenerate = async () => {
     }, 1000);
     
     try {
-      await generateSeedanceVideo({
-        prompt: prompt.trim(),
-        mode: seedanceMode,
-        ratio: seedanceRatio,
-        duration: seedanceDuration,
-        resolution: seedanceResolution,
-        fps: seedanceFps,
-        camerafixed: seedanceCamerafixed,
-        seed: seedanceSeed || undefined,
-        firstFrameFile: seedanceFirstFrame || undefined,
-        lastFrameFile: seedanceLastFrame || undefined,
-      });
+      // TODO: Uncomment when Seedance video generation backend integration is ready
+      // await generateSeedanceVideo({
+      //   prompt: prompt.trim(),
+      //   mode: seedanceMode,
+      //   ratio: seedanceRatio,
+      //   duration: seedanceDuration,
+      //   resolution: seedanceResolution,
+      //   fps: seedanceFps,
+      //   camerafixed: seedanceCamerafixed,
+      //   seed: seedanceSeed || undefined,
+      //   firstFrameFile: seedanceFirstFrame || undefined,
+      //   lastFrameFile: seedanceLastFrame || undefined,
+      // });
+      
+      // Temporary: Seedance video generation not yet implemented in backend
+      throw new Error('Seedance video generation is not yet supported in this backend integration.');
     } catch (error) {
       console.error('Seedance video generation error:', error);
       // Clear spinner on error
@@ -3646,13 +3669,18 @@ const handleGenerate = async () => {
 
     try {
       resetLumaVideo();
-      await generateLumaVideo({
-        prompt: trimmedPrompt,
-        model: lumaRayVariant,
-        resolution: '720p',
-        durationSeconds: 5,
-        loop: false,
-      });
+      
+      // TODO: Uncomment when Luma video generation backend integration is ready
+      // await generateLumaVideo({
+      //   prompt: trimmedPrompt,
+      //   model: lumaRayVariant,
+      //   resolution: '720p',
+      //   durationSeconds: 5,
+      //   loop: false,
+      // });
+      
+      // Temporary: Luma video generation not yet implemented in backend
+      throw new Error('Luma video generation is not yet supported in this backend integration.');
     } catch (error) {
       console.error('Luma video generation error:', error);
       if (spinnerTimeoutRef.current) {
@@ -3706,6 +3734,7 @@ const handleGenerate = async () => {
 
     const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const modelForGeneration = selectedModel;
+    const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
   debugLog('[Create] handleGenerateImage called', { model: modelForGeneration, batchSize: effectiveBatchSize });
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
@@ -3723,7 +3752,6 @@ const handleGenerate = async () => {
   const qwenSizeForGeneration = qwenSize;
   const qwenPromptExtendForGeneration = qwenPromptExtend;
   const qwenWatermarkForGeneration = qwenWatermark;
-  const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
 
   const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration, startedAt: Date.now() };
     
@@ -5102,7 +5130,7 @@ const handleGenerate = async () => {
                                       ? 'opacity-100'
                                       : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                                   }`}>
-                                    {renderHoverPrimaryActions(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
+                                    {renderHoverPrimaryActions()}
                                 <div className="flex items-center gap-0.5">
                                   {renderEditButton(`folder-actions-${folder.id}-${idx}-${img.url}`, img)}
                                   <button
@@ -5333,7 +5361,7 @@ const handleGenerate = async () => {
                 )}
                 
                 {/* Folder Contents View - Moved to separate section */}
-                {false && selectedFolder && (
+                {selectedFolder && (
                   <div className="w-full">
                     {/* Folder header with back button and info */}
                     <div className="mb-6">
@@ -5531,7 +5559,7 @@ const handleGenerate = async () => {
                           <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
                             imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                           }`}>
-                            {renderHoverPrimaryActions(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
+                            {renderHoverPrimaryActions()}
                             <div className="flex items-center gap-0.5">
                               {renderEditButton(`folder-actions-${selectedFolder}-${idx}-${img.url}`, img)}
                               <button
@@ -6005,7 +6033,7 @@ const handleGenerate = async () => {
                         <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         }`}>
-                          {renderHoverPrimaryActions(`gallery-actions-${idx}-${img.url}`, img)}
+                          {renderHoverPrimaryActions()}
                           <div className="flex items-center gap-0.5">
                             {renderEditButton(`gallery-actions-${idx}-${img.url}`, img)}
                             <button
@@ -7106,7 +7134,7 @@ const handleGenerate = async () => {
                     <div className={`pointer-events-auto ${
                       imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
-                      {renderHoverPrimaryActions(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
+                      {renderHoverPrimaryActions()}
                     </div>
                     <div className={`flex items-center gap-0.5 pointer-events-auto ${
                       imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'

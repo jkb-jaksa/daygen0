@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyTheme(theme)
     try {
       window.localStorage.setItem(STORAGE_KEY, theme)
-    } catch (error) {
+    } catch {
       // Ignore storage errors (e.g., in private mode)
     }
   }, [theme])

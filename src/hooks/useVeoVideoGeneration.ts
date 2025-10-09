@@ -42,7 +42,7 @@ const UNSUPPORTED_MESSAGE = 'Veo video generation is not yet supported in this b
 export const useVeoVideoGeneration = () => {
   const [state, setState] = useState<VideoGenerationState>(INITIAL_STATE);
 
-  const startGeneration = useCallback(async (_options: VideoGenerationOptions) => {
+  const startGeneration = useCallback(async () => {
     setState((prev) => ({
       ...prev,
       isLoading: false,

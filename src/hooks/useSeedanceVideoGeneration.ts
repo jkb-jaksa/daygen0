@@ -44,7 +44,7 @@ const UNSUPPORTED_MESSAGE = 'Seedance video generation is not yet supported in t
 export const useSeedanceVideoGeneration = () => {
   const [state, setState] = useState<SeedanceVideoGenerationState>(INITIAL_STATE);
 
-  const generateVideo = useCallback(async (_options: SeedanceVideoGenerationOptions) => {
+  const generateVideo = useCallback(async () => {
     setState((prev) => ({
       ...prev,
       isLoading: false,

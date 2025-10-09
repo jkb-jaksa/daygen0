@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Leaf, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -180,7 +180,6 @@ const ModelMenuPortal: React.FC<{
 // Main Component
 export default function Edit() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const userKey = user?.id || user?.email || "anon";
   const { history, addPrompt } = usePromptHistory(userKey, 10);

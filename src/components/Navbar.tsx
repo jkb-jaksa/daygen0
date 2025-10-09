@@ -1,4 +1,4 @@
-import { Search, User, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, Sun, Moon } from "lucide-react";
+import { Search, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, Sun, Moon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";

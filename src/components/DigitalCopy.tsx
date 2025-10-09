@@ -135,7 +135,7 @@ function ModalityCard({ modality, onStartCreating }: { modality: typeof modaliti
 export default function DigitalCopy() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAudioUploadModal, setShowAudioUploadModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(null);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);

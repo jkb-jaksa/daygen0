@@ -15,11 +15,7 @@ export function useRunwayVideoGeneration() {
   const [taskId, setTaskId] = useState<string | null>(null);
 
   const generate = useCallback(
-    async (_args: {
-      promptText: string;
-      promptImage?: string;
-      options?: RunwayVideoOptions;
-    }) => {
+    async () => {
       const message = 'Runway video generation is not yet supported in this backend integration.';
       setStatus('error');
       setError(message);
@@ -27,7 +23,8 @@ export function useRunwayVideoGeneration() {
       setTaskId(null);
       throw new Error(message);
     },
-  []);
+    []
+  );
 
   return { status, error, videoUrl, taskId, generate };
 }

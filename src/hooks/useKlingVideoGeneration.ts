@@ -76,7 +76,7 @@ export function useKlingVideoGeneration() {
     stopPolling();
   }, [stopPolling]);
 
-  const generateVideo = useCallback(async (_options: KlingVideoOptions) => {
+  const generateVideo = useCallback(async () => {
     stopPolling();
     setState({
       status: 'failed',

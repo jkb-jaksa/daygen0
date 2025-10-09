@@ -57,12 +57,10 @@ function SectionFallback({ label }: { label: string }) {
 
 function UseCaseCard({
   title,
-  description,
   imageUrl,
   imageAlt,
 }: {
   title: string;
-  description: string;
   imageUrl: string;
   imageAlt: string;
 }) {
@@ -230,49 +228,41 @@ function Home() {
                       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         <UseCaseCard
                           title="lifestyle images"
-                          description="Create inviting scenes for social media, marketing, and everyday storytelling."
                           imageUrl="/lifestyle images.png"
                           imageAlt="Lifestyle images example"
                         />
                         <UseCaseCard
                           title="formal images"
-                          description="Design professional visuals for presentations, ads, and polished brand assets."
                           imageUrl="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80"
                           imageAlt="Modern office meeting with laptops and charts"
                         />
                         <UseCaseCard
                           title="artistic images"
-                          description="Experiment with bold concepts, surreal styles, and expressive compositions."
                           imageUrl="/artistic images.png"
                           imageAlt="Artistic images example"
                         />
                         <UseCaseCard
                           title="product visualizations"
-                          description="Render photorealistic product shots to showcase every angle and finish with ease."
                           imageUrl="/product visualizations.png"
                           imageAlt="Product visualizations example"
                         />
                         <UseCaseCard
                           title="virtual try-on"
-                          description="Simulate outfits, accessories, and cosmetics on lifelike models for instant previews."
                           imageUrl="/virtual try-on.png"
                           imageAlt="Virtual try-on example"
                         />
                         <UseCaseCard
                           title="brand identity kits"
-                          description="Develop cohesive logos, palettes, and collateral that keep every touchpoint on-brand."
                           imageUrl="/brand identity.png"
                           imageAlt="Brand identity example"
                         />
                         <UseCaseCard
                           title="infographics"
-                          description="Turn complex data into clear, compelling visuals for decks, reports, and social posts."
                           imageUrl="/infographics.png"
                           imageAlt="Infographics example"
                         />
                         <UseCaseCard
                           title="upscaling"
-                          description="Enhance resolution and detail to breathe new life into legacy or low-res assets."
                           imageUrl="/upscaling.png"
                           imageAlt="Upscaling example"
                         />

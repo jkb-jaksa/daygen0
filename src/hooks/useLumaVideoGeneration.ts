@@ -46,7 +46,7 @@ export function useLumaVideoGeneration() {
     setState(INITIAL_STATE);
   }, []);
 
-  const generate = useCallback(async (_options: LumaVideoOptions) => {
+  const generate = useCallback(async () => {
     setState((prev) => ({
       ...prev,
       isLoading: false,

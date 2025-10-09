@@ -59,6 +59,71 @@ export const useFluxImageGeneration = () => {
     progress: undefined,
   });
 
+  const pollForJobCompletion = useCallback(
+    async (
+      jobId: string,
+      prompt: string,
+      model: string,
+      references: string[] | undefined,
+      avatarId: string | undefined,
+      ownerId: string | undefined,
+    ): Promise<FluxGeneratedImage> => {
+      const maxAttempts = 60; // 5 minutes with 5-second intervals
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to check job status: ${response.status}`);
+          }
+
+          const job = await response.json();
+
+          if (job.status === 'COMPLETED' && job.resultUrl) {
+            return {
+              url: job.resultUrl,
+              prompt,
+              model,
+              timestamp: new Date().toISOString(),
+              jobId,
+              references: references || undefined,
+              ownerId,
+              avatarId,
+            };
+          } else if (job.status === 'FAILED') {
+            throw new Error(job.error || 'Job failed');
+          }
+
+          setState((prev) => ({
+            ...prev,
+            jobStatus: job.status === 'PROCESSING' ? 'processing' : 'queued',
+            progress: job.progress ? `${job.progress}%` : 'Processing...',
+          }));
+
+          // Wait 5 seconds before next poll
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          attempts++;
+        } catch (error) {
+          if (attempts === maxAttempts - 1) {
+            throw error;
+          }
+          // Wait before retry
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          attempts++;
+        }
+      }
+
+      throw new Error('Job polling timeout');
+    },
+    [token],
+  );
+
   const generateImage = useCallback(
     async (options: FluxImageGenerationOptions) => {
       setState((prev) => ({
@@ -137,40 +202,29 @@ export const useFluxImageGeneration = () => {
         }
 
         const payload = (await response.json()) as {
-          dataUrl?: string;
-          dataUrls?: string[];
-          jobId?: string | null;
-          status?: string | null;
+          jobId?: string;
+          status?: string;
         };
 
-        const dataUrl =
-          typeof payload.dataUrl === 'string'
-            ? payload.dataUrl
-            : Array.isArray(payload.dataUrls) && typeof payload.dataUrls[0] === 'string'
-              ? payload.dataUrls[0]
-              : null;
-
-        if (!dataUrl) {
-          throw new Error('Flux generation did not return an image.');
+        if (!payload.jobId) {
+          throw new Error('Flux generation did not return a job ID.');
         }
 
-        const generatedImage: FluxGeneratedImage = {
-          url: dataUrl,
+        const generatedImage = await pollForJobCompletion(
+          payload.jobId,
           prompt,
-          model: resolvedModel,
-          timestamp: new Date().toISOString(),
-          jobId: payload.jobId ?? '',
-          references: references || undefined,
-          ownerId: user?.id,
-          avatarId: options.avatarId,
-        };
+          resolvedModel,
+          references,
+          options.avatarId,
+          user?.id,
+        );
 
         setState((prev) => ({
           ...prev,
           isLoading: false,
           error: null,
           generatedImage,
-          jobStatus: (payload.status as FluxImageGenerationState['jobStatus']) ?? 'completed',
+          jobStatus: 'completed',
           progress: undefined,
         }));
 
@@ -188,7 +242,7 @@ export const useFluxImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id],
+    [token, user?.id, pollForJobCompletion],
   );
 
   const clearError = useCallback(() => {
