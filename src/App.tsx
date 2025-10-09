@@ -174,14 +174,14 @@ function Home() {
       <div className="relative z-10">
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
               <div className="home-hero relative z-10">
                 <div className="home-hero-copy flex max-w-5xl flex-col gap-2">
                     <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
                       Your Daily AI Generations.
                     </h1>
-                    <p className={`${headings.tripleHeading.description} text-left mt-0`}>
+                    <p className={`${headings.tripleHeading.description} text-left mt-0 mb-1`}>
                       Master all the best Creative AI Tools in one place.
                     </p>
                     <div className="home-hero-actions flex flex-wrap gap-3">
@@ -195,7 +195,7 @@ function Home() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:items-stretch">
+              <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
                   className={`${glass.surface} flex flex-col rounded-3xl border-theme-dark p-4 lg:h-full`}
                   ref={sidebarRef}

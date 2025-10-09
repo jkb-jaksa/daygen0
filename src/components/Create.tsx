@@ -6112,14 +6112,29 @@ const handleGenerate = async () => {
               <div className="flex items-center justify-between gap-2 px-3">
                 {/* Left icons and controls */}
                 <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/create/chat')}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 rounded-full transition-colors duration-200`}
-                    aria-label="Chat mode"
-                  >
-                    <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/create/chat')}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 rounded-full transition-colors duration-200`}
+                      aria-label="Chat mode"
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip('chat-mode-tooltip');
+                      }}
+                    >
+                      <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
+                    </button>
+                    <div
+                      data-tooltip-for="chat-mode-tooltip"
+                      className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                      style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    >
+                      Chat Mode
+                    </div>
+                  </div>
                 <button
                   type="button"
                   onClick={isGemini ? handleRefsClick : undefined}
@@ -7055,7 +7070,7 @@ const handleGenerate = async () => {
                   <div
                     data-tooltip-for="batch-size-tooltip"
                     className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '-8px' }}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                   >
                     Batch size
                   </div>
