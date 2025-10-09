@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 const Create = lazy(() => import("../components/Create"));
 const Avatars = lazy(() => import("../components/Avatars"));
+const ChatMode = lazy(() => import("../components/create/ChatMode"));
 
 const Loading = () => (
   <div className="flex min-h-[40vh] items-center justify-center text-theme-white">Loading…</div>
@@ -17,6 +18,7 @@ export default function CreateRoutes() {
           <Route index element={<Avatars />} />
           <Route path=":avatarSlug" element={<Avatars />} />
         </Route>
+        <Route path="chat" element={<ChatMode />} />
         <Route path=":category" element={<Create />} />
         <Route path="*" element={<Navigate to="image" replace />} />
       </Routes>
