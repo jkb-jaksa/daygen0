@@ -71,6 +71,7 @@ import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
+import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -289,123 +290,6 @@ const ModelMenuPortal: React.FC<{
   );
 };
 
-// Portal component for avatar picker to avoid clipping by parent containers
-const AvatarPickerPortal: React.FC<{
-  anchorRef: React.RefObject<HTMLElement | null>;
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 288, transform: 'translateY(0)' }); // w-72 = 288px
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>(open);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const updatePosition = () => {
-      if (!anchorRef.current) return;
-      const rect = anchorRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const dropdownHeight = 400; // Approximate height with avatars
-
-      // Check if there's enough space above the trigger
-      const spaceAbove = rect.top;
-      const spaceBelow = viewportHeight - rect.bottom;
-
-      // Position above if there's more space above, otherwise position below
-      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
-
-      setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
-        left: rect.left,
-        width: 288, // w-72
-        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)'
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open, anchorRef]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && 
-          !menuRef.current.contains(event.target as Node) && 
-          !anchorRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-      if (menuRef.current) {
-        menuRef.current.focus();
-      }
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose, anchorRef]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={(node) => {
-        menuRef.current = node;
-        setScrollableRef(node);
-      }}
-      tabIndex={-1}
-      style={{
-        position: "fixed",
-        top: pos.top,
-        left: pos.left,
-        width: pos.width,
-        zIndex: 9999,
-        transform: pos.transform,
-        maxHeight: '400px',
-        overflowY: 'auto',
-        overflowX: 'hidden'
-      }}
-      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-4 overscroll-contain scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
-      onWheel={handleWheel}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-      onFocus={() => {
-        if (menuRef.current) {
-          menuRef.current.focus();
-        }
-      }}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
 
 const ImageActionMenuPortal: React.FC<{
   anchorEl: HTMLElement | null;
@@ -6231,10 +6115,10 @@ const handleGenerate = async () => {
                   <button
                     type="button"
                     onClick={() => navigate('/create/chat')}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 rounded-full transition-colors duration-200`}
+                    aria-label="Chat mode"
                   >
-                    <MessageCircle className="w-4 h-4 flex-shrink-0 text-n-text" />
-                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Chat mode</span>
+                    <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
                   </button>
                 <button
                   type="button"

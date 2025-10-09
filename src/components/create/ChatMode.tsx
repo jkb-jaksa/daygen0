@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookmarkIcon,
-  Image as ImageIcon,
+  Check,
   LayoutDashboard,
-  Loader2,
   MessageCircle,
   Pencil,
   Package,
   Plus,
   Send,
-  Sparkles,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/useAuth";
@@ -20,6 +19,15 @@ import { useFooter } from "../../contexts/useFooter";
 import { buttons, glass, inputs, layout } from "../../styles/designSystem";
 import { useChatSessions } from "../../hooks/useChatSessions";
 import type { ChatMessage, ChatSession } from "../../hooks/useChatSessions";
+import { usePromptHistory } from "../../hooks/usePromptHistory";
+import { useSavedPrompts } from "../../hooks/useSavedPrompts";
+import { PromptsDropdown } from "../PromptsDropdown";
+import { AvatarPickerPortal } from "./AvatarPickerPortal";
+import type { AvatarSelection, StoredAvatar } from "../avatars/types";
+import { createAvatarRecord, normalizeStoredAvatars } from "../../utils/avatars";
+import { getPersistedValue, setPersistedValue } from "../../lib/clientStorage";
+
+const AvatarCreationModal = lazy(() => import("../avatars/AvatarCreationModal"));
 
 const createId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -87,7 +95,7 @@ type GroupedSessions = {
 
 const ChatMode: React.FC = () => {
   const navigate = useNavigate();
-  const { storagePrefix } = useAuth();
+  const { storagePrefix, user } = useAuth();
   const { setFooterVisible } = useFooter();
   const {
     sessions,
@@ -98,18 +106,36 @@ const ChatMode: React.FC = () => {
     deleteSession,
   } = useChatSessions(storagePrefix);
 
+  const userKey = user?.id || user?.email || "anon";
+  const { history, addPrompt, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
+  const { savedPrompts, savePrompt, removePrompt, updatePrompt } = useSavedPrompts(userKey);
+
   const [input, setInput] = useState("");
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [chatNameDraft, setChatNameDraft] = useState("");
   const [chatToRename, setChatToRename] = useState<ChatSession | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [chatToDelete, setChatToDelete] = useState<ChatSession | null>(null);
+  const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [storedProducts, setStoredProducts] = useState<StoredAvatar[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<StoredAvatar | null>(null);
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
+  const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
+  const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
+  const [avatarName, setAvatarName] = useState("");
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
+  const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const promptsButtonRef = useRef<HTMLButtonElement>(null);
+  const avatarButtonRef = useRef<HTMLButtonElement>(null);
+  const productButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setFooterVisible(false);
@@ -131,6 +157,114 @@ const ChatMode: React.FC = () => {
     if (!messagesEndRef.current) return;
     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [activeSession?.messages.length, isAssistantTyping]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAvatars = async () => {
+      if (!storagePrefix) {
+        if (isMounted) {
+          setStoredAvatars([]);
+          setSelectedAvatar(null);
+        }
+        return;
+      }
+
+      try {
+        const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars");
+        if (!isMounted) return;
+
+        const normalized = normalizeStoredAvatars(stored ?? [], { ownerId: user?.id ?? undefined });
+        setStoredAvatars(normalized);
+
+        const needsPersist =
+          (stored?.length ?? 0) !== normalized.length ||
+          (stored ?? []).some((avatar, index) => {
+            const normalizedAvatar = normalized[index];
+            if (!normalizedAvatar) return true;
+            return avatar.slug !== normalizedAvatar.slug || avatar.ownerId !== normalizedAvatar.ownerId;
+          });
+
+        if (needsPersist) {
+          await setPersistedValue(storagePrefix, "avatars", normalized);
+        }
+      } catch {
+        if (isMounted) {
+          setStoredAvatars([]);
+        }
+      }
+    };
+
+    void loadAvatars();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storagePrefix, user?.id]);
+
+  useEffect(() => {
+    if (!selectedAvatar) return;
+    const match = storedAvatars.find(avatar => avatar.id === selectedAvatar.id);
+    if (!match) {
+      setSelectedAvatar(null);
+    } else if (match !== selectedAvatar) {
+      setSelectedAvatar(match);
+    }
+  }, [selectedAvatar, storedAvatars]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProducts = async () => {
+      if (!storagePrefix) {
+        if (isMounted) {
+          setStoredProducts([]);
+          setSelectedProduct(null);
+        }
+        return;
+      }
+
+      try {
+        const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "products");
+        if (!isMounted) return;
+
+        const normalized = normalizeStoredAvatars(stored ?? [], { ownerId: user?.id ?? undefined });
+        setStoredProducts(normalized);
+
+        const needsPersist =
+          (stored?.length ?? 0) !== normalized.length ||
+          (stored ?? []).some((product, index) => {
+            const normalizedProduct = normalized[index];
+            if (!normalizedProduct) return true;
+            return product.slug !== normalizedProduct.slug || product.ownerId !== normalizedProduct.ownerId;
+          });
+
+        if (needsPersist) {
+          await setPersistedValue(storagePrefix, "products", normalized);
+        }
+      } catch {
+        if (isMounted) {
+          setStoredProducts([]);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storagePrefix, user?.id]);
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const match = storedProducts.find(product => product.id === selectedProduct.id);
+    if (!match) {
+      setSelectedProduct(null);
+    } else if (match !== selectedProduct) {
+      setSelectedProduct(match);
+    }
+  }, [selectedProduct, storedProducts]);
 
   const groupedSessions = useMemo(() => {
     const groups = new Map<string, typeof sessions>();
@@ -180,6 +314,219 @@ const ChatMode: React.FC = () => {
   const removeReference = (index: number) => {
     setReferencePreviews(prev => prev.filter((_, idx) => idx !== index));
   };
+
+  const handleAvatarSelect = useCallback((avatar: StoredAvatar) => {
+    setSelectedAvatar(avatar);
+    setIsAvatarPickerOpen(false);
+  }, []);
+
+  const clearSelectedAvatar = useCallback(() => {
+    setSelectedAvatar(null);
+  }, []);
+
+  const handleAvatarDelete = useCallback(
+    async (avatar: StoredAvatar) => {
+      if (!window.confirm(`Remove ${avatar.name}?`)) return;
+
+      const updated = storedAvatars.filter(item => item.id !== avatar.id);
+      setStoredAvatars(updated);
+      if (selectedAvatar?.id === avatar.id) {
+        setSelectedAvatar(null);
+      }
+
+      if (storagePrefix) {
+        try {
+          await setPersistedValue(storagePrefix, "avatars", updated);
+        } catch {
+          // ignore persistence errors in chat mode
+        }
+      }
+    },
+    [selectedAvatar, storedAvatars, storagePrefix],
+  );
+
+  const handleProductSelect = useCallback((product: StoredAvatar) => {
+    setSelectedProduct(product);
+    setIsProductPickerOpen(false);
+  }, []);
+
+  const clearSelectedProduct = useCallback(() => {
+    setSelectedProduct(null);
+  }, []);
+
+  const handleProductDelete = useCallback(
+    async (product: StoredAvatar) => {
+      if (!window.confirm(`Remove ${product.name}?`)) return;
+
+      const updated = storedProducts.filter(item => item.id !== product.id);
+      setStoredProducts(updated);
+      if (selectedProduct?.id === product.id) {
+        setSelectedProduct(null);
+      }
+
+      if (storagePrefix) {
+        try {
+          await setPersistedValue(storagePrefix, "products", updated);
+        } catch {
+          // ignore persistence errors in chat mode
+        }
+      }
+    },
+    [selectedProduct, storedProducts, storagePrefix],
+  );
+
+  const validateAvatarFile = useCallback((file: File): string | null => {
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      return "Please choose a JPEG, PNG, or WebP image file.";
+    }
+
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return "File size must be less than 50MB.";
+    }
+
+    if (file.size === 0) {
+      return "The selected file is empty.";
+    }
+
+    return null;
+  }, []);
+
+  const getImageDimensions = useCallback((file: File): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = () => {
+        reject(new Error("Failed to load image"));
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  const processAvatarImageFile = useCallback(
+    async (file: File) => {
+      const validationError = validateAvatarFile(file);
+      if (validationError) {
+        setAvatarUploadError(validationError);
+        return;
+      }
+
+      try {
+        const { width, height } = await getImageDimensions(file);
+        const maxDimension = 8192;
+        const minDimension = 64;
+
+        if (width > maxDimension || height > maxDimension) {
+          setAvatarUploadError(`Image dimensions (${width}x${height}) are too large. Maximum allowed: ${maxDimension}x${maxDimension}.`);
+          return;
+        }
+
+        if (width < minDimension || height < minDimension) {
+          setAvatarUploadError(`Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`);
+          return;
+        }
+      } catch {
+        setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
+        return;
+      }
+
+      setAvatarUploadError(null);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          setAvatarSelection({ imageUrl: result, source: "upload" });
+        }
+      };
+      reader.onerror = () => {
+        setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      };
+      reader.readAsDataURL(file);
+    },
+    [getImageDimensions, validateAvatarFile],
+  );
+
+  const handleSaveNewAvatar = useCallback(async () => {
+    if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
+
+    const record = createAvatarRecord({
+      name: avatarName.trim(),
+      imageUrl: avatarSelection.imageUrl,
+      source: avatarSelection.source,
+      sourceId: avatarSelection.sourceId,
+      ownerId: user?.id ?? undefined,
+      existingAvatars: storedAvatars,
+    });
+
+    const updated = [record, ...storedAvatars];
+    setStoredAvatars(updated);
+    setSelectedAvatar(record);
+
+    try {
+      await setPersistedValue(storagePrefix, "avatars", updated);
+    } catch {
+      // ignore persistence errors
+    }
+
+    setIsAvatarCreationModalOpen(false);
+    setAvatarName("");
+    setAvatarSelection(null);
+    setAvatarUploadError(null);
+    setIsDraggingAvatar(false);
+  }, [avatarName, avatarSelection, storagePrefix, storedAvatars, user?.id]);
+
+  const resetAvatarCreationPanel = useCallback(() => {
+    setIsAvatarCreationModalOpen(false);
+    setAvatarName("");
+    setAvatarSelection(null);
+    setAvatarUploadError(null);
+    setIsDraggingAvatar(false);
+  }, []);
+
+  const handleProductUpload: React.ChangeEventHandler<HTMLInputElement> = async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async loadEvent => {
+      const imageUrl = loadEvent.target?.result as string;
+      const record: StoredAvatar = {
+        id: `product-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        slug: `product-${Date.now()}`,
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        imageUrl,
+        createdAt: new Date().toISOString(),
+        source: "upload",
+        published: false,
+        ownerId: user?.id,
+      };
+
+      const updated = [record, ...storedProducts];
+      setStoredProducts(updated);
+      setSelectedProduct(record);
+
+      if (storagePrefix) {
+        try {
+          await setPersistedValue(storagePrefix, "products", updated);
+        } catch {
+          // ignore persistence errors
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const handleSaveRecentPrompt = useCallback(
+    (text: string) => {
+      savePrompt(text);
+    },
+    [savePrompt],
+  );
 
   const focusTextarea = () => {
     textareaRef.current?.focus();
@@ -313,6 +660,7 @@ const ChatMode: React.FC = () => {
     };
 
     appendMessage(sessionId, userMessage);
+    addPrompt(content);
     setInput("");
     setReferencePreviews([]);
     setIsAssistantTyping(true);
@@ -328,30 +676,6 @@ const ChatMode: React.FC = () => {
       appendMessage(sessionId, response);
       setIsAssistantTyping(false);
     }, 650);
-  };
-
-  const handleGenerateImage = () => {
-    if (!activeSession) return;
-    const sessionId = activeSession.id;
-    const createdAt = new Date().toISOString();
-    const description = input.trim() || "Image generation";
-    const seed = `${description}-${createdAt}`;
-    const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(seed)}/512/512`;
-
-    setIsGeneratingImage(true);
-
-    scheduleTimeout(() => {
-      const message: ChatMessage = {
-        id: createId(),
-        role: "assistant",
-        kind: "image",
-        content: description,
-        imageUrl,
-        createdAt: new Date().toISOString(),
-      };
-      appendMessage(sessionId, message, description);
-      setIsGeneratingImage(false);
-    }, 800);
   };
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
@@ -370,7 +694,7 @@ const ChatMode: React.FC = () => {
     <div className={`${layout.page} pt-24`}>
       {(isCreateModalOpen || chatToRename || chatToDelete) && (
         <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12"
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black py-12"
           role="dialog"
           aria-modal="true"
         >
@@ -457,16 +781,16 @@ const ChatMode: React.FC = () => {
       )}
       <div className={`${layout.container} pb-6`}>
         <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-6">
-          <aside className={`${glass.prompt} hidden h-full w-48 flex-shrink-0 flex-col rounded-[24px] border border-theme-mid/40 bg-theme-black/40 p-4 lg:flex`}>
+          <aside className="hidden h-full w-48 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-theme-text" />
-                <h2 className="text-base font-raleway font-medium text-theme-white">Chat history</h2>
+                <MessageCircle className="h-4 w-4 text-theme-white" />
+                <h2 className="text-base font-raleway font-light text-theme-white">History</h2>
               </div>
               <button
                 type="button"
                 onClick={openCreateModal}
-                className={`${glass.prompt} grid size-7 place-items-center rounded-full text-theme-white transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
+                className="grid size-7 place-items-center rounded-full text-theme-white transition-colors duration-150 hover:text-theme-text"
                 aria-label="Start a new chat"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -481,7 +805,6 @@ const ChatMode: React.FC = () => {
                   <div className="space-y-1">
                     {group.sessions.map(session => {
                       const isActive = session.id === activeSession?.id;
-                      const lastMessage = session.messages[session.messages.length - 1];
                       return (
                         <button
                           key={session.id}
@@ -493,38 +816,28 @@ const ChatMode: React.FC = () => {
                           }}
                           className={`group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
                             isActive
-                              ? "bg-theme-text/15 border border-theme-text/40 text-theme-white"
-                              : "border border-transparent hover:border-theme-mid/40 hover:bg-theme-black/50 text-theme-light"
+                              ? "bg-theme-dark border border-theme-mid text-theme-text"
+                              : "border border-transparent hover:border-theme-dark hover:bg-theme-black text-theme-light"
                           }`}
                           aria-pressed={isActive}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="truncate text-sm font-raleway text-theme-white">
+                            <span className={`truncate text-sm font-raleway font-light ${isActive ? "text-theme-text" : "text-theme-white"}`}>
                               {session.title || "New chat"}
                             </span>
-                            <span className="text-xs font-raleway text-theme-light">
-                              {formatTimestamp(session.updatedAt)}
-                            </span>
-                          </div>
-                          <div className="mt-2 flex items-center justify-between gap-2">
-                            {lastMessage ? (
-                              <div className="truncate text-xs font-raleway text-theme-light/80">
-                                {lastMessage.kind === "image" ? "Image response" : lastMessage.content}
-                              </div>
-                            ) : (
-                              <span className="text-xs font-raleway text-theme-light/60">No messages yet</span>
-                            )}
-                            <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                            <div className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={event => {
                                   event.stopPropagation();
                                   openRenameModal(session);
                                 }}
-                                className="grid size-6 place-items-center rounded-full border border-transparent text-theme-light transition-colors duration-150 hover:border-theme-text hover:text-theme-text"
+                                className={`grid size-6 place-items-center rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${
+                                  isActive ? "text-theme-text hover:text-theme-white" : "text-theme-light hover:text-theme-text"
+                                }`}
                                 aria-label="Rename chat"
                               >
-                                <Pencil className="h-3.5 w-3.5" />
+                                <Pencil className="h-3 w-3" />
                               </button>
                               <button
                                 type="button"
@@ -532,10 +845,12 @@ const ChatMode: React.FC = () => {
                                   event.stopPropagation();
                                   openDeleteModal(session);
                                 }}
-                                className="grid size-6 place-items-center rounded-full border border-transparent text-theme-light transition-colors duration-150 hover:border-theme-text hover:text-theme-text"
+                                className={`grid size-6 place-items-center rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${
+                                  isActive ? "text-theme-text hover:text-theme-white" : "text-theme-light hover:text-theme-text"
+                                }`}
                                 aria-label="Delete chat"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-3 w-3" />
                               </button>
                             </div>
                           </div>
@@ -548,22 +863,7 @@ const ChatMode: React.FC = () => {
             </div>
           </aside>
           <section className="flex min-h-full flex-1 flex-col gap-4">
-            <header className="flex items-center justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-raleway font-light text-theme-white">
-                  {activeSession?.title ?? "New chat"}
-                </h1>
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate("/create/image")}
-                className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-4 py-2 text-sm font-raleway text-theme-white transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Platform mode
-              </button>
-            </header>
-            <div className={`${glass.prompt} flex-1 overflow-hidden rounded-[24px] border border-theme-mid/40 bg-theme-black/40`}>
+            <div className="flex-1 overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black">
               <div className="flex h-full flex-col">
                 <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
                   {activeSession?.messages.map(message => (
@@ -575,7 +875,7 @@ const ChatMode: React.FC = () => {
                       className={`max-w-[min(720px,90%)] rounded-3xl px-4 py-3 text-sm font-raleway leading-relaxed ${
                         message.role === "user"
                           ? "bg-theme-text text-theme-black"
-                          : "border border-theme-mid/40 bg-theme-black/70 text-theme-white"
+                          : "border border-theme-dark bg-theme-black text-theme-white"
                       }`}
                     >
                       {message.kind === "image" && message.imageUrl ? (
@@ -585,9 +885,9 @@ const ChatMode: React.FC = () => {
                             src={message.imageUrl}
                             alt={message.content}
                             loading="lazy"
-                            className="w-full max-w-md rounded-2xl border border-theme-mid/40 object-cover"
+                            className="w-full max-w-md rounded-2xl border border-theme-dark object-cover"
                           />
-                          <p className="text-sm text-theme-white/80">{message.content}</p>
+                          <p className="text-sm text-theme-white">{message.content}</p>
                         </div>
                       ) : (
                         <p>{message.content}</p>
@@ -597,24 +897,24 @@ const ChatMode: React.FC = () => {
                 ))}
                 {isAssistantTyping && (
                   <div className="flex justify-start">
-                    <div className="rounded-3xl border border-theme-mid/40 bg-theme-black/60 px-4 py-2 text-sm font-raleway text-theme-light">
+                    <div className="rounded-3xl border border-theme-dark bg-theme-black px-4 py-2 text-sm font-raleway text-theme-light">
                       Daygen is thinking…
                     </div>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
-              <form onSubmit={handleSubmit} className="border-t border-theme-mid/30 px-4 py-4">
+              <form onSubmit={handleSubmit} className="border-t border-theme-dark px-4 py-4">
                 <div className={`rounded-[20px] px-4 py-3 ${glass.prompt}`}>
                   <div className="mb-1">
                     <textarea
                       ref={textareaRef}
-                      placeholder="Ask anything or brainstorm ideas…"
+                      placeholder="Describe what you want to create..."
                       value={input}
                       onChange={event => setInput(event.target.value)}
                       onKeyDown={handleKeyDown}
                       rows={1}
-                      className="h-[36px] w-full resize-none overflow-hidden rounded-lg border-0 bg-transparent px-3 py-2 font-raleway text-base text-theme-white placeholder:text-theme-light focus:outline-none"
+                      className="h-[36px] w-full resize-none overflow-hidden rounded-lg border-0 bg-transparent px-3 py-2 font-raleway text-base text-theme-text placeholder:text-theme-light focus:outline-none"
                     />
                   </div>
                   <div className="flex items-center justify-between gap-2 px-3">
@@ -622,40 +922,83 @@ const ChatMode: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => navigate("/create/image")}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text lg:px-3`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                        aria-label="Platform mode"
                       >
-                        <LayoutDashboard className="h-3.5 w-3.5" />
-                        <span className="hidden whitespace-nowrap text-sm lg:inline">Platform mode</span>
+                        <LayoutDashboard className="h-3 w-3" />
                       </button>
                       <button
                         type="button"
                         onClick={handleReferenceClick}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60 lg:px-3`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60 lg:px-3`}
                         disabled={referencePreviews.length >= REFERENCE_LIMIT}
                       >
                         <Plus className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Reference</span>
                       </button>
                       <button
+                        ref={avatarButtonRef}
                         type="button"
-                        onClick={focusTextarea}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text lg:px-3`}
+                        onClick={() => setIsAvatarPickerOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
                       >
                         <Users className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Avatars</span>
                       </button>
+                      {selectedAvatar && (
+                        <div className="flex items-center gap-2">
+                          <div className="hidden text-sm font-raleway text-theme-light lg:block">Avatar:</div>
+                          <div className="relative">
+                            <img
+                              src={selectedAvatar.imageUrl}
+                              alt={selectedAvatar.name}
+                              className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={clearSelectedAvatar}
+                              className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-theme-black text-theme-white transition-colors duration-150 hover:bg-theme-dark"
+                              aria-label="Remove avatar"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <button
+                        ref={productButtonRef}
                         type="button"
-                        onClick={focusTextarea}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text lg:px-3`}
+                        onClick={() => setIsProductPickerOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
                       >
                         <Package className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Products</span>
                       </button>
+                      {selectedProduct && (
+                        <div className="flex items-center gap-2">
+                          <div className="hidden text-sm font-raleway text-theme-light lg:block">Product:</div>
+                          <div className="relative">
+                            <img
+                              src={selectedProduct.imageUrl}
+                              alt={selectedProduct.name}
+                              className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={clearSelectedProduct}
+                              className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-theme-black text-theme-white transition-colors duration-150 hover:bg-theme-dark"
+                              aria-label="Remove product"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <button
+                        ref={promptsButtonRef}
                         type="button"
-                        onClick={focusTextarea}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text lg:px-3`}
+                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text lg:px-3`}
                       >
                         <BookmarkIcon className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Saved prompts</span>
@@ -671,12 +1014,12 @@ const ChatMode: React.FC = () => {
                                 <img
                                   src={preview}
                                   alt={`Reference ${index + 1}`}
-                                  className="h-9 w-9 rounded-lg border border-theme-mid/40 object-cover"
+                                  className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => removeReference(index)}
-                                  className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-theme-black/80 text-theme-white transition-colors duration-150 hover:bg-theme-black"
+                                  className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-theme-black text-theme-white transition-colors duration-150 hover:bg-theme-dark"
                                   aria-label="Remove reference"
                                 >
                                   <span className="text-xs">×</span>
@@ -686,29 +1029,190 @@ const ChatMode: React.FC = () => {
                           </div>
                         </div>
                       )}
+                      <AvatarPickerPortal
+                        anchorRef={avatarButtonRef}
+                        open={isAvatarPickerOpen}
+                        onClose={() => setIsAvatarPickerOpen(false)}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="text-base font-raleway text-theme-text">Your Avatars</div>
+                            <button
+                              type="button"
+                              className="inline-flex size-7 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={() => {
+                                setIsAvatarPickerOpen(false);
+                                setIsAvatarCreationModalOpen(true);
+                                setAvatarName("");
+                              }}
+                              aria-label="Create a new Avatar"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          {storedAvatars.length > 0 ? (
+                            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                              {storedAvatars.map(avatar => {
+                                const isActive = selectedAvatar?.id === avatar.id;
+                                return (
+                                  <div
+                                    key={avatar.id}
+                                    className="flex w-full items-center gap-3 rounded-2xl border border-theme-dark px-3 py-2 transition-colors duration-200 group hover:border-theme-dark hover:bg-theme-text/10"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAvatarSelect(avatar)}
+                                      className={`flex flex-1 items-center gap-3 ${
+                                        isActive ? "text-theme-text" : "text-theme-white"
+                                      }`}
+                                    >
+                                      <img
+                                        src={avatar.imageUrl}
+                                        alt={avatar.name}
+                                        loading="lazy"
+                                        className="h-10 w-10 rounded-lg object-cover"
+                                      />
+                                      <div className="min-w-0 flex-1 text-left">
+                                        <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
+                                      </div>
+                                      {isActive && <Check className="h-4 w-4 text-theme-text" />}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={event => {
+                                        event.stopPropagation();
+                                        void handleAvatarDelete(avatar);
+                                      }}
+                                      className="opacity-0 transition-opacity duration-200 hover:bg-theme-text/10 rounded-full p-1 group-hover:opacity-100"
+                                      title="Delete Avatar"
+                                      aria-label="Delete Avatar"
+                                    >
+                                      <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-theme-dark bg-theme-black p-4 text-sm font-raleway text-theme-white">
+                              You haven't saved any Avatars yet. Visit the Avatars page to create one.
+                            </div>
+                          )}
+                          {storedAvatars.length === 0 && (
+                            <button
+                              type="button"
+                              className={`w-full ${buttons.glassPromptCompact}`}
+                              onClick={() => {
+                                navigate("/create/avatars");
+                                setIsAvatarPickerOpen(false);
+                              }}
+                            >
+                              <Users className="h-4 w-4" />
+                              Go to Avatars
+                            </button>
+                          )}
+                        </div>
+                      </AvatarPickerPortal>
+                      <AvatarPickerPortal
+                        anchorRef={productButtonRef}
+                        open={isProductPickerOpen}
+                        onClose={() => setIsProductPickerOpen(false)}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="text-base font-raleway text-theme-text">Your Products</div>
+                            <label htmlFor="chat-product-upload">
+                              <button
+                                type="button"
+                                className="inline-flex size-7 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                aria-label="Add a new Product"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </label>
+                            <input
+                              id="chat-product-upload"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleProductUpload}
+                              className="hidden"
+                            />
+                          </div>
+                          {storedProducts.length > 0 ? (
+                            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                              {storedProducts.map(product => {
+                                const isActive = selectedProduct?.id === product.id;
+                                return (
+                                  <div
+                                    key={product.id}
+                                    className="flex w-full items-center gap-3 rounded-2xl border border-theme-dark px-3 py-2 transition-colors duration-200 group hover:border-theme-dark hover:bg-theme-text/10"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => handleProductSelect(product)}
+                                      className={`flex flex-1 items-center gap-3 ${
+                                        isActive ? "text-theme-text" : "text-theme-white"
+                                      }`}
+                                    >
+                                      <img
+                                        src={product.imageUrl}
+                                        alt={product.name}
+                                        loading="lazy"
+                                        className="h-10 w-10 rounded-lg object-cover"
+                                      />
+                                      <div className="min-w-0 flex-1 text-left">
+                                        <p className="truncate text-sm font-raleway text-theme-white">{product.name}</p>
+                                      </div>
+                                      {isActive && <Check className="h-4 w-4 text-theme-text" />}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={event => {
+                                        event.stopPropagation();
+                                        void handleProductDelete(product);
+                                      }}
+                                      className="opacity-0 transition-opacity duration-200 hover:bg-theme-text/10 rounded-full p-1 group-hover:opacity-100"
+                                      title="Delete Product"
+                                      aria-label="Delete Product"
+                                    >
+                                      <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-theme-dark bg-theme-black p-4 text-sm font-raleway text-theme-white">
+                              You haven't added any Products yet. Click the + button above to add one.
+                            </div>
+                          )}
+                        </div>
+                      </AvatarPickerPortal>
+                      <PromptsDropdown
+                        isOpen={isPromptsDropdownOpen}
+                        onClose={() => setIsPromptsDropdownOpen(false)}
+                        anchorEl={promptsButtonRef.current}
+                        recentPrompts={history}
+                        savedPrompts={savedPrompts}
+                        onSelectPrompt={text => {
+                          setInput(text);
+                          focusTextarea();
+                        }}
+                        onRemoveSavedPrompt={removePrompt}
+                        onRemoveRecentPrompt={removeRecentPrompt}
+                        onUpdateSavedPrompt={updatePrompt}
+                        onAddSavedPrompt={savePrompt}
+                        onSaveRecentPrompt={handleSaveRecentPrompt}
+                      />
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleGenerateImage}
-                        className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-4 py-2 text-sm font-raleway text-theme-white transition-colors duration-150 hover:border-theme-text hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60`}
-                        disabled={isGeneratingImage}
-                      >
-                        {isGeneratingImage ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ImageIcon className="h-4 w-4" />
-                        )}
-                        Generate image
-                      </button>
                       <button
                         type="submit"
                         className="inline-flex items-center gap-2 rounded-full bg-theme-text px-5 py-2 text-sm font-raleway font-medium text-theme-black transition-colors duration-150 hover:bg-theme-white disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={!input.trim()}
                       >
-                        <Sparkles className="h-4 w-4" />
+                        <Send className="h-4 w-4" />
                         Send
-                        <Send className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -727,6 +1231,29 @@ const ChatMode: React.FC = () => {
         </section>
       </div>
     </div>
+    <Suspense fallback={null}>
+      <AvatarCreationModal
+        open={isAvatarCreationModalOpen}
+        selection={avatarSelection}
+        uploadError={avatarUploadError}
+        isDragging={isDraggingAvatar}
+        avatarName={avatarName}
+        disableSave={!avatarSelection || !avatarName.trim()}
+        galleryImages={[]}
+        hasGalleryImages={false}
+        onClose={resetAvatarCreationPanel}
+        onAvatarNameChange={setAvatarName}
+        onSave={handleSaveNewAvatar}
+        onSelectFromGallery={imageUrl => setAvatarSelection({ imageUrl, source: "gallery", sourceId: imageUrl })}
+        onClearSelection={() => {
+          setAvatarSelection(null);
+          setAvatarUploadError(null);
+        }}
+        onProcessFile={processAvatarImageFile}
+        onDragStateChange={setIsDraggingAvatar}
+        onUploadError={setAvatarUploadError}
+      />
+    </Suspense>
   </div>
   );
 };
