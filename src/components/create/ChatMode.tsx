@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookmarkIcon,
@@ -6,20 +6,20 @@ import {
   LayoutDashboard,
   Loader2,
   MessageCircle,
+  Pencil,
   Package,
   Plus,
   Send,
   Sparkles,
+  Trash2,
   Users,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/useAuth";
-import { glass, layout } from "../../styles/designSystem";
-import {
-  ChatMessage,
-  ChatSession,
-  useChatSessions,
-} from "../../hooks/useChatSessions";
+import { useFooter } from "../../contexts/useFooter";
+import { buttons, glass, inputs, layout } from "../../styles/designSystem";
+import { useChatSessions } from "../../hooks/useChatSessions";
+import type { ChatMessage, ChatSession } from "../../hooks/useChatSessions";
 
 const createId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -88,21 +88,33 @@ type GroupedSessions = {
 const ChatMode: React.FC = () => {
   const navigate = useNavigate();
   const { storagePrefix } = useAuth();
+  const { setFooterVisible } = useFooter();
   const {
     sessions,
     activeSessionId,
     selectSession,
     createSession,
     updateSession,
+    deleteSession,
   } = useChatSessions(storagePrefix);
 
   const [input, setInput] = useState("");
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [chatNameDraft, setChatNameDraft] = useState("");
+  const [chatToRename, setChatToRename] = useState<ChatSession | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [chatToDelete, setChatToDelete] = useState<ChatSession | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setFooterVisible(false);
+    return () => setFooterVisible(true);
+  }, [setFooterVisible]);
 
   const activeSession = useMemo(() => {
     if (!sessions.length) return undefined;
@@ -172,6 +184,103 @@ const ChatMode: React.FC = () => {
   const focusTextarea = () => {
     textareaRef.current?.focus();
   };
+
+  const openCreateModal = () => {
+    setChatNameDraft("");
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+    setChatNameDraft("");
+  }, []);
+
+  const confirmCreateChat = useCallback(() => {
+    const session = createSession();
+    const trimmed = chatNameDraft.trim();
+    if (trimmed) {
+      const now = new Date().toISOString();
+      updateSession(session.id, current => ({
+        ...current,
+        title: deriveTitle(trimmed),
+        updatedAt: now,
+      }));
+    }
+    selectSession(session.id);
+    setInput("");
+    setReferencePreviews([]);
+    closeCreateModal();
+    textareaRef.current?.focus();
+  }, [chatNameDraft, closeCreateModal, createSession, selectSession, updateSession]);
+
+  const openRenameModal = (session: ChatSession) => {
+    setChatToRename(session);
+    setRenameDraft(session.title === "New chat" ? "" : session.title);
+  };
+
+  const closeRenameModal = useCallback(() => {
+    setChatToRename(null);
+    setRenameDraft("");
+  }, []);
+
+  const confirmRenameChat = useCallback(() => {
+    if (!chatToRename) return;
+    const trimmed = renameDraft.trim();
+    const nextTitle = trimmed ? deriveTitle(trimmed) : "New chat";
+    const now = new Date().toISOString();
+    updateSession(chatToRename.id, current => ({
+      ...current,
+      title: nextTitle,
+      updatedAt: now,
+    }));
+    closeRenameModal();
+  }, [chatToRename, closeRenameModal, renameDraft, updateSession]);
+
+  const openDeleteModal = (session: ChatSession) => {
+    setChatToDelete(session);
+  };
+
+  const closeDeleteModal = useCallback(() => {
+    setChatToDelete(null);
+  }, []);
+
+  const confirmDeleteChat = useCallback(() => {
+    if (!chatToDelete) return;
+    deleteSession(chatToDelete.id);
+    if (activeSessionId === chatToDelete.id) {
+      setInput("");
+      setReferencePreviews([]);
+    }
+    closeDeleteModal();
+  }, [activeSessionId, chatToDelete, closeDeleteModal, deleteSession]);
+
+  useEffect(() => {
+    const hasModalOpen = isCreateModalOpen || chatToRename !== null || chatToDelete !== null;
+    if (!hasModalOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (chatToRename) {
+          closeRenameModal();
+        } else if (chatToDelete) {
+          closeDeleteModal();
+        } else if (isCreateModalOpen) {
+          closeCreateModal();
+        }
+      } else if (event.key === "Enter") {
+        if (chatToRename) {
+          confirmRenameChat();
+        } else if (chatToDelete) {
+          confirmDeleteChat();
+        } else if (isCreateModalOpen) {
+          confirmCreateChat();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [chatToRename, chatToDelete, isCreateModalOpen, closeCreateModal, closeDeleteModal, closeRenameModal, confirmCreateChat, confirmDeleteChat, confirmRenameChat]);
 
   const appendMessage = (sessionId: string, message: ChatMessage, titleFallback?: string) => {
     updateSession(sessionId, session => {
@@ -259,6 +368,93 @@ const ChatMode: React.FC = () => {
 
   return (
     <div className={`${layout.page} pt-24`}>
+      {(isCreateModalOpen || chatToRename || chatToDelete) && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12"
+          role="dialog"
+          aria-modal="true"
+        >
+          {isCreateModalOpen && (
+            <div className={`${glass.promptDark} w-full max-w-sm min-w-[24rem] rounded-[20px] px-6 py-12 text-center transition-colors duration-200`}>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <MessageCircle className="mx-auto h-10 w-10 text-theme-text" />
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Start new chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
+                    Name your conversation to keep things organized.
+                  </p>
+                  <input
+                    type="text"
+                    value={chatNameDraft}
+                    onChange={event => setChatNameDraft(event.target.value)}
+                    placeholder="Chat title"
+                    className={`${inputs.base} text-theme-text`}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button type="button" onClick={closeCreateModal} className={buttons.ghost}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={confirmCreateChat} className={buttons.primary}>
+                    Create chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {chatToRename && (
+            <div className={`${glass.promptDark} w-full max-w-sm min-w-[24rem] rounded-[20px] px-6 py-12 text-center transition-colors duration-200`}>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <Pencil className="mx-auto h-10 w-10 text-theme-text" />
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Rename chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
+                    Give this chat a new name to make it easier to find later.
+                  </p>
+                  <input
+                    type="text"
+                    value={renameDraft}
+                    onChange={event => setRenameDraft(event.target.value)}
+                    placeholder="Chat title"
+                    className={`${inputs.base} text-theme-text`}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button type="button" onClick={closeRenameModal} className={buttons.ghost}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={confirmRenameChat} className={buttons.primary}>
+                    Save changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {chatToDelete && (
+            <div className={`${glass.promptDark} w-full max-w-sm min-w-[24rem] rounded-[20px] px-6 py-12 text-center transition-colors duration-200`}>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <Trash2 className="mx-auto h-10 w-10 text-theme-text" />
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
+                    Are you sure you want to delete “{chatToDelete.title || "New chat"}”? This action cannot be undone.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button type="button" onClick={closeDeleteModal} className={buttons.ghost}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={confirmDeleteChat} className={buttons.primary}>
+                    Delete chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <div className={`${layout.container} pb-6`}>
         <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-6">
           <aside className={`${glass.prompt} hidden h-full w-48 flex-shrink-0 flex-col rounded-[24px] border border-theme-mid/40 bg-theme-black/40 p-4 lg:flex`}>
@@ -269,12 +465,7 @@ const ChatMode: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  const session = createSession();
-                  selectSession(session.id);
-                  setInput("");
-                  setReferencePreviews([]);
-                }}
+                onClick={openCreateModal}
                 className={`${glass.prompt} grid size-7 place-items-center rounded-full text-theme-white transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
                 aria-label="Start a new chat"
               >
@@ -300,7 +491,7 @@ const ChatMode: React.FC = () => {
                             setInput("");
                             setReferencePreviews([]);
                           }}
-                          className={`w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
+                          className={`group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
                             isActive
                               ? "bg-theme-text/15 border border-theme-text/40 text-theme-white"
                               : "border border-transparent hover:border-theme-mid/40 hover:bg-theme-black/50 text-theme-light"
@@ -315,11 +506,39 @@ const ChatMode: React.FC = () => {
                               {formatTimestamp(session.updatedAt)}
                             </span>
                           </div>
-                          {lastMessage && (
-                            <div className="mt-1 truncate text-xs font-raleway text-theme-light/80">
-                              {lastMessage.kind === "image" ? "Image response" : lastMessage.content}
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            {lastMessage ? (
+                              <div className="truncate text-xs font-raleway text-theme-light/80">
+                                {lastMessage.kind === "image" ? "Image response" : lastMessage.content}
+                              </div>
+                            ) : (
+                              <span className="text-xs font-raleway text-theme-light/60">No messages yet</span>
+                            )}
+                            <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                              <button
+                                type="button"
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  openRenameModal(session);
+                                }}
+                                className="grid size-6 place-items-center rounded-full border border-transparent text-theme-light transition-colors duration-150 hover:border-theme-text hover:text-theme-text"
+                                aria-label="Rename chat"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  openDeleteModal(session);
+                                }}
+                                className="grid size-6 place-items-center rounded-full border border-transparent text-theme-light transition-colors duration-150 hover:border-theme-text hover:text-theme-text"
+                                aria-label="Delete chat"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
-                          )}
+                          </div>
                         </button>
                       );
                     })}
@@ -386,67 +605,65 @@ const ChatMode: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
               <form onSubmit={handleSubmit} className="border-t border-theme-mid/30 px-4 py-4">
-                <div
-                  className={`rounded-[20px] px-4 py-3 ${glass.prompt}`}
-                >
-                  <div className="mb-2">
+                <div className={`rounded-[20px] px-4 py-3 ${glass.prompt}`}>
+                  <div className="mb-1">
                     <textarea
                       ref={textareaRef}
                       placeholder="Ask anything or brainstorm ideas…"
                       value={input}
-                      onChange={(event) => setInput(event.target.value)}
+                      onChange={event => setInput(event.target.value)}
                       onKeyDown={handleKeyDown}
                       rows={1}
-                      className="w-full resize-none overflow-hidden bg-transparent text-base font-raleway text-theme-white placeholder:text-theme-light focus:outline-none"
+                      className="h-[36px] w-full resize-none overflow-hidden rounded-lg border-0 bg-transparent px-3 py-2 font-raleway text-base text-theme-white placeholder:text-theme-light focus:outline-none"
                     />
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center justify-between gap-2 px-3">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                       <button
                         type="button"
                         onClick={() => navigate("/create/image")}
-                        className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-3 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text lg:px-3`}
                       >
                         <LayoutDashboard className="h-3.5 w-3.5" />
-                        Platform mode
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Platform mode</span>
                       </button>
                       <button
                         type="button"
                         onClick={handleReferenceClick}
-                        className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-3 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-150 hover:border-theme-text hover:text-theme-text disabled:opacity-40`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60 lg:px-3`}
                         disabled={referencePreviews.length >= REFERENCE_LIMIT}
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        Reference
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Reference</span>
                       </button>
                       <button
                         type="button"
                         onClick={focusTextarea}
-                        className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-3 py-1.5 text-xs font-raleway text-theme-white/70 transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text lg:px-3`}
                       >
                         <Users className="h-3.5 w-3.5" />
-                        Avatars
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Avatars</span>
                       </button>
                       <button
                         type="button"
                         onClick={focusTextarea}
-                        className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-3 py-1.5 text-xs font-raleway text-theme-white/70 transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text lg:px-3`}
                       >
                         <Package className="h-3.5 w-3.5" />
-                        Products
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Products</span>
                       </button>
                       <button
                         type="button"
                         onClick={focusTextarea}
-                        className={`${glass.prompt} inline-flex items-center gap-2 rounded-full border border-theme-mid/40 px-3 py-1.5 text-xs font-raleway text-theme-white/70 transition-colors duration-150 hover:border-theme-text hover:text-theme-text`}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text lg:px-3`}
                       >
                         <BookmarkIcon className="h-3.5 w-3.5" />
-                        Saved prompts
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Saved prompts</span>
                       </button>
                       {referencePreviews.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-raleway text-theme-light">
-                            {referencePreviews.length}/{REFERENCE_LIMIT}
+                          <span className="hidden text-sm font-raleway text-theme-light lg:block">
+                            Reference ({referencePreviews.length}/{REFERENCE_LIMIT}):
                           </span>
                           <div className="flex items-center gap-1.5">
                             {referencePreviews.map((preview, index) => (
@@ -454,7 +671,7 @@ const ChatMode: React.FC = () => {
                                 <img
                                   src={preview}
                                   alt={`Reference ${index + 1}`}
-                                  className="size-9 rounded-lg border border-theme-mid/40 object-cover"
+                                  className="h-9 w-9 rounded-lg border border-theme-mid/40 object-cover"
                                 />
                                 <button
                                   type="button"
