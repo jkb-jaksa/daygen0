@@ -4002,12 +4002,9 @@ const handleGenerate = async () => {
             topP: topPForGeneration,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatar?.id,
-<<<<<<< HEAD
+            productId: selectedProduct?.id,
             clientJobId: generationId,
             onProgress: handleGeminiProgress,
-=======
-            productId: selectedProduct?.id,
->>>>>>> b3b5c6d62503f4d454a223a5dd4df4bfd88a890d
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
@@ -4125,7 +4122,6 @@ const handleGenerate = async () => {
 
           const result = await response.json();
 
-<<<<<<< HEAD
           if (result?.jobId) {
             const jobId: string = result.jobId;
             let jobResultUrl: string | null = null;
@@ -4165,6 +4161,7 @@ const handleGenerate = async () => {
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
               avatarId: selectedAvatar?.id,
+              productId: selectedProduct?.id,
             };
           } else {
             const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
@@ -4179,19 +4176,9 @@ const handleGenerate = async () => {
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
               avatarId: selectedAvatar?.id,
+              productId: selectedProduct?.id,
             };
           }
-=======
-          img = {
-            url: dataUrl,
-            prompt: trimmedPrompt,
-            model: recraftModel,
-            timestamp: new Date().toISOString(),
-            ownerId: user?.id,
-            avatarId: selectedAvatar?.id,
-            productId: selectedProduct?.id,
-          };
->>>>>>> b3b5c6d62503f4d454a223a5dd4df4bfd88a890d
         } else if (isLumaPhotonModel) {
           const resolvedLumaModel =
             modelForGeneration === "luma-photon-flash-1"
