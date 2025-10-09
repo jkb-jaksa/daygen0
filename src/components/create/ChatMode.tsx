@@ -3,16 +3,23 @@ import { useNavigate } from "react-router-dom";
 import {
   BookmarkIcon,
   Check,
+  Film,
   LayoutDashboard,
   MessageCircle,
+  Minus,
   Pencil,
   Package,
   Plus,
   Send,
+  Settings,
+  Shapes,
+  Sparkles,
   Trash2,
   Users,
+  Wand2,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { useAuth } from "../../auth/useAuth";
 import { useFooter } from "../../contexts/useFooter";
@@ -26,8 +33,10 @@ import { AvatarPickerPortal } from "./AvatarPickerPortal";
 import type { AvatarSelection, StoredAvatar } from "../avatars/types";
 import { createAvatarRecord, normalizeStoredAvatars } from "../../utils/avatars";
 import { getPersistedValue, setPersistedValue } from "../../lib/clientStorage";
+import { getToolLogo, hasToolLogo } from "../../utils/toolLogos";
 
 const AvatarCreationModal = lazy(() => import("../avatars/AvatarCreationModal"));
+const SettingsMenu = lazy(() => import("./SettingsMenu"));
 
 const createId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -42,6 +51,88 @@ const scheduleTimeout = (callback: () => void, delay: number) => {
 };
 
 const REFERENCE_LIMIT = 3;
+
+type ImageModelOption = {
+  id: string;
+  name: string;
+  desc: string;
+  Icon: LucideIcon;
+};
+
+const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
+  {
+    id: "gemini-2.5-flash-image",
+    name: "Gemini 2.5 Flash",
+    desc: "Best image editing.",
+    Icon: Sparkles,
+  },
+  {
+    id: "flux-1.1",
+    name: "Flux 1.1",
+    desc: "High-quality text-to-image generation and editing.",
+    Icon: Wand2,
+  },
+  {
+    id: "reve-image",
+    name: "Reve",
+    desc: "Great text-to-image and image editing.",
+    Icon: Sparkles,
+  },
+  {
+    id: "ideogram",
+    name: "Ideogram 3.0",
+    desc: "Advanced image generation, editing, and enhancement.",
+    Icon: Package,
+  },
+  {
+    id: "recraft",
+    name: "Recraft",
+    desc: "Great for text, icons and mockups.",
+    Icon: Shapes,
+  },
+  {
+    id: "qwen-image",
+    name: "Qwen",
+    desc: "Great image editing.",
+    Icon: Wand2,
+  },
+  {
+    id: "runway-gen4",
+    name: "Runway Gen-4",
+    desc: "Great image model. Great control & editing features",
+    Icon: Film,
+  },
+  {
+    id: "chatgpt-image",
+    name: "ChatGPT",
+    desc: "Popular image model.",
+    Icon: Sparkles,
+  },
+  {
+    id: "luma-photon-1",
+    name: "Luma Photon 1",
+    desc: "High-quality image generation with Photon.",
+    Icon: Sparkles,
+  },
+  {
+    id: "luma-photon-flash-1",
+    name: "Luma Photon Flash 1",
+    desc: "Fast image generation with Photon Flash.",
+    Icon: Sparkles,
+  },
+] as const;
+
+type GeminiAspectRatio =
+  | "1:1"
+  | "2:3"
+  | "3:2"
+  | "3:4"
+  | "4:3"
+  | "4:5"
+  | "5:4"
+  | "9:16"
+  | "16:9"
+  | "21:9";
 
 const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
@@ -130,12 +221,43 @@ const ChatMode: React.FC = () => {
   const [avatarName, setAvatarName] = useState("");
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [batchSize, setBatchSize] = useState<number>(1);
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [fluxModel, setFluxModel] = useState<"flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max">(
+    "flux-pro-1.1",
+  );
+  const [recraftModel, setRecraftModel] = useState<"recraft-v3" | "recraft-v2">("recraft-v3");
+  const [runwayModel, setRunwayModel] = useState<"runway-gen4" | "runway-gen4-turbo">("runway-gen4");
+  const [temperature, setTemperature] = useState<number>(1);
+  const [outputLength, setOutputLength] = useState<number>(8192);
+  const [topP, setTopP] = useState<number>(1);
+  const [geminiAspectRatio, setGeminiAspectRatio] = useState<GeminiAspectRatio>("1:1");
+  const [qwenSize, setQwenSize] = useState<string>("1328*1328");
+  const [qwenPromptExtend, setQwenPromptExtend] = useState<boolean>(true);
+  const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
+  const [lumaPhotonModel, setLumaPhotonModel] = useState<"luma-photon-1" | "luma-photon-flash-1">("luma-photon-1");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const promptsButtonRef = useRef<HTMLButtonElement>(null);
   const avatarButtonRef = useRef<HTMLButtonElement>(null);
   const productButtonRef = useRef<HTMLButtonElement>(null);
+  const settingsRef = useRef<HTMLButtonElement>(null);
+  const modelSelectorRef = useRef<HTMLButtonElement>(null);
+
+  const currentModel = useMemo(() => {
+    return IMAGE_MODEL_OPTIONS.find(model => model.id === selectedModel) ?? IMAGE_MODEL_OPTIONS[0];
+  }, [selectedModel]);
+
+  const isGeminiModel = selectedModel === "gemini-2.5-flash-image";
+  const isFluxModel = selectedModel === "flux-1.1";
+  const isRunwayImageModel = selectedModel === "runway-gen4";
+  const isRecraftModel = selectedModel === "recraft";
+  const isQwenModel = selectedModel === "qwen-image";
+  const isLumaPhotonImageModel =
+    selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
 
   useEffect(() => {
     setFooterVisible(false);
@@ -932,6 +1054,7 @@ const ChatMode: React.FC = () => {
                         onClick={handleReferenceClick}
                         className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60 lg:px-3`}
                         disabled={referencePreviews.length >= REFERENCE_LIMIT}
+                        aria-label="Add reference"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Reference</span>
@@ -941,9 +1064,10 @@ const ChatMode: React.FC = () => {
                         type="button"
                         onClick={() => setIsAvatarPickerOpen(prev => !prev)}
                         className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
+                        aria-label="Choose avatar"
                       >
                         <Users className="h-3.5 w-3.5" />
-                        <span className="hidden whitespace-nowrap text-sm lg:inline">Avatars</span>
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Avatar</span>
                       </button>
                       {selectedAvatar && (
                         <div className="flex items-center gap-2">
@@ -970,9 +1094,10 @@ const ChatMode: React.FC = () => {
                         type="button"
                         onClick={() => setIsProductPickerOpen(prev => !prev)}
                         className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
+                        aria-label="Choose product"
                       >
                         <Package className="h-3.5 w-3.5" />
-                        <span className="hidden whitespace-nowrap text-sm lg:inline">Products</span>
+                        <span className="hidden whitespace-nowrap text-sm lg:inline">Product</span>
                       </button>
                       {selectedProduct && (
                         <div className="flex items-center gap-2">
@@ -998,10 +1123,10 @@ const ChatMode: React.FC = () => {
                         ref={promptsButtonRef}
                         type="button"
                         onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text lg:px-3`}
+                        className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                        aria-label="Saved prompts"
                       >
                         <BookmarkIcon className="h-3.5 w-3.5" />
-                        <span className="hidden whitespace-nowrap text-sm lg:inline">Saved prompts</span>
                       </button>
                       {referencePreviews.length > 0 && (
                         <div className="flex items-center gap-2">
@@ -1188,22 +1313,271 @@ const ChatMode: React.FC = () => {
                           )}
                         </div>
                       </AvatarPickerPortal>
-                      <PromptsDropdown
-                        isOpen={isPromptsDropdownOpen}
-                        onClose={() => setIsPromptsDropdownOpen(false)}
-                        anchorEl={promptsButtonRef.current}
-                        recentPrompts={history}
-                        savedPrompts={savedPrompts}
-                        onSelectPrompt={text => {
-                          setInput(text);
-                          focusTextarea();
-                        }}
-                        onRemoveSavedPrompt={removePrompt}
-                        onRemoveRecentPrompt={removeRecentPrompt}
-                        onUpdateSavedPrompt={updatePrompt}
-                        onAddSavedPrompt={savePrompt}
-                        onSaveRecentPrompt={handleSaveRecentPrompt}
-                      />
+                        <PromptsDropdown
+                          isOpen={isPromptsDropdownOpen}
+                          onClose={() => setIsPromptsDropdownOpen(false)}
+                          anchorEl={promptsButtonRef.current}
+                          recentPrompts={history}
+                          savedPrompts={savedPrompts}
+                          onSelectPrompt={text => {
+                            setInput(text);
+                            focusTextarea();
+                          }}
+                          onRemoveSavedPrompt={removePrompt}
+                          onRemoveRecentPrompt={removeRecentPrompt}
+                          onUpdateSavedPrompt={updatePrompt}
+                          onAddSavedPrompt={savePrompt}
+                          onSaveRecentPrompt={handleSaveRecentPrompt}
+                        />
+                      <button
+                        ref={settingsRef}
+                        type="button"
+                        onClick={() => setIsSettingsOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full p-0 text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                        aria-label="Settings"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                      {isSettingsOpen && (
+                        <Suspense fallback={null}>
+                          <SettingsMenu
+                            anchorRef={settingsRef}
+                            open={isSettingsOpen}
+                            onClose={() => setIsSettingsOpen(false)}
+                            common={{
+                              batchSize,
+                              onBatchSizeChange: value => setBatchSize(value),
+                              min: 1,
+                              max: 4,
+                            }}
+                            flux={{
+                              enabled: isFluxModel,
+                              model: fluxModel,
+                              onModelChange: setFluxModel,
+                            }}
+                            veo={{
+                              enabled: false,
+                              aspectRatio: "16:9",
+                              onAspectRatioChange: () => {},
+                              model: "veo-3.0-generate-001",
+                              onModelChange: () => {},
+                              negativePrompt: "",
+                              onNegativePromptChange: () => {},
+                              seed: undefined,
+                              onSeedChange: () => {},
+                            }}
+                            hailuo={{
+                              enabled: false,
+                              duration: 8,
+                              onDurationChange: () => {},
+                              resolution: "768P",
+                              onResolutionChange: () => {},
+                              promptOptimizer: false,
+                              onPromptOptimizerChange: () => {},
+                              fastPretreatment: false,
+                              onFastPretreatmentChange: () => {},
+                              watermark: false,
+                              onWatermarkChange: () => {},
+                              firstFrame: null,
+                              onFirstFrameChange: () => {},
+                              lastFrame: null,
+                              onLastFrameChange: () => {},
+                            }}
+                            wan={{
+                              enabled: false,
+                              size: "",
+                              onSizeChange: () => {},
+                              negativePrompt: "",
+                              onNegativePromptChange: () => {},
+                              promptExtend: false,
+                              onPromptExtendChange: () => {},
+                              watermark: false,
+                              onWatermarkChange: () => {},
+                              seed: "",
+                              onSeedChange: () => {},
+                            }}
+                            seedance={{
+                              enabled: false,
+                              mode: "t2v",
+                              onModeChange: () => {},
+                              ratio: "16:9",
+                              onRatioChange: () => {},
+                              duration: 8,
+                              onDurationChange: () => {},
+                              resolution: "1080p",
+                              onResolutionChange: () => {},
+                              fps: 24,
+                              onFpsChange: () => {},
+                              cameraFixed: false,
+                              onCameraFixedChange: () => {},
+                              seed: "",
+                              onSeedChange: () => {},
+                              firstFrame: null,
+                              onFirstFrameChange: () => {},
+                              lastFrame: null,
+                              onLastFrameChange: () => {},
+                            }}
+                            recraft={{
+                              enabled: isRecraftModel,
+                              model: recraftModel,
+                              onModelChange: setRecraftModel,
+                            }}
+                            runway={{
+                              enabled: isRunwayImageModel,
+                              model: runwayModel,
+                              onModelChange: setRunwayModel,
+                            }}
+                            gemini={{
+                              enabled: isGeminiModel,
+                              temperature,
+                              onTemperatureChange: setTemperature,
+                              outputLength,
+                              onOutputLengthChange: setOutputLength,
+                              topP,
+                              onTopPChange: setTopP,
+                              aspectRatio: geminiAspectRatio,
+                              onAspectRatioChange: setGeminiAspectRatio,
+                            }}
+                            qwen={{
+                              enabled: isQwenModel,
+                              size: qwenSize,
+                              onSizeChange: setQwenSize,
+                              promptExtend: qwenPromptExtend,
+                              onPromptExtendChange: setQwenPromptExtend,
+                              watermark: qwenWatermark,
+                              onWatermarkChange: setQwenWatermark,
+                            }}
+                            kling={{
+                              enabled: false,
+                              model: "kling-v2.1-master",
+                              onModelChange: () => {},
+                              aspectRatio: "16:9",
+                              onAspectRatioChange: () => {},
+                              duration: 5,
+                              onDurationChange: () => {},
+                              mode: "standard",
+                              onModeChange: () => {},
+                              cfgScale: 5,
+                              onCfgScaleChange: () => {},
+                              negativePrompt: "",
+                              onNegativePromptChange: () => {},
+                              cameraType: "none",
+                              onCameraTypeChange: () => {},
+                              cameraConfig: {
+                                horizontal: 0,
+                                vertical: 0,
+                                pan: 0,
+                                tilt: 0,
+                                roll: 0,
+                                zoom: 0,
+                              },
+                              onCameraConfigChange: () => {},
+                              statusMessage: null,
+                            }}
+                            lumaPhoton={{
+                              enabled: isLumaPhotonImageModel,
+                              model: lumaPhotonModel,
+                              onModelChange: setLumaPhotonModel,
+                            }}
+                            lumaRay={{
+                              enabled: false,
+                              variant: "luma-ray-2",
+                              onVariantChange: () => {},
+                            }}
+                          />
+                        </Suspense>
+                      )}
+                      <button
+                        ref={modelSelectorRef}
+                        type="button"
+                        onClick={() => setIsModelSelectorOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
+                        aria-haspopup="listbox"
+                        aria-expanded={isModelSelectorOpen}
+                      >
+                        {hasToolLogo(currentModel.name) ? (
+                          <img
+                            src={getToolLogo(currentModel.name)!}
+                            alt={`${currentModel.name} logo`}
+                            className="h-4 w-4 flex-shrink-0 rounded object-contain"
+                          />
+                        ) : (
+                          <currentModel.Icon className="h-4 w-4 flex-shrink-0" />
+                        )}
+                        <span className="hidden xl:inline whitespace-nowrap text-sm text-theme-text">
+                          {currentModel.name}
+                        </span>
+                      </button>
+                      <AvatarPickerPortal
+                        anchorRef={modelSelectorRef}
+                        open={isModelSelectorOpen}
+                        onClose={() => setIsModelSelectorOpen(false)}
+                      >
+                        <div className="space-y-2">
+                          {IMAGE_MODEL_OPTIONS.map(model => {
+                            const isActive = model.id === selectedModel;
+                            return (
+                              <button
+                                key={model.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedModel(model.id);
+                                  setIsModelSelectorOpen(false);
+                                }}
+                                className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-150 ${
+                                  isActive
+                                    ? "border-theme-text bg-theme-text/10 text-theme-text"
+                                    : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
+                                }`}
+                              >
+                                {hasToolLogo(model.name) ? (
+                                  <img
+                                    src={getToolLogo(model.name)!}
+                                    alt={`${model.name} logo`}
+                                    className="h-5 w-5 flex-shrink-0 rounded object-contain"
+                                  />
+                                ) : (
+                                  <model.Icon
+                                    className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-theme-text" : "text-theme-white"}`}
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className={`truncate text-sm font-raleway ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                                    {model.name}
+                                  </div>
+                                  <div className="truncate text-xs font-raleway text-theme-light">{model.desc}</div>
+                                </div>
+                                {isActive && <Check className="h-4 w-4 flex-shrink-0 text-theme-text" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </AvatarPickerPortal>
+                      <div
+                        role="group"
+                        aria-label="Batch size"
+                        className={`${glass.promptBorderless} hidden h-8 items-center gap-0 rounded-full px-2 text-n-text lg:flex`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setBatchSize(prev => Math.max(1, prev - 1))}
+                          disabled={batchSize === 1}
+                          aria-label="Decrease batch size"
+                          className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text">{batchSize}</span>
+                        <button
+                          type="button"
+                          onClick={() => setBatchSize(prev => Math.min(4, prev + 1))}
+                          disabled={batchSize === 4}
+                          aria-label="Increase batch size"
+                          className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
