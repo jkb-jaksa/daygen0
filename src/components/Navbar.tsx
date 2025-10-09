@@ -101,6 +101,9 @@ export default function Navbar() {
       if (navRef.current) {
         const h = Math.ceil(navRef.current.getBoundingClientRect().height);
         setNavH(h);
+        if (typeof document !== "undefined") {
+          document.documentElement.style.setProperty("--nav-h", `${h}px`);
+        }
       }
     };
     measure();
@@ -491,7 +494,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -509,7 +512,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <item.Icon className="w-4 h-4" />
@@ -706,7 +709,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"
               role="menuitem"
             >
               My account
@@ -718,7 +721,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"
               role="menuitem"
             >
               My works
@@ -730,7 +733,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"
               role="menuitem"
             >
               Log out

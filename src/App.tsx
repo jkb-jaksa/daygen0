@@ -76,7 +76,7 @@ function UseCaseCard({
       <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
-          <h2 className="text-[20px] font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-[16px] font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
     </div>
@@ -97,7 +97,7 @@ function ComingSoonPanel({ label, className }: { label: string; className?: stri
   const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
   return (
     <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""}`}>
-      <h2 className="text-xl font-raleway font-light text-theme-text">{formattedLabel}</h2>
+      <h2 className="text-xl font-raleway font-normal text-theme-text">{formattedLabel}</h2>
       <p className="mt-2 text-sm font-raleway text-theme-white">Coming soon.</p>
     </div>
   );
@@ -170,16 +170,16 @@ function Home() {
   return (
     <div className={`${layout.page} home-page`}>
       <div className="relative z-10">
-        <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h)+0.5rem)] pb-[calc(var(--nav-h)+0.5rem)]">
+        <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
               <div className="home-hero relative z-10">
                 <div className="home-hero-copy flex max-w-5xl flex-col gap-2">
                     <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
                       Your Daily AI Generations.
                     </h1>
-                    <p className={`${headings.tripleHeading.description} text-left mt-0`}>
+                    <p className={`${headings.tripleHeading.description} text-left mt-0 mb-1`}>
                       Master all the best Creative AI Tools in one place.
                     </p>
                     <div className="home-hero-actions flex flex-wrap gap-3">
@@ -193,7 +193,7 @@ function Home() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:items-stretch">
+              <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
                   className={`${glass.surface} flex flex-col rounded-3xl border-theme-dark p-4 lg:h-full`}
                   ref={sidebarRef}

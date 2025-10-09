@@ -162,7 +162,7 @@ export default function Understand() {
   return (
     <div className={`${layout.page}`}>
       <div className={layout.backdrop} aria-hidden />
-      <section className="relative z-10 py-12 sm:py-16 lg:py-20">
+      <section className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
@@ -244,7 +244,7 @@ export default function Understand() {
                     {/* Create section */}
                     {createCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-theme-text">create</h2>
+                        <h2 className="text-xl font-raleway font-normal text-theme-text">create</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={createCases} />
                         </Suspense>
@@ -254,7 +254,7 @@ export default function Understand() {
                     {/* Edit section */}
                     {editCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-theme-text">edit</h2>
+                        <h2 className="text-xl font-raleway font-normal text-theme-text">edit</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={editCases} />
                         </Suspense>
@@ -264,7 +264,7 @@ export default function Understand() {
                     {/* Personalize section */}
                     {personalizeCases.length > 0 && (
                       <div>
-                        <h2 className="text-xl font-raleway font-light text-theme-text">personalize</h2>
+                        <h2 className="text-xl font-raleway font-normal text-theme-text">personalize</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={personalizeCases} />
                         </Suspense>
@@ -273,7 +273,7 @@ export default function Understand() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-raleway font-light text-theme-text">
+                    <h2 className="text-2xl font-raleway font-normal text-theme-text">
                       {activeCategory === "image" 
                         ? "image use cases" 
                         : activeCategory === "text"

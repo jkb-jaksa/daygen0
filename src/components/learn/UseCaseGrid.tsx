@@ -21,7 +21,7 @@ const UseCaseCard = memo(({ useCase }: { useCase: UseCaseItem }) => {
       onPointerLeave={onPointerLeave}
     >
       <h4 className="text-base font-raleway font-normal text-theme-text">{useCase.title}</h4>
-      <p className="text-sm font-raleway font-light leading-relaxed text-theme-white">
+      <p className="text-sm font-raleway font-normal leading-relaxed text-theme-white">
         {useCase.subtitle}
       </p>
     </Link>

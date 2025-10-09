@@ -20,7 +20,7 @@ export default function Upgrade() {
 
   return (
     <main className={`${layout.page}`}> 
-      <section className={`${layout.container} pt-[calc(var(--nav-h)+1rem)] pb-24`}> 
+      <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24`}> 
         {/* Close Button */}
         <div className="flex justify-end mb-4 relative z-50">
           <button

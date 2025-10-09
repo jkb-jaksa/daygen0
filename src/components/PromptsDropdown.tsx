@@ -448,7 +448,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                 <h3 className="text-xl font-raleway font-normal text-n-text">
                   Delete Prompt
                 </h3>
-                <p className="text-base font-raleway font-light text-n-white">
+                <p className="text-base font-raleway font-normal text-n-white">
                   Are you sure you want to delete this prompt? This action cannot be undone.
                 </p>
               </div>
@@ -485,7 +485,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                 <h3 className="text-xl font-raleway font-normal text-n-text">
                   Delete Recent Prompt
                 </h3>
-                <p className="text-base font-raleway font-light text-n-white">
+                <p className="text-base font-raleway font-normal text-n-white">
                   Are you sure you want to delete this prompt from your recent prompts? This action cannot be undone.
                 </p>
               </div>

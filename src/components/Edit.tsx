@@ -1341,7 +1341,7 @@ export default function Edit() {
                       }}
                       title="Adjust brush size"
                     />
-                    <span className="text-theme-white text-xs font-mono font-light min-w-[2rem] text-center">
+                    <span className="text-theme-white text-xs font-mono font-normal min-w-[2rem] text-center">
                       {brushSize}px
                     </span>
                   </div>
@@ -1552,7 +1552,6 @@ export default function Edit() {
               className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
             >
               <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Prompts</span>
             </button>
 
             <PromptsDropdown
@@ -1797,7 +1796,7 @@ export default function Edit() {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Remove from Saved Prompts
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to remove this prompt from your saved prompts?
                 </p>
               </div>

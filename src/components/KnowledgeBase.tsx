@@ -106,7 +106,7 @@ function ToolCard({ tool }: { tool: ToolResource }) {
       </div>
       <div className="flex flex-1 flex-col gap-0.5">
         <h4 className="text-base font-raleway font-normal capitalize text-theme-text">{tool.name}</h4>
-        <p className="text-sm font-raleway font-light leading-relaxed text-theme-white">
+        <p className="text-sm font-raleway font-normal leading-relaxed text-theme-white">
           {tool.description}
         </p>
       </div>
@@ -122,7 +122,7 @@ export default function KnowledgeBase() {
   return (
     <div className={`${layout.page}`}>
       <div className={layout.backdrop} aria-hidden />
-      <section className="relative z-10 py-12 sm:py-16 lg:py-20">
+      <section className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
@@ -131,7 +131,7 @@ export default function KnowledgeBase() {
               Learn
             </p>
             <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-theme-text`}>Tools</h1>
-            <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-theme-white">
+            <p className="mt-3 max-w-2xl text-base font-raleway font-normal leading-relaxed text-theme-white">
               Explore model guides, best practices, and tips for the creative AI tools you use every day.
             </p>
           </header>
@@ -197,7 +197,7 @@ export default function KnowledgeBase() {
             <div className="flex-1">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                 <h2 className="text-xl font-raleway font-light text-theme-text">
+                 <h2 className="text-xl font-raleway font-normal text-theme-text">
                    {activeCategory === "image" 
                      ? "Image generation" 
                      : activeCategory === "text"
@@ -234,7 +234,7 @@ export default function KnowledgeBase() {
                 {/* Other tools subsection - only show for image category */}
                 {activeCategory === "image" && (
                   <div className="mt-12">
-                    <h3 className="text-xl font-raleway font-light text-theme-text">Other tools</h3>
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">Other tools</h3>
                     <p className="mt-2 text-sm font-raleway text-theme-white">
                       Here are other great tools to improve your DayGen workflows.
                     </p>
@@ -249,7 +249,7 @@ export default function KnowledgeBase() {
                 {/* Coming soon for video category */}
                 {activeCategory === "video" && (
                   <div className="mt-12">
-                    <h3 className="text-xl font-raleway font-light text-theme-text">Other tools</h3>
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">Other tools</h3>
                     <p className="mt-2 text-sm font-raleway text-theme-white">
                       Coming soon
                     </p>

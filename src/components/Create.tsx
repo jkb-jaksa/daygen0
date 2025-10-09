@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -77,6 +77,7 @@ import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
+import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -295,123 +296,6 @@ const ModelMenuPortal: React.FC<{
   );
 };
 
-// Portal component for avatar picker to avoid clipping by parent containers
-const AvatarPickerPortal: React.FC<{
-  anchorRef: React.RefObject<HTMLElement | null>;
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}> = ({ anchorRef, open, onClose, children }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 288, transform: 'translateY(0)' }); // w-72 = 288px
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>(open);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const updatePosition = () => {
-      if (!anchorRef.current) return;
-      const rect = anchorRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const dropdownHeight = 400; // Approximate height with avatars
-
-      // Check if there's enough space above the trigger
-      const spaceAbove = rect.top;
-      const spaceBelow = viewportHeight - rect.bottom;
-
-      // Position above if there's more space above, otherwise position below
-      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
-
-      setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
-        left: rect.left,
-        width: 288, // w-72
-        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)'
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open, anchorRef]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && 
-          !menuRef.current.contains(event.target as Node) && 
-          !anchorRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-      if (menuRef.current) {
-        menuRef.current.focus();
-      }
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose, anchorRef]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={(node) => {
-        menuRef.current = node;
-        setScrollableRef(node);
-      }}
-      tabIndex={-1}
-      style={{
-        position: "fixed",
-        top: pos.top,
-        left: pos.left,
-        width: pos.width,
-        zIndex: 9999,
-        transform: pos.transform,
-        maxHeight: '400px',
-        overflowY: 'auto',
-        overflowX: 'hidden'
-      }}
-      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-4 overscroll-contain scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
-      onWheel={handleWheel}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-      onFocus={() => {
-        if (menuRef.current) {
-          menuRef.current.focus();
-        }
-      }}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
 
 const ImageActionMenuPortal: React.FC<{
   anchorEl: HTMLElement | null;
@@ -540,6 +424,7 @@ const Create: React.FC = () => {
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
   const settingsRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
+  const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -551,6 +436,11 @@ const Create: React.FC = () => {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
+  // Product state
+  const [storedProducts, setStoredProducts] = useState<StoredAvatar[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<StoredAvatar | null>(null);
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<StoredAvatar | null>(null);
   const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
   // Avatar creation modal state
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
@@ -1726,11 +1616,75 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
   }, [selectedAvatar, storedAvatars]);
 
+  // Load products from storage
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProducts = async () => {
+      if (!storagePrefix) {
+        if (isMounted) {
+          setStoredProducts([]);
+          setSelectedProduct(null);
+        }
+        return;
+      }
+
+      try {
+        const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "products");
+        if (!isMounted) return;
+
+        const normalized = normalizeStoredAvatars(stored ?? [], { ownerId: user?.id ?? undefined });
+        setStoredProducts(normalized);
+
+        const needsPersist =
+          (stored?.length ?? 0) !== normalized.length ||
+          (stored ?? []).some((product, index) => {
+            const normalizedProduct = normalized[index];
+            if (!normalizedProduct) return true;
+            return product.slug !== normalizedProduct.slug || product.ownerId !== normalizedProduct.ownerId;
+          });
+
+        if (needsPersist) {
+          await setPersistedValue(storagePrefix, "products", normalized);
+        }
+      } catch (error) {
+        debugError("Failed to load stored products", error);
+        if (isMounted) {
+          setStoredProducts([]);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storagePrefix, user?.id]);
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const match = storedProducts.find(product => product.id === selectedProduct.id);
+    if (!match) {
+      setSelectedProduct(null);
+      return;
+    }
+    if (match !== selectedProduct) {
+      setSelectedProduct(match);
+    }
+  }, [selectedProduct, storedProducts]);
+
   useEffect(() => {
     if (activeCategory !== "image" && isAvatarPickerOpen) {
       setIsAvatarPickerOpen(false);
     }
   }, [activeCategory, isAvatarPickerOpen]);
+
+  useEffect(() => {
+    if (activeCategory !== "image" && isProductPickerOpen) {
+      setIsProductPickerOpen(false);
+    }
+  }, [activeCategory, isProductPickerOpen]);
 
   useEffect(() => {
     if (gallery.length < 10 || persistentStorageRequested.current) return;
@@ -2965,7 +2919,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
             onClick={(e) => {
@@ -3287,6 +3241,38 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setPendingAvatarId(null);
     setIsAvatarPickerOpen(false);
   }, []);
+
+  const handleProductSelect = useCallback(
+    (product: StoredAvatar) => {
+      setSelectedProduct(product);
+      setIsProductPickerOpen(false);
+    },
+    [],
+  );
+
+  const clearSelectedProduct = useCallback(() => {
+    setSelectedProduct(null);
+    setIsProductPickerOpen(false);
+  }, []);
+
+  const confirmDeleteProduct = useCallback(async () => {
+    if (!productToDelete || !storagePrefix) return;
+    
+    const updatedProducts = storedProducts.filter(p => p.id !== productToDelete.id);
+    setStoredProducts(updatedProducts);
+    
+    if (selectedProduct?.id === productToDelete.id) {
+      clearSelectedProduct();
+    }
+    
+    try {
+      await setPersistedValue(storagePrefix, "products", updatedProducts);
+    } catch (error) {
+      debugError("Failed to persist products", error);
+    }
+    
+    setProductToDelete(null);
+  }, [productToDelete, storedProducts, selectedProduct, storagePrefix, clearSelectedProduct]);
 
   const confirmDeleteAvatar = useCallback(async () => {
     if (!avatarToDelete || !storagePrefix) return;
@@ -3851,6 +3837,14 @@ const handleGenerate = async () => {
         debugError('Failed to prepare avatar reference for generation', error);
       }
     }
+    if (selectedProduct) {
+      try {
+        const productFile = await urlToFile(selectedProduct.imageUrl, `${selectedProduct.id}.png`);
+        referencesForGeneration.push(productFile);
+      } catch (error) {
+        debugError('Failed to prepare product reference for generation', error);
+      }
+    }
     const temperatureForGeneration = temperature;
     const outputLengthForGeneration = outputLength;
     const topPForGeneration = topP;
@@ -4008,8 +4002,12 @@ const handleGenerate = async () => {
             topP: topPForGeneration,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatar?.id,
+<<<<<<< HEAD
             clientJobId: generationId,
             onProgress: handleGeminiProgress,
+=======
+            productId: selectedProduct?.id,
+>>>>>>> b3b5c6d62503f4d454a223a5dd4df4bfd88a890d
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
@@ -4020,6 +4018,7 @@ const handleGenerate = async () => {
             useWebhook: false,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           };
 
           if ((fluxModel === 'flux-kontext-pro' || fluxModel === 'flux-kontext-max') && imageData) {
@@ -4044,6 +4043,7 @@ const handleGenerate = async () => {
             quality: 'high',
             background: 'transparent',
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           });
         } else if (isIdeogramModel) {
           const ideogramResult = await generateIdeogramImage({
@@ -4052,6 +4052,7 @@ const handleGenerate = async () => {
             rendering_speed: 'DEFAULT',
             num_images: 1,
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           });
           if (!ideogramResult || ideogramResult.length === 0) {
             throw new Error('Ideogram generation failed');
@@ -4064,6 +4065,7 @@ const handleGenerate = async () => {
             prompt_extend: qwenPromptExtendForGeneration,
             watermark: qwenWatermarkForGeneration,
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           });
           if (!qwenResult || qwenResult.length === 0) {
             throw new Error('Qwen generation failed');
@@ -4077,6 +4079,7 @@ const handleGenerate = async () => {
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             ratio: "1920:1080",
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           });
           img = runwayResult;
         } else if (isRunwayVideoModel) {
@@ -4089,6 +4092,7 @@ const handleGenerate = async () => {
             height: 1024,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           });
           img = reveResult;
         } else if (isRecraftModel) {
@@ -4121,6 +4125,7 @@ const handleGenerate = async () => {
 
           const result = await response.json();
 
+<<<<<<< HEAD
           if (result?.jobId) {
             const jobId: string = result.jobId;
             let jobResultUrl: string | null = null;
@@ -4176,6 +4181,17 @@ const handleGenerate = async () => {
               avatarId: selectedAvatar?.id,
             };
           }
+=======
+          img = {
+            url: dataUrl,
+            prompt: trimmedPrompt,
+            model: recraftModel,
+            timestamp: new Date().toISOString(),
+            ownerId: user?.id,
+            avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
+          };
+>>>>>>> b3b5c6d62503f4d454a223a5dd4df4bfd88a890d
         } else if (isLumaPhotonModel) {
           const resolvedLumaModel =
             modelForGeneration === "luma-photon-flash-1"
@@ -4186,6 +4202,7 @@ const handleGenerate = async () => {
             prompt: trimmedPrompt,
             model: resolvedLumaModel,
             avatarId: selectedAvatar?.id,
+            productId: selectedProduct?.id,
           });
 
           if (!lumaResult) {
@@ -4427,7 +4444,7 @@ const handleGenerate = async () => {
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -4464,7 +4481,7 @@ const handleGenerate = async () => {
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Create New Folder</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -4542,7 +4559,7 @@ const handleGenerate = async () => {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : (publishConfirmation.count === 1 
@@ -4579,7 +4596,7 @@ const handleGenerate = async () => {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : (unpublishConfirmation.count === 1 
@@ -4616,7 +4633,7 @@ const handleGenerate = async () => {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {downloadConfirmation.count === 1 
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download ${downloadConfirmation.count} images?`}
@@ -4649,7 +4666,7 @@ const handleGenerate = async () => {
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
@@ -5136,7 +5153,7 @@ const handleGenerate = async () => {
                             
                             {/* Upload info overlay */}
                             <div
-                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-none hidden lg:flex items-end z-10"
+                              className="PromptDescriptionBar absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-100 ease-in-out pointer-events-none hidden sm:flex items-end z-10"
                             >
                               <div className="w-full p-4">
                                 <div className="mb-2">
@@ -5262,7 +5279,7 @@ const handleGenerate = async () => {
 
                               {/* Image info overlay */}
                               <div
-                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
+                                className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
                                   imageActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${folder.id}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
                                 onClick={(e) => {
@@ -5708,7 +5725,7 @@ const handleGenerate = async () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
                                 imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               onClick={(e) => {
@@ -6001,7 +6018,7 @@ const handleGenerate = async () => {
                               
                               {/* Hover prompt overlay */}
                               {seedanceVideo.prompt && (
-                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none hidden lg:flex items-end z-10 opacity-0 group-hover:opacity-100`}>
+                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none hidden sm:flex items-end z-10 opacity-0 group-hover:opacity-100`}>
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
@@ -6038,7 +6055,7 @@ const handleGenerate = async () => {
                               
                               {/* Hover prompt overlay */}
                               {video.prompt && (
-                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none hidden lg:flex items-end z-10 opacity-0 group-hover:opacity-100`}>
+                                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-none hidden sm:flex items-end z-10 opacity-0 group-hover:opacity-100`}>
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
@@ -6201,7 +6218,7 @@ const handleGenerate = async () => {
                           {/* Hover prompt overlay */}
                           {img.prompt && (
                             <div
-                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
+                              className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
                                 imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                               }`}
                               onClick={(e) => {
@@ -6461,6 +6478,29 @@ const handleGenerate = async () => {
               <div className="flex items-center justify-between gap-2 px-3">
                 {/* Left icons and controls */}
                 <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/create/chat')}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 rounded-full transition-colors duration-200`}
+                      aria-label="Chat mode"
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip('chat-mode-tooltip');
+                      }}
+                    >
+                      <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
+                    </button>
+                    <div
+                      data-tooltip-for="chat-mode-tooltip"
+                      className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                      style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    >
+                      Chat Mode
+                    </div>
+                  </div>
                 <button
                   type="button"
                   onClick={isGemini ? handleRefsClick : undefined}
@@ -6470,7 +6510,7 @@ const handleGenerate = async () => {
                   className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
                 >
                   <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Add Reference</span>
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Reference</span>
                 </button>
 
                 {/* Reference images display - right next to Add reference button */}
@@ -6515,7 +6555,7 @@ const handleGenerate = async () => {
                       className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
                       <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Select Avatar</span>
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Avatar</span>
                     </button>
 
                     {/* Selected Avatar display - right next to Select Avatar button */}
@@ -6546,12 +6586,47 @@ const handleGenerate = async () => {
 
                     <button
                       type="button"
+                      ref={productButtonRef}
+                      onClick={() => setIsProductPickerOpen(prev => !prev)}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                    >
+                      <Package className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Product</span>
+                    </button>
+
+                    {/* Selected Product display - right next to Product button */}
+                    {selectedProduct && (
+                      <div className="flex items-center gap-2">
+                        <div className="hidden lg:block text-sm text-n-text font-raleway">Product:</div>
+                        <div className="relative group">
+                          <img
+                            src={selectedProduct.imageUrl}
+                            alt={selectedProduct.name}
+                            loading="lazy"
+                            className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
+                            title={selectedProduct.name}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearSelectedProduct();
+                            }}
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                            title="Remove product"
+                          >
+                            <X className="w-2.5 h-2.5 text-n-text" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
                       ref={promptsButtonRef}
                       onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
                       className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                     >
                       <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Prompts</span>
                     </button>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
@@ -6657,6 +6732,108 @@ const handleGenerate = async () => {
                             <Users className="h-4 w-4" />
                             Go to Avatars
                           </button>
+                        )}
+                      </div>
+                    </AvatarPickerPortal>
+                    <AvatarPickerPortal
+                      anchorRef={productButtonRef}
+                      open={isProductPickerOpen}
+                      onClose={() => setIsProductPickerOpen(false)}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-base font-raleway text-theme-text">
+                            Your Products
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file || !storagePrefix) return;
+                              
+                              const reader = new FileReader();
+                              reader.onload = async (event) => {
+                                const imageUrl = event.target?.result as string;
+                                const newProduct: StoredAvatar = {
+                                  id: `product-${Date.now()}`,
+                                  slug: `product-${Date.now()}`,
+                                  name: file.name.replace(/\.[^/.]+$/, ""),
+                                  imageUrl,
+                                  createdAt: new Date().toISOString(),
+                                  source: "upload",
+                                  published: false,
+                                  ownerId: user?.id,
+                                };
+                                const updated = [...storedProducts, newProduct];
+                                setStoredProducts(updated);
+                                await setPersistedValue(storagePrefix, "products", updated);
+                              };
+                              reader.readAsDataURL(file);
+                              e.target.value = '';
+                            }}
+                            style={{ display: 'none' }}
+                            id="product-upload"
+                          />
+                          <label htmlFor="product-upload">
+                            <button
+                              type="button"
+                              className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={() => document.getElementById('product-upload')?.click()}
+                              aria-label="Add a new Product"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </label>
+                        </div>
+                        {storedProducts.length > 0 ? (
+                          <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                            {storedProducts.map(product => {
+                              const isActive = selectedProduct?.id === product.id;
+                              return (
+                                <div key={product.id} className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleProductSelect(product)}
+                                    className={`flex flex-1 items-center gap-3 ${
+                                      isActive
+                                        ? 'text-theme-text'
+                                        : 'text-white'
+                                    }`}
+                                  >
+                                    <img
+                                      src={product.imageUrl}
+                                      alt={product.name}
+                                      loading="lazy"
+                                      className="h-10 w-10 rounded-lg object-cover"
+                                    />
+                                    <div className="min-w-0 flex-1 text-left">
+                                      <p className="truncate text-sm font-raleway text-theme-white">{product.name}</p>
+                                    </div>
+                                    {isActive && <Check className="h-4 w-4 text-theme-text" />}
+                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setProductToDelete(product);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
+                                      title="Delete Product"
+                                      aria-label="Delete Product"
+                                    >
+                                      <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
+                            You haven't added any Products yet. Click the + button above to add one.
+                          </div>
                         )}
                       </div>
                     </AvatarPickerPortal>
@@ -7242,7 +7419,7 @@ const handleGenerate = async () => {
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </button>
-                    <span className="min-w-[2rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
+                    <span className="min-w-[1.25rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
                       {batchSize}
                     </span>
                     <button
@@ -7259,7 +7436,7 @@ const handleGenerate = async () => {
                   <div
                     data-tooltip-for="batch-size-tooltip"
                     className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '-8px' }}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                   >
                     Batch size
                   </div>
@@ -7622,7 +7799,7 @@ const handleGenerate = async () => {
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
                   <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -7638,6 +7815,38 @@ const handleGenerate = async () => {
                     type="button"
                     className={buttons.primary}
                     onClick={confirmDeleteAvatar}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {productToDelete && (
+          <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
+            <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+              <div className="space-y-4 text-center">
+                <div className="space-y-3">
+                  <Trash2 className="default-orange-icon mx-auto" />
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Product</h3>
+                  <p className="text-base font-raleway font-normal text-theme-white">
+                    Are you sure you want to delete "{productToDelete.name}"? This action cannot be undone.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button
+                    type="button"
+                    className={buttons.ghost}
+                    onClick={() => setProductToDelete(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={buttons.primary}
+                    onClick={confirmDeleteProduct}
                   >
                     Delete
                   </button>
@@ -7762,7 +7971,7 @@ const handleGenerate = async () => {
                   <h3 className="text-xl font-raleway font-normal text-theme-text">
                     Remove from Saved Prompts
                   </h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Are you sure you want to remove this prompt from your saved prompts?
                   </p>
                 </div>

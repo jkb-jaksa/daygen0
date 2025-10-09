@@ -26,7 +26,7 @@ export default function Courses() {
   return (
     <div className={`${layout.page}`}>
       <div className={layout.backdrop} aria-hidden />
-      <section className="relative z-10 py-12 sm:py-16 lg:py-20">
+      <section className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
@@ -35,7 +35,7 @@ export default function Courses() {
               Learn
             </p>
             <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-theme-text`}>Courses</h1>
-            <p className="mt-3 max-w-2xl text-base font-raleway font-light leading-relaxed text-theme-white">
+            <p className="mt-3 max-w-2xl text-base font-raleway font-normal leading-relaxed text-theme-white">
               Coming soon.
             </p>
           </header>
@@ -101,7 +101,7 @@ export default function Courses() {
             <div className="flex-1">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                <h2 className="text-xl font-raleway font-light text-theme-text">Courses</h2>
+                <h2 className="text-xl font-raleway font-normal text-theme-text">Courses</h2>
                 <p className="mt-2 text-sm font-raleway text-theme-white">
                   Coming soon.
                 </p>

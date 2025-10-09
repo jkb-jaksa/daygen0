@@ -1271,7 +1271,7 @@ export default function Avatars() {
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10 pt-[calc(var(--nav-h,4rem)+2rem)] pb-12 sm:pb-16 lg:pb-20">
+      <div className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
         <section className={`${layout.container} flex flex-col gap-10 items-center`}>
           <header className="max-w-3xl text-center">
             <div className={`${headings.tripleHeading.container} text-center`}>
@@ -1317,7 +1317,7 @@ export default function Avatars() {
 
           <div className="w-full max-w-6xl space-y-5">
             <div className="space-y-2 text-left">
-              <h2 className="text-2xl font-light font-raleway text-theme-text">Your Avatars</h2>
+              <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
             </div>
             {avatars.length > 0 && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
@@ -1828,7 +1828,7 @@ export default function Avatars() {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Publish Image
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to publish this image? It will be visible to other users.
                 </p>
               </div>
@@ -1861,7 +1861,7 @@ export default function Avatars() {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Unpublish Image
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to unpublish this image? It will no longer be visible to other users.
                 </p>
               </div>
@@ -1892,7 +1892,7 @@ export default function Avatars() {
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Check folders to add or remove this item from.
                 </p>
               </div>
@@ -2007,7 +2007,7 @@ export default function Avatars() {
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                 </p>
               </div>
@@ -2041,7 +2041,7 @@ export default function Avatars() {
                 <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {avatarToPublish.published 
                     ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
                     : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
@@ -2077,7 +2077,7 @@ export default function Avatars() {
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
                 <h3 className="text-xl font-raleway font-normal text-theme-text">Delete image</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to delete this image? This action cannot be undone.
                 </p>
               </div>
