@@ -3934,19 +3934,62 @@ const handleGenerate = async () => {
           }
 
           const result = await response.json();
-          const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
-          if (!dataUrl) {
-            throw new Error('No image returned from Recraft');
-          }
 
-          img = {
-            url: dataUrl,
-            prompt: trimmedPrompt,
-            model: recraftModel,
-            timestamp: new Date().toISOString(),
-            ownerId: user?.id,
-            avatarId: selectedAvatar?.id,
-          };
+          if (result?.jobId) {
+            const jobId: string = result.jobId;
+            let jobResultUrl: string | null = null;
+
+            for (let attempt = 0; attempt < 60; attempt += 1) {
+              const statusResponse = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (!statusResponse.ok) {
+                throw new Error(`Failed to check Recraft job status (${statusResponse.status})`);
+              }
+
+              const job = await statusResponse.json();
+              if (job.status === 'COMPLETED' && job.resultUrl) {
+                jobResultUrl = job.resultUrl as string;
+                break;
+              }
+
+              if (job.status === 'FAILED') {
+                throw new Error(job.error || 'Recraft job failed');
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, 5000));
+            }
+
+            if (!jobResultUrl) {
+              throw new Error('Recraft job timed out');
+            }
+
+            img = {
+              url: jobResultUrl,
+              prompt: trimmedPrompt,
+              model: recraftModel,
+              timestamp: new Date().toISOString(),
+              ownerId: user?.id,
+              avatarId: selectedAvatar?.id,
+            };
+          } else {
+            const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
+            if (!dataUrl) {
+              throw new Error('No image returned from Recraft');
+            }
+
+            img = {
+              url: dataUrl,
+              prompt: trimmedPrompt,
+              model: recraftModel,
+              timestamp: new Date().toISOString(),
+              ownerId: user?.id,
+              avatarId: selectedAvatar?.id,
+            };
+          }
         } else if (isLumaPhotonModel) {
           const resolvedLumaModel =
             modelForGeneration === "luma-photon-flash-1"

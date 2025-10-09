@@ -38,6 +38,53 @@ export const useRunwayImageGeneration = () => {
     generatedImage: null,
   });
 
+  const pollForJobCompletion = useCallback(
+    async (
+      jobId: string,
+      prompt: string,
+      model: string,
+      references: string[],
+      avatarId: string | undefined,
+      ownerId: string | undefined,
+    ): Promise<GeneratedImage> => {
+      const maxAttempts = 60;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to check job status: ${response.status}`);
+        }
+
+        const job = await response.json();
+        if (job.status === 'COMPLETED' && job.resultUrl) {
+          return {
+            url: job.resultUrl,
+            prompt,
+            model,
+            timestamp: new Date().toISOString(),
+            references: references.length ? references : undefined,
+            ownerId,
+            avatarId,
+          };
+        }
+
+        if (job.status === 'FAILED') {
+          throw new Error(job.error || 'Job failed');
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+
+      throw new Error('Job polling timeout');
+    },
+    [token],
+  );
+
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     setState(prev => ({
       ...prev,
@@ -108,15 +155,34 @@ export const useRunwayImageGeneration = () => {
 
       const payload = await res.json();
 
+      if (payload?.jobId) {
+        const generatedImage = await pollForJobCompletion(
+          payload.jobId,
+          prompt,
+          uiModel,
+          references,
+          options.avatarId,
+          user?.id,
+        );
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      }
+
       if (!payload?.dataUrl) {
         throw new Error('No image data returned from Runway API');
       }
 
-      // Convert the API response format to our expected format
       const generatedImage: GeneratedImage = {
         url: payload.dataUrl,
         prompt,
-        model: uiModel, // Use the UI model ID, not the internal API model
+        model: uiModel,
         timestamp: new Date().toISOString(),
         references: references || undefined,
         ownerId: user?.id,
@@ -143,7 +209,7 @@ export const useRunwayImageGeneration = () => {
 
       throw new Error(errorMessage);
     }
-  }, [token, user?.id]);
+  }, [token, user?.id, pollForJobCompletion]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

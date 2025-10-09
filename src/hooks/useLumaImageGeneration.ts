@@ -46,6 +46,51 @@ export function useLumaImageGeneration() {
     contentType: null,
   });
 
+  const pollForJobCompletion = useCallback(
+    async (
+      jobId: string,
+      options: LumaImageGenerationOptions,
+    ): Promise<LumaGeneratedImage> => {
+      const maxAttempts = 60;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to check job status: ${response.status}`);
+        }
+
+        const job = await response.json();
+        if (job.status === 'COMPLETED' && job.resultUrl) {
+          return {
+            url: job.resultUrl,
+            prompt: options.prompt,
+            model: options.model,
+            timestamp: new Date().toISOString(),
+            ownerId: user?.id,
+            avatarId: options.avatarId,
+            generationId: job.id ?? null,
+            state: job.status,
+            contentType: null,
+          };
+        }
+
+        if (job.status === 'FAILED') {
+          throw new Error(job.error || 'Job failed');
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+
+      throw new Error('Job polling timeout');
+    },
+    [token, user?.id],
+  );
+
   const generateImage = useCallback(
     async (options: LumaImageGenerationOptions) => {
       setState((prev) => ({
@@ -120,6 +165,22 @@ export function useLumaImageGeneration() {
         }
 
         const payload = (await response.json()) as Record<string, unknown>;
+
+        if (typeof payload.jobId === 'string') {
+          const generatedImage = await pollForJobCompletion(payload.jobId, options);
+
+          setState({
+            isLoading: false,
+            error: null,
+            generatedImage,
+            generationId: generatedImage.generationId ?? null,
+            status: 'COMPLETED',
+            contentType: generatedImage.contentType ?? null,
+          });
+
+          return generatedImage;
+        }
+
         const dataUrl = typeof payload.dataUrl === 'string'
           ? payload.dataUrl
           : Array.isArray(payload.dataUrls)
@@ -190,7 +251,7 @@ export function useLumaImageGeneration() {
         throw new Error(message);
       }
     },
-    [token, user?.id],
+    [token, user?.id, pollForJobCompletion],
   );
 
   const clearError = useCallback(() => {

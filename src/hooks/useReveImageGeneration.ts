@@ -49,6 +49,51 @@ export const useReveImageGeneration = () => {
     progress: undefined,
   });
 
+  const pollForJobCompletion = useCallback(
+    async (
+      jobId: string,
+      options: ReveImageGenerationOptions,
+    ): Promise<ReveGeneratedImage> => {
+      const maxAttempts = 60;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to check job status: ${response.status}`);
+        }
+
+        const job = await response.json();
+
+        if (job.status === 'COMPLETED' && job.resultUrl) {
+          return {
+            url: job.resultUrl,
+            prompt: options.prompt,
+            model: options.model ?? 'reve-image-1.0',
+            timestamp: new Date().toISOString(),
+            jobId,
+            references: options.references || undefined,
+            ownerId: user?.id,
+            avatarId: options.avatarId,
+          };
+        }
+
+        if (job.status === 'FAILED') {
+          throw new Error(job.error || 'Job failed');
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+
+      throw new Error('Job polling timeout');
+    },
+    [token, user?.id],
+  );
+
   const generateImage = useCallback(
     async (options: ReveImageGenerationOptions) => {
       setState((prev) => ({
@@ -116,6 +161,27 @@ export const useReveImageGeneration = () => {
           status?: string | null;
         };
 
+        if (payload.jobId) {
+          setState((prev) => ({
+            ...prev,
+            jobStatus: 'processing',
+            progress: 'Generating image…',
+          }));
+
+          const generatedImage = await pollForJobCompletion(payload.jobId, options);
+
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: null,
+            generatedImage,
+            jobStatus: 'completed',
+            progress: 'Generation complete!',
+          }));
+
+          return generatedImage;
+        }
+
         const imageUrl =
           (Array.isArray(payload.images) && payload.images.find((url): url is string => typeof url === 'string')) ||
           (typeof payload.dataUrl === 'string' ? payload.dataUrl : null);
@@ -158,7 +224,7 @@ export const useReveImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id],
+    [token, user?.id, pollForJobCompletion],
   );
 
   const editImage = useCallback(async () => {

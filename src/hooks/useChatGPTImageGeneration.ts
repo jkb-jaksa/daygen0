@@ -39,6 +39,51 @@ export const useChatGPTImageGeneration = () => {
     generatedImage: null,
   });
 
+  const pollForJobCompletion = useCallback(
+    async (
+      jobId: string,
+      prompt: string,
+      options: ChatGPTImageGenerationOptions,
+    ): Promise<ChatGPTGeneratedImage> => {
+      const maxAttempts = 60;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to check job status: ${response.status}`);
+        }
+
+        const job = await response.json();
+        if (job.status === 'COMPLETED' && job.resultUrl) {
+          return {
+            url: job.resultUrl,
+            prompt,
+            model: 'chatgpt-image',
+            timestamp: new Date().toISOString(),
+            size: options.size ?? '1024x1024',
+            quality: options.quality ?? 'high',
+            background: options.background ?? 'transparent',
+            ownerId: user?.id,
+            avatarId: options.avatarId,
+          };
+        }
+
+        if (job.status === 'FAILED') {
+          throw new Error(job.error || 'Job failed');
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+
+      throw new Error('Job polling timeout');
+    },
+    [token, user?.id],
+  );
+
   const generateImage = useCallback(async (options: ChatGPTImageGenerationOptions) => {
     setState(prev => ({
       ...prev,
@@ -100,6 +145,19 @@ export const useChatGPTImageGeneration = () => {
       const data = await res.json();
       debugLog('[chatgpt-image] Response data:', data);
 
+      if (data?.jobId) {
+        const generatedImage = await pollForJobCompletion(data.jobId, prompt, options);
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          generatedImage,
+          error: null,
+        }));
+
+        return generatedImage;
+      }
+
       // Handle multiple images (dataUrls array) or single image (dataUrl)
       const imageUrls = data.dataUrls || (data.dataUrl ? [data.dataUrl] : []);
       
@@ -141,7 +199,7 @@ export const useChatGPTImageGeneration = () => {
 
       throw new Error(errorMessage);
     }
-  }, [token, user?.id]);
+  }, [token, user?.id, pollForJobCompletion]);
 
   const clearError = useCallback(() => {
     setState(prev => ({
