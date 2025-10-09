@@ -5,7 +5,11 @@ import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
-import type { GeneratedImage } from "../hooks/useGeminiImageGeneration";
+import type {
+  GeneratedImage,
+  ImageGenerationProgressUpdate,
+  ImageGenerationStatus,
+} from "../hooks/useGeminiImageGeneration";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import type { FluxGeneratedImage, FluxImageGenerationOptions } from "../hooks/useFluxImageGeneration";
@@ -84,6 +88,19 @@ const CATEGORY_TO_PATH: Record<string, string> = {
   uploads: "/gallery/uploads",
   "my-folders": "/gallery/folders",
   inspirations: "/gallery/inspirations",
+};
+
+type ActiveGenerationStatus = Exclude<ImageGenerationStatus, 'idle'>;
+
+type ActiveGenerationJob = {
+  id: string;
+  prompt: string;
+  model: string;
+  startedAt: number;
+  progress: number;
+  backendProgress?: number;
+  status: ActiveGenerationStatus;
+  jobId?: string | null;
 };
 
 const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio"]);
@@ -705,7 +722,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const LONG_POLL_THRESHOLD_MS = 90000;
   const LONG_POLL_NOTICE_MINUTES = 2;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
-  const [activeGenerationQueue, setActiveGenerationQueue] = useState<Array<{ id: string; prompt: string; model: string; startedAt: number }>>([]);
+  const [activeGenerationQueue, setActiveGenerationQueue] = useState<ActiveGenerationJob[]>([]);
   const hasGenerationCapacity = activeGenerationQueue.length < MAX_PARALLEL_GENERATIONS;
   const [longPollNotice, setLongPollNotice] = useState<{ jobId: string; startedAt: number } | null>(null);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
@@ -966,6 +983,94 @@ const [batchSize, setBatchSize] = useState<number>(1);
   }, [updatePromptBarReservedSpace, activeCategory, selectedFolder]);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+
+  const stopProgressAnimation = useCallback((jobId: string) => {
+    const timer = progressTimersRef.current.get(jobId);
+    if (timer) {
+      clearInterval(timer);
+      progressTimersRef.current.delete(jobId);
+    }
+  }, []);
+
+  const startProgressAnimation = useCallback(
+    (
+      jobId: string,
+      options?: {
+        max?: number;
+        step?: number;
+        interval?: number;
+      },
+    ) => {
+      stopProgressAnimation(jobId);
+
+      const maxCap = options?.max ?? 96;
+      const baseStep = options?.step ?? 1.4;
+      const interval = options?.interval ?? 650;
+
+      const tick = () => {
+        setActiveGenerationQueue(prev =>
+          prev.map(job => {
+            if (job.id !== jobId) {
+              return job;
+            }
+
+            if (job.status === 'completed' || job.status === 'failed') {
+              return job;
+            }
+
+            const backendCap =
+              typeof job.backendProgress === 'number' && Number.isFinite(job.backendProgress)
+                ? Math.max(0, Math.min(100, job.backendProgress))
+                : undefined;
+
+            const effectiveCap = Math.max(
+              job.progress,
+              Math.min(maxCap, backendCap ?? maxCap),
+            );
+
+            const gap = effectiveCap - job.progress;
+            if (gap <= 0.15) {
+              return job;
+            }
+
+            const dynamicStep =
+              gap > 20
+                ? baseStep
+                : gap > 12
+                  ? baseStep * 0.7
+                  : gap > 6
+                    ? baseStep * 0.45
+                    : baseStep * 0.25;
+
+            const nextProgress = Math.min(
+              effectiveCap,
+              job.progress + dynamicStep,
+            );
+
+            if (nextProgress <= job.progress) {
+              return job;
+            }
+
+            return {
+              ...job,
+              progress: nextProgress,
+            };
+          }),
+        );
+      };
+
+      tick();
+      const timer = setInterval(tick, interval);
+      progressTimersRef.current.set(jobId, timer);
+    },
+    [setActiveGenerationQueue, stopProgressAnimation],
+  );
+
+  useEffect(() => () => {
+    progressTimersRef.current.forEach(clearInterval);
+    progressTimersRef.current.clear();
+  }, []);
   const [isButtonSpinning, setIsButtonSpinning] = useState(false);
 
   useEffect(() => {
@@ -3753,12 +3858,54 @@ const handleGenerate = async () => {
   const qwenPromptExtendForGeneration = qwenPromptExtend;
   const qwenWatermarkForGeneration = qwenWatermark;
 
-  const jobMeta = { id: generationId, prompt: trimmedPrompt, model: modelForGeneration, startedAt: Date.now() };
-    
-    // Only add to activeGenerationQueue if we're not handling video models that manage their own state
-    if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"))) {
-      setActiveGenerationQueue(prev => [...prev, jobMeta]);
-    }
+  const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image";
+  const isFluxModel = modelForGeneration === "flux-1.1";
+  const isChatGPTModel = modelForGeneration === "chatgpt-image";
+  const isIdeogramModel = modelForGeneration === "ideogram";
+  const isQwenModel = modelForGeneration === "qwen-image";
+  const isRunwayModel = modelForGeneration === "runway-gen4";
+  const isRunwayVideoModel = modelForGeneration === "runway-video-gen4";
+  const isWanVideoModel = modelForGeneration === "wan-video-2.2";
+  const isHailuoVideoModel = modelForGeneration === "hailuo-02";
+  const isReveModel = modelForGeneration === "reve-image";
+  const isRecraftModel = modelForGeneration === "recraft";
+  const isLumaPhotonModel =
+    modelForGeneration === "luma-photon-1" ||
+    modelForGeneration === "luma-photon-flash-1";
+
+  const jobMeta: ActiveGenerationJob = {
+    id: generationId,
+    prompt: trimmedPrompt,
+    model: modelForGeneration,
+    startedAt: Date.now(),
+    progress: 1,
+    backendProgress: 0,
+    status: 'queued',
+  };
+
+  // Only add to activeGenerationQueue if we're not handling video models that manage their own state
+  const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
+
+  if (shouldTrackJob) {
+    setActiveGenerationQueue(prev => {
+      const next = [...prev, jobMeta];
+      return next.map(job =>
+        job.id === generationId
+          ? {
+              ...job,
+              status: 'processing',
+              progress: Math.max(job.progress, isGeminiModel ? 4 : 7),
+            }
+          : job,
+      );
+    });
+
+    startProgressAnimation(generationId, {
+      max: isGeminiModel ? 97 : 95,
+      step: isGeminiModel ? 1.1 : 1.6,
+      interval: isGeminiModel ? 620 : 540,
+    });
+  }
     if (spinnerTimeoutRef.current) {
       clearTimeout(spinnerTimeoutRef.current);
     }
@@ -3767,6 +3914,56 @@ const handleGenerate = async () => {
       setIsButtonSpinning(false);
       spinnerTimeoutRef.current = null;
     }, 1000);
+
+    const handleGeminiProgress = (update: ImageGenerationProgressUpdate) => {
+      if (update.clientJobId && update.clientJobId !== generationId) {
+        return;
+      }
+
+      setActiveGenerationQueue(prev =>
+        prev.map(job => {
+          if (job.id !== generationId) {
+            return job;
+          }
+
+          const nextProgress =
+            typeof update.progress === 'number'
+              ? Math.max(job.progress, Math.min(100, Math.round(update.progress)))
+              : job.progress;
+          const nextBackend =
+            typeof update.backendProgress === 'number'
+              ? Math.max(job.backendProgress ?? 0, Math.min(100, update.backendProgress))
+              : job.backendProgress;
+          const rawStatus = update.status;
+          const mappedStatus: ActiveGenerationStatus = rawStatus === 'completed'
+            ? 'completed'
+            : rawStatus === 'failed'
+              ? 'failed'
+              : rawStatus === 'processing'
+                ? 'processing'
+                : 'queued';
+
+          const status: ActiveGenerationStatus =
+            job.status === 'completed'
+              ? 'completed'
+              : job.status === 'failed'
+                ? 'failed'
+                : mappedStatus;
+
+          return {
+            ...job,
+            progress: nextProgress,
+            backendProgress: nextBackend,
+            status,
+            jobId: update.jobId ?? job.jobId,
+          };
+        }),
+      );
+
+      if (update.status === 'completed' || update.status === 'failed') {
+        stopProgressAnimation(generationId);
+      }
+    };
 
     try {
       const fileToDataUrl = (file: File) =>
@@ -3787,19 +3984,6 @@ const handleGenerate = async () => {
         ? await Promise.all(referenceFilesForGeneration.map(fileToDataUrl))
         : [];
 
-      const isGeminiModel = modelForGeneration === "gemini-2.5-flash-image";
-      const isFluxModel = modelForGeneration === "flux-1.1";
-      const isChatGPTModel = modelForGeneration === "chatgpt-image";
-      const isIdeogramModel = modelForGeneration === "ideogram";
-      const isQwenModel = modelForGeneration === "qwen-image";
-      const isRunwayModel = modelForGeneration === "runway-gen4";
-      const isRunwayVideoModel = modelForGeneration === "runway-video-gen4";
-      const isWanVideoModel = modelForGeneration === "wan-video-2.2";
-      const isHailuoVideoModel = modelForGeneration === "hailuo-02";
-      const isReveModel = modelForGeneration === "reve-image";
-      const isRecraftModel = modelForGeneration === "recraft";
-      const isLumaPhotonModel = modelForGeneration === "luma-photon-1" || modelForGeneration === "luma-photon-flash-1";
-
       debugLog('[Create] Model checks:', { 
         modelForGeneration, 
         isRunwayVideoModel, 
@@ -3810,7 +3994,7 @@ const handleGenerate = async () => {
         isChatGPTModel 
       });
 
-      const runSingleGeneration = async () => {
+  const runSingleGeneration = async () => {
         let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
         if (isGeminiModel) {
@@ -3824,6 +4008,8 @@ const handleGenerate = async () => {
             topP: topPForGeneration,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatar?.id,
+            clientJobId: generationId,
+            onProgress: handleGeminiProgress,
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
@@ -4025,6 +4211,23 @@ const handleGenerate = async () => {
         debugLog('[Create] Starting batch item', { iteration: iteration + 1, total: effectiveBatchSize, model: modelForGeneration });
         const img = await runSingleGeneration();
         if (img?.url) {
+          if (shouldTrackJob && !isGeminiModel) {
+            const completionRatio = (iteration + 1) / effectiveBatchSize;
+            const targetProgress = Math.min(98, 45 + completionRatio * 50);
+            setActiveGenerationQueue(prev =>
+              prev.map(job =>
+                job.id === generationId
+                  ? {
+                      ...job,
+                      progress: Math.max(job.progress, targetProgress),
+                      backendProgress: Math.max(job.backendProgress ?? 0, targetProgress),
+                      status: 'processing',
+                    }
+                  : job,
+              ),
+            );
+          }
+
           successfulGenerations += 1;
           debugLog('New image generated, refreshing gallery...');
           await fetchGalleryImages();
@@ -4036,6 +4239,22 @@ const handleGenerate = async () => {
         }
       }
 
+      if (shouldTrackJob && !isGeminiModel) {
+        setActiveGenerationQueue(prev =>
+          prev.map(job =>
+            job.id === generationId
+              ? {
+                  ...job,
+                  progress: 100,
+                  backendProgress: 100,
+                  status: 'completed',
+                }
+              : job,
+          ),
+        );
+        stopProgressAnimation(generationId);
+      }
+
       if (successfulGenerations > 1) {
         setCopyNotification(`${successfulGenerations} images generated!`);
         setTimeout(() => setCopyNotification(null), 2000);
@@ -4044,6 +4263,21 @@ const handleGenerate = async () => {
       debugError('Error generating image:', error);
       // Clear any previous errors from all hooks
       clearAllGenerationErrors();
+      if (shouldTrackJob) {
+        stopProgressAnimation(generationId);
+        setActiveGenerationQueue(prev =>
+          prev.map(job =>
+            job.id === generationId
+              ? {
+                  ...job,
+                  status: 'failed',
+                  progress: Math.max(job.progress, 100),
+                  backendProgress: Math.max(job.backendProgress ?? 0, 100),
+                }
+              : job,
+          ),
+        );
+      }
     } finally {
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -4051,7 +4285,8 @@ const handleGenerate = async () => {
       }
       setIsButtonSpinning(false);
       // Only remove from activeGenerationQueue if we added it in the first place
-      if (!(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"))) {
+      if (shouldTrackJob) {
+        stopProgressAnimation(generationId);
         setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
       }
     }
@@ -5883,21 +6118,67 @@ const handleGenerate = async () => {
 
                     if (isPending) {
                       const pending = item as PendingGalleryItem;
-                      return (
-                        <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse">
-                          <div className="w-full aspect-square animate-gradient-colors"></div>
-                          <div className="absolute inset-0 flex items-center justify-center bg-theme-black/50 backdrop-blur-sm">
-                            <div className="text-center">
-                              <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
-                              <div className="text-theme-white text-xs font-raleway animate-pulse">
-                                Generating...
+                      const hasProgress = typeof pending.progress === 'number';
+                      if (!hasProgress) {
+                        return (
+                          <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse">
+                            <div className="w-full aspect-square animate-gradient-colors"></div>
+                            <div className="absolute inset-0 flex items-center justify-center bg-theme-black/55 backdrop-blur-sm">
+                              <div className="text-center">
+                                <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
+                                <div className="text-theme-white text-xs font-raleway animate-pulse">
+                                  Generating...
+                                </div>
                               </div>
                             </div>
+                            <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+                              <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
+                                {pending.prompt}
+                              </p>
+                            </div>
                           </div>
-                          <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
-                            <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
-                              {pending.prompt}
-                            </p>
+                        );
+                      }
+
+                      const progressValue = Math.max(
+                        pending.progress ?? 0,
+                        0,
+                      );
+                      const roundedProgress = Math.min(100, Math.max(0, Math.round(progressValue)));
+                      const statusLabel = (() => {
+                        switch (pending.status) {
+                          case 'processing':
+                            return 'Generating';
+                          case 'completed':
+                            return 'Finishing';
+                          case 'failed':
+                            return 'Retry needed';
+                          default:
+                            return 'Preparing';
+                        }
+                      })();
+
+                      return (
+                        <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black">
+                          <div className="w-full aspect-square animate-gradient-colors"></div>
+                          <div className="absolute inset-0 flex flex-col justify-between bg-theme-black/60 backdrop-blur-md">
+                            <div className="p-3">
+                              <p className="text-theme-white/70 text-xs font-raleway line-clamp-3">
+                                {pending.prompt}
+                              </p>
+                            </div>
+                            <div className="px-4 pb-5">
+                              <div className="flex items-center justify-between text-[11px] font-raleway text-theme-white/80 mb-2">
+                                <span className="uppercase tracking-[0.08em]">{statusLabel}</span>
+                                <span>{roundedProgress}%</span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-theme-white/15 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-[color:var(--brand-cyan)] transition-[width] duration-500 ease-out"
+                                  style={{ width: `${roundedProgress}%` }}
+                                ></div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );

@@ -64,7 +64,17 @@ export type StoredGalleryImage = {
   avatarId?: string;
 };
 
-export type PendingGalleryItem = { pending: true; id: string; prompt: string; model: string; startedAt: number };
+export type PendingGalleryItem = {
+  pending: true;
+  id: string;
+  prompt: string;
+  model: string;
+  startedAt: number;
+  progress?: number;
+  backendProgress?: number;
+  status?: 'queued' | 'processing' | 'completed' | 'failed';
+  jobId?: string | null;
+};
 
 export type SerializedUpload = {
   id: string;
