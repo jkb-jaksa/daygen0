@@ -32,6 +32,12 @@ function createBaseProps(anchor: HTMLElement): SettingsMenuProps {
     anchorRef,
     open: true,
     onClose: vi.fn(),
+    common: {
+      batchSize: 1,
+      onBatchSizeChange: vi.fn(),
+      min: 1,
+      max: 4,
+    },
     flux: {
       enabled: false,
       model: 'flux-pro-1.1',
