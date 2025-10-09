@@ -261,7 +261,7 @@ const ChatMode: React.FC = () => {
     <div className={`${layout.page} pt-24`}>
       <div className={`${layout.container} pb-6`}>
         <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-6">
-          <aside className={`${glass.prompt} hidden h-full w-72 flex-shrink-0 flex-col rounded-[24px] border border-theme-mid/40 bg-theme-black/40 p-4 lg:flex`}>
+          <aside className={`${glass.prompt} hidden h-full w-48 flex-shrink-0 flex-col rounded-[24px] border border-theme-mid/40 bg-theme-black/40 p-4 lg:flex`}>
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-theme-text" />
