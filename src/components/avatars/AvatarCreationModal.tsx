@@ -251,7 +251,7 @@ function AvatarCreationModalComponent({
               <label className="flex flex-col space-y-2 w-fit">
                 <span className="text-sm font-raleway text-theme-white/70">Name</span>
                 <input
-                  className={`${inputs.base} !w-64`}
+                  className={`${inputs.compact} !w-64`}
                   placeholder="Enter your Avatar name"
                   value={avatarName}
                   onChange={(event) => onAvatarNameChange(event.target.value)}

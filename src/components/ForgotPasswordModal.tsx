@@ -71,15 +71,15 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="block text-sm text-theme-text font-raleway">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className={inputs.base}
-                  placeholder="Enter your email"
-                  disabled={isSubmitting}
-                />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className={inputs.compact}
+                placeholder="Enter your email"
+                disabled={isSubmitting}
+              />
               </div>
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && <p className="text-xs font-raleway text-red-400">{error}</p>}

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // Note: Video generation functions are kept for future backend integration
-import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -75,7 +75,7 @@ import type { StoredAvatar, AvatarSelection } from "./avatars/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
-import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
+import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT_GAP } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
 import CircularProgressRing from "./CircularProgressRing";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
@@ -172,6 +172,7 @@ const AI_MODELS = [
 
 const DEFAULT_REFERENCE_LIMIT = 3;
 const MAX_REFERENCES_WITH_AVATAR = 2;
+const PROMPT_TEXTAREA_MAX_HEIGHT = 160;
 
 type GeminiAspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
 
@@ -828,6 +829,17 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const longPollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const promptBarRef = useRef<HTMLDivElement | null>(null);
+  const adjustPromptTextareaHeight = useCallback(() => {
+    const textarea = promptTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.overflowX = "hidden";
+    const fullHeight = textarea.scrollHeight;
+    const clampedHeight = Math.min(fullHeight, PROMPT_TEXTAREA_MAX_HEIGHT);
+    textarea.style.height = `${clampedHeight}px`;
+    textarea.style.overflowY = fullHeight > PROMPT_TEXTAREA_MAX_HEIGHT ? "auto" : "hidden";
+  }, []);
   const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
   const updatePromptBarReservedSpace = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -845,13 +857,31 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setPromptBarReservedSpace(reserved);
   }, []);
 
+  const minimumPromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
+  const effectivePromptReservedSpace = Math.max(promptBarReservedSpace, minimumPromptReservedSpace);
+  const getCreateEmptyStateStyle = (isActive: boolean) =>
+    isActive
+      ? ({
+          "--create-empty-offset": `calc((${SIDEBAR_WIDTH}px + ${SIDEBAR_CONTENT_GAP}px) / 2)`,
+        } as React.CSSProperties)
+      : undefined;
+
+  const uploadsEmptyStateActive = activeCategory === "uploads" && uploadedImages.length === 0;
+  const uploadsEmptyStateStyle = getCreateEmptyStateStyle(uploadsEmptyStateActive);
+  const inspirationsEmptyStateActive = activeCategory === "inspirations" && inspirationsGallery.length === 0;
+  const inspirationsEmptyStateStyle = getCreateEmptyStateStyle(inspirationsEmptyStateActive);
+  const foldersEmptyStateActive = activeCategory === "my-folders" && folders.length === 0;
+  const foldersEmptyStateStyle = getCreateEmptyStateStyle(foldersEmptyStateActive);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     updatePromptBarReservedSpace();
+    adjustPromptTextareaHeight();
 
     const handleResize = () => {
       updatePromptBarReservedSpace();
+      adjustPromptTextareaHeight();
     };
 
     window.addEventListener("resize", handleResize);
@@ -863,6 +893,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     if (element && typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(() => {
         updatePromptBarReservedSpace();
+        adjustPromptTextareaHeight();
       });
       resizeObserver.observe(element);
     }
@@ -872,7 +903,11 @@ const [batchSize, setBatchSize] = useState<number>(1);
       window.removeEventListener("orientationchange", handleResize);
       resizeObserver?.disconnect();
     };
-  }, [updatePromptBarReservedSpace, activeCategory, selectedFolder]);
+  }, [updatePromptBarReservedSpace, adjustPromptTextareaHeight, activeCategory, selectedFolder]);
+
+  useLayoutEffect(() => {
+    adjustPromptTextareaHeight();
+  }, [prompt, adjustPromptTextareaHeight]);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
@@ -4524,7 +4559,7 @@ const handleGenerate = async () => {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className={`${inputs.base} text-theme-text ${
+                  className={`${inputs.compact} text-theme-text ${
                     folders.some(folder =>
                       folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                     ) && newFolderName.trim()
@@ -5151,34 +5186,60 @@ const handleGenerate = async () => {
                   </Suspense>
                 )}
                 {activeCategory === "inspirations" && (
-                  <div className="w-full">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
-                      {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
-                      {inspirationsGallery.length === 0 && (
-                        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                  <div
+                    className="w-full flex flex-col"
+                    style={{
+                      minHeight: `max(400px, calc(100dvh - var(--nav-h) - ${SIDEBAR_TOP_PADDING}px - ${effectivePromptReservedSpace}px))`,
+                    }}
+                  >
+                    {inspirationsGallery.length === 0 ? (
+                      /* Empty state for inspirations */
+                      <div
+                        className={`flex flex-1 w-full items-center justify-center py-16 text-center${
+                          inspirationsEmptyStateActive ? " lg:[transform:translateX(calc(var(--create-empty-offset)*-1))]" : ""
+                        }`}
+                        style={inspirationsEmptyStateStyle}
+                      >
+                        <div className="flex w-full max-w-2xl flex-col items-center px-6">
                           <Sparkles className="default-orange-icon mb-4" />
                           <h3 className="text-xl font-raleway text-theme-text mb-2">No inspirations yet</h3>
                           <p className="text-base font-raleway text-theme-white max-w-md">
                             Explore the community gallery and save images you love to see them here.
                           </p>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
+                        {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
-                  <div className="w-full">
+                  <div
+                    className="w-full flex flex-col"
+                    style={{
+                      minHeight: `max(400px, calc(100dvh - var(--nav-h) - ${SIDEBAR_TOP_PADDING}px - ${effectivePromptReservedSpace}px))`,
+                    }}
+                  >
 
                     {uploadedImages.length === 0 ? (
                       /* Empty state for uploads */
-                      <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
-                        <Upload className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-theme-text mb-2">No uploads yet</h3>
-                        <p className="text-base font-raleway text-theme-white max-w-md">
-                          Here you will see all your uploaded reference images that were used to create a new image or video.
-                        </p>
+                      <div
+                        className={`flex flex-1 w-full items-center justify-center py-16 text-center${
+                          uploadsEmptyStateActive ? " lg:[transform:translateX(calc(var(--create-empty-offset)*-1))]" : ""
+                        }`}
+                        style={uploadsEmptyStateStyle}
+                      >
+                        <div className="flex w-full max-w-2xl flex-col items-center px-6">
+                          <Upload className="default-orange-icon mb-4" />
+                          <h3 className="text-xl font-raleway text-theme-text mb-2">No uploads yet</h3>
+                          <p className="text-base font-raleway text-theme-white max-w-md">
+                            Here you will see all your uploaded reference images that were used to create a new image or video.
+                          </p>
+                        </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
@@ -5519,35 +5580,48 @@ const handleGenerate = async () => {
                 
                 {/* My Folders View */}
                 {activeCategory === "my-folders" && (
-                  <div className="w-full">
-                    {/* New Folder button */}
-                    <div className="mb-6 flex justify-end">
-                      <button
-                        onClick={() => setNewFolderDialog(true)}
-                        className={buttons.primary}
-                      >
-                        <FolderPlus className="w-4 h-4" />
-                        New Folder
-                      </button>
-                    </div>
-                    
+                  <div
+                    className="w-full flex flex-col"
+                    style={{
+                      minHeight: `max(400px, calc(100dvh - var(--nav-h) - ${SIDEBAR_TOP_PADDING}px - ${effectivePromptReservedSpace}px))`,
+                    }}
+                  >
                     {folders.length === 0 ? (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <FolderIcon className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-theme-text mb-2">No folders yet</h3>
-                        <p className="text-base font-raleway text-theme-white max-w-md mb-4">
-                          Create your first folder to organize your images.
-                        </p>
-                        <button
-                          onClick={() => setNewFolderDialog(true)}
-                          className={buttons.primary}
-                        >
-                          <FolderPlus className="w-4 h-4" />
-                          Create Folder
-                        </button>
+                      /* Empty state for folders */
+                      <div
+                        className={`flex flex-1 w-full items-center justify-center py-16 text-center${
+                          foldersEmptyStateActive ? " lg:[transform:translateX(calc(var(--create-empty-offset)*-1))]" : ""
+                        }`}
+                        style={foldersEmptyStateStyle}
+                      >
+                        <div className="flex w-full max-w-2xl flex-col items-center px-6">
+                          <FolderIcon className="default-orange-icon mb-4" />
+                          <h3 className="text-xl font-raleway text-theme-text mb-2">No folders yet</h3>
+                          <p className="text-base font-raleway text-theme-white max-w-md mb-4">
+                            Create your first folder to organize your images.
+                          </p>
+                          <button
+                            onClick={() => setNewFolderDialog(true)}
+                            className={buttons.primary}
+                          >
+                            <FolderPlus className="w-4 h-4" />
+                            Create Folder
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
+                      <>
+                        {/* New Folder button */}
+                        <div className="mb-6 flex justify-end">
+                          <button
+                            onClick={() => setNewFolderDialog(true)}
+                            className={buttons.primary}
+                          >
+                            <FolderPlus className="w-4 h-4" />
+                            New Folder
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -5686,6 +5760,7 @@ const handleGenerate = async () => {
                       </div>
                         ))}
                       </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -6478,7 +6553,7 @@ const handleGenerate = async () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
+          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && activeCategory !== "inspirations" && (
             <div
               ref={promptBarRef}
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
@@ -6502,7 +6577,7 @@ const handleGenerate = async () => {
                   onKeyDown={onKeyDown}
                   onPaste={handlePaste}
                   rows={1}
-                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
+                  className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
                 />
               </div>
               
@@ -6514,7 +6589,7 @@ const handleGenerate = async () => {
                     <button
                       type="button"
                       onClick={() => navigate('/create/chat')}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 rounded-full transition-colors duration-200`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
                       aria-label="Chat mode"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
@@ -6533,17 +6608,30 @@ const handleGenerate = async () => {
                       Chat Mode
                     </div>
                   </div>
-                <button
-                  type="button"
-                  onClick={isGemini ? handleRefsClick : undefined}
-                  title="Add reference image"
-                  aria-label="Add reference image"
-                  disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                >
-                  <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Reference</span>
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={isGemini ? handleRefsClick : undefined}
+                    aria-label="Add reference image"
+                    disabled={!isGemini}
+                    className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                    onMouseEnter={(e) => {
+                      if (isGemini) showHoverTooltip(e.currentTarget, 'reference-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('reference-tooltip');
+                    }}
+                  >
+                    <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                  </button>
+                  <div
+                    data-tooltip-for="reference-tooltip"
+                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Upload Reference Image
+                  </div>
+                </div>
 
                 {/* Reference images display - right next to Add reference button */}
                 {referencePreviews.length > 0 && (
@@ -6652,14 +6740,29 @@ const handleGenerate = async () => {
                       </div>
                     )}
 
-                    <button
-                      type="button"
-                      ref={promptsButtonRef}
-                      onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                    >
-                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                    </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={promptsButtonRef}
+                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(e.currentTarget, 'prompts-tooltip');
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip('prompts-tooltip');
+                        }}
+                      >
+                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                      </button>
+                      <div
+                        data-tooltip-for="prompts-tooltip"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Your Prompts
+                      </div>
+                    </div>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
                       open={isAvatarPickerOpen}
@@ -7486,7 +7589,7 @@ const handleGenerate = async () => {
                 <button 
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`btn btn-night font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
