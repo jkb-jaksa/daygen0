@@ -3919,16 +3919,16 @@ const handleGenerate = async () => {
           ? {
               ...job,
               status: 'processing',
-              progress: Math.max(job.progress, isGeminiModel ? 4 : 7),
+              progress: Math.max(job.progress, 4),
             }
           : job,
       );
     });
 
     startProgressAnimation(generationId, {
-      max: isGeminiModel ? 97 : 95,
-      step: isGeminiModel ? 1.1 : 1.6,
-      interval: isGeminiModel ? 620 : 540,
+      max: 97,
+      step: 1.1,
+      interval: 620,
     });
   }
     if (spinnerTimeoutRef.current) {
@@ -6223,7 +6223,7 @@ const handleGenerate = async () => {
                               textColor="var(--theme-orange-1)"
                             />
                             <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
-                              {statusLabel} {roundedProgress}%
+                              {statusLabel}
                             </span>
                             <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
                               {pending.prompt}
