@@ -75,7 +75,7 @@ import type { StoredAvatar, AvatarSelection } from "./avatars/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
-import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
+import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT_GAP } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
 
@@ -857,6 +857,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const minimumPromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
   const effectivePromptReservedSpace = Math.max(promptBarReservedSpace, minimumPromptReservedSpace);
+  const uploadsEmptyStateActive = activeCategory === "uploads" && uploadedImages.length === 0;
+  const uploadsEmptyStateStyle = uploadsEmptyStateActive
+    ? ({
+        "--uploads-empty-offset": `calc((${SIDEBAR_WIDTH}px + ${SIDEBAR_CONTENT_GAP}px) / 2)`,
+      } as React.CSSProperties)
+    : undefined;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -5152,7 +5158,12 @@ const handleGenerate = async () => {
 
                     {uploadedImages.length === 0 ? (
                       /* Empty state for uploads */
-                      <div className="flex flex-1 w-full items-center justify-center py-16 text-center">
+                      <div
+                        className={`flex flex-1 w-full items-center justify-center py-16 text-center${
+                          uploadsEmptyStateActive ? " lg:[transform:translateX(calc(var(--uploads-empty-offset)*-1))]" : ""
+                        }`}
+                        style={uploadsEmptyStateStyle}
+                      >
                         <div className="flex w-full max-w-2xl flex-col items-center px-6">
                           <Upload className="default-orange-icon mb-4" />
                           <h3 className="text-xl font-raleway text-theme-text mb-2">No uploads yet</h3>
