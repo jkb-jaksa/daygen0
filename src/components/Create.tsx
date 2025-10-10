@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // Note: Video generation functions are kept for future backend integration
-import React, { useRef, useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -170,6 +170,7 @@ const AI_MODELS = [
 
 const DEFAULT_REFERENCE_LIMIT = 3;
 const MAX_REFERENCES_WITH_AVATAR = 2;
+const PROMPT_TEXTAREA_MAX_HEIGHT = 160;
 
 type GeminiAspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
 
@@ -826,6 +827,17 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const longPollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const promptBarRef = useRef<HTMLDivElement | null>(null);
+  const adjustPromptTextareaHeight = useCallback(() => {
+    const textarea = promptTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.overflowX = "hidden";
+    const fullHeight = textarea.scrollHeight;
+    const clampedHeight = Math.min(fullHeight, PROMPT_TEXTAREA_MAX_HEIGHT);
+    textarea.style.height = `${clampedHeight}px`;
+    textarea.style.overflowY = fullHeight > PROMPT_TEXTAREA_MAX_HEIGHT ? "auto" : "hidden";
+  }, []);
   const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
   const updatePromptBarReservedSpace = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -847,9 +859,11 @@ const [batchSize, setBatchSize] = useState<number>(1);
     if (typeof window === "undefined") return;
 
     updatePromptBarReservedSpace();
+    adjustPromptTextareaHeight();
 
     const handleResize = () => {
       updatePromptBarReservedSpace();
+      adjustPromptTextareaHeight();
     };
 
     window.addEventListener("resize", handleResize);
@@ -861,6 +875,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     if (element && typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(() => {
         updatePromptBarReservedSpace();
+        adjustPromptTextareaHeight();
       });
       resizeObserver.observe(element);
     }
@@ -870,7 +885,11 @@ const [batchSize, setBatchSize] = useState<number>(1);
       window.removeEventListener("orientationchange", handleResize);
       resizeObserver?.disconnect();
     };
-  }, [updatePromptBarReservedSpace, activeCategory, selectedFolder]);
+  }, [updatePromptBarReservedSpace, adjustPromptTextareaHeight, activeCategory, selectedFolder]);
+
+  useLayoutEffect(() => {
+    adjustPromptTextareaHeight();
+  }, [prompt, adjustPromptTextareaHeight]);
   const { estimate: storageEstimate, refresh: refreshStorageEstimate } = useStorageEstimate();
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
@@ -4476,7 +4495,7 @@ const handleGenerate = async () => {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className={`${inputs.base} text-theme-text ${
+                  className={`${inputs.compact} text-theme-text ${
                     folders.some(folder =>
                       folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                     ) && newFolderName.trim()
@@ -6457,7 +6476,7 @@ const handleGenerate = async () => {
                   onKeyDown={onKeyDown}
                   onPaste={handlePaste}
                   rows={1}
-                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
+                  className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
                 />
               </div>
               
@@ -6469,7 +6488,7 @@ const handleGenerate = async () => {
                     <button
                       type="button"
                       onClick={() => navigate('/create/chat')}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 rounded-full transition-colors duration-200`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
                       aria-label="Chat mode"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
@@ -6488,17 +6507,30 @@ const handleGenerate = async () => {
                       Chat Mode
                     </div>
                   </div>
-                <button
-                  type="button"
-                  onClick={isGemini ? handleRefsClick : undefined}
-                  title="Add reference image"
-                  aria-label="Add reference image"
-                  disabled={!isGemini}
-                  className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                >
-                  <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Reference</span>
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={isGemini ? handleRefsClick : undefined}
+                    aria-label="Add reference image"
+                    disabled={!isGemini}
+                    className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                    onMouseEnter={(e) => {
+                      if (isGemini) showHoverTooltip(e.currentTarget, 'reference-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('reference-tooltip');
+                    }}
+                  >
+                    <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                  </button>
+                  <div
+                    data-tooltip-for="reference-tooltip"
+                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Upload Reference Image
+                  </div>
+                </div>
 
                 {/* Reference images display - right next to Add reference button */}
                 {referencePreviews.length > 0 && (
@@ -6607,14 +6639,29 @@ const handleGenerate = async () => {
                       </div>
                     )}
 
-                    <button
-                      type="button"
-                      ref={promptsButtonRef}
-                      onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                    >
-                      <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                    </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={promptsButtonRef}
+                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(e.currentTarget, 'prompts-tooltip');
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip('prompts-tooltip');
+                        }}
+                      >
+                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                      </button>
+                      <div
+                        data-tooltip-for="prompts-tooltip"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Your Prompts
+                      </div>
+                    </div>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
                       open={isAvatarPickerOpen}
@@ -7441,7 +7488,7 @@ const handleGenerate = async () => {
                 <button 
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`btn btn-night font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {(() => {
                     const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);

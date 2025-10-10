@@ -231,11 +231,11 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-black: #060806;
   --n-black-rgb: 6 8 6;
 
-  /* Legacy brand warm gradient stops (now mapped to n-white) */
-  --n-orange-1: #b8c0c0;
-  --n-orange-1-rgb: 184 192 192;
-  --n-orange-2: #b8c0c0;
-  --n-orange-2-rgb: 184 192 192;
+  /* Brand orange colors */
+  --n-orange-1: #FF9947;
+  --n-orange-1-rgb: 255 153 71;
+  --n-orange-2: #FF8C42;
+  --n-orange-2-rgb: 255 140 66;
 
   /* Daygen palette – day (light) */
   --d-text: #010202;
@@ -251,10 +251,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --d-black: #f8fbfb;
   --d-black-rgb: 248 251 251;
 
-  --d-orange-1: #3ab8b9;
-  --d-orange-1-rgb: 58 184 185;
-  --d-orange-2: #2da5a6;
-  --d-orange-2-rgb: 45 165 166;
+  --d-orange-1: #FF8C42;
+  --d-orange-1-rgb: 255 140 66;
+  --d-orange-2: #FF7A2E;
+  --d-orange-2-rgb: 255 122 46;
   
   /* Brand cyan color */
   --brand-cyan: rgb(3,188,189);
@@ -293,10 +293,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --accent-cyan-ring: rgba(3, 188, 189, 0.5);
   --accent-cyan-text: #8cebeb;
 
-  --accent-orange-bg: rgba(184, 192, 192, 0.18);
-  --accent-orange-border: rgba(184, 192, 192, 0.42);
-  --accent-orange-ring: rgba(184, 192, 192, 0.5);
-  --accent-orange-text: #e3e7e7;
+  --accent-orange-bg: rgba(255, 153, 71, 0.18);
+  --accent-orange-border: rgba(255, 153, 71, 0.42);
+  --accent-orange-ring: rgba(255, 153, 71, 0.5);
+  --accent-orange-text: #ffcb9f;
 
   --accent-lime-bg: rgba(182, 242, 127, 0.18);
   --accent-lime-border: rgba(182, 242, 127, 0.4);
@@ -822,8 +822,8 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.2) 100%
     ),
     var(--theme-orange-1);
-  border-color: transparent;
-  color: var(--theme-black);
+  border: none;
+  color: #060806;
   flex-shrink: 0;
   box-shadow: 
     inset 0 1px 2px rgba(255, 255, 255, 0.3),
@@ -841,7 +841,8 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.25) 100%
     ),
     color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
-  border-color: transparent;
+  border: none;
+  color: #060806;
   box-shadow: 
     inset 0 1px 2px rgba(255, 255, 255, 0.4),
     inset 0 -1px 2px rgba(0, 0, 0, 0.25),
@@ -858,7 +859,8 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.3) 100%
     ),
     color-mix(in srgb, var(--theme-orange-1) 70%, black 30%);
-  border-color: transparent;
+  border: none;
+  color: #060806;
   box-shadow: 
     inset 0 1px 2px rgba(255, 255, 255, 0.2),
     inset 0 -1px 2px rgba(0, 0, 0, 0.3),

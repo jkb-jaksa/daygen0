@@ -862,7 +862,7 @@ const ChatMode: React.FC = () => {
                     value={chatNameDraft}
                     onChange={event => setChatNameDraft(event.target.value)}
                     placeholder="Chat title"
-                    className={`${inputs.base} text-theme-text`}
+                    className={`${inputs.compact} text-theme-text`}
                     autoFocus
                   />
                 </div>
@@ -893,7 +893,7 @@ const ChatMode: React.FC = () => {
                     value={renameDraft}
                     onChange={event => setRenameDraft(event.target.value)}
                     placeholder="Chat title"
-                    className={`${inputs.base} text-theme-text`}
+                    className={`${inputs.compact} text-theme-text`}
                     autoFocus
                   />
                 </div>
@@ -902,7 +902,7 @@ const ChatMode: React.FC = () => {
                     Cancel
                   </button>
                   <button type="button" onClick={confirmRenameChat} className={buttons.primary}>
-                    Save changes
+                    Save
                   </button>
                 </div>
               </div>
@@ -1077,7 +1077,7 @@ const ChatMode: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => navigate("/create/image")}
-                          className={`${glass.promptBorderless} flex h-8 items-center justify-center rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                          className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
                           aria-label="Platform mode"
                           onMouseEnter={(e) => {
                             showHoverTooltip(e.currentTarget, 'platform-mode-tooltip');
@@ -1096,16 +1096,30 @@ const ChatMode: React.FC = () => {
                           Platform Mode
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleReferenceClick}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60 lg:px-3`}
-                        disabled={referencePreviews.length >= REFERENCE_LIMIT}
-                        aria-label="Add reference"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span className="hidden whitespace-nowrap text-sm lg:inline">Reference</span>
-                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={handleReferenceClick}
+                          className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text disabled:cursor-not-allowed disabled:opacity-60`}
+                          disabled={referencePreviews.length >= REFERENCE_LIMIT}
+                          aria-label="Add reference"
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(e.currentTarget, 'reference-tooltip-chat');
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip('reference-tooltip-chat');
+                          }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                        <div
+                          data-tooltip-for="reference-tooltip-chat"
+                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                        >
+                          Upload Reference Image
+                        </div>
+                      </div>
                       <button
                         ref={avatarButtonRef}
                         type="button"
@@ -1166,15 +1180,30 @@ const ChatMode: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      <button
-                        ref={promptsButtonRef}
-                        type="button"
-                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
-                        aria-label="Saved prompts"
-                      >
-                        <BookmarkIcon className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="relative">
+                        <button
+                          ref={promptsButtonRef}
+                          type="button"
+                          onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                          className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                          aria-label="Saved prompts"
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(e.currentTarget, 'prompts-tooltip-chat');
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip('prompts-tooltip-chat');
+                          }}
+                        >
+                          <BookmarkIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <div
+                          data-tooltip-for="prompts-tooltip-chat"
+                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                        >
+                          Your Prompts
+                        </div>
+                      </div>
                       {referencePreviews.length > 0 && (
                         <div className="flex items-center gap-2">
                           <span className="hidden text-sm font-raleway text-theme-light lg:block">
@@ -1644,7 +1673,7 @@ const ChatMode: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-2 rounded-full bg-theme-text px-5 py-2 text-sm font-raleway font-medium text-theme-black transition-colors duration-150 hover:bg-theme-white disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn btn-orange btn-compact font-raleway text-base font-medium parallax-large disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={!input.trim()}
                       >
                         <Send className="h-4 w-4" />

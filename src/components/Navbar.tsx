@@ -353,7 +353,7 @@ export default function Navbar() {
                 >
                   Pricing
                 </button>
-                <button className={`${buttons.primary} btn-compact`} onClick={()=>setShowAuth("login")}>
+                <button className="btn btn-orange btn-compact font-raleway text-base font-medium parallax-large" onClick={()=>setShowAuth("login")}>
                   Sign In
                 </button>
               </>
@@ -409,7 +409,7 @@ export default function Navbar() {
                 
                 {/* Upgrade Button */}
                 <button 
-                  className={`hidden lg:flex ${buttons.primary} btn-compact items-center gap-1.5`}
+                  className="hidden lg:flex btn btn-orange btn-compact items-center gap-1.5 font-raleway text-base font-medium parallax-large"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -578,7 +578,7 @@ export default function Navbar() {
                         setMobileNavOpen(false);
                         navigate('/upgrade');
                       }}
-                      className={`${buttons.primary} w-full justify-center`}
+                      className="btn btn-orange w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
                     >
                       Upgrade
                     </button>
@@ -633,7 +633,7 @@ export default function Navbar() {
                         setMobileNavOpen(false);
                         setShowAuth('login');
                       }}
-                      className={`${buttons.primary} w-full justify-center`}
+                      className="btn btn-orange w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
                     >
                       Sign In
                     </button>

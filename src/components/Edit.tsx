@@ -1676,14 +1676,14 @@ export default function Edit() {
               <button 
                 onClick={handleGenerateImage}
                 disabled={!prompt.trim()}
-                className={`btn btn-night font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 {isButtonSpinning ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-n-black" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4 text-n-black" />
+                  <Sparkles className="w-4 h-4" />
                 )}
-                <span className="text-n-black">Generate</span>
+                <span>Generate</span>
               </button>
             </Tooltip>
           </div>
