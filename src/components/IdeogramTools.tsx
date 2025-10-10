@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useIdeogramImageGeneration } from '../hooks/useIdeogramImageGeneration';
+import CircularProgressRing from './CircularProgressRing';
 import { debugError } from '../utils/debug';
 import { buttons, inputs, glass } from '../styles/designSystem';
 
@@ -13,6 +14,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
     error,
     generatedImages,
     progress,
+    progressValue,
     generateImage,
     editImage,
     reframeImage,
@@ -222,9 +224,26 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       )}
 
       {/* Progress Display */}
-      {isLoading && progress && (
-        <div className="mb-4 rounded-lg border border-[color:rgba(3,188,189,0.4)] bg-[color:rgba(3,188,189,0.12)] p-4">
-          <p className="text-[color:var(--brand-cyan)] font-raleway">{progress}</p>
+      {isLoading && (
+        <div className="mb-4 rounded-lg border border-[color:rgba(255,118,0,0.45)] bg-[color:rgba(255,118,0,0.12)] p-4">
+          <div className="flex items-center gap-4">
+            <CircularProgressRing
+              progress={
+                typeof progressValue === 'number'
+                  ? Math.max(0, Math.min(100, progressValue))
+                  : 35
+              }
+              size={38}
+              strokeWidth={3}
+              showPercentage
+              baseColor="rgba(255, 255, 255, 0.14)"
+              textColor="var(--theme-white)"
+              className="shrink-0"
+            />
+            <p className="text-theme-white/80 font-raleway text-sm">
+              {progress ?? 'Working with Ideogram…'}
+            </p>
+          </div>
         </div>
       )}
 

@@ -72,6 +72,7 @@ export type PendingGalleryItem = {
   startedAt: number;
   progress?: number;
   backendProgress?: number;
+  backendProgressUpdatedAt?: number;
   status?: 'queued' | 'processing' | 'completed' | 'failed';
   jobId?: string | null;
 };

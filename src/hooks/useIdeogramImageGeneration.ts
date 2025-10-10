@@ -23,6 +23,7 @@ export interface IdeogramImageGenerationState {
   error: string | null;
   generatedImages: IdeogramGeneratedImage[];
   progress?: string;
+  progressValue?: number;
 }
 
 export interface IdeogramGenerateOptions {
@@ -88,6 +89,7 @@ export const useIdeogramImageGeneration = () => {
     error: null,
     generatedImages: [],
     progress: undefined,
+    progressValue: undefined,
   });
 
   const pollForJobCompletion = useCallback(
@@ -142,9 +144,23 @@ export const useIdeogramImageGeneration = () => {
             throw new Error(job.error || 'Job failed');
           }
 
+          const rawProgress =
+            typeof job.progress === 'number'
+              ? job.progress
+              : typeof job.progress === 'string'
+                ? Number.parseFloat(job.progress)
+                : undefined;
+          const boundedProgress =
+            typeof rawProgress === 'number' && Number.isFinite(rawProgress)
+              ? Math.max(0, Math.min(100, rawProgress))
+              : undefined;
+
           setState((prev) => ({
             ...prev,
-            progress: job.progress ? `${job.progress}%` : 'Processing...',
+            progress: boundedProgress !== undefined ? `${Math.round(boundedProgress)}%` : 'Processing...',
+            progressValue:
+              boundedProgress ??
+              (typeof prev.progressValue === 'number' ? prev.progressValue : 0),
           }));
 
           // Wait 5 seconds before next poll
@@ -172,6 +188,7 @@ export const useIdeogramImageGeneration = () => {
         isLoading: true,
         error: null,
         progress: 'Generating image with Ideogram…',
+        progressValue: 0,
       }));
 
       try {
@@ -181,6 +198,7 @@ export const useIdeogramImageGeneration = () => {
             isLoading: false,
             error: AUTH_ERROR_MESSAGE,
             progress: undefined,
+            progressValue: undefined,
           }));
           throw new Error(AUTH_ERROR_MESSAGE);
         }
@@ -248,6 +266,7 @@ export const useIdeogramImageGeneration = () => {
             isLoading: false,
             error: null,
             progress: 'Generation complete!',
+            progressValue: 100,
             generatedImages: [...prev.generatedImages, ...generatedImages],
           }));
 
@@ -279,6 +298,7 @@ export const useIdeogramImageGeneration = () => {
           isLoading: false,
           error: null,
           progress: 'Generation complete!',
+          progressValue: 100,
           generatedImages: [...prev.generatedImages, ...generatedImages],
         }));
 
@@ -290,6 +310,7 @@ export const useIdeogramImageGeneration = () => {
           isLoading: false,
           error: message,
           progress: undefined,
+          progressValue: undefined,
         }));
         throw new Error(message);
       }
@@ -304,6 +325,7 @@ export const useIdeogramImageGeneration = () => {
       isLoading: false,
       error: message,
       progress: undefined,
+      progressValue: undefined,
     }));
     throw new Error(message);
   }, []);
@@ -368,6 +390,7 @@ export const useIdeogramImageGeneration = () => {
       error: null,
       generatedImages: [],
       progress: undefined,
+      progressValue: undefined,
     });
   }, []);
 

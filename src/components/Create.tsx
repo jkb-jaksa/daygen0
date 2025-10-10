@@ -77,6 +77,7 @@ import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
+import CircularProgressRing from "./CircularProgressRing";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
@@ -100,6 +101,7 @@ type ActiveGenerationJob = {
   startedAt: number;
   progress: number;
   backendProgress?: number;
+  backendProgressUpdatedAt?: number;
   status: ActiveGenerationStatus;
   jobId?: string | null;
 };
@@ -913,10 +915,38 @@ const [batchSize, setBatchSize] = useState<number>(1);
               typeof job.backendProgress === 'number' && Number.isFinite(job.backendProgress)
                 ? Math.max(0, Math.min(100, job.backendProgress))
                 : undefined;
+            const now = Date.now();
+            const elapsedSeconds = Math.max(0, (now - job.startedAt) / 1000);
+            const backendUpdatedAt = job.backendProgressUpdatedAt ?? job.startedAt;
+            const backendStaleSeconds = Math.max(0, (now - backendUpdatedAt) / 1000);
+            const targetLimit =
+              typeof backendCap === 'number' && backendCap >= 100 ? 100 : maxCap;
 
-            const effectiveCap = Math.max(
-              job.progress,
-              Math.min(maxCap, backendCap ?? maxCap),
+            let backendDrivenCap = targetLimit;
+            if (typeof backendCap === 'number') {
+              if (backendCap >= 100) {
+                backendDrivenCap = 100;
+              } else {
+                const elapsedAllowance = Math.min(45, elapsedSeconds * 2.4);
+                const staleAllowance = Math.min(
+                  40,
+                  Math.max(0, backendStaleSeconds - 1) * 3.2,
+                );
+                const minimumAllowance = backendCap < 25 ? 18 : 12;
+                const allowance = Math.max(minimumAllowance, elapsedAllowance, staleAllowance);
+                backendDrivenCap = Math.min(targetLimit, backendCap + allowance);
+              }
+            }
+
+            const driftAllowance = Math.max(
+              baseStep * 0.75,
+              0.6 + elapsedSeconds * 0.18 + backendStaleSeconds * 0.25,
+            );
+            const timeDriftCap = Math.min(targetLimit, job.progress + driftAllowance);
+
+            const effectiveCap = Math.min(
+              targetLimit,
+              Math.max(job.progress, backendDrivenCap, timeDriftCap),
             );
 
             const gap = effectiveCap - job.progress;
@@ -3874,6 +3904,7 @@ const handleGenerate = async () => {
     startedAt: Date.now(),
     progress: 1,
     backendProgress: 0,
+    backendProgressUpdatedAt: Date.now(),
     status: 'queued',
   };
 
@@ -3921,13 +3952,22 @@ const handleGenerate = async () => {
           }
 
           const nextProgress =
-            typeof update.progress === 'number'
+            typeof update.progress === 'number' && Number.isFinite(update.progress)
               ? Math.max(job.progress, Math.min(100, Math.round(update.progress)))
               : job.progress;
+          const backendUpdateReceived =
+            typeof update.backendProgress === 'number' && Number.isFinite(update.backendProgress);
+          const boundedBackendUpdate = backendUpdateReceived
+            ? Math.max(0, Math.min(100, update.backendProgress))
+            : null;
           const nextBackend =
-            typeof update.backendProgress === 'number'
-              ? Math.max(job.backendProgress ?? 0, Math.min(100, update.backendProgress))
+            boundedBackendUpdate !== null
+              ? Math.max(job.backendProgress ?? 0, boundedBackendUpdate)
               : job.backendProgress;
+          const backendProgressUpdatedAt =
+            boundedBackendUpdate !== null && nextBackend !== job.backendProgress
+              ? Date.now()
+              : job.backendProgressUpdatedAt;
           const rawStatus = update.status;
           const mappedStatus: ActiveGenerationStatus = rawStatus === 'completed'
             ? 'completed'
@@ -3948,6 +3988,7 @@ const handleGenerate = async () => {
             ...job,
             progress: nextProgress,
             backendProgress: nextBackend,
+            backendProgressUpdatedAt,
             status,
             jobId: update.jobId ?? job.jobId,
           };
@@ -4219,16 +4260,21 @@ const handleGenerate = async () => {
             const completionRatio = (iteration + 1) / effectiveBatchSize;
             const targetProgress = Math.min(98, 45 + completionRatio * 50);
             setActiveGenerationQueue(prev =>
-              prev.map(job =>
-                job.id === generationId
-                  ? {
-                      ...job,
-                      progress: Math.max(job.progress, targetProgress),
-                      backendProgress: Math.max(job.backendProgress ?? 0, targetProgress),
-                      status: 'processing',
-                    }
-                  : job,
-              ),
+              prev.map(job => {
+                if (job.id !== generationId) {
+                  return job;
+                }
+                const currentBackend = job.backendProgress ?? 0;
+                const nextBackend = Math.max(currentBackend, targetProgress);
+                return {
+                  ...job,
+                  progress: Math.max(job.progress, targetProgress),
+                  backendProgress: nextBackend,
+                  backendProgressUpdatedAt:
+                    nextBackend > currentBackend ? Date.now() : job.backendProgressUpdatedAt,
+                  status: 'processing',
+                };
+              }),
             );
           }
 
@@ -4251,6 +4297,7 @@ const handleGenerate = async () => {
                   ...job,
                   progress: 100,
                   backendProgress: 100,
+                  backendProgressUpdatedAt: Date.now(),
                   status: 'completed',
                 }
               : job,
@@ -4276,7 +4323,8 @@ const handleGenerate = async () => {
                   ...job,
                   status: 'failed',
                   progress: Math.max(job.progress, 100),
-                  backendProgress: Math.max(job.backendProgress ?? 0, 100),
+                  backendProgress: 100,
+                  backendProgressUpdatedAt: Date.now(),
                 }
               : job,
           ),
@@ -6165,24 +6213,21 @@ const handleGenerate = async () => {
                       return (
                         <div key={`loading-${pending.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black">
                           <div className="w-full aspect-square animate-gradient-colors"></div>
-                          <div className="absolute inset-0 flex flex-col justify-between bg-theme-black/60 backdrop-blur-md">
-                            <div className="p-3">
-                              <p className="text-theme-white/70 text-xs font-raleway line-clamp-3">
-                                {pending.prompt}
-                              </p>
-                            </div>
-                            <div className="px-4 pb-5">
-                              <div className="flex items-center justify-between text-[11px] font-raleway text-theme-white/80 mb-2">
-                                <span className="uppercase tracking-[0.08em]">{statusLabel}</span>
-                                <span>{roundedProgress}%</span>
-                              </div>
-                              <div className="h-2 w-full rounded-full bg-theme-white/15 overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-[color:var(--brand-cyan)] transition-[width] duration-500 ease-out"
-                                  style={{ width: `${roundedProgress}%` }}
-                                ></div>
-                              </div>
-                            </div>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-theme-black/65 backdrop-blur-[10px] px-5 py-6 text-center">
+                            <CircularProgressRing
+                              progress={roundedProgress}
+                              size={58}
+                              strokeWidth={4}
+                              showPercentage
+                              className="drop-shadow-[0_0_18px_rgba(255,102,0,0.35)]"
+                              textColor="var(--theme-orange-1)"
+                            />
+                            <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
+                              {statusLabel} {roundedProgress}%
+                            </span>
+                            <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
+                              {pending.prompt}
+                            </p>
                           </div>
                         </div>
                       );
