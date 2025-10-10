@@ -11,7 +11,7 @@ import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeNext } from "../utils/navigation";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../hooks/useTheme";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon };

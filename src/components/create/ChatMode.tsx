@@ -182,13 +182,6 @@ const formatDateHeading = (isoDate: string) => {
   return formatter.format(date);
 };
 
-const formatTimestamp = (iso: string) => {
-  const date = new Date(iso);
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "numeric",
-  }).format(date);
-};
 
 const deriveTitle = (value: string) => {
   const cleaned = value.replace(/\s+/g, " ").trim();

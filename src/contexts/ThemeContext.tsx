@@ -1,16 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-
-export type ThemeMode = 'night' | 'day'
-
-type ThemeContextValue = {
-  theme: ThemeMode
-  setTheme: (mode: ThemeMode) => void
-  toggleTheme: () => void
-}
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { type ThemeMode, ThemeContext } from './themeContext'
 
 const STORAGE_KEY = 'daygen-theme'
-
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
 function readInitialTheme(): ThemeMode {
   if (typeof window === 'undefined') {
@@ -63,10 +54,3 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
-}

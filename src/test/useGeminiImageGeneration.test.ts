@@ -43,23 +43,23 @@ describe('useGeminiImageGeneration', () => {
     const { result } = renderHook(() => useGeminiImageGeneration());
     
     // Mock a successful response
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         jobId: 'test-job-id',
         progress: 0
       })
-    });
+    } as Response);
 
     // Mock job polling response
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValue({
       ok: true,
       json: async () => ({
         status: 'COMPLETED',
         resultUrl: 'https://example.com/image.png',
         progress: 100
       })
-    });
+    } as Response);
 
     // Start the generation and check initial state
     act(() => {
@@ -86,17 +86,17 @@ describe('useGeminiImageGeneration', () => {
     const { result } = renderHook(() => useGeminiImageGeneration());
     
     // Mock initial response
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         jobId: 'test-job-id',
         progress: 0
       })
-    });
+    } as Response);
 
     // Mock progressive job polling responses
     let pollCount = 0;
-    (global.fetch as any).mockImplementation(() => {
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockImplementation(() => {
       pollCount++;
       if (pollCount === 1) {
         return Promise.resolve({
@@ -146,13 +146,13 @@ describe('useGeminiImageGeneration', () => {
     const { result } = renderHook(() => useGeminiImageGeneration());
     
     // Mock responses
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         jobId: 'test-job-id-1',
         progress: 0
       })
-    });
+    } as Response);
 
     // Start first generation
     await act(async () => {
@@ -163,13 +163,13 @@ describe('useGeminiImageGeneration', () => {
     });
 
     // Mock second generation response
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         jobId: 'test-job-id-2',
         progress: 0
       })
-    });
+    } as Response);
 
     // Start second generation - should clear previous controller
     await act(async () => {
@@ -187,7 +187,7 @@ describe('useGeminiImageGeneration', () => {
     const { result } = renderHook(() => useGeminiImageGeneration());
     
     // Mock error response
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    (global.fetch as vi.MockedFunction<typeof fetch>).mockRejectedValueOnce(new Error('Network error'));
 
     await act(async () => {
       try {
@@ -195,7 +195,7 @@ describe('useGeminiImageGeneration', () => {
           prompt: 'Test prompt',
           model: 'gemini-2.5-flash-image'
         });
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
     });
