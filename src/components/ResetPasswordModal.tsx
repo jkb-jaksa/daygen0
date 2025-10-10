@@ -90,29 +90,29 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="block text-sm text-theme-text font-raleway">New password</label>
-                <input
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                  className={inputs.base}
-                  placeholder="Enter your new password"
-                  disabled={isSubmitting}
-                  minLength={8}
-                />
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                className={inputs.compact}
+                placeholder="Enter your new password"
+                disabled={isSubmitting}
+                minLength={8}
+              />
               </div>
               <div className="space-y-2">
                 <label className="block text-sm text-theme-text font-raleway">Confirm new password</label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  className={inputs.base}
-                  placeholder="Re-enter your new password"
-                  disabled={isSubmitting}
-                  minLength={8}
-                />
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                className={inputs.compact}
+                placeholder="Re-enter your new password"
+                disabled={isSubmitting}
+                minLength={8}
+              />
               </div>
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && <p className="text-xs font-raleway text-red-400">{error}</p>}

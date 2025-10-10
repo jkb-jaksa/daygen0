@@ -60,7 +60,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   <input
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    className={inputs.base}
+                    className={inputs.compact}
                     placeholder="Enter your name"
                     disabled={isSubmitting}
                   />
@@ -73,7 +73,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className={inputs.base}
+                  className={inputs.compact}
                   placeholder="Enter your email"
                   disabled={isSubmitting}
                 />
@@ -85,7 +85,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  className={inputs.base}
+                  className={inputs.compact}
                   placeholder="Enter your password"
                   disabled={isSubmitting}
                   minLength={8}
@@ -99,7 +99,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                     required
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    className={inputs.base}
+                    className={inputs.compact}
                     placeholder="Re-enter your password"
                     disabled={isSubmitting}
                     minLength={8}

@@ -84,8 +84,8 @@ const inputCore =
   `w-full glass-liquid willchange-backdrop isolate backdrop-blur-[32px] border border-theme-dark bg-theme-mid/85 px-4 text-theme-white placeholder:text-theme-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-theme-mid disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
 
 export const inputs = {
-  base: `${inputCore} rounded-xl py-3`,
-  compact: `${inputCore} rounded-lg py-2 text-sm`,
+  base: `${inputCore} rounded-xl py-1.5`,
+  compact: `${inputCore} rounded-lg py-3 text-sm`,
   pill: `${inputCore} rounded-full py-3`,
   textarea: `${inputCore} rounded-xl py-3 min-h-[140px] resize-y`,
 };

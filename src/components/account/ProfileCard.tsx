@@ -108,7 +108,7 @@ export function ProfileCard({
       >
         <div>
           <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="display-name">
-            Display name
+            Display Name
           </label>
           <input
             id="display-name"

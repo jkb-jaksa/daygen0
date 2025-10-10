@@ -855,6 +855,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setPromptBarReservedSpace(reserved);
   }, []);
 
+  const minimumPromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
+  const effectivePromptReservedSpace = Math.max(promptBarReservedSpace, minimumPromptReservedSpace);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -5140,16 +5143,23 @@ const handleGenerate = async () => {
 
                 {/* Uploads View */}
                 {activeCategory === "uploads" && (
-                  <div className="w-full">
+                  <div
+                    className="w-full flex flex-col"
+                    style={{
+                      minHeight: `max(400px, calc(100dvh - var(--nav-h) - ${SIDEBAR_TOP_PADDING}px - ${effectivePromptReservedSpace}px))`,
+                    }}
+                  >
 
                     {uploadedImages.length === 0 ? (
                       /* Empty state for uploads */
-                      <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px]">
-                        <Upload className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-theme-text mb-2">No uploads yet</h3>
-                        <p className="text-base font-raleway text-theme-white max-w-md">
-                          Here you will see all your uploaded reference images that were used to create a new image or video.
-                        </p>
+                      <div className="flex flex-1 w-full items-center justify-center py-16 text-center">
+                        <div className="flex w-full max-w-2xl flex-col items-center px-6">
+                          <Upload className="default-orange-icon mb-4" />
+                          <h3 className="text-xl font-raleway text-theme-text mb-2">No uploads yet</h3>
+                          <p className="text-base font-raleway text-theme-white max-w-md">
+                            Here you will see all your uploaded reference images that were used to create a new image or video.
+                          </p>
+                        </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>

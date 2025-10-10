@@ -224,10 +224,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-light: #969b9b;
   --n-light-rgb: 150 155 155;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --n-mid: #2f3636;
-  --n-mid-rgb: 47 54 54;
-  --n-dark: #151717;
-  --n-dark-rgb: 21 23 23;
+  --n-mid: #373e3e;
+  --n-mid-rgb: 55 62 62;
+  --n-dark: #1b1d1d;
+  --n-dark-rgb: 27 29 29;
   --n-black: #060806;
   --n-black-rgb: 6 8 6;
 
@@ -821,13 +821,13 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.1) 75%,
       rgba(0, 0, 0, 0.2) 100%
     ),
-    var(--theme-orange-1);
+    #FF9947;
   border: none;
   color: #060806;
   flex-shrink: 0;
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1),
     0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
@@ -840,12 +840,12 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.15) 75%,
       rgba(0, 0, 0, 0.25) 100%
     ),
-    color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
+    color-mix(in srgb, #FF9947 78%, white 22%);
   border: none;
   color: #060806;
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.4),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
     0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -858,12 +858,12 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.2) 75%,
       rgba(0, 0, 0, 0.3) 100%
     ),
-    color-mix(in srgb, var(--theme-orange-1) 70%, black 30%);
+    color-mix(in srgb, #FF9947 70%, black 30%);
   border: none;
   color: #060806;
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.2),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15),
     0 1px 1px rgba(0, 0, 0, 0.12);
   transform: translateY(1px);
 }
@@ -1287,8 +1287,8 @@ html[data-theme="day"] .card-overlay-gradient {
   color: var(--theme-black);
   flex-shrink: 0;
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.03),
     0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -1305,8 +1305,8 @@ html[data-theme="day"] .card-overlay-gradient {
   border: none;
   color: var(--theme-black);
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.4),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
     0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -1323,8 +1323,8 @@ html[data-theme="day"] .card-overlay-gradient {
   border: none;
   color: var(--theme-black);
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.09),
+    inset 0 1px 2px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
     0 1px 2px rgba(0, 0, 0, 0.1);
   transform: translateY(1px);
 }
@@ -1344,8 +1344,8 @@ html[data-theme="day"] .card-overlay-gradient {
   color: var(--n-black);
   flex-shrink: 0;
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.03),
     0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -1362,8 +1362,8 @@ html[data-theme="day"] .card-overlay-gradient {
   border: none;
   color: var(--n-black);
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.4),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
     0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -1380,8 +1380,8 @@ html[data-theme="day"] .card-overlay-gradient {
   border: none;
   color: var(--n-black);
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.09),
+    inset 0 1px 2px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
     0 1px 2px rgba(0, 0, 0, 0.1);
   transform: translateY(1px);
 }
