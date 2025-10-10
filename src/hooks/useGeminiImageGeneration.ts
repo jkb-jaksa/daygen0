@@ -162,8 +162,10 @@ export const useGeminiImageGeneration = () => {
     initialStatus?: ImageGenerationStatus;
     initialProgress?: number;
   }) => {
+    // Clear any existing controller completely
     if (progressControllerRef.current?.timer) {
       clearInterval(progressControllerRef.current.timer);
+      progressControllerRef.current = null;
     }
 
     const initialProgress = Math.max(
@@ -180,6 +182,10 @@ export const useGeminiImageGeneration = () => {
       status: params.initialStatus ?? 'queued',
       stage: undefined,
       onProgress: params.onProgress,
+      lastEmitValue: undefined,
+      lastEmitStatus: undefined,
+      lastEmitStage: undefined,
+      lastEmitJobId: undefined,
     };
 
     progressControllerRef.current = controller;
@@ -202,27 +208,27 @@ export const useGeminiImageGeneration = () => {
       const backendCap =
         current.backend >= 100
           ? 100
-          : Math.min(current.backend + 12, 99);
+          : Math.min(current.backend + 8, 99);
 
       const isBackendMaxed = current.backend >= 100;
       let nextDisplay = current.display;
 
       if (isBackendMaxed) {
-        nextDisplay = Math.min(100, current.display + 2.5);
+        nextDisplay = Math.min(100, current.display + 1.5);
       } else if (current.display < backendCap) {
         const gap = backendCap - current.display;
         const increment =
-          gap > 10 ? 2.2 : gap > 5 ? 1.2 : 0.6;
+          gap > 15 ? 1.8 : gap > 8 ? 1.2 : gap > 3 ? 0.8 : 0.4;
         nextDisplay = Math.min(backendCap, current.display + increment);
       } else if (current.display < 96) {
-        nextDisplay = Math.min(96, current.display + 0.3);
+        nextDisplay = Math.min(96, current.display + 0.2);
       }
 
       if (nextDisplay !== current.display) {
         current.display = nextDisplay;
         emitProgress(current);
       }
-    }, 450);
+    }, 300);
   }, [emitProgress]);
 
   const updateControllerWithBackend = useCallback((update: {
@@ -428,15 +434,22 @@ export const useGeminiImageGeneration = () => {
   }, [token, updateControllerWithBackend, stopProgressController]);
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
-    setState(prev => ({
-      ...prev,
+    // Reset state completely for each new generation
+    setState({
       isLoading: true,
       error: null,
       generatedImage: null,
       progress: 0,
       status: 'queued',
       jobId: null,
-    }));
+    });
+    
+    // Clear any existing progress controller
+    if (progressControllerRef.current?.timer) {
+      clearInterval(progressControllerRef.current.timer);
+      progressControllerRef.current = null;
+    }
+    
     startProgressController({
       clientJobId: options.clientJobId,
       onProgress: options.onProgress,

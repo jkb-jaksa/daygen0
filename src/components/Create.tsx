@@ -897,8 +897,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
       stopProgressAnimation(jobId);
 
       const maxCap = options?.max ?? 96;
-      const baseStep = options?.step ?? 1.4;
-      const interval = options?.interval ?? 650;
+      const baseStep = options?.step ?? 0.8;
+      const interval = options?.interval ?? 400;
 
       const tick = () => {
         setActiveGenerationQueue(prev =>
@@ -939,8 +939,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
             }
 
             const driftAllowance = Math.max(
-              baseStep * 0.75,
-              0.6 + elapsedSeconds * 0.18 + backendStaleSeconds * 0.25,
+              baseStep * 0.5,
+              0.3 + elapsedSeconds * 0.1 + backendStaleSeconds * 0.15,
             );
             const timeDriftCap = Math.min(targetLimit, job.progress + driftAllowance);
 
@@ -958,10 +958,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
               gap > 20
                 ? baseStep
                 : gap > 12
-                  ? baseStep * 0.7
+                  ? baseStep * 0.6
                   : gap > 6
-                    ? baseStep * 0.45
-                    : baseStep * 0.25;
+                    ? baseStep * 0.35
+                    : baseStep * 0.2;
 
             const nextProgress = Math.min(
               effectiveCap,

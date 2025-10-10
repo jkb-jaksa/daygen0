@@ -21,13 +21,14 @@ export const CircularProgressRing: React.FC<CircularProgressRingProps> = ({
   baseColor = 'rgba(255, 255, 255, 0.18)',
   progressColor = 'var(--theme-orange-1)',
   textColor = 'var(--theme-orange-1)',
-  animationDurationMs = 360,
+  animationDurationMs = 800,
 }) => {
   const boundedProgress = Math.max(0, Math.min(100, progress));
   const [displayProgress, setDisplayProgress] = useState(boundedProgress);
   const animationRef = useRef<number | null>(null);
   const prefersReducedMotionRef = useRef<boolean | null>(null);
   const lastProgressRef = useRef(boundedProgress);
+  const isAnimatingRef = useRef(false);
 
   useEffect(() => {
     if (prefersReducedMotionRef.current === null) {
@@ -46,21 +47,28 @@ export const CircularProgressRing: React.FC<CircularProgressRingProps> = ({
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
+      isAnimatingRef.current = false;
     }
 
     if (duration === 0) {
       setDisplayProgress(boundedProgress);
+      lastProgressRef.current = boundedProgress;
+      return () => undefined;
+    }
+
+    // Only animate if the new progress is greater than the last recorded progress
+    // This prevents the progress from going backwards
+    const targetValue = Math.max(lastProgressRef.current, boundedProgress);
+    
+    // If the target is the same as current display, no need to animate
+    if (Math.abs(targetValue - displayProgress) < 0.1) {
+      lastProgressRef.current = targetValue;
       return () => undefined;
     }
 
     const startValue = displayProgress;
-    const targetValue = Math.max(lastProgressRef.current, boundedProgress);
     lastProgressRef.current = targetValue;
-
-    if (Math.abs(targetValue - startValue) < 0.05) {
-      setDisplayProgress(targetValue);
-      return () => undefined;
-    }
+    isAnimatingRef.current = true;
 
     let startTimestamp: number | null = null;
 
@@ -70,14 +78,20 @@ export const CircularProgressRing: React.FC<CircularProgressRingProps> = ({
       }
       const elapsed = timestamp - startTimestamp;
       const progressRatio = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - progressRatio, 3); // easeOutCubic
+      
+      // Use easeOutCubic for smooth animation
+      const eased = 1 - Math.pow(1 - progressRatio, 3);
       const nextValue = startValue + (targetValue - startValue) * eased;
-      setDisplayProgress(nextValue);
+      
+      // Ensure progress never goes backwards
+      const clampedValue = Math.max(displayProgress, nextValue);
+      setDisplayProgress(clampedValue);
 
       if (progressRatio < 1) {
         animationRef.current = requestAnimationFrame(step);
       } else {
         animationRef.current = null;
+        isAnimatingRef.current = false;
         setDisplayProgress(targetValue);
       }
     };
@@ -88,6 +102,7 @@ export const CircularProgressRing: React.FC<CircularProgressRingProps> = ({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
+        isAnimatingRef.current = false;
       }
     };
     // We intentionally omit displayProgress from deps to avoid restarting mid animation
@@ -99,6 +114,7 @@ export const CircularProgressRing: React.FC<CircularProgressRingProps> = ({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
+        isAnimatingRef.current = false;
       }
     },
     [],
