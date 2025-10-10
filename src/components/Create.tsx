@@ -857,12 +857,19 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const minimumPromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
   const effectivePromptReservedSpace = Math.max(promptBarReservedSpace, minimumPromptReservedSpace);
+  const getCreateEmptyStateStyle = (isActive: boolean) =>
+    isActive
+      ? ({
+          "--create-empty-offset": `calc((${SIDEBAR_WIDTH}px + ${SIDEBAR_CONTENT_GAP}px) / 2)`,
+        } as React.CSSProperties)
+      : undefined;
+
   const uploadsEmptyStateActive = activeCategory === "uploads" && uploadedImages.length === 0;
-  const uploadsEmptyStateStyle = uploadsEmptyStateActive
-    ? ({
-        "--uploads-empty-offset": `calc((${SIDEBAR_WIDTH}px + ${SIDEBAR_CONTENT_GAP}px) / 2)`,
-      } as React.CSSProperties)
-    : undefined;
+  const uploadsEmptyStateStyle = getCreateEmptyStateStyle(uploadsEmptyStateActive);
+  const inspirationsEmptyStateActive = activeCategory === "inspirations" && inspirationsGallery.length === 0;
+  const inspirationsEmptyStateStyle = getCreateEmptyStateStyle(inspirationsEmptyStateActive);
+  const foldersEmptyStateActive = activeCategory === "my-folders" && folders.length === 0;
+  const foldersEmptyStateStyle = getCreateEmptyStateStyle(foldersEmptyStateActive);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -5131,19 +5138,33 @@ const handleGenerate = async () => {
                   </Suspense>
                 )}
                 {activeCategory === "inspirations" && (
-                  <div className="w-full">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
-                      {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
-                      {inspirationsGallery.length === 0 && (
-                        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                  <div
+                    className="w-full flex flex-col"
+                    style={{
+                      minHeight: `max(400px, calc(100dvh - var(--nav-h) - ${SIDEBAR_TOP_PADDING}px - ${effectivePromptReservedSpace}px))`,
+                    }}
+                  >
+                    {inspirationsGallery.length === 0 ? (
+                      /* Empty state for inspirations */
+                      <div
+                        className={`flex flex-1 w-full items-center justify-center py-16 text-center${
+                          inspirationsEmptyStateActive ? " lg:[transform:translateX(calc(var(--create-empty-offset)*-1))]" : ""
+                        }`}
+                        style={inspirationsEmptyStateStyle}
+                      >
+                        <div className="flex w-full max-w-2xl flex-col items-center px-6">
                           <Sparkles className="default-orange-icon mb-4" />
                           <h3 className="text-xl font-raleway text-theme-text mb-2">No inspirations yet</h3>
                           <p className="text-base font-raleway text-theme-white max-w-md">
                             Explore the community gallery and save images you love to see them here.
                           </p>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
+                        {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -5160,7 +5181,7 @@ const handleGenerate = async () => {
                       /* Empty state for uploads */
                       <div
                         className={`flex flex-1 w-full items-center justify-center py-16 text-center${
-                          uploadsEmptyStateActive ? " lg:[transform:translateX(calc(var(--uploads-empty-offset)*-1))]" : ""
+                          uploadsEmptyStateActive ? " lg:[transform:translateX(calc(var(--create-empty-offset)*-1))]" : ""
                         }`}
                         style={uploadsEmptyStateStyle}
                       >
@@ -5511,35 +5532,48 @@ const handleGenerate = async () => {
                 
                 {/* My Folders View */}
                 {activeCategory === "my-folders" && (
-                  <div className="w-full">
-                    {/* New Folder button */}
-                    <div className="mb-6 flex justify-end">
-                      <button
-                        onClick={() => setNewFolderDialog(true)}
-                        className={buttons.primary}
-                      >
-                        <FolderPlus className="w-4 h-4" />
-                        New Folder
-                      </button>
-                    </div>
-                    
+                  <div
+                    className="w-full flex flex-col"
+                    style={{
+                      minHeight: `max(400px, calc(100dvh - var(--nav-h) - ${SIDEBAR_TOP_PADDING}px - ${effectivePromptReservedSpace}px))`,
+                    }}
+                  >
                     {folders.length === 0 ? (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <FolderIcon className="default-orange-icon mb-4" />
-                        <h3 className="text-xl font-raleway text-theme-text mb-2">No folders yet</h3>
-                        <p className="text-base font-raleway text-theme-white max-w-md mb-4">
-                          Create your first folder to organize your images.
-                        </p>
-                        <button
-                          onClick={() => setNewFolderDialog(true)}
-                          className={buttons.primary}
-                        >
-                          <FolderPlus className="w-4 h-4" />
-                          Create Folder
-                        </button>
+                      /* Empty state for folders */
+                      <div
+                        className={`flex flex-1 w-full items-center justify-center py-16 text-center${
+                          foldersEmptyStateActive ? " lg:[transform:translateX(calc(var(--create-empty-offset)*-1))]" : ""
+                        }`}
+                        style={foldersEmptyStateStyle}
+                      >
+                        <div className="flex w-full max-w-2xl flex-col items-center px-6">
+                          <FolderIcon className="default-orange-icon mb-4" />
+                          <h3 className="text-xl font-raleway text-theme-text mb-2">No folders yet</h3>
+                          <p className="text-base font-raleway text-theme-white max-w-md mb-4">
+                            Create your first folder to organize your images.
+                          </p>
+                          <button
+                            onClick={() => setNewFolderDialog(true)}
+                            className={buttons.primary}
+                          >
+                            <FolderPlus className="w-4 h-4" />
+                            Create Folder
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
+                      <>
+                        {/* New Folder button */}
+                        <div className="mb-6 flex justify-end">
+                          <button
+                            onClick={() => setNewFolderDialog(true)}
+                            className={buttons.primary}
+                          >
+                            <FolderPlus className="w-4 h-4" />
+                            New Folder
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -5678,6 +5712,7 @@ const handleGenerate = async () => {
                       </div>
                         ))}
                       </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -6473,7 +6508,7 @@ const handleGenerate = async () => {
           
           
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
-          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && (
+          {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && activeCategory !== "inspirations" && (
             <div
               ref={promptBarRef}
               className={`promptbar fixed z-40 rounded-[20px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
