@@ -864,7 +864,7 @@ const CustomMultiSelect: React.FC<{
                   onClick={() => toggleOption(option.value)}
                   className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
-                      ? "bg-[color:var(--theme-text)] border-[color:var(--theme-text)]/70 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
+                      ? "bg-[color:var(--theme-text)] border-0 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
                       : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
                   }`}
                 >

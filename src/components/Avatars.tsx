@@ -22,7 +22,7 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
-import { layout, text, buttons, inputs, glass, headings, iconButtons } from "../styles/designSystem";
+import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
