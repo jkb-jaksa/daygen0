@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 const Create = lazy(() => import("../components/Create"));
 const Avatars = lazy(() => import("../components/Avatars"));
+const Products = lazy(() => import("../components/Products"));
 const ChatMode = lazy(() => import("../components/create/ChatMode"));
 
 const Loading = () => (
@@ -17,6 +18,10 @@ export default function CreateRoutes() {
         <Route path="avatars">
           <Route index element={<Avatars />} />
           <Route path=":avatarSlug" element={<Avatars />} />
+        </Route>
+        <Route path="products">
+          <Route index element={<Products />} />
+          <Route path=":productSlug" element={<Products />} />
         </Route>
         <Route path="chat" element={<ChatMode />} />
         <Route path=":category" element={<Create />} />

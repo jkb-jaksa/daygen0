@@ -375,6 +375,7 @@ export interface GalleryPanelProps {
   getAvailableFolders: () => string[];
   folders: Folder[];
   getAvailableAvatars: () => Array<{ id: string; name: string }>;
+  getAvailableProducts: () => Array<{ id: string; name: string }>;
   toggleSelectMode: () => void;
   toggleSelectAllVisible: () => void;
   filteredGallery: GalleryImageLike[];
@@ -406,6 +407,7 @@ export function GalleryPanel({
   getAvailableFolders,
   folders,
   getAvailableAvatars,
+  getAvailableProducts,
   toggleSelectMode,
   toggleSelectAllVisible,
   filteredGallery,
@@ -438,6 +440,11 @@ export function GalleryPanel({
     label: avatar.name,
   }));
 
+  const productOptions = getAvailableProducts().map(product => ({
+    value: product.id,
+    label: product.name,
+  }));
+
   const folderOptions = getAvailableFolders().map(folderId => {
     const folder = folders.find(f => f.id === folderId);
     return { value: folderId, label: folder?.name || folderId };
@@ -452,7 +459,7 @@ export function GalleryPanel({
             <h3 className="text-sm font-raleway text-theme-white">Filters</h3>
           </div>
           <button
-            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", avatar: "all" })}
+            onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", avatar: "all", product: "all" })}
             className="px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway"
           >
             Clear
@@ -488,8 +495,8 @@ export function GalleryPanel({
           </div>
         </div>
 
-        {/* Main filter grid: Modality, Model, Avatar, Folder */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        {/* Main filter grid: Modality, Model, Avatar, Product, Folder */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
             <CustomMultiSelect
@@ -579,6 +586,32 @@ export function GalleryPanel({
                     onClick={() => setGalleryFilters(prev => ({ ...prev, avatar: "all" }))}
                     className="hover:text-theme-text transition-colors duration-200"
                     aria-label="Remove avatar filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-theme-white/70 font-raleway">Product</label>
+            <CustomDropdown
+              value={galleryFilters.product}
+              onChange={value => setGalleryFilters(prev => ({ ...prev, product: value }))}
+              options={productOptions}
+              disabled={productOptions.length === 0}
+              placeholder={productOptions.length === 0 ? "No products available" : "All products"}
+            />
+            {galleryFilters.product !== "all" && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
+                  <span>{getAvailableProducts().find(p => p.id === galleryFilters.product)?.name || galleryFilters.product}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGalleryFilters(prev => ({ ...prev, product: "all" }))}
+                    className="hover:text-theme-text transition-colors duration-200"
+                    aria-label="Remove product filter"
                   >
                     <X className="w-3 h-3" />
                   </button>

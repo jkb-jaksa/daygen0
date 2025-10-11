@@ -27,6 +27,7 @@ import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
+const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
@@ -72,8 +73,11 @@ import type {
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { StoredAvatar, AvatarSelection } from "./avatars/types";
+import type { StoredProduct, ProductSelection } from "./products/types";
 import AvatarBadge from "./avatars/AvatarBadge";
+import ProductBadge from "./products/ProductBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
+import { createProductRecord, normalizeStoredProducts } from "../utils/products";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT_GAP } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
@@ -440,16 +444,22 @@ const Create: React.FC = () => {
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
   // Product state
-  const [storedProducts, setStoredProducts] = useState<StoredAvatar[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<StoredAvatar | null>(null);
+  const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
+  const [pendingProductId, setPendingProductId] = useState<string | null>(null);
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<StoredAvatar | null>(null);
+  const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
+  const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
   const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
   // Avatar creation modal state
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [isProductCreationModalOpen, setIsProductCreationModalOpen] = useState(false);
+  const [productSelection, setProductSelection] = useState<ProductSelection | null>(null);
+  const [productUploadError, setProductUploadError] = useState<string | null>(null);
+  const [isDraggingProduct, setIsDraggingProduct] = useState(false);
 
   const avatarMap = useMemo(() => {
     const map = new Map<string, StoredAvatar>();
@@ -458,7 +468,15 @@ const Create: React.FC = () => {
     }
     return map;
   }, [storedAvatars]);
+  const productMap = useMemo(() => {
+    const map = new Map<string, StoredProduct>();
+    for (const product of storedProducts) {
+      map.set(product.id, product);
+    }
+    return map;
+  }, [storedProducts]);
   const [avatarName, setAvatarName] = useState("");
+  const [productName, setProductName] = useState("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
 const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
@@ -586,6 +604,13 @@ const [batchSize, setBatchSize] = useState<number>(1);
       return;
     }
 
+    if (category === "products") {
+      if (!options?.skipRoute && location.pathname !== "/create/products") {
+        navigate("/create/products");
+      }
+      return;
+    }
+
     setActiveCategoryState(category);
     if (options?.skipRoute) return;
 
@@ -656,7 +681,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     models: [],
     types: [],
     folder: 'all',
-    avatar: 'all'
+    avatar: 'all',
+    product: 'all'
   });
   const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
@@ -682,6 +708,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       // Avatar filter
       if (galleryFilters.avatar !== 'all') {
         if (item.avatarId !== galleryFilters.avatar) {
+          return false;
+        }
+      }
+
+      if (galleryFilters.product !== 'all') {
+        if (item.productId !== galleryFilters.product) {
           return false;
         }
       }
@@ -723,6 +755,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       // Avatar filter
       if (galleryFilters.avatar !== 'all') {
         if (item.avatarId !== galleryFilters.avatar) {
+          return false;
+        }
+      }
+
+      if (galleryFilters.product !== 'all') {
+        if (item.productId !== galleryFilters.product) {
           return false;
         }
       }
@@ -823,6 +861,13 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return storedAvatars.map(avatar => ({
       id: avatar.id,
       name: avatar.name,
+    }));
+  };
+
+  const getAvailableProducts = () => {
+    return storedProducts.map(product => ({
+      id: product.id,
+      name: product.name,
     }));
   };
   
@@ -1265,6 +1310,22 @@ const [batchSize, setBatchSize] = useState<number>(1);
     };
   }, [creationsModalAvatar]);
 
+  useEffect(() => {
+    if (!creationsModalProduct) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCreationsModalProduct(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [creationsModalProduct]);
+
   
   // Use the Gemini image generation hook
   const {
@@ -1695,10 +1756,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
 
       try {
-        const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "products");
+        const stored = await getPersistedValue<StoredProduct[]>(storagePrefix, "products");
         if (!isMounted) return;
 
-        const normalized = normalizeStoredAvatars(stored ?? [], { ownerId: user?.id ?? undefined });
+        const normalized = normalizeStoredProducts(stored ?? [], { ownerId: user?.id ?? undefined });
         setStoredProducts(normalized);
 
         const needsPersist =
@@ -1738,6 +1799,29 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setSelectedProduct(match);
     }
   }, [selectedProduct, storedProducts]);
+
+  useEffect(() => {
+    if (!pendingProductId) return;
+    const match = storedProducts.find(product => product.id === pendingProductId);
+    if (match) {
+      setSelectedProduct(match);
+      setPendingProductId(null);
+    } else if (storedProducts.length > 0) {
+      setPendingProductId(null);
+    }
+  }, [pendingProductId, storedProducts]);
+
+  useEffect(() => {
+    if (!creationsModalProduct) return;
+    const match = storedProducts.find(product => product.id === creationsModalProduct.id);
+    if (!match) {
+      setCreationsModalProduct(null);
+      return;
+    }
+    if (match !== creationsModalProduct) {
+      setCreationsModalProduct(match);
+    }
+  }, [creationsModalProduct, storedProducts]);
 
   useEffect(() => {
     if (activeCategory !== "image" && isAvatarPickerOpen) {
@@ -2528,6 +2612,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         selectedModel: modelFromState,
         focusPromptBar: shouldFocus,
         avatarId,
+        productId,
       } = locationState;
 
       if (modelFromState) {
@@ -2562,6 +2647,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       if (avatarId) {
         setPendingAvatarId(avatarId);
+      }
+
+      if (productId) {
+        setPendingProductId(productId);
       }
 
       navigate(location.pathname, { replace: true, state: null });
@@ -3094,6 +3183,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
                       onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
                     />
                   )}
+                  {(() => {
+                    const productForImage = img.productId ? productMap.get(img.productId) : undefined;
+                    if (!productForImage) return null;
+                    return (
+                      <ProductBadge
+                        product={productForImage}
+                        onClick={() => setCreationsModalProduct(productForImage)}
+                      />
+                    );
+                  })()}
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -3308,7 +3407,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
   }, []);
 
   const handleProductSelect = useCallback(
-    (product: StoredAvatar) => {
+    (product: StoredProduct) => {
+      setPendingProductId(null);
       setSelectedProduct(product);
       setIsProductPickerOpen(false);
     },
@@ -3317,27 +3417,32 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const clearSelectedProduct = useCallback(() => {
     setSelectedProduct(null);
+    setPendingProductId(null);
     setIsProductPickerOpen(false);
   }, []);
 
   const confirmDeleteProduct = useCallback(async () => {
     if (!productToDelete || !storagePrefix) return;
-    
+
     const updatedProducts = storedProducts.filter(p => p.id !== productToDelete.id);
     setStoredProducts(updatedProducts);
-    
+
     if (selectedProduct?.id === productToDelete.id) {
       clearSelectedProduct();
     }
-    
+
+    if (creationsModalProduct?.id === productToDelete.id) {
+      setCreationsModalProduct(null);
+    }
+
     try {
       await setPersistedValue(storagePrefix, "products", updatedProducts);
     } catch (error) {
       debugError("Failed to persist products", error);
     }
-    
+
     setProductToDelete(null);
-  }, [productToDelete, storedProducts, selectedProduct, storagePrefix, clearSelectedProduct]);
+  }, [productToDelete, storedProducts, selectedProduct, storagePrefix, clearSelectedProduct, creationsModalProduct]);
 
   const confirmDeleteAvatar = useCallback(async () => {
     if (!avatarToDelete || !storagePrefix) return;
@@ -3474,6 +3579,88 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarSelection(null);
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
+  }, []);
+
+  const processProductImageFile = useCallback(async (file: File) => {
+    const validationError = validateAvatarFile(file);
+    if (validationError) {
+      setProductUploadError(validationError);
+      return;
+    }
+
+    try {
+      const { width, height } = await getImageDimensions(file);
+      const maxDimension = 8192;
+      const minDimension = 64;
+
+      if (width > maxDimension || height > maxDimension) {
+        setProductUploadError(
+          `Image dimensions (${width}x${height}) are too large. Maximum allowed: ${maxDimension}x${maxDimension}.`,
+        );
+        return;
+      }
+
+      if (width < minDimension || height < minDimension) {
+        setProductUploadError(
+          `Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`,
+        );
+        return;
+      }
+    } catch {
+      setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      return;
+    }
+
+    setProductUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setProductSelection({ imageUrl: result, source: "upload" });
+      }
+    };
+    reader.onerror = () => {
+      setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+    };
+    reader.readAsDataURL(file);
+  }, [getImageDimensions, validateAvatarFile]);
+
+  const handleSaveNewProduct = useCallback(async () => {
+    if (!productSelection || !productName.trim() || !storagePrefix) return;
+
+    const record = createProductRecord({
+      name: productName.trim(),
+      imageUrl: productSelection.imageUrl,
+      source: productSelection.source,
+      sourceId: productSelection.sourceId,
+      ownerId: user?.id ?? undefined,
+      existingProducts: storedProducts,
+    });
+
+    const updatedProducts = [record, ...storedProducts];
+    setStoredProducts(updatedProducts);
+    setPendingProductId(record.id);
+
+    try {
+      await setPersistedValue(storagePrefix, "products", updatedProducts);
+    } catch (error) {
+      debugError("Failed to persist products", error);
+    }
+
+    setIsProductCreationModalOpen(false);
+    setProductName("");
+    setProductSelection(null);
+    setProductUploadError(null);
+    setIsDraggingProduct(false);
+  }, [productSelection, productName, storagePrefix, user?.id, storedProducts]);
+
+  const resetProductCreationPanel = useCallback(() => {
+    setIsProductCreationModalOpen(false);
+    setProductName("");
+    setProductSelection(null);
+    setProductUploadError(null);
+    setIsDraggingProduct(false);
   }, []);
 
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -5161,6 +5348,7 @@ const handleGenerate = async () => {
                       getAvailableFolders={getAvailableFolders}
                       folders={folders}
                       getAvailableAvatars={getAvailableAvatars}
+                      getAvailableProducts={getAvailableProducts}
                       toggleSelectMode={toggleSelectMode}
                       toggleSelectAllVisible={toggleSelectAllVisible}
                       filteredGallery={filteredGallery}
@@ -5452,6 +5640,16 @@ const handleGenerate = async () => {
                                               <AvatarBadge
                                                 avatar={avatarForImage}
                                                 onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                              />
+                                            );
+                                          })()}
+                                          {(() => {
+                                            const productForImage = img.productId ? productMap.get(img.productId) : undefined;
+                                            if (!productForImage) return null;
+                                            return (
+                                              <ProductBadge
+                                                product={productForImage}
+                                                onClick={() => setCreationsModalProduct(productForImage)}
                                               />
                                             );
                                           })()}
@@ -6440,6 +6638,16 @@ const handleGenerate = async () => {
                                         />
                                       );
                                     })()}
+                                    {(() => {
+                                      const productForImage = img.productId ? productMap.get(img.productId) : undefined;
+                                      if (!productForImage) return null;
+                                      return (
+                                        <ProductBadge
+                                          product={productForImage}
+                                          onClick={() => setCreationsModalProduct(productForImage)}
+                                        />
+                                      );
+                                    })()}
                                   </div>
                                   {img.isPublic && (
                                     <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -6877,49 +7085,31 @@ const handleGenerate = async () => {
                     >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <div className="text-base font-raleway text-theme-text">
-                            Your Products
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file || !storagePrefix) return;
-                              
-                              const reader = new FileReader();
-                              reader.onload = async (event) => {
-                                const imageUrl = event.target?.result as string;
-                                const newProduct: StoredAvatar = {
-                                  id: `product-${Date.now()}`,
-                                  slug: `product-${Date.now()}`,
-                                  name: file.name.replace(/\.[^/.]+$/, ""),
-                                  imageUrl,
-                                  createdAt: new Date().toISOString(),
-                                  source: "upload",
-                                  published: false,
-                                  ownerId: user?.id,
-                                };
-                                const updated = [...storedProducts, newProduct];
-                                setStoredProducts(updated);
-                                await setPersistedValue(storagePrefix, "products", updated);
-                              };
-                              reader.readAsDataURL(file);
-                              e.target.value = '';
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProductPickerOpen(false);
+                              navigate('/create/products');
                             }}
-                            style={{ display: 'none' }}
-                            id="product-upload"
-                          />
-                          <label htmlFor="product-upload">
-                            <button
-                              type="button"
-                              className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                              onClick={() => document.getElementById('product-upload')?.click()}
-                              aria-label="Add a new Product"
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </button>
-                          </label>
+                            className="text-base font-raleway text-theme-text cursor-pointer"
+                          >
+                            Your Products
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            onClick={() => {
+                              setIsProductPickerOpen(false);
+                              setIsProductCreationModalOpen(true);
+                              setProductName('');
+                              setProductSelection(null);
+                              setProductUploadError(null);
+                              setIsDraggingProduct(false);
+                            }}
+                            aria-label="Add a new Product"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                         {storedProducts.length > 0 ? (
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
@@ -6950,8 +7140,21 @@ const handleGenerate = async () => {
                                   <div className="flex items-center gap-1">
                                     <button
                                       type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setCreationsModalProduct(product);
+                                        setIsProductPickerOpen(false);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
+                                      title="View creations"
+                                      aria-label="View creations with this Product"
+                                    >
+                                      <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
                                         setProductToDelete(product);
                                       }}
                                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
@@ -6969,6 +7172,19 @@ const handleGenerate = async () => {
                           <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
                             You haven't added any Products yet. Click the + button above to add one.
                           </div>
+                        )}
+                        {!storedProducts.length && (
+                          <button
+                            type="button"
+                            className={`w-full ${buttons.glassPromptCompact}`}
+                            onClick={() => {
+                              navigate('/create/products');
+                              setIsProductPickerOpen(false);
+                            }}
+                          >
+                            <Package className="h-4 w-4" />
+                            Go to Products
+                          </button>
                         )}
                       </div>
                     </AvatarPickerPortal>
@@ -7875,6 +8091,18 @@ const handleGenerate = async () => {
                                 />
                               );
                             })()}
+                            {(() => {
+                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
+                              if (!img?.productId) return null;
+                              const productForImage = productMap.get(img.productId);
+                              if (!productForImage) return null;
+                              return (
+                                <ProductBadge
+                                  product={productForImage}
+                                  onClick={() => setCreationsModalProduct(productForImage)}
+                                />
+                              );
+                            })()}
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -8072,6 +8300,84 @@ const handleGenerate = async () => {
           </div>
         )}
 
+        {creationsModalProduct && (
+          <div
+            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+            onClick={() => setCreationsModalProduct(null)}
+          >
+            <div
+              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                onClick={() => setCreationsModalProduct(null)}
+                aria-label="Close Product creations"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-2xl font-raleway text-theme-text">
+                    Creations with {creationsModalProduct.name}
+                  </h2>
+                  <p className="text-sm font-raleway text-theme-white">
+                    Manage creations featuring this product.
+                  </p>
+                </div>
+
+                <div className="flex justify-start">
+                  <div className="w-1/3 sm:w-1/5 lg:w-1/6">
+                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
+                      <img
+                        src={creationsModalProduct.imageUrl}
+                        alt={creationsModalProduct.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {gallery
+                    .filter(img => img.productId === creationsModalProduct.id)
+                    .map((img, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                        <img
+                          src={img.url}
+                          alt={img.prompt || 'Generated image'}
+                          loading="lazy"
+                          className="w-full h-full object-cover cursor-pointer"
+                          onClick={() => {
+                            setSelectedFullImage(img);
+                            setIsFullSizeOpen(true);
+                          }}
+                        />
+                        <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="absolute bottom-0 left-0 right-0 p-2">
+                            <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {gallery.filter(img => img.productId === creationsModalProduct.id).length === 0 && (
+                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
+                    <p className="text-sm font-raleway text-theme-white/70">
+                      Generate a new image with this product to see it appear here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Avatar Creation Modal */}
         {isAvatarCreationModalOpen && (
           <Suspense fallback={null}>
@@ -8092,6 +8398,29 @@ const handleGenerate = async () => {
               onProcessFile={processAvatarImageFile}
               onDragStateChange={setIsDraggingAvatar}
               onUploadError={setAvatarUploadError}
+            />
+          </Suspense>
+        )}
+
+        {isProductCreationModalOpen && (
+          <Suspense fallback={null}>
+            <ProductCreationModal
+              open={isProductCreationModalOpen}
+              selection={productSelection}
+              uploadError={productUploadError}
+              isDragging={isDraggingProduct}
+              productName={productName}
+              disableSave={!productSelection || !productName.trim()}
+              galleryImages={gallery}
+              hasGalleryImages={gallery.length > 0}
+              onClose={resetProductCreationPanel}
+              onProductNameChange={setProductName}
+              onSave={handleSaveNewProduct}
+              onSelectFromGallery={(imageUrl) => setProductSelection({ imageUrl, source: 'gallery', sourceId: imageUrl })}
+              onClearSelection={() => setProductSelection(null)}
+              onProcessFile={processProductImageFile}
+              onDragStateChange={setIsDraggingProduct}
+              onUploadError={setProductUploadError}
             />
           </Suspense>
         )}
