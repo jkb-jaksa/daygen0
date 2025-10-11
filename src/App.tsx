@@ -73,7 +73,13 @@ function UseCaseCard({
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >
-      <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
+      <img
+        src={imageUrl}
+        alt={imageAlt}
+        loading="lazy"
+        decoding="async"
+        className="h-48 w-full object-cover"
+      />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
           <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>

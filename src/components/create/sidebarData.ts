@@ -9,6 +9,7 @@ import {
   Upload,
   Sparkles,
   Folder,
+  Package,
 } from "lucide-react";
 
 export type SidebarEntry = {
@@ -26,6 +27,8 @@ export const CREATE_CATEGORIES: SidebarEntry[] = [
 
 export const LIBRARY_CATEGORIES: SidebarEntry[] = [
   { key: "gallery", label: "gallery", Icon: Grid3X3 },
+  { key: "avatars", label: "avatars", Icon: Users },
+  { key: "products", label: "products", Icon: Package },
   { key: "uploads", label: "uploads", Icon: Upload },
   { key: "inspirations", label: "inspirations", Icon: Sparkles },
 ];

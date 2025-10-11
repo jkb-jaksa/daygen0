@@ -89,6 +89,7 @@ const CATEGORY_TO_PATH: Record<string, string> = {
   image: "/create/image",
   video: "/create/video",
   avatars: "/create/avatars",
+  products: "/create/products",
   audio: "/create/audio",
   gallery: "/gallery",
   uploads: "/gallery/uploads",
@@ -110,7 +111,7 @@ type ActiveGenerationJob = {
   jobId?: string | null;
 };
 
-const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio"]);
+const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio", "avatars", "products"]);
 
 const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
   public: "gallery",
@@ -1172,6 +1173,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         'image',
         'video',
         'avatars',
+        'products',
         'audio',
         'gallery',
         'uploads',

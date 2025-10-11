@@ -1130,6 +1130,8 @@ const ChatMode: React.FC = () => {
                             <img
                               src={selectedAvatar.imageUrl}
                               alt={selectedAvatar.name}
+                              loading="lazy"
+                              decoding="async"
                               className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                             />
                             <button
@@ -1160,6 +1162,8 @@ const ChatMode: React.FC = () => {
                             <img
                               src={selectedProduct.imageUrl}
                               alt={selectedProduct.name}
+                              loading="lazy"
+                              decoding="async"
                               className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                             />
                             <button
@@ -1208,6 +1212,8 @@ const ChatMode: React.FC = () => {
                                 <img
                                   src={preview}
                                   alt={`Reference ${index + 1}`}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                                 />
                                 <button
@@ -1568,6 +1574,8 @@ const ChatMode: React.FC = () => {
                           <img
                             src={getToolLogo(currentModel.name)!}
                             alt={`${currentModel.name} logo`}
+                            loading="lazy"
+                            decoding="async"
                             className="h-4 w-4 flex-shrink-0 rounded object-contain"
                           />
                         ) : (
@@ -1603,6 +1611,8 @@ const ChatMode: React.FC = () => {
                                   <img
                                     src={getToolLogo(model.name)!}
                                     alt={`${model.name} logo`}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="h-5 w-5 flex-shrink-0 rounded object-contain"
                                   />
                                 ) : (
