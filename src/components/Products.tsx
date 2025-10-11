@@ -741,13 +741,18 @@ export default function Products() {
   );
 
   const renderProductCard = useCallback(
-    (product: StoredProduct) => {
+    (
+      product: StoredProduct,
+      options?: { disableModalTrigger?: boolean; keyPrefix?: string },
+    ) => {
+      const disableModalTrigger = options?.disableModalTrigger ?? false;
+      const keyPrefix = options?.keyPrefix ?? "product";
       const isEditing = editingProductId === product.id;
-      const isInteractive = !isEditing;
+      const isInteractive = !(disableModalTrigger || isEditing);
 
       return (
         <div
-          key={`product-${product.id}`}
+          key={`${keyPrefix}-${product.id}`}
           className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
             isInteractive ? " cursor-pointer" : ""
           }`}
@@ -1590,53 +1595,23 @@ export default function Products() {
               </div>
 
               <div className="flex justify-start">
-                <div className="w-1/3 sm:w-1/5 lg:w-1/6">
-                  <div
-                    className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg cursor-pointer"
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`View ${creationsModalProduct.name} full size`}
-                    onClick={openProductFullSizeView}
-                    onKeyDown={event => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openProductFullSizeView();
-                      }
-                    }}
-                  >
-                    <div
-                      className="relative aspect-square overflow-hidden card-media-frame"
-                      data-has-image={Boolean(creationsModalProduct.imageUrl)}
-                      style={createCardImageStyle(creationsModalProduct.imageUrl)}
-                    >
-                      <img
-                        src={creationsModalProduct.imageUrl}
-                        alt={creationsModalProduct.name}
-                        className="h-full w-full object-cover relative z-[1]"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="hidden lg:block">
-                      <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-base font-raleway font-normal text-theme-text truncate">
-                            {creationsModalProduct.name}
-                          </p>
-                          {creationsModalProduct.published && (
-                            <div className={`${glass.promptDark} text-theme-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
-                              <div className="flex items-center gap-1">
-                                <Globe className="w-3 h-3 text-theme-text" />
-                                <span className="leading-none">Public</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate lg:hidden">
-                    {creationsModalProduct.name}
-                  </p>
+                <div
+                  className="w-1/3 sm:w-1/5 lg:w-1/6 cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View ${creationsModalProduct.name} full size`}
+                  onClick={openProductFullSizeView}
+                  onKeyDown={event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openProductFullSizeView();
+                    }
+                  }}
+                >
+                  {renderProductCard(creationsModalProduct, {
+                    disableModalTrigger: true,
+                    keyPrefix: "modal-product",
+                  })}
                 </div>
               </div>
 
