@@ -1,4 +1,4 @@
-import { Search, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, Sun, Moon } from "lucide-react";
+import { Search, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, Sun, Moon, Package, LayoutGrid } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -52,6 +52,12 @@ const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideI
   { to: "/learn/tools", label: "tools", Icon: Edit },
   { to: "/learn/prompts", label: "prompts", Icon: FileText },
   { to: "/learn/courses", label: "courses", Icon: GraduationCap },
+];
+
+const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
+  { to: "/create/gallery", label: "gallery", Icon: LayoutGrid },
+  { to: "/create/avatars", label: "avatars", Icon: Users },
+  { to: "/create/products", label: "products", Icon: Package },
 ];
 
 export default function Navbar() {
@@ -292,7 +298,7 @@ export default function Navbar() {
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
-                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "digital copy") {
+                    if (item.label !== "explore" && item.label !== "edit" && item.label !== "digital copy") {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
@@ -300,7 +306,7 @@ export default function Navbar() {
                   }}
                   onFocus={() => {
                     item.prefetch?.();
-                    if (item.label !== "explore" && item.label !== "my works" && item.label !== "edit" && item.label !== "digital copy") {
+                    if (item.label !== "explore" && item.label !== "edit" && item.label !== "digital copy") {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
@@ -508,6 +514,22 @@ export default function Navbar() {
                 ) : activeMenu === "learn" ? (
                   <div className="flex flex-col gap-1.5">
                     {LEARN_MENU_LINKS.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setActiveMenu(null)}
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                      >
+                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
+                          <item.Icon className="w-4 h-4" />
+                        </div>
+                        <span>{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : activeMenu === "my works" ? (
+                  <div className="flex flex-col gap-1.5">
+                    {MY_WORKS_MENU_LINKS.map((item) => (
                       <Link
                         key={item.to}
                         to={item.to}
