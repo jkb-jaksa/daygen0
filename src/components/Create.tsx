@@ -6876,77 +6876,89 @@ const handleGenerate = async () => {
 
                 {activeCategory === "image" && (
                   <>
-                    <button
-                      type="button"
-                      ref={avatarButtonRef}
-                      onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                    >
-                      <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Avatar</span>
-                    </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={avatarButtonRef}
+                        onClick={() => setIsAvatarPickerOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      >
+                        <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                        {!selectedAvatar && (
+                          <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Avatar</span>
+                        )}
+                        {selectedAvatar && (
+                          <span className="ml-0.5 flex items-center gap-2">
+                            <img
+                              src={selectedAvatar.imageUrl}
+                              alt={selectedAvatar.name}
+                              loading="lazy"
+                              className="w-7 h-7 rounded-lg object-cover border border-n-mid"
+                              title={selectedAvatar.name}
+                            />
+                            <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
+                              {selectedAvatar.name}
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                      {selectedAvatar && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearSelectedAvatar();
+                          }}
+                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                          title="Remove avatar"
+                          aria-label="Remove avatar"
+                        >
+                          <X className="w-2.5 h-2.5 text-n-text" />
+                        </button>
+                      )}
+                    </div>
 
-                    {/* Selected Avatar display - right next to Select Avatar button */}
-                    {selectedAvatar && (
-                      <div className="flex items-center gap-2">
-                        <div className="hidden lg:block text-sm text-n-text font-raleway">Avatar:</div>
-                        <div className="relative group">
-                          <img
-                            src={selectedAvatar.imageUrl}
-                            alt={selectedAvatar.name}
-                            loading="lazy"
-                            className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
-                            title={selectedAvatar.name}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearSelectedAvatar();
-                            }}
-                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                            title="Remove avatar"
-                          >
-                            <X className="w-2.5 h-2.5 text-n-text" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      ref={productButtonRef}
-                      onClick={() => setIsProductPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                    >
-                      <Package className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Product</span>
-                    </button>
-
-                    {/* Selected Product display - right next to Product button */}
-                    {selectedProduct && (
-                      <div className="flex items-center gap-2">
-                        <div className="hidden lg:block text-sm text-n-text font-raleway">Product:</div>
-                        <div className="relative group">
-                          <img
-                            src={selectedProduct.imageUrl}
-                            alt={selectedProduct.name}
-                            loading="lazy"
-                            className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
-                            title={selectedProduct.name}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearSelectedProduct();
-                            }}
-                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                            title="Remove product"
-                          >
-                            <X className="w-2.5 h-2.5 text-n-text" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={productButtonRef}
+                        onClick={() => setIsProductPickerOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                      >
+                        <Package className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                        {!selectedProduct && (
+                          <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Product</span>
+                        )}
+                        {selectedProduct && (
+                          <span className="ml-0.5 flex items-center gap-2">
+                            <img
+                              src={selectedProduct.imageUrl}
+                              alt={selectedProduct.name}
+                              loading="lazy"
+                              className="w-7 h-7 rounded-lg object-cover border border-n-mid"
+                              title={selectedProduct.name}
+                            />
+                            <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
+                              {selectedProduct.name}
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                      {selectedProduct && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearSelectedProduct();
+                          }}
+                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                          title="Remove product"
+                          aria-label="Remove product"
+                        >
+                          <X className="w-2.5 h-2.5 text-n-text" />
+                        </button>
+                      )}
+                    </div>
 
                     <div className="relative">
                       <button
