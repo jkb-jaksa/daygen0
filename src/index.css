@@ -224,8 +224,8 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-light: #858a8a;
   --n-light-rgb: 133 138 138;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --n-mid: #373e3e;
-  --n-mid-rgb: 55 62 62;
+  --n-mid: #2d3333;
+  --n-mid-rgb: 45 51 51;
   --n-dark: #1b1d1d;
   --n-dark-rgb: 27 29 29;
   --n-black: #060806;

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark, Scan } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -21,6 +21,9 @@ import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
 import { ToolInfoHover } from "./ToolInfoHover";
+import { AspectRatioDropdown } from "./AspectRatioDropdown";
+import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
+import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../data/aspectRatios";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -192,25 +195,11 @@ export default function Edit() {
   
   // Prompt bar state
   const [prompt, setPrompt] = useState<string>("");
+  const [geminiAspectRatio, setGeminiAspectRatio] = useState<GeminiAspectRatio>("1:1");
+  const [qwenSize, setQwenSize] = useState<string>("1328*1328");
   const [isDragging, setIsDragging] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
-  const referenceDisplayItems = useMemo(() => {
-    const items: { url: string; isPrimary: boolean; index?: number }[] = [];
-    if (previewUrl) {
-      items.push({ url: previewUrl, isPrimary: true });
-    }
-    referencePreviews.forEach((url, idx) => {
-      items.push({ url, isPrimary: false, index: idx });
-    });
-    return items;
-  }, [previewUrl, referencePreviews]);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
-  const [isButtonSpinning, setIsButtonSpinning] = useState(false);
-  const [temperature, setTemperature] = useState(0.8);
-  const [topP, setTopP] = useState(0.95);
-  const [topK, setTopK] = useState(64);
   const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-2.5-flash-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
@@ -230,11 +219,67 @@ export default function Edit() {
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [allPaths, setAllPaths] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
   const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
+
+  const isGemini = selectedModel === "gemini-2.5-flash-image";
+  const isFlux = isFluxModelId(selectedModel);
+  const isChatGPT = selectedModel === "chatgpt-image";
+  const isIdeogram = selectedModel === "ideogram";
+  const isQwen = selectedModel === "qwen-image";
+  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
+  const isReve = selectedModel === "reve-image";
+
+  const referenceDisplayItems = useMemo(() => {
+    const items: { url: string; isPrimary: boolean; index?: number }[] = [];
+    if (previewUrl) {
+      items.push({ url: previewUrl, isPrimary: true });
+    }
+    referencePreviews.forEach((url, idx) => {
+      items.push({ url, isPrimary: false, index: idx });
+    });
+    return items;
+  }, [previewUrl, referencePreviews]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
+  const aspectRatioConfig = useMemo<{
+    options: ReadonlyArray<AspectRatioOption>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+  } | null>(() => {
+    if (isGemini) {
+      return {
+        options: GEMINI_ASPECT_RATIO_OPTIONS,
+        selectedValue: geminiAspectRatio,
+        onSelect: value => setGeminiAspectRatio(value as GeminiAspectRatio),
+      };
+    }
+
+    if (isQwen) {
+      return {
+        options: QWEN_ASPECT_RATIO_OPTIONS,
+        selectedValue: qwenSize,
+        onSelect: setQwenSize,
+      };
+    }
+
+    return null;
+  }, [isGemini, geminiAspectRatio, isQwen, qwenSize]);
+
+  useEffect(() => {
+    if (!aspectRatioConfig) {
+      setIsAspectRatioMenuOpen(false);
+    }
+  }, [aspectRatioConfig]);
+  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
+  const [isButtonSpinning, setIsButtonSpinning] = useState(false);
+  const [temperature, setTemperature] = useState(0.8);
+  const [topP, setTopP] = useState(0.95);
+  const [topK, setTopK] = useState(64);
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const promptsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -295,15 +340,6 @@ export default function Edit() {
     clearError: clearReveError,
     clearGeneratedImage: clearReveImage,
   } = useReveImageGeneration();
-
-  // Determine which model is selected and get the appropriate state
-  const isGemini = selectedModel === "gemini-2.5-flash-image";
-  const isFlux = isFluxModelId(selectedModel);
-  const isChatGPT = selectedModel === "chatgpt-image";
-  const isIdeogram = selectedModel === "ideogram";
-  const isQwen = selectedModel === "qwen-image";
-  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
-  const isReve = selectedModel === "reve-image";
 
   // Get the current error and generated image based on selected model
   const currentError = isGemini ? geminiError : 
@@ -433,6 +469,7 @@ export default function Edit() {
           temperature,
           topP,
           outputLength: topK,
+          aspectRatio: geminiAspectRatio,
         });
       } else if (isFluxModelId(selectedModel)) {
         const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
@@ -460,7 +497,7 @@ export default function Edit() {
       } else if (isQwen) {
         await generateQwenImage({
           prompt: trimmedPrompt,
-          size: '1024x1024',
+          size: qwenSize,
           prompt_extend: true,
           watermark: false,
         });
@@ -1570,6 +1607,29 @@ export default function Edit() {
               onSaveRecentPrompt={savePromptToLibrary}
             />
 
+            {aspectRatioConfig && (
+              <div className="relative">
+                <button
+                  ref={aspectRatioButtonRef}
+                  type="button"
+                  onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                  aria-label="Aspect ratio"
+                  title="Aspect ratio"
+                >
+                  <Scan className="w-4 h-4 flex-shrink-0" />
+                </button>
+                <AspectRatioDropdown
+                  anchorRef={aspectRatioButtonRef}
+                  open={isAspectRatioMenuOpen}
+                  onClose={() => setIsAspectRatioMenuOpen(false)}
+                  options={aspectRatioConfig.options}
+                  selectedValue={aspectRatioConfig.selectedValue}
+                  onSelect={aspectRatioConfig.onSelect}
+                />
+              </div>
+            )}
+
             {/* Settings button */}
             <div className="relative settings-dropdown">
               <button
@@ -1673,17 +1733,23 @@ export default function Edit() {
             
             {/* Generate button on right */}
             <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
-              <button 
+              <button
                 onClick={handleGenerateImage}
                 disabled={!prompt.trim()}
-                className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
+                aria-label={`${isButtonSpinning ? "Generating..." : "Generate"} (uses 1 credit)`}
               >
-                {isButtonSpinning ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                <span>Generate</span>
+                <span className="text-sm sm:text-base font-raleway font-medium">
+                  {isButtonSpinning ? "Generating..." : "Generate"}
+                </span>
+                <div className="flex items-center gap-1">
+                  {isButtonSpinning ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                </div>
               </button>
             </Tooltip>
           </div>

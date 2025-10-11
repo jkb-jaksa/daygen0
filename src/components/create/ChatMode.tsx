@@ -18,6 +18,7 @@ import {
   Users,
   Wand2,
   X,
+  Scan,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -34,6 +35,9 @@ import type { AvatarSelection, StoredAvatar } from "../avatars/types";
 import { createAvatarRecord, normalizeStoredAvatars } from "../../utils/avatars";
 import { getPersistedValue, setPersistedValue } from "../../lib/clientStorage";
 import { getToolLogo, hasToolLogo } from "../../utils/toolLogos";
+import { AspectRatioDropdown } from "../AspectRatioDropdown";
+import type { AspectRatioOption, GeminiAspectRatio } from "../../types/aspectRatio";
+import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../../data/aspectRatios";
 
 const AvatarCreationModal = lazy(() => import("../avatars/AvatarCreationModal"));
 const SettingsMenu = lazy(() => import("./SettingsMenu"));
@@ -148,18 +152,6 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
   },
 ] as const;
 
-type GeminiAspectRatio =
-  | "1:1"
-  | "2:3"
-  | "3:2"
-  | "3:4"
-  | "4:3"
-  | "4:5"
-  | "5:4"
-  | "9:16"
-  | "16:9"
-  | "21:9";
-
 const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
@@ -244,6 +236,7 @@ const ChatMode: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
   const [fluxModel, setFluxModel] = useState<"flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max">(
     "flux-pro-1.1",
   );
@@ -265,6 +258,7 @@ const ChatMode: React.FC = () => {
   const productButtonRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
 
   const currentModel = useMemo(() => {
     return IMAGE_MODEL_OPTIONS.find(model => model.id === selectedModel) ?? IMAGE_MODEL_OPTIONS[0];
@@ -277,6 +271,36 @@ const ChatMode: React.FC = () => {
   const isQwenModel = selectedModel === "qwen-image";
   const isLumaPhotonImageModel =
     selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
+
+  const aspectRatioConfig = useMemo<{
+    options: ReadonlyArray<AspectRatioOption>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+  } | null>(() => {
+    if (isGeminiModel) {
+      return {
+        options: GEMINI_ASPECT_RATIO_OPTIONS,
+        selectedValue: geminiAspectRatio,
+        onSelect: value => setGeminiAspectRatio(value as GeminiAspectRatio),
+      };
+    }
+
+    if (isQwenModel) {
+      return {
+        options: QWEN_ASPECT_RATIO_OPTIONS,
+        selectedValue: qwenSize,
+        onSelect: setQwenSize,
+      };
+    }
+
+    return null;
+  }, [isGeminiModel, geminiAspectRatio, isQwenModel, qwenSize]);
+
+  useEffect(() => {
+    if (!aspectRatioConfig) {
+      setIsAspectRatioMenuOpen(false);
+    }
+  }, [aspectRatioConfig]);
 
   useEffect(() => {
     setFooterVisible(false);
@@ -1402,8 +1426,42 @@ const ChatMode: React.FC = () => {
                           onRemoveRecentPrompt={removeRecentPrompt}
                           onUpdateSavedPrompt={updatePrompt}
                           onAddSavedPrompt={savePrompt}
-                          onSaveRecentPrompt={handleSaveRecentPrompt}
-                        />
+                      onSaveRecentPrompt={handleSaveRecentPrompt}
+                    />
+                      {aspectRatioConfig && (
+                        <div className="relative">
+                          <button
+                            ref={aspectRatioButtonRef}
+                            type="button"
+                            onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                            className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                            aria-label="Aspect ratio"
+                            onMouseEnter={(event) => {
+                              showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip-chat');
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip('aspect-ratio-tooltip-chat');
+                            }}
+                          >
+                            <Scan className="h-3.5 w-3.5" />
+                          </button>
+                          <div
+                            data-tooltip-for="aspect-ratio-tooltip-chat"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                          >
+                            Aspect Ratio
+                          </div>
+                          <AspectRatioDropdown
+                            anchorRef={aspectRatioButtonRef}
+                            open={isAspectRatioMenuOpen}
+                            onClose={() => setIsAspectRatioMenuOpen(false)}
+                            options={aspectRatioConfig.options}
+                            selectedValue={aspectRatioConfig.selectedValue}
+                            onSelect={aspectRatioConfig.onSelect}
+                          />
+                        </div>
+                      )}
                       <button
                         ref={settingsRef}
                         type="button"

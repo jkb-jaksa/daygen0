@@ -4,20 +4,9 @@ import { createPortal } from "react-dom";
 import { glass } from "../../styles/designSystem";
 import { useDropdownScrollLock } from "../../hooks/useDropdownScrollLock";
 import { Minus, Plus } from "lucide-react";
+import type { GeminiAspectRatio } from "../../types/aspectRatio";
 
 type FluxModelOption = "flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max";
-
-type GeminiAspectRatio =
-  | '1:1'
-  | '2:3'
-  | '3:2'
-  | '3:4'
-  | '4:3'
-  | '4:5'
-  | '5:4'
-  | '9:16'
-  | '16:9'
-  | '21:9';
 
 
 interface FluxSettingsProps {

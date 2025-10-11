@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -31,6 +31,7 @@ const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
+import { AspectRatioDropdown } from "./AspectRatioDropdown";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
@@ -83,6 +84,14 @@ import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT
 import { ToolInfoHover } from "./ToolInfoHover";
 import CircularProgressRing from "./CircularProgressRing";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
+import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
+import {
+  GEMINI_ASPECT_RATIO_OPTIONS,
+  VIDEO_ASPECT_RATIO_OPTIONS,
+  BASIC_ASPECT_RATIO_OPTIONS,
+  WAN_ASPECT_RATIO_OPTIONS,
+  QWEN_ASPECT_RATIO_OPTIONS,
+} from "../data/aspectRatios";
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -178,8 +187,6 @@ const AI_MODELS = [
 const DEFAULT_REFERENCE_LIMIT = 3;
 const MAX_REFERENCES_WITH_AVATAR = 2;
 const PROMPT_TEXTAREA_MAX_HEIGHT = 160;
-
-type GeminiAspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
 
 // Portal component for model menu to avoid clipping by parent containers
 const ModelMenuPortal: React.FC<{
@@ -431,6 +438,7 @@ const Create: React.FC = () => {
   const refsInputRef = useRef<HTMLInputElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
   const settingsRef = useRef<HTMLButtonElement | null>(null);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
@@ -508,11 +516,96 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [qwenSize, setQwenSize] = useState<string>('1328*1328');
   const [qwenPromptExtend, setQwenPromptExtend] = useState<boolean>(true);
   const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
+  
+  // Video and aspect ratio state (must be declared before aspectRatioConfig useMemo)
+  const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
+  const [seedanceRatio, setSeedanceRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [klingAspectRatio, setKlingAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [wanSize, setWanSize] = useState<string>('1920*1080');
+  
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  
+  const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
+
+  const aspectRatioConfig = useMemo<{
+    options: ReadonlyArray<AspectRatioOption>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+  } | null>(() => {
+    if (isGemini) {
+      return {
+        options: GEMINI_ASPECT_RATIO_OPTIONS,
+        selectedValue: geminiAspectRatio,
+        onSelect: value => setGeminiAspectRatio(value as GeminiAspectRatio),
+      };
+    }
+
+    if (isVeo) {
+      return {
+        options: VIDEO_ASPECT_RATIO_OPTIONS,
+        selectedValue: videoAspectRatio,
+        onSelect: value => setVideoAspectRatio(value as "16:9" | "9:16"),
+      };
+    }
+
+    if (isSeedance) {
+      return {
+        options: BASIC_ASPECT_RATIO_OPTIONS,
+        selectedValue: seedanceRatio,
+        onSelect: value => setSeedanceRatio(value as "16:9" | "9:16" | "1:1"),
+      };
+    }
+
+    if (isKlingVideo) {
+      return {
+        options: BASIC_ASPECT_RATIO_OPTIONS,
+        selectedValue: klingAspectRatio,
+        onSelect: value => setKlingAspectRatio(value as "16:9" | "9:16" | "1:1"),
+      };
+    }
+
+    if (isWanVideo) {
+      return {
+        options: WAN_ASPECT_RATIO_OPTIONS,
+        selectedValue: wanSize,
+        onSelect: setWanSize,
+      };
+    }
+
+    if (isQwen) {
+      return {
+        options: QWEN_ASPECT_RATIO_OPTIONS,
+        selectedValue: qwenSize,
+        onSelect: setQwenSize,
+      };
+    }
+
+    return null;
+  }, [
+    isGemini,
+    geminiAspectRatio,
+    isVeo,
+    videoAspectRatio,
+    isSeedance,
+    seedanceRatio,
+    isKlingVideo,
+    klingAspectRatio,
+    isWanVideo,
+    wanSize,
+    isQwen,
+    qwenSize,
+  ]);
+
+  useEffect(() => {
+    if (!aspectRatioConfig) {
+      setIsAspectRatioMenuOpen(false);
+    }
+  }, [aspectRatioConfig]);
+
+  const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
+  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+
   // Video generation state
-  const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
   const [videoNegativePrompt, setVideoNegativePrompt] = useState<string>('');
   const [videoSeed, setVideoSeed] = useState<number | undefined>(undefined);
@@ -524,7 +617,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [runwayModel, setRunwayModel] = useState<'runway-gen4' | 'runway-gen4-turbo'>('runway-gen4');
   
   // Wan-specific state
-  const [wanSize, setWanSize] = useState<string>('1920*1080');
   const [wanNegativePrompt, setWanNegativePrompt] = useState<string>('');
   const [wanPromptExtend, setWanPromptExtend] = useState<boolean>(true);
   const [wanWatermark, setWanWatermark] = useState<boolean>(false);
@@ -541,7 +633,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   // Kling-specific state
   const [klingModel, setKlingModel] = useState<'kling-v2.1-master' | 'kling-v2-master'>('kling-v2.1-master');
-  const [klingAspectRatio, setKlingAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [klingDuration, setKlingDuration] = useState<5 | 10>(5);
   const [klingNegativePrompt, setKlingNegativePrompt] = useState<string>('');
   const [klingCfgScale, setKlingCfgScale] = useState<number>(0.8);
@@ -571,7 +662,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   
   // Seedance-specific state
   const [seedanceMode, setSeedanceMode] = useState<'t2v' | 'i2v-first' | 'i2v-first-last'>('t2v');
-  const [seedanceRatio, setSeedanceRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [seedanceDuration, setSeedanceDuration] = useState<number>(5);
   const [seedanceResolution, setSeedanceResolution] = useState<'1080p' | '720p'>('1080p');
   const [seedanceFps, setSeedanceFps] = useState<number>(24);
@@ -594,8 +684,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [currentInspirationIndex, setCurrentInspirationIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [fullSizeContext, setFullSizeContext] = useState<'gallery' | 'inspirations'>('gallery');
-  const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
-  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
 
   const setActiveCategory = useCallback((category: string, options?: { skipRoute?: boolean }) => {
     if (category === "avatars") {
@@ -1438,6 +1526,72 @@ const [batchSize, setBatchSize] = useState<number>(1);
     generateVideo: generateKlingVideo, // Kept for future backend integration
     reset: resetKlingVideo,
   } = useKlingVideoGeneration();
+
+  const { showGenerateSpinner, generateButtonLabel } = useMemo(() => {
+    const isWanGenerating =
+      isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
+    const isHailuoGenerating =
+      isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
+    const isLumaGenerating =
+      (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
+    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
+
+    const showSpinner =
+      isButtonSpinning ||
+      isVideoGenerating ||
+      isVideoPolling ||
+      isRunwayVideoGenerating ||
+      isWanGenerating ||
+      isHailuoGenerating ||
+      isKlingGenerating ||
+      seedanceLoading ||
+      isLumaGenerating;
+
+    const label = activeCategory === "video"
+      ? selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
+        ? "Generating..."
+        : selectedModel === "seedance-1.0-pro" && seedanceLoading
+          ? "Generating..."
+          : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
+            ? "Generating..."
+            : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
+              ? "Generating..."
+              : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
+                ? "Generating..."
+                : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
+                  ? "Generating..."
+                  : isVideoGenerating
+                    ? "Starting..."
+                    : isVideoPolling
+                      ? "Generating..."
+                      : "Generate"
+      : "Generate";
+
+    return { showGenerateSpinner: showSpinner, generateButtonLabel: label };
+  }, [
+    activeCategory,
+    selectedModel,
+    runwayVideoStatus,
+    seedanceLoading,
+    isHailuoVideo,
+    hailuoStatus,
+    hailuoIsPolling,
+    isWanVideo,
+    wanStatus,
+    wanIsPolling,
+    isKlingVideo,
+    klingStatus,
+    klingIsPolling,
+    isLumaRay,
+    lumaVideoLoading,
+    lumaVideoPolling,
+    isLumaPhoton,
+    lumaImageLoading,
+    isVideoGenerating,
+    isVideoPolling,
+    isRunwayVideoGenerating,
+    isButtonSpinning,
+  ]);
 
   const clearAllGenerationErrors = useCallback(() => {
     clearGeminiError();
@@ -6494,8 +6648,7 @@ const handleGenerate = async () => {
                               size={58}
                               strokeWidth={4}
                               showPercentage
-                              className="drop-shadow-[0_0_18px_rgba(255,102,0,0.35)]"
-                              textColor="var(--theme-orange-1)"
+                              className="drop-shadow-[0_0_18px_rgba(168,176,176,0.35)]"
                             />
                             <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
                               {statusLabel}
@@ -7377,6 +7530,40 @@ const handleGenerate = async () => {
                   )}
 
                 </div>
+                {aspectRatioConfig && (
+                  <div className="relative">
+                    <button
+                      ref={aspectRatioButtonRef}
+                      type="button"
+                      onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                      aria-label="Aspect ratio"
+                      onMouseEnter={event => {
+                        showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip');
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip('aspect-ratio-tooltip');
+                      }}
+                    >
+                      <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                    </button>
+                    <div
+                      data-tooltip-for="aspect-ratio-tooltip"
+                      className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                      style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    >
+                      Aspect Ratio
+                    </div>
+                    <AspectRatioDropdown
+                      anchorRef={aspectRatioButtonRef}
+                      open={isAspectRatioMenuOpen}
+                      onClose={() => setIsAspectRatioMenuOpen(false)}
+                      options={aspectRatioConfig.options}
+                      selectedValue={aspectRatioConfig.selectedValue}
+                      onSelect={aspectRatioConfig.onSelect}
+                    />
+                  </div>
+                )}
 
                 {/* Model Selector */}
                 <div className="relative model-selector flex-shrink-0">
@@ -7816,45 +8003,23 @@ const handleGenerate = async () => {
                   : isComingSoon
                     ? "This model is coming soon!"
                     : ""}>
-                <button 
+                <button
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
+                  aria-label={`${generateButtonLabel} (uses 1 credit)`}
                 >
-                  {(() => {
-                    const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
-                    const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
-                    const isLumaGenerating = (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
-                    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
-                    return showSpinner ? (
+                  <span className="text-n-black text-sm sm:text-base font-raleway font-medium">
+                    {generateButtonLabel}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {showGenerateSpinner ? (
                       <Loader2 className="w-4 h-4 animate-spin text-n-black" />
                     ) : (
                       <Sparkles className="w-4 h-4 text-n-black" />
-                    );
-                  })()}
-                  <span className="text-n-black hidden sm:inline">
-                    {activeCategory === "video" ? 
-                      (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
-                        ? "Generating..."
-                        : selectedModel === "seedance-1.0-pro" && seedanceLoading
-                          ? "Generating..."
-                          : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
-                            ? "Generating..."
-                          : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
-                            ? "Generating..."
-                          : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
-                            ? "Generating..."
-                            : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
-                            ? "Generating..."
-                            : isVideoGenerating
-                              ? "Starting..."
-                              : isVideoPolling
-                                ? "Generating..."
-                                : "Generate") : 
-                      "Generate"
-                    }
-                  </span>
+                    )}
+                    <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                  </div>
                 </button>
               </Tooltip>
               </div>
