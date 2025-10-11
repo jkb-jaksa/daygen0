@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
-import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
+import { layout, glass, text as textStyles, inputs, headings } from "../styles/designSystem";
 import { getToolLogo } from "../utils/toolLogos";
 import { getLearnToolByName, slugifyLearnTool } from "../data/learnTools";
 import useParallaxHover from "../hooks/useParallaxHover";
@@ -126,14 +126,16 @@ export default function KnowledgeBase() {
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-theme-light font-raleway">
-              <BookOpen className="h-4 w-4" />
-              Learn
-            </p>
-            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-theme-text`}>Tools</h1>
-            <p className="mt-3 max-w-2xl text-base font-raleway font-normal leading-relaxed text-theme-white">
-              Explore model guides, best practices, and tips for the creative AI tools you use every day.
-            </p>
+            <div className={headings.tripleHeading.container}>
+              <p className={headings.tripleHeading.eyebrow}>
+                <BookOpen className="h-4 w-4" />
+                Learn
+              </p>
+              <h1 className={`${textStyles.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Tools</h1>
+              <p className={headings.tripleHeading.description}>
+                Explore model guides, best practices, and tips for the creative AI tools you use every day.
+              </p>
+            </div>
           </header>
 
           {/* Navigation buttons */}

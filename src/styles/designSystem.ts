@@ -20,10 +20,10 @@ export const text = {
 
 export const headings = {
   tripleHeading: {
-    container: "flex flex-col gap-1",
+    container: "flex flex-col gap-0",
     eyebrow: "flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-theme-light font-raleway",
-    mainHeading: "mt-1 text-[2rem] sm:text-[2.5rem]",
-    description: "mt-1 max-w-2xl text-base font-raleway font-normal leading-relaxed text-theme-white",
+    mainHeading: "text-[2rem] sm:text-[2.5rem]",
+    description: "max-w-2xl text-base font-raleway font-normal leading-relaxed text-theme-white",
   },
 };
 

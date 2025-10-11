@@ -1356,17 +1356,23 @@ export default function Products() {
               </button>
             </div>
             <div className="absolute inset-x-0 bottom-0 pointer-events-none px-4 pb-4">
-              <div className={`${glass.promptDark} pointer-events-auto rounded-[24px] border border-theme-dark/60 px-5 py-4`}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-base font-raleway font-normal text-theme-white truncate">
-                    {creationsModalProduct.name}
-                  </p>
-                  {creationsModalProduct.published && (
-                    <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
-                      <Globe className="w-3 h-3 text-theme-text" />
-                      <span>Public</span>
+              <div className="PromptDescriptionBar pointer-events-auto rounded-2xl p-4 text-theme-text">
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-base font-raleway font-semibold leading-relaxed">
+                      {creationsModalProduct.name}
                     </div>
-                  )}
+                    {creationsModalProduct.published && (
+                      <div className="mt-2 flex justify-center">
+                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                          <div className="flex items-center gap-1">
+                            <Globe className="w-3 h-3 text-theme-text" />
+                            <span className="leading-none">Public</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1545,22 +1551,28 @@ export default function Products() {
             </div>
 
             <div className="absolute inset-x-0 bottom-0 pointer-events-none px-4 pb-4">
-              <div className={`${glass.promptDark} pointer-events-auto rounded-[24px] border border-theme-dark/60 px-5 py-4 space-y-3`}>
-                <p className="text-sm font-raleway text-theme-white">
-                  {selectedFullImage.prompt || "Generated image"}
-                </p>
-                <div className="flex items-center justify-between gap-2 text-xs font-raleway text-theme-white/70">
-                  <span>
-                    {selectedFullImage.timestamp
-                      ? new Date(selectedFullImage.timestamp).toLocaleString()
-                      : "Recently generated"}
-                  </span>
-                  {selectedFullImage.isPublic && (
-                    <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
-                      <Globe className="w-3 h-3 text-theme-text" />
-                      <span>Public</span>
+              <div className="PromptDescriptionBar pointer-events-auto rounded-2xl p-4 text-theme-text">
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-sm font-raleway leading-relaxed">
+                      {selectedFullImage.prompt || "Generated image"}
                     </div>
-                  )}
+                    <div className="mt-2 flex justify-center items-center gap-2">
+                      <div className="text-xs font-raleway text-theme-white/70">
+                        {selectedFullImage.timestamp
+                          ? new Date(selectedFullImage.timestamp).toLocaleString()
+                          : "Recently generated"}
+                      </div>
+                      {selectedFullImage.isPublic && (
+                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                          <div className="flex items-center gap-1">
+                            <Globe className="w-3 h-3 text-theme-text" />
+                            <span className="leading-none">Public</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
