@@ -8303,8 +8303,8 @@ const handleGenerate = async () => {
                 </div>
 
                 {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
-                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
-                    <p className="text-sm font-raleway text-theme-white/70">
+                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                    <p className="text-sm font-raleway text-theme-light">
                       Generate a new image with this avatar to see it appear here.
                     </p>
                   </div>
@@ -8381,8 +8381,8 @@ const handleGenerate = async () => {
                 </div>
 
                 {gallery.filter(img => img.productId === creationsModalProduct.id).length === 0 && (
-                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
-                    <p className="text-sm font-raleway text-theme-white/70">
+                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                    <p className="text-sm font-raleway text-theme-light">
                       Generate a new image with this product to see it appear here.
                     </p>
                   </div>

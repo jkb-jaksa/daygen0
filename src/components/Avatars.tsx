@@ -1495,8 +1495,8 @@ export default function Avatars() {
               </div>
 
               {creationModalItems.filter(item => item.kind === "image").length === 0 && (
-                <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
-                  <p className="text-sm font-raleway text-theme-white/70">
+                <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                  <p className="text-sm font-raleway text-theme-light">
                     Generate a new image with this avatar to see it appear here.
                   </p>
                 </div>

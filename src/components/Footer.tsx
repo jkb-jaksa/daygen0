@@ -37,15 +37,15 @@ export default function Footer() {
 
         {/* Copyright bar - moved inside footer container */}
         <div className={`${glass.promptDark} w-full mt-8 py-4`}>
-          <div className={`${layout.container} relative flex items-center justify-center`}>
-            <span className="text-b-white font-raleway font-normal text-center">
+          <div className={`${layout.container} relative flex items-center justify-between`}>
+            <span className="text-b-white font-raleway font-normal text-center flex-1">
               © <span className="font-normal">2025</span> — <span className="text-b-text font-normal">daygen</span>
             </span>
-            {/* Back-to-top button - aligned with container edge */}
+            {/* Back-to-top button - aligned with search bar in navbar */}
             <button
               onClick={scrollToTop}
               aria-label="Back to top"
-              className="image-action-btn parallax-force-positioned absolute right-0 top-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black"
+              className="image-action-btn parallax-force-positioned focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black"
             >
               <ChevronUp className="size-4" />
             </button>
