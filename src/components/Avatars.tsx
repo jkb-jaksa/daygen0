@@ -20,8 +20,9 @@ import {
   Lock,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
-import { layout, text, buttons, inputs, glass, headings } from "../styles/designSystem";
+import { layout, text, buttons, inputs, glass, headings, iconButtons } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
@@ -184,6 +185,14 @@ export default function Avatars() {
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isAvatarFullSizeOpen, setIsAvatarFullSizeOpen] = useState<boolean>(false);
+  const hasAvatars = avatars.length > 0;
+
+  const openAvatarCreator = useCallback(() => {
+    setIsPanelOpen(true);
+    if (!selection) {
+      setAvatarName(deriveSuggestedName());
+    }
+  }, [selection]);
 
   useEffect(() => {
     const state = location.state as AvatarNavigationState | null;
@@ -1271,33 +1280,65 @@ export default function Avatars() {
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
-        <section className={`${layout.container} flex flex-col gap-10 items-center`}>
-          <header className="max-w-3xl text-center">
-            <div className={`${headings.tripleHeading.container} text-center`}>
-              <p className={`${headings.tripleHeading.eyebrow} justify-center`}>
-                <Users className="h-4 w-4 text-theme-white/60" />
-                avatars
-              </p>
-              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Create your Avatar.</h1>
-              <p className={headings.tripleHeading.description}>{subtitle}</p>
-            </div>
-            <div className="mt-8">
-              <button
-              type="button"
-              className={buttons.primary}
-              onClick={() => {
-                setIsPanelOpen(true);
-                if (!selection) {
-                  setAvatarName(deriveSuggestedName());
-                }
-              }}
+      <div className="relative z-10">
+        <section className={`${layout.container}`}>
+          <div
+            className={
+              hasAvatars
+                ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
+                : "flex min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center justify-center px-4"
+            }
+          >
+            <header
+              className={`w-full max-w-3xl ${hasAvatars ? "text-left" : "text-center"} ${hasAvatars ? "" : "mx-auto"}`}
             >
-              <Users className="h-5 w-5" />
-              Create Avatar
-            </button>
-            </div>
-          </header>
+              <div
+                className={`${headings.tripleHeading.container} ${hasAvatars ? "text-left" : "text-center"}`}
+              >
+                <p className={`${headings.tripleHeading.eyebrow} ${hasAvatars ? "justify-start" : "justify-center"}`}>
+                  <Users className="h-4 w-4 text-theme-white/60" />
+                  avatars
+                </p>
+                <h1
+                  className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
+                >
+                  Create your Avatar.
+                </h1>
+                <p
+                  className={`${headings.tripleHeading.description} ${hasAvatars ? "" : "mx-auto"}`}
+                >
+                  {subtitle}
+                </p>
+              </div>
+              {!hasAvatars && (
+                <div className="mt-8 flex justify-center">
+                  <button type="button" className={buttons.primary} onClick={openAvatarCreator}>
+                    <Users className="h-5 w-5" />
+                    Create Avatar
+                  </button>
+                </div>
+              )}
+            </header>
+
+            {hasAvatars && (
+              <div className="w-full max-w-6xl space-y-5">
+                <div className="flex items-center gap-3 text-left">
+                  <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
+                  <button
+                    type="button"
+                    className={iconButtons.lg}
+                    onClick={openAvatarCreator}
+                    aria-label="Create Avatar"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
+                  {avatars.map(avatar => renderAvatarCard(avatar))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {missingAvatarSlug && (
             <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
@@ -1315,16 +1356,6 @@ export default function Avatars() {
             </div>
           )}
 
-          <div className="w-full max-w-6xl space-y-5">
-            <div className="space-y-2 text-left">
-              <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
-            </div>
-            {avatars.length > 0 && (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
-                {avatars.map(avatar => renderAvatarCard(avatar))}
-              </div>
-            )}
-          </div>
         </section>
       </div>
 
