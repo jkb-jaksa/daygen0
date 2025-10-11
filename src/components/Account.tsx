@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useAuth } from "../auth/useAuth";
-import { X, CheckCircle2, Lock } from "lucide-react";
+import { X, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
@@ -22,6 +22,9 @@ type AccountAuthScreenProps = {
 };
 
 function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const {
     mode,
     setMode,
@@ -161,36 +164,56 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
                   <label htmlFor="auth-password" className="block text-sm font-raleway text-theme-white/80">
                     Password
                   </label>
-                  <input
-                    id="auth-password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className={inputs.base}
-                    placeholder="Enter your password"
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    required
-                    minLength={8}
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    <input
+                      id="auth-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className={inputs.base}
+                      placeholder="Enter your password"
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      required
+                      minLength={8}
+                      disabled={isSubmitting}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-white/60 hover:text-theme-text transition-colors"
+                      disabled={isSubmitting}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 {mode === "signup" && (
                   <div className="space-y-1">
                     <label htmlFor="auth-confirm" className="block text-sm font-raleway text-theme-white/80">
                       Confirm password
                     </label>
-                    <input
-                      id="auth-confirm"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      className={inputs.base}
-                      placeholder="Re-enter your password"
-                      autoComplete="new-password"
-                      required
-                      minLength={8}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <input
+                        id="auth-confirm"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        className={inputs.base}
+                        placeholder="Re-enter your password"
+                        autoComplete="new-password"
+                        required
+                        minLength={8}
+                        disabled={isSubmitting}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-white/60 hover:text-theme-text transition-colors"
+                        disabled={isSubmitting}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 )}
                 <div aria-live="polite" role="status" className="min-h-[1rem]">

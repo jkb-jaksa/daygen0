@@ -3,6 +3,7 @@ import { useAuth } from "../auth/useAuth";
 import { buttons, inputs } from "../styles/designSystem";
 import { debugError } from "../utils/debug";
 import { resolveAuthErrorMessage } from "../utils/errorMessages";
+import { Eye, EyeOff } from "lucide-react";
 
 interface ResetPasswordModalProps {
   open: boolean;
@@ -18,6 +19,8 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -90,29 +93,49 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="block text-sm text-theme-text font-raleway">New password</label>
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                className={inputs.compact}
-                placeholder="Enter your new password"
-                disabled={isSubmitting}
-                minLength={8}
-              />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    className={inputs.compact}
+                    placeholder="Enter your new password"
+                    disabled={isSubmitting}
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-light hover:text-theme-text transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 <label className="block text-sm text-theme-text font-raleway">Confirm new password</label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                className={inputs.compact}
-                placeholder="Re-enter your new password"
-                disabled={isSubmitting}
-                minLength={8}
-              />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    className={inputs.compact}
+                    placeholder="Re-enter your new password"
+                    disabled={isSubmitting}
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-light hover:text-theme-text transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && <p className="text-xs font-raleway text-red-400">{error}</p>}

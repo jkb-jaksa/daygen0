@@ -3,6 +3,7 @@ import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buttons, inputs } from "../styles/designSystem";
 import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface AuthModalProps {
   open: boolean;
@@ -12,6 +13,8 @@ interface AuthModalProps {
 
 export default function AuthModal({ open, onClose, defaultMode = "login" }: AuthModalProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const {
     mode,
@@ -80,30 +83,50 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               </div>
               <div className="space-y-2">
                 <label className="block text-sm text-theme-text font-raleway">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className={inputs.compact}
-                  placeholder="Enter your password"
-                  disabled={isSubmitting}
-                  minLength={8}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className={inputs.compact}
+                    placeholder="Enter your password"
+                    disabled={isSubmitting}
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-light hover:text-theme-text transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               {mode === "signup" && (
                 <div className="space-y-2">
                   <label className="block text-sm text-theme-text font-raleway">Confirm password</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    className={inputs.compact}
-                    placeholder="Re-enter your password"
-                    disabled={isSubmitting}
-                    minLength={8}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      className={inputs.compact}
+                      placeholder="Re-enter your password"
+                      disabled={isSubmitting}
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-light hover:text-theme-text transition-colors"
+                      disabled={isSubmitting}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               )}
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">

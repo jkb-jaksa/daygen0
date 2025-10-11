@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -7,6 +7,7 @@ import {
   Trash2,
   X,
   Edit,
+  Pencil,
   Camera,
   MoreHorizontal,
   Download,
@@ -16,6 +17,9 @@ import {
   Globe,
   Lock,
   Image as ImageIcon,
+  Check,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { layout, glass, buttons, headings, iconButtons, text } from "../styles/designSystem";
@@ -128,6 +132,14 @@ export default function Products() {
   const [addToFolderDialog, setAddToFolderDialog] = useState(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string | null>(null);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingProductName, setEditingProductName] = useState("");
+  const [isFullSizeOpen, setIsFullSizeOpen] = useState(false);
+  const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isProductFullSizeOpen, setIsProductFullSizeOpen] = useState(false);
+  const [creationMoreMenu, setCreationMoreMenu] = useState<{ imageUrl: string; anchor: HTMLElement } | null>(null);
+  const [galleryEditMenu, setGalleryEditMenu] = useState<{ imageUrl: string; anchor: HTMLElement } | null>(null);
   const pendingSlugRef = useRef<string | null>(null);
   const hasProducts = storedProducts.length > 0;
   const productsSubtitle =
@@ -421,8 +433,13 @@ export default function Products() {
       setCreationsModalProduct(null);
     }
 
+    if (editingProductId === productToDelete.id) {
+      setEditingProductId(null);
+      setEditingProductName("");
+    }
+
     setProductToDelete(null);
-  }, [productToDelete, storagePrefix, storedProducts, creationsModalProduct, showToast]);
+  }, [productToDelete, storagePrefix, storedProducts, creationsModalProduct, showToast, editingProductId]);
 
   const handleManageFolders = useCallback((imageUrl: string) => {
     setSelectedImageForFolder(imageUrl);
@@ -501,11 +518,15 @@ export default function Products() {
   const toggleProductEditMenu = useCallback((productId: string, anchor: HTMLElement) => {
     setProductEditMenu(prev => (prev?.productId === productId ? null : { productId, anchor }));
     setProductMoreMenu(null);
+    setCreationMoreMenu(null);
+    setGalleryEditMenu(null);
   }, []);
 
   const toggleProductMoreMenu = useCallback((productId: string, anchor: HTMLElement) => {
     setProductMoreMenu(prev => (prev?.productId === productId ? null : { productId, anchor }));
     setProductEditMenu(null);
+    setCreationMoreMenu(null);
+    setGalleryEditMenu(null);
   }, []);
 
   const closeProductEditMenu = useCallback(() => {
@@ -532,6 +553,166 @@ export default function Products() {
     [persistProducts],
   );
 
+  const startRenamingProduct = useCallback((product: StoredProduct) => {
+    setProductEditMenu(null);
+    setProductMoreMenu(null);
+    setEditingProductId(product.id);
+    setEditingProductName(product.name);
+  }, []);
+
+  const cancelRenamingProduct = useCallback(() => {
+    setEditingProductId(null);
+    setEditingProductName("");
+  }, []);
+
+  const submitProductRename = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!editingProductId) return;
+      const trimmed = editingProductName.trim();
+      if (!trimmed) return;
+
+      setStoredProducts(prev => {
+        const updated = prev.map(record =>
+          record.id === editingProductId ? { ...record, name: trimmed } : record,
+        );
+        void persistProducts(updated);
+        return updated;
+      });
+
+      setEditingProductId(null);
+      setEditingProductName("");
+    },
+    [editingProductId, editingProductName, persistProducts],
+  );
+
+  const toggleCreationMoreMenu = useCallback((imageUrl: string, anchor: HTMLElement) => {
+    setCreationMoreMenu(prev => (prev?.imageUrl === imageUrl ? null : { imageUrl, anchor }));
+    setGalleryEditMenu(null);
+  }, []);
+
+  const closeCreationMoreMenu = useCallback(() => {
+    setCreationMoreMenu(null);
+  }, []);
+
+  const toggleGalleryEditMenu = useCallback((imageUrl: string, anchor: HTMLElement) => {
+    setGalleryEditMenu(prev => (prev?.imageUrl === imageUrl ? null : { imageUrl, anchor }));
+    setCreationMoreMenu(null);
+  }, []);
+
+  const closeGalleryEditMenu = useCallback(() => {
+    setGalleryEditMenu(null);
+  }, []);
+
+  const openFullSizeView = useCallback(
+    (image: GalleryImageLike) => {
+      if (!creationsModalProduct) return;
+      const productImages = galleryImages.filter(item => item.productId === creationsModalProduct.id);
+      const index = productImages.findIndex(item => item.url === image.url);
+      if (index === -1) return;
+      setCurrentImageIndex(index);
+      setSelectedFullImage(image);
+      setIsProductFullSizeOpen(false);
+      setIsFullSizeOpen(true);
+      setCreationMoreMenu(null);
+      setGalleryEditMenu(null);
+    },
+    [creationsModalProduct, galleryImages],
+  );
+
+  const closeFullSizeView = useCallback(() => {
+    setIsFullSizeOpen(false);
+    setSelectedFullImage(null);
+    setCreationMoreMenu(null);
+    setGalleryEditMenu(null);
+  }, []);
+
+  const navigateFullSizeImage = useCallback(
+    (direction: "prev" | "next") => {
+      if (!creationsModalProduct) return;
+      const productImages = galleryImages.filter(image => image.productId === creationsModalProduct.id);
+      const totalImages = productImages.length;
+      if (totalImages === 0) return;
+      const newIndex =
+        direction === "prev"
+          ? currentImageIndex > 0
+            ? currentImageIndex - 1
+            : totalImages - 1
+          : currentImageIndex < totalImages - 1
+          ? currentImageIndex + 1
+          : 0;
+      setCurrentImageIndex(newIndex);
+      setSelectedFullImage(productImages[newIndex]);
+    },
+    [creationsModalProduct, galleryImages, currentImageIndex],
+  );
+
+  const openProductFullSizeView = useCallback(() => {
+    if (!creationsModalProduct) return;
+    setCreationMoreMenu(null);
+    setGalleryEditMenu(null);
+    setIsFullSizeOpen(false);
+    setSelectedFullImage(null);
+    setIsProductFullSizeOpen(true);
+  }, [creationsModalProduct]);
+
+  const closeProductFullSizeView = useCallback(() => {
+    setIsProductFullSizeOpen(false);
+  }, []);
+
+  const goToCreateImageFromGallery = useCallback(
+    (image: GalleryImageLike) => {
+      const productId = creationsModalProduct?.id ?? image.productId;
+      setCreationsModalProduct(null);
+      setIsFullSizeOpen(false);
+      setIsProductFullSizeOpen(false);
+      setSelectedFullImage(null);
+      setCreationMoreMenu(null);
+      setGalleryEditMenu(null);
+      navigate("/create/image", {
+        state: {
+          selectedModel: image.model,
+          promptToPrefill: image.prompt,
+          productId,
+          focusPromptBar: true,
+        },
+      });
+    },
+    [creationsModalProduct?.id, navigate],
+  );
+
+  const goToCreateVideoFromGallery = useCallback(
+    (image: GalleryImageLike) => {
+      const productId = creationsModalProduct?.id ?? image.productId;
+      setCreationsModalProduct(null);
+      setIsFullSizeOpen(false);
+      setIsProductFullSizeOpen(false);
+      setSelectedFullImage(null);
+      setCreationMoreMenu(null);
+      setGalleryEditMenu(null);
+      navigate("/create/video", {
+        state: {
+          productId,
+          focusPromptBar: true,
+        },
+      });
+    },
+    [creationsModalProduct?.id, navigate],
+  );
+
+  const handleEditCreation = useCallback(
+    (image: GalleryImageLike) => {
+      setCreationsModalProduct(null);
+      setIsFullSizeOpen(false);
+      setIsProductFullSizeOpen(false);
+      setSelectedFullImage(null);
+      setCreationMoreMenu(null);
+      setGalleryEditMenu(null);
+      navigate("/edit", { state: { imageToEdit: image } });
+    },
+    [navigate],
+  );
+
   const activeGalleryImages = useMemo(() => {
     if (!creationsModalProduct) return [] as GalleryImageLike[];
     return galleryImages.filter(image => image.productId === creationsModalProduct.id);
@@ -547,6 +728,12 @@ export default function Products() {
 
   const openProductCreations = useCallback(
     (product: StoredProduct) => {
+      setCreationMoreMenu(null);
+      setGalleryEditMenu(null);
+      setIsFullSizeOpen(false);
+      setIsProductFullSizeOpen(false);
+      setSelectedFullImage(null);
+      setCurrentImageIndex(0);
       setCreationsModalProduct(product);
       navigate(`/create/products/${product.slug}`);
     },
@@ -554,202 +741,315 @@ export default function Products() {
   );
 
   const renderProductCard = useCallback(
-    (product: StoredProduct) => (
-      <div
-        key={`product-${product.id}`}
-        className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
-        role="button"
-        tabIndex={0}
-        aria-label={`View creations for ${product.name}`}
-        onClick={() => openProductCreations(product)}
-        onKeyDown={event => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            openProductCreations(product);
-          }
-        }}
-      >
+    (product: StoredProduct) => {
+      const isEditing = editingProductId === product.id;
+      const isInteractive = !isEditing;
+
+      return (
         <div
-          className="relative aspect-square overflow-hidden card-media-frame"
-          data-has-image={Boolean(product.imageUrl)}
-          style={createCardImageStyle(product.imageUrl)}
+          key={`product-${product.id}`}
+          className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
+            isInteractive ? " cursor-pointer" : ""
+          }`}
+          role={isInteractive ? "button" : undefined}
+          tabIndex={isInteractive ? 0 : undefined}
+          aria-label={isInteractive ? `View creations for ${product.name}` : undefined}
+          onClick={
+            isInteractive
+              ? () => openProductCreations(product)
+              : undefined
+          }
+          onKeyDown={
+            isInteractive
+              ? event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openProductCreations(product);
+                  }
+                }
+              : undefined
+          }
         >
-          <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
-            <button
-              type="button"
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                productEditMenu?.productId === product.id
-                  ? "opacity-100 pointer-events-auto"
-                  : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
-              }`}
-              onClick={event => {
-                event.stopPropagation();
-                toggleProductEditMenu(product.id, event.currentTarget);
-              }}
-              title="Edit Product"
-              aria-label="Edit Product"
-            >
-              <Edit className="w-3.5 h-3.5" />
-            </button>
-            <ImageActionMenuPortal
-              anchorEl={productEditMenu?.productId === product.id ? productEditMenu?.anchor ?? null : null}
-              open={productEditMenu?.productId === product.id}
-              onClose={closeProductEditMenu}
-            >
+          <div
+            className="relative aspect-square overflow-hidden card-media-frame"
+            data-has-image={Boolean(product.imageUrl)}
+            style={createCardImageStyle(product.imageUrl)}
+          >
+            <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                  productEditMenu?.productId === product.id
+                    ? "opacity-100 pointer-events-auto"
+                    : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                }`}
                 onClick={event => {
                   event.stopPropagation();
-                  handleNavigateToImage(product);
-                  closeProductEditMenu();
+                  toggleProductEditMenu(product.id, event.currentTarget);
                 }}
+                title="Edit Product"
+                aria-label="Edit Product"
               >
-                <ImageIcon className="h-4 w-4" />
-                Create image
+                <Edit className="w-3.5 h-3.5" />
+              </button>
+              <ImageActionMenuPortal
+                anchorEl={productEditMenu?.productId === product.id ? productEditMenu?.anchor ?? null : null}
+                open={productEditMenu?.productId === product.id}
+                onClose={closeProductEditMenu}
+              >
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    handleNavigateToImage(product);
+                    closeProductEditMenu();
+                  }}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Create image
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    handleNavigateToVideo(product);
+                    closeProductEditMenu();
+                  }}
+                >
+                  <Camera className="h-4 w-4" />
+                  Make video
+                </button>
+              </ImageActionMenuPortal>
+            </div>
+            <div className="absolute right-2 top-2 z-10 flex gap-1">
+              <button
+                type="button"
+                className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                onClick={event => {
+                  event.stopPropagation();
+                  setProductToDelete(product);
+                }}
+                title={`Delete ${product.name}`}
+                aria-label={`Delete ${product.name}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                  productMoreMenu?.productId === product.id
+                    ? "opacity-100 pointer-events-auto"
+                    : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                }`}
                 onClick={event => {
                   event.stopPropagation();
-                  handleNavigateToVideo(product);
-                  closeProductEditMenu();
+                  toggleProductMoreMenu(product.id, event.currentTarget);
                 }}
+                title="More actions"
+                aria-label="More actions"
               >
-                <Camera className="h-4 w-4" />
-                Make video
+                <MoreHorizontal className="w-3.5 h-3.5" />
               </button>
-            </ImageActionMenuPortal>
-          </div>
-          <div className="absolute right-2 top-2 z-10 flex gap-1">
-            <button
-              type="button"
-              className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
-              onClick={event => {
-                event.stopPropagation();
-                setProductToDelete(product);
-              }}
-              title={`Delete ${product.name}`}
-              aria-label={`Delete ${product.name}`}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                productMoreMenu?.productId === product.id
-                  ? "opacity-100 pointer-events-auto"
-                  : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
-              }`}
-              onClick={event => {
-                event.stopPropagation();
-                toggleProductMoreMenu(product.id, event.currentTarget);
-              }}
-              title="More actions"
-              aria-label="More actions"
-            >
-              <MoreHorizontal className="w-3.5 h-3.5" />
-            </button>
-            <ImageActionMenuPortal
-              anchorEl={productMoreMenu?.productId === product.id ? productMoreMenu?.anchor ?? null : null}
-              open={productMoreMenu?.productId === product.id}
-              onClose={closeProductMoreMenu}
-            >
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={event => {
-                  event.stopPropagation();
-                  void handleDownloadImage(product.imageUrl);
-                  closeProductMoreMenu();
-                }}
+              <ImageActionMenuPortal
+                anchorEl={productMoreMenu?.productId === product.id ? productMoreMenu?.anchor ?? null : null}
+                open={productMoreMenu?.productId === product.id}
+                onClose={closeProductMoreMenu}
               >
-                <Download className="h-4 w-4" />
-                Download
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={event => {
-                  event.stopPropagation();
-                  void handleCopyLink(product.imageUrl);
-                  closeProductMoreMenu();
-                }}
-              >
-                <Copy className="h-4 w-4" />
-                Copy link
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={event => {
-                  event.stopPropagation();
-                  handleManageFolders(product.imageUrl);
-                  closeProductMoreMenu();
-                }}
-              >
-                <FolderIcon className="h-4 w-4" />
-                Manage folders
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={event => {
-                  event.stopPropagation();
-                  toggleProductPublished(product);
-                }}
-              >
-                {product.published ? (
-                  <>
-                    <Lock className="h-4 w-4" />
-                    Unpublish
-                  </>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    void handleDownloadImage(product.imageUrl);
+                    closeProductMoreMenu();
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    void handleCopyLink(product.imageUrl);
+                    closeProductMoreMenu();
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy link
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    handleManageFolders(product.imageUrl);
+                    closeProductMoreMenu();
+                  }}
+                >
+                  <FolderIcon className="h-4 w-4" />
+                  Manage folders
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleProductPublished(product);
+                    closeProductMoreMenu();
+                  }}
+                >
+                  {product.published ? (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      Unpublish
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="h-4 w-4" />
+                      Publish
+                    </>
+                  )}
+                </button>
+              </ImageActionMenuPortal>
+            </div>
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover relative z-[1]"
+              loading="lazy"
+            />
+            <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
+              <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
+                {isEditing ? (
+                  <form
+                    className="flex items-center gap-2"
+                    onSubmit={submitProductRename}
+                    onClick={event => event.stopPropagation()}
+                  >
+                    <input
+                      className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
+                      value={editingProductName}
+                      onChange={event => setEditingProductName(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          cancelRenamingProduct();
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                      onClick={cancelRenamingProduct}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </form>
                 ) : (
-                  <>
-                    <Globe className="h-4 w-4" />
-                    Publish
-                  </>
-                )}
-              </button>
-            </ImageActionMenuPortal>
-          </div>
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="h-full w-full object-cover relative z-[1]"
-            loading="lazy"
-          />
-          <div className="absolute bottom-0 left-0 right-0 hidden lg:block">
-            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-base font-raleway font-normal text-theme-text truncate">{product.name}</p>
-                {product.published && (
-                  <div className={`${glass.promptDark} text-theme-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
-                    <div className="flex items-center gap-1">
-                      <Globe className="w-3 h-3 text-theme-text" />
-                      <span className="leading-none">Public</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <p className="text-base font-raleway font-normal text-theme-text truncate">{product.name}</p>
+                      <button
+                        type="button"
+                        className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                        onClick={event => {
+                          event.stopPropagation();
+                          startRenamingProduct(product);
+                        }}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
                     </div>
+                    {product.published && (
+                      <div className={`${glass.promptDark} text-theme-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3 text-theme-text" />
+                          <span className="leading-none">Public</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           </div>
+          <div className="lg:hidden space-y-2 px-4 py-4 text-center">
+            {isEditing ? (
+              <form
+                className="flex items-center gap-2 justify-center"
+                onSubmit={submitProductRename}
+                onClick={event => event.stopPropagation()}
+              >
+                <input
+                  className="flex-1 max-w-xs rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
+                  value={editingProductName}
+                  onChange={event => setEditingProductName(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      cancelRenamingProduct();
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                  onClick={cancelRenamingProduct}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </form>
+            ) : (
+              <div className="text-center space-y-2">
+                <div className="flex items-center gap-2 justify-center">
+                  <p className="text-base font-raleway font-normal text-theme-text">{product.name}</p>
+                  <button
+                    type="button"
+                    className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      startRenamingProduct(product);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                </div>
+                {product.published && (
+                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                    <Globe className="w-3 h-3 text-theme-text" />
+                    <span>Public</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="lg:hidden space-y-2 px-4 py-4 text-center">
-          <p className="text-base font-raleway font-normal text-theme-text">{product.name}</p>
-          {product.published && (
-            <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
-              <Globe className="w-3 h-3 text-theme-text" />
-              <span>Public</span>
-            </div>
-          )}
-        </div>
-      </div>
-    ),
+      );
+    },
     [
       closeProductEditMenu,
       closeProductMoreMenu,
+      cancelRenamingProduct,
+      editingProductId,
+      editingProductName,
       handleCopyLink,
       handleDownloadImage,
       handleManageFolders,
@@ -758,18 +1058,58 @@ export default function Products() {
       openProductCreations,
       productEditMenu,
       productMoreMenu,
+      startRenamingProduct,
+      submitProductRename,
       toggleProductEditMenu,
       toggleProductMoreMenu,
       toggleProductPublished,
     ],
   );
 
-  const handleCloseCreationsModal = () => {
+  const handleCloseCreationsModal = useCallback(() => {
+    setIsFullSizeOpen(false);
+    setIsProductFullSizeOpen(false);
+    setSelectedFullImage(null);
+    setCreationMoreMenu(null);
+    setGalleryEditMenu(null);
+    setCurrentImageIndex(0);
     setCreationsModalProduct(null);
     if (productSlug) {
       navigate("/create/products", { replace: true });
     }
-  };
+  }, [navigate, productSlug]);
+
+  useEffect(() => {
+    if (!creationsModalProduct) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isFullSizeOpen) {
+          closeFullSizeView();
+        } else if (isProductFullSizeOpen) {
+          closeProductFullSizeView();
+        } else {
+          handleCloseCreationsModal();
+        }
+      } else if (isFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        navigateFullSizeImage(event.key === "ArrowLeft" ? "prev" : "next");
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    closeFullSizeView,
+    closeProductFullSizeView,
+    creationsModalProduct,
+    handleCloseCreationsModal,
+    isFullSizeOpen,
+    isProductFullSizeOpen,
+    navigateFullSizeImage,
+  ]);
 
   return (
     <div className={layout.page}>
@@ -819,7 +1159,7 @@ export default function Products() {
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
                   {storedProducts.map(product => renderProductCard(product))}
                 </div>
               </div>
@@ -845,6 +1185,379 @@ export default function Products() {
               <button type="button" className={buttons.primary} onClick={confirmDeleteProduct}>
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isProductFullSizeOpen && creationsModalProduct && (
+        <div
+          className="fixed inset-0 z-[11200] bg-theme-black/80 flex items-center justify-center p-4"
+          onClick={closeProductFullSizeView}
+        >
+          <div
+            className="relative max-w-[95vw] max-h-[90vh] group flex items-center justify-center"
+            onClick={event => event.stopPropagation()}
+          >
+            <img
+              src={creationsModalProduct.imageUrl}
+              alt={creationsModalProduct.name}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+              <div className="pointer-events-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleProductEditMenu(creationsModalProduct.id, event.currentTarget);
+                  }}
+                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  title="Create options"
+                  aria-label="Create options"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={productEditMenu?.productId === creationsModalProduct.id ? productEditMenu?.anchor ?? null : null}
+                  open={productEditMenu?.productId === creationsModalProduct.id}
+                  onClose={closeProductEditMenu}
+                  zIndex={11250}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      const productForAction = creationsModalProduct;
+                      if (productForAction) {
+                        handleNavigateToImage(productForAction);
+                      }
+                      setCreationsModalProduct(null);
+                      setIsProductFullSizeOpen(false);
+                      setIsFullSizeOpen(false);
+                      closeProductEditMenu();
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Create image
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      const productForAction = creationsModalProduct;
+                      if (productForAction) {
+                        handleNavigateToVideo(productForAction);
+                      }
+                      setCreationsModalProduct(null);
+                      setIsProductFullSizeOpen(false);
+                      setIsFullSizeOpen(false);
+                      closeProductEditMenu();
+                    }}
+                  >
+                    <Camera className="h-4 w-4" />
+                    Make video
+                  </button>
+                </ImageActionMenuPortal>
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleProductMoreMenu(creationsModalProduct.id, event.currentTarget);
+                  }}
+                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  title="More actions"
+                  aria-label="More actions"
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={productMoreMenu?.productId === creationsModalProduct.id ? productMoreMenu?.anchor ?? null : null}
+                  open={productMoreMenu?.productId === creationsModalProduct.id}
+                  onClose={closeProductMoreMenu}
+                  zIndex={11250}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      void handleDownloadImage(creationsModalProduct.imageUrl);
+                      closeProductMoreMenu();
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      void handleCopyLink(creationsModalProduct.imageUrl);
+                      closeProductMoreMenu();
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy link
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      handleManageFolders(creationsModalProduct.imageUrl);
+                      closeProductMoreMenu();
+                    }}
+                  >
+                    <FolderIcon className="h-4 w-4" />
+                    Manage folders
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleProductPublished(creationsModalProduct);
+                    closeProductMoreMenu();
+                  }}
+                >
+                    {creationsModalProduct.published ? (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        Unpublish
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-4 w-4" />
+                        Publish
+                      </>
+                    )}
+                  </button>
+                </ImageActionMenuPortal>
+              </div>
+              <button
+                type="button"
+                className="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                onClick={event => {
+                  event.stopPropagation();
+                  closeProductFullSizeView();
+                }}
+                aria-label="Close full size view"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 pointer-events-none px-4 pb-4">
+              <div className={`${glass.promptDark} pointer-events-auto rounded-[24px] border border-theme-dark/60 px-5 py-4`}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-base font-raleway font-normal text-theme-white truncate">
+                    {creationsModalProduct.name}
+                  </p>
+                  {creationsModalProduct.published && (
+                    <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                      <Globe className="w-3 h-3 text-theme-text" />
+                      <span>Public</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
+        <div
+          className="fixed inset-0 z-[11300] bg-theme-black/80 flex items-start justify-center p-4"
+          onClick={closeFullSizeView}
+        >
+          <div
+            className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-10"
+            onClick={event => event.stopPropagation()}
+          >
+            {galleryImages.filter(image => image.productId === creationsModalProduct.id).length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.stopPropagation();
+                    navigateFullSizeImage("prev");
+                  }}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:text-theme-text transition-all duration-100`}
+                  title="Previous image"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.stopPropagation();
+                    navigateFullSizeImage("next");
+                  }}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:text-theme-text transition-all duration-100`}
+                  title="Next image"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            <img
+              src={selectedFullImage.url}
+              alt={selectedFullImage.prompt || creationsModalProduct.name}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+              <div className="pointer-events-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
+                  }}
+                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  title="Create options"
+                  aria-label="Create options"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={galleryEditMenu?.imageUrl === selectedFullImage.url ? galleryEditMenu?.anchor ?? null : null}
+                  open={galleryEditMenu?.imageUrl === selectedFullImage.url}
+                  onClose={closeGalleryEditMenu}
+                  zIndex={11400}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      goToCreateImageFromGallery(selectedFullImage);
+                      closeGalleryEditMenu();
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Create image
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      goToCreateVideoFromGallery(selectedFullImage);
+                      closeGalleryEditMenu();
+                    }}
+                  >
+                    <Camera className="h-4 w-4" />
+                    Make video
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      handleEditCreation(selectedFullImage);
+                      closeGalleryEditMenu();
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit image
+                  </button>
+                </ImageActionMenuPortal>
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
+                  }}
+                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  title="More options"
+                  aria-label="More options"
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={creationMoreMenu?.imageUrl === selectedFullImage.url ? creationMoreMenu?.anchor ?? null : null}
+                  open={creationMoreMenu?.imageUrl === selectedFullImage.url}
+                  onClose={closeCreationMoreMenu}
+                  zIndex={11400}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      handleDownloadImage(selectedFullImage.url);
+                      closeCreationMoreMenu();
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      void handleCopyLink(selectedFullImage.url);
+                      closeCreationMoreMenu();
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy link
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={event => {
+                      event.stopPropagation();
+                      handleManageFolders(selectedFullImage.url);
+                      closeCreationMoreMenu();
+                    }}
+                  >
+                    <FolderIcon className="h-4 w-4" />
+                    Manage folders
+                  </button>
+                </ImageActionMenuPortal>
+              </div>
+              <button
+                type="button"
+                className="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                onClick={event => {
+                  event.stopPropagation();
+                  closeFullSizeView();
+                }}
+                aria-label="Close full size view"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 pointer-events-none px-4 pb-4">
+              <div className={`${glass.promptDark} pointer-events-auto rounded-[24px] border border-theme-dark/60 px-5 py-4 space-y-3`}>
+                <p className="text-sm font-raleway text-theme-white">
+                  {selectedFullImage.prompt || "Generated image"}
+                </p>
+                <div className="flex items-center justify-between gap-2 text-xs font-raleway text-theme-white/70">
+                  <span>
+                    {selectedFullImage.timestamp
+                      ? new Date(selectedFullImage.timestamp).toLocaleString()
+                      : "Recently generated"}
+                  </span>
+                  {selectedFullImage.isPublic && (
+                    <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                      <Globe className="w-3 h-3 text-theme-text" />
+                      <span>Public</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -878,7 +1591,19 @@ export default function Products() {
 
               <div className="flex justify-start">
                 <div className="w-1/3 sm:w-1/5 lg:w-1/6">
-                  <div className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg">
+                  <div
+                    className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View ${creationsModalProduct.name} full size`}
+                    onClick={openProductFullSizeView}
+                    onKeyDown={event => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openProductFullSizeView();
+                      }
+                    }}
+                  >
                     <div
                       className="relative aspect-square overflow-hidden card-media-frame"
                       data-has-image={Boolean(creationsModalProduct.imageUrl)}
@@ -923,26 +1648,12 @@ export default function Products() {
                       className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
                       role="button"
                       tabIndex={0}
-                      aria-label={`Create with ${creationsModalProduct.name}`}
-                      onClick={() => {
-                        navigate("/create/image", {
-                          state: {
-                            selectedModel: image.model,
-                            promptToPrefill: image.prompt,
-                            productId: creationsModalProduct.id,
-                          },
-                        });
-                      }}
+                      aria-label={`Open full view for ${creationsModalProduct.name}`}
+                      onClick={() => openFullSizeView(image)}
                       onKeyDown={event => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          navigate("/create/image", {
-                            state: {
-                              selectedModel: image.model,
-                              promptToPrefill: image.prompt,
-                              productId: creationsModalProduct.id,
-                            },
-                          });
+                          openFullSizeView(image);
                         }
                       }}
                     >
@@ -951,6 +1662,126 @@ export default function Products() {
                         data-has-image={Boolean(image.url)}
                         style={createCardImageStyle(image.url)}
                       >
+                        <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
+                          <button
+                            type="button"
+                            onClick={event => {
+                              event.stopPropagation();
+                              toggleGalleryEditMenu(image.url, event.currentTarget);
+                            }}
+                            className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                              galleryEditMenu?.imageUrl === image.url
+                                ? "opacity-100 pointer-events-auto"
+                                : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                            }`}
+                            title="Create or edit"
+                            aria-label="Create or edit"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <ImageActionMenuPortal
+                            anchorEl={galleryEditMenu?.imageUrl === image.url ? galleryEditMenu?.anchor ?? null : null}
+                            open={galleryEditMenu?.imageUrl === image.url}
+                            onClose={closeGalleryEditMenu}
+                          >
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={event => {
+                                event.stopPropagation();
+                                goToCreateImageFromGallery(image);
+                                closeGalleryEditMenu();
+                              }}
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                              Create image
+                            </button>
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={event => {
+                                event.stopPropagation();
+                                goToCreateVideoFromGallery(image);
+                                closeGalleryEditMenu();
+                              }}
+                            >
+                              <Camera className="h-4 w-4" />
+                              Make video
+                            </button>
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={event => {
+                                event.stopPropagation();
+                                handleEditCreation(image);
+                                closeGalleryEditMenu();
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit image
+                            </button>
+                          </ImageActionMenuPortal>
+                        </div>
+                        <div className="absolute right-2 top-2 z-10 flex gap-1">
+                          <button
+                            type="button"
+                            onClick={event => {
+                              event.stopPropagation();
+                              toggleCreationMoreMenu(image.url, event.currentTarget);
+                            }}
+                            className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                              creationMoreMenu?.imageUrl === image.url
+                                ? "opacity-100 pointer-events-auto"
+                                : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+                            }`}
+                            title="More options"
+                            aria-label="More options"
+                          >
+                            <MoreHorizontal className="w-3.5 h-3.5" />
+                          </button>
+                          <ImageActionMenuPortal
+                            anchorEl={creationMoreMenu?.imageUrl === image.url ? creationMoreMenu?.anchor ?? null : null}
+                            open={creationMoreMenu?.imageUrl === image.url}
+                            onClose={closeCreationMoreMenu}
+                          >
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={event => {
+                                event.stopPropagation();
+                                handleDownloadImage(image.url);
+                                closeCreationMoreMenu();
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </button>
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={event => {
+                                event.stopPropagation();
+                                void handleCopyLink(image.url);
+                                closeCreationMoreMenu();
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                              Copy link
+                            </button>
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              onClick={event => {
+                                event.stopPropagation();
+                                handleManageFolders(image.url);
+                                closeCreationMoreMenu();
+                              }}
+                            >
+                              <FolderIcon className="h-4 w-4" />
+                              Manage folders
+                            </button>
+                          </ImageActionMenuPortal>
+                        </div>
                         <img
                           src={image.url}
                           alt={image.prompt || "Generated image"}

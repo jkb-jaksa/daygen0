@@ -785,31 +785,34 @@ export default function Avatars() {
   ) => {
     const disableModalTrigger = options?.disableModalTrigger ?? false;
     const keyPrefix = options?.keyPrefix ?? "avatar";
+    const isEditing = editingAvatarId === avatar.id;
+    const isInteractive = !(disableModalTrigger || isEditing);
+
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
         className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
-          disableModalTrigger ? "" : " cursor-pointer"
+          isInteractive ? " cursor-pointer" : ""
         }`}
-        role={disableModalTrigger ? undefined : "button"}
-        tabIndex={disableModalTrigger ? -1 : 0}
-        aria-label={disableModalTrigger ? undefined : `View creations for ${avatar.name}`}
+        role={isInteractive ? "button" : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
+        aria-label={isInteractive ? `View creations for ${avatar.name}` : undefined}
         onClick={
-          disableModalTrigger
-            ? undefined
-            : () => {
+          isInteractive
+            ? () => {
                 openCreationsModal(avatar);
               }
+            : undefined
         }
         onKeyDown={
-          disableModalTrigger
-            ? undefined
-            : event => {
+          isInteractive
+            ? event => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   openCreationsModal(avatar);
                 }
               }
+            : undefined
         }
       >
         <div
@@ -979,15 +982,15 @@ export default function Avatars() {
             className="h-full w-full object-cover relative z-[1]"
             loading="lazy"
           />
-          <div className="absolute bottom-0 left-0 right-0 hidden lg:block">
+          <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
             <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
               {editingAvatarId === avatar.id ? (
                 <form
-                  className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+                  className="flex items-center gap-2"
                   onSubmit={submitRename}
                 >
                   <input
-                    className={inputs.compact}
+                    className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
                     value={editingName}
                     onChange={event => setEditingName(event.target.value)}
                     onKeyDown={event => {
@@ -998,21 +1001,19 @@ export default function Avatars() {
                     }}
                     autoFocus
                   />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="submit"
-                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
-                      onClick={cancelRenaming}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                    onClick={cancelRenaming}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </form>
               ) : (
                 <div className="flex items-center justify-between">
@@ -1020,12 +1021,11 @@ export default function Avatars() {
                     <p className="text-base font-raleway font-normal text-theme-text">{avatar.name}</p>
                     <button
                       type="button"
-                      className={`text-theme-white/70 hover:text-theme-text transition-colors duration-200 ${
-                        disableModalTrigger 
-                          ? 'opacity-100' 
-                          : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      onClick={() => startRenaming(avatar)}
+                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        startRenaming(avatar);
+                      }}
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
@@ -1042,6 +1042,64 @@ export default function Avatars() {
               )}
             </div>
           </div>
+        </div>
+        {/* Mobile version of avatar name and publish status */}
+        <div className="lg:hidden space-y-2 px-4 py-4">
+          {editingAvatarId === avatar.id ? (
+            <form
+              className="flex items-center gap-2 justify-center"
+              onSubmit={submitRename}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <input
+                className="flex-1 max-w-xs rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
+                value={editingName}
+                onChange={event => setEditingName(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    cancelRenaming();
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+              >
+                <Check className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                onClick={cancelRenaming}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </form>
+          ) : (
+            <div className="text-center space-y-2">
+              <div className="flex items-center gap-2 justify-center">
+                <p className="text-base font-raleway font-normal text-theme-text">{avatar.name}</p>
+                <button
+                  type="button"
+                  className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    startRenaming(avatar);
+                  }}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
+              {avatar.published && (
+                <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                  <Globe className="w-3 h-3 text-theme-text" />
+                  <span>Public</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1342,7 +1400,7 @@ export default function Avatars() {
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
                   {avatars.map(avatar => renderAvatarCard(avatar))}
                 </div>
               </div>
