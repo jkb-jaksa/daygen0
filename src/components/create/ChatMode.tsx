@@ -928,7 +928,7 @@ const ChatMode: React.FC = () => {
       )}
       <div className={`${layout.container} pb-6`}>
         <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-3">
-          <aside className="hidden h-full w-40 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
+          <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />

@@ -2,6 +2,7 @@ import { memo, useRef } from "react";
 import { Package, Upload, X } from "lucide-react";
 import type { GalleryImageLike } from "../create/types";
 import { buttons, glass, inputs } from "../../styles/designSystem";
+import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { ProductSelection } from "./types";
 
 interface ProductCreationModalProps {
@@ -122,8 +123,16 @@ function ProductCreationModalComponent({
               </div>
               <div className="w-48 mx-auto">
                 {selection ? (
-                  <div className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50">
-                    <img src={selection.imageUrl} alt="Selected product" className="h-full w-full object-cover" />
+                  <div
+                    className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50 card-media-frame"
+                    data-has-image={Boolean(selection?.imageUrl)}
+                    style={createCardImageStyle(selection?.imageUrl)}
+                  >
+                    <img
+                      src={selection.imageUrl}
+                      alt="Selected product"
+                      className="h-full w-full object-cover relative z-[1]"
+                    />
                     <button
                       type="button"
                       onClick={() => {

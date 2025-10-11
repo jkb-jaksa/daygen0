@@ -1,4 +1,4 @@
-import { Search, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, Sun, Moon, Package, LayoutGrid } from "lucide-react";
+import { Search, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, SunMedium, Moon, Package, LayoutGrid } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -42,7 +42,6 @@ const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
   { key: "text", label: "text", Icon: Edit },
   { key: "image", label: "image", Icon: ImageIcon },
   { key: "video", label: "video", Icon: VideoIcon },
-  { key: "avatars", label: "avatars", Icon: Users },
   { key: "audio", label: "audio", Icon: Volume2 },
 ];
 
@@ -84,7 +83,7 @@ export default function Navbar() {
       {isDay ? (
         <Moon className="w-4 h-4" aria-hidden="true" />
       ) : (
-        <Sun className="w-4 h-4" aria-hidden="true" />
+        <SunMedium className="w-4 h-4" aria-hidden="true" />
       )}
       {showLabel && <span className="text-sm font-raleway">{isDay ? "Night" : "Day"}</span>}
     </button>
@@ -256,7 +255,6 @@ export default function Navbar() {
       text: "/create/text",
       image: "/create/image",
       video: "/create/video",
-      avatars: "/create/avatars",
       audio: "/create/audio",
     };
     const target = targetMap[category] ?? "/create";

@@ -32,6 +32,7 @@ import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } f
 import type { AvatarSelection, StoredAvatar } from "./avatars/types";
 import { debugError } from "../utils/debug";
 import { createAvatarRecord, findAvatarBySlug, normalizeStoredAvatars } from "../utils/avatars";
+import { createCardImageStyle } from "../utils/cardImageStyle";
 
 type AvatarNavigationState = {
   openAvatarCreator?: boolean;
@@ -811,7 +812,11 @@ export default function Avatars() {
               }
         }
       >
-        <div className="relative aspect-square overflow-hidden">
+        <div
+          className="relative aspect-square overflow-hidden card-media-frame"
+          data-has-image={Boolean(avatar.imageUrl)}
+          style={createCardImageStyle(avatar.imageUrl)}
+        >
           <div className="absolute left-2 top-2 z-10">
             <button
               type="button"
@@ -971,7 +976,7 @@ export default function Avatars() {
           <img
             src={avatar.imageUrl}
             alt={avatar.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover relative z-[1]"
             loading="lazy"
           />
           <div className="absolute bottom-0 left-0 right-0 hidden lg:block">
@@ -1065,7 +1070,11 @@ export default function Avatars() {
       className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
-      <div className="relative aspect-square overflow-hidden">
+      <div
+        className="relative aspect-square overflow-hidden card-media-frame"
+        data-has-image={Boolean(image.url)}
+        style={createCardImageStyle(image.url)}
+      >
         <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
           <div className="relative">
             <button
@@ -1210,7 +1219,7 @@ export default function Avatars() {
         <img
           src={image.url}
           alt={image.prompt || "Avatar creation"}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover relative z-[1]"
           loading="lazy"
         />
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100 hidden lg:block">
@@ -1322,7 +1331,7 @@ export default function Avatars() {
 
             {hasAvatars && (
               <div className="w-full max-w-6xl space-y-5">
-                <div className="flex items-center gap-3 text-left">
+                <div className="flex items-center gap-2 text-left">
                   <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
                   <button
                     type="button"

@@ -76,7 +76,7 @@ function UseCaseCard({
       <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
-          <h2 className="text-[16px] font-medium tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
     </div>
@@ -195,7 +195,7 @@ function Home() {
               </div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
-                  className={`${glass.surface} flex flex-col rounded-3xl border-theme-dark p-4 lg:h-full`}
+                  className={`${glass.surface} rounded-3xl border-theme-dark p-4 lg:h-full`}
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >
@@ -242,9 +242,9 @@ function Home() {
                           imageAlt="Artistic images example"
                         />
                         <UseCaseCard
-                          title="product visualizations"
+                          title="product placement"
                           imageUrl="/product visualizations.png"
-                          imageAlt="Product visualizations example"
+                          imageAlt="Product placement example"
                         />
                         <UseCaseCard
                           title="virtual try-on"
