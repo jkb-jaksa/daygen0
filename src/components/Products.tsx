@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Package, Plus, Trash2, Info, X } from "lucide-react";
+import { Package, Plus, Trash2, X, Image as ImageIcon } from "lucide-react";
 
-import { layout, glass, buttons } from "../styles/designSystem";
+import { layout, glass, buttons, headings, iconButtons, text } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import useToast from "../hooks/useToast";
@@ -46,6 +46,9 @@ export default function Products() {
   const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
   const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
   const pendingSlugRef = useRef<string | null>(null);
+  const hasProducts = storedProducts.length > 0;
+  const productsSubtitle =
+    "Save product images you love so you can reuse them instantly when crafting prompts.";
 
   useEffect(() => {
     let isMounted = true;
@@ -303,6 +306,94 @@ export default function Products() {
     setIsDraggingProduct(false);
   };
 
+  const openProductCreations = useCallback(
+    (product: StoredProduct) => {
+      setCreationsModalProduct(product);
+      navigate(`/create/products/${product.slug}`);
+    },
+    [navigate],
+  );
+
+  const handleUseProduct = useCallback(
+    (product: StoredProduct) => {
+      navigate("/create/image", {
+        state: {
+          focusPromptBar: true,
+          productId: product.id,
+        },
+      });
+    },
+    [navigate],
+  );
+
+  const renderProductCard = useCallback(
+    (product: StoredProduct) => (
+      <div
+        key={`product-${product.id}`}
+        className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-label={`View creations for ${product.name}`}
+        onClick={() => openProductCreations(product)}
+        onKeyDown={event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openProductCreations(product);
+          }
+        }}
+      >
+        <div className="relative aspect-square overflow-hidden">
+          <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
+            <button
+              type="button"
+              className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+              onClick={event => {
+                event.stopPropagation();
+                handleUseProduct(product);
+              }}
+              title="Use Product"
+              aria-label="Use Product"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="absolute right-2 top-2 z-10 flex gap-2">
+            <button
+              type="button"
+              className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+              onClick={event => {
+                event.stopPropagation();
+                setProductToDelete(product);
+              }}
+              title={`Delete ${product.name}`}
+              aria-label={`Delete ${product.name}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+          <div className="absolute bottom-0 left-0 right-0 hidden lg:block">
+            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
+              <div className="flex flex-col gap-1">
+                <p className="text-base font-raleway font-normal text-theme-text">{product.name}</p>
+                <p className="text-xs font-raleway text-theme-white/60">
+                  Added {formatDate(product.createdAt) || "recently"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="lg:hidden space-y-1 px-4 py-4 text-center">
+          <p className="text-base font-raleway font-normal text-theme-text">{product.name}</p>
+          <p className="text-xs font-raleway text-theme-white/60">
+            Added {formatDate(product.createdAt) || "recently"}
+          </p>
+        </div>
+      </div>
+    ),
+    [handleUseProduct, openProductCreations],
+  );
+
   const handleCloseCreationsModal = () => {
     setCreationsModalProduct(null);
     if (productSlug) {
@@ -311,95 +402,60 @@ export default function Products() {
   };
 
   return (
-    <div className={`${layout.page} px-4 pb-20 pt-16`}>
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
-        <header className="text-center space-y-4">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-full border border-theme-mid/40 bg-theme-black/60">
-            <Package className="h-7 w-7 text-theme-text" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-raleway text-theme-text">Your Products</h1>
-            <p className="mx-auto max-w-2xl text-base font-raleway text-theme-white/70">
-              Save product images you love so you can reuse them instantly when crafting prompts.
-            </p>
-          </div>
-          <div className="flex justify-center gap-3">
-            <button
-              type="button"
-              className={buttons.primary}
-              onClick={() => {
-                navigate("/create/image", {
-                  state: {
-                    focusPromptBar: true,
-                  },
-                });
-              }}
+    <div className={layout.page}>
+      <div className="relative z-10">
+        <section className={layout.container}>
+          <div
+            className={
+              hasProducts
+                ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
+                : "flex min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center justify-center px-4"
+            }
+          >
+            <header
+              className={`w-full max-w-3xl ${hasProducts ? "text-left" : "text-center"} ${hasProducts ? "" : "mx-auto"}`}
             >
-              Open Create
-            </button>
-            <button type="button" className={buttons.ghost} onClick={handleOpenCreationModal}>
-              Add a Product
-            </button>
-          </div>
-        </header>
-
-        {storedProducts.length === 0 ? null : (
-          <section className="space-y-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <h2 className="text-xl font-raleway text-theme-text">Saved products</h2>
-                <p className="text-sm font-raleway text-theme-white/60">
-                  {storedProducts.length} {storedProducts.length === 1 ? "product" : "products"}
+              <div className={`${headings.tripleHeading.container} ${hasProducts ? "text-left" : "text-center"}`}>
+                <p className={`${headings.tripleHeading.eyebrow} ${hasProducts ? "justify-start" : "justify-center"}`}>
+                  <Package className="h-4 w-4 text-theme-white/60" />
+                  products
+                </p>
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                  Add your Product.
+                </h1>
+                <p className={`${headings.tripleHeading.description} ${hasProducts ? "" : "mx-auto"}`}>
+                  {productsSubtitle}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <button type="button" className={buttons.primary} onClick={handleOpenCreationModal}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Product
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {storedProducts.map(product => (
-                <div key={product.id} className={`${glass.promptDark} group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark/60 p-4 transition-colors duration-200`}>
-                  <div className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark/70 bg-theme-black/50">
-                    <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
-                  </div>
-                  <div className="mt-4 flex items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <h3 className="truncate text-lg font-raleway text-theme-text">{product.name}</h3>
-                      <p className="text-xs font-raleway text-theme-white/50">
-                        Added {formatDate(product.createdAt) || "recently"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded-full border border-theme-mid/50 px-2.5 py-1 text-xs font-raleway text-theme-white transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
-                        onClick={() => {
-                          setCreationsModalProduct(product);
-                          navigate(`/create/products/${product.slug}`);
-                        }}
-                      >
-                        <Info className="h-3.5 w-3.5" />
-                        View creations
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex size-8 items-center justify-center rounded-full border border-theme-mid/50 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={() => setProductToDelete(product)}
-                        aria-label={`Delete ${product.name}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+              {!hasProducts && (
+                <div className="mt-8 flex justify-center">
+                  <button type="button" className={buttons.primary} onClick={handleOpenCreationModal}>
+                    Add a Product
+                  </button>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              )}
+            </header>
+
+            {hasProducts && (
+              <div className="w-full max-w-6xl space-y-5">
+                <div className="flex items-center gap-3 text-left">
+                  <h2 className="text-2xl font-normal font-raleway text-theme-text">My Products</h2>
+                  <button
+                    type="button"
+                    className={iconButtons.lg}
+                    onClick={handleOpenCreationModal}
+                    aria-label="Add Product"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
+                  {storedProducts.map(product => renderProductCard(product))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
 
       {productToDelete && (

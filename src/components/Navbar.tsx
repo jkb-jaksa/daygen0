@@ -55,7 +55,7 @@ const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideI
 ];
 
 const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
-  { to: "/create/gallery", label: "gallery", Icon: LayoutGrid },
+  { to: "/gallery", label: "gallery", Icon: LayoutGrid },
   { to: "/create/avatars", label: "avatars", Icon: Users },
   { to: "/create/products", label: "products", Icon: Package },
 ];
