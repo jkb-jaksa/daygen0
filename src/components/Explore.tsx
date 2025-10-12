@@ -464,18 +464,19 @@ const ImageActionMenuPortal: React.FC<{
     if (!open || !anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
     const width = Math.max(200, rect.width);
-    const margin = 8;
+    const horizontalMargin = 8;
+    const verticalOffset = 2;
 
     const availableLeft = Math.max(
-      margin,
+      horizontalMargin,
       (typeof window !== "undefined"
-        ? window.innerWidth - width - margin
+        ? window.innerWidth - width - horizontalMargin
         : rect.left)
     );
-    const left = Math.min(Math.max(margin, rect.left), availableLeft);
+    const left = Math.min(Math.max(horizontalMargin, rect.left), availableLeft);
 
     setPos({
-      top: rect.bottom + margin,
+      top: rect.bottom + verticalOffset,
       left,
       width,
     });
@@ -491,8 +492,9 @@ const ImageActionMenuPortal: React.FC<{
       const anchorRect = anchorEl.getBoundingClientRect();
       const menuRect = menuRef.current.getBoundingClientRect();
       const width = Math.max(200, anchorRect.width);
-      const margin = 8;
-      
+      const horizontalMargin = 8;
+      const verticalOffset = 2;
+
       let top;
       if (isRecreateMenu) {
         // For recreate menu, always position above the button
@@ -504,12 +506,12 @@ const ImageActionMenuPortal: React.FC<{
       } else {
         // Position below the button for other menus (full-size view)
         // Reduce margin to bring dropdown closer to button
-        top = anchorRect.bottom + 2;
+        top = anchorRect.bottom + verticalOffset;
       }
-      
-      const availableLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
+
+      const availableLeft = Math.max(horizontalMargin, window.innerWidth - menuRect.width - horizontalMargin);
       const left = Math.min(
-        Math.max(margin, anchorRect.left),
+        Math.max(horizontalMargin, anchorRect.left),
         availableLeft
       );
 

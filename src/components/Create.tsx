@@ -292,8 +292,10 @@ const ModelMenuPortal: React.FC<{
       // Position above if there's more space above, otherwise position below
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
 
+      const verticalOffset = 2;
+
       setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
         transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
@@ -404,8 +406,10 @@ const ImageActionMenuPortal: React.FC<{
     const updatePosition = () => {
       if (!anchorEl) return;
       const rect = anchorEl.getBoundingClientRect();
+      const verticalOffset = 2;
+
       setPos({
-        top: rect.bottom + 8,
+        top: rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(200, rect.width),
       });

@@ -171,8 +171,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
       // Position above if there's more space above, otherwise position below
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
       
+      const verticalOffset = 2;
+
       setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: 384,
         transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)',

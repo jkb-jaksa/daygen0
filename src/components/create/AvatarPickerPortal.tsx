@@ -40,8 +40,10 @@ export const AvatarPickerPortal: React.FC<AvatarPickerPortalProps> = ({
       const spaceBelow = viewportHeight - rect.bottom;
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
 
+      const verticalOffset = 2;
+
       setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: 288,
         transform: shouldPositionAbove ? "translateY(-100%)" : "translateY(0)",

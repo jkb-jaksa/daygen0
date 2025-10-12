@@ -196,8 +196,10 @@ const SettingsPortal: React.FC<{
     const updatePosition = () => {
       if (!anchorRef.current) return;
       const rect = anchorRef.current.getBoundingClientRect();
+      const verticalOffset = 2;
+
       setPos({
-        top: rect.top - 8,
+        top: rect.top - verticalOffset,
         left: rect.left,
         width: Math.max(320, rect.width),
       });

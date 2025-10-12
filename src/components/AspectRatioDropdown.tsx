@@ -46,8 +46,10 @@ export const AspectRatioDropdown: React.FC<AspectRatioDropdownProps> = ({
       const spaceBelow = viewportHeight - rect.bottom;
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
 
+      const verticalOffset = 2;
+
       setPosition({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(rect.width, 240),
         transform: shouldPositionAbove ? "translateY(-100%)" : "translateY(0)",

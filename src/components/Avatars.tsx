@@ -60,8 +60,10 @@ const ImageActionMenuPortal: React.FC<{
     const updatePosition = () => {
       if (!anchorEl) return;
       const rect = anchorEl.getBoundingClientRect();
+      const verticalOffset = 2;
+
       setPos({
-        top: rect.bottom + 8,
+        top: rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(200, rect.width),
       });
