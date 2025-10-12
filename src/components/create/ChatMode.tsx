@@ -1129,13 +1129,13 @@ const ChatMode: React.FC = () => {
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
-                        <div
-                          data-tooltip-for="reference-tooltip-chat"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                          style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                        >
-                          Upload Reference Image
-                        </div>
+                      <div
+                        data-tooltip-for="reference-tooltip-chat"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Reference Image
+                      </div>
                       </div>
                       <button
                         ref={avatarButtonRef}

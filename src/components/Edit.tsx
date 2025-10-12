@@ -1523,8 +1523,8 @@ export default function Edit() {
             <button
               type="button"
               onClick={handleRefsClick}
-              title="Add reference image"
-              aria-label="Add reference image"
+              title="Reference Image"
+              aria-label="Reference Image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
               className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-n-black/20 text-n-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
             >

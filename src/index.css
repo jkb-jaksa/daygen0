@@ -592,17 +592,17 @@ picture {
 
 .range-brand { -webkit-appearance: none; appearance: none; background: transparent; }
 .range-brand:focus { outline: none; }
-.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--theme-orange-1); cursor: pointer; border: none; transform: translateY(-50%); }
-.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--theme-orange-1); cursor: pointer; border: none; transform: translateY(-50%); }
+.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--theme-text); cursor: pointer; border: none; transform: translateY(-50%); }
+.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--theme-text); cursor: pointer; border: none; transform: translateY(-50%); }
 .range-brand::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background:
-  radial-gradient(circle at 0 50%, var(--theme-orange-1) 2px, transparent 3px) repeat-x,
-  linear-gradient(90deg, var(--theme-orange-1), rgba(184,192,192,0.5));
+  radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
+  linear-gradient(90deg, var(--theme-text), rgba(184,192,192,0.5));
   background-size: 12px 4px, 100% 4px;
   background-position: 0 0, 0 0;
 }
 .range-brand::-moz-range-track { height: 4px; border-radius: 999px; background:
-  radial-gradient(circle at 0 50%, var(--theme-orange-1) 2px, transparent 3px) repeat-x,
-  linear-gradient(90deg, var(--theme-orange-1), rgba(184,192,192,0.5));
+  radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
+  linear-gradient(90deg, var(--theme-text), rgba(184,192,192,0.5));
   background-size: 12px 4px, 100% 4px;
   background-position: 0 0, 0 0;
 }
@@ -872,19 +872,19 @@ html[data-theme="day"] .prompt-surface {
 .panel-warm-bg {
   background:
     linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    var(--theme-orange-1);
+    var(--theme-text);
 }
 
 /* Warm gradient utility - solid orange */
 .bg-warm-gradient {
-  background: var(--theme-orange-1);
+  background: var(--theme-text);
 }
 
 
 
 /* Text warm gradient - solid orange with 3D effect */
 .text-warm-gradient {
-  color: var(--theme-orange-1);
+  color: var(--theme-text);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.3),
     0 -1px 2px rgba(0, 0, 0, 0.2),
@@ -1020,7 +1020,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Brand orange text utility - solid orange with 3D effect */
 .text-theme-orange { 
-  color: var(--theme-orange-1);
+  color: var(--theme-text);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.3),
     0 -1px 2px rgba(0, 0, 0, 0.2),
@@ -1029,7 +1029,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Softer, lighter warm for active states with 3D effect */
 .text-theme-orange-soft { 
-  color: color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
+  color: color-mix(in srgb, var(--theme-text) 78%, white 22%);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.25),
     0 -1px 2px rgba(0, 0, 0, 0.15),
@@ -1038,7 +1038,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Brand color - primary orange with 3D effect */
 .text-brand { 
-  color: var(--theme-orange-1);
+  color: var(--theme-text);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.3),
     0 -1px 2px rgba(0, 0, 0, 0.2),
@@ -1095,7 +1095,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Lighter text color classes for pricing with 3D effect */
 .text-orange-lighter {
-  color: color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
+  color: color-mix(in srgb, var(--theme-text) 78%, white 22%);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.25),
     0 -1px 2px rgba(0, 0, 0, 0.15),
@@ -1518,7 +1518,7 @@ html[data-theme="day"] .card-media-frame::before {
   border-color: var(--theme-light);
 }
 .promptbar.drag-active {
-  border-color: var(--theme-orange-1);
+  border-color: var(--theme-text);
   border-width: 1px;
 }
 
@@ -1678,21 +1678,21 @@ select option:not(:disabled) {
 
 select option:hover,
 select option:not(:disabled):hover {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
 
 select option:checked,
 select option:not(:disabled):checked {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
 
 select option:focus,
 select option:not(:disabled):focus {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1700,7 +1700,7 @@ select option:not(:disabled):focus {
 /* For WebKit browsers (Chrome, Safari, Edge) */
 select option:checked:focus,
 select option:not(:disabled):checked:focus {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1708,7 +1708,7 @@ select option:not(:disabled):checked:focus {
 /* For Firefox */
 select option:checked:focus-visible,
 select option:not(:disabled):checked:focus-visible {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1724,12 +1724,12 @@ select option::-webkit-scrollbar-track {
 }
 
 select option::-webkit-scrollbar-thumb {
-  background: var(--theme-orange-1);
+  background: var(--theme-text);
   border-radius: 4px;
 }
 
 select option::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
+  background: color-mix(in srgb, var(--theme-text) 78%, white 22%);
 }
 
 /* Force override for all select elements in the app */
@@ -1740,13 +1740,13 @@ select option::-webkit-scrollbar-thumb:hover {
 }
 
 * select option:hover {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
 
 * select option:checked {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -2044,7 +2044,7 @@ html[data-theme="day"] .faq-section {
 }
 
 .faq-card__trigger:focus-visible {
-  outline: 2px solid var(--theme-orange-1);
+  outline: 2px solid var(--theme-text);
   outline-offset: 4px;
 }
 

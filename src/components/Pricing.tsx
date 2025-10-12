@@ -209,7 +209,7 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
           {tier.features.map((feature, index) => (
             <div key={index} className="flex items-start gap-3">
               <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-                tier.id === 'free' ? 'bg-theme-orange-1/20' : 
+                tier.id === 'free' ? 'bg-theme-text/20' : 
                 tier.id === 'pro' ? 'bg-brand-cyan/20' : 
                 'bg-brand-red/20'
               }`}>
