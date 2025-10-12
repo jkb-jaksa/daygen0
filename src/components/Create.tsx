@@ -514,6 +514,7 @@ const Create: React.FC = () => {
   const settingsRef = useRef<HTMLButtonElement | null>(null);
   const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
+  const avatarQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
@@ -3786,7 +3787,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     });
   }, []);
 
-  const processAvatarImageFile = useCallback(async (file: File) => {
+  const processAvatarImageFile = useCallback(async (file: File, options?: { openCreationModal?: boolean; resetName?: boolean }) => {
     // Pre-validate the file
     const validationError = validateAvatarFile(file);
     if (validationError) {
@@ -3825,13 +3826,26 @@ const [batchSize, setBatchSize] = useState<number>(1);
       const result = reader.result;
       if (typeof result === "string") {
         setAvatarSelection({ imageUrl: result, source: "upload" });
+        if (options?.openCreationModal) {
+          if (options.resetName !== false) {
+            setAvatarName("");
+          }
+          setIsAvatarCreationModalOpen(true);
+          setIsAvatarPickerOpen(false);
+        }
       }
     };
     reader.onerror = () => {
     setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
-  }, [validateAvatarFile, getImageDimensions]);
+  }, [validateAvatarFile, getImageDimensions, setAvatarSelection, setAvatarName, setIsAvatarCreationModalOpen, setIsAvatarPickerOpen]);
+
+  const handleAvatarQuickUpload = useCallback((file: File | null) => {
+    if (!file) return;
+    setIsDraggingAvatar(false);
+    void processAvatarImageFile(file, { openCreationModal: true });
+  }, [processAvatarImageFile, setIsDraggingAvatar]);
 
   const handleSaveNewAvatar = useCallback(async () => {
     if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
@@ -3847,6 +3861,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     const updatedAvatars = [record, ...storedAvatars];
     setStoredAvatars(updatedAvatars);
+    setPendingAvatarId(record.id);
 
     try {
       await setPersistedValue(storagePrefix, "avatars", updatedAvatars);
@@ -7344,7 +7359,7 @@ const handleGenerate = async () => {
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
                               return (
-                                <div className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                <div key={avatar.id} className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleAvatarSelect(avatar)}
@@ -7397,8 +7412,103 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-light">
-                            You haven't saved any Avatars yet. Visit the Avatars page to create one.
+                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-6 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                                isDraggingAvatar
+                                  ? 'border-brand bg-brand/10'
+                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                              }`}
+                              onDragOver={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setAvatarUploadError(null);
+                                setIsDraggingAvatar(true);
+                              }}
+                              onDragLeave={() => {
+                                setIsDraggingAvatar(false);
+                              }}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setIsDraggingAvatar(false);
+                                const files = Array.from(event.dataTransfer?.files ?? []);
+                                const file = files.find(item => item.type.startsWith('image/')) ?? null;
+                                if (!file) {
+                                  setAvatarUploadError('Please choose an image file.');
+                                  return;
+                                }
+                                setAvatarUploadError(null);
+                                handleAvatarQuickUpload(file);
+                              }}
+                              onClick={() => {
+                                setAvatarUploadError(null);
+                                avatarQuickUploadInputRef.current?.click();
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setAvatarUploadError(null);
+                                  avatarQuickUploadInputRef.current?.click();
+                                }
+                              }}
+                              onPaste={(event) => {
+                                const items = Array.from(event.clipboardData?.items ?? []);
+                                const file = items.find(item => item.type.startsWith('image/'))?.getAsFile() ?? null;
+                                if (!file) {
+                                  return;
+                                }
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setAvatarUploadError(null);
+                                handleAvatarQuickUpload(file);
+                              }}
+                            >
+                              <div className="flex size-9 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
+                                <Upload className="h-4 w-4 text-n-text" />
+                              </div>
+                              <p className="text-sm text-n-white">
+                                Drag & drop or click to upload an Avatar image
+                              </p>
+                              <button
+                                type="button"
+                                className={`${buttons.primary} !w-fit !px-4 !py-1.5 text-sm inline-flex items-center gap-2`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setAvatarUploadError(null);
+                                  avatarQuickUploadInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="w-4 h-4" />
+                                Upload
+                              </button>
+                            </div>
+                            <input
+                              ref={avatarQuickUploadInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0] ?? null;
+                                event.target.value = '';
+                                if (!file) {
+                                  return;
+                                }
+                                if (!file.type.startsWith('image/')) {
+                                  setAvatarUploadError('Please choose an image file.');
+                                  return;
+                                }
+                                setAvatarUploadError(null);
+                                handleAvatarQuickUpload(file);
+                              }}
+                            />
+                            {avatarUploadError && (
+                              <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                {avatarUploadError}
+                              </p>
+                            )}
                           </div>
                         )}
                         {!storedAvatars.length && (

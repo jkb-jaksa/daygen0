@@ -1354,17 +1354,22 @@ export default function Avatars() {
     };
   }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView]);
 
+  const shouldCenterEmptyState = !hasAvatars && !selection;
+  const emptyStateLayoutClass = [
+    "flex w-full min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center px-4",
+    shouldCenterEmptyState
+      ? "justify-center"
+      : "justify-start gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20",
+  ].join(" ");
+  const pageLayoutClass = hasAvatars
+    ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
+    : emptyStateLayoutClass;
+
   return (
     <div className={layout.page}>
       <div className="relative z-10">
         <section className={`${layout.container}`}>
-          <div
-            className={
-              hasAvatars
-                ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
-                : "flex min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center justify-center px-4"
-            }
-          >
+          <div className={pageLayoutClass}>
             <header
               className={`w-full max-w-3xl ${hasAvatars ? "text-left" : "text-center"} ${hasAvatars ? "" : "mx-auto"}`}
             >

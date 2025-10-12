@@ -84,18 +84,18 @@ function AvatarCreationOptionsComponent({
 
   return (
     <div className={`flex flex-col gap-6 ${className ?? ""}`}>
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark p-6`}>
-          <div className="mb-6 flex items-center justify-center gap-3">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark p-6 flex flex-col`}>
+          <div className="mb-4 flex items-center justify-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
               <Upload className="h-4 w-4 text-theme-white" />
             </div>
             <h3 className="text-xl font-raleway text-theme-text">Upload your Image</h3>
           </div>
-          <div className="mx-auto w-full max-w-md">
+          <div className="mx-auto w-full max-w-md flex-1 flex items-center justify-center">
             {selection ? (
               <div
-                className="card-media-frame relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50"
+                className="card-media-frame relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50 w-48"
                 data-has-image={Boolean(selection?.imageUrl)}
                 style={createCardImageStyle(selection?.imageUrl)}
               >
@@ -110,23 +110,15 @@ function AvatarCreationOptionsComponent({
                     onClearSelection();
                     onUploadError(null);
                   }}
-                  className="absolute right-1.5 top-1.5 rounded-full bg-theme-black/80 p-1 text-theme-white transition-colors duration-200 hover:bg-theme-black hover:text-theme-text"
+                  className={`absolute right-1 top-1 rounded-full p-1.5 text-theme-white transition-colors duration-200 hover:text-theme-text z-10 ${glass.promptDark}`}
                   aria-label="Remove selected image"
                 >
                   <X className="h-3 w-3" />
                 </button>
-                <button
-                  type="button"
-                  onClick={triggerFileBrowse}
-                  className="absolute bottom-1.5 left-1.5 rounded-full bg-theme-black/80 p-1 text-theme-white transition-colors duration-200 hover:bg-theme-black hover:text-theme-text"
-                  aria-label="Change image"
-                >
-                  <Upload className="h-3 w-3" />
-                </button>
               </div>
             ) : (
               <label
-                className={`flex w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed py-6 px-6 text-center text-sm font-raleway text-theme-white transition-colors duration-200 ${
+                className={`flex w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed min-h-[180px] py-4 px-6 text-center text-sm font-raleway text-theme-white transition-colors duration-200 ${
                   isDragging
                     ? "border-brand bg-brand/10"
                     : "border-theme-white/30 bg-theme-black/60 hover:border-theme-text/50"
@@ -177,15 +169,15 @@ function AvatarCreationOptionsComponent({
           )}
         </div>
 
-        <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark p-6`}>
-          <div className="mb-6 flex items-center justify-center gap-3">
+        <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark p-6 flex flex-col`}>
+          <div className="mb-4 flex items-center justify-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
               <Users className="h-4 w-4 text-theme-white" />
             </div>
             <h3 className="text-xl font-raleway text-theme-text">Choose from your Creations</h3>
           </div>
 
-          <div className="max-h-48 overflow-y-auto pr-1">
+          <div className="mx-auto w-full max-w-md flex-1">
             {hasGalleryImages ? (
               <div className="grid grid-cols-3 gap-3">
                 {galleryImages.map(image => {
@@ -215,7 +207,7 @@ function AvatarCreationOptionsComponent({
                 })}
               </div>
             ) : (
-              <div className="mx-auto w-full max-w-sm rounded-2xl border border-theme-dark bg-theme-black/50 p-6 text-center">
+              <div className="w-full rounded-2xl border border-theme-dark bg-theme-black/50 flex items-center justify-center min-h-[180px] py-6 px-6 text-center">
                 <p className="text-base font-raleway text-theme-white">
                   Generate an image in the studio to see it here.
                 </p>
@@ -228,9 +220,9 @@ function AvatarCreationOptionsComponent({
       {selection && (
         <div className="flex flex-col items-center gap-6">
           <label className="flex w-fit flex-col space-y-2">
-            <span className="text-sm font-raleway text-theme-white/70">Name</span>
+            <span className="text-sm font-raleway text-theme-white">Name</span>
             <input
-              className={`${inputs.compact} !w-64`}
+              className={`${inputs.compact} !w-64 text-theme-text`}
               placeholder="Enter your Avatar name"
               value={avatarName}
               onChange={(event) => onAvatarNameChange(event.target.value)}
@@ -243,7 +235,7 @@ function AvatarCreationOptionsComponent({
             disabled={disableSave}
             onClick={onSave}
           >
-            Save Avatar
+            Save
           </button>
         </div>
       )}
