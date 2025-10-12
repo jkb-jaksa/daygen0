@@ -3112,12 +3112,15 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const renderEditButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
     const isOpen = imageActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
+    const isFullSize = menuId.startsWith('fullsize-actions-');
 
     return (
       <div className="relative">
         <button
           type="button"
           className={`image-action-btn parallax-large transition-opacity duration-100 ${
+            isFullSize ? 'image-action-btn--fullsize ' : ''
+          }${
             anyMenuOpen 
               ? 'opacity-100 pointer-events-auto' 
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -3130,7 +3133,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             toggleImageActionMenu(menuId, event.currentTarget, image);
           }}
         >
-          <Edit className="w-3.5 h-3.5" />
+          <Edit className="w-3 h-3" />
         </button>
         <ImageActionMenuPortal
           anchorEl={isOpen ? imageActionMenu?.anchor ?? null : null}
@@ -3205,12 +3208,15 @@ const [batchSize, setBatchSize] = useState<number>(1);
   ): React.JSX.Element => {
     const isOpen = moreActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
+    const isFullSize = menuId.startsWith('fullsize-actions-');
 
     return (
       <div className="relative">
         <button
           type="button"
           className={`image-action-btn parallax-large transition-opacity duration-100 ${
+            isFullSize ? 'image-action-btn--fullsize ' : ''
+          }${
             anyMenuOpen 
               ? 'opacity-100 pointer-events-auto' 
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -3223,7 +3229,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             toggleMoreActionMenu(menuId, event.currentTarget, image);
           }}
         >
-          <MoreHorizontal className="w-3.5 h-3.5" />
+          <MoreHorizontal className="w-3 h-3" />
         </button>
         <ImageActionMenuPortal
           anchorEl={isOpen ? moreActionMenu?.anchor ?? null : null}
@@ -3374,7 +3380,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             <div className="w-full p-4">
               <div className="mb-2">
                 <div className="relative">
-                  <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                  <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                     {img.prompt}
                     <button
                       data-copy-button="true"
@@ -3550,7 +3556,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               aria-pressed={isSelected}
               aria-label={isSelected ? 'Unselect image' : 'Select image'}
             >
-              {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+              {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
             </button>
           </div>
           {!isSelectMode && (
@@ -3578,7 +3584,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   title="Delete image"
                   aria-label="Delete image"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
                 <button
                   type="button"
@@ -3595,7 +3601,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                 >
                   <Heart
-                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-100 ${
+                    className={`heart-icon w-3 h-3 transition-colors duration-100 ${
                       favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                     }`}
                   />
@@ -5807,7 +5813,7 @@ const handleGenerate = async () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
+                                    <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 pl-1">
                                       {upload.file.name}
                                     </p>
                                     <p className="text-theme-white/60 text-xs font-raleway mt-1">
@@ -5829,7 +5835,7 @@ const handleGenerate = async () => {
                                 title="Delete upload" 
                                 aria-label="Delete upload"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3 h-3" />
                               </button>
                               <a 
                                 href={upload.previewUrl} 
@@ -5838,7 +5844,7 @@ const handleGenerate = async () => {
                                 title="Download image" 
                                 aria-label="Download image"
                               >
-                                <Download className="w-3.5 h-3.5" />
+                                <Download className="w-3 h-3" />
                               </a>
                             </div>
                           </div>
@@ -5938,7 +5944,7 @@ const handleGenerate = async () => {
                                 <div className="w-full p-4">
                                   <div className="mb-2">
                                     <div className="relative">
-                                      <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
+                                      <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                         {img.prompt && (
                                           <>
@@ -6076,7 +6082,7 @@ const handleGenerate = async () => {
                                   aria-pressed={isSelected}
                                   aria-label={isSelected ? 'Unselect image' : 'Select image'}
                                 >
-                                  {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                                  {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                                 </button>
                                 {!isSelectMode && (
                                   <div className={`ml-auto flex items-center gap-0.5 ${
@@ -6101,7 +6107,7 @@ const handleGenerate = async () => {
                                     title="Delete image" 
                                     aria-label="Delete image"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-3 h-3" />
                                   </button>
                                   <button 
                                     type="button" 
@@ -6118,7 +6124,7 @@ const handleGenerate = async () => {
                                     aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   >
                                     <Heart 
-                                      className={`heart-icon w-3.5 h-3.5 transition-colors duration-100 ${
+                                      className={`heart-icon w-3 h-3 transition-colors duration-100 ${
                                         favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                                       }`} 
                                     />
@@ -6317,7 +6323,7 @@ const handleGenerate = async () => {
                             title="Delete folder" 
                             aria-label="Delete folder"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
@@ -6409,7 +6415,7 @@ const handleGenerate = async () => {
                               <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         data-copy-button="true"
@@ -6536,15 +6542,15 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
                                 }}
-                                className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                                  imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                }`}
-                                title="Delete image" 
-                                aria-label="Delete image"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
+                              className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                                imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
+                                  ? 'opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                              }`}
+                              title="Delete image" 
+                              aria-label="Delete image"
+                            >
+                              <Trash2 className="w-3 h-3" />
                               </button>
                               <button 
                                 type="button" 
@@ -6559,11 +6565,11 @@ const handleGenerate = async () => {
                                 }`}
                                 title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                                 aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                              >
-                                <Heart 
-                                  className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                                    favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                                  }`} 
+                            >
+                              <Heart 
+                                className={`heart-icon w-3 h-3 transition-colors duration-200 ${
+                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                }`}
                                 />
                               </button>
                               {renderMoreButton(
@@ -6695,7 +6701,7 @@ const handleGenerate = async () => {
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
-                                        <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                        <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                           {seedanceVideo.prompt}
                                         </p>
                                       </div>
@@ -6732,7 +6738,7 @@ const handleGenerate = async () => {
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
-                                        <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                        <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                           {video.prompt}
                                         </p>
                                       </div>
@@ -6898,7 +6904,7 @@ const handleGenerate = async () => {
                               <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         data-copy-button="true"
@@ -7062,15 +7068,15 @@ const handleGenerate = async () => {
                                 event.stopPropagation();
                                 confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
                               }}
-                              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
-                                  ? 'opacity-100 pointer-events-auto'
-                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                              }`}
-                              title="Delete image" 
-                              aria-label="Delete image"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
+                            className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                              imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
+                                ? 'opacity-100 pointer-events-auto'
+                                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                            }`}
+                            title="Delete image" 
+                            aria-label="Delete image"
+                          >
+                            <Trash2 className="w-3 h-3" />
                             </button>
                             <button 
                               type="button" 
@@ -7087,7 +7093,7 @@ const handleGenerate = async () => {
                               aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                             >
                               <Heart 
-                                className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                className={`heart-icon w-3 h-3 transition-colors duration-200 ${
                                   favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                                 }`} 
                               />
@@ -8702,7 +8708,7 @@ const handleGenerate = async () => {
                       <button
                         type="button"
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext)}
-                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                        className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -8715,7 +8721,7 @@ const handleGenerate = async () => {
                       <button 
                         type="button" 
                         onClick={() => toggleFavorite(activeFullSizeImage.url)} 
-                        className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
+                        className={`image-action-btn image-action-btn--fullsize parallax-large favorite-toggle transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'

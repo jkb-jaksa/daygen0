@@ -874,7 +874,7 @@ export default function Avatars() {
               title="Edit Avatar"
               aria-label="Edit Avatar"
             >
-              <Edit className="w-3.5 h-3.5" />
+              <Edit className="w-3 h-3" />
             </button>
             <ImageActionMenuPortal
               anchorEl={disableModalTrigger 
@@ -949,7 +949,7 @@ export default function Avatars() {
               title="More options"
               aria-label="More options"
             >
-              <MoreHorizontal className="w-3.5 h-3.5" />
+              <MoreHorizontal className="w-3 h-3" />
             </button>
             <ImageActionMenuPortal
               anchorEl={avatarMoreMenu?.avatarId === avatar.id ? avatarMoreMenu?.anchor ?? null : null}
@@ -1180,7 +1180,7 @@ export default function Avatars() {
               title="Edit image"
               aria-label="Edit image"
             >
-              <Edit className="w-3.5 h-3.5" />
+              <Edit className="w-3 h-3" />
             </button>
             <ImageActionMenuPortal
               anchorEl={galleryEditMenu?.imageUrl === image.url ? galleryEditMenu?.anchor ?? null : null}
@@ -1247,7 +1247,7 @@ export default function Avatars() {
             title="More options"
             aria-label="More options"
           >
-            <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
           </button>
           <ImageActionMenuPortal
             anchorEl={creationMoreMenu?.imageUrl === image.url ? creationMoreMenu?.anchor ?? null : null}
@@ -1314,7 +1314,7 @@ export default function Avatars() {
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100 hidden lg:block">
           <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
             <div className="space-y-2">
-              <p className="text-sm font-raleway text-theme-white leading-relaxed line-clamp-3">
+              <p className="text-xs font-raleway text-theme-white leading-relaxed line-clamp-3">
                 {image.prompt || "Untitled creation"}
               </p>
               <div className="flex items-center justify-between text-xs font-raleway text-theme-white/70">
@@ -1558,11 +1558,11 @@ export default function Avatars() {
                     event.stopPropagation();
                     toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="Edit Avatar"
                   aria-label="Edit Avatar"
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Edit className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
@@ -1605,11 +1605,11 @@ export default function Avatars() {
                     event.stopPropagation();
                     toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="More options"
                   aria-label="More options"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
@@ -1753,11 +1753,11 @@ export default function Avatars() {
                     event.stopPropagation();
                     toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="Edit image"
                   aria-label="Edit image"
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Edit className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={galleryEditMenu?.imageUrl === selectedFullImage.url ? galleryEditMenu?.anchor ?? null : null}
@@ -1805,7 +1805,7 @@ export default function Avatars() {
                     event.stopPropagation();
                     confirmDeleteImage(selectedFullImage);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="Delete image" 
                   aria-label="Delete image"
                 >
@@ -1817,11 +1817,11 @@ export default function Avatars() {
                     event.stopPropagation();
                     toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="More options" 
                   aria-label="More options"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={creationMoreMenu?.imageUrl === selectedFullImage.url ? creationMoreMenu?.anchor ?? null : null}

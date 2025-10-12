@@ -2149,7 +2149,7 @@ const Explore: React.FC = () => {
                       <div className="w-full p-4">
                         <div className="mb-2">
                           <div className="relative">
-                            <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                            <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                               {item.prompt}
                               <button
                                 data-copy-button="true"
@@ -2647,7 +2647,7 @@ const Explore: React.FC = () => {
                       aria-label={selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                     >
                       <Heart
-                        className={`w-3.5 h-3.5 transition-colors duration-100 ${
+                        className={`w-3 h-3 transition-colors duration-100 ${
                           selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                         }`}
                         aria-hidden="true"
@@ -2661,7 +2661,7 @@ const Explore: React.FC = () => {
                           event.stopPropagation();
                           toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                         }}
-                        className="image-action-btn parallax-large pointer-events-auto"
+                        className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
                         aria-label="More options"
                       >
                         <MoreHorizontal className="size-4" aria-hidden="true" />
@@ -2700,7 +2700,7 @@ const Explore: React.FC = () => {
                   <button
                     type="button"
                     onClick={closeFullSizeView}
-                    className="image-action-btn parallax-large pointer-events-auto"
+                    className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
                     aria-label="Close"
                   >
                     <X className="size-4" aria-hidden="true" />

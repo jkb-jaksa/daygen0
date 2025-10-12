@@ -799,7 +799,7 @@ export default function Products() {
                 title="Edit Product"
                 aria-label="Edit Product"
               >
-                <Edit className="w-3.5 h-3.5" />
+                <Edit className="w-3 h-3" />
               </button>
               <ImageActionMenuPortal
                 anchorEl={productEditMenu?.productId === product.id ? productEditMenu?.anchor ?? null : null}
@@ -859,7 +859,7 @@ export default function Products() {
                 title="More actions"
                 aria-label="More actions"
               >
-                <MoreHorizontal className="w-3.5 h-3.5" />
+                <MoreHorizontal className="w-3 h-3" />
               </button>
               <ImageActionMenuPortal
                 anchorEl={productMoreMenu?.productId === product.id ? productMoreMenu?.anchor ?? null : null}
@@ -1225,11 +1225,11 @@ export default function Products() {
                     event.stopPropagation();
                     toggleProductEditMenu(creationsModalProduct.id, event.currentTarget);
                   }}
-                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
                   title="Create options"
                   aria-label="Create options"
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Edit className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={productEditMenu?.productId === creationsModalProduct.id ? productEditMenu?.anchor ?? null : null}
@@ -1280,11 +1280,11 @@ export default function Products() {
                     event.stopPropagation();
                     toggleProductMoreMenu(creationsModalProduct.id, event.currentTarget);
                   }}
-                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
                   title="More actions"
                   aria-label="More actions"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={productMoreMenu?.productId === creationsModalProduct.id ? productMoreMenu?.anchor ?? null : null}
@@ -1440,11 +1440,11 @@ export default function Products() {
                     event.stopPropagation();
                     toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
                   title="Create options"
                   aria-label="Create options"
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Edit className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={galleryEditMenu?.imageUrl === selectedFullImage.url ? galleryEditMenu?.anchor ?? null : null}
@@ -1495,11 +1495,11 @@ export default function Products() {
                     event.stopPropagation();
                     toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className="image-action-btn parallax-large transition-opacity duration-100 opacity-100"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
                   title="More options"
                   aria-label="More options"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={creationMoreMenu?.imageUrl === selectedFullImage.url ? creationMoreMenu?.anchor ?? null : null}
@@ -1672,7 +1672,7 @@ export default function Products() {
                             title="Create or edit"
                             aria-label="Create or edit"
                           >
-                            <Edit className="w-3.5 h-3.5" />
+                            <Edit className="w-3 h-3" />
                           </button>
                           <ImageActionMenuPortal
                             anchorEl={galleryEditMenu?.imageUrl === image.url ? galleryEditMenu?.anchor ?? null : null}
@@ -1732,7 +1732,7 @@ export default function Products() {
                             title="More options"
                             aria-label="More options"
                           >
-                            <MoreHorizontal className="w-3.5 h-3.5" />
+                            <MoreHorizontal className="w-3 h-3" />
                           </button>
                           <ImageActionMenuPortal
                             anchorEl={creationMoreMenu?.imageUrl === image.url ? creationMoreMenu?.anchor ?? null : null}
