@@ -1,6 +1,6 @@
-import { memo, useRef } from "react";
-import { Upload, X } from "lucide-react";
-import { buttons, inputs } from "../../styles/designSystem";
+import { memo, useRef, useEffect, useState } from "react";
+import { Upload, X, Check, Pencil } from "lucide-react";
+import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { AvatarSelection } from "./types";
 
@@ -12,6 +12,7 @@ export interface AvatarCreationOptionsProps {
   disableSave: boolean;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
+  onSaveName: () => void;
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
@@ -27,6 +28,7 @@ function AvatarCreationOptionsComponent({
   disableSave,
   onAvatarNameChange,
   onSave,
+  onSaveName,
   onClearSelection,
   onProcessFile,
   onDragStateChange,
@@ -34,6 +36,25 @@ function AvatarCreationOptionsComponent({
   className,
 }: AvatarCreationOptionsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditingName, setIsEditingName] = useState(true);
+
+  // Auto-focus the name input when an avatar is selected
+  useEffect(() => {
+    if (selection && nameInputRef.current && isEditingName) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
+    }
+  }, [selection, isEditingName]);
+
+  // Reset edit mode when selection changes
+  useEffect(() => {
+    if (selection) {
+      setIsEditingName(true);
+    }
+  }, [selection]);
 
   const validateAvatarFile = (file: File): string | null => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -87,6 +108,62 @@ function AvatarCreationOptionsComponent({
                 alt="Selected avatar"
                 className="relative z-[1] h-full w-full object-cover"
               />
+              {/* Avatar name overlay */}
+              <div className="absolute bottom-0 left-0 right-0 z-10">
+                <div className="PromptDescriptionBar rounded-b-2xl px-4 py-4">
+                  <div className="flex items-center gap-2 h-6">
+                    {isEditingName ? (
+                      <>
+                        <input
+                          ref={nameInputRef}
+                          className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white/40 focus:border-theme-text focus:outline-none h-6"
+                          placeholder="Enter your Avatar name"
+                          value={avatarName}
+                          onChange={(event) => onAvatarNameChange(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              setIsEditingName(false);
+                            }
+                          }}
+                        />
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                            onClick={() => setIsEditingName(false)}
+                            aria-label="Save avatar name"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                            onClick={() => onAvatarNameChange("")}
+                            aria-label="Clear avatar name"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="flex-1 text-base font-raleway font-normal text-theme-text leading-6 pl-2">
+                          {avatarName || "Untitled Avatar"}
+                        </p>
+                        <button
+                          type="button"
+                          className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                          onClick={() => setIsEditingName(true)}
+                          aria-label="Edit avatar name"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
             <button
               type="button"
@@ -165,16 +242,6 @@ function AvatarCreationOptionsComponent({
 
       {selection && (
         <div className="flex flex-col items-center gap-6">
-          <label className="flex w-fit flex-col space-y-2">
-            <span className="text-sm font-raleway text-theme-white">Name</span>
-            <input
-              className={`${inputs.compact} !w-64 text-theme-text`}
-              placeholder="Enter your Avatar name"
-              value={avatarName}
-              onChange={(event) => onAvatarNameChange(event.target.value)}
-            />
-          </label>
-
           <button
             type="button"
             className={`${buttons.primary} !w-fit ${disableSave ? "pointer-events-none opacity-50" : ""}`}

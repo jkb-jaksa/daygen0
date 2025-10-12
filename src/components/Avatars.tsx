@@ -1411,6 +1411,13 @@ export default function Avatars() {
                   disableSave={disableSave}
                   onAvatarNameChange={setAvatarName}
                   onSave={handleSaveAvatar}
+                  onSaveName={() => {
+                    // Just save the name, don't close the modal
+                    if (avatarName.trim() && selection) {
+                      // Name is already saved in state, no additional action needed
+                      // The user can continue editing or save the avatar later
+                    }
+                  }}
                   onClearSelection={() => setSelection(null)}
                   onProcessFile={processImageFile}
                   onDragStateChange={setIsDragging}
@@ -1469,6 +1476,13 @@ export default function Avatars() {
             onClose={resetPanel}
             onAvatarNameChange={setAvatarName}
             onSave={handleSaveAvatar}
+            onSaveName={() => {
+              // Just save the name, don't close the modal
+              if (avatarName.trim() && selection) {
+                // Name is already saved in state, no additional action needed
+                // The user can continue editing or save the avatar later
+              }
+            }}
             onClearSelection={() => setSelection(null)}
             onProcessFile={processImageFile}
             onDragStateChange={setIsDragging}
