@@ -932,76 +932,74 @@ export default function Products() {
               loading="lazy"
             />
             <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
-              <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
-                {isEditing ? (
-                  <form
-                    className="flex items-center gap-2"
-                    onSubmit={submitProductRename}
-                    onClick={event => event.stopPropagation()}
-                  >
-                    <input
-                      className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
-                      value={editingProductName}
-                      onChange={event => setEditingProductName(event.target.value)}
-                      onKeyDown={event => {
-                        if (event.key === "Escape") {
-                          event.preventDefault();
-                          cancelRenamingProduct();
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      type="submit"
-                      className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+              <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-2.5">
+                <div className="flex h-[32px] items-center gap-2">
+                  {isEditing ? (
+                    <form
+                      className="flex h-full flex-1 items-center gap-2"
+                      onSubmit={submitProductRename}
+                      onClick={event => event.stopPropagation()}
                     >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                      onClick={cancelRenamingProduct}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </form>
-                ) : (
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-base font-raleway font-normal text-theme-text truncate">{product.name}</p>
-                      <button
-                        type="button"
-                        className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                        onClick={event => {
-                          event.stopPropagation();
-                          startRenamingProduct(product);
+                      <input
+                        className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                        placeholder="Enter name..."
+                        value={editingProductName}
+                        onChange={event => setEditingProductName(event.target.value)}
+                        onKeyDown={event => {
+                          if (event.key === "Escape") {
+                            event.preventDefault();
+                            cancelRenamingProduct();
+                          }
                         }}
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
                       >
-                        <Pencil className="w-3 h-3" />
+                        <Check className="h-4 w-4" />
                       </button>
-                    </div>
-                    {product.published && (
-                      <div className={`${glass.promptDark} text-theme-white px-2 py-1 text-xs rounded-full font-medium font-raleway`}>
-                        <div className="flex items-center gap-1">
+                    </form>
+                  ) : (
+                    <>
+                      <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
+                        {product.name}
+                      </p>
+                      {!disableModalTrigger && (
+                        <button
+                          type="button"
+                          className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                          onClick={event => {
+                            event.stopPropagation();
+                            startRenamingProduct(product);
+                          }}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      )}
+                      {product.published && (
+                        <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                           <Globe className="w-3 h-3 text-theme-text" />
                           <span className="leading-none">Public</span>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-          <div className="lg:hidden space-y-2 px-4 py-4 text-center">
+          {/* Mobile version of product name and publish status */}
+          <div className="lg:hidden space-y-3 px-4 py-4">
             {isEditing ? (
               <form
-                className="flex items-center gap-2 justify-center"
+                className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5"
                 onSubmit={submitProductRename}
                 onClick={event => event.stopPropagation()}
               >
                 <input
-                  className="flex-1 max-w-xs rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
+                  className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                  placeholder="Enter name..."
                   value={editingProductName}
                   onChange={event => setEditingProductName(event.target.value)}
                   onKeyDown={event => {
@@ -1014,25 +1012,20 @@ export default function Products() {
                 />
                 <button
                   type="submit"
-                  className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                  className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
                 >
-                  <Check className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                  onClick={cancelRenamingProduct}
-                >
-                  <X className="h-3.5 w-3.5" />
+                  <Check className="h-4 w-4" />
                 </button>
               </form>
             ) : (
-              <div className="text-center space-y-2">
-                <div className="flex items-center gap-2 justify-center">
-                  <p className="text-base font-raleway font-normal text-theme-text">{product.name}</p>
+              <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5">
+                <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
+                  {product.name}
+                </p>
+                {!disableModalTrigger && (
                   <button
                     type="button"
-                    className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                    className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       startRenamingProduct(product);
@@ -1040,11 +1033,11 @@ export default function Products() {
                   >
                     <Pencil className="w-3 h-3" />
                   </button>
-                </div>
+                )}
                 {product.published && (
-                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                  <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                     <Globe className="w-3 h-3 text-theme-text" />
-                    <span>Public</span>
+                    <span className="leading-none">Public</span>
                   </div>
                 )}
               </div>
@@ -1132,7 +1125,7 @@ export default function Products() {
                 products
               </p>
               <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
-                Add your <span className="text-brand">Product</span>.
+                Create your <span className="text-brand">Product</span>.
               </h1>
               <p className={headings.tripleHeading.description}>
                 {productsSubtitle}
@@ -1163,7 +1156,7 @@ export default function Products() {
           {hasProducts && (
             <div className="w-full max-w-6xl space-y-5">
               <div className="flex items-center gap-2 text-left">
-                <h2 className="text-2xl font-normal font-raleway text-theme-text">My Products</h2>
+                <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Products</h2>
                 <button
                   type="button"
                   className={iconButtons.lg}
@@ -1218,16 +1211,18 @@ export default function Products() {
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
             />
             <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-              <div className="pointer-events-auto flex items-center gap-2">
+              <div className={`pointer-events-auto ${
+                productEditMenu?.productId === creationsModalProduct.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
                 <button
                   type="button"
                   onClick={event => {
                     event.stopPropagation();
                     toggleProductEditMenu(creationsModalProduct.id, event.currentTarget);
                   }}
-                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
-                  title="Create options"
-                  aria-label="Create options"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100"
+                  title="Edit Product"
+                  aria-label="Edit Product"
                 >
                   <Edit className="w-3 h-3" />
                 </button>
@@ -1274,15 +1269,19 @@ export default function Products() {
                     Make video
                   </button>
                 </ImageActionMenuPortal>
+              </div>
+              <div className={`pointer-events-auto ${
+                productMoreMenu?.productId === creationsModalProduct.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
                 <button
                   type="button"
                   onClick={event => {
                     event.stopPropagation();
                     toggleProductMoreMenu(creationsModalProduct.id, event.currentTarget);
                   }}
-                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
-                  title="More actions"
-                  aria-label="More actions"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100"
+                  title="More options"
+                  aria-label="More options"
                 >
                   <MoreHorizontal className="w-3 h-3" />
                 </button>
@@ -1351,39 +1350,38 @@ export default function Products() {
                   </button>
                 </ImageActionMenuPortal>
               </div>
-              <button
-                type="button"
-                className="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={event => {
-                  event.stopPropagation();
-                  closeProductFullSizeView();
-                }}
-                aria-label="Close full size view"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
-            <div className="absolute inset-x-0 bottom-0 pointer-events-none px-4 pb-4">
-              <div className="PromptDescriptionBar pointer-events-auto rounded-2xl p-4 text-theme-text">
-                <div className="flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-base font-raleway font-semibold leading-relaxed">
-                      {creationsModalProduct.name}
-                    </div>
-                    {creationsModalProduct.published && (
-                      <div className="mt-2 flex justify-center">
-                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                          <div className="flex items-center gap-1">
-                            <Globe className="w-3 h-3 text-theme-text" />
-                            <span className="leading-none">Public</span>
-                          </div>
+            
+            {/* Info bar - only on hover */}
+            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
+              productMoreMenu?.productId === creationsModalProduct.id || productEditMenu?.productId === creationsModalProduct.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}>
+              <div className="flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-base font-raleway leading-relaxed font-semibold">
+                    {creationsModalProduct.name}
+                  </div>
+                  {creationsModalProduct.published && (
+                    <div className="mt-2 flex justify-center">
+                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3 text-theme-text" />
+                          <span className="leading-none">Public</span>
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+            
+            <button
+              onClick={closeProductFullSizeView}
+              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              aria-label="Close full size view"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -1432,17 +1430,20 @@ export default function Products() {
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
             />
 
+            {/* Action buttons - only show on hover */}
             <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-              <div className="pointer-events-auto flex items-center gap-2">
+              <div className={`pointer-events-auto ${
+                galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
                 <button
                   type="button"
                   onClick={event => {
                     event.stopPropagation();
                     toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
-                  title="Create options"
-                  aria-label="Create options"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100"
+                  title="Edit image"
+                  aria-label="Edit image"
                 >
                   <Edit className="w-3 h-3" />
                 </button>
@@ -1489,13 +1490,17 @@ export default function Products() {
                     Edit image
                   </button>
                 </ImageActionMenuPortal>
+              </div>
+              <div className={`flex items-center gap-0.5 pointer-events-auto ${
+                galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
                 <button
                   type="button"
                   onClick={event => {
                     event.stopPropagation();
                     toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 opacity-100"
+                  className="image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100"
                   title="More options"
                   aria-label="More options"
                 >
@@ -1545,45 +1550,43 @@ export default function Products() {
                   </button>
                 </ImageActionMenuPortal>
               </div>
-              <button
-                type="button"
-                className="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={event => {
-                  event.stopPropagation();
-                  closeFullSizeView();
-                }}
-                aria-label="Close full size view"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
-
-            <div className="absolute inset-x-0 bottom-0 pointer-events-none px-4 pb-4">
-              <div className="PromptDescriptionBar pointer-events-auto rounded-2xl p-4 text-theme-text">
-                <div className="flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-sm font-raleway leading-relaxed">
-                      {selectedFullImage.prompt || "Generated image"}
+            
+            {/* Prompt and metadata info - only on hover */}
+            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
+              galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}>
+              <div className="flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-sm font-raleway leading-relaxed">
+                    {selectedFullImage.prompt || "Generated image"}
+                  </div>
+                  <div className="mt-2 flex justify-center items-center gap-2">
+                    <div className="text-xs font-raleway text-theme-white/70">
+                      {selectedFullImage.timestamp
+                        ? new Date(selectedFullImage.timestamp).toLocaleString()
+                        : "Recently generated"}
                     </div>
-                    <div className="mt-2 flex justify-center items-center gap-2">
-                      <div className="text-xs font-raleway text-theme-white/70">
-                        {selectedFullImage.timestamp
-                          ? new Date(selectedFullImage.timestamp).toLocaleString()
-                          : "Recently generated"}
-                      </div>
-                      {selectedFullImage.isPublic && (
-                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                          <div className="flex items-center gap-1">
-                            <Globe className="w-3 h-3 text-theme-text" />
-                            <span className="leading-none">Public</span>
-                          </div>
+                    {selectedFullImage.isPublic && (
+                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3 text-theme-text" />
+                          <span className="leading-none">Public</span>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
+            
+            <button
+              onClick={closeFullSizeView}
+              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              aria-label="Close full size view"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

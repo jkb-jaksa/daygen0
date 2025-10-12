@@ -198,7 +198,7 @@ function ProductCreationOptionsComponent({
             }}
           >
             <Upload className="default-orange-icon mx-auto mb-4" />
-            <p className="mb-2 text-xl font-raleway text-theme-text">Upload your product</p>
+            <p className="mb-2 text-xl font-raleway text-theme-text">Upload your image</p>
             <p className="mb-6 text-base font-raleway text-theme-white">
               Click anywhere, drag and drop, or paste your image to get started
             </p>
