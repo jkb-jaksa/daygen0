@@ -139,3 +139,7 @@ export const toolAccents = {
 } as const;
 
 export type ToolAccentKey = keyof typeof toolAccents;
+
+export const brandColors = {
+  orange: "text-theme-orange",
+};

@@ -145,16 +145,7 @@ export default function Products() {
   const [galleryEditMenu, setGalleryEditMenu] = useState<{ imageUrl: string; anchor: HTMLElement } | null>(null);
   const pendingSlugRef = useRef<string | null>(null);
   const hasProducts = storedProducts.length > 0;
-  const shouldCenterEmptyState = !hasProducts && !productSelection;
-  const emptyStateLayoutClass = [
-    "flex w-full min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center px-4",
-    shouldCenterEmptyState
-      ? "justify-center"
-      : "justify-start gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20",
-  ].join(" ");
-  const pageLayoutClass = hasProducts
-    ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
-    : emptyStateLayoutClass;
+  const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
   const productsSubtitle =
     "Save product images you love so you can reuse them instantly when crafting prompts.";
 
@@ -1131,71 +1122,64 @@ export default function Products() {
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10">
-        <section className={`${layout.container}`}>
-          <div className={pageLayoutClass}>
-            <header
-              className={`w-full max-w-3xl ${hasProducts ? "text-left" : "text-center"} ${hasProducts ? "" : "mx-auto"}`}
-            >
-              <div className={`${headings.tripleHeading.container} ${hasProducts ? "text-left" : "text-center"}`}>
-                <p className={`${headings.tripleHeading.eyebrow} ${hasProducts ? "justify-start" : "justify-center"}`}>
-                  <Package className="h-4 w-4 text-theme-white/60" />
-                  products
-                </p>
-                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
-                  Add your Product.
-                </h1>
-                <p className={`${headings.tripleHeading.description} ${hasProducts ? "" : "mx-auto"}`}>
-                  {productsSubtitle}
-                </p>
-              </div>
-              {!hasProducts && (
-                <div className="mt-8 w-full max-w-7xl mx-auto">
-                  <Suspense fallback={null}>
-                    <ProductCreationOptions
-                      selection={productSelection}
-                      uploadError={productUploadError}
-                      isDragging={isDraggingProduct}
-                      productName={productName}
-                      disableSave={!productSelection || !productName.trim()}
-                      galleryImages={galleryImages}
-                      hasGalleryImages={galleryImages.length > 0}
-                      onProductNameChange={setProductName}
-                      onSave={handleSaveNewProduct}
-                      onSelectFromGallery={imageUrl =>
-                        setProductSelection({ imageUrl, source: "gallery", sourceId: imageUrl })
-                      }
-                      onClearSelection={() => setProductSelection(null)}
-                      onProcessFile={processProductImageFile}
-                      onDragStateChange={setIsDraggingProduct}
-                      onUploadError={setProductUploadError}
-                    />
-                  </Suspense>
-                </div>
-              )}
-            </header>
+      <div className={layout.backdrop} aria-hidden />
+      <section className={`relative z-10 ${sectionLayoutClass}`}>
+        <div className={`${layout.container} flex flex-col gap-10`}>
+          <header className="max-w-3xl text-left">
+            <div className={`${headings.tripleHeading.container} text-left`}>
+              <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
+                <Package className="h-4 w-4 text-theme-white/60" />
+                products
+              </p>
+              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                Add your Product.
+              </h1>
+              <p className={headings.tripleHeading.description}>
+                {productsSubtitle}
+              </p>
+            </div>
+          </header>
 
-            {hasProducts && (
-              <div className="w-full max-w-6xl space-y-5">
-                <div className="flex items-center gap-2 text-left">
-                  <h2 className="text-2xl font-normal font-raleway text-theme-text">My Products</h2>
-                  <button
-                    type="button"
-                    className={iconButtons.lg}
-                    onClick={handleOpenCreationModal}
-                    aria-label="Add Product"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
-                  {storedProducts.map(product => renderProductCard(product))}
-                </div>
+          {!hasProducts && (
+            <div className="w-full">
+              <Suspense fallback={null}>
+                <ProductCreationOptions
+                  selection={productSelection}
+                  uploadError={productUploadError}
+                  isDragging={isDraggingProduct}
+                  productName={productName}
+                  disableSave={!productSelection || !productName.trim()}
+                  onProductNameChange={setProductName}
+                  onSave={handleSaveNewProduct}
+                  onClearSelection={() => setProductSelection(null)}
+                  onProcessFile={processProductImageFile}
+                  onDragStateChange={setIsDraggingProduct}
+                  onUploadError={setProductUploadError}
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {hasProducts && (
+            <div className="w-full max-w-6xl space-y-5">
+              <div className="flex items-center gap-2 text-left">
+                <h2 className="text-2xl font-normal font-raleway text-theme-text">My Products</h2>
+                <button
+                  type="button"
+                  className={iconButtons.lg}
+                  onClick={handleOpenCreationModal}
+                  aria-label="Add Product"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
               </div>
-            )}
-          </div>
-        </section>
-      </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
+                {storedProducts.map(product => renderProductCard(product))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {productToDelete && (
         <div className="fixed inset-0 z-[12000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
@@ -1829,12 +1813,9 @@ export default function Products() {
             isDragging={isDraggingProduct}
             productName={productName}
             disableSave={!productSelection || !productName.trim()}
-            galleryImages={galleryImages}
-            hasGalleryImages={galleryImages.length > 0}
             onClose={resetProductCreationPanel}
             onProductNameChange={setProductName}
             onSave={handleSaveNewProduct}
-            onSelectFromGallery={imageUrl => setProductSelection({ imageUrl, source: "gallery", sourceId: imageUrl })}
             onClearSelection={() => setProductSelection(null)}
             onProcessFile={processProductImageFile}
             onDragStateChange={setIsDraggingProduct}

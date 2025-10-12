@@ -1,6 +1,5 @@
 import { memo, useRef } from "react";
-import { Package, Upload, X } from "lucide-react";
-import type { GalleryImageLike } from "../create/types";
+import { Upload, X } from "lucide-react";
 import { buttons, glass, inputs } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { ProductSelection } from "./types";
@@ -12,12 +11,9 @@ interface ProductCreationModalProps {
   isDragging: boolean;
   productName: string;
   disableSave: boolean;
-  galleryImages: GalleryImageLike[];
-  hasGalleryImages: boolean;
   onClose: () => void;
   onProductNameChange: (value: string) => void;
   onSave: () => void;
-  onSelectFromGallery: (imageUrl: string) => void;
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
@@ -31,12 +27,9 @@ function ProductCreationModalComponent({
   isDragging,
   productName,
   disableSave,
-  galleryImages,
-  hasGalleryImages,
   onClose,
   onProductNameChange,
   onSave,
-  onSelectFromGallery,
   onClearSelection,
   onProcessFile,
   onDragStateChange,
@@ -104,24 +97,19 @@ function ProductCreationModalComponent({
           <div className="space-y-2">
             <h2 className="text-2xl font-raleway text-theme-text">Add a Product</h2>
             <p className="text-sm font-raleway text-theme-white">
-              Upload a product image or pick something you&apos;ve already generated so it&apos;s ready for quick reuse in your prompts.
+              Upload a product image so it&apos;s ready for quick reuse in your prompts.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark/60 p-4`}>
-              <div className="flex items-start gap-4 mb-4">
-                <div className="flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
-                  <Upload className="h-5 w-5 text-theme-white" />
+          <div className="flex justify-center">
+            <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark/60 p-6 w-full max-w-md`}>
+              <div className="mb-4 flex items-center justify-center gap-3">
+                <div className="flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
+                  <Upload className="h-4 w-4 text-theme-white" />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-raleway text-theme-text">Upload a new product image</h3>
-                  <p className="text-sm font-raleway text-theme-white">
-                    High-quality PNG, JPG, or WebP images up to 50 MB work best for consistent results.
-                  </p>
-                </div>
+                <h3 className="text-xl font-raleway text-theme-text">Upload your Product</h3>
               </div>
-              <div className="w-48 mx-auto">
+              <div className="w-64 mx-auto">
                 {selection ? (
                   <div
                     className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50 card-media-frame"
@@ -139,10 +127,10 @@ function ProductCreationModalComponent({
                         onClearSelection();
                         onUploadError(null);
                       }}
-                      className="absolute top-1.5 right-1.5 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1"
+                      className="absolute top-2 right-2 z-10 bg-theme-black/90 hover:bg-theme-black text-theme-white hover:text-theme-text hover:scale-110 transition-all duration-200 rounded-full p-2"
                       aria-label="Remove selected image"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
@@ -200,54 +188,6 @@ function ProductCreationModalComponent({
               {uploadError && (
                 <p className="mt-3 text-sm font-raleway text-red-400 text-center">{uploadError}</p>
               )}
-            </div>
-
-            <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark/60 p-4`}>
-              <div className="flex items-start gap-4 mb-4">
-                <div className="flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
-                  <Package className="h-5 w-5 text-theme-white" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-raleway text-theme-text">Choose from your creations</h3>
-                  <p className="text-sm font-raleway text-theme-white">
-                    Select an image you&apos;ve already generated in DayGen to turn it into a saved product.
-                  </p>
-                </div>
-              </div>
-
-              <div className="max-h-48 overflow-y-auto pr-1">
-                {hasGalleryImages ? (
-                  <div className="grid grid-cols-3 gap-3">
-                    {galleryImages.map(image => {
-                      const isSelected = selection?.source === "gallery" && selection.sourceId === image.url;
-                      return (
-                        <button
-                          type="button"
-                          key={image.url}
-                          className={`relative overflow-hidden rounded-2xl border ${
-                            isSelected ? "border-theme-light" : "border-theme-dark"
-                          }`}
-                          onClick={() => {
-                            onUploadError(null);
-                            onSelectFromGallery(image.url);
-                          }}
-                        >
-                          <img src={image.url} alt={image.prompt ?? "Gallery creation"} className="aspect-square w-full object-cover" />
-                          {isSelected && (
-                            <div className="absolute inset-0 border-4 border-theme-light pointer-events-none" aria-hidden="true" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="w-64 mx-auto rounded-2xl border border-theme-dark/70 bg-theme-black/50 p-6 text-center">
-                    <p className="text-sm font-raleway text-theme-white/70">
-                      Generate an image in the Create tab and it will appear here for quick selection.
-                    </p>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 

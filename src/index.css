@@ -232,10 +232,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-black-rgb: 6 8 6;
 
   /* Brand orange colors */
-  --n-orange-1: #FF9947;
-  --n-orange-1-rgb: 255 153 71;
-  --n-orange-2: #FF8C42;
-  --n-orange-2-rgb: 255 140 66;
+  --n-orange-1: #FF8C00;
+  --n-orange-1-rgb: 255 140 0;
+  --n-orange-2: #FF8C00;
+  --n-orange-2-rgb: 255 140 0;
 
   /* Daygen palette – day (light) */
   --d-text: #010202;
@@ -251,10 +251,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --d-black: #f8fbfb;
   --d-black-rgb: 248 251 251;
 
-  --d-orange-1: #FF8C42;
-  --d-orange-1-rgb: 255 140 66;
-  --d-orange-2: #FF7A2E;
-  --d-orange-2-rgb: 255 122 46;
+  --d-orange-1: #FF8C00;
+  --d-orange-1-rgb: 255 140 0;
+  --d-orange-2: #FF8C00;
+  --d-orange-2-rgb: 255 140 0;
   
   /* Brand cyan color */
   --brand-cyan: rgb(3,188,189);
@@ -293,10 +293,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --accent-cyan-ring: rgba(3, 188, 189, 0.5);
   --accent-cyan-text: #8cebeb;
 
-  --accent-orange-bg: rgba(255, 153, 71, 0.18);
-  --accent-orange-border: rgba(255, 153, 71, 0.42);
-  --accent-orange-ring: rgba(255, 153, 71, 0.5);
-  --accent-orange-text: #ffcb9f;
+  --accent-orange-bg: rgba(255, 140, 0, 0.18);
+  --accent-orange-border: rgba(255, 140, 0, 0.42);
+  --accent-orange-ring: rgba(255, 140, 0, 0.5);
+  --accent-orange-text: #ffb366;
 
   --accent-lime-bg: rgba(182, 242, 127, 0.18);
   --accent-lime-border: rgba(182, 242, 127, 0.4);
@@ -821,7 +821,7 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.1) 75%,
       rgba(0, 0, 0, 0.2) 100%
     ),
-    #FF9947;
+    #FF8C00;
   border: none;
   color: #060806;
   flex-shrink: 0;
@@ -840,7 +840,7 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.15) 75%,
       rgba(0, 0, 0, 0.25) 100%
     ),
-    color-mix(in srgb, #FF9947 78%, white 22%);
+    color-mix(in srgb, #FF8C00 78%, white 22%);
   border: none;
   color: #060806;
   box-shadow: 
@@ -858,7 +858,7 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.2) 75%,
       rgba(0, 0, 0, 0.3) 100%
     ),
-    color-mix(in srgb, #FF9947 70%, black 30%);
+    color-mix(in srgb, #FF8C00 70%, black 30%);
   border: none;
   color: #060806;
   box-shadow: 

@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { X } from "lucide-react";
-import type { GalleryImageLike } from "../create/types";
 import type { AvatarSelection } from "./types";
 import AvatarCreationOptions from "./AvatarCreationOptions";
 
@@ -11,17 +10,13 @@ interface AvatarCreationModalProps {
   isDragging: boolean;
   avatarName: string;
   disableSave: boolean;
-  galleryImages: GalleryImageLike[];
-  hasGalleryImages: boolean;
   onClose: () => void;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
-  onSelectFromGallery: (imageUrl: string) => void;
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
-  galleryOpenTrigger?: number;
 }
 
 function AvatarCreationModalComponent({
@@ -31,17 +26,13 @@ function AvatarCreationModalComponent({
   isDragging,
   avatarName,
   disableSave,
-  galleryImages,
-  hasGalleryImages,
   onClose,
   onAvatarNameChange,
   onSave,
-  onSelectFromGallery,
   onClearSelection,
   onProcessFile,
   onDragStateChange,
   onUploadError,
-  galleryOpenTrigger,
 }: AvatarCreationModalProps) {
   if (!open) {
     return null;
@@ -74,16 +65,12 @@ function AvatarCreationModalComponent({
             isDragging={isDragging}
             avatarName={avatarName}
             disableSave={disableSave}
-            galleryImages={galleryImages}
-            hasGalleryImages={hasGalleryImages}
             onAvatarNameChange={onAvatarNameChange}
             onSave={onSave}
-            onSelectFromGallery={onSelectFromGallery}
             onClearSelection={onClearSelection}
             onProcessFile={onProcessFile}
             onDragStateChange={onDragStateChange}
             onUploadError={onUploadError}
-            galleryOpenTrigger={galleryOpenTrigger}
           />
         </div>
       </div>

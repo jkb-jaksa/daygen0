@@ -350,14 +350,9 @@ export default function Avatars() {
       }
     };
     reader.onerror = () => {
-      setUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      setUploadError("We couldn't read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
-  }, []);
-
-  const selectImageFromGallery = useCallback((imageUrl: string) => {
-    setSelection({ imageUrl, source: "gallery", sourceId: imageUrl });
-    setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
   }, []);
 
   const handleSaveAvatar = useCallback(() => {
@@ -812,7 +807,6 @@ export default function Avatars() {
     [navigate],
   );
 
-  const hasGalleryImages = galleryImages.length > 0;
   const disableSave = !selection || !avatarName.trim();
   const subtitle = useMemo(() => defaultSubtitle, []);
 
@@ -1382,86 +1376,68 @@ export default function Avatars() {
     };
   }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView]);
 
-  const shouldCenterEmptyState = !hasAvatars && !selection;
-  const emptyStateLayoutClass = [
-    "flex w-full min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center px-4",
-    shouldCenterEmptyState
-      ? "justify-center"
-      : "justify-start gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20",
-  ].join(" ");
-  const pageLayoutClass = hasAvatars
-    ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
-    : emptyStateLayoutClass;
+  const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10">
-        <section className={`${layout.container}`}>
-          <div className={pageLayoutClass}>
-            <header
-              className={`w-full max-w-3xl ${hasAvatars ? "text-left" : "text-center"} ${hasAvatars ? "" : "mx-auto"}`}
-            >
-              <div
-                className={`${headings.tripleHeading.container} ${hasAvatars ? "text-left" : "text-center"}`}
+      <div className={layout.backdrop} aria-hidden />
+      <section className={`relative z-10 ${sectionLayoutClass}`}>
+        <div className={`${layout.container} flex flex-col gap-10`}>
+          <header className="max-w-3xl text-left">
+            <div className={`${headings.tripleHeading.container} text-left`}>
+              <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
+                <Users className="h-4 w-4 text-theme-white/60" />
+                avatars
+              </p>
+              <h1
+                className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
               >
-                <p className={`${headings.tripleHeading.eyebrow} ${hasAvatars ? "justify-start" : "justify-center"}`}>
-                  <Users className="h-4 w-4 text-theme-white/60" />
-                  avatars
-                </p>
-                <h1
-                  className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
-                >
-                  Create your Avatar.
-                </h1>
-                <p
-                  className={`${headings.tripleHeading.description} ${hasAvatars ? "" : "mx-auto"}`}
-                >
-                  {subtitle}
-                </p>
-              </div>
-              {!hasAvatars && (
-                <div className="mt-8 w-full max-w-7xl mx-auto">
-                  <Suspense fallback={null}>
-                    <AvatarCreationOptions
-                      selection={selection}
-                      uploadError={uploadError}
-                      isDragging={isDragging}
-                      avatarName={avatarName}
-                      disableSave={disableSave}
-                      galleryImages={galleryImages}
-                      hasGalleryImages={hasGalleryImages}
-                      onAvatarNameChange={setAvatarName}
-                      onSave={handleSaveAvatar}
-                      onSelectFromGallery={selectImageFromGallery}
-                      onClearSelection={() => setSelection(null)}
-                      onProcessFile={processImageFile}
-                      onDragStateChange={setIsDragging}
-                      onUploadError={setUploadError}
-                    />
-                  </Suspense>
-                </div>
-              )}
-            </header>
+                Create your Avatar.
+              </h1>
+              <p className={headings.tripleHeading.description}>
+                {subtitle}
+              </p>
+            </div>
+          </header>
 
-            {hasAvatars && (
-              <div className="w-full max-w-6xl space-y-5">
-                <div className="flex items-center gap-2 text-left">
-                  <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
-                  <button
-                    type="button"
-                    className={iconButtons.lg}
-                    onClick={openAvatarCreator}
-                    aria-label="Create Avatar"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
-                  {avatars.map(avatar => renderAvatarCard(avatar))}
-                </div>
+          {!hasAvatars && (
+            <div className="w-full">
+              <Suspense fallback={null}>
+                <AvatarCreationOptions
+                  selection={selection}
+                  uploadError={uploadError}
+                  isDragging={isDragging}
+                  avatarName={avatarName}
+                  disableSave={disableSave}
+                  onAvatarNameChange={setAvatarName}
+                  onSave={handleSaveAvatar}
+                  onClearSelection={() => setSelection(null)}
+                  onProcessFile={processImageFile}
+                  onDragStateChange={setIsDragging}
+                  onUploadError={setUploadError}
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {hasAvatars && (
+            <div className="w-full max-w-6xl space-y-5">
+              <div className="flex items-center gap-2 text-left">
+                <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
+                <button
+                  type="button"
+                  className={iconButtons.lg}
+                  onClick={openAvatarCreator}
+                  aria-label="Create Avatar"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
               </div>
-            )}
-          </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
+                {avatars.map(avatar => renderAvatarCard(avatar))}
+              </div>
+            </div>
+          )}
 
           {missingAvatarSlug && (
             <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
@@ -1478,9 +1454,8 @@ export default function Avatars() {
               </button>
             </div>
           )}
-
-        </section>
-      </div>
+        </div>
+      </section>
 
       {isPanelOpen && (
         <Suspense fallback={null}>
@@ -1491,12 +1466,9 @@ export default function Avatars() {
             isDragging={isDragging}
             avatarName={avatarName}
             disableSave={disableSave}
-            galleryImages={galleryImages}
-            hasGalleryImages={hasGalleryImages}
             onClose={resetPanel}
             onAvatarNameChange={setAvatarName}
             onSave={handleSaveAvatar}
-            onSelectFromGallery={selectImageFromGallery}
             onClearSelection={() => setSelection(null)}
             onProcessFile={processImageFile}
             onDragStateChange={setIsDragging}
