@@ -545,11 +545,13 @@ const Create: React.FC = () => {
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
   const [avatarGalleryOpenTrigger, setAvatarGalleryOpenTrigger] = useState(0);
   const [isProductCreationModalOpen, setIsProductCreationModalOpen] = useState(false);
   const [productSelection, setProductSelection] = useState<ProductSelection | null>(null);
   const [productUploadError, setProductUploadError] = useState<string | null>(null);
   const [isDraggingProduct, setIsDraggingProduct] = useState(false);
+  const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
 
   useEffect(() => {
     if (!isStyleModalOpen || typeof document === 'undefined') {
@@ -3882,6 +3884,31 @@ const [batchSize, setBatchSize] = useState<number>(1);
     void processAvatarImageFile(file, { openCreationModal: true });
   }, [processAvatarImageFile, setIsDraggingAvatar]);
 
+  const handleAvatarButtonDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverAvatarButton(true);
+  }, []);
+
+  const handleAvatarButtonDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverAvatarButton(false);
+  }, []);
+
+  const handleAvatarButtonDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverAvatarButton(false);
+    
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      handleAvatarQuickUpload(imageFile);
+    }
+  }, [handleAvatarQuickUpload]);
+
   const handleSaveNewAvatar = useCallback(async () => {
     if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
 
@@ -3992,6 +4019,31 @@ const [batchSize, setBatchSize] = useState<number>(1);
     },
     [processProductImageFile, setIsDraggingProduct],
   );
+
+  const handleProductButtonDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverProductButton(true);
+  }, []);
+
+  const handleProductButtonDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverProductButton(false);
+  }, []);
+
+  const handleProductButtonDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverProductButton(false);
+    
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      handleProductQuickUpload(imageFile);
+    }
+  }, [handleProductQuickUpload]);
 
   const handleSaveNewProduct = useCallback(async () => {
     if (!productSelection || !productName.trim() || !storagePrefix) return;
@@ -7251,7 +7303,10 @@ const handleGenerate = async () => {
                         type="button"
                         ref={avatarButtonRef}
                         onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                        onDragOver={handleAvatarButtonDragOver}
+                        onDragLeave={handleAvatarButtonDragLeave}
+                        onDrop={handleAvatarButtonDrop}
+                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand' : 'hover:bg-n-text/20'} text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                       >
                         <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
                         {!selectedAvatar && (
@@ -7293,7 +7348,10 @@ const handleGenerate = async () => {
                         type="button"
                         ref={productButtonRef}
                         onClick={() => setIsProductPickerOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                        onDragOver={handleProductButtonDragOver}
+                        onDragLeave={handleProductButtonDragLeave}
+                        onDrop={handleProductButtonDrop}
+                        className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand' : 'hover:bg-n-text/20'} text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
                       >
                         <Package className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
                         {!selectedProduct && (

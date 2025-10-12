@@ -54,7 +54,7 @@ function AvatarCreationModalComponent({
           <div className="space-y-2">
             <h2 className="text-2xl font-raleway text-theme-text">Create Avatar</h2>
             <p className="text-sm font-raleway text-theme-white">
-              Pick an image and give your avatar a name. We'll save it here for quick use later.
+              Pick an image and give your Avatar a name.
             </p>
           </div>
 

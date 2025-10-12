@@ -97,7 +97,7 @@ function ProductCreationModalComponent({
           <div className="space-y-2">
             <h2 className="text-2xl font-raleway text-theme-text">Add a Product</h2>
             <p className="text-sm font-raleway text-theme-white">
-              Upload a product image so it&apos;s ready for quick reuse in your prompts.
+              Pick an image and give your Product a name.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ function ProductCreationModalComponent({
                 <h3 className="text-xl font-raleway text-theme-text">Upload your Product</h3>
               </div>
               {selection ? (
-                <div className="w-48 mx-auto">
+                <div className="w-full max-w-[16rem] mx-auto">
                   <div
                     className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50 card-media-frame"
                     data-has-image={Boolean(selection?.imageUrl)}
