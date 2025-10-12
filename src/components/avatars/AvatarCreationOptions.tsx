@@ -116,8 +116,8 @@ function AvatarCreationOptionsComponent({
                       <>
                         <input
                           ref={nameInputRef}
-                          className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white/40 focus:border-theme-text focus:outline-none h-6"
-                          placeholder="Enter your Avatar name"
+                          className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none h-6"
+                          placeholder="Name..."
                           value={avatarName}
                           onChange={(event) => onAvatarNameChange(event.target.value)}
                           onKeyDown={(event) => {

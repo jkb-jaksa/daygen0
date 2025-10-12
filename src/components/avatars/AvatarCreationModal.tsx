@@ -45,7 +45,7 @@ function AvatarCreationModalComponent({
       <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] border border-theme-dark bg-theme-black/90 shadow-2xl">
         <button
           type="button"
-          className="absolute right-4 top-4 z-10 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
+          className="absolute right-4 top-4 z-10 w-10 h-10 flex items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white hover:text-theme-text"
           onClick={onClose}
           aria-label="Close avatar creation"
         >
