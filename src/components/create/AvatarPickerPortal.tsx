@@ -18,7 +18,7 @@ export const AvatarPickerPortal: React.FC<AvatarPickerPortalProps> = ({
   children,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 288, transform: "translateY(0)" });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: "auto", transform: "translateY(0)" });
   const {
     setScrollableRef,
     handleWheel,
@@ -45,7 +45,7 @@ export const AvatarPickerPortal: React.FC<AvatarPickerPortalProps> = ({
       setPos({
         top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
-        width: 288,
+        width: "auto",
         transform: shouldPositionAbove ? "translateY(-100%)" : "translateY(0)",
       });
     };
@@ -112,7 +112,7 @@ export const AvatarPickerPortal: React.FC<AvatarPickerPortalProps> = ({
         overflowY: "auto",
         overflowX: "hidden",
       }}
-      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-4 overscroll-contain scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
+      className={`${glass.prompt} rounded-3xl focus:outline-none shadow-2xl p-3 overscroll-contain scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

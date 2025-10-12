@@ -7394,7 +7394,7 @@ const handleGenerate = async () => {
                       onClose={() => setIsAvatarPickerOpen(false)}
                     >
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between px-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -7405,23 +7405,13 @@ const handleGenerate = async () => {
                           >
                             Your Avatars
                           </button>
-                          <button
-                            type="button"
-                            className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={() => {
-                              openAvatarCreationModal();
-                            }}
-                            aria-label="Create a new Avatar"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                         {storedAvatars.length > 0 ? (
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
                               return (
-                                <div key={avatar.id} className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                <div key={avatar.id} className="flex items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleAvatarSelect(avatar)}
@@ -7474,15 +7464,14 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4">
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-6 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
-                                isDraggingAvatar
-                                  ? 'border-brand bg-brand/10'
-                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
-                              }`}
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                              isDraggingAvatar
+                                ? 'border-brand bg-brand/10'
+                                : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                            }`}
                               onDragOver={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -7528,25 +7517,21 @@ const handleGenerate = async () => {
                                 handleAvatarQuickUpload(file);
                               }}
                             >
-                              <div className="flex size-9 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
-                                <Upload className="h-4 w-4 text-n-text" />
-                              </div>
                               <p className="text-sm text-n-white">
-                                Drag & drop or click to upload an Avatar image
+                                Drop your image.
                               </p>
                               <button
                                 type="button"
-                                className={`${buttons.primary} !w-fit !px-4 !py-1.5 text-sm inline-flex items-center gap-2`}
+                                className={`${buttons.primary} !w-fit !h-auto !px-2 !py-2 text-sm inline-flex items-center gap-1.5 rounded-lg`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setAvatarUploadError(null);
                                   avatarQuickUploadInputRef.current?.click();
                                 }}
                               >
-                                <Upload className="w-4 h-4" />
+                                <Upload className="w-3 h-3" />
                                 Upload
                               </button>
-                            </div>
                             <input
                               ref={avatarQuickUploadInputRef}
                               type="file"
@@ -7576,7 +7561,7 @@ const handleGenerate = async () => {
                         {!storedAvatars.length && (
                           <button
                             type="button"
-                            className="w-full inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
+                            className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                             onClick={() => {
                               navigate('/create/avatars');
                               setIsAvatarPickerOpen(false);
@@ -7594,7 +7579,7 @@ const handleGenerate = async () => {
                       onClose={() => setIsProductPickerOpen(false)}
                     >
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between px-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -7605,28 +7590,13 @@ const handleGenerate = async () => {
                           >
                             Your Products
                           </button>
-                          <button
-                            type="button"
-                            className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={() => {
-                              setIsProductPickerOpen(false);
-                              setIsProductCreationModalOpen(true);
-                              setProductName('');
-                              setProductSelection(null);
-                              setProductUploadError(null);
-                              setIsDraggingProduct(false);
-                            }}
-                            aria-label="Add a new Product"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                         {storedProducts.length > 0 ? (
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                             {storedProducts.map(product => {
                               const isActive = selectedProduct?.id === product.id;
                               return (
-                                <div key={product.id} className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                <div key={product.id} className="flex items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleProductSelect(product)}
@@ -7679,15 +7649,14 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4">
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-6 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
-                                isDraggingProduct
-                                  ? 'border-brand bg-brand/10'
-                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
-                              }`}
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                              isDraggingProduct
+                                ? 'border-brand bg-brand/10'
+                                : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                            }`}
                               onDragOver={event => {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -7733,25 +7702,21 @@ const handleGenerate = async () => {
                                 handleProductQuickUpload(file);
                               }}
                             >
-                              <div className="flex size-9 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
-                                <Upload className="h-4 w-4 text-n-text" />
-                              </div>
                               <p className="text-sm text-n-white">
-                                Drag & drop or click to upload a Product image
+                                Drop your image.
                               </p>
                               <button
                                 type="button"
-                                className={`${buttons.primary} !w-fit !px-4 !py-1.5 text-sm inline-flex items-center gap-2`}
+                                className={`${buttons.primary} !w-fit !h-auto !px-2 !py-2 text-sm inline-flex items-center gap-1.5 rounded-lg`}
                                 onClick={event => {
                                   event.stopPropagation();
                                   setProductUploadError(null);
                                   productQuickUploadInputRef.current?.click();
                                 }}
                               >
-                                <Upload className="w-4 h-4" />
+                                <Upload className="w-3 h-3" />
                                 Upload
                               </button>
-                            </div>
                             <input
                               ref={productQuickUploadInputRef}
                               type="file"
@@ -7781,7 +7746,7 @@ const handleGenerate = async () => {
                         {!storedProducts.length && (
                           <button
                             type="button"
-                            className="w-full inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
+                            className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                             onClick={() => {
                               navigate('/create/products');
                               setIsProductPickerOpen(false);
