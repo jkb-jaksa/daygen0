@@ -7226,14 +7226,14 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
+                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-light">
                             You haven't saved any Avatars yet. Visit the Avatars page to create one.
                           </div>
                         )}
                         {!storedAvatars.length && (
                           <button
                             type="button"
-                            className={`w-full ${buttons.glassPromptCompact}`}
+                            className="w-full inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                             onClick={() => {
                               navigate('/create/avatars');
                               setIsAvatarPickerOpen(false);
@@ -7336,14 +7336,14 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
+                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-light">
                             You haven't added any Products yet. Click the + button above to add one.
                           </div>
                         )}
                         {!storedProducts.length && (
                           <button
                             type="button"
-                            className={`w-full ${buttons.glassPromptCompact}`}
+                            className="w-full inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                             onClick={() => {
                               navigate('/create/products');
                               setIsProductPickerOpen(false);
