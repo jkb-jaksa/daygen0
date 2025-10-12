@@ -2007,7 +2007,7 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2019,7 +2019,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2031,7 +2031,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2112,7 +2112,7 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await copyImageLink(item);
@@ -2123,7 +2123,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await downloadImage(item);
@@ -2589,7 +2589,7 @@ const Explore: React.FC = () => {
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2601,7 +2601,7 @@ const Explore: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2613,7 +2613,7 @@ const Explore: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2674,7 +2674,7 @@ const Explore: React.FC = () => {
                       >
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                           onClick={async (event) => {
                             event.stopPropagation();
                             await copyImageLink(selectedFullImage);
@@ -2685,7 +2685,7 @@ const Explore: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                           onClick={async (event) => {
                             event.stopPropagation();
                             await downloadImage(selectedFullImage);

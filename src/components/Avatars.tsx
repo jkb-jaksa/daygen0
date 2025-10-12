@@ -890,7 +890,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToImage(avatar);
@@ -906,7 +906,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToVideo(avatar);
@@ -959,7 +959,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDownloadImage(avatar.imageUrl);
@@ -971,7 +971,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleCopyLink(avatar.imageUrl);
@@ -983,7 +983,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleManageFolders(avatar.imageUrl);
@@ -995,7 +995,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   setAvatarToPublish(avatar);
@@ -1190,7 +1190,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleEditCreation(image);
@@ -1202,7 +1202,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   navigate("/create/video", {
@@ -1257,7 +1257,7 @@ export default function Avatars() {
           >
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleDownloadImage(image.url);
@@ -1269,7 +1269,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleCopyLink(image.url);
@@ -1281,7 +1281,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleManageFolders(image.url);
@@ -1293,7 +1293,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleCreationPublish(image.url);
@@ -1572,7 +1572,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleNavigateToImage(creationsModalAvatar);
@@ -1584,7 +1584,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleNavigateToVideo(creationsModalAvatar);
@@ -1619,7 +1619,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDownloadImage(creationsModalAvatar.imageUrl);
@@ -1631,7 +1631,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleCopyLink(creationsModalAvatar.imageUrl);
@@ -1643,7 +1643,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleManageFolders(creationsModalAvatar.imageUrl);
@@ -1655,7 +1655,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       setAvatarToPublish(creationsModalAvatar);
@@ -1767,7 +1767,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleEditCreation(selectedFullImage);
@@ -1779,7 +1779,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate("/create/video", {
@@ -1831,7 +1831,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDownloadImage(selectedFullImage.url);
@@ -1843,7 +1843,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleCopyLink(selectedFullImage.url);
@@ -1855,7 +1855,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleManageFolders(selectedFullImage.url);
@@ -1867,7 +1867,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       toggleCreationPublish(selectedFullImage.url);

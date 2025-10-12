@@ -808,7 +808,7 @@ export default function Products() {
               >
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     handleNavigateToImage(product);
@@ -820,7 +820,7 @@ export default function Products() {
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     handleNavigateToVideo(product);
@@ -868,7 +868,7 @@ export default function Products() {
               >
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     void handleDownloadImage(product.imageUrl);
@@ -880,7 +880,7 @@ export default function Products() {
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     void handleCopyLink(product.imageUrl);
@@ -892,7 +892,7 @@ export default function Products() {
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     handleManageFolders(product.imageUrl);
@@ -904,7 +904,7 @@ export default function Products() {
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     toggleProductPublished(product);
@@ -1239,7 +1239,7 @@ export default function Products() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       const productForAction = creationsModalProduct;
@@ -1257,7 +1257,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       const productForAction = creationsModalProduct;
@@ -1294,7 +1294,7 @@ export default function Products() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       void handleDownloadImage(creationsModalProduct.imageUrl);
@@ -1306,7 +1306,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       void handleCopyLink(creationsModalProduct.imageUrl);
@@ -1318,7 +1318,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       handleManageFolders(creationsModalProduct.imageUrl);
@@ -1330,7 +1330,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={event => {
                     event.stopPropagation();
                     toggleProductPublished(creationsModalProduct);
@@ -1454,7 +1454,7 @@ export default function Products() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       goToCreateImageFromGallery(selectedFullImage);
@@ -1466,7 +1466,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       goToCreateVideoFromGallery(selectedFullImage);
@@ -1478,7 +1478,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       handleEditCreation(selectedFullImage);
@@ -1509,7 +1509,7 @@ export default function Products() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       handleDownloadImage(selectedFullImage.url);
@@ -1521,7 +1521,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       void handleCopyLink(selectedFullImage.url);
@@ -1533,7 +1533,7 @@ export default function Products() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={event => {
                       event.stopPropagation();
                       handleManageFolders(selectedFullImage.url);
@@ -1681,7 +1681,7 @@ export default function Products() {
                           >
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                               onClick={event => {
                                 event.stopPropagation();
                                 goToCreateImageFromGallery(image);
@@ -1693,7 +1693,7 @@ export default function Products() {
                             </button>
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                               onClick={event => {
                                 event.stopPropagation();
                                 goToCreateVideoFromGallery(image);
@@ -1705,7 +1705,7 @@ export default function Products() {
                             </button>
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                               onClick={event => {
                                 event.stopPropagation();
                                 handleEditCreation(image);
@@ -1741,7 +1741,7 @@ export default function Products() {
                           >
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                               onClick={event => {
                                 event.stopPropagation();
                                 handleDownloadImage(image.url);
@@ -1753,7 +1753,7 @@ export default function Products() {
                             </button>
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                               onClick={event => {
                                 event.stopPropagation();
                                 void handleCopyLink(image.url);
@@ -1765,7 +1765,7 @@ export default function Products() {
                             </button>
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                               onClick={event => {
                                 event.stopPropagation();
                                 handleManageFolders(image.url);

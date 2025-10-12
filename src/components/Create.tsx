@@ -3142,7 +3142,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -3153,7 +3153,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleCreateAvatarFromMenu(image);
@@ -3164,7 +3164,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -3175,7 +3175,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUsePromptAgain();
@@ -3186,7 +3186,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -3238,7 +3238,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -3264,7 +3264,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -3275,7 +3275,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -3288,7 +3288,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           {context !== 'inspirations' && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleImagePublicStatus(image.url);
