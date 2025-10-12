@@ -218,8 +218,8 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-text: #FAFAFA;
   --n-text-rgb: 250 250 250;
   /* Slightly darken n-white globally (very subtle) */
-  --n-white: #A8B0B0;
-  --n-white-rgb: 168 176 176;
+  --n-white: #B0B8B8;
+  --n-white-rgb: 176 184 184;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
   --n-light: #858a8a;
   --n-light-rgb: 133 138 138;

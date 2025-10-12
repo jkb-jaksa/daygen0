@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -92,6 +92,76 @@ import {
   WAN_ASPECT_RATIO_OPTIONS,
   QWEN_ASPECT_RATIO_OPTIONS,
 } from "../data/aspectRatios";
+
+type StyleOption = {
+  id: string;
+  name: string;
+  prompt: string;
+  previewGradient: string;
+};
+
+const STYLE_OPTIONS: StyleOption[] = [
+  {
+    id: "cinematic",
+    name: "Cinematic",
+    prompt: "cinematic lighting, dramatic composition, rich contrast, anamorphic lens flare",
+    previewGradient: "linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)",
+  },
+  {
+    id: "illustrative",
+    name: "Illustrative",
+    prompt: "whimsical illustration, hand-drawn line work, painterly shading, storybook aesthetic",
+    previewGradient: "linear-gradient(135deg, rgba(251,191,36,0.35) 0%, rgba(79,70,229,0.55) 100%)",
+  },
+  {
+    id: "neon-noir",
+    name: "Neon Noir",
+    prompt: "neon lighting, noir shadows, futuristic city glow, high contrast color accents",
+    previewGradient: "linear-gradient(135deg, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.6) 50%, rgba(236,72,153,0.45) 100%)",
+  },
+  {
+    id: "minimalist",
+    name: "Minimalist",
+    prompt: "minimalist composition, soft neutral palette, negative space, refined details",
+    previewGradient: "linear-gradient(135deg, rgba(148,163,184,0.35) 0%, rgba(226,232,240,0.6) 100%)",
+  },
+  {
+    id: "watercolor",
+    name: "Watercolor",
+    prompt: "watercolor texture, fluid brush strokes, soft gradients, organic pigment bloom",
+    previewGradient: "linear-gradient(135deg, rgba(110,231,183,0.35) 0%, rgba(103,232,249,0.5) 100%)",
+  },
+  {
+    id: "retro-futurism",
+    name: "Retro Futurism",
+    prompt: "retro futurism, optimistic color palette, chrome details, retro technology motifs",
+    previewGradient: "linear-gradient(135deg, rgba(251,191,36,0.4) 0%, rgba(248,113,113,0.5) 60%, rgba(96,165,250,0.45) 100%)",
+  },
+  {
+    id: "vintage",
+    name: "Vintage",
+    prompt: "vintage aesthetic, warm sepia tones, film grain texture, nostalgic atmosphere",
+    previewGradient: "linear-gradient(135deg, rgba(217,119,6,0.4) 0%, rgba(180,83,9,0.5) 100%)",
+  },
+  {
+    id: "cyberpunk",
+    name: "Cyberpunk",
+    prompt: "cyberpunk aesthetic, neon colors, digital glitches, high-tech dystopian atmosphere",
+    previewGradient: "linear-gradient(135deg, rgba(236,72,153,0.45) 0%, rgba(168,85,247,0.5) 50%, rgba(14,165,233,0.4) 100%)",
+  },
+  {
+    id: "dreamy",
+    name: "Dreamy",
+    prompt: "dreamy atmosphere, soft focus, ethereal glow, pastel colors, fantasy aesthetic",
+    previewGradient: "linear-gradient(135deg, rgba(251,207,232,0.45) 0%, rgba(196,181,253,0.5) 50%, rgba(165,243,252,0.4) 100%)",
+  },
+  {
+    id: "dramatic",
+    name: "Dramatic",
+    prompt: "dramatic lighting, bold shadows, intense contrast, moody atmosphere, powerful composition",
+    previewGradient: "linear-gradient(135deg, rgba(239,68,68,0.4) 0%, rgba(17,24,39,0.7) 50%, rgba(239,68,68,0.4) 100%)",
+  },
+];
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -441,6 +511,7 @@ const Create: React.FC = () => {
   const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
+  const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -452,6 +523,9 @@ const Create: React.FC = () => {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
+  const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+  const [tempSelectedStyle, setTempSelectedStyle] = useState<StyleOption | null>(null);
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
@@ -469,6 +543,60 @@ const Create: React.FC = () => {
   const [productSelection, setProductSelection] = useState<ProductSelection | null>(null);
   const [productUploadError, setProductUploadError] = useState<string | null>(null);
   const [isDraggingProduct, setIsDraggingProduct] = useState(false);
+
+  useEffect(() => {
+    if (!isStyleModalOpen || typeof document === 'undefined') {
+      return;
+    }
+
+    // Initialize temp selection with current selection
+    setTempSelectedStyle(selectedStyle);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsStyleModalOpen(false);
+        if (stylesButtonRef.current) {
+          stylesButtonRef.current.focus();
+        }
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isStyleModalOpen, selectedStyle]);
+
+  const applyStyleToPrompt = useCallback(
+    (basePrompt: string) => (selectedStyle ? `${basePrompt}\n\nStyle: ${selectedStyle.prompt}` : basePrompt),
+    [selectedStyle],
+  );
+
+  const focusStyleButton = () => {
+    if (stylesButtonRef.current) {
+      stylesButtonRef.current.focus();
+    }
+  };
+
+  const handleSelectStyle = (style: StyleOption) => {
+    setTempSelectedStyle(style);
+  };
+
+  const handleApplyStyle = () => {
+    setSelectedStyle(tempSelectedStyle);
+    setIsStyleModalOpen(false);
+    focusStyleButton();
+  };
+
+  const handleClearStyle = () => {
+    setSelectedStyle(null);
+    setIsStyleModalOpen(false);
+    focusStyleButton();
+  };
 
   const avatarMap = useMemo(() => {
     const map = new Map<string, StoredAvatar>();
@@ -3970,9 +4098,11 @@ const handleGenerate = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) return;
 
+    const finalPrompt = applyStyleToPrompt(trimmedPrompt);
+
     debugLog('[Create] Starting Wan video generation, setting isButtonSpinning to true');
 
-    setWanVideoPrompt(trimmedPrompt);
+    setWanVideoPrompt(finalPrompt);
 
     if (spinnerTimeoutRef.current) {
       clearTimeout(spinnerTimeoutRef.current);
@@ -4219,6 +4349,8 @@ const handleGenerate = async () => {
       return;
     }
 
+    const finalPrompt = applyStyleToPrompt(trimmedPrompt);
+
     // Check if model is supported
     if (isComingSoon) {
       alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Reve, Recraft, Veo, and Seedance models are available.');
@@ -4275,16 +4407,16 @@ const handleGenerate = async () => {
     modelForGeneration === "luma-photon-1" ||
     modelForGeneration === "luma-photon-flash-1";
 
-  const jobMeta: ActiveGenerationJob = {
-    id: generationId,
-    prompt: trimmedPrompt,
-    model: modelForGeneration,
-    startedAt: Date.now(),
-    progress: 1,
-    backendProgress: 0,
-    backendProgressUpdatedAt: Date.now(),
-    status: 'queued',
-  };
+    const jobMeta: ActiveGenerationJob = {
+      id: generationId,
+      prompt: finalPrompt,
+      model: modelForGeneration,
+      startedAt: Date.now(),
+      progress: 1,
+      backendProgress: 0,
+      backendProgressUpdatedAt: Date.now(),
+      status: 'queued',
+    };
 
   // Only add to activeGenerationQueue if we're not handling video models that manage their own state
   const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
@@ -4412,7 +4544,7 @@ const handleGenerate = async () => {
 
         if (isGeminiModel) {
           img = await generateGeminiImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: modelForGeneration,
             imageData,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
@@ -4427,7 +4559,7 @@ const handleGenerate = async () => {
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: fluxModel as FluxModel,
             width: 1024,
             height: 1024,
@@ -4454,7 +4586,7 @@ const handleGenerate = async () => {
           img = fluxResult;
         } else if (isChatGPTModel) {
           img = await generateChatGPTImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             size: '1024x1024',
             quality: 'high',
             background: 'transparent',
@@ -4463,7 +4595,7 @@ const handleGenerate = async () => {
           });
         } else if (isIdeogramModel) {
           const ideogramResult = await generateIdeogramImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             aspect_ratio: '1:1',
             rendering_speed: 'DEFAULT',
             num_images: 1,
@@ -4476,7 +4608,7 @@ const handleGenerate = async () => {
           img = ideogramResult[0];
         } else if (isQwenModel) {
           const qwenResult = await generateQwenImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             size: qwenSizeForGeneration,
             prompt_extend: qwenPromptExtendForGeneration,
             watermark: qwenWatermarkForGeneration,
@@ -4489,7 +4621,7 @@ const handleGenerate = async () => {
           img = qwenResult[0];
         } else if (isRunwayModel) {
           const runwayResult = await generateRunwayImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: runwayModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
             uiModel: runwayModel,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
@@ -4502,7 +4634,7 @@ const handleGenerate = async () => {
           throw new Error('Runway video generation is not yet supported in this backend integration.');
         } else if (isReveModel) {
           const reveResult = await generateReveImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: "reve-image-1.0",
             width: 1024,
             height: 1024,
@@ -4523,7 +4655,7 @@ const handleGenerate = async () => {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              prompt: trimmedPrompt,
+              prompt: finalPrompt,
               model: recraftModel,
               providerOptions: {
                 style: 'realistic_image',
@@ -4575,7 +4707,7 @@ const handleGenerate = async () => {
 
             img = {
               url: jobResultUrl,
-              prompt: trimmedPrompt,
+              prompt: finalPrompt,
               model: recraftModel,
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
@@ -4590,7 +4722,7 @@ const handleGenerate = async () => {
 
             img = {
               url: dataUrl,
-              prompt: trimmedPrompt,
+              prompt: finalPrompt,
               model: recraftModel,
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
@@ -4605,7 +4737,7 @@ const handleGenerate = async () => {
               : lumaPhotonModel;
 
           const lumaResult = await generateLumaImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: resolvedLumaModel,
             avatarId: selectedAvatar?.id,
             productId: selectedProduct?.id,
@@ -7118,6 +7250,41 @@ const handleGenerate = async () => {
                     <div className="relative">
                       <button
                         type="button"
+                        ref={stylesButtonRef}
+                        onClick={() => setIsStyleModalOpen(true)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                        aria-label="Select a style"
+                        aria-expanded={isStyleModalOpen}
+                      >
+                        <Palette className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                        {!selectedStyle && (
+                          <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Style</span>
+                        )}
+                        {selectedStyle && (
+                          <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
+                            {selectedStyle.name}
+                          </span>
+                        )}
+                      </button>
+                      {selectedStyle && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClearStyle();
+                          }}
+                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                          title="Remove style"
+                          aria-label="Remove style"
+                        >
+                          <X className="w-2.5 h-2.5 text-n-text" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <button
+                        type="button"
                         ref={promptsButtonRef}
                         onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
                         className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
@@ -7371,6 +7538,101 @@ const handleGenerate = async () => {
                       onAddSavedPrompt={savePrompt}
                       onSaveRecentPrompt={savePromptToLibrary}
                     />
+                    {isStyleModalOpen &&
+                      createPortal(
+                        <div
+                          className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
+                          role="dialog"
+                          aria-modal="true"
+                          aria-labelledby="style-modal-heading"
+                          onClick={() => {
+                            setIsStyleModalOpen(false);
+                            focusStyleButton();
+                          }}
+                        >
+                          <div
+                            className={`${glass.prompt} w-full max-w-2xl rounded-3xl border border-theme-mid p-4 shadow-xl`}
+                            onClick={event => event.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <h2 id="style-modal-heading" className="text-base font-raleway text-theme-text">
+                                Style
+                              </h2>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsStyleModalOpen(false);
+                                  focusStyleButton();
+                                }}
+                                className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                aria-label="Close styles"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 relative pb-16">
+                              {STYLE_OPTIONS.map(option => {
+                                const isActive = tempSelectedStyle?.id === option.id;
+                                return (
+                                  <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => handleSelectStyle(option)}
+                                    className="w-full text-left group"
+                                  >
+                                    <div className={`relative overflow-hidden rounded-xl border transition-colors duration-200 ${
+                                      isActive
+                                        ? 'border-theme-text'
+                                        : 'border-theme-mid group-hover:border-theme-text'
+                                    }`}>
+                                      <div
+                                        role="img"
+                                        aria-label={`${option.name} style placeholder`}
+                                        className="w-full aspect-square"
+                                        style={{
+                                          backgroundImage: option.previewGradient,
+                                          backgroundSize: "cover",
+                                          backgroundPosition: "center",
+                                        }}
+                                      />
+                                      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-2 py-1.5 bg-gradient-to-t from-black/60 to-transparent">
+                                        <span className="text-sm font-normal font-raleway text-theme-text">{option.name}</span>
+                                        {isActive && <Check className="h-3.5 w-3.5 text-theme-text" />}
+                                      </div>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-start p-4 pointer-events-none">
+                                <p className="text-sm font-raleway text-theme-white text-left">
+                                  Styles add ready-made prompt guidance that layers on top of your description.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsStyleModalOpen(false);
+                                  focusStyleButton();
+                                }}
+                                className={buttons.ghost}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleApplyStyle}
+                                disabled={!tempSelectedStyle}
+                                className={buttons.primary}
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </div>
+                        </div>,
+                        document.body,
+                      )}
                   </>
                 )}
                 <div className="relative settings-dropdown">
