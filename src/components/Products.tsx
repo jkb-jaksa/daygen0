@@ -35,6 +35,7 @@ import { createProductRecord, findProductBySlug, normalizeStoredProducts } from 
 import { createCardImageStyle } from "../utils/cardImageStyle";
 
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
+const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
 
 const ImageActionMenuPortal: React.FC<{
   anchorEl: HTMLElement | null;
@@ -144,6 +145,16 @@ export default function Products() {
   const [galleryEditMenu, setGalleryEditMenu] = useState<{ imageUrl: string; anchor: HTMLElement } | null>(null);
   const pendingSlugRef = useRef<string | null>(null);
   const hasProducts = storedProducts.length > 0;
+  const shouldCenterEmptyState = !hasProducts && !productSelection;
+  const emptyStateLayoutClass = [
+    "flex w-full min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center px-4",
+    shouldCenterEmptyState
+      ? "justify-center"
+      : "justify-start gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20",
+  ].join(" ");
+  const pageLayoutClass = hasProducts
+    ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
+    : emptyStateLayoutClass;
   const productsSubtitle =
     "Save product images you love so you can reuse them instantly when crafting prompts.";
 
@@ -1121,14 +1132,8 @@ export default function Products() {
   return (
     <div className={layout.page}>
       <div className="relative z-10">
-        <section className={layout.container}>
-          <div
-            className={
-              hasProducts
-                ? "flex flex-col gap-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20"
-                : "flex min-h-[calc(100dvh-var(--nav-h,4rem))] flex-col items-center justify-center px-4"
-            }
-          >
+        <section className={`${layout.container}`}>
+          <div className={pageLayoutClass}>
             <header
               className={`w-full max-w-3xl ${hasProducts ? "text-left" : "text-center"} ${hasProducts ? "" : "mx-auto"}`}
             >
@@ -1145,10 +1150,27 @@ export default function Products() {
                 </p>
               </div>
               {!hasProducts && (
-                <div className="mt-8 flex justify-center">
-                  <button type="button" className={buttons.primary} onClick={handleOpenCreationModal}>
-                    Add a Product
-                  </button>
+                <div className="mt-8 w-full max-w-7xl mx-auto">
+                  <Suspense fallback={null}>
+                    <ProductCreationOptions
+                      selection={productSelection}
+                      uploadError={productUploadError}
+                      isDragging={isDraggingProduct}
+                      productName={productName}
+                      disableSave={!productSelection || !productName.trim()}
+                      galleryImages={galleryImages}
+                      hasGalleryImages={galleryImages.length > 0}
+                      onProductNameChange={setProductName}
+                      onSave={handleSaveNewProduct}
+                      onSelectFromGallery={imageUrl =>
+                        setProductSelection({ imageUrl, source: "gallery", sourceId: imageUrl })
+                      }
+                      onClearSelection={() => setProductSelection(null)}
+                      onProcessFile={processProductImageFile}
+                      onDragStateChange={setIsDraggingProduct}
+                      onUploadError={setProductUploadError}
+                    />
+                  </Suspense>
                 </div>
               )}
             </header>

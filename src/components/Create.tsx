@@ -515,6 +515,7 @@ const Create: React.FC = () => {
   const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const productQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
@@ -3753,7 +3754,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   }, [avatarToDelete, storedAvatars, selectedAvatar, storagePrefix]);
 
   // Avatar creation modal handlers
-  const validateAvatarFile = useCallback((file: File): string | null => {
+  const validateImageFile = useCallback((file: File): string | null => {
     // Check MIME type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
@@ -3789,7 +3790,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const processAvatarImageFile = useCallback(async (file: File, options?: { openCreationModal?: boolean; resetName?: boolean }) => {
     // Pre-validate the file
-    const validationError = validateAvatarFile(file);
+    const validationError = validateImageFile(file);
     if (validationError) {
       setAvatarUploadError(validationError);
       return;
@@ -3839,7 +3840,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
-  }, [validateAvatarFile, getImageDimensions, setAvatarSelection, setAvatarName, setIsAvatarCreationModalOpen, setIsAvatarPickerOpen]);
+  }, [validateImageFile, getImageDimensions, setAvatarSelection, setAvatarName, setIsAvatarCreationModalOpen, setIsAvatarPickerOpen]);
 
   const handleAvatarQuickUpload = useCallback((file: File | null) => {
     if (!file) return;
@@ -3884,50 +3885,77 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setIsDraggingAvatar(false);
   }, []);
 
-  const processProductImageFile = useCallback(async (file: File) => {
-    const validationError = validateAvatarFile(file);
-    if (validationError) {
-      setProductUploadError(validationError);
-      return;
-    }
-
-    try {
-      const { width, height } = await getImageDimensions(file);
-      const maxDimension = 8192;
-      const minDimension = 64;
-
-      if (width > maxDimension || height > maxDimension) {
-        setProductUploadError(
-          `Image dimensions (${width}x${height}) are too large. Maximum allowed: ${maxDimension}x${maxDimension}.`,
-        );
+  const processProductImageFile = useCallback(
+    async (file: File, options?: { openCreationModal?: boolean; resetName?: boolean }) => {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        setProductUploadError(validationError);
         return;
       }
 
-      if (width < minDimension || height < minDimension) {
-        setProductUploadError(
-          `Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`,
-        );
+      try {
+        const { width, height } = await getImageDimensions(file);
+        const maxDimension = 8192;
+        const minDimension = 64;
+
+        if (width > maxDimension || height > maxDimension) {
+          setProductUploadError(
+            `Image dimensions (${width}x${height}) are too large. Maximum allowed: ${maxDimension}x${maxDimension}.`,
+          );
+          return;
+        }
+
+        if (width < minDimension || height < minDimension) {
+          setProductUploadError(
+            `Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`,
+          );
+          return;
+        }
+      } catch {
+        setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
         return;
       }
-    } catch {
-      setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
-      return;
-    }
 
-    setProductUploadError(null);
+      setProductUploadError(null);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === "string") {
-        setProductSelection({ imageUrl: result, source: "upload" });
-      }
-    };
-    reader.onerror = () => {
-      setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
-    };
-    reader.readAsDataURL(file);
-  }, [getImageDimensions, validateAvatarFile]);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          setProductSelection({ imageUrl: result, source: "upload" });
+          if (options?.openCreationModal) {
+            if (options.resetName !== false) {
+              setProductName("");
+            }
+            setIsProductCreationModalOpen(true);
+            setIsProductPickerOpen(false);
+          }
+        }
+      };
+      reader.onerror = () => {
+        setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      };
+      reader.readAsDataURL(file);
+    },
+    [
+      getImageDimensions,
+      validateImageFile,
+      setProductSelection,
+      setProductName,
+      setIsProductCreationModalOpen,
+      setIsProductPickerOpen,
+      setProductUploadError,
+    ],
+  );
+
+  const handleProductQuickUpload = useCallback(
+    (file: File | null) => {
+      if (!file) return;
+      setIsDraggingProduct(false);
+      void processProductImageFile(file, { openCreationModal: true });
+    },
+    [processProductImageFile, setIsDraggingProduct],
+  );
 
   const handleSaveNewProduct = useCallback(async () => {
     if (!productSelection || !productName.trim() || !storagePrefix) return;
@@ -7617,8 +7645,103 @@ const handleGenerate = async () => {
                             })}
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-light">
-                            You haven't added any Products yet. Click the + button above to add one.
+                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-6 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                                isDraggingProduct
+                                  ? 'border-brand bg-brand/10'
+                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                              }`}
+                              onDragOver={event => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setProductUploadError(null);
+                                setIsDraggingProduct(true);
+                              }}
+                              onDragLeave={() => {
+                                setIsDraggingProduct(false);
+                              }}
+                              onDrop={event => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setIsDraggingProduct(false);
+                                const files = Array.from(event.dataTransfer?.files ?? []);
+                                const file = files.find(item => item.type.startsWith('image/')) ?? null;
+                                if (!file) {
+                                  setProductUploadError('Please choose an image file.');
+                                  return;
+                                }
+                                setProductUploadError(null);
+                                handleProductQuickUpload(file);
+                              }}
+                              onClick={() => {
+                                setProductUploadError(null);
+                                productQuickUploadInputRef.current?.click();
+                              }}
+                              onKeyDown={event => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setProductUploadError(null);
+                                  productQuickUploadInputRef.current?.click();
+                                }
+                              }}
+                              onPaste={event => {
+                                const items = Array.from(event.clipboardData?.items ?? []);
+                                const file = items.find(item => item.type.startsWith('image/'))?.getAsFile() ?? null;
+                                if (!file) {
+                                  return;
+                                }
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setProductUploadError(null);
+                                handleProductQuickUpload(file);
+                              }}
+                            >
+                              <div className="flex size-9 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
+                                <Upload className="h-4 w-4 text-n-text" />
+                              </div>
+                              <p className="text-sm text-n-white">
+                                Drag & drop or click to upload a Product image
+                              </p>
+                              <button
+                                type="button"
+                                className={`${buttons.primary} !w-fit !px-4 !py-1.5 text-sm inline-flex items-center gap-2`}
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  setProductUploadError(null);
+                                  productQuickUploadInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="w-4 h-4" />
+                                Upload
+                              </button>
+                            </div>
+                            <input
+                              ref={productQuickUploadInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              onChange={event => {
+                                const file = event.target.files?.[0] ?? null;
+                                event.target.value = '';
+                                if (!file) {
+                                  return;
+                                }
+                                if (!file.type.startsWith('image/')) {
+                                  setProductUploadError('Please choose an image file.');
+                                  return;
+                                }
+                                setProductUploadError(null);
+                                handleProductQuickUpload(file);
+                              }}
+                            />
+                            {productUploadError && (
+                              <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                {productUploadError}
+                              </p>
+                            )}
                           </div>
                         )}
                         {!storedProducts.length && (

@@ -1,19 +1,19 @@
 import { memo, useRef } from "react";
-import { Upload, Users, X } from "lucide-react";
+import { Package, Upload, X } from "lucide-react";
 import type { GalleryImageLike } from "../create/types";
 import { buttons, glass, inputs } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
-import type { AvatarSelection } from "./types";
+import type { ProductSelection } from "./types";
 
-export interface AvatarCreationOptionsProps {
-  selection: AvatarSelection | null;
+interface ProductCreationOptionsProps {
+  selection: ProductSelection | null;
   uploadError: string | null;
   isDragging: boolean;
-  avatarName: string;
+  productName: string;
   disableSave: boolean;
   galleryImages: GalleryImageLike[];
   hasGalleryImages: boolean;
-  onAvatarNameChange: (value: string) => void;
+  onProductNameChange: (value: string) => void;
   onSave: () => void;
   onSelectFromGallery: (imageUrl: string) => void;
   onClearSelection: () => void;
@@ -23,15 +23,15 @@ export interface AvatarCreationOptionsProps {
   className?: string;
 }
 
-function AvatarCreationOptionsComponent({
+function ProductCreationOptionsComponent({
   selection,
   uploadError,
   isDragging,
-  avatarName,
+  productName,
   disableSave,
   galleryImages,
   hasGalleryImages,
-  onAvatarNameChange,
+  onProductNameChange,
   onSave,
   onSelectFromGallery,
   onClearSelection,
@@ -39,39 +39,16 @@ function AvatarCreationOptionsComponent({
   onDragStateChange,
   onUploadError,
   className,
-}: AvatarCreationOptionsProps) {
+}: ProductCreationOptionsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const validateAvatarFile = (file: File): string | null => {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      return "Please choose a JPEG, PNG, or WebP image file.";
-    }
-
-    const maxSize = 50 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return "File size must be less than 50MB.";
-    }
-
-    if (file.size === 0) {
-      return "The selected file is empty.";
-    }
-
-    return null;
-  };
 
   const handleFiles = (files: FileList | File[]) => {
     const list = Array.from(files);
     if (!list.length) return;
+
     const file = list.find(item => item.type.startsWith("image/"));
     if (!file) {
       onUploadError("Please choose an image file.");
-      return;
-    }
-
-    const validationError = validateAvatarFile(file);
-    if (validationError) {
-      onUploadError(validationError);
       return;
     }
 
@@ -86,8 +63,9 @@ function AvatarCreationOptionsComponent({
             <div className="flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
               <Upload className="h-4 w-4 text-theme-white" />
             </div>
-            <h3 className="text-xl font-raleway text-theme-text">Upload your Image</h3>
+            <h3 className="text-xl font-raleway text-theme-text">Upload your Product</h3>
           </div>
+
           <div className="mx-auto w-full max-w-md flex-1 flex items-center justify-center">
             {selection ? (
               <div
@@ -97,7 +75,7 @@ function AvatarCreationOptionsComponent({
               >
                 <img
                   src={selection.imageUrl}
-                  alt="Selected avatar"
+                  alt="Selected product"
                   className="relative z-[1] h-full w-full object-cover"
                 />
                 <button
@@ -119,17 +97,17 @@ function AvatarCreationOptionsComponent({
                     ? "border-brand bg-brand/10"
                     : "border-theme-white/30 bg-theme-black/60 hover:border-theme-text/50"
                 }`}
-                onDragOver={(event) => {
+                onDragOver={event => {
                   event.preventDefault();
                   onDragStateChange(true);
                 }}
                 onDragLeave={() => onDragStateChange(false)}
-                onDrop={(event) => {
+                onDrop={event => {
                   event.preventDefault();
                   onDragStateChange(false);
                   handleFiles(event.dataTransfer?.files ?? []);
                 }}
-                onPaste={(event) => {
+                onPaste={event => {
                   const items = Array.from(event.clipboardData?.items ?? []);
                   const file = items.find(item => item.type.startsWith("image/"))?.getAsFile();
                   if (file) {
@@ -137,19 +115,21 @@ function AvatarCreationOptionsComponent({
                   }
                 }}
               >
-                <span className="text-base text-theme-white">Click anywhere, drag and drop, or paste your image to get started.</span>
-                
+                <span className="text-base text-theme-white">
+                  Click anywhere, drag and drop, or paste your image to get started.
+                </span>
+
                 <div className={`${buttons.primary} inline-flex items-center gap-2`}>
                   <Upload className="w-4 h-4" />
                   Upload
                 </div>
-                
+
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   className="sr-only"
-                  onChange={(event) => {
+                  onChange={event => {
                     const file = event.target.files?.[0];
                     event.target.value = "";
                     if (file) {
@@ -160,6 +140,7 @@ function AvatarCreationOptionsComponent({
               </label>
             )}
           </div>
+
           {uploadError && (
             <p className="mt-3 text-center text-sm font-raleway text-red-400">{uploadError}</p>
           )}
@@ -168,7 +149,7 @@ function AvatarCreationOptionsComponent({
         <div className={`${glass.promptDark} rounded-[28px] border border-theme-dark p-6 flex flex-col`}>
           <div className="mb-4 flex items-center justify-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black/70">
-              <Users className="h-4 w-4 text-theme-white" />
+              <Package className="h-4 w-4 text-theme-white" />
             </div>
             <h3 className="text-xl font-raleway text-theme-text">Choose from your Creations</h3>
           </div>
@@ -216,12 +197,12 @@ function AvatarCreationOptionsComponent({
       {selection && (
         <div className="flex flex-col items-center gap-6">
           <label className="flex w-fit flex-col space-y-2">
-            <span className="text-sm font-raleway text-theme-white">Name</span>
+            <span className="text-sm font-raleway text-theme-white">Product name</span>
             <input
               className={`${inputs.compact} !w-64 text-theme-text`}
-              placeholder="Enter your Avatar name"
-              value={avatarName}
-              onChange={(event) => onAvatarNameChange(event.target.value)}
+              placeholder="Enter your Product name"
+              value={productName}
+              onChange={event => onProductNameChange(event.target.value)}
             />
           </label>
 
@@ -239,6 +220,6 @@ function AvatarCreationOptionsComponent({
   );
 }
 
-export const AvatarCreationOptions = memo(AvatarCreationOptionsComponent);
+export const ProductCreationOptions = memo(ProductCreationOptionsComponent);
 
-export default AvatarCreationOptions;
+export default ProductCreationOptions;
