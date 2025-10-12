@@ -1613,11 +1613,12 @@ export default function Edit() {
                   ref={aspectRatioButtonRef}
                   type="button"
                   onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
                   aria-label="Aspect ratio"
                   title="Aspect ratio"
                 >
                   <Scan className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
                 </button>
                 <AspectRatioDropdown
                   anchorRef={aspectRatioButtonRef}

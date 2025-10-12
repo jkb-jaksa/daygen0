@@ -7,7 +7,6 @@ const STORE_NAME = 'kv';
 type StorageKey =
   | 'gallery'
   | 'favorites'
-  | 'uploads'
   | 'folders'
   | 'editGallery'
   | 'inspirations'

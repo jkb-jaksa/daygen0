@@ -80,14 +80,6 @@ export type PendingGalleryItem = {
   jobId?: string | null;
 };
 
-export type SerializedUpload = {
-  id: string;
-  fileName: string;
-  fileType: string;
-  previewUrl: string;
-  uploadDate: string;
-};
-
 export type SerializedFolder = {
   id: string;
   name: string;
@@ -119,13 +111,6 @@ export type GalleryFilters = {
 export type ImageActionMenuState = { id: string; anchor: HTMLElement | null } | null;
 
 export type BulkActionsMenuState = { anchor: HTMLElement | null } | null;
-
-export type UploadItem = {
-  id: string;
-  file: File;
-  previewUrl: string;
-  uploadDate: Date;
-};
 
 export type FolderThumbnailDialogState = { show: boolean; folderId: string | null };
 

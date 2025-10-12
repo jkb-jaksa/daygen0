@@ -7536,7 +7536,7 @@ const handleGenerate = async () => {
                       ref={aspectRatioButtonRef}
                       type="button"
                       onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
                       aria-label="Aspect ratio"
                       onMouseEnter={event => {
                         showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip');
@@ -7546,6 +7546,7 @@ const handleGenerate = async () => {
                       }}
                     >
                       <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                      <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
                     </button>
                     <div
                       data-tooltip-for="aspect-ratio-tooltip"
