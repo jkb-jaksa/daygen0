@@ -2,6 +2,7 @@ import { memo } from "react";
 import { X, Users } from "lucide-react";
 import type { AvatarSelection } from "./types";
 import AvatarCreationOptions from "./AvatarCreationOptions";
+import { glass } from "../../styles/designSystem";
 
 interface AvatarCreationModalProps {
   open: boolean;
@@ -42,7 +43,7 @@ function AvatarCreationModalComponent({
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-theme-black/80 px-4 py-4">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] border border-theme-dark bg-theme-black/90 shadow-2xl">
+      <div className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}>
         <button
           type="button"
           className="absolute right-4 top-4 z-10 w-10 h-10 flex items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white hover:text-theme-text"

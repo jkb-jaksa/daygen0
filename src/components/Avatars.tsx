@@ -131,9 +131,9 @@ const ImageActionMenuPortal: React.FC<{
 
 
 const deriveSuggestedName = (raw?: string) => {
-  if (!raw) return "New Avatar";
+  if (!raw) return "";
   const cleaned = raw.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
-  if (!cleaned) return "New Avatar";
+  if (!cleaned) return "";
   const words = cleaned.split(" ");
   const slice = words.slice(0, 4).join(" ");
   return slice.charAt(0).toUpperCase() + slice.slice(1);
@@ -356,10 +356,11 @@ export default function Avatars() {
   }, []);
 
   const handleSaveAvatar = useCallback(() => {
-    if (!selection || !avatarName.trim()) return;
+    if (!selection) return;
+    const normalizedName = avatarName.trim() || "New Avatar";
 
     const record = createAvatarRecord({
-      name: avatarName.trim(),
+      name: normalizedName,
       imageUrl: selection.imageUrl,
       source: selection.source,
       sourceId: selection.sourceId,
@@ -403,11 +404,11 @@ export default function Avatars() {
       event.preventDefault();
       if (!editingAvatarId) return;
       const trimmed = editingName.trim();
-      if (!trimmed) return;
+      const normalizedName = trimmed || "New Avatar";
 
       setAvatars(prev => {
         const updated = prev.map(record =>
-          record.id === editingAvatarId ? { ...record, name: trimmed } : record,
+          record.id === editingAvatarId ? { ...record, name: normalizedName } : record,
         );
         void persistAvatars(updated);
         return updated;
@@ -415,7 +416,7 @@ export default function Avatars() {
 
       // Update the modal avatar if it's currently open and matches the renamed avatar
       if (creationsModalAvatar && creationsModalAvatar.id === editingAvatarId) {
-        setCreationsModalAvatar(prev => prev ? { ...prev, name: trimmed } : null);
+        setCreationsModalAvatar(prev => prev ? { ...prev, name: normalizedName } : null);
       }
 
       setEditingAvatarId(null);
@@ -807,7 +808,7 @@ export default function Avatars() {
     [navigate],
   );
 
-  const disableSave = !selection || !avatarName.trim();
+  const disableSave = !selection;
   const subtitle = useMemo(() => defaultSubtitle, []);
 
   const renderAvatarCard = (
@@ -818,6 +819,7 @@ export default function Avatars() {
     const keyPrefix = options?.keyPrefix ?? "avatar";
     const isEditing = editingAvatarId === avatar.id;
     const isInteractive = !(disableModalTrigger || isEditing);
+    const displayName = avatar.name.trim() ? avatar.name : "Enter name...";
 
     return (
       <div
@@ -827,7 +829,7 @@ export default function Avatars() {
         }`}
         role={isInteractive ? "button" : undefined}
         tabIndex={isInteractive ? 0 : undefined}
-        aria-label={isInteractive ? `View creations for ${avatar.name}` : undefined}
+        aria-label={isInteractive ? `View creations for ${displayName}` : undefined}
         onClick={
           isInteractive
             ? () => {
@@ -1014,76 +1016,74 @@ export default function Avatars() {
             loading="lazy"
           />
           <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
-            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
-              {editingAvatarId === avatar.id ? (
-                <form
-                  className="flex items-center gap-2"
-                  onSubmit={submitRename}
-                >
-                  <input
-                    className="flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
-                    value={editingName}
-                    onChange={event => setEditingName(event.target.value)}
-                    onKeyDown={event => {
-                      if (event.key === "Escape") {
-                        event.preventDefault();
-                        cancelRenaming();
-                      }
-                    }}
-                    autoFocus
-                  />
-                  <button
-                    type="submit"
-                    className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-2.5">
+              <div className="flex h-[32px] items-center gap-2">
+                {editingAvatarId === avatar.id ? (
+                  <form
+                    className="flex h-full flex-1 items-center gap-2"
+                    onSubmit={submitRename}
+                    onClick={event => event.stopPropagation()}
                   >
-                    <Check className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
-                    onClick={cancelRenaming}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </form>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-raleway font-normal text-theme-text">{avatar.name}</p>
-                    <button
-                      type="button"
-                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        startRenaming(avatar);
+                    <input
+                      className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                      placeholder="Enter name..."
+                      value={editingName}
+                      onChange={event => setEditingName(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          cancelRenaming();
+                        }
                       }}
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
                     >
-                      <Pencil className="w-3 h-3" />
+                      <Check className="h-4 w-4" />
                     </button>
-                  </div>
-                  {avatar.published && (
-                    <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                      <div className="flex items-center gap-1">
+                  </form>
+                ) : (
+                  <>
+                    <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
+                      {displayName}
+                    </p>
+                    {!disableModalTrigger && (
+                      <button
+                        type="button"
+                        className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          startRenaming(avatar);
+                        }}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                    {avatar.published && (
+                      <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                         <Globe className="w-3 h-3 text-theme-text" />
                         <span className="leading-none">Public</span>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
         {/* Mobile version of avatar name and publish status */}
-        <div className="lg:hidden space-y-2 px-4 py-4">
+        <div className="lg:hidden space-y-3 px-4 py-4">
           {editingAvatarId === avatar.id ? (
             <form
-              className="flex items-center gap-2 justify-center"
+              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5"
               onSubmit={submitRename}
               onClick={(event) => event.stopPropagation()}
             >
               <input
-                className="flex-1 max-w-xs rounded-lg border border-theme-mid bg-theme-black/60 px-2 py-1 text-sm font-raleway text-theme-text placeholder-theme-white/40 transition-colors duration-200 focus:border-theme-text focus:outline-none"
+                className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                placeholder="Enter name..."
                 value={editingName}
                 onChange={event => setEditingName(event.target.value)}
                 onKeyDown={event => {
@@ -1096,25 +1096,20 @@ export default function Avatars() {
               />
               <button
                 type="submit"
-                className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
               >
-                <Check className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
-                onClick={cancelRenaming}
-              >
-                <X className="h-3.5 w-3.5" />
+                <Check className="h-4 w-4" />
               </button>
             </form>
           ) : (
-            <div className="text-center space-y-2">
-              <div className="flex items-center gap-2 justify-center">
-                <p className="text-base font-raleway font-normal text-theme-text">{avatar.name}</p>
+            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5">
+                <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
+                  {displayName}
+              </p>
+              {!disableModalTrigger && (
                 <button
                   type="button"
-                  className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                  className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
                   onClick={(event) => {
                     event.stopPropagation();
                     startRenaming(avatar);
@@ -1122,11 +1117,11 @@ export default function Avatars() {
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
-              </div>
+              )}
               {avatar.published && (
-                <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                   <Globe className="w-3 h-3 text-theme-text" />
-                  <span>Public</span>
+                  <span className="leading-none">Public</span>
                 </div>
               )}
             </div>
