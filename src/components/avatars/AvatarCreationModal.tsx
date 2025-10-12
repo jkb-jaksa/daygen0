@@ -21,6 +21,7 @@ interface AvatarCreationModalProps {
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
+  galleryOpenTrigger?: number;
 }
 
 function AvatarCreationModalComponent({
@@ -40,6 +41,7 @@ function AvatarCreationModalComponent({
   onProcessFile,
   onDragStateChange,
   onUploadError,
+  galleryOpenTrigger,
 }: AvatarCreationModalProps) {
   if (!open) {
     return null;
@@ -81,6 +83,7 @@ function AvatarCreationModalComponent({
             onProcessFile={onProcessFile}
             onDragStateChange={onDragStateChange}
             onUploadError={onUploadError}
+            galleryOpenTrigger={galleryOpenTrigger}
           />
         </div>
       </div>

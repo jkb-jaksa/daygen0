@@ -545,6 +545,7 @@ const Create: React.FC = () => {
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [avatarGalleryOpenTrigger, setAvatarGalleryOpenTrigger] = useState(0);
   const [isProductCreationModalOpen, setIsProductCreationModalOpen] = useState(false);
   const [productSelection, setProductSelection] = useState<ProductSelection | null>(null);
   const [productUploadError, setProductUploadError] = useState<string | null>(null);
@@ -3788,6 +3789,33 @@ const [batchSize, setBatchSize] = useState<number>(1);
     });
   }, []);
 
+  const openAvatarCreationModal = useCallback(
+    (options?: { openGallery?: boolean; resetSelection?: boolean; resetName?: boolean }) => {
+      setIsAvatarPickerOpen(false);
+      if (options?.resetSelection !== false) {
+        setAvatarSelection(null);
+      }
+      if (options?.resetName !== false) {
+        setAvatarName("");
+      }
+      setAvatarUploadError(null);
+      setIsDraggingAvatar(false);
+      if (options?.openGallery) {
+        setAvatarGalleryOpenTrigger(prev => prev + 1);
+      }
+      setIsAvatarCreationModalOpen(true);
+    },
+    [
+      setIsAvatarPickerOpen,
+      setAvatarSelection,
+      setAvatarName,
+      setAvatarUploadError,
+      setIsDraggingAvatar,
+      setAvatarGalleryOpenTrigger,
+      setIsAvatarCreationModalOpen,
+    ],
+  );
+
   const processAvatarImageFile = useCallback(async (file: File, options?: { openCreationModal?: boolean; resetName?: boolean }) => {
     // Pre-validate the file
     const validationError = validateImageFile(file);
@@ -3828,11 +3856,11 @@ const [batchSize, setBatchSize] = useState<number>(1);
       if (typeof result === "string") {
         setAvatarSelection({ imageUrl: result, source: "upload" });
         if (options?.openCreationModal) {
-          if (options.resetName !== false) {
-            setAvatarName("");
-          }
-          setIsAvatarCreationModalOpen(true);
-          setIsAvatarPickerOpen(false);
+          openAvatarCreationModal({
+            openGallery: false,
+            resetName: options.resetName,
+            resetSelection: false,
+          });
         }
       }
     };
@@ -3840,7 +3868,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
-  }, [validateImageFile, getImageDimensions, setAvatarSelection, setAvatarName, setIsAvatarCreationModalOpen, setIsAvatarPickerOpen]);
+  }, [validateImageFile, getImageDimensions, openAvatarCreationModal, setAvatarSelection, setAvatarUploadError]);
 
   const handleAvatarQuickUpload = useCallback((file: File | null) => {
     if (!file) return;
@@ -3875,6 +3903,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarSelection(null);
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
+    setAvatarGalleryOpenTrigger(0);
   }, [avatarName, avatarSelection, storedAvatars, storagePrefix, user?.id]);
 
   const resetAvatarCreationPanel = useCallback(() => {
@@ -3883,6 +3912,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarSelection(null);
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
+    setAvatarGalleryOpenTrigger(0);
   }, []);
 
   const processProductImageFile = useCallback(
@@ -7373,9 +7403,7 @@ const handleGenerate = async () => {
                             type="button"
                             className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={() => {
-                              setIsAvatarPickerOpen(false);
-                              setIsAvatarCreationModalOpen(true);
-                              setAvatarName("");
+                              openAvatarCreationModal();
                             }}
                             aria-label="Create a new Avatar"
                           >
@@ -9077,6 +9105,7 @@ const handleGenerate = async () => {
               onProcessFile={processAvatarImageFile}
               onDragStateChange={setIsDraggingAvatar}
               onUploadError={setAvatarUploadError}
+              galleryOpenTrigger={avatarGalleryOpenTrigger}
             />
           </Suspense>
         )}

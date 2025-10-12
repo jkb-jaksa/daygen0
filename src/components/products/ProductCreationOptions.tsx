@@ -1,9 +1,10 @@
-import { memo, useRef } from "react";
+import { memo, useRef, useState } from "react";
 import { Package, Upload, X } from "lucide-react";
 import type { GalleryImageLike } from "../create/types";
 import { buttons, glass, inputs } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { ProductSelection } from "./types";
+import GallerySelectionModal from "../shared/GallerySelectionModal";
 
 interface ProductCreationOptionsProps {
   selection: ProductSelection | null;
@@ -41,6 +42,7 @@ function ProductCreationOptionsComponent({
   className,
 }: ProductCreationOptionsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   const handleFiles = (files: FileList | File[]) => {
     const list = Array.from(files);
@@ -92,7 +94,7 @@ function ProductCreationOptionsComponent({
               </div>
             ) : (
               <label
-                className={`flex w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed min-h-[180px] py-4 px-6 text-center text-sm font-raleway text-theme-white transition-colors duration-200 ${
+                className={`flex w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed min-w-[180px] min-h-[200px] px-6 text-center text-sm font-raleway text-theme-white transition-colors duration-200 ${
                   isDragging
                     ? "border-brand bg-brand/10"
                     : "border-theme-white/30 bg-theme-black/60 hover:border-theme-text/50"
@@ -154,37 +156,43 @@ function ProductCreationOptionsComponent({
             <h3 className="text-xl font-raleway text-theme-text">Choose from your Creations</h3>
           </div>
 
-          <div className="mx-auto w-full max-w-md flex-1">
+          <div className="mx-auto w-full max-w-md flex-1 flex items-center justify-center">
             {hasGalleryImages ? (
-              <div className="grid grid-cols-3 gap-3">
-                {galleryImages.map(image => {
-                  const isSelected = selection?.source === "gallery" && selection.sourceId === image.url;
-                  return (
-                    <button
-                      type="button"
-                      key={image.url}
-                      className={`relative overflow-hidden rounded-2xl border ${
-                        isSelected ? "border-theme-light" : "border-theme-dark"
-                      }`}
-                      onClick={() => {
-                        onUploadError(null);
-                        onSelectFromGallery(image.url);
-                      }}
+              <div className="w-full flex flex-col items-center justify-center gap-6">
+                {selection?.source === "gallery" ? (
+                  <div className="w-48 space-y-3">
+                    <div
+                      className="card-media-frame relative aspect-square overflow-hidden rounded-2xl border border-theme-light bg-theme-black/50"
+                      data-has-image={Boolean(selection?.imageUrl)}
+                      style={createCardImageStyle(selection?.imageUrl)}
                     >
                       <img
-                        src={image.url}
-                        alt={image.prompt ?? "Gallery creation"}
-                        className="aspect-square w-full object-cover"
+                        src={selection.imageUrl}
+                        alt="Selected from gallery"
+                        className="relative z-[1] h-full w-full object-cover"
                       />
-                      {isSelected && (
-                        <div className="pointer-events-none absolute inset-0 border-4 border-theme-light" aria-hidden="true" />
-                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsGalleryModalOpen(true)}
+                      className={`${buttons.secondary} w-full`}
+                    >
+                      Change Selection
                     </button>
-                  );
-                })}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsGalleryModalOpen(true)}
+                    className={`${buttons.primary} inline-flex items-center gap-2`}
+                  >
+                    <Package className="w-4 h-4" />
+                    Browse Your Creations
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="w-full rounded-2xl border border-theme-dark bg-theme-black/50 flex items-center justify-center min-h-[180px] py-6 px-6 text-center">
+              <div className="w-full rounded-2xl border border-theme-dark bg-theme-black/50 flex items-center justify-center min-w-[180px] min-h-[200px] px-6 text-center">
                 <p className="text-base font-raleway text-theme-white">
                   Generate an image in the studio to see it here.
                 </p>
@@ -216,6 +224,18 @@ function ProductCreationOptionsComponent({
           </button>
         </div>
       )}
+
+      <GallerySelectionModal
+        open={isGalleryModalOpen}
+        galleryImages={galleryImages}
+        selectedImageUrl={selection?.source === "gallery" ? selection.sourceId ?? null : null}
+        onClose={() => setIsGalleryModalOpen(false)}
+        onSelect={(imageUrl) => {
+          onUploadError(null);
+          onSelectFromGallery(imageUrl);
+        }}
+        title="Choose from your Creations"
+      />
     </div>
   );
 }

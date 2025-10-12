@@ -27,6 +27,7 @@ import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
+import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
@@ -42,7 +43,7 @@ type AvatarNavigationState = {
 };
 
 const defaultSubtitle =
-  "Craft a consistent look for your brand, team, or characters. Upload a portrait or reuse something you've already made.";
+  "Craft a consistent look for your brand, team, or characters.";
 
 // Portal component for avatar action menu
 const ImageActionMenuPortal: React.FC<{
@@ -190,6 +191,7 @@ export default function Avatars() {
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isAvatarFullSizeOpen, setIsAvatarFullSizeOpen] = useState<boolean>(false);
   const hasAvatars = avatars.length > 0;
+  const { images: remoteGalleryImages } = useGalleryImages();
 
   const openAvatarCreator = useCallback(() => {
     setIsPanelOpen(true);
@@ -305,6 +307,32 @@ export default function Avatars() {
       isMounted = false;
     };
   }, [storagePrefix, user?.id, persistAvatars]);
+
+  useEffect(() => {
+    if (!remoteGalleryImages.length) return;
+    setGalleryImages(prev => {
+      const existingMap = new Map(prev.map(image => [image.url, image]));
+      const remoteUrlSet = new Set(remoteGalleryImages.map(image => image.url));
+      const merged = remoteGalleryImages.map(image => {
+        const existing = existingMap.get(image.url);
+        if (!existing) {
+          return image;
+        }
+        return {
+          ...image,
+          avatarId: existing.avatarId ?? image.avatarId,
+          productId: existing.productId ?? image.productId,
+        };
+      });
+      const extras = prev.filter(image => !remoteUrlSet.has(image.url));
+      return [...merged, ...extras];
+    });
+  }, [remoteGalleryImages]);
+
+  useEffect(() => {
+    if (galleryImages.length === 0) return;
+    void persistGalleryImages(galleryImages);
+  }, [galleryImages, persistGalleryImages]);
 
   const processImageFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
