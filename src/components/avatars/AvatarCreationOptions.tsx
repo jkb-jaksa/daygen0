@@ -76,7 +76,7 @@ function AvatarCreationOptionsComponent({
     <div className={`flex flex-col items-center gap-6 ${className ?? ""}`}>
       <div className="w-full max-w-md mx-auto">
         {selection ? (
-          <div className="relative">
+          <div className="relative w-full max-w-xs mx-auto">
             <div
               className="card-media-frame relative aspect-square w-full overflow-hidden rounded-2xl border border-theme-dark/60 bg-theme-black/60"
               data-has-image={Boolean(selection?.imageUrl)}

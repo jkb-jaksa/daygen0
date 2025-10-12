@@ -1392,7 +1392,7 @@ export default function Avatars() {
               <h1
                 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
               >
-                Create your Avatar.
+                Create your <span className="text-brand">Avatar</span>.
               </h1>
               <p className={headings.tripleHeading.description}>
                 {subtitle}
@@ -1433,7 +1433,7 @@ export default function Avatars() {
                   <Plus className="h-5 w-5" />
                 </button>
               </div>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
                 {avatars.map(avatar => renderAvatarCard(avatar))}
               </div>
             </div>

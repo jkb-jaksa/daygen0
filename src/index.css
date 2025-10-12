@@ -872,19 +872,19 @@ html[data-theme="day"] .prompt-surface {
 .panel-warm-bg {
   background:
     linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    var(--theme-text);
+    #FF8C00;
 }
 
 /* Warm gradient utility - solid orange */
 .bg-warm-gradient {
-  background: var(--theme-text);
+  background: #FF8C00;
 }
 
 
 
 /* Text warm gradient - solid orange with 3D effect */
 .text-warm-gradient {
-  color: var(--theme-text);
+  color: #FF8C00;
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.3),
     0 -1px 2px rgba(0, 0, 0, 0.2),
@@ -1020,7 +1020,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Brand orange text utility - solid orange with 3D effect */
 .text-theme-orange { 
-  color: var(--theme-text);
+  color: #FF8C00;
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.3),
     0 -1px 2px rgba(0, 0, 0, 0.2),
@@ -1029,7 +1029,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Softer, lighter warm for active states with 3D effect */
 .text-theme-orange-soft { 
-  color: color-mix(in srgb, var(--theme-text) 78%, white 22%);
+  color: color-mix(in srgb, #FF8C00 78%, white 22%);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.25),
     0 -1px 2px rgba(0, 0, 0, 0.15),
@@ -1038,7 +1038,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Brand color - primary orange with 3D effect */
 .text-brand { 
-  color: var(--theme-text);
+  color: #FF8C00;
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.3),
     0 -1px 2px rgba(0, 0, 0, 0.2),
@@ -1095,7 +1095,7 @@ html[data-theme="day"] .text-white-gradient {
 
 /* Lighter text color classes for pricing with 3D effect */
 .text-orange-lighter {
-  color: color-mix(in srgb, var(--theme-text) 78%, white 22%);
+  color: color-mix(in srgb, #FF8C00 78%, white 22%);
   text-shadow: 
     0 1px 2px rgba(255, 255, 255, 0.25),
     0 -1px 2px rgba(0, 0, 0, 0.15),
@@ -1282,7 +1282,7 @@ html[data-theme="day"] .card-overlay-gradient {
       rgba(0, 0, 0, 0.05) 75%,
       rgba(0, 0, 0, 0.1) 100%
     ),
-    var(--theme-text);
+    #FAFAFA;
   border: none;
   color: var(--theme-black);
   flex-shrink: 0;
@@ -1301,7 +1301,7 @@ html[data-theme="day"] .card-overlay-gradient {
       rgba(0, 0, 0, 0.06) 75%,
       rgba(0, 0, 0, 0.11) 100%
     ),
-    color-mix(in srgb, var(--theme-text) 88%, white 12%);
+    color-mix(in srgb, #FAFAFA 88%, white 12%);
   border: none;
   color: var(--theme-black);
   box-shadow: 
@@ -1319,7 +1319,7 @@ html[data-theme="day"] .card-overlay-gradient {
       rgba(0, 0, 0, 0.1) 75%,
       rgba(0, 0, 0, 0.15) 100%
     ),
-    color-mix(in srgb, var(--theme-text) 70%, black 30%);
+    color-mix(in srgb, #FAFAFA 70%, black 30%);
   border: none;
   color: var(--theme-black);
   box-shadow: 

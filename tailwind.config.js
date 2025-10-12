@@ -51,7 +51,7 @@ module.exports = {
         d: dayPalette,
         theme: themePalette,
         // Brand color
-        brand: '#B8C0C0',
+        brand: '#FF8C00',
         'brand-cyan': 'var(--brand-cyan)',
         'brand-red': 'var(--brand-red)',
         // Alias palette for testing (maps to d- tokens)

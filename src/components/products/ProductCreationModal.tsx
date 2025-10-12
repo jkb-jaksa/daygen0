@@ -109,8 +109,8 @@ function ProductCreationModalComponent({
                 </div>
                 <h3 className="text-xl font-raleway text-theme-text">Upload your Product</h3>
               </div>
-              <div className="w-64 mx-auto">
-                {selection ? (
+              {selection ? (
+                <div className="w-48 mx-auto">
                   <div
                     className="relative aspect-square overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/50 card-media-frame"
                     data-has-image={Boolean(selection?.imageUrl)}
@@ -141,7 +141,9 @@ function ProductCreationModalComponent({
                       <Upload className="w-3 h-3" />
                     </button>
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <div className="w-64 mx-auto">
                   <label
                     className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-6 text-center text-sm font-raleway text-theme-white transition-colors duration-200 ${
                       isDragging
@@ -183,8 +185,8 @@ function ProductCreationModalComponent({
                       }}
                     />
                   </label>
-                )}
-              </div>
+                </div>
+              )}
               {uploadError && (
                 <p className="mt-3 text-sm font-raleway text-red-400 text-center">{uploadError}</p>
               )}

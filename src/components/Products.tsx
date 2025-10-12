@@ -1132,7 +1132,7 @@ export default function Products() {
                 products
               </p>
               <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
-                Add your Product.
+                Add your <span className="text-brand">Product</span>.
               </h1>
               <p className={headings.tripleHeading.description}>
                 {productsSubtitle}
@@ -1173,7 +1173,7 @@ export default function Products() {
                   <Plus className="h-5 w-5" />
                 </button>
               </div>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
                 {storedProducts.map(product => renderProductCard(product))}
               </div>
             </div>
