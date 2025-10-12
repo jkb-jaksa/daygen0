@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/useAuth";
 import { useFooter } from "./contexts/useFooter";
-import { layout, text, buttons, headings, glass } from "./styles/designSystem";
+import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
 
@@ -179,11 +179,11 @@ function Home() {
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
             <div className="flex flex-col gap-4">
-              <div className="home-hero relative z-10">
-                <div className="home-hero-copy flex max-w-5xl flex-col gap-2">
-                    <div className="flex flex-col gap-2 lg:max-w-xl">
+              <div className="home-hero relative z-10 w-full">
+                <div className="flex items-start justify-between gap-4 w-full">
+                  <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
-                      Your Daily AI Generations.
+                      Your <span className={brandColors.orange}>Daily</span> AI Generations.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-left mt-0 mb-1`}>
                       Master all the best Creative AI Tools in one place.
@@ -196,6 +196,9 @@ function Home() {
                         Create
                       </Link>
                     </div>
+                  </div>
+                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-light`}>
+                    day<span className={brandColors.orange}>gen</span>
                   </div>
                 </div>
               </div>
