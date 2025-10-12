@@ -26,6 +26,7 @@ import { layout, text, buttons, glass, headings, iconButtons } from "../styles/d
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
+const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
@@ -317,12 +318,18 @@ export default function Avatars() {
       const result = reader.result;
       if (typeof result === "string") {
         setSelection({ imageUrl: result, source: "upload" });
+        setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
       }
     };
     reader.onerror = () => {
       setUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  const selectImageFromGallery = useCallback((imageUrl: string) => {
+    setSelection({ imageUrl, source: "gallery", sourceId: imageUrl });
+    setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
   }, []);
 
   const handleSaveAvatar = useCallback(() => {
@@ -1380,11 +1387,25 @@ export default function Avatars() {
                 </p>
               </div>
               {!hasAvatars && (
-                <div className="mt-8 flex justify-center">
-                  <button type="button" className={buttons.primary} onClick={openAvatarCreator}>
-                    <Users className="h-5 w-5" />
-                    Create Avatar
-                  </button>
+                <div className="mt-8 w-full max-w-7xl mx-auto">
+                  <Suspense fallback={null}>
+                    <AvatarCreationOptions
+                      selection={selection}
+                      uploadError={uploadError}
+                      isDragging={isDragging}
+                      avatarName={avatarName}
+                      disableSave={disableSave}
+                      galleryImages={galleryImages}
+                      hasGalleryImages={hasGalleryImages}
+                      onAvatarNameChange={setAvatarName}
+                      onSave={handleSaveAvatar}
+                      onSelectFromGallery={selectImageFromGallery}
+                      onClearSelection={() => setSelection(null)}
+                      onProcessFile={processImageFile}
+                      onDragStateChange={setIsDragging}
+                      onUploadError={setUploadError}
+                    />
+                  </Suspense>
                 </div>
               )}
             </header>
@@ -1442,7 +1463,7 @@ export default function Avatars() {
             onClose={resetPanel}
             onAvatarNameChange={setAvatarName}
             onSave={handleSaveAvatar}
-            onSelectFromGallery={(imageUrl) => setSelection({ imageUrl, source: 'gallery', sourceId: imageUrl })}
+            onSelectFromGallery={selectImageFromGallery}
             onClearSelection={() => setSelection(null)}
             onProcessFile={processImageFile}
             onDragStateChange={setIsDragging}
