@@ -7630,7 +7630,8 @@ const handleGenerate = async () => {
                                 handleAvatarQuickUpload(file);
                               }}
                             >
-                              <p className="text-sm text-n-white">
+                              <Upload className="w-5 h-5 text-n-white mb-0" />
+                              <p className="text-sm text-n-white mb-0">
                                 Drop your image.
                               </p>
                               <button
@@ -7815,7 +7816,8 @@ const handleGenerate = async () => {
                                 handleProductQuickUpload(file);
                               }}
                             >
-                              <p className="text-sm text-n-white">
+                              <Upload className="w-5 h-5 text-n-white mb-0" />
+                              <p className="text-sm text-n-white mb-0">
                                 Drop your image.
                               </p>
                               <button
