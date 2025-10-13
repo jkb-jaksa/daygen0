@@ -15,6 +15,7 @@ export interface QwenGeneratedImage {
   watermark?: boolean;
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface QwenImageGenerationState {
@@ -32,6 +33,7 @@ export interface QwenGenerateOptions {
   prompt_extend?: boolean;
   watermark?: boolean;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
@@ -78,6 +80,8 @@ export const useQwenImageGeneration = () => {
             watermark: options.watermark,
             ownerId: user?.id,
             avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
+            avatarImageId: options.avatarImageId,
           };
 
           return [image];
@@ -182,6 +186,7 @@ export const useQwenImageGeneration = () => {
           watermark: options.watermark,
           ownerId: user?.id,
           avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
         };
 
         setState((prev) => ({

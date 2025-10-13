@@ -37,6 +37,7 @@ export type GalleryImageLike = {
   savedFrom?: SavedCreator;
   avatarId?: string;
   productId?: string;
+  avatarImageId?: string;
 };
 
 export type GalleryVideoLike = {
@@ -52,6 +53,7 @@ export type GalleryVideoLike = {
   operationName?: string;
   avatarId?: string; // Avatar ID for filtering
   productId?: string; // Product ID for filtering
+  avatarImageId?: string;
 };
 
 export type StoredGalleryImage = {
@@ -65,6 +67,7 @@ export type StoredGalleryImage = {
   savedFrom?: SavedCreator;
   avatarId?: string;
   productId?: string;
+  avatarImageId?: string;
 };
 
 export type PendingGalleryItem = {

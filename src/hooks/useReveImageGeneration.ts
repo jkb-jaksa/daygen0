@@ -12,6 +12,7 @@ export interface ReveGeneratedImage {
   references?: string[];
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface ReveImageGenerationState {
@@ -34,6 +35,7 @@ export interface ReveImageGenerationOptions {
   seed?: number;
   references?: string[];
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
@@ -79,6 +81,8 @@ export const useReveImageGeneration = () => {
             references: options.references || undefined,
             ownerId: user?.id,
             avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
+            avatarImageId: options.avatarImageId,
           };
         }
 
@@ -199,6 +203,7 @@ export const useReveImageGeneration = () => {
           references: options.references || undefined,
           ownerId: user?.id,
           avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
         };
 
         setState((prev) => ({

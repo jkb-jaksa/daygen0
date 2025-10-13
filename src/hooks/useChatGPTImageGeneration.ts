@@ -14,6 +14,7 @@ export interface ChatGPTGeneratedImage {
   background: string;
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface ChatGPTImageGenerationState {
@@ -29,6 +30,7 @@ export interface ChatGPTImageGenerationOptions {
   quality?: 'standard' | 'high';
   background?: 'transparent' | 'white' | 'black';
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export const useChatGPTImageGeneration = () => {
@@ -69,6 +71,8 @@ export const useChatGPTImageGeneration = () => {
             background: options.background ?? 'transparent',
             ownerId: user?.id,
             avatarId: options.avatarId,
+        avatarImageId: options.avatarImageId,
+            avatarImageId: options.avatarImageId,
           };
         }
 
@@ -175,6 +179,7 @@ export const useChatGPTImageGeneration = () => {
         background,
         ownerId: user?.id,
         avatarId: options.avatarId,
+        avatarImageId: options.avatarImageId,
       };
 
       setState(prev => ({

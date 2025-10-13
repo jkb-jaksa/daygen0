@@ -659,15 +659,26 @@ const ChatMode: React.FC = () => {
     const reader = new FileReader();
     reader.onload = async loadEvent => {
       const imageUrl = loadEvent.target?.result as string;
+      const createdAt = new Date().toISOString();
+      const imageId = `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const record: StoredAvatar = {
         id: `product-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         slug: `product-${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, ""),
         imageUrl,
-        createdAt: new Date().toISOString(),
+        createdAt,
         source: "upload",
         published: false,
         ownerId: user?.id,
+        primaryImageId: imageId,
+        images: [
+          {
+            id: imageId,
+            url: imageUrl,
+            createdAt,
+            source: "upload",
+          },
+        ],
       };
 
       const updated = [record, ...storedProducts];

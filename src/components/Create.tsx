@@ -525,6 +525,7 @@ const Create: React.FC = () => {
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
+  const [selectedAvatarImageId, setSelectedAvatarImageId] = useState<string | null>(null);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
@@ -540,6 +541,21 @@ const Create: React.FC = () => {
   const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
   const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
   const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
+  const selectedAvatarImage = useMemo(() => {
+    if (!selectedAvatar) return null;
+    const targetId = selectedAvatarImageId ?? selectedAvatar.primaryImageId;
+    return selectedAvatar.images.find(image => image.id === targetId) ?? selectedAvatar.images[0] ?? null;
+  }, [selectedAvatar, selectedAvatarImageId]);
+  const selectedAvatarImageIndex = useMemo(() => {
+    if (!selectedAvatar) return null;
+    const activeId = selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId;
+    const index = selectedAvatar.images.findIndex(image => image.id === activeId);
+    return index >= 0 ? index : null;
+  }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
+  const activeAvatarImageId = useMemo(() => {
+    if (!selectedAvatar) return null;
+    return selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId ?? selectedAvatar.images[0]?.id ?? null;
+  }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
   // Avatar creation modal state
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
@@ -1974,6 +1990,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         if (isMounted) {
           setStoredAvatars([]);
           setSelectedAvatar(null);
+          setSelectedAvatarImageId(null);
           setPendingAvatarId(null);
         }
         return;
@@ -2017,6 +2034,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     const match = storedAvatars.find(avatar => avatar.id === pendingAvatarId);
     if (match) {
       setSelectedAvatar(match);
+      setSelectedAvatarImageId(match.primaryImageId ?? match.images[0]?.id ?? null);
       setPendingAvatarId(null);
     } else if (storedAvatars.length > 0) {
       setPendingAvatarId(null);
@@ -2028,12 +2046,21 @@ const [batchSize, setBatchSize] = useState<number>(1);
     const match = storedAvatars.find(avatar => avatar.id === selectedAvatar.id);
     if (!match) {
       setSelectedAvatar(null);
+      setSelectedAvatarImageId(null);
       return;
     }
     if (match !== selectedAvatar) {
       setSelectedAvatar(match);
+      setSelectedAvatarImageId(prev => {
+        if (prev && match.images.some(image => image.id === prev)) {
+          return prev;
+        }
+        return match.primaryImageId ?? match.images[0]?.id ?? null;
+      });
+    } else if (selectedAvatarImageId && !match.images.some(image => image.id === selectedAvatarImageId)) {
+      setSelectedAvatarImageId(match.primaryImageId ?? match.images[0]?.id ?? null);
     }
-  }, [selectedAvatar, storedAvatars]);
+  }, [selectedAvatar, selectedAvatarImageId, storedAvatars]);
 
   // Load products from storage
   useEffect(() => {
@@ -3687,6 +3714,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     (avatar: StoredAvatar) => {
       setPendingAvatarId(null);
       setSelectedAvatar(avatar);
+       setSelectedAvatarImageId(avatar.primaryImageId ?? avatar.images[0]?.id ?? null);
       setIsAvatarPickerOpen(false);
       if (referenceFiles.length > MAX_REFERENCES_WITH_AVATAR) {
         const trimmedFiles = referenceFiles.slice(0, MAX_REFERENCES_WITH_AVATAR);
@@ -3701,6 +3729,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const clearSelectedAvatar = useCallback(() => {
     setSelectedAvatar(null);
+    setSelectedAvatarImageId(null);
     setPendingAvatarId(null);
     setIsAvatarPickerOpen(false);
   }, []);
@@ -3751,6 +3780,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     
     if (selectedAvatar?.id === avatarToDelete.id) {
       setSelectedAvatar(null);
+      setSelectedAvatarImageId(null);
     }
     
     try {
@@ -4506,7 +4536,13 @@ const handleGenerate = async () => {
     const referencesForGeneration = referenceFiles.slice(0);
     if (selectedAvatar) {
       try {
-        const avatarFile = await urlToFile(selectedAvatar.imageUrl, `${selectedAvatar.id}.png`);
+        const avatarImageToUse =
+          selectedAvatarImage ??
+          selectedAvatar.images.find(image => image.id === (selectedAvatarImageId ?? selectedAvatar.primaryImageId)) ??
+          selectedAvatar.images[0];
+        const avatarSourceUrl = avatarImageToUse?.url ?? selectedAvatar.imageUrl;
+        const avatarFileName = `${selectedAvatar.id}-${avatarImageToUse?.id ?? "primary"}.png`;
+        const avatarFile = await urlToFile(avatarSourceUrl, avatarFileName);
         referencesForGeneration.unshift(avatarFile);
       } catch (error) {
         debugError('Failed to prepare avatar reference for generation', error);
@@ -4688,6 +4724,7 @@ const handleGenerate = async () => {
             topP: topPForGeneration,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
             clientJobId: generationId,
             onProgress: handleGeminiProgress,
@@ -4701,6 +4738,7 @@ const handleGenerate = async () => {
             useWebhook: false,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           };
 
@@ -4726,6 +4764,7 @@ const handleGenerate = async () => {
             quality: 'high',
             background: 'transparent',
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
         } else if (isIdeogramModel) {
@@ -4735,6 +4774,7 @@ const handleGenerate = async () => {
             rendering_speed: 'DEFAULT',
             num_images: 1,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           if (!ideogramResult || ideogramResult.length === 0) {
@@ -4748,6 +4788,7 @@ const handleGenerate = async () => {
             prompt_extend: qwenPromptExtendForGeneration,
             watermark: qwenWatermarkForGeneration,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           if (!qwenResult || qwenResult.length === 0) {
@@ -4762,6 +4803,7 @@ const handleGenerate = async () => {
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             ratio: "1920:1080",
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           img = runwayResult;
@@ -4775,6 +4817,7 @@ const handleGenerate = async () => {
             height: 1024,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           img = reveResult;
@@ -4847,6 +4890,7 @@ const handleGenerate = async () => {
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
               avatarId: selectedAvatar?.id,
+              avatarImageId: activeAvatarImageId ?? undefined,
               productId: selectedProduct?.id,
             };
           } else {
@@ -4862,6 +4906,7 @@ const handleGenerate = async () => {
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
               avatarId: selectedAvatar?.id,
+              avatarImageId: activeAvatarImageId ?? undefined,
               productId: selectedProduct?.id,
             };
           }
@@ -4875,6 +4920,7 @@ const handleGenerate = async () => {
             prompt: finalPrompt,
             model: resolvedLumaModel,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
 
@@ -7315,15 +7361,24 @@ const handleGenerate = async () => {
                         {selectedAvatar && (
                           <span className="ml-0.5 flex items-center gap-2">
                             <img
-                              src={selectedAvatar.imageUrl}
+                              src={selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
                               alt={selectedAvatar.name}
                               loading="lazy"
                               className="w-7 h-7 rounded-lg object-cover border border-n-mid"
-                              title={selectedAvatar.name}
+                              title={
+                                selectedAvatarImageIndex !== null
+                                  ? `${selectedAvatar.name} — Variation ${selectedAvatarImageIndex + 1}`
+                                  : selectedAvatar.name
+                              }
                             />
                             <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
                               {selectedAvatar.name}
                             </span>
+                            {selectedAvatarImageIndex !== null && (
+                              <span className="hidden lg:inline text-xs font-raleway text-n-text/70">
+                                (Var {selectedAvatarImageIndex + 1})
+                              </span>
+                            )}
                           </span>
                         )}
                       </button>
@@ -8969,72 +9024,148 @@ const handleGenerate = async () => {
                 type="button"
                 className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
                 onClick={() => setCreationsModalAvatar(null)}
-                aria-label="Close Avatar creations"
+                aria-label="Close Avatar details"
               >
                 <X className="h-5 w-5" />
               </button>
 
               <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-raleway text-theme-text">
-                    Creations with {creationsModalAvatar.name}
-                  </h2>
-                  <p className="text-sm font-raleway text-theme-white">
-                    Manage creations with your Avatar.
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-raleway text-theme-text">
+                      Avatar: {creationsModalAvatar.name}
+                    </h2>
+                    <p className="text-sm font-raleway text-theme-white">
+                      Choose which avatar image you want to send with your next prompt.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className={buttons.ghost}
+                      onClick={() => {
+                        navigate(`/create/avatars/${creationsModalAvatar.slug}`);
+                        setCreationsModalAvatar(null);
+                      }}
+                    >
+                      Manage avatar
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {creationsModalAvatar.images.map((image, index) => {
+                      const isSelectedForPrompt =
+                        selectedAvatar?.id === creationsModalAvatar.id
+                          ? (selectedAvatarImageId ?? creationsModalAvatar.primaryImageId) === image.id
+                          : false;
+                      const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                      return (
+                        <div key={image.id} className="flex flex-col items-center gap-2">
+                          <div
+                            className={`relative aspect-square w-32 overflow-hidden rounded-2xl border ${
+                              isSelectedForPrompt ? 'border-theme-text ring-2 ring-theme-text/50' : 'border-theme-dark'
+                            } bg-theme-black/60`}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute left-2 top-2 flex flex-col gap-1">
+                              {isPrimary && (
+                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                  Primary
+                                </span>
+                              )}
+                              {isSelectedForPrompt && (
+                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                  In use
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
+                            <button
+                              type="button"
+                              className={`rounded-full border px-3 py-1 transition-colors duration-200 ${
+                                isSelectedForPrompt
+                                  ? 'border-theme-text text-theme-text'
+                                  : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
+                              }`}
+                              onClick={() => {
+                                setSelectedAvatar(creationsModalAvatar);
+                                setSelectedAvatarImageId(image.id);
+                                setCreationsModalAvatar(null);
+                              }}
+                            >
+                              {isSelectedForPrompt ? 'Using for prompts' : 'Use for prompts'}
+                            </button>
+                            <a
+                              href={image.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
+                            >
+                              Open
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs font-raleway text-theme-white/60">
+                    You can add or edit avatar images from the manage avatar page.
                   </p>
                 </div>
 
-                {/* Main Avatar Display */}
-                <div className="flex justify-start">
-                  <div className="w-1/3 sm:w-1/5 lg:w-1/6">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
-                      <img
-                        src={creationsModalAvatar.imageUrl}
-                        alt={creationsModalAvatar.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalAvatar.name}</p>
-                  </div>
-                </div>
-
-                {/* Creations Grid */}
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {gallery
-                    .filter(img => img.avatarId === creationsModalAvatar.id)
-                    .map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
-                        <img
-                          src={img.url}
-                          alt={img.prompt || 'Generated image'}
-                          loading="lazy"
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => {
-                            setSelectedFullImage(img);
-                            setIsFullSizeOpen(true);
-                          }}
-                        />
-                        <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <div className="absolute bottom-0 left-0 right-0 p-2">
-                            <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
+                <div className="space-y-3">
+                  <h3 className="text-lg font-raleway text-theme-text">
+                    Creations with {creationsModalAvatar.name}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {gallery
+                      .filter(img => img.avatarId === creationsModalAvatar.id)
+                      .map(image => (
+                        <div key={image.url} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                          <img
+                            src={image.url}
+                            alt={image.prompt || 'Generated image'}
+                            loading="lazy"
+                            className="h-full w-full object-cover cursor-pointer"
+                            onClick={() => {
+                              setSelectedFullImage(image);
+                              setIsFullSizeOpen(true);
+                            }}
+                          />
+                          {image.avatarImageId && (
+                            <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                              Variation {Math.max(1, creationsModalAvatar.images.findIndex(img => img.id === image.avatarImageId) + 1)}
+                            </span>
+                          )}
+                          <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                </div>
-
-                {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
-                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
-                    <p className="text-sm font-raleway text-theme-light">
-                      Generate a new image with this avatar to see it appear here.
-                    </p>
+                      ))}
                   </div>
-                )}
+                  {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
+                    <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                      <p className="text-sm font-raleway text-theme-light">
+                        Generate a new image with this avatar to see it appear here.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
+
 
         {creationsModalProduct && (
           <div

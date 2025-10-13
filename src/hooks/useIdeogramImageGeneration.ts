@@ -16,6 +16,7 @@ export interface IdeogramGeneratedImage {
   negativePrompt?: string;
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface IdeogramImageGenerationState {
@@ -37,6 +38,7 @@ export interface IdeogramGenerateOptions {
   style_type?: 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION';
   negative_prompt?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface IdeogramEditOptions {
@@ -104,6 +106,7 @@ export const useIdeogramImageGeneration = () => {
       styleType: string | undefined,
       negativePrompt: string | undefined,
       avatarId: string | undefined,
+      avatarImageId: string | undefined,
       ownerId: string | undefined,
     ): Promise<IdeogramGeneratedImage[]> => {
       const maxAttempts = 60; // 5 minutes with 5-second intervals
@@ -258,6 +261,7 @@ export const useIdeogramImageGeneration = () => {
             options.style_type,
             options.negative_prompt,
             options.avatarId,
+            options.avatarImageId,
             user?.id,
           );
 

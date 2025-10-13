@@ -15,6 +15,7 @@ export interface FluxGeneratedImage {
   references?: string[];
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
   r2FileId?: string;
 }
 
@@ -46,6 +47,7 @@ export interface FluxImageGenerationOptions {
   useWebhook?: boolean;
   references?: string[];
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
@@ -67,6 +69,7 @@ export const useFluxImageGeneration = () => {
       model: string,
       references: string[] | undefined,
       avatarId: string | undefined,
+      avatarImageId: string | undefined,
       ownerId: string | undefined,
     ): Promise<FluxGeneratedImage> => {
       const pollIntervalMs = 3000;
@@ -141,6 +144,7 @@ export const useFluxImageGeneration = () => {
               references: references || undefined,
               ownerId,
               avatarId,
+              avatarImageId,
               r2FileId,
             };
           }
@@ -228,6 +232,8 @@ export const useFluxImageGeneration = () => {
             model: resolvedModel,
             references,
             providerOptions,
+            avatarId: options.avatarId,
+            avatarImageId: options.avatarImageId,
           }),
         });
 
@@ -261,6 +267,7 @@ export const useFluxImageGeneration = () => {
           resolvedModel,
           references,
           options.avatarId,
+          options.avatarImageId,
           user?.id,
         );
 

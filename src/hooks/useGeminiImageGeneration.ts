@@ -12,6 +12,7 @@ export interface GeneratedImage {
   references?: string[]; // Base64 data URLs for reference images used
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
+  avatarImageId?: string;
   r2FileId?: string;
 }
 
@@ -94,6 +95,7 @@ export interface ImageGenerationOptions {
   topP?: number;
   aspectRatio?: string;
   avatarId?: string;
+  avatarImageId?: string;
   clientJobId?: string;
   onProgress?: (update: ImageGenerationProgressUpdate) => void;
 }
@@ -307,6 +309,7 @@ export const useGeminiImageGeneration = () => {
     model: string,
     references: string[] | undefined,
     avatarId: string | undefined,
+    avatarImageId: string | undefined,
     ownerId: string | undefined,
   ): Promise<GeneratedImage> => {
     const pollIntervalMs = 3000;
@@ -408,6 +411,7 @@ export const useGeminiImageGeneration = () => {
             references: references || undefined,
             ownerId,
             avatarId,
+            avatarImageId,
             r2FileId,
           };
         }
@@ -487,6 +491,13 @@ export const useGeminiImageGeneration = () => {
         outputLength,
         topP,
       };
+
+      if (options.avatarId) {
+        baseBody.avatarId = options.avatarId;
+      }
+      if (options.avatarImageId) {
+        baseBody.avatarImageId = options.avatarImageId;
+      }
 
       if (aspectRatio) {
         baseBody.providerOptions = { aspectRatio };
@@ -576,6 +587,7 @@ export const useGeminiImageGeneration = () => {
           modelUsed,
           references,
           options.avatarId,
+          options.avatarImageId,
           user?.id
         );
 
@@ -610,6 +622,7 @@ export const useGeminiImageGeneration = () => {
         references: references || undefined,
         ownerId: user?.id,
         avatarId: options.avatarId,
+        avatarImageId: options.avatarImageId,
       };
 
       stopProgressController({
