@@ -371,59 +371,145 @@ export default function Avatars() {
     void persistGalleryImages(galleryImages);
   }, [galleryImages, persistGalleryImages]);
 
-  const handleAddAvatarImage = useCallback(
-    async (avatarId: string, file: File, source: AvatarImage["source"] = "upload", sourceId?: string) => {
+  const getFilesFromDataTransfer = (dataTransfer: DataTransfer | null): File[] => {
+    if (!dataTransfer) return [];
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+      const files = Array.from(dataTransfer.items)
+        .filter(item => item.kind === "file")
+        .map(item => item.getAsFile())
+        .filter((file): file is File => Boolean(file));
+      if (files.length > 0) {
+        return files;
+      }
+    }
+    return Array.from(dataTransfer.files ?? []);
+  };
+
+  const handleAddAvatarImages = useCallback(
+  async (
+    avatarId: string,
+    incomingFiles: File[] | FileList,
+    source: AvatarImage["source"] = "upload",
+    sourceId?: string,
+  ) => {
+    const files = Array.isArray(incomingFiles) ? incomingFiles : Array.from(incomingFiles);
+    const imageFiles = files.filter(file => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      setAvatarImageUploadError("Please choose an image file.");
+      return;
+    }
+
+    const targetAvatar = avatars.find(avatar => avatar.id === avatarId);
+    if (!targetAvatar) {
+      setAvatarImageUploadError("We couldn't find that avatar.");
+      return;
+    }
+
+    const availableSlots = Math.max(0, MAX_AVATAR_IMAGES - targetAvatar.images.length);
+    if (availableSlots <= 0) {
+      setAvatarImageUploadError(`You can add up to ${MAX_AVATAR_IMAGES} images per avatar.`);
+      return;
+    }
+
+    const skippedReasons: string[] = [];
+    const validFiles: File[] = [];
+    for (const file of imageFiles) {
+      if (validFiles.length >= availableSlots) {
+        skippedReasons.push(
+          availableSlots === 1
+            ? "Only one additional image can be added right now. Extra files were skipped."
+            : `Only ${availableSlots} additional images can be added right now. Extra files were skipped.`,
+        );
+        break;
+      }
       const validationError = validateAvatarFile(file);
       if (validationError) {
-        setAvatarImageUploadError(validationError);
-        return;
+        skippedReasons.push(validationError);
+        continue;
       }
-      const targetAvatar = avatars.find(avatar => avatar.id === avatarId);
-      if (!targetAvatar) {
-        setAvatarImageUploadError("We couldn't find that avatar.");
-        return;
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      setAvatarImageUploadError(skippedReasons[0] ?? "Please choose an image file.");
+      return;
+    }
+
+    setIsUploadingAvatarImage(true);
+    try {
+      const processedResults = await Promise.allSettled(
+        validFiles.map(async file => {
+          const url = await readFileAsDataUrl(file);
+          const image: AvatarImage = {
+            id: `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            url,
+            createdAt: new Date().toISOString(),
+            source,
+            sourceId,
+          };
+          return image;
+        }),
+      );
+
+      const successfulImages: AvatarImage[] = [];
+      for (const result of processedResults) {
+        if (result.status === "fulfilled") {
+          successfulImages.push(result.value);
+        } else {
+          skippedReasons.push("We couldn't read one of the images. Try uploading it again.");
+        }
       }
-      if (targetAvatar.images.length >= MAX_AVATAR_IMAGES) {
-        setAvatarImageUploadError(`You can add up to ${MAX_AVATAR_IMAGES} images per avatar.`);
+
+      if (successfulImages.length === 0) {
+        setAvatarImageUploadError(skippedReasons[0] ?? "We couldn't read that image. Try uploading a different file.");
         return;
       }
 
-      setAvatarImageUploadError(null);
-      setIsUploadingAvatarImage(true);
-      try {
-        const url = await readFileAsDataUrl(file);
-        const createdAt = new Date().toISOString();
-        const image: AvatarImage = {
-          id: `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          url,
-          createdAt,
-          source,
-          sourceId,
-        };
-        let updatedAvatar: StoredAvatar | null = null;
-        setAvatars(prev => {
-          const updated = prev.map(record => {
-            if (record.id !== avatarId) {
-              return record;
-            }
-            const next = withUpdatedAvatarImages(record, images => [...images, image]);
-            updatedAvatar = next;
-            return next;
-          });
-          void persistAvatars(updated);
-          return updated;
+      let updatedAvatar: StoredAvatar | null = null;
+      setAvatars(prev => {
+        const updated = prev.map(record => {
+          if (record.id !== avatarId) {
+            return record;
+          }
+          const next = withUpdatedAvatarImages(record, images => [...images, ...successfulImages]);
+          updatedAvatar = next;
+          return next;
         });
-        if (updatedAvatar && creationsModalAvatar?.id === avatarId) {
-          setCreationsModalAvatar(updatedAvatar);
-        }
-      } catch (error) {
-        debugError("Failed to add avatar image", error);
-        setAvatarImageUploadError("We couldn't read that image. Try uploading a different file.");
-      } finally {
-        setIsUploadingAvatarImage(false);
+        void persistAvatars(updated);
+        return updated;
+      });
+
+      if (updatedAvatar && creationsModalAvatar?.id === avatarId) {
+        setCreationsModalAvatar(updatedAvatar);
       }
+
+      if (skippedReasons.length > 0) {
+        setAvatarImageUploadError(`Some files were skipped: ${skippedReasons[0]}`);
+      } else {
+        setAvatarImageUploadError(null);
+      }
+    } catch (error) {
+      debugError("Failed to add avatar images", error);
+      setAvatarImageUploadError("We couldn't read that image. Try uploading a different file.");
+    } finally {
+      setIsUploadingAvatarImage(false);
+    }
+  },
+  [avatars, creationsModalAvatar, persistAvatars],
+);
+
+  const handleAvatarImagesDrop = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) {
+        setAvatarImageUploadError("Please choose an image file.");
+        return;
+      }
+      if (!creationsModalAvatar) {
+        return;
+      }
+      void handleAddAvatarImages(creationsModalAvatar.id, files);
     },
-    [avatars, creationsModalAvatar, persistAvatars],
+    [creationsModalAvatar, handleAddAvatarImages],
   );
 
   const handleRemoveAvatarImage = useCallback(
@@ -501,18 +587,17 @@ export default function Avatars() {
         event.target.value = "";
         return;
       }
-      const file = Array.from(files).find(item => item.type.startsWith("image/"));
-      if (!file) {
-        setAvatarImageUploadError("Please choose an image file.");
+      const fileArray = Array.from(files);
+      if (fileArray.length === 0) {
         event.target.value = "";
         return;
       }
 
-      void handleAddAvatarImage(targetId, file);
+      void handleAddAvatarImages(targetId, fileArray);
       event.target.value = "";
       setAvatarImageUploadTarget(null);
     },
-    [avatarImageUploadTarget, creationsModalAvatar, handleAddAvatarImage],
+    [avatarImageUploadTarget, creationsModalAvatar, handleAddAvatarImages],
   );
 
   const processImageFile = useCallback((file: File) => {
@@ -1876,7 +1961,24 @@ export default function Avatars() {
               {avatarImages.length}/{MAX_AVATAR_IMAGES} images
             </span>
           </div>
-          <div className="flex flex-wrap gap-4">
+          <div
+            className="flex flex-wrap gap-4"
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = "copy";
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDraggingOverSlot(null);
+              const files = getFilesFromDataTransfer(e.dataTransfer);
+              e.dataTransfer?.clearData();
+              handleAvatarImagesDrop(files);
+            }}
+          >
             {imageSlots.map((_, index) => {
               const image = avatarImages[index];
               if (!image) {
@@ -1908,20 +2010,17 @@ export default function Avatars() {
                     onDragOver={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      if (e.dataTransfer) {
+                        e.dataTransfer.dropEffect = "copy";
+                      }
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setDraggingOverSlot(null);
-                      const files = Array.from(e.dataTransfer?.files ?? []);
-                      if (files.length > 0 && creationsModalAvatar) {
-                        const file = files.find(f => f.type.startsWith("image/"));
-                        if (file) {
-                          void handleAddAvatarImage(creationsModalAvatar.id, file);
-                        } else {
-                          setAvatarImageUploadError("Please choose an image file.");
-                        }
-                      }
+                      const files = getFilesFromDataTransfer(e.dataTransfer);
+                      e.dataTransfer?.clearData();
+                      handleAvatarImagesDrop(files);
                     }}
                     role="button"
                     tabIndex={0}
