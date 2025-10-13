@@ -184,6 +184,7 @@ export default function Avatars() {
   const [selection, setSelection] = useState<AvatarSelection | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
@@ -1703,7 +1704,7 @@ export default function Avatars() {
                 onSubmit={submitRename}
               >
                 <input
-                  className="bg-transparent text-lg font-raleway text-theme-text focus:outline-none"
+                  className="bg-transparent text-3xl font-raleway text-theme-text focus:outline-none"
                   value={editingName}
                   onChange={event => setEditingName(event.target.value)}
                   autoFocus
@@ -1725,10 +1726,10 @@ export default function Avatars() {
               </form>
             ) : (
               <>
-                <h1 className="text-3xl font-raleway text-theme-text">{creationsModalAvatar.name}</h1>
+                <h1 className="text-3xl font-raleway text-theme-text h-12 flex items-center">{creationsModalAvatar.name}</h1>
                 <button
                   type="button"
-                  className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
+                  className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
                   onClick={() => startRenaming(creationsModalAvatar)}
                 >
                   <Pencil className="h-4 w-4" />
@@ -1880,19 +1881,64 @@ export default function Avatars() {
               const image = avatarImages[index];
               if (!image) {
                 return (
-                  <button
+                  <div
                     key={`placeholder-${index}`}
-                    type="button"
-                    className="flex aspect-square w-32 items-center justify-center rounded-2xl border-2 border-dashed border-theme-white/30 bg-theme-black/40 text-theme-white/70 transition-colors duration-200 hover:border-theme-text/60 hover:text-theme-text"
+                    className={`flex aspect-square w-32 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
+                      draggingOverSlot === index
+                        ? "border-brand drag-active"
+                        : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
+                    }`}
                     onClick={openAvatarImageUploader}
-                    disabled={isUploadingAvatarImage}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingOverSlot(index);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Only set dragging to false if we're leaving the drop zone entirely
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX;
+                      const y = e.clientY;
+                      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+                        setDraggingOverSlot(null);
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingOverSlot(null);
+                      const files = Array.from(e.dataTransfer?.files ?? []);
+                      if (files.length > 0 && creationsModalAvatar) {
+                        const file = files.find(f => f.type.startsWith("image/"));
+                        if (file) {
+                          void handleAddAvatarImage(creationsModalAvatar.id, file);
+                        } else {
+                          setAvatarImageUploadError("Please choose an image file.");
+                        }
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openAvatarImageUploader();
+                      }
+                    }}
+                    aria-label="Upload avatar image"
                   >
                     {isUploadingAvatarImage ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <Upload className="h-5 w-5" />
                     )}
-                  </button>
+                  </div>
                 );
               }
 

@@ -1,4 +1,4 @@
-import { memo, useRef, useEffect, useState } from "react";
+import { memo, useRef, useEffect, useState, useCallback } from "react";
 import { Upload, X, Check, Pencil } from "lucide-react";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
@@ -38,6 +38,7 @@ function AvatarCreationOptionsComponent({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(true);
+  const dragCounterRef = useRef(0);
 
   // Auto-focus the name input when an avatar is selected
   useEffect(() => {
@@ -74,7 +75,7 @@ function AvatarCreationOptionsComponent({
     return null;
   };
 
-  const handleFiles = (files: FileList | File[]) => {
+  const handleFiles = useCallback((files: FileList | File[]) => {
     const list = Array.from(files);
     if (!list.length) return;
     const file = list.find(item => item.type.startsWith("image/"));
@@ -91,7 +92,38 @@ function AvatarCreationOptionsComponent({
 
     onUploadError(null);
     onProcessFile(file);
-  };
+  }, [onUploadError, onProcessFile]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) {
+      onDragStateChange(true);
+    }
+  }, [onDragStateChange]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      onDragStateChange(false);
+    }
+  }, [onDragStateChange]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    onDragStateChange(false);
+    handleFiles(Array.from(e.dataTransfer?.files ?? []));
+  }, [onDragStateChange, handleFiles]);
 
   return (
     <div className={`flex flex-col items-center gap-6 ${className ?? ""}`}>
@@ -175,16 +207,10 @@ function AvatarCreationOptionsComponent({
                 : "border-theme-white/30 hover:border-theme-text/50"
             }`}
             onClick={() => fileInputRef.current?.click()}
-            onDragOver={event => {
-              event.preventDefault();
-              onDragStateChange(true);
-            }}
-            onDragLeave={() => onDragStateChange(false)}
-            onDrop={event => {
-              event.preventDefault();
-              onDragStateChange(false);
-              handleFiles(event.dataTransfer?.files ?? []);
-            }}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             onPaste={event => {
               const items = Array.from(event.clipboardData?.items ?? []);
               const file = items.find(item => item.type.startsWith("image/"))?.getAsFile();
@@ -249,3 +275,4 @@ function AvatarCreationOptionsComponent({
 export const AvatarCreationOptions = memo(AvatarCreationOptionsComponent);
 
 export default AvatarCreationOptions;
+

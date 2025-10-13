@@ -1,5 +1,13 @@
 export type ProductSource = "upload" | "gallery";
 
+export interface ProductImage {
+  id: string;
+  url: string;
+  createdAt: string;
+  source: ProductSource;
+  sourceId?: string;
+}
+
 export interface StoredProduct {
   id: string;
   slug: string;
@@ -10,6 +18,8 @@ export interface StoredProduct {
   sourceId?: string;
   published: boolean;
   ownerId?: string;
+  primaryImageId: string;
+  images: ProductImage[];
 }
 
 export interface ProductSelection {
