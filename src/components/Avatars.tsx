@@ -238,8 +238,13 @@ export default function Avatars() {
   const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
   const [isUploadingAvatarImage, setIsUploadingAvatarImage] = useState<boolean>(false);
+  const avatarsRef = useRef<StoredAvatar[]>(avatars);
   const hasAvatars = avatars.length > 0;
   const { images: remoteGalleryImages } = useGalleryImages();
+
+  useEffect(() => {
+    avatarsRef.current = avatars;
+  }, [avatars]);
 
   const openAvatarCreator = useCallback(() => {
     setIsPanelOpen(true);
@@ -382,6 +387,42 @@ export default function Avatars() {
     void persistGalleryImages(galleryImages);
   }, [galleryImages, persistGalleryImages]);
 
+  const commitAvatarUpdate = useCallback(
+    (
+      avatarId: string,
+      updater: (images: AvatarImage[]) => AvatarImage[],
+      nextPrimaryId?: string,
+    ): StoredAvatar | null => {
+      let updatedAvatar: StoredAvatar | null = null;
+
+      setAvatars(prev => {
+        const updated = prev.map(record => {
+          if (record.id !== avatarId) {
+            return record;
+          }
+          const next = withUpdatedAvatarImages(record, updater, nextPrimaryId);
+          updatedAvatar = next;
+          return next;
+        });
+        if (updatedAvatar) {
+          void persistAvatars(updated);
+        }
+        return updated;
+      });
+
+      if (updatedAvatar) {
+        setCreationsModalAvatar(prev =>
+          prev && prev.id === avatarId
+            ? withUpdatedAvatarImages(prev, updater, nextPrimaryId)
+            : prev,
+        );
+      }
+
+      return updatedAvatar;
+    },
+    [persistAvatars],
+  );
+
   const handleAddAvatarImages = useCallback(
     async (
       avatarId: string,
@@ -394,7 +435,7 @@ export default function Avatars() {
         return;
       }
 
-      const targetAvatar = avatars.find(avatar => avatar.id === avatarId);
+      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
       if (!targetAvatar) {
         setAvatarImageUploadError("We couldn't find that avatar.");
         return;
@@ -448,25 +489,7 @@ export default function Avatars() {
           })),
         );
 
-        let updatedAvatar: StoredAvatar | null = null;
-        setAvatars(prev => {
-          const updated = prev.map(record => {
-            if (record.id !== avatarId) {
-              return record;
-            }
-            const next = withUpdatedAvatarImages(record, images => [...images, ...newImages]);
-            updatedAvatar = next;
-            return next;
-          });
-          if (updatedAvatar) {
-            void persistAvatars(updated);
-          }
-          return updated;
-        });
-
-        if (updatedAvatar && creationsModalAvatar?.id === avatarId) {
-          setCreationsModalAvatar(updatedAvatar);
-        }
+        commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
 
         let statusMessage: string | null = null;
         if (validationError && validFiles.length < limitedFiles.length) {
@@ -488,69 +511,45 @@ export default function Avatars() {
         setIsUploadingAvatarImage(false);
       }
     },
-    [avatars, creationsModalAvatar, persistAvatars],
-  );
-
-  const handleAddAvatarImage = useCallback(
-    (avatarId: string, file: File, source: AvatarImage["source"] = "upload", sourceId?: string) =>
-      handleAddAvatarImages(avatarId, [file], source, sourceId),
-    [handleAddAvatarImages],
+    [commitAvatarUpdate],
   );
 
   const handleRemoveAvatarImage = useCallback(
     (avatarId: string, imageId: string) => {
-      let updatedAvatar: StoredAvatar | null = null;
-      setAvatars(prev => {
-        const updated = prev.map(record => {
-          if (record.id !== avatarId) {
-            return record;
-          }
-          if (record.images.length <= 1) {
-            setAvatarImageUploadError("An avatar must keep at least one image.");
-            return record;
-          }
-          const next = withUpdatedAvatarImages(
-            record,
-            images => images.filter(image => image.id !== imageId),
-            record.primaryImageId === imageId ? undefined : record.primaryImageId,
-          );
-          updatedAvatar = next;
-          return next;
-        });
-        if (updatedAvatar) {
-          void persistAvatars(updated);
-        }
-        return updated;
-      });
-      if (updatedAvatar && creationsModalAvatar?.id === avatarId) {
-        setCreationsModalAvatar(updatedAvatar);
+      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
+      if (!targetAvatar) {
+        setAvatarImageUploadError("We couldn't find that avatar.");
+        return;
       }
+      if (targetAvatar.images.length <= 1) {
+        setAvatarImageUploadError("An avatar must keep at least one image.");
+        return;
+      }
+      setAvatarImageUploadError(null);
+      commitAvatarUpdate(
+        avatarId,
+        images => images.filter(image => image.id !== imageId),
+        targetAvatar.primaryImageId === imageId ? undefined : targetAvatar.primaryImageId,
+      );
     },
-    [creationsModalAvatar, persistAvatars],
+    [commitAvatarUpdate],
   );
 
   const handleSetPrimaryAvatarImage = useCallback(
     (avatarId: string, imageId: string) => {
-      let updatedAvatar: StoredAvatar | null = null;
-      setAvatars(prev => {
-        const updated = prev.map(record => {
-          if (record.id !== avatarId) {
-            return record;
-          }
-          const next = withUpdatedAvatarImages(record, images => images, imageId);
-          updatedAvatar = next;
-          return next;
-        });
-        if (updatedAvatar) {
-          void persistAvatars(updated);
-        }
-        return updated;
-      });
-      if (updatedAvatar && creationsModalAvatar?.id === avatarId) {
-        setCreationsModalAvatar(updatedAvatar);
+      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
+      if (!targetAvatar) {
+        setAvatarImageUploadError("We couldn't find that avatar.");
+        return;
       }
+      if (!targetAvatar.images.some(image => image.id === imageId)) {
+        setAvatarImageUploadError("We couldn't find that image.");
+        return;
+      }
+      setAvatarImageUploadError(null);
+      commitAvatarUpdate(avatarId, images => images, imageId);
     },
-    [creationsModalAvatar, persistAvatars],
+    [commitAvatarUpdate],
   );
 
   const openAvatarImageUploader = useCallback(() => {
@@ -1671,11 +1670,6 @@ export default function Avatars() {
               disableSave={disableSave}
               onAvatarNameChange={handleAvatarNameChange}
               onSave={handleSaveAvatar}
-              onSaveName={() => {
-                if (avatarName.trim() && selection) {
-                  // Name is already saved in state
-                }
-              }}
               onClearSelection={() => setSelection(null)}
               onProcessFile={processImageFile}
               onDragStateChange={setIsDragging}
@@ -2177,13 +2171,6 @@ export default function Avatars() {
             onClose={resetPanel}
             onAvatarNameChange={handleAvatarNameChange}
             onSave={handleSaveAvatar}
-            onSaveName={() => {
-              // Just save the name, don't close the modal
-              if (avatarName.trim() && selection) {
-                // Name is already saved in state, no additional action needed
-                // The user can continue editing or save the avatar later
-              }
-            }}
             onClearSelection={() => setSelection(null)}
             onProcessFile={processImageFile}
             onDragStateChange={setIsDragging}

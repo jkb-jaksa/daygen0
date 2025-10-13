@@ -12,7 +12,6 @@ export interface AvatarCreationOptionsProps {
   disableSave: boolean;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
-  onSaveName: () => void;
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
@@ -28,7 +27,6 @@ function AvatarCreationOptionsComponent({
   disableSave,
   onAvatarNameChange,
   onSave,
-  onSaveName,
   onClearSelection,
   onProcessFile,
   onDragStateChange,

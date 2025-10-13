@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { X, Search } from "lucide-react";
 import type { GalleryImageLike } from "../create/types";
-import { buttons, glass, inputs } from "../../styles/designSystem";
+import { inputs } from "../../styles/designSystem";
 
 interface GallerySelectionModalProps {
   open: boolean;

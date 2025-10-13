@@ -14,7 +14,6 @@ interface AvatarCreationModalProps {
   onClose: () => void;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
-  onSaveName: () => void;
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
@@ -31,7 +30,6 @@ function AvatarCreationModalComponent({
   onClose,
   onAvatarNameChange,
   onSave,
-  onSaveName,
   onClearSelection,
   onProcessFile,
   onDragStateChange,
@@ -73,7 +71,6 @@ function AvatarCreationModalComponent({
             disableSave={disableSave}
             onAvatarNameChange={onAvatarNameChange}
             onSave={onSave}
-            onSaveName={onSaveName}
             onClearSelection={onClearSelection}
             onProcessFile={onProcessFile}
             onDragStateChange={onDragStateChange}
