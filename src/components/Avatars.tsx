@@ -60,9 +60,61 @@ const defaultSubtitle =
 
 const MAX_AVATAR_IMAGES = 5;
 const AVATAR_ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const AVATAR_ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
+
+const LOCAL_AVATAR_STORAGE_KEY = "daygen.avatar-cache";
+
+const getFileExtension = (file: File): string | null => {
+  const name = file.name ?? "";
+  const lastDot = name.lastIndexOf(".");
+  if (lastDot === -1 || lastDot === name.length - 1) {
+    return null;
+  }
+  return name.slice(lastDot + 1).toLowerCase();
+};
+
+const isSupportedAvatarFile = (file: File): boolean => {
+  if (file.type && AVATAR_ALLOWED_TYPES.has(file.type)) {
+    return true;
+  }
+  const extension = getFileExtension(file);
+  if (!extension) return false;
+  return AVATAR_ALLOWED_EXTENSIONS.has(extension);
+};
+
+const readCachedAvatars = (): StoredAvatar[] | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LOCAL_AVATAR_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredAvatar[];
+  } catch (error) {
+    debugError("Failed to read cached avatars", error);
+    return null;
+  }
+};
+
+const writeCachedAvatars = (records: StoredAvatar[]) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_AVATAR_STORAGE_KEY, JSON.stringify(records));
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      // Clear the cache if quota is exceeded to allow the app to continue
+      debugError("localStorage quota exceeded, clearing avatar cache", error);
+      try {
+        window.localStorage.removeItem(LOCAL_AVATAR_STORAGE_KEY);
+      } catch (clearError) {
+        debugError("Failed to clear avatar cache", clearError);
+      }
+    } else {
+      debugError("Failed to write cached avatars", error);
+    }
+  }
+};
 
 const validateAvatarFile = (file: File): string | null => {
-  if (!AVATAR_ALLOWED_TYPES.has(file.type)) {
+  if (!isSupportedAvatarFile(file)) {
     return "Please choose a JPEG, PNG, or WebP image file.";
   }
 
@@ -237,8 +289,9 @@ export default function Avatars() {
   const avatarImageInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
-  const [isUploadingAvatarImage, setIsUploadingAvatarImage] = useState<boolean>(false);
+  const [uploadingAvatarIds, setUploadingAvatarIds] = useState<Set<string>>(new Set());
   const avatarsRef = useRef<StoredAvatar[]>(avatars);
+  const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
   const hasAvatars = avatars.length > 0;
   const { images: remoteGalleryImages } = useGalleryImages();
 
@@ -297,11 +350,18 @@ export default function Avatars() {
 
   const persistAvatars = useCallback(
     async (records: StoredAvatar[]) => {
+      // Always update ref first, regardless of cache/storage success
+      avatarsRef.current = records;
+      
+      // Try to write to cache (may fail due to quota)
+      writeCachedAvatars(records);
+      
+      // Try to persist to remote storage
       if (!storagePrefix) return;
       try {
         await setPersistedValue(storagePrefix, "avatars", records);
       } catch (error) {
-        debugError("Failed to persist avatars", error);
+        debugError("Failed to persist avatars to remote storage", error);
       }
     },
     [storagePrefix],
@@ -322,36 +382,59 @@ export default function Avatars() {
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
-      if (!storagePrefix) return;
       try {
-        const [storedAvatars, storedGallery, storedFolders] = await Promise.all([
-          getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
-          getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
-          getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),
-        ]);
-        if (!isMounted) return;
+        if (storagePrefix) {
+          const [storedAvatars, storedGallery, storedFolders] = await Promise.all([
+            getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
+            getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
+            getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),
+          ]);
+          if (!isMounted) return;
 
-        if (storedAvatars) {
-          const normalized = normalizeStoredAvatars(storedAvatars, { ownerId: user?.id ?? undefined });
-          setAvatars(normalized);
-          if (storedAvatars.some(avatar => !avatar.slug || (!avatar.ownerId && user?.id))) {
-            void persistAvatars(normalized);
+          if (storedAvatars) {
+            const normalized = normalizeStoredAvatars(storedAvatars, { ownerId: user?.id ?? undefined });
+            setAvatars(normalized);
+            writeCachedAvatars(normalized);
+            if (storedAvatars.some(avatar => !avatar.slug || (!avatar.ownerId && user?.id))) {
+              void persistAvatars(normalized);
+            }
+          } else {
+            const cached = readCachedAvatars();
+            if (cached) {
+              const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
+              setAvatars(normalized);
+              writeCachedAvatars(normalized);
+            }
           }
-        }
 
-        if (storedGallery) {
-          setGalleryImages(hydrateStoredGallery(storedGallery));
-        }
+          if (storedGallery) {
+            setGalleryImages(hydrateStoredGallery(storedGallery));
+          }
 
-        if (storedFolders) {
-          setFolders(storedFolders.map(folder => ({
-            ...folder,
-            createdAt: new Date(folder.createdAt),
-            videoIds: folder.videoIds || [],
-          })));
+          if (storedFolders) {
+            setFolders(storedFolders.map(folder => ({
+              ...folder,
+              createdAt: new Date(folder.createdAt),
+              videoIds: folder.videoIds || [],
+            })));
+          }
+        } else {
+          const cached = readCachedAvatars();
+          if (cached) {
+            const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
+            if (!isMounted) return;
+            setAvatars(normalized);
+            writeCachedAvatars(normalized);
+          }
         }
       } catch (error) {
         debugError("Failed to load avatar data", error);
+        const cached = readCachedAvatars();
+        if (cached && isMounted) {
+          const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
+          setAvatars(normalized);
+          writeCachedAvatars(normalized);
+        }
       }
     };
 
@@ -406,17 +489,13 @@ export default function Avatars() {
         });
         if (updatedAvatar) {
           void persistAvatars(updated);
+          // Synchronize modal state immediately with the same computed avatar
+          setCreationsModalAvatar(current =>
+            current && current.id === avatarId ? updatedAvatar : current,
+          );
         }
         return updated;
       });
-
-      if (updatedAvatar) {
-        setCreationsModalAvatar(prev =>
-          prev && prev.id === avatarId
-            ? withUpdatedAvatarImages(prev, updater, nextPrimaryId)
-            : prev,
-        );
-      }
 
       return updatedAvatar;
     },
@@ -431,25 +510,93 @@ export default function Avatars() {
       sourceId?: string,
     ) => {
       if (!files.length) {
-        setAvatarImageUploadError("Please choose an image file.");
+        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
         return;
       }
 
-      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
+      // Check if this avatar is already uploading - if so, queue the files
+      setUploadingAvatarIds(prev => {
+        if (prev.has(avatarId)) {
+          // Queue these files for later processing
+          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
+          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
+          return prev;
+        }
+        // Mark as uploading
+        const next = new Set(prev);
+        next.add(avatarId);
+        return next;
+      });
+
+      // If already uploading, the files have been queued and we return
+      if (uploadingAvatarIds.has(avatarId)) {
+        return;
+      }
+
+      try {
+        // Process current batch
+        await processAvatarImageBatch(avatarId, files, source, sourceId);
+
+        // Process any queued files
+        while (pendingUploadsRef.current.has(avatarId)) {
+          const queuedFiles = pendingUploadsRef.current.get(avatarId) || [];
+          if (queuedFiles.length === 0) {
+            pendingUploadsRef.current.delete(avatarId);
+            break;
+          }
+          pendingUploadsRef.current.delete(avatarId);
+          await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
+        }
+      } finally {
+        // Clear upload state
+        setUploadingAvatarIds(prev => {
+          const next = new Set(prev);
+          next.delete(avatarId);
+          return next;
+        });
+        pendingUploadsRef.current.delete(avatarId);
+      }
+    },
+    [uploadingAvatarIds],
+  );
+
+  const processAvatarImageBatch = useCallback(
+    async (
+      avatarId: string,
+      files: File[],
+      source: AvatarImage["source"] = "upload",
+      sourceId?: string,
+    ) => {
+      // Get the latest avatar state using functional update
+      let targetAvatar: StoredAvatar | null = null;
+      let availableSlots = 0;
+      let avatarsExist = false;
+
+      setAvatars(prev => {
+        avatarsExist = prev.length > 0;
+        targetAvatar = prev.find(avatar => avatar.id === avatarId) || null;
+        if (targetAvatar) {
+          availableSlots = Math.max(0, MAX_AVATAR_IMAGES - targetAvatar.images.length);
+        }
+        return prev;
+      });
+
       if (!targetAvatar) {
-        setAvatarImageUploadError("We couldn't find that avatar.");
+        // Only show error if avatars have been loaded (not initial empty state)
+        if (avatarsExist) {
+          setAvatarImageUploadError("We couldn't find that avatar.");
+        }
         return;
       }
 
-      const availableSlots = Math.max(0, MAX_AVATAR_IMAGES - targetAvatar.images.length);
       if (availableSlots <= 0) {
         setAvatarImageUploadError(`You can add up to ${MAX_AVATAR_IMAGES} images per avatar.`);
         return;
       }
 
-      const imageFiles = files.filter(file => file.type.startsWith("image/"));
+      const imageFiles = files.filter(isSupportedAvatarFile);
       if (!imageFiles.length) {
-        setAvatarImageUploadError("Please choose an image file.");
+        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
         return;
       }
 
@@ -471,17 +618,16 @@ export default function Avatars() {
       }
 
       if (!validFiles.length) {
-        setAvatarImageUploadError(validationError ?? "Please choose an image file.");
+        setAvatarImageUploadError(validationError ?? "Please choose a JPEG, PNG, or WebP image file.");
         return;
       }
 
       setAvatarImageUploadError(null);
-      setIsUploadingAvatarImage(true);
 
       try {
         const newImages: AvatarImage[] = await Promise.all(
-          validFiles.map(async file => ({
-            id: `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          validFiles.map(async (file, index) => ({
+            id: `avatar-img-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
             url: await readFileAsDataUrl(file),
             createdAt: new Date().toISOString(),
             source,
@@ -489,7 +635,12 @@ export default function Avatars() {
           })),
         );
 
-        commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
+        // Use commitAvatarUpdate which now properly synchronizes all state
+        const result = commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
+        
+        if (!result) {
+          throw new Error("Failed to update avatar");
+        }
 
         let statusMessage: string | null = null;
         if (validationError && validFiles.length < limitedFiles.length) {
@@ -499,16 +650,17 @@ export default function Avatars() {
           statusMessage = `Only ${addedCount} ${addedCount === 1 ? "image was" : "images were"} added because you reached the limit.`;
         } else if (skippedByTypeCount > 0) {
           statusMessage = skippedByTypeCount === 1
-            ? "One file was skipped because it isn't an image."
-            : `${skippedByTypeCount} files were skipped because they aren't images.`;
+            ? "One file was skipped because it isn't a supported image."
+            : `${skippedByTypeCount} files were skipped because they aren't supported images.`;
         }
 
-        setAvatarImageUploadError(statusMessage);
+        if (statusMessage) {
+          setAvatarImageUploadError(statusMessage);
+        }
       } catch (error) {
         debugError("Failed to add avatar image", error);
         setAvatarImageUploadError("We couldn't read that image. Try uploading a different file.");
-      } finally {
-        setIsUploadingAvatarImage(false);
+        // On error, we don't need to rollback since commitAvatarUpdate only runs if file processing succeeds
       }
     },
     [commitAvatarUpdate],
@@ -580,8 +732,8 @@ export default function Avatars() {
   );
 
   const processImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Please choose an image file.");
+    if (!isSupportedAvatarFile(file)) {
+      setUploadError("Please choose a JPEG, PNG, or WebP image file.");
       return;
     }
 
@@ -1066,7 +1218,6 @@ export default function Avatars() {
     setMissingAvatarSlug(null);
     setAvatarImageUploadError(null);
     setAvatarImageUploadTarget(null);
-    setIsUploadingAvatarImage(false);
     setActiveAvatarImageId(null);
     if (avatarSlug) {
       navigate("/create/avatars", { replace: true });
@@ -1646,7 +1797,7 @@ export default function Avatars() {
         <div className={`${headings.tripleHeading.container} text-left`}>
           <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
             <Users className="h-4 w-4 text-theme-white/60" />
-            avatars
+            AVATARS
           </p>
           <h1
             className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
@@ -1682,7 +1833,7 @@ export default function Avatars() {
       {hasAvatars && (
         <div className="w-full max-w-6xl space-y-5">
           <div className="flex items-center gap-2 text-left">
-            <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
+            <h2 className="text-2xl font-normal font-raleway text-theme-text">Your AVATARS</h2>
             <button
               type="button"
               className={iconButtons.lg}
@@ -1772,33 +1923,14 @@ export default function Avatars() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <button
             type="button"
-            className={`${buttons.ghost} flex items-center gap-2`}
+            className="text-sm font-raleway text-theme-white/80 hover:text-theme-text transition-colors duration-200"
             onClick={closeCreationsModal}
           >
-            <ChevronLeft className="h-4 w-4" />
-            Back to avatars
+            ← Back to AVATARS
           </button>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              className={`${buttons.primary} flex items-center gap-2`}
-              onClick={() => handleNavigateToImage(creationsModalAvatar)}
-            >
-              <ImageIcon className="h-4 w-4" />
-              Create image
-            </button>
-            <button
-              type="button"
-              className={`${buttons.secondary} flex items-center gap-2`}
-              onClick={() => handleNavigateToVideo(creationsModalAvatar)}
-            >
-              <Camera className="h-4 w-4" />
-              Make video
-            </button>
-          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-0">
           <div className="flex flex-wrap items-center gap-3">
             {editingAvatarId === creationsModalAvatar.id ? (
               <form
@@ -1966,15 +2098,15 @@ export default function Avatars() {
               </ImageActionMenuPortal>
             </div>
           </div>
-          <p className="text-sm font-raleway text-theme-white">
-            Manage creations with your avatar.
+          <p className="text-base font-raleway text-theme-white mt-0">
+            Manage creations with your Avatar.
           </p>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-raleway text-theme-text">Avatar images</h2>
-            <span className="text-xs font-raleway text-theme-white/60">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-raleway text-theme-text">Avatar Images</h2>
+            <span className="text-xs font-raleway text-theme-white">
               {avatarImages.length}/{MAX_AVATAR_IMAGES} images
             </span>
           </div>
@@ -1985,7 +2117,7 @@ export default function Avatars() {
                 return (
                   <div
                     key={`placeholder-${index}`}
-                    className={`flex aspect-square w-32 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
+                    className={`flex aspect-square w-32 h-32 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
                       draggingOverSlot === index
                         ? "border-brand drag-active"
                         : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
@@ -2012,7 +2144,7 @@ export default function Avatars() {
                     }}
                     aria-label="Upload avatar image"
                   >
-                    {isUploadingAvatarImage ? (
+                    {uploadingAvatarIds.has(creationsModalAvatar.id) ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <Upload className="h-5 w-5" />
@@ -2026,7 +2158,7 @@ export default function Avatars() {
               return (
                 <div key={image.id} className="flex flex-col items-center gap-2">
                   <div
-                    className="relative aspect-square w-32 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
+                    className="relative aspect-square w-32 h-32 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
                     onDragEnter={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
@@ -2086,8 +2218,8 @@ export default function Avatars() {
             <p className="text-sm font-raleway text-rose-300">{avatarImageUploadError}</p>
           )}
           {avatarImages.length < MAX_AVATAR_IMAGES && (
-            <p className="text-xs font-raleway text-theme-white/60">
-              Add up to {MAX_AVATAR_IMAGES} images to define this avatar.
+            <p className="text-xs font-raleway text-theme-white">
+              Upload up to {MAX_AVATAR_IMAGES} images for your Avatar.
             </p>
           )}
         </div>
