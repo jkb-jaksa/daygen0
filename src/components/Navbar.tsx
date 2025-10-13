@@ -4,6 +4,7 @@ import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/useAuth";
+import { useTestAuth } from "../auth/TestAuthContext";
 import AuthModal from "./AuthModal";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
@@ -61,6 +62,7 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
   const { user, logOut } = useAuth();
+  const { user: testUser, signOut: testSignOut } = useTestAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -259,7 +261,8 @@ export default function Navbar() {
     emitNavigateToCategory(category);
   }, [navigate, closeMenu, emitNavigateToCategory]);
 
-  const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || user);
+  const currentUser = user || testUser;
+  const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || currentUser);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
@@ -317,7 +320,7 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center gap-1 lg:gap-2">
-            {!user ? (
+            {!currentUser ? (
               <>
                 <div className="flex items-center gap-0">
                   <button
@@ -402,9 +405,9 @@ export default function Navbar() {
                 >
                   <CreditCard className="w-4 h-4" />
                   <span className="hidden xl:inline font-raleway text-sm font-normal">
-                    Credits: {user.credits}
+                    Credits: {currentUser.credits}
                   </span>
-                  <span className="lg:inline xl:hidden font-raleway text-sm font-normal">{user.credits}</span>
+                  <span className="lg:inline xl:hidden font-raleway text-sm font-normal">{currentUser.credits}</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -429,9 +432,9 @@ export default function Navbar() {
                     aria-expanded={menuOpen}
                     aria-label="My account"
                   >
-                    {user.profileImage ? (
+                    {currentUser.profileImage ? (
                       <img
-                        src={user.profileImage}
+                        src={currentUser.profileImage}
                         alt="Profile"
                         className="size-5 rounded-full object-cover"
                       />
@@ -439,10 +442,10 @@ export default function Navbar() {
                       <span
                         className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90"
                       >
-                        {(user.displayName || user.email)[0]?.toUpperCase()}
+                        {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{user.displayName || user.email}</span>
+                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.displayName || currentUser.email}</span>
                   </button>
                 </div>
               </>
@@ -603,11 +606,15 @@ export default function Navbar() {
                       My account
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setActiveMenu(null);
                         setMenuOpen(false);
                         setMobileNavOpen(false);
-                        logOut();
+                        if (testUser) {
+                          await testSignOut();
+                        } else {
+                          logOut();
+                        }
                         navigate('/');
                       }}
                       className={`${buttons.ghost} w-full justify-center`}
@@ -669,7 +676,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Auth modal */}
+      {/* Auth modals */}
       <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />
       {/* User dropdown - anchored to trigger via portal */}
       {menuOpen &&
@@ -727,10 +734,14 @@ export default function Navbar() {
               My works
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 setActiveMenu(null);
                 setMenuOpen(false);
-                logOut();
+                if (testUser) {
+                  await testSignOut();
+                } else {
+                  logOut();
+                }
                 navigate("/");
               }}
               className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"

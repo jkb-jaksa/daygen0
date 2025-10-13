@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/useAuth";
+import { TestAuthProvider } from "./auth/TestAuthContext";
 import { useFooter } from "./contexts/useFooter";
 import { layout, text, buttons, headings, glass } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
@@ -27,6 +28,8 @@ const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
 const ResetPasswordPage = lazy(() => import("./components/ResetPasswordPage"));
 const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 function NavbarFallback() {
   return (
@@ -328,8 +331,9 @@ export default function App() {
   const { isFooterVisible } = useFooter();
   
   return (
-    <BrowserRouter>
-      <div>
+    <TestAuthProvider>
+      <BrowserRouter>
+        <div>
         <Suspense fallback={null}>
           <GlobalSvgDefs />
         </Suspense>
@@ -370,6 +374,8 @@ export default function App() {
               />
               <Route path="/account" element={<Account />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
@@ -379,7 +385,8 @@ export default function App() {
             <Footer />
           </Suspense>
         )}
-      </div>
-    </BrowserRouter>
+        </div>
+      </BrowserRouter>
+    </TestAuthProvider>
   );
 }
