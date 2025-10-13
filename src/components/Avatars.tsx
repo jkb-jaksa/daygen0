@@ -1926,11 +1926,11 @@ export default function Avatars() {
             className="text-sm font-raleway text-theme-white/80 hover:text-theme-text transition-colors duration-200"
             onClick={closeCreationsModal}
           >
-            ← Back to AVATARS
+            ← Back to Avatars
           </button>
         </div>
 
-        <div className="space-y-0">
+        <div className="space-y-0 -mt-4">
           <div className="flex flex-wrap items-center gap-3">
             {editingAvatarId === creationsModalAvatar.id ? (
               <form
@@ -2103,7 +2103,7 @@ export default function Avatars() {
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 -mt-3">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-raleway text-theme-text">Avatar Images</h2>
             <span className="text-xs font-raleway text-theme-white">
@@ -2117,7 +2117,7 @@ export default function Avatars() {
                 return (
                   <div
                     key={`placeholder-${index}`}
-                    className={`flex aspect-square w-32 h-32 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
+                    className={`flex aspect-square w-60 h-60 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
                       draggingOverSlot === index
                         ? "border-brand drag-active"
                         : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
@@ -2158,7 +2158,7 @@ export default function Avatars() {
               return (
                 <div key={image.id} className="flex flex-col items-center gap-2">
                   <div
-                    className="relative aspect-square w-32 h-32 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
+                    className="relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
                     onDragEnter={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
@@ -2193,13 +2193,6 @@ export default function Avatars() {
                         Set primary
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className="rounded-full border border-theme-mid px-2 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
-                      onClick={() => openAvatarFullSizeView(image.id)}
-                    >
-                      View
-                    </button>
                     {avatarImages.length > 1 && (
                       <button
                         type="button"
@@ -2216,11 +2209,6 @@ export default function Avatars() {
           </div>
           {avatarImageUploadError && (
             <p className="text-sm font-raleway text-rose-300">{avatarImageUploadError}</p>
-          )}
-          {avatarImages.length < MAX_AVATAR_IMAGES && (
-            <p className="text-xs font-raleway text-theme-white">
-              Upload up to {MAX_AVATAR_IMAGES} images for your Avatar.
-            </p>
           )}
         </div>
 
