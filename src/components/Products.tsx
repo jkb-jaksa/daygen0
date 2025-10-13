@@ -395,8 +395,20 @@ export default function Products() {
   const handleSaveNewProduct = useCallback(async () => {
     if (!productSelection || !productName.trim() || !storagePrefix) return;
 
+    const normalizedName = productName.trim();
+
+    // Check for duplicate product names (case-insensitive)
+    const isDuplicate = storedProducts.some(
+      product => product.name.toLowerCase() === normalizedName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      setProductUploadError("A product with this name already exists");
+      return;
+    }
+
     const record = createProductRecord({
-      name: productName.trim(),
+      name: normalizedName,
       imageUrl: productSelection.imageUrl,
       source: productSelection.source,
       sourceId: productSelection.sourceId,
@@ -444,6 +456,14 @@ export default function Products() {
 
     setProductToDelete(null);
   }, [productToDelete, storagePrefix, storedProducts, creationsModalProduct, showToast, editingProductId]);
+
+  const handleProductNameChange = useCallback((name: string) => {
+    setProductName(name);
+    // Clear duplicate name error when user changes the name
+    if (productUploadError === "A product with this name already exists") {
+      setProductUploadError(null);
+    }
+  }, [productUploadError]);
 
   const handleManageFolders = useCallback((imageUrl: string) => {
     setSelectedImageForFolder(imageUrl);
@@ -1142,7 +1162,7 @@ export default function Products() {
                   isDragging={isDraggingProduct}
                   productName={productName}
                   disableSave={!productSelection || !productName.trim()}
-                  onProductNameChange={setProductName}
+                  onProductNameChange={handleProductNameChange}
                   onSave={handleSaveNewProduct}
                   onClearSelection={() => setProductSelection(null)}
                   onProcessFile={processProductImageFile}
@@ -1817,7 +1837,7 @@ export default function Products() {
             productName={productName}
             disableSave={!productSelection || !productName.trim()}
             onClose={resetProductCreationPanel}
-            onProductNameChange={setProductName}
+            onProductNameChange={handleProductNameChange}
             onSave={handleSaveNewProduct}
             onClearSelection={() => setProductSelection(null)}
             onProcessFile={processProductImageFile}

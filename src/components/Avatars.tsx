@@ -359,6 +359,16 @@ export default function Avatars() {
     if (!selection) return;
     const normalizedName = avatarName.trim() || "New Avatar";
 
+    // Check for duplicate avatar names (case-insensitive)
+    const isDuplicate = avatars.some(
+      avatar => avatar.name.toLowerCase() === normalizedName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      setUploadError("An avatar with this name already exists");
+      return;
+    }
+
     const record = createAvatarRecord({
       name: normalizedName,
       imageUrl: selection.imageUrl,
@@ -388,6 +398,14 @@ export default function Avatars() {
     setUploadError(null);
     setIsDragging(false);
   }, []);
+
+  const handleAvatarNameChange = useCallback((name: string) => {
+    setAvatarName(name);
+    // Clear duplicate name error when user changes the name
+    if (uploadError === "An avatar with this name already exists") {
+      setUploadError(null);
+    }
+  }, [uploadError]);
 
   const startRenaming = useCallback((avatar: StoredAvatar) => {
     setEditingAvatarId(avatar.id);
@@ -1039,7 +1057,7 @@ export default function Avatars() {
                     />
                     <button
                       type="submit"
-                      className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                      className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
                     >
                       <Check className="h-4 w-4" />
                     </button>
@@ -1052,7 +1070,7 @@ export default function Avatars() {
                     {!disableModalTrigger && (
                       <button
                         type="button"
-                        className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                        className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
                         onClick={(event) => {
                           event.stopPropagation();
                           startRenaming(avatar);
@@ -1096,7 +1114,7 @@ export default function Avatars() {
               />
               <button
                 type="submit"
-                className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
               >
                 <Check className="h-4 w-4" />
               </button>
@@ -1109,7 +1127,7 @@ export default function Avatars() {
               {!disableModalTrigger && (
                 <button
                   type="button"
-                  className="flex-shrink-0 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                  className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
                   onClick={(event) => {
                     event.stopPropagation();
                     startRenaming(avatar);
@@ -1404,7 +1422,7 @@ export default function Avatars() {
                   isDragging={isDragging}
                   avatarName={avatarName}
                   disableSave={disableSave}
-                  onAvatarNameChange={setAvatarName}
+                  onAvatarNameChange={handleAvatarNameChange}
                   onSave={handleSaveAvatar}
                   onSaveName={() => {
                     // Just save the name, don't close the modal
@@ -1469,7 +1487,7 @@ export default function Avatars() {
             avatarName={avatarName}
             disableSave={disableSave}
             onClose={resetPanel}
-            onAvatarNameChange={setAvatarName}
+            onAvatarNameChange={handleAvatarNameChange}
             onSave={handleSaveAvatar}
             onSaveName={() => {
               // Just save the name, don't close the modal
@@ -1684,7 +1702,7 @@ export default function Avatars() {
             }`}>
               <div className="flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-base font-raleway leading-relaxed font-semibold">
+                  <div className="text-base font-raleway leading-relaxed font-normal">
                     {creationsModalAvatar.name}
                   </div>
                   {creationsModalAvatar.published && (
