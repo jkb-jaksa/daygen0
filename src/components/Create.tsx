@@ -7999,16 +7999,18 @@ const handleGenerate = async () => {
                                       key={section.id}
                                       type="button"
                                       onClick={() => setActiveStyleSection(section.id)}
-                                      className={`rounded-full border px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                                      className={`rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
                                         isActive
-                                          ? 'bg-theme-text text-theme-black border-theme-text'
-                                          : 'bg-theme-black/60 border-theme-mid text-theme-white hover:border-theme-text/70'
+                                          ? 'bg-theme-text text-n-black border border-theme-text'
+                                          : `${glass.promptDark} text-n-white hover:text-n-text hover:border-theme-text/70`
                                       }`}
                                       aria-pressed={isActive}
                                     >
                                       <span>{section.name}</span>
                                       {sectionSelectedCount > 0 && (
-                                        <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-theme-black/70 px-2 text-xs font-medium text-theme-text">
+                                        <span className={`ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
+                                          isActive ? 'bg-theme-text text-n-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                                        }`}>
                                           {sectionSelectedCount}
                                         </span>
                                       )}
