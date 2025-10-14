@@ -80,6 +80,7 @@ export const useQwenImageGeneration = () => {
             watermark: options.watermark,
             ownerId: user?.id,
             avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
             avatarImageId: options.avatarImageId,
           };
 
