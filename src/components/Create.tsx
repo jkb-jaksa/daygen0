@@ -44,6 +44,7 @@ import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
+import { useParallaxHover } from "../hooks/useParallaxHover";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
 import { useLumaImageGeneration } from "../hooks/useLumaImageGeneration";
@@ -521,6 +522,9 @@ const Create: React.FC = () => {
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
+  
+  // Parallax hover effect for buttons
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
@@ -7331,7 +7335,7 @@ const handleGenerate = async () => {
                     <button
                       type="button"
                       onClick={() => navigate('/create/chat')}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
                       aria-label="Chat mode"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
@@ -7339,6 +7343,9 @@ const handleGenerate = async () => {
                       onMouseLeave={() => {
                         hideHoverTooltip('chat-mode-tooltip');
                       }}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
                       <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
                     </button>
@@ -7355,13 +7362,16 @@ const handleGenerate = async () => {
                         type="button"
                         ref={promptsButtonRef}
                         onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group parallax-small`}
                         onMouseEnter={(e) => {
                           showHoverTooltip(e.currentTarget, 'prompts-tooltip');
                         }}
                         onMouseLeave={() => {
                           hideHoverTooltip('prompts-tooltip');
                         }}
+                        onPointerMove={onPointerMove}
+                        onPointerEnter={onPointerEnter}
+                        onPointerLeave={onPointerLeave}
                       >
                         <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
                       </button>
@@ -7380,13 +7390,16 @@ const handleGenerate = async () => {
                     onClick={isGemini ? handleRefsClick : undefined}
                     aria-label="Add reference image"
                     disabled={!isGemini}
-                    className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                    className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
                     onMouseEnter={(e) => {
                       if (isGemini) showHoverTooltip(e.currentTarget, 'reference-tooltip');
                     }}
                     onMouseLeave={() => {
                       hideHoverTooltip('reference-tooltip');
                     }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
                   >
                     <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
                   </button>
@@ -7434,12 +7447,15 @@ const handleGenerate = async () => {
 
                 {activeCategory === "image" && (
                   <>
+                    {storedAvatars.length > 0 && (
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
                       open={isAvatarPickerOpen}
                       onClose={() => setIsAvatarPickerOpen(false)}
                     >
                       <div className="space-y-3">
+                        {storedAvatars.length > 0 ? (
+                          <>
                         <div className="flex items-center justify-between px-1">
                           <button
                             type="button"
@@ -7451,8 +7467,19 @@ const handleGenerate = async () => {
                           >
                             Your Avatars
                           </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAvatarUploadError(null);
+                                  avatarQuickUploadInputRef.current?.click();
+                                }}
+                                className="p-1 rounded-lg hover:bg-theme-text/10 transition-colors duration-200"
+                                title="Add new avatar"
+                                aria-label="Add new avatar"
+                              >
+                                <Plus className="h-4 w-4 text-theme-text" />
+                              </button>
                         </div>
-                        {storedAvatars.length > 0 ? (
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
@@ -7509,15 +7536,22 @@ const handleGenerate = async () => {
                               );
                             })}
                           </div>
+                          </>
                         ) : (
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
-                              isDraggingAvatar
-                                ? 'border-brand bg-brand/10'
-                                : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
-                            }`}
+                          <>
+                            <div className="flex items-center justify-center px-1">
+                              <span className="text-base font-raleway text-theme-text">
+                                Upload Avatar
+                              </span>
+                            </div>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                                isDraggingAvatar
+                                  ? 'border-brand bg-brand/10'
+                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                              }`}
                               onDragOver={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -7579,33 +7613,12 @@ const handleGenerate = async () => {
                                 <Upload className="w-3 h-3" />
                                 Upload
                               </button>
-                            <input
-                              ref={avatarQuickUploadInputRef}
-                              type="file"
-                              accept="image/*"
-                              className="sr-only"
-                              onChange={(event) => {
-                                const file = event.target.files?.[0] ?? null;
-                                event.target.value = '';
-                                if (!file) {
-                                  return;
-                                }
-                                if (!file.type.startsWith('image/')) {
-                                  setAvatarUploadError('Please choose an image file.');
-                                  return;
-                                }
-                                setAvatarUploadError(null);
-                                handleAvatarQuickUpload(file);
-                              }}
-                            />
                             {avatarUploadError && (
                               <p className="mt-3 text-sm font-raleway text-red-400 text-center">
                                 {avatarUploadError}
                               </p>
                             )}
                           </div>
-                        )}
-                        {!storedAvatars.length && (
                           <button
                             type="button"
                             className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
@@ -7617,15 +7630,20 @@ const handleGenerate = async () => {
                             <Users className="h-4 w-4" />
                             Go to Avatars
                           </button>
+                          </>
                         )}
                       </div>
                     </AvatarPickerPortal>
+                    )}
+                    {storedProducts.length > 0 && (
                     <AvatarPickerPortal
                       anchorRef={productButtonRef}
                       open={isProductPickerOpen}
                       onClose={() => setIsProductPickerOpen(false)}
                     >
                       <div className="space-y-3">
+                        {storedProducts.length > 0 ? (
+                          <>
                         <div className="flex items-center justify-between px-1">
                           <button
                             type="button"
@@ -7637,8 +7655,19 @@ const handleGenerate = async () => {
                           >
                             Your Products
                           </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProductUploadError(null);
+                                  productQuickUploadInputRef.current?.click();
+                                }}
+                                className="p-1 rounded-lg hover:bg-theme-text/10 transition-colors duration-200"
+                                title="Add new product"
+                                aria-label="Add new product"
+                              >
+                                <Plus className="h-4 w-4 text-theme-text" />
+                              </button>
                         </div>
-                        {storedProducts.length > 0 ? (
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                             {storedProducts.map(product => {
                               const isActive = selectedProduct?.id === product.id;
@@ -7695,15 +7724,22 @@ const handleGenerate = async () => {
                               );
                             })}
                           </div>
+                          </>
                         ) : (
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
-                              isDraggingProduct
-                                ? 'border-brand bg-brand/10'
-                                : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
-                            }`}
+                          <>
+                            <div className="flex items-center justify-center px-1">
+                              <span className="text-base font-raleway text-theme-text">
+                                Upload Product
+                              </span>
+                            </div>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                                isDraggingProduct
+                                  ? 'border-brand bg-brand/10'
+                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                              }`}
                               onDragOver={event => {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -7765,33 +7801,12 @@ const handleGenerate = async () => {
                                 <Upload className="w-3 h-3" />
                                 Upload
                               </button>
-                            <input
-                              ref={productQuickUploadInputRef}
-                              type="file"
-                              accept="image/*"
-                              className="sr-only"
-                              onChange={event => {
-                                const file = event.target.files?.[0] ?? null;
-                                event.target.value = '';
-                                if (!file) {
-                                  return;
-                                }
-                                if (!file.type.startsWith('image/')) {
-                                  setProductUploadError('Please choose an image file.');
-                                  return;
-                                }
-                                setProductUploadError(null);
-                                handleProductQuickUpload(file);
-                              }}
-                            />
-                            {productUploadError && (
-                              <p className="mt-3 text-sm font-raleway text-red-400 text-center">
-                                {productUploadError}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {!storedProducts.length && (
+                              {productUploadError && (
+                                <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                  {productUploadError}
+                                </p>
+                              )}
+                            </div>
                           <button
                             type="button"
                             className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
@@ -7803,9 +7818,54 @@ const handleGenerate = async () => {
                             <Package className="h-4 w-4" />
                             Go to Products
                           </button>
+                          </>
                         )}
                       </div>
                     </AvatarPickerPortal>
+                    )}
+                    
+                    {/* Avatar file input - always in DOM */}
+                    <input
+                      ref={avatarQuickUploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        event.target.value = '';
+                        if (!file) {
+                          return;
+                        }
+                        if (!file.type.startsWith('image/')) {
+                          setAvatarUploadError('Please choose an image file.');
+                          return;
+                        }
+                        setAvatarUploadError(null);
+                        handleAvatarQuickUpload(file);
+                      }}
+                    />
+                    
+                    {/* Product file input - always in DOM */}
+                    <input
+                      ref={productQuickUploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={event => {
+                        const file = event.target.files?.[0] ?? null;
+                        event.target.value = '';
+                        if (!file) {
+                          return;
+                        }
+                        if (!file.type.startsWith('image/')) {
+                          setProductUploadError('Please choose an image file.');
+                          return;
+                        }
+                        setProductUploadError(null);
+                        handleProductQuickUpload(file);
+                      }}
+                    />
+                    
                     <PromptsDropdown
                       isOpen={isPromptsDropdownOpen}
                       onClose={() => setIsPromptsDropdownOpen(false)}
@@ -7959,7 +8019,10 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small`}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -8344,7 +8407,10 @@ const handleGenerate = async () => {
                     onClick={toggleSettings}
                     title="Settings"
                     aria-label="Settings"
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 parallax-small`}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
                   >
                     <Settings className="w-4 h-4 text-n-text" />
                   </button>
@@ -8500,7 +8566,7 @@ const handleGenerate = async () => {
                       ref={aspectRatioButtonRef}
                       type="button"
                       onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
                       aria-label="Aspect ratio"
                       onMouseEnter={event => {
                         showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip');
@@ -8508,6 +8574,9 @@ const handleGenerate = async () => {
                       onMouseLeave={() => {
                         hideHoverTooltip('aspect-ratio-tooltip');
                       }}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
                       <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
                       <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
@@ -8585,16 +8654,29 @@ const handleGenerate = async () => {
                     <button
                       type="button"
                       ref={avatarButtonRef}
-                      onClick={() => setIsAvatarPickerOpen(prev => !prev)}
+                      onClick={() => {
+                        if (storedAvatars.length === 0) {
+                          // Direct upload when no avatars exist
+                          setAvatarUploadError(null);
+                          avatarQuickUploadInputRef.current?.click();
+                        } else {
+                          // Show picker when avatars exist
+                          setIsAvatarPickerOpen(prev => !prev);
+                        }
+                      }}
                       onDragOver={handleAvatarButtonDragOver}
                       onDragLeave={handleAvatarButtonDragLeave}
                       onDrop={handleAvatarButtonDrop}
-                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-16 w-16 rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1`}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center ${selectedAvatar ? 'h-24 w-24' : 'h-16 w-16'} rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1 parallax-small`}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
                       {!selectedAvatar && (
                         <>
                           <div className="flex-1 flex items-end justify-center pb-1">
-                            <Users className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                            <Users className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <Plus className="w-4 h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-sm font-raleway text-n-text">
@@ -8609,14 +8691,14 @@ const handleGenerate = async () => {
                             src={selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
                             alt={selectedAvatar.name}
                             loading="lazy"
-                            className="w-12 h-12 rounded-lg object-cover border border-n-mid"
+                            className="w-16 h-16 rounded-lg object-cover border border-n-mid"
                             title={
                               selectedAvatarImageIndex !== null
                                 ? `${selectedAvatar.name} — Variation ${selectedAvatarImageIndex + 1}`
                                 : selectedAvatar.name
                             }
                           />
-                          <span className="text-[10px] font-raleway text-n-text max-w-full truncate mt-auto text-center">
+                          <span className="text-sm font-raleway text-n-text mt-auto text-center px-1">
                             {selectedAvatar.name}
                           </span>
                         </>
@@ -8642,16 +8724,29 @@ const handleGenerate = async () => {
                     <button
                       type="button"
                       ref={productButtonRef}
-                      onClick={() => setIsProductPickerOpen(prev => !prev)}
+                      onClick={() => {
+                        if (storedProducts.length === 0) {
+                          // Direct upload when no products exist
+                          setProductUploadError(null);
+                          productQuickUploadInputRef.current?.click();
+                        } else {
+                          // Show picker when products exist
+                          setIsProductPickerOpen(prev => !prev);
+                        }
+                      }}
                       onDragOver={handleProductButtonDragOver}
                       onDragLeave={handleProductButtonDragLeave}
                       onDrop={handleProductButtonDrop}
-                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-16 w-16 rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1`}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center ${selectedProduct ? 'h-24 w-24' : 'h-16 w-16'} rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1 parallax-small`}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
                       {!selectedProduct && (
                         <>
                           <div className="flex-1 flex items-end justify-center pb-1">
-                            <Package className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                            <Package className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <Plus className="w-4 h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-sm font-raleway text-n-text">
@@ -8666,10 +8761,10 @@ const handleGenerate = async () => {
                             src={selectedProduct.imageUrl}
                             alt={selectedProduct.name}
                             loading="lazy"
-                            className="w-12 h-12 rounded-lg object-cover border border-n-mid"
+                            className="w-16 h-16 rounded-lg object-cover border border-n-mid"
                             title={selectedProduct.name}
                           />
-                          <span className="text-[10px] font-raleway text-n-text max-w-full truncate mt-auto text-center">
+                          <span className="text-sm font-raleway text-n-text mt-auto text-center px-1">
                             {selectedProduct.name}
                           </span>
                         </>
@@ -8696,9 +8791,12 @@ const handleGenerate = async () => {
                       type="button"
                       ref={stylesButtonRef}
                       onClick={() => setIsStyleModalOpen(true)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-16 w-16 rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center ${totalSelectedStyles > 0 ? 'h-24 w-24' : 'h-16 w-16'} rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1 parallax-small`}
                       aria-label="Select style"
                       aria-expanded={isStyleModalOpen}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
                       {totalSelectedStyles === 0 && (
                         <>
@@ -8721,7 +8819,7 @@ const handleGenerate = async () => {
                           </div>
                           <div className="flex items-center gap-1">
                             <Palette className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
-                            <span className="text-[10px] font-raleway text-n-text max-w-full truncate text-center">
+                            <span className="text-sm font-raleway text-n-text text-center px-1">
                               {selectedStylesLabel ? selectedStylesLabel.split(' ').slice(0, 2).join(' ') : 'Style'}
                             </span>
                           </div>
