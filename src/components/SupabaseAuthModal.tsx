@@ -5,7 +5,7 @@ import { buttons, inputs } from '../styles/designSystem';
 interface SupabaseAuthModalProps {
   open: boolean;
   onClose: () => void;
-  defaultMode?: 'login' | 'signup' | 'magic-link';
+  defaultMode?: 'login' | 'signup';
 }
 
 export default function SupabaseAuthModal({ 
@@ -13,7 +13,7 @@ export default function SupabaseAuthModal({
   onClose, 
   defaultMode = 'login' 
 }: SupabaseAuthModalProps) {
-  const [mode, setMode] = useState<'login' | 'signup' | 'magic-link'>(defaultMode);
+  const [mode, setMode] = useState<'login' | 'signup'>(defaultMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -47,9 +47,6 @@ export default function SupabaseAuthModal({
       } else if (mode === 'login') {
         await signInWithPassword(email, password);
         onClose();
-      } else if (mode === 'magic-link') {
-        await signInWithMagicLink(email);
-        setSuccessMessage('Check your email for the magic link to sign in.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -58,7 +55,7 @@ export default function SupabaseAuthModal({
     }
   };
 
-  const handleModeChange = (newMode: 'login' | 'signup' | 'magic-link') => {
+  const handleModeChange = (newMode: 'login' | 'signup') => {
     setMode(newMode);
     setError('');
     setSuccessMessage('');
@@ -73,7 +70,7 @@ export default function SupabaseAuthModal({
         <div className="text-center space-y-4">
           <div className="space-y-3">
             <h3 className="text-theme-text font-raleway font-normal text-xl">
-              {mode === 'login' ? 'Log in' : mode === 'signup' ? 'Sign up' : 'Magic Link'}
+              {mode === 'login' ? 'Log in' : 'Sign up'}
             </h3>
             <p className="text-theme-light text-sm font-raleway font-normal">Welcome to DayGen</p>
             <button 
@@ -105,16 +102,6 @@ export default function SupabaseAuthModal({
             >
               Sign up
             </button>
-            <button 
-              onClick={() => handleModeChange('magic-link')} 
-              className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${
-                mode === 'magic-link' 
-                  ? 'bg-theme-dark border-theme-mid text-theme-text' 
-                  : 'bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text'
-              }`}
-            >
-              Magic Link
-            </button>
           </div>
 
           <div className="space-y-4">
@@ -145,21 +132,19 @@ export default function SupabaseAuthModal({
                 />
               </div>
               
-              {mode !== 'magic-link' && (
-                <div className="space-y-2">
-                  <label className="block text-sm text-theme-text font-raleway">Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputs.compact}
-                    placeholder="Enter your password"
-                    disabled={isSubmitting}
-                    minLength={8}
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <label className="block text-sm text-theme-text font-raleway">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputs.compact}
+                  placeholder="Enter your password"
+                  disabled={isSubmitting}
+                  minLength={8}
+                />
+              </div>
 
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
@@ -175,9 +160,7 @@ export default function SupabaseAuthModal({
                   ? 'Please wait…' 
                   : mode === 'login' 
                     ? 'Log in' 
-                    : mode === 'signup' 
-                      ? 'Create account' 
-                      : 'Send Magic Link'
+                    : 'Create account'
                 }
               </button>
 
@@ -185,22 +168,10 @@ export default function SupabaseAuthModal({
                 <div className="text-center">
                   <button
                     type="button"
-                    onClick={() => handleModeChange('magic-link')}
+                    onClick={() => {/* Add forgot password functionality here */}}
                     className="text-xs text-theme-light hover:text-theme-text transition-colors font-raleway underline"
                   >
-                    Use Magic Link instead
-                  </button>
-                </div>
-              )}
-
-              {mode === 'magic-link' && (
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleModeChange('login')}
-                    className="text-xs text-theme-light hover:text-theme-text transition-colors font-raleway underline"
-                  >
-                    Use password instead
+                    Forgot password?
                   </button>
                 </div>
               )}

@@ -14,11 +14,57 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        
+        // Check if this is a Google OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        if (code) {
+          // Handle Google OAuth callback
+          try {
+            const response = await fetch(getApiUrl('/api/auth/google/callback'), {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Google authentication failed');
+            }
+
+            const result = await response.json();
+            
+            // Store the session data
+            if (result.session) {
+              localStorage.setItem('daygen:authToken', result.session.access_token);
+              localStorage.setItem('daygen:refreshToken', result.session.refresh_token);
+            }
+
+            // Refresh user profile
+            await refreshUser();
+            // Redirect to main app
+            navigate('/');
+            return;
+          } catch (googleError) {
+            console.error('Google OAuth callback error:', googleError);
+            setError(googleError instanceof Error ? googleError.message : 'Google authentication failed');
+            return;
+          }
+        }
+
         if (error) {
-          console.error('Auth callback error:', error);
-          setError(error.message);
+          setError(`Authentication error: ${error}`);
+          return;
+        }
+
+        // Handle Supabase auth callback
+        const { data, error: supabaseError } = await supabase.auth.getSession();
+        
+        if (supabaseError) {
+          console.error('Auth callback error:', supabaseError);
+          setError(supabaseError.message);
           return;
         }
 

@@ -3,8 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "../auth/useAuth";
-import { useTestAuth } from "../auth/TestAuthContext";
+import { useAuth } from "../auth/AuthProvider";
 import AuthModal from "./AuthModal";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
@@ -62,7 +61,6 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
   const { user, logOut } = useAuth();
-  const { user: testUser, signOut: testSignOut } = useTestAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -261,7 +259,7 @@ export default function Navbar() {
     emitNavigateToCategory(category);
   }, [navigate, closeMenu, emitNavigateToCategory]);
 
-  const currentUser = user || testUser;
+  const currentUser = user;
   const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || currentUser);
 
   return (
@@ -610,8 +608,8 @@ export default function Navbar() {
                         setActiveMenu(null);
                         setMenuOpen(false);
                         setMobileNavOpen(false);
-                        if (testUser) {
-                          await testSignOut();
+                        if (user) {
+                          await logOut();
                         } else {
                           logOut();
                         }
@@ -737,8 +735,8 @@ export default function Navbar() {
               onClick={async () => {
                 setActiveMenu(null);
                 setMenuOpen(false);
-                if (testUser) {
-                  await testSignOut();
+                if (user) {
+                  await logOut();
                 } else {
                   logOut();
                 }

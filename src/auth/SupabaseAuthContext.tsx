@@ -21,7 +21,6 @@ interface SupabaseAuthContextValue {
   isAuthenticated: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -38,58 +37,78 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   const fetchUserProfile = useCallback(async (authUser: User): Promise<SupabaseUser> => {
     try {
-      const response = await fetch(getApiUrl('/api/auth/supabase/me'), {
+      // Try backend first, fallback to basic user info
+      const response = await fetch(getApiUrl('/api/auth/me'), {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
+      if (response.ok) {
+        const profile = await response.json();
+        return profile;
       }
-
-      const profile = await response.json();
-      return profile;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // Return basic user info if profile fetch fails
-      return {
-        id: authUser.id,
-        email: authUser.email || '',
-        displayName: authUser.user_metadata?.display_name || null,
-        credits: 20,
-        profileImage: authUser.user_metadata?.avatar_url || null,
-        role: 'USER',
-        createdAt: authUser.created_at,
-        updatedAt: authUser.updated_at || authUser.created_at,
-      };
+      console.error('Error fetching user profile from backend:', error);
     }
+
+    // Fallback to basic user info if backend is not available
+    return {
+      id: authUser.id,
+      email: authUser.email || '',
+      displayName: authUser.user_metadata?.display_name || null,
+      credits: 20,
+      profileImage: authUser.user_metadata?.avatar_url || null,
+      role: 'USER',
+      createdAt: authUser.created_at,
+      updatedAt: authUser.updated_at || authUser.created_at,
+    };
   }, [session?.access_token]);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
     try {
-      // Use our backend magic link signup endpoint
-      const response = await fetch(getApiUrl('/api/auth/signup'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Use Supabase password-based signup with email confirmation
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName,
+          },
         },
-        body: JSON.stringify({
-          email,
-          displayName,
-        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Signup failed');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const result = await response.json();
-      
+      // If user was created successfully, create profile in our database
+      if (data.user) {
+        try {
+          const response = await fetch(getApiUrl('/api/users/me'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.session?.access_token}`,
+            },
+            body: JSON.stringify({
+              email: data.user.email,
+              displayName: displayName,
+              authUserId: data.user.id,
+            }),
+          });
+
+          if (!response.ok) {
+            console.warn('Failed to create user profile in database, but Supabase user was created');
+          }
+        } catch (profileError) {
+          console.warn('Error creating user profile:', profileError);
+        }
+      }
+
       return {
-        needsEmailConfirmation: true, // Magic link always requires email confirmation
+        needsEmailConfirmation: !data.user?.email_confirmed_at,
       };
     } catch (error) {
       console.error('Sign up error:', error);
@@ -120,30 +139,6 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     }
   }, [fetchUserProfile]);
 
-  const signInWithMagicLink = useCallback(async (email: string) => {
-    try {
-      const response = await fetch(getApiUrl('/api/auth/magic-link'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Magic link signin failed');
-      }
-
-      const result = await response.json();
-      // Magic link sent successfully
-    } catch (error) {
-      console.error('Magic link signin error:', error);
-      throw error;
-    }
-  }, []);
 
   const signInWithGoogle = useCallback(async () => {
     try {
@@ -179,12 +174,18 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
+    try {
+      // Use Supabase directly for password reset
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
 
-    if (error) {
-      throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
     }
   }, []);
 
@@ -239,7 +240,6 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     isAuthenticated: Boolean(session && user),
     signUp,
     signInWithPassword,
-    signInWithMagicLink,
     signInWithGoogle,
     signOut,
     resetPassword,

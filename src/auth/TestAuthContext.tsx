@@ -17,7 +17,6 @@ interface TestAuthContextValue {
   isAuthenticated: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -72,13 +71,6 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
     throw new Error('Invalid email or password');
   }, []);
 
-  const signInWithMagicLink = useCallback(async (email: string) => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For testing, just show a success message
-    console.log('Magic link sent to:', email);
-  }, []);
 
   const signInWithGoogle = useCallback(async () => {
     // Simulate API call delay
@@ -153,7 +145,6 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: Boolean(user),
     signUp,
     signInWithPassword,
-    signInWithMagicLink,
     signInWithGoogle,
     signOut,
     resetPassword,
