@@ -1797,7 +1797,7 @@ export default function Avatars() {
         <div className={`${headings.tripleHeading.container} text-left`}>
           <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
             <Users className="h-4 w-4 text-theme-white/60" />
-            AVATARS
+            Avatars
           </p>
           <h1
             className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
