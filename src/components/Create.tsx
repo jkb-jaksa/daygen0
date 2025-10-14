@@ -100,68 +100,70 @@ type StyleOption = {
   previewGradient: string;
 };
 
-const STYLE_OPTIONS: StyleOption[] = [
+type StyleSectionId = "lifestyle" | "formal" | "artistic";
+
+type StyleSection = {
+  id: StyleSectionId;
+  name: string;
+  options: StyleOption[];
+};
+
+const STYLE_GRADIENTS = [
+  "linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)",
+  "linear-gradient(135deg, rgba(251,191,36,0.35) 0%, rgba(79,70,229,0.55) 100%)",
+  "linear-gradient(135deg, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.6) 50%, rgba(236,72,153,0.45) 100%)",
+  "linear-gradient(135deg, rgba(148,163,184,0.35) 0%, rgba(226,232,240,0.6) 100%)",
+  "linear-gradient(135deg, rgba(110,231,183,0.35) 0%, rgba(103,232,249,0.5) 100%)",
+  "linear-gradient(135deg, rgba(251,191,36,0.4) 0%, rgba(248,113,113,0.5) 60%, rgba(96,165,250,0.45) 100%)",
+  "linear-gradient(135deg, rgba(217,119,6,0.4) 0%, rgba(180,83,9,0.5) 100%)",
+  "linear-gradient(135deg, rgba(236,72,153,0.45) 0%, rgba(168,85,247,0.5) 50%, rgba(14,165,233,0.4) 100%)",
+  "linear-gradient(135deg, rgba(251,207,232,0.45) 0%, rgba(196,181,253,0.5) 50%, rgba(165,243,252,0.4) 100%)",
+  "linear-gradient(135deg, rgba(30,64,175,0.5) 0%, rgba(59,130,246,0.45) 50%, rgba(248,113,113,0.4) 100%)",
+];
+
+const createPlaceholderStyles = (sectionId: StyleSectionId, sectionName: string): StyleOption[] =>
+  Array.from({ length: 20 }, (_, index) => {
+    const gradient = STYLE_GRADIENTS[index % STYLE_GRADIENTS.length];
+    const label = `${sectionName} Style ${index + 1}`;
+    return {
+      id: `${sectionId}-${index + 1}`,
+      name: label,
+      prompt: `${sectionName.toLowerCase()} inspired placeholder prompt ${index + 1}`,
+      previewGradient: gradient,
+    };
+  });
+
+const STYLE_SECTIONS: StyleSection[] = [
   {
-    id: "cinematic",
-    name: "Cinematic",
-    prompt: "cinematic lighting, dramatic composition, rich contrast, anamorphic lens flare",
-    previewGradient: "linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)",
+    id: "lifestyle",
+    name: "Lifestyle",
+    options: createPlaceholderStyles("lifestyle", "Lifestyle"),
   },
   {
-    id: "illustrative",
-    name: "Illustrative",
-    prompt: "whimsical illustration, hand-drawn line work, painterly shading, storybook aesthetic",
-    previewGradient: "linear-gradient(135deg, rgba(251,191,36,0.35) 0%, rgba(79,70,229,0.55) 100%)",
+    id: "formal",
+    name: "Formal",
+    options: createPlaceholderStyles("formal", "Formal"),
   },
   {
-    id: "neon-noir",
-    name: "Neon Noir",
-    prompt: "neon lighting, noir shadows, futuristic city glow, high contrast color accents",
-    previewGradient: "linear-gradient(135deg, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.6) 50%, rgba(236,72,153,0.45) 100%)",
-  },
-  {
-    id: "minimalist",
-    name: "Minimalist",
-    prompt: "minimalist composition, soft neutral palette, negative space, refined details",
-    previewGradient: "linear-gradient(135deg, rgba(148,163,184,0.35) 0%, rgba(226,232,240,0.6) 100%)",
-  },
-  {
-    id: "watercolor",
-    name: "Watercolor",
-    prompt: "watercolor texture, fluid brush strokes, soft gradients, organic pigment bloom",
-    previewGradient: "linear-gradient(135deg, rgba(110,231,183,0.35) 0%, rgba(103,232,249,0.5) 100%)",
-  },
-  {
-    id: "retro-futurism",
-    name: "Retro Futurism",
-    prompt: "retro futurism, optimistic color palette, chrome details, retro technology motifs",
-    previewGradient: "linear-gradient(135deg, rgba(251,191,36,0.4) 0%, rgba(248,113,113,0.5) 60%, rgba(96,165,250,0.45) 100%)",
-  },
-  {
-    id: "vintage",
-    name: "Vintage",
-    prompt: "vintage aesthetic, warm sepia tones, film grain texture, nostalgic atmosphere",
-    previewGradient: "linear-gradient(135deg, rgba(217,119,6,0.4) 0%, rgba(180,83,9,0.5) 100%)",
-  },
-  {
-    id: "cyberpunk",
-    name: "Cyberpunk",
-    prompt: "cyberpunk aesthetic, neon colors, digital glitches, high-tech dystopian atmosphere",
-    previewGradient: "linear-gradient(135deg, rgba(236,72,153,0.45) 0%, rgba(168,85,247,0.5) 50%, rgba(14,165,233,0.4) 100%)",
-  },
-  {
-    id: "dreamy",
-    name: "Dreamy",
-    prompt: "dreamy atmosphere, soft focus, ethereal glow, pastel colors, fantasy aesthetic",
-    previewGradient: "linear-gradient(135deg, rgba(251,207,232,0.45) 0%, rgba(196,181,253,0.5) 50%, rgba(165,243,252,0.4) 100%)",
-  },
-  {
-    id: "dramatic",
-    name: "Dramatic",
-    prompt: "dramatic lighting, bold shadows, intense contrast, moody atmosphere, powerful composition",
-    previewGradient: "linear-gradient(135deg, rgba(239,68,68,0.4) 0%, rgba(17,24,39,0.7) 50%, rgba(239,68,68,0.4) 100%)",
+    id: "artistic",
+    name: "Artistic",
+    options: createPlaceholderStyles("artistic", "Artistic"),
   },
 ];
+
+type SelectedStylesMap = Record<StyleSectionId, StyleOption[]>;
+
+const createEmptySelectedStyles = (): SelectedStylesMap => ({
+  lifestyle: [],
+  formal: [],
+  artistic: [],
+});
+
+const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
+  lifestyle: [...styles.lifestyle],
+  formal: [...styles.formal],
+  artistic: [...styles.artistic],
+});
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -530,9 +532,10 @@ const Create: React.FC = () => {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
+  const [selectedStyles, setSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
-  const [tempSelectedStyle, setTempSelectedStyle] = useState<StyleOption | null>(null);
+  const [tempSelectedStyles, setTempSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
+  const [activeStyleSection, setActiveStyleSection] = useState<StyleSectionId>("lifestyle");
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
@@ -575,7 +578,12 @@ const Create: React.FC = () => {
     }
 
     // Initialize temp selection with current selection
-    setTempSelectedStyle(selectedStyle);
+    setTempSelectedStyles(cloneSelectedStyles(selectedStyles));
+
+    const firstSectionWithSelection = STYLE_SECTIONS.find(section => selectedStyles[section.id].length > 0);
+    if (firstSectionWithSelection) {
+      setActiveStyleSection(firstSectionWithSelection.id);
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -594,11 +602,26 @@ const Create: React.FC = () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [isStyleModalOpen, selectedStyle]);
+  }, [isStyleModalOpen, selectedStyles]);
 
   const applyStyleToPrompt = useCallback(
-    (basePrompt: string) => (selectedStyle ? `${basePrompt}\n\nStyle: ${selectedStyle.prompt}` : basePrompt),
-    [selectedStyle],
+    (basePrompt: string) => {
+      const selectedPrompts = Object.values(selectedStyles)
+        .flat()
+        .map(style => style.prompt.trim())
+        .filter(Boolean);
+
+      if (selectedPrompts.length === 0) {
+        return basePrompt;
+      }
+
+      const formattedPrompts = selectedPrompts
+        .map((prompt, index) => `${index + 1}. ${prompt}`)
+        .join("\n");
+
+      return `${basePrompt}\n\nStyle:\n${formattedPrompts}`;
+    },
+    [selectedStyles],
   );
 
   const focusStyleButton = () => {
@@ -607,18 +630,58 @@ const Create: React.FC = () => {
     }
   };
 
-  const handleSelectStyle = (style: StyleOption) => {
-    setTempSelectedStyle(style);
+  const selectedStylesList = useMemo(() => Object.values(selectedStyles).flat(), [selectedStyles]);
+  const totalSelectedStyles = selectedStylesList.length;
+  const totalTempSelectedStyles = useMemo(
+    () => Object.values(tempSelectedStyles).reduce((count, styles) => count + styles.length, 0),
+    [tempSelectedStyles],
+  );
+  const activeStyleSectionData = useMemo(
+    () => STYLE_SECTIONS.find(section => section.id === activeStyleSection) ?? STYLE_SECTIONS[0],
+    [activeStyleSection],
+  );
+  const selectedStylesLabel = useMemo(() => {
+    if (totalSelectedStyles === 0) {
+      return null;
+    }
+
+    if (totalSelectedStyles === 1) {
+      return selectedStylesList[0]?.name ?? null;
+    }
+
+    if (totalSelectedStyles === 2) {
+      const [first, second] = selectedStylesList;
+      return `${first?.name ?? ""}, ${second?.name ?? ""}`.trim();
+    }
+
+    const [first, second] = selectedStylesList;
+    return `${first?.name ?? ""}, ${second?.name ?? ""} + ${totalSelectedStyles - 2} more`.trim();
+  }, [selectedStylesList, totalSelectedStyles]);
+
+  const handleToggleTempStyle = (sectionId: StyleSectionId, style: StyleOption) => {
+    setTempSelectedStyles(prev => {
+      const sectionStyles = prev[sectionId];
+      const exists = sectionStyles.some(option => option.id === style.id);
+      const updatedSectionStyles = exists
+        ? sectionStyles.filter(option => option.id !== style.id)
+        : [...sectionStyles, style];
+
+      return {
+        ...prev,
+        [sectionId]: updatedSectionStyles,
+      };
+    });
   };
 
-  const handleApplyStyle = () => {
-    setSelectedStyle(tempSelectedStyle);
+  const handleApplyStyles = () => {
+    setSelectedStyles(cloneSelectedStyles(tempSelectedStyles));
     setIsStyleModalOpen(false);
     focusStyleButton();
   };
 
-  const handleClearStyle = () => {
-    setSelectedStyle(null);
+  const handleClearStyles = () => {
+    setSelectedStyles(createEmptySelectedStyles());
+    setTempSelectedStyles(createEmptySelectedStyles());
     setIsStyleModalOpen(false);
     focusStyleButton();
   };
@@ -7449,29 +7512,34 @@ const handleGenerate = async () => {
                         ref={stylesButtonRef}
                         onClick={() => setIsStyleModalOpen(true)}
                         className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                        aria-label="Select a style"
+                        aria-label="Select style"
                         aria-expanded={isStyleModalOpen}
                       >
                         <Palette className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                        {!selectedStyle && (
+                        {totalSelectedStyles === 0 && (
                           <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Style</span>
                         )}
-                        {selectedStyle && (
-                          <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
-                            {selectedStyle.name}
+                        {totalSelectedStyles > 0 && (
+                          <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[10rem] truncate">
+                            {selectedStylesLabel ?? `Style (${totalSelectedStyles})`}
+                          </span>
+                        )}
+                        {totalSelectedStyles > 0 && (
+                          <span className="lg:hidden text-xs font-raleway text-n-text">
+                            {totalSelectedStyles}
                           </span>
                         )}
                       </button>
-                      {selectedStyle && (
+                      {totalSelectedStyles > 0 && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleClearStyle();
+                            handleClearStyles();
                           }}
                           className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove style"
-                          aria-label="Remove style"
+                          title="Remove styles"
+                          aria-label="Remove styles"
                         >
                           <X className="w-2.5 h-2.5 text-n-text" />
                         </button>
@@ -7902,11 +7970,11 @@ const handleGenerate = async () => {
                           }}
                         >
                           <div
-                            className={`${glass.prompt} w-full max-w-2xl rounded-3xl border border-theme-mid p-4 shadow-xl`}
+                            className={`${glass.prompt} w-full max-w-4xl rounded-3xl border border-theme-mid px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
                             onClick={event => event.stopPropagation()}
                           >
-                            <div className="flex items-center justify-between mb-3">
-                              <h2 id="style-modal-heading" className="text-base font-raleway text-theme-text">
+                            <div className="flex items-center justify-between mb-4">
+                              <h2 id="style-modal-heading" className="text-lg font-raleway text-theme-text">
                                 Style
                               </h2>
                               <button
@@ -7915,52 +7983,83 @@ const handleGenerate = async () => {
                                   setIsStyleModalOpen(false);
                                   focusStyleButton();
                                 }}
-                                className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                aria-label="Close styles"
+                                className="inline-flex size-8 items-center justify-center rounded-full border border-theme-mid bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                aria-label="Close style"
                               >
-                                <X className="w-3.5 h-3.5" />
+                                <X className="w-4 h-4" />
                               </button>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 relative pb-16">
-                              {STYLE_OPTIONS.map(option => {
-                                const isActive = tempSelectedStyle?.id === option.id;
-                                return (
-                                  <button
-                                    key={option.id}
-                                    type="button"
-                                    onClick={() => handleSelectStyle(option)}
-                                    className="w-full text-left group"
-                                  >
-                                    <div className={`relative overflow-hidden rounded-xl border transition-colors duration-200 ${
-                                      isActive
-                                        ? 'border-theme-text'
-                                        : 'border-theme-mid group-hover:border-theme-text'
-                                    }`}>
-                                      <div
-                                        role="img"
-                                        aria-label={`${option.name} style placeholder`}
-                                        className="w-full aspect-square"
-                                        style={{
-                                          backgroundImage: option.previewGradient,
-                                          backgroundSize: "cover",
-                                          backgroundPosition: "center",
-                                        }}
-                                      />
-                                      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-2 py-1.5 bg-gradient-to-t from-black/60 to-transparent">
-                                        <span className="text-sm font-normal font-raleway text-theme-text">{option.name}</span>
-                                        {isActive && <Check className="h-3.5 w-3.5 text-theme-text" />}
-                                      </div>
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-start p-4 pointer-events-none">
-                                <p className="text-sm font-raleway text-theme-white text-left">
-                                  Styles add ready-made prompt guidance that layers on top of your description.
+                            <div className="flex flex-1 flex-col gap-2 overflow-hidden">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {STYLE_SECTIONS.map(section => {
+                                  const isActive = section.id === activeStyleSectionData.id;
+                                  const sectionSelectedCount = tempSelectedStyles[section.id].length;
+                                  return (
+                                    <button
+                                      key={section.id}
+                                      type="button"
+                                      onClick={() => setActiveStyleSection(section.id)}
+                                      className={`rounded-full border px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                                        isActive
+                                          ? 'bg-theme-text text-theme-black border-theme-text'
+                                          : 'bg-theme-black/60 border-theme-mid text-theme-white hover:border-theme-text/70'
+                                      }`}
+                                      aria-pressed={isActive}
+                                    >
+                                      <span>{section.name}</span>
+                                      {sectionSelectedCount > 0 && (
+                                        <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-theme-black/70 px-2 text-xs font-medium text-theme-text">
+                                          {sectionSelectedCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex-1 overflow-y-auto">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
+                                  {activeStyleSectionData.options.map(option => {
+                                    const isActive = tempSelectedStyles[activeStyleSectionData.id].some(style => style.id === option.id);
+                                    return (
+                                      <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => handleToggleTempStyle(activeStyleSectionData.id, option)}
+                                        className="w-full text-left group"
+                                      >
+                                        <div
+                                          className={`relative overflow-hidden rounded-xl border transition-colors duration-200 ${
+                                            isActive
+                                              ? 'border-theme-text'
+                                              : 'border-theme-mid group-hover:border-theme-text'
+                                          }`}
+                                        >
+                                          <div
+                                            role="img"
+                                            aria-label={`${option.name} style placeholder`}
+                                            className="w-full aspect-square"
+                                            style={{
+                                              backgroundImage: option.previewGradient,
+                                              backgroundSize: 'cover',
+                                              backgroundPosition: 'center',
+                                            }}
+                                          />
+                                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                                            <span className="text-sm font-normal font-raleway text-theme-text">{option.name}</span>
+                                            {isActive && <Check className="h-3.5 w-3.5 text-theme-text" />}
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <p className="mt-3 text-sm font-raleway text-theme-white">
+                                  Style adds ready-made prompt guidance that layers on top of your description. Select any combination
+                                  that fits your vision.
                                 </p>
                               </div>
                             </div>
-                            <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+                            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -7973,8 +8072,8 @@ const handleGenerate = async () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={handleApplyStyle}
-                                disabled={!tempSelectedStyle}
+                                onClick={handleApplyStyles}
+                                disabled={totalTempSelectedStyles === 0}
                                 className={buttons.primary}
                               >
                                 Apply
