@@ -71,7 +71,6 @@ export const useChatGPTImageGeneration = () => {
             background: options.background ?? 'transparent',
             ownerId: user?.id,
             avatarId: options.avatarId,
-        avatarImageId: options.avatarImageId,
             avatarImageId: options.avatarImageId,
           };
         }

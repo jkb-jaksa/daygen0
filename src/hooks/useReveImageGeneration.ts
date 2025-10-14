@@ -81,7 +81,6 @@ export const useReveImageGeneration = () => {
             references: options.references || undefined,
             ownerId: user?.id,
             avatarId: options.avatarId,
-          avatarImageId: options.avatarImageId,
             avatarImageId: options.avatarImageId,
           };
         }
