@@ -8667,16 +8667,16 @@ const handleGenerate = async () => {
                       onDragOver={handleAvatarButtonDragOver}
                       onDragLeave={handleAvatarButtonDragLeave}
                       onDrop={handleAvatarButtonDrop}
-                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center ${selectedAvatar ? 'h-24 w-24' : 'h-16 w-16'} rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1 parallax-small`}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-20 w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
                     >
                       {!selectedAvatar && (
                         <>
-                          <div className="flex-1 flex items-end justify-center pb-1">
-                            <Users className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
-                            <Plus className="w-4 h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
+                          <div className="flex-1 flex items-center justify-center mt-3">
+                            <Users className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <Plus className="w-5 h-5 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-sm font-raleway text-n-text">
@@ -8691,16 +8691,18 @@ const handleGenerate = async () => {
                             src={selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
                             alt={selectedAvatar.name}
                             loading="lazy"
-                            className="w-16 h-16 rounded-lg object-cover border border-n-mid"
+                            className="absolute inset-0 w-full h-full rounded-xl object-cover"
                             title={
                               selectedAvatarImageIndex !== null
                                 ? `${selectedAvatar.name} — Variation ${selectedAvatarImageIndex + 1}`
                                 : selectedAvatar.name
                             }
                           />
-                          <span className="text-sm font-raleway text-n-text mt-auto text-center px-1">
-                            {selectedAvatar.name}
-                          </span>
+                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                            <span className="text-sm font-raleway text-n-text text-center">
+                              {selectedAvatar.name}
+                            </span>
+                          </div>
                         </>
                       )}
                     </button>
@@ -8711,11 +8713,11 @@ const handleGenerate = async () => {
                           e.stopPropagation();
                           clearSelectedAvatar();
                         }}
-                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
                         title="Remove avatar"
                         aria-label="Remove avatar"
                       >
-                        <X className="w-2.5 h-2.5 text-n-text" />
+                        <X className="w-3.5 h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                       </button>
                     )}
                   </div>
@@ -8737,16 +8739,16 @@ const handleGenerate = async () => {
                       onDragOver={handleProductButtonDragOver}
                       onDragLeave={handleProductButtonDragLeave}
                       onDrop={handleProductButtonDrop}
-                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center ${selectedProduct ? 'h-24 w-24' : 'h-16 w-16'} rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1 parallax-small`}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-20 w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
                     >
                       {!selectedProduct && (
                         <>
-                          <div className="flex-1 flex items-end justify-center pb-1">
-                            <Package className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
-                            <Plus className="w-4 h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
+                          <div className="flex-1 flex items-center justify-center mt-3">
+                            <Package className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <Plus className="w-5 h-5 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-sm font-raleway text-n-text">
@@ -8761,12 +8763,14 @@ const handleGenerate = async () => {
                             src={selectedProduct.imageUrl}
                             alt={selectedProduct.name}
                             loading="lazy"
-                            className="w-16 h-16 rounded-lg object-cover border border-n-mid"
+                            className="absolute inset-0 w-full h-full rounded-xl object-cover"
                             title={selectedProduct.name}
                           />
-                          <span className="text-sm font-raleway text-n-text mt-auto text-center px-1">
-                            {selectedProduct.name}
-                          </span>
+                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                            <span className="text-sm font-raleway text-n-text text-center">
+                              {selectedProduct.name}
+                            </span>
+                          </div>
                         </>
                       )}
                     </button>
@@ -8777,11 +8781,11 @@ const handleGenerate = async () => {
                           e.stopPropagation();
                           clearSelectedProduct();
                         }}
-                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
                         title="Remove product"
                         aria-label="Remove product"
                       >
-                        <X className="w-2.5 h-2.5 text-n-text" />
+                        <X className="w-3.5 h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                       </button>
                     )}
                   </div>
@@ -8791,7 +8795,7 @@ const handleGenerate = async () => {
                       type="button"
                       ref={stylesButtonRef}
                       onClick={() => setIsStyleModalOpen(true)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center ${totalSelectedStyles > 0 ? 'h-24 w-24' : 'h-16 w-16'} rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1 parallax-small`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-20 w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small`}
                       aria-label="Select style"
                       aria-expanded={isStyleModalOpen}
                       onPointerMove={onPointerMove}
@@ -8800,8 +8804,8 @@ const handleGenerate = async () => {
                     >
                       {totalSelectedStyles === 0 && (
                         <>
-                          <div className="flex-1 flex items-end justify-center pb-1">
-                            <Palette className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                          <div className="flex-1 flex items-center justify-center mt-3">
+                            <Palette className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-sm font-raleway text-n-text">
