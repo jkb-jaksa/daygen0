@@ -258,7 +258,6 @@ const AI_MODELS = [
 ];
 
 const DEFAULT_REFERENCE_LIMIT = 3;
-const MAX_REFERENCES_WITH_AVATAR = 2;
 const PROMPT_TEXTAREA_MAX_HEIGHT = 160;
 
 // Portal component for model menu to avoid clipping by parent containers
@@ -547,7 +546,10 @@ const Create: React.FC = () => {
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
   const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
-  const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
+  const referenceLimit = useMemo(() => {
+    const usedSlots = (selectedAvatar ? 1 : 0) + (selectedProduct ? 1 : 0);
+    return Math.max(0, DEFAULT_REFERENCE_LIMIT - usedSlots);
+  }, [selectedAvatar, selectedProduct]);
   const selectedAvatarImage = useMemo(() => {
     if (!selectedAvatar) return null;
     const targetId = selectedAvatarImageId ?? selectedAvatar.primaryImageId;
@@ -3781,17 +3783,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
     (avatar: StoredAvatar) => {
       setPendingAvatarId(null);
       setSelectedAvatar(avatar);
-       setSelectedAvatarImageId(avatar.primaryImageId ?? avatar.images[0]?.id ?? null);
+      setSelectedAvatarImageId(avatar.primaryImageId ?? avatar.images[0]?.id ?? null);
       setIsAvatarPickerOpen(false);
-      if (referenceFiles.length > MAX_REFERENCES_WITH_AVATAR) {
-        const trimmedFiles = referenceFiles.slice(0, MAX_REFERENCES_WITH_AVATAR);
-        const trimmedPreviews = referencePreviews.slice(0, MAX_REFERENCES_WITH_AVATAR);
-        referencePreviews.slice(MAX_REFERENCES_WITH_AVATAR).forEach(url => URL.revokeObjectURL(url));
-        setReferenceFiles(trimmedFiles);
-        setReferencePreviews(trimmedPreviews);
-      }
     },
-    [referenceFiles, referencePreviews],
+    [],
   );
 
   const clearSelectedAvatar = useCallback(() => {
@@ -3815,6 +3810,23 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setPendingProductId(null);
     setIsProductPickerOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (referenceFiles.length <= referenceLimit) {
+      return;
+    }
+
+    setReferenceFiles(prev => {
+      if (prev.length <= referenceLimit) return prev;
+      return prev.slice(0, referenceLimit);
+    });
+
+    setReferencePreviews(prev => {
+      if (prev.length <= referenceLimit) return prev;
+      prev.slice(referenceLimit).forEach(url => URL.revokeObjectURL(url));
+      return prev.slice(0, referenceLimit);
+    });
+  }, [referenceFiles, referenceLimit]);
 
   const confirmDeleteProduct = useCallback(async () => {
     if (!productToDelete || !storagePrefix) return;
@@ -7415,7 +7427,7 @@ const handleGenerate = async () => {
                 {/* Reference images display - right next to Add reference button */}
                 {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
+                    <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referencePreviews.length + (selectedAvatar ? 1 : 0) + (selectedProduct ? 1 : 0)}/{DEFAULT_REFERENCE_LIMIT}):</div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((url, idx) => (
                         <div key={idx} className="relative group">
