@@ -1804,7 +1804,7 @@ export default function Avatars() {
           >
             Create your <span className="text-brand">Avatar</span>.
           </h1>
-          <p className={headings.tripleHeading.description}>
+          <p className={`${headings.tripleHeading.description} -mb-4`}>
             {subtitle}
           </p>
         </div>
@@ -1960,7 +1960,7 @@ export default function Avatars() {
               </form>
             ) : (
               <>
-                <h1 className="text-3xl font-raleway text-theme-text h-12 flex items-center">{creationsModalAvatar.name}</h1>
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text h-12 flex items-center`}>{creationsModalAvatar.name}</h1>
                 <button
                   type="button"
                   className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
@@ -2105,7 +2105,7 @@ export default function Avatars() {
 
         <div className="space-y-4 -mt-3">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-raleway text-theme-text">Avatar Images</h2>
+            <h2 className="text-2xl font-normal font-raleway text-theme-text">Avatar Images</h2>
             <span className="text-xs font-raleway text-theme-white">
               {avatarImages.length}/{MAX_AVATAR_IMAGES} images
             </span>
