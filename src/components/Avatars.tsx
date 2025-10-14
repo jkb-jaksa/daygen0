@@ -1920,80 +1920,71 @@ export default function Avatars() {
 
     return (
       <div className="flex flex-col gap-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <header className="max-w-3xl text-left">
           <button
             type="button"
-            className="text-sm font-raleway text-theme-white/80 hover:text-theme-text transition-colors duration-200"
+            className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
             onClick={closeCreationsModal}
           >
             ← Back to Avatars
           </button>
-        </div>
-
-        <div className="space-y-0 -mt-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {editingAvatarId === creationsModalAvatar.id ? (
-              <form
-                className="flex h-12 items-center gap-2 rounded-3xl border border-theme-mid bg-theme-black/60 px-4"
-                onSubmit={submitRename}
-              >
-                <input
-                  className="bg-transparent text-3xl font-raleway text-theme-text focus:outline-none"
-                  value={editingName}
-                  onChange={event => setEditingName(event.target.value)}
-                  autoFocus
-                  placeholder="Enter name..."
-                />
-                <button
-                  type="submit"
-                  className="text-theme-white transition-colors duration-200 hover:text-theme-text"
+          <div className={`${headings.tripleHeading.container} text-left`}>
+            <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
+            <div className="flex flex-wrap items-center gap-3">
+              {editingAvatarId === creationsModalAvatar.id ? (
+                <form
+                  className="flex h-12 items-center gap-2 rounded-3xl border border-theme-mid bg-theme-black/60 px-4"
+                  onSubmit={submitRename}
                 >
-                  <Check className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                  onClick={cancelRenaming}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </form>
-            ) : (
-              <>
-                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text h-12 flex items-center`}>{creationsModalAvatar.name}</h1>
-                <button
-                  type="button"
-                  className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
-                  onClick={() => startRenaming(creationsModalAvatar)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-              </>
-            )}
-
-            {creationsModalAvatar.published && (
-              <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
-                <Globe className="h-3 w-3 text-theme-text" />
-                <span>Public</span>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(event) => toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget)}
-                className="image-action-btn parallax-large"
-                title="Avatar actions"
-                aria-label="Avatar actions"
-              >
-                <Edit className="w-3 h-3" />
-              </button>
-              <ImageActionMenuPortal
-                anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
-                open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
-                onClose={closeModalAvatarEditMenu}
-                zIndex={1200}
-              >
+                  <input
+                    className="bg-transparent text-3xl font-raleway text-theme-text focus:outline-none"
+                    value={editingName}
+                    onChange={event => setEditingName(event.target.value)}
+                    autoFocus
+                    placeholder="Enter name..."
+                  />
+                  <button
+                    type="submit"
+                    className="text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                    onClick={cancelRenaming}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                    {creationsModalAvatar.name}
+                  </h1>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
+                      onClick={() => startRenaming(creationsModalAvatar)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget)}
+                      className="image-action-btn parallax-large"
+                      title="Avatar actions"
+                      aria-label="Avatar actions"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </button>
+                    <ImageActionMenuPortal
+                      anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
+                      open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
+                      onClose={closeModalAvatarEditMenu}
+                      zIndex={1200}
+                    >
                 <button
                   type="button"
                   className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
@@ -2019,98 +2010,101 @@ export default function Avatars() {
                   Make video
                 </button>
               </ImageActionMenuPortal>
-
-              <button
-                type="button"
-                onClick={(event) => toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget)}
-                className="image-action-btn parallax-large"
-                title="More options"
-                aria-label="More options"
-              >
-                <MoreHorizontal className="w-3 h-3" />
-              </button>
-              <ImageActionMenuPortal
-                anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
-                open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
-                onClose={closeAvatarMoreMenu}
-                zIndex={1200}
-              >
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleDownloadImage(creationsModalAvatar.imageUrl);
-                    closeAvatarMoreMenu();
-                  }}
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleCopyLink(creationsModalAvatar.imageUrl);
-                    closeAvatarMoreMenu();
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                  Copy link
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleManageFolders(creationsModalAvatar.imageUrl);
-                    closeAvatarMoreMenu();
-                  }}
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  Manage folders
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setAvatarToPublish(creationsModalAvatar);
-                    closeAvatarMoreMenu();
-                  }}
-                >
-                  <Globe className="h-4 w-4" />
-                  {creationsModalAvatar.published ? "Unpublish" : "Publish"}
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-300 transition-colors duration-200 hover:text-rose-200"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setAvatarToDelete(creationsModalAvatar);
-                    closeAvatarMoreMenu();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete avatar
-                </button>
-              </ImageActionMenuPortal>
+                    <button
+                      type="button"
+                      onClick={(event) => toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget)}
+                      className="image-action-btn parallax-large"
+                      title="More options"
+                      aria-label="More options"
+                    >
+                      <MoreHorizontal className="w-3 h-3" />
+                    </button>
+                    <ImageActionMenuPortal
+                      anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                      open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
+                      onClose={closeAvatarMoreMenu}
+                      zIndex={1200}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDownloadImage(creationsModalAvatar.imageUrl);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleCopyLink(creationsModalAvatar.imageUrl);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleManageFolders(creationsModalAvatar.imageUrl);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <FolderIcon className="h-4 w-4" />
+                        Manage folders
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setAvatarToPublish(creationsModalAvatar);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Globe className="h-4 w-4" />
+                        {creationsModalAvatar.published ? "Unpublish" : "Publish"}
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-300 transition-colors duration-200 hover:text-rose-200"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setAvatarToDelete(creationsModalAvatar);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete avatar
+                      </button>
+                    </ImageActionMenuPortal>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-          <p className="text-base font-raleway text-theme-white mt-0">
-            Manage creations with your Avatar.
-          </p>
-        </div>
 
-        <div className="space-y-4 -mt-3">
-          <div className="flex items-center gap-3">
+            <p className={`${headings.tripleHeading.description} -mb-4`}>
+              Manage creations with your Avatar.
+            </p>
+          </div>
+        </header>
+
+        <div className="w-full max-w-6xl space-y-5">
+          <div className="flex items-center gap-2">
             <h2 className="text-2xl font-normal font-raleway text-theme-text">Avatar Images</h2>
             <span className="text-xs font-raleway text-theme-white">
               {avatarImages.length}/{MAX_AVATAR_IMAGES} images
             </span>
           </div>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex gap-4">
             {imageSlots.map((_, index) => {
               const image = avatarImages[index];
               if (!image) {
