@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Edit,
-  Grid3X3,
+  LayoutGrid,
   Image as ImageIcon,
   Users,
   Video as VideoIcon,
@@ -25,7 +25,7 @@ export const CREATE_CATEGORIES: SidebarEntry[] = [
 ];
 
 export const LIBRARY_CATEGORIES: SidebarEntry[] = [
-  { key: "gallery", label: "gallery", Icon: Grid3X3 },
+  { key: "gallery", label: "gallery", Icon: LayoutGrid },
   { key: "avatars", label: "avatars", Icon: Users },
   { key: "products", label: "products", Icon: Package },
   { key: "inspirations", label: "inspirations", Icon: Sparkles },

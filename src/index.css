@@ -1262,7 +1262,7 @@ html[data-theme="day"] .card-overlay-gradient {
       rgba(0, 0, 0, 0.05) 75%,
       rgba(0, 0, 0, 0.1) 100%
     ),
-    #FAFAFA;
+    var(--theme-text);
   border: none;
   color: var(--theme-black);
   flex-shrink: 0;
@@ -1281,7 +1281,7 @@ html[data-theme="day"] .card-overlay-gradient {
       rgba(0, 0, 0, 0.06) 75%,
       rgba(0, 0, 0, 0.11) 100%
     ),
-    color-mix(in srgb, #FAFAFA 88%, white 12%);
+    color-mix(in srgb, var(--theme-text) 88%, white 12%);
   border: none;
   color: var(--theme-black);
   box-shadow: 
@@ -1299,7 +1299,7 @@ html[data-theme="day"] .card-overlay-gradient {
       rgba(0, 0, 0, 0.1) 75%,
       rgba(0, 0, 0, 0.15) 100%
     ),
-    color-mix(in srgb, #FAFAFA 70%, black 30%);
+    color-mix(in srgb, var(--theme-text) 70%, black 30%);
   border: none;
   color: var(--theme-black);
   box-shadow: 

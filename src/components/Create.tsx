@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -8817,7 +8817,8 @@ const handleGenerate = async () => {
                       {totalSelectedStyles === 0 && (
                         <>
                           <div className="flex-1 flex items-center justify-center mt-3">
-                            <Palette className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                            <Palette className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <LayoutGrid className="w-5 h-5 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-sm font-raleway text-n-text">
