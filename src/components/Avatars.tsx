@@ -1833,7 +1833,7 @@ export default function Avatars() {
       {hasAvatars && (
         <div className="w-full max-w-6xl space-y-5">
           <div className="flex items-center gap-2 text-left">
-            <h2 className="text-2xl font-normal font-raleway text-theme-text">Your AVATARS</h2>
+            <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
             <button
               type="button"
               className={iconButtons.lg}
