@@ -1609,44 +1609,6 @@ export default function Edit() {
               onSaveRecentPrompt={savePromptToLibrary}
             />
 
-            {aspectRatioConfig && (
-              <div className="relative">
-                <button
-                  ref={aspectRatioButtonRef}
-                  type="button"
-                  onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                  aria-label="Aspect ratio"
-                  title="Aspect ratio"
-                >
-                  <Scan className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
-                </button>
-                <AspectRatioDropdown
-                  anchorRef={aspectRatioButtonRef}
-                  open={isAspectRatioMenuOpen}
-                  onClose={() => setIsAspectRatioMenuOpen(false)}
-                  options={aspectRatioConfig.options}
-                  selectedValue={aspectRatioConfig.selectedValue}
-                  onSelect={aspectRatioConfig.onSelect}
-                />
-              </div>
-            )}
-
-            {/* Settings button */}
-            <div className="relative settings-dropdown">
-              <button
-                ref={settingsRef}
-                type="button"
-                onClick={toggleSettings}
-                title="Settings"
-                aria-label="Settings"
-                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-              >
-                <Settings className="w-4 h-4 text-n-text" />
-              </button>
-            </div>
-
             {/* Model Selector */}
             <div className="relative model-selector">
               <button
@@ -1732,6 +1694,44 @@ export default function Edit() {
                 })}
               </ModelMenuPortal>
             </div>
+
+            {/* Settings button */}
+            <div className="relative settings-dropdown">
+              <button
+                ref={settingsRef}
+                type="button"
+                onClick={toggleSettings}
+                title="Settings"
+                aria-label="Settings"
+                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+              >
+                <Settings className="w-4 h-4 text-n-text" />
+              </button>
+            </div>
+
+            {aspectRatioConfig && (
+              <div className="relative">
+                <button
+                  ref={aspectRatioButtonRef}
+                  type="button"
+                  onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                  aria-label="Aspect ratio"
+                  title="Aspect ratio"
+                >
+                  <Scan className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
+                </button>
+                <AspectRatioDropdown
+                  anchorRef={aspectRatioButtonRef}
+                  open={isAspectRatioMenuOpen}
+                  onClose={() => setIsAspectRatioMenuOpen(false)}
+                  options={aspectRatioConfig.options}
+                  selectedValue={aspectRatioConfig.selectedValue}
+                  onSelect={aspectRatioConfig.onSelect}
+                />
+              </div>
+            )}
           </div>
             
             {/* Generate button on right */}

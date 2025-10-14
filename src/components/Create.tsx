@@ -7306,6 +7306,9 @@ const handleGenerate = async () => {
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []); if (files.length) { handleAddReferenceFiles(files); } }}
             >
+              <div className="flex gap-3 items-stretch">
+                {/* Left section: Textarea + Controls */}
+                <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
               <div className="mb-1">
                 <textarea
@@ -7347,6 +7350,30 @@ const handleGenerate = async () => {
                       Chat Mode
                     </div>
                   </div>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={promptsButtonRef}
+                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(e.currentTarget, 'prompts-tooltip');
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip('prompts-tooltip');
+                        }}
+                      >
+                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                      </button>
+                      <div
+                        data-tooltip-for="prompts-tooltip"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Your Prompts
+                      </div>
+                    </div>
+
                 <div className="relative">
                   <button
                     type="button"
@@ -7407,168 +7434,6 @@ const handleGenerate = async () => {
 
                 {activeCategory === "image" && (
                   <>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        ref={avatarButtonRef}
-                        onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                        onDragOver={handleAvatarButtonDragOver}
-                        onDragLeave={handleAvatarButtonDragLeave}
-                        onDrop={handleAvatarButtonDrop}
-                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand' : 'hover:bg-n-text/20'} text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                      >
-                        <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                        {!selectedAvatar && (
-                          <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Avatar</span>
-                        )}
-                        {selectedAvatar && (
-                          <span className="ml-0.5 flex items-center gap-2">
-                            <img
-                              src={selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
-                              alt={selectedAvatar.name}
-                              loading="lazy"
-                              className="w-7 h-7 rounded-lg object-cover border border-n-mid"
-                              title={
-                                selectedAvatarImageIndex !== null
-                                  ? `${selectedAvatar.name} — Variation ${selectedAvatarImageIndex + 1}`
-                                  : selectedAvatar.name
-                              }
-                            />
-                            <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
-                              {selectedAvatar.name}
-                            </span>
-                            {selectedAvatarImageIndex !== null && (
-                              <span className="hidden lg:inline text-xs font-raleway text-n-text/70">
-                                (Var {selectedAvatarImageIndex + 1})
-                              </span>
-                            )}
-                          </span>
-                        )}
-                      </button>
-                      {selectedAvatar && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearSelectedAvatar();
-                          }}
-                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove avatar"
-                          aria-label="Remove avatar"
-                        >
-                          <X className="w-2.5 h-2.5 text-n-text" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="relative">
-                      <button
-                        type="button"
-                        ref={productButtonRef}
-                        onClick={() => setIsProductPickerOpen(prev => !prev)}
-                        onDragOver={handleProductButtonDragOver}
-                        onDragLeave={handleProductButtonDragLeave}
-                        onDrop={handleProductButtonDrop}
-                        className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand' : 'hover:bg-n-text/20'} text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                      >
-                        <Package className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                        {!selectedProduct && (
-                          <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Product</span>
-                        )}
-                        {selectedProduct && (
-                          <span className="ml-0.5 flex items-center gap-2">
-                            <img
-                              src={selectedProduct.imageUrl}
-                              alt={selectedProduct.name}
-                              loading="lazy"
-                              className="w-7 h-7 rounded-lg object-cover border border-n-mid"
-                              title={selectedProduct.name}
-                            />
-                            <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[6rem] truncate">
-                              {selectedProduct.name}
-                            </span>
-                          </span>
-                        )}
-                      </button>
-                      {selectedProduct && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearSelectedProduct();
-                          }}
-                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove product"
-                          aria-label="Remove product"
-                        >
-                          <X className="w-2.5 h-2.5 text-n-text" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="relative">
-                      <button
-                        type="button"
-                        ref={stylesButtonRef}
-                        onClick={() => setIsStyleModalOpen(true)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                        aria-label="Select style"
-                        aria-expanded={isStyleModalOpen}
-                      >
-                        <Palette className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                        {totalSelectedStyles === 0 && (
-                          <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Style</span>
-                        )}
-                        {totalSelectedStyles > 0 && (
-                          <span className="hidden lg:inline text-sm font-raleway text-n-text max-w-[10rem] truncate">
-                            {selectedStylesLabel ?? `Style (${totalSelectedStyles})`}
-                          </span>
-                        )}
-                        {totalSelectedStyles > 0 && (
-                          <span className="lg:hidden text-xs font-raleway text-n-text">
-                            {totalSelectedStyles}
-                          </span>
-                        )}
-                      </button>
-                      {totalSelectedStyles > 0 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleClearStyles();
-                          }}
-                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove styles"
-                          aria-label="Remove styles"
-                        >
-                          <X className="w-2.5 h-2.5 text-n-text" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="relative">
-                      <button
-                        type="button"
-                        ref={promptsButtonRef}
-                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
-                        onMouseEnter={(e) => {
-                          showHoverTooltip(e.currentTarget, 'prompts-tooltip');
-                        }}
-                        onMouseLeave={() => {
-                          hideHoverTooltip('prompts-tooltip');
-                        }}
-                      >
-                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      </button>
-                      <div
-                        data-tooltip-for="prompts-tooltip"
-                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                      >
-                        Your Prompts
-                      </div>
-                    </div>
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
                       open={isAvatarPickerOpen}
@@ -8087,198 +7952,6 @@ const handleGenerate = async () => {
                       )}
                   </>
                 )}
-                <div className="relative settings-dropdown">
-                  <button
-                    ref={settingsRef}
-                    type="button"
-                    onClick={toggleSettings}
-                    title="Settings"
-                    aria-label="Settings"
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-                  >
-                    <Settings className="w-4 h-4 text-n-text" />
-                  </button>
-                  
-                  {/* Settings Dropdown Portal */}
-                  {isSettingsOpen && (
-                    <Suspense fallback={null}>
-                      <SettingsMenu
-                        anchorRef={settingsRef}
-                        open={isSettingsOpen}
-                        onClose={() => setIsSettingsOpen(false)}
-                        common={{
-                          batchSize,
-                          onBatchSizeChange: value => setBatchSize(value),
-                          min: 1,
-                          max: 4,
-                        }}
-                        flux={{
-                          enabled: isFlux,
-                          model: fluxModel,
-                          onModelChange: setFluxModel,
-                        }}
-                        veo={{
-                          enabled: isVeo,
-                          aspectRatio: videoAspectRatio,
-                          onAspectRatioChange: setVideoAspectRatio,
-                          model: videoModel,
-                          onModelChange: setVideoModel,
-                          negativePrompt: videoNegativePrompt,
-                          onNegativePromptChange: setVideoNegativePrompt,
-                          seed: videoSeed,
-                          onSeedChange: setVideoSeed,
-                        }}
-                        hailuo={{
-                          enabled: isHailuoVideo,
-                          duration: hailuoDuration,
-                          onDurationChange: setHailuoDuration,
-                          resolution: hailuoResolution,
-                          onResolutionChange: setHailuoResolution,
-                          promptOptimizer: hailuoPromptOptimizer,
-                          onPromptOptimizerChange: setHailuoPromptOptimizer,
-                          fastPretreatment: hailuoFastPretreatment,
-                          onFastPretreatmentChange: setHailuoFastPretreatment,
-                          watermark: hailuoWatermark,
-                          onWatermarkChange: setHailuoWatermark,
-                          firstFrame: hailuoFirstFrame,
-                          onFirstFrameChange: setHailuoFirstFrame,
-                          lastFrame: hailuoLastFrame,
-                          onLastFrameChange: setHailuoLastFrame,
-                        }}
-                        wan={{
-                          enabled: isWanVideo,
-                          size: wanSize,
-                          onSizeChange: setWanSize,
-                          negativePrompt: wanNegativePrompt,
-                          onNegativePromptChange: setWanNegativePrompt,
-                          promptExtend: wanPromptExtend,
-                          onPromptExtendChange: setWanPromptExtend,
-                          watermark: wanWatermark,
-                          onWatermarkChange: setWanWatermark,
-                          seed: wanSeed,
-                          onSeedChange: setWanSeed,
-                        }}
-                        kling={{
-                          enabled: isKlingVideo,
-                          model: klingModel,
-                          onModelChange: setKlingModel,
-                          aspectRatio: klingAspectRatio,
-                          onAspectRatioChange: setKlingAspectRatio,
-                          duration: klingDuration,
-                          onDurationChange: setKlingDuration,
-                          mode: klingMode,
-                          onModeChange: setKlingMode,
-                          cfgScale: klingCfgScale,
-                          onCfgScaleChange: setKlingCfgScale,
-                          negativePrompt: klingNegativePrompt,
-                          onNegativePromptChange: setKlingNegativePrompt,
-                          cameraType: klingCameraType,
-                          onCameraTypeChange: setKlingCameraType,
-                          cameraConfig: klingCameraConfig,
-                          onCameraConfigChange: (updates) => setKlingCameraConfig((prev) => ({ ...prev, ...updates })),
-                          statusMessage: klingStatusMessage,
-                        }}
-                        seedance={{
-                          enabled: isSeedance,
-                          mode: seedanceMode,
-                          onModeChange: setSeedanceMode,
-                          ratio: seedanceRatio,
-                          onRatioChange: setSeedanceRatio,
-                          duration: seedanceDuration,
-                          onDurationChange: setSeedanceDuration,
-                          resolution: seedanceResolution,
-                          onResolutionChange: setSeedanceResolution,
-                          fps: seedanceFps,
-                          onFpsChange: setSeedanceFps,
-                          cameraFixed: seedanceCamerafixed,
-                          onCameraFixedChange: setSeedanceCamerafixed,
-                          seed: seedanceSeed,
-                          onSeedChange: setSeedanceSeed,
-                          firstFrame: seedanceFirstFrame,
-                          onFirstFrameChange: setSeedanceFirstFrame,
-                          lastFrame: seedanceLastFrame,
-                          onLastFrameChange: setSeedanceLastFrame,
-                        }}
-                        recraft={{
-                          enabled: isRecraft,
-                          model: recraftModel,
-                          onModelChange: setRecraftModel,
-                        }}
-                        runway={{
-                          enabled: isRunway,
-                          model: runwayModel,
-                          onModelChange: setRunwayModel,
-                        }}
-                        gemini={{
-                          enabled: isGemini,
-                          temperature,
-                          onTemperatureChange: setTemperature,
-                          outputLength,
-                          onOutputLengthChange: setOutputLength,
-                          topP,
-                          onTopPChange: setTopP,
-                          aspectRatio: geminiAspectRatio,
-                          onAspectRatioChange: setGeminiAspectRatio,
-                        }}
-                        qwen={{
-                          enabled: isQwen,
-                          size: qwenSize,
-                          onSizeChange: setQwenSize,
-                          promptExtend: qwenPromptExtend,
-                          onPromptExtendChange: setQwenPromptExtend,
-                          watermark: qwenWatermark,
-                          onWatermarkChange: setQwenWatermark,
-                        }}
-                        lumaPhoton={{
-                          enabled: isLumaPhoton,
-                          model: lumaPhotonModel,
-                          onModelChange: setLumaPhotonModel,
-                        }}
-                        lumaRay={{
-                          enabled: isLumaRay,
-                          variant: lumaRayVariant,
-                          onVariantChange: setLumaRayVariant,
-                        }}
-                      />
-                    </Suspense>
-                  )}
-
-                </div>
-                {aspectRatioConfig && (
-                  <div className="relative">
-                    <button
-                      ref={aspectRatioButtonRef}
-                      type="button"
-                      onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                      aria-label="Aspect ratio"
-                      onMouseEnter={event => {
-                        showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip');
-                      }}
-                      onMouseLeave={() => {
-                        hideHoverTooltip('aspect-ratio-tooltip');
-                      }}
-                    >
-                      <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
-                      <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
-                    </button>
-                    <div
-                      data-tooltip-for="aspect-ratio-tooltip"
-                      className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                      style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                    >
-                      Aspect Ratio
-                    </div>
-                    <AspectRatioDropdown
-                      anchorRef={aspectRatioButtonRef}
-                      open={isAspectRatioMenuOpen}
-                      onClose={() => setIsAspectRatioMenuOpen(false)}
-                      options={aspectRatioConfig.options}
-                      selectedValue={aspectRatioConfig.selectedValue}
-                      onSelect={aspectRatioConfig.onSelect}
-                    />
-                  </div>
-                )}
 
                 {/* Model Selector */}
                 <div className="relative model-selector flex-shrink-0">
@@ -8664,6 +8337,198 @@ const handleGenerate = async () => {
                     )}
                   </ModelMenuPortal>
                 </div>
+                <div className="relative settings-dropdown">
+                  <button
+                    ref={settingsRef}
+                    type="button"
+                    onClick={toggleSettings}
+                    title="Settings"
+                    aria-label="Settings"
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+                  >
+                    <Settings className="w-4 h-4 text-n-text" />
+                  </button>
+                  
+                  {/* Settings Dropdown Portal */}
+                  {isSettingsOpen && (
+                    <Suspense fallback={null}>
+                      <SettingsMenu
+                        anchorRef={settingsRef}
+                        open={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
+                        common={{
+                          batchSize,
+                          onBatchSizeChange: value => setBatchSize(value),
+                          min: 1,
+                          max: 4,
+                        }}
+                        flux={{
+                          enabled: isFlux,
+                          model: fluxModel,
+                          onModelChange: setFluxModel,
+                        }}
+                        veo={{
+                          enabled: isVeo,
+                          aspectRatio: videoAspectRatio,
+                          onAspectRatioChange: setVideoAspectRatio,
+                          model: videoModel,
+                          onModelChange: setVideoModel,
+                          negativePrompt: videoNegativePrompt,
+                          onNegativePromptChange: setVideoNegativePrompt,
+                          seed: videoSeed,
+                          onSeedChange: setVideoSeed,
+                        }}
+                        hailuo={{
+                          enabled: isHailuoVideo,
+                          duration: hailuoDuration,
+                          onDurationChange: setHailuoDuration,
+                          resolution: hailuoResolution,
+                          onResolutionChange: setHailuoResolution,
+                          promptOptimizer: hailuoPromptOptimizer,
+                          onPromptOptimizerChange: setHailuoPromptOptimizer,
+                          fastPretreatment: hailuoFastPretreatment,
+                          onFastPretreatmentChange: setHailuoFastPretreatment,
+                          watermark: hailuoWatermark,
+                          onWatermarkChange: setHailuoWatermark,
+                          firstFrame: hailuoFirstFrame,
+                          onFirstFrameChange: setHailuoFirstFrame,
+                          lastFrame: hailuoLastFrame,
+                          onLastFrameChange: setHailuoLastFrame,
+                        }}
+                        wan={{
+                          enabled: isWanVideo,
+                          size: wanSize,
+                          onSizeChange: setWanSize,
+                          negativePrompt: wanNegativePrompt,
+                          onNegativePromptChange: setWanNegativePrompt,
+                          promptExtend: wanPromptExtend,
+                          onPromptExtendChange: setWanPromptExtend,
+                          watermark: wanWatermark,
+                          onWatermarkChange: setWanWatermark,
+                          seed: wanSeed,
+                          onSeedChange: setWanSeed,
+                        }}
+                        kling={{
+                          enabled: isKlingVideo,
+                          model: klingModel,
+                          onModelChange: setKlingModel,
+                          aspectRatio: klingAspectRatio,
+                          onAspectRatioChange: setKlingAspectRatio,
+                          duration: klingDuration,
+                          onDurationChange: setKlingDuration,
+                          mode: klingMode,
+                          onModeChange: setKlingMode,
+                          cfgScale: klingCfgScale,
+                          onCfgScaleChange: setKlingCfgScale,
+                          negativePrompt: klingNegativePrompt,
+                          onNegativePromptChange: setKlingNegativePrompt,
+                          cameraType: klingCameraType,
+                          onCameraTypeChange: setKlingCameraType,
+                          cameraConfig: klingCameraConfig,
+                          onCameraConfigChange: (updates) => setKlingCameraConfig((prev) => ({ ...prev, ...updates })),
+                          statusMessage: klingStatusMessage,
+                        }}
+                        seedance={{
+                          enabled: isSeedance,
+                          mode: seedanceMode,
+                          onModeChange: setSeedanceMode,
+                          ratio: seedanceRatio,
+                          onRatioChange: setSeedanceRatio,
+                          duration: seedanceDuration,
+                          onDurationChange: setSeedanceDuration,
+                          resolution: seedanceResolution,
+                          onResolutionChange: setSeedanceResolution,
+                          fps: seedanceFps,
+                          onFpsChange: setSeedanceFps,
+                          cameraFixed: seedanceCamerafixed,
+                          onCameraFixedChange: setSeedanceCamerafixed,
+                          seed: seedanceSeed,
+                          onSeedChange: setSeedanceSeed,
+                          firstFrame: seedanceFirstFrame,
+                          onFirstFrameChange: setSeedanceFirstFrame,
+                          lastFrame: seedanceLastFrame,
+                          onLastFrameChange: setSeedanceLastFrame,
+                        }}
+                        recraft={{
+                          enabled: isRecraft,
+                          model: recraftModel,
+                          onModelChange: setRecraftModel,
+                        }}
+                        runway={{
+                          enabled: isRunway,
+                          model: runwayModel,
+                          onModelChange: setRunwayModel,
+                        }}
+                        gemini={{
+                          enabled: isGemini,
+                          temperature,
+                          onTemperatureChange: setTemperature,
+                          outputLength,
+                          onOutputLengthChange: setOutputLength,
+                          topP,
+                          onTopPChange: setTopP,
+                          aspectRatio: geminiAspectRatio,
+                          onAspectRatioChange: setGeminiAspectRatio,
+                        }}
+                        qwen={{
+                          enabled: isQwen,
+                          size: qwenSize,
+                          onSizeChange: setQwenSize,
+                          promptExtend: qwenPromptExtend,
+                          onPromptExtendChange: setQwenPromptExtend,
+                          watermark: qwenWatermark,
+                          onWatermarkChange: setQwenWatermark,
+                        }}
+                        lumaPhoton={{
+                          enabled: isLumaPhoton,
+                          model: lumaPhotonModel,
+                          onModelChange: setLumaPhotonModel,
+                        }}
+                        lumaRay={{
+                          enabled: isLumaRay,
+                          variant: lumaRayVariant,
+                          onVariantChange: setLumaRayVariant,
+                        }}
+                      />
+                    </Suspense>
+                  )}
+
+                </div>
+                {aspectRatioConfig && (
+                  <div className="relative">
+                    <button
+                      ref={aspectRatioButtonRef}
+                      type="button"
+                      onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                      aria-label="Aspect ratio"
+                      onMouseEnter={event => {
+                        showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip');
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip('aspect-ratio-tooltip');
+                      }}
+                    >
+                      <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                      <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
+                    </button>
+                    <div
+                      data-tooltip-for="aspect-ratio-tooltip"
+                      className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                      style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    >
+                      Aspect Ratio
+                    </div>
+                    <AspectRatioDropdown
+                      anchorRef={aspectRatioButtonRef}
+                      open={isAspectRatioMenuOpen}
+                      onClose={() => setIsAspectRatioMenuOpen(false)}
+                      options={aspectRatioConfig.options}
+                      selectedValue={aspectRatioConfig.selectedValue}
+                      onSelect={aspectRatioConfig.onSelect}
+                    />
+                  </div>
+                )}
                 <div className="relative batch-size-selector hidden lg:flex flex-shrink-0">
                   <div
                     role="group"
@@ -8708,9 +8573,180 @@ const handleGenerate = async () => {
                     Batch size
                   </div>
                 </div>
+                  </div>
+                </div>
               </div>
               
-              {/* Generate button on right */}
+            {/* Right section: Avatar, Product, Style, Generate */}
+            <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+              {activeCategory === "image" && (
+                <>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={avatarButtonRef}
+                      onClick={() => setIsAvatarPickerOpen(prev => !prev)}
+                      onDragOver={handleAvatarButtonDragOver}
+                      onDragLeave={handleAvatarButtonDragLeave}
+                      onDrop={handleAvatarButtonDrop}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-16 w-16 rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1`}
+                    >
+                      {!selectedAvatar && (
+                        <>
+                          <div className="flex-1 flex items-end justify-center pb-1">
+                            <Users className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-raleway text-n-text">
+                              Avatar
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {selectedAvatar && (
+                        <>
+                          <img
+                            src={selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
+                            alt={selectedAvatar.name}
+                            loading="lazy"
+                            className="w-12 h-12 rounded-lg object-cover border border-n-mid"
+                            title={
+                              selectedAvatarImageIndex !== null
+                                ? `${selectedAvatar.name} — Variation ${selectedAvatarImageIndex + 1}`
+                                : selectedAvatar.name
+                            }
+                          />
+                          <span className="text-[10px] font-raleway text-n-text max-w-full truncate mt-auto text-center">
+                            {selectedAvatar.name}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                    {selectedAvatar && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearSelectedAvatar();
+                        }}
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                        title="Remove avatar"
+                        aria-label="Remove avatar"
+                      >
+                        <X className="w-2.5 h-2.5 text-n-text" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={productButtonRef}
+                      onClick={() => setIsProductPickerOpen(prev => !prev)}
+                      onDragOver={handleProductButtonDragOver}
+                      onDragLeave={handleProductButtonDragLeave}
+                      onDrop={handleProductButtonDrop}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-16 w-16 rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1`}
+                    >
+                      {!selectedProduct && (
+                        <>
+                          <div className="flex-1 flex items-end justify-center pb-1">
+                            <Package className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-raleway text-n-text">
+                              Product
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {selectedProduct && (
+                        <>
+                          <img
+                            src={selectedProduct.imageUrl}
+                            alt={selectedProduct.name}
+                            loading="lazy"
+                            className="w-12 h-12 rounded-lg object-cover border border-n-mid"
+                            title={selectedProduct.name}
+                          />
+                          <span className="text-[10px] font-raleway text-n-text max-w-full truncate mt-auto text-center">
+                            {selectedProduct.name}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                    {selectedProduct && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearSelectedProduct();
+                        }}
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                        title="Remove product"
+                        aria-label="Remove product"
+                      >
+                        <X className="w-2.5 h-2.5 text-n-text" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={stylesButtonRef}
+                      onClick={() => setIsStyleModalOpen(true)}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-16 w-16 rounded-xl transition-all duration-200 group gap-1 px-2 pt-2 pb-1`}
+                      aria-label="Select style"
+                      aria-expanded={isStyleModalOpen}
+                    >
+                      {totalSelectedStyles === 0 && (
+                        <>
+                          <div className="flex-1 flex items-end justify-center pb-1">
+                            <Palette className="w-4 h-4 flex-shrink-0 text-n-white group-hover:text-n-text transition-colors duration-100" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-raleway text-n-text">
+                              Style
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {totalSelectedStyles > 0 && (
+                        <>
+                          <div className="flex-1 flex items-center justify-center">
+                            <span className="text-2xl font-raleway font-bold text-n-text">
+                              {totalSelectedStyles}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Palette className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
+                            <span className="text-[10px] font-raleway text-n-text max-w-full truncate text-center">
+                              {selectedStylesLabel ? selectedStylesLabel.split(' ').slice(0, 2).join(' ') : 'Style'}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                    {totalSelectedStyles > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleClearStyles();
+                        }}
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                        title="Remove styles"
+                        aria-label="Remove styles"
+                      >
+                        <X className="w-2.5 h-2.5 text-n-text" />
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Generate button */}
               <Tooltip text={!prompt.trim()
                 ? "Enter your prompt to generate"
                 : !hasGenerationCapacity
@@ -8737,7 +8773,8 @@ const handleGenerate = async () => {
                   </div>
                 </button>
               </Tooltip>
-              </div>
+            </div>
+            </div>
             </div>
           )}
           

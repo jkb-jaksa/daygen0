@@ -1439,40 +1439,76 @@ const ChatMode: React.FC = () => {
                           onAddSavedPrompt={savePrompt}
                       onSaveRecentPrompt={handleSaveRecentPrompt}
                     />
-                      {aspectRatioConfig && (
-                        <div className="relative">
-                          <button
-                            ref={aspectRatioButtonRef}
-                            type="button"
-                            onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                            className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
-                            aria-label="Aspect ratio"
-                            onMouseEnter={(event) => {
-                              showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip-chat');
-                            }}
-                            onMouseLeave={() => {
-                              hideHoverTooltip('aspect-ratio-tooltip-chat');
-                            }}
-                          >
-                            <Scan className="h-3.5 w-3.5" />
-                          </button>
-                          <div
-                            data-tooltip-for="aspect-ratio-tooltip-chat"
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                            style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                          >
-                            Aspect Ratio
-                          </div>
-                          <AspectRatioDropdown
-                            anchorRef={aspectRatioButtonRef}
-                            open={isAspectRatioMenuOpen}
-                            onClose={() => setIsAspectRatioMenuOpen(false)}
-                            options={aspectRatioConfig.options}
-                            selectedValue={aspectRatioConfig.selectedValue}
-                            onSelect={aspectRatioConfig.onSelect}
+                      <button
+                        ref={modelSelectorRef}
+                        type="button"
+                        onClick={() => setIsModelSelectorOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
+                        aria-haspopup="listbox"
+                        aria-expanded={isModelSelectorOpen}
+                      >
+                        {hasToolLogo(currentModel.name) ? (
+                          <img
+                            src={getToolLogo(currentModel.name)!}
+                            alt={`${currentModel.name} logo`}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-4 w-4 flex-shrink-0 rounded object-contain"
                           />
+                        ) : (
+                          <currentModel.Icon className="h-4 w-4 flex-shrink-0" />
+                        )}
+                        <span className="hidden xl:inline whitespace-nowrap text-sm text-theme-text">
+                          {currentModel.name}
+                        </span>
+                      </button>
+                      <AvatarPickerPortal
+                        anchorRef={modelSelectorRef}
+                        open={isModelSelectorOpen}
+                        onClose={() => setIsModelSelectorOpen(false)}
+                      >
+                        <div className="space-y-2">
+                          {IMAGE_MODEL_OPTIONS.map(model => {
+                            const isActive = model.id === selectedModel;
+                            return (
+                              <button
+                                key={model.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedModel(model.id);
+                                  setIsModelSelectorOpen(false);
+                                }}
+                                className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-150 ${
+                                  isActive
+                                    ? "border-theme-text bg-theme-text/10 text-theme-text"
+                                    : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
+                                }`}
+                              >
+                                {hasToolLogo(model.name) ? (
+                                  <img
+                                    src={getToolLogo(model.name)!}
+                                    alt={`${model.name} logo`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-5 w-5 flex-shrink-0 rounded object-contain"
+                                  />
+                                ) : (
+                                  <model.Icon
+                                    className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-theme-text" : "text-theme-white"}`}
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className={`truncate text-sm font-raleway ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                                    {model.name}
+                                  </div>
+                                  <div className="truncate text-xs font-raleway text-theme-light">{model.desc}</div>
+                                </div>
+                                {isActive && <Check className="h-4 w-4 flex-shrink-0 text-theme-text" />}
+                              </button>
+                            );
+                          })}
                         </div>
-                      )}
+                      </AvatarPickerPortal>
                       <button
                         ref={settingsRef}
                         type="button"
@@ -1631,76 +1667,40 @@ const ChatMode: React.FC = () => {
                           />
                         </Suspense>
                       )}
-                      <button
-                        ref={modelSelectorRef}
-                        type="button"
-                        onClick={() => setIsModelSelectorOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
-                        aria-haspopup="listbox"
-                        aria-expanded={isModelSelectorOpen}
-                      >
-                        {hasToolLogo(currentModel.name) ? (
-                          <img
-                            src={getToolLogo(currentModel.name)!}
-                            alt={`${currentModel.name} logo`}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-4 w-4 flex-shrink-0 rounded object-contain"
+                      {aspectRatioConfig && (
+                        <div className="relative">
+                          <button
+                            ref={aspectRatioButtonRef}
+                            type="button"
+                            onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                            className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                            aria-label="Aspect ratio"
+                            onMouseEnter={(event) => {
+                              showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip-chat');
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip('aspect-ratio-tooltip-chat');
+                            }}
+                          >
+                            <Scan className="h-3.5 w-3.5" />
+                          </button>
+                          <div
+                            data-tooltip-for="aspect-ratio-tooltip-chat"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                          >
+                            Aspect Ratio
+                          </div>
+                          <AspectRatioDropdown
+                            anchorRef={aspectRatioButtonRef}
+                            open={isAspectRatioMenuOpen}
+                            onClose={() => setIsAspectRatioMenuOpen(false)}
+                            options={aspectRatioConfig.options}
+                            selectedValue={aspectRatioConfig.selectedValue}
+                            onSelect={aspectRatioConfig.onSelect}
                           />
-                        ) : (
-                          <currentModel.Icon className="h-4 w-4 flex-shrink-0" />
-                        )}
-                        <span className="hidden xl:inline whitespace-nowrap text-sm text-theme-text">
-                          {currentModel.name}
-                        </span>
-                      </button>
-                      <AvatarPickerPortal
-                        anchorRef={modelSelectorRef}
-                        open={isModelSelectorOpen}
-                        onClose={() => setIsModelSelectorOpen(false)}
-                      >
-                        <div className="space-y-2">
-                          {IMAGE_MODEL_OPTIONS.map(model => {
-                            const isActive = model.id === selectedModel;
-                            return (
-                              <button
-                                key={model.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedModel(model.id);
-                                  setIsModelSelectorOpen(false);
-                                }}
-                                className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-150 ${
-                                  isActive
-                                    ? "border-theme-text bg-theme-text/10 text-theme-text"
-                                    : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
-                                }`}
-                              >
-                                {hasToolLogo(model.name) ? (
-                                  <img
-                                    src={getToolLogo(model.name)!}
-                                    alt={`${model.name} logo`}
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="h-5 w-5 flex-shrink-0 rounded object-contain"
-                                  />
-                                ) : (
-                                  <model.Icon
-                                    className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-theme-text" : "text-theme-white"}`}
-                                  />
-                                )}
-                                <div className="min-w-0 flex-1">
-                                  <div className={`truncate text-sm font-raleway ${isActive ? "text-theme-text" : "text-theme-white"}`}>
-                                    {model.name}
-                                  </div>
-                                  <div className="truncate text-xs font-raleway text-theme-light">{model.desc}</div>
-                                </div>
-                                {isActive && <Check className="h-4 w-4 flex-shrink-0 text-theme-text" />}
-                              </button>
-                            );
-                          })}
                         </div>
-                      </AvatarPickerPortal>
+                      )}
                       <div className="relative hidden lg:block">
                         <div
                           role="group"
