@@ -1,60 +1,164 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import type { User, Session } from '@supabase/supabase-js';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl } from '../utils/api';
-import { AuthContext, type AuthContextValue, type User as AppUser, type UpdateProfilePayload } from './context';
+import {
+  AuthContext,
+  type AuthContextValue,
+  type User as AppUser,
+  type UpdateProfilePayload,
+} from './context';
+
+type SessionTokens = {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+};
+
+const createFallbackUser = (authUser: SupabaseUser): AppUser => ({
+  id: authUser.id,
+  authUserId: authUser.id,
+  email: authUser.email ?? '',
+  displayName:
+    (authUser.user_metadata?.display_name as string | undefined)?.trim() ||
+    (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
+    authUser.email?.split('@')[0] ||
+    null,
+  credits: 20,
+  profileImage:
+    (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
+  role: 'USER',
+  createdAt: authUser.created_at,
+  updatedAt: authUser.updated_at ?? authUser.created_at,
+});
+
+const normalizeBackendUser = (payload: any): AppUser => ({
+  id: payload.id as string,
+  authUserId:
+    (payload.authUserId as string | undefined) ??
+    (payload.auth_user_id as string | undefined) ??
+    (payload.id as string),
+  email: (payload.email as string | undefined) ?? '',
+  displayName:
+    (payload.displayName as string | undefined) ??
+    (payload.display_name as string | undefined) ??
+    null,
+  credits:
+    typeof payload.credits === 'number'
+      ? payload.credits
+      : Number(payload.credits ?? 0),
+  profileImage:
+    (payload.profileImage as string | undefined) ??
+    (payload.profile_image as string | undefined) ??
+    null,
+  role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+  createdAt:
+    typeof payload.createdAt === 'string'
+      ? payload.createdAt
+      : (payload.created_at as string | undefined) ?? new Date().toISOString(),
+  updatedAt:
+    typeof payload.updatedAt === 'string'
+      ? payload.updatedAt
+      : (payload.updated_at as string | undefined) ?? new Date().toISOString(),
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserProfile = useCallback(async (authUser: User): Promise<AppUser> => {
-    try {
-      // Try backend first, fallback to basic user info
-      const response = await fetch(getApiUrl('/api/auth/me'), {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (response.ok) {
-        const profile = await response.json();
-        return profile;
-      } else {
-        // Fallback to basic user info if backend fails
-        console.warn('Backend profile fetch failed, using basic user info');
-        return {
-          id: authUser.id,
-          authUserId: authUser.id,
-          email: authUser.email || '',
-          displayName: authUser.user_metadata?.display_name || authUser.user_metadata?.full_name || null,
-          credits: 20, // Default credits
-          profileImage: authUser.user_metadata?.avatar_url || null,
-          role: 'USER' as const,
-          createdAt: authUser.created_at,
-          updatedAt: authUser.updated_at || authUser.created_at,
-        };
+  const syncWithBackend = useCallback(
+    async (tokens: SessionTokens) => {
+      if (!tokens.accessToken) {
+        return null;
       }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // Fallback to basic user info
-      return {
-        id: authUser.id,
-        authUserId: authUser.id,
-        email: authUser.email || '',
-        displayName: authUser.user_metadata?.display_name || authUser.user_metadata?.full_name || null,
-        credits: 20, // Default credits
-        profileImage: authUser.user_metadata?.avatar_url || null,
-        role: 'USER' as const,
-        createdAt: authUser.created_at,
-        updatedAt: authUser.updated_at || authUser.created_at,
-      };
-    }
-  }, [session?.access_token]);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<AppUser> => {
+      try {
+        const response = await fetch(getApiUrl('/api/auth/oauth-callback'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_token: tokens.accessToken,
+            refresh_token: tokens.refreshToken ?? undefined,
+          }),
+        });
+
+        if (response.ok) {
+          const payload = (await response.json()) as {
+            user?: AppUser;
+          };
+          if (payload?.user) {
+            return normalizeBackendUser(payload.user);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to sync Supabase session with backend:', error);
+      }
+
+      return null;
+    },
+    [],
+  );
+
+  const fetchUserProfile = useCallback(
+    async (
+      authUser: SupabaseUser,
+      tokenOverride?: SessionTokens,
+    ): Promise<AppUser> => {
+      let accessToken =
+        tokenOverride?.accessToken ?? session?.access_token ?? null;
+      let refreshToken =
+        tokenOverride?.refreshToken ?? session?.refresh_token ?? null;
+
+      if (!accessToken) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Failed to fetch active Supabase session:', error);
+        }
+        accessToken = data.session?.access_token ?? null;
+        refreshToken = refreshToken ?? data.session?.refresh_token ?? null;
+      }
+
+      if (accessToken) {
+        const synced = await syncWithBackend({
+          accessToken,
+          refreshToken,
+        });
+        if (synced) {
+          return synced;
+        }
+
+        try {
+          const response = await fetch(getApiUrl('/api/auth/me'), {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const payload = await response.json();
+            return normalizeBackendUser(payload);
+          }
+
+          if (response.status !== 401) {
+            console.warn(
+              'Unexpected response fetching backend profile:',
+              response.status,
+            );
+          }
+        } catch (error) {
+          console.warn('Error fetching backend profile:', error);
+        }
+      }
+
+      return createFallbackUser(authUser);
+    },
+    [session?.access_token, session?.refresh_token, syncWithBackend],
+  );
+
+  const signIn = useCallback<
+    AuthContextValue['signIn']
+  >(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -68,13 +172,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('No user returned from sign in');
     }
 
-    const profile = await fetchUserProfile(data.user);
+    const profile = await fetchUserProfile(data.user, {
+      accessToken: data.session?.access_token ?? null,
+      refreshToken: data.session?.refresh_token ?? null,
+    });
+
     setUser(profile);
-    setSession(data.session);
+    setSession(data.session ?? null);
     return profile;
   }, [fetchUserProfile]);
 
-  const signUp = useCallback(async (email: string, password: string, displayName?: string): Promise<AppUser> => {
+  const signUp = useCallback<
+    AuthContextValue['signUp']
+  >(async (email, password, displayName) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -93,37 +203,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('No user returned from sign up');
     }
 
-    // If user was created successfully, create profile in our database
-    if (data.user) {
-      try {
-        const response = await fetch(getApiUrl('/api/users/me'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${data.session?.access_token}`,
-          },
-          body: JSON.stringify({
-            email: data.user.email,
-            displayName: displayName,
-            authUserId: data.user.id,
-          }),
-        });
+    const profile = await fetchUserProfile(data.user, {
+      accessToken: data.session?.access_token ?? null,
+      refreshToken: data.session?.refresh_token ?? null,
+    });
 
-        if (!response.ok) {
-          console.warn('Failed to create user profile in database, but Supabase user was created');
-        }
-      } catch (profileError) {
-        console.warn('Error creating user profile:', profileError);
-      }
-    }
-
-    const profile = await fetchUserProfile(data.user);
     setUser(profile);
-    setSession(data.session);
+    setSession(data.session ?? null);
     return profile;
   }, [fetchUserProfile]);
 
-  const signInWithGoogle = useCallback(async (): Promise<void> => {
+  const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -137,53 +227,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logOut = useCallback(async () => {
+    const accessToken = session?.access_token;
+    if (accessToken) {
+      try {
+        await fetch(getApiUrl('/api/auth/signout'), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      } catch (error) {
+        console.warn('Failed to sign out backend session:', error);
+      }
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error signing out:', error);
     }
+
     setUser(null);
     setSession(null);
-  }, []);
+  }, [session?.access_token]);
 
   const refreshUser = useCallback(async (): Promise<AppUser> => {
-    if (!session?.user) {
+    let activeSession = session;
+
+    if (!activeSession) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        throw new Error(error.message);
+      }
+      activeSession = data.session ?? null;
+    }
+
+    if (!activeSession?.user) {
       throw new Error('No session available');
     }
 
-    const profile = await fetchUserProfile(session.user);
+    const profile = await fetchUserProfile(activeSession.user, {
+      accessToken: activeSession.access_token ?? null,
+      refreshToken: activeSession.refresh_token ?? null,
+    });
+
     setUser(profile);
+    setSession(activeSession);
     return profile;
-  }, [session?.user, fetchUserProfile]);
+  }, [session, fetchUserProfile]);
 
-  const updateProfile = useCallback(async (patch: UpdateProfilePayload): Promise<AppUser> => {
-    if (!user) {
-      throw new Error('No user logged in');
+  const updateProfile = useCallback<
+    AuthContextValue['updateProfile']
+  >(async (patch) => {
+    if (!session?.access_token) {
+      throw new Error('No active session');
     }
 
-    try {
-      const response = await fetch(getApiUrl('/api/users/me'), {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify(patch),
-      });
+    const response = await fetch(getApiUrl('/api/users/me'), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(patch),
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      const updatedProfile = await response.json();
-      setUser(updatedProfile);
-      return updatedProfile;
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error('Failed to update profile');
     }
-  }, [user, session?.access_token]);
 
-  const requestPasswordReset = useCallback(async (email: string): Promise<void> => {
+    const payload = await response.json();
+    const updatedProfile = normalizeBackendUser(payload);
+    setUser(updatedProfile);
+    return updatedProfile;
+  }, [session?.access_token]);
+
+  const requestPasswordReset = useCallback<
+    AuthContextValue['requestPasswordReset']
+  >(async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
@@ -193,7 +313,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const resetPassword = useCallback(async (token: string, newPassword: string): Promise<void> => {
+  const resetPassword = useCallback<
+    AuthContextValue['resetPassword']
+  >(async (_token, newPassword) => {
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
@@ -203,16 +325,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Listen for auth changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      
-      if (session?.user) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      console.log('Auth state changed:', _event, nextSession?.user?.email);
+
+      if (nextSession?.user) {
         try {
-          const profile = await fetchUserProfile(session.user);
+          const profile = await fetchUserProfile(nextSession.user, {
+            accessToken: nextSession.access_token ?? null,
+            refreshToken: nextSession.refresh_token ?? null,
+          });
           setUser(profile);
-          setSession(session);
+          setSession(nextSession);
         } catch (error) {
           console.error('Error fetching user profile on auth change:', error);
           setUser(null);
@@ -222,23 +348,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setSession(null);
       }
-      
+
       setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, [fetchUserProfile]);
 
-  // Initial session check
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user);
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting initial session:', error);
+          return;
+        }
+
+        const initialSession = data.session;
+        if (initialSession?.user) {
+          const profile = await fetchUserProfile(initialSession.user, {
+            accessToken: initialSession.access_token ?? null,
+            refreshToken: initialSession.refresh_token ?? null,
+          });
           setUser(profile);
-          setSession(session);
+          setSession(initialSession);
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
@@ -247,17 +380,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    getInitialSession();
+    void getInitialSession();
   }, [fetchUserProfile]);
 
   const value: AuthContextValue = {
     user,
-    token: session?.access_token || null,
+    token: session?.access_token ?? null,
     isLoading,
     isAuthenticated: Boolean(user),
     storagePrefix: 'daygen',
     signIn,
     signUp,
+    signInWithGoogle,
     logOut,
     refreshUser,
     updateProfile,
@@ -265,11 +399,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetPassword,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

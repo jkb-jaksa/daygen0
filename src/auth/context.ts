@@ -25,6 +25,7 @@ type AuthContextValue = {
   storagePrefix: string;
   signIn: (email: string, password: string) => Promise<User>;
   signUp: (email: string, password: string, displayName?: string) => Promise<User>;
+  signInWithGoogle: () => Promise<void>;
   logOut: () => void;
   refreshUser: () => Promise<User>;
   updateProfile: (patch: UpdateProfilePayload) => Promise<User>;

@@ -1,100 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { useSupabaseAuth } from '../auth/SupabaseAuthContext';
+import { useAuth } from '../auth/AuthProvider';
 import { getApiUrl } from '../utils/api';
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshUser } = useSupabaseAuth();
+  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Check if this is a Google OAuth callback
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const error = urlParams.get('error');
+        const code = searchParams.get('code');
+        const errorParam = searchParams.get('error');
+
+        if (errorParam) {
+          setError(`Authentication error: ${errorParam}`);
+          return;
+        }
+
+        let activeSession: Session | null = null;
 
         if (code) {
-          // Handle Google OAuth callback
-          try {
-            const response = await fetch(getApiUrl('/api/auth/google/callback'), {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+          const { data, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.message || 'Google authentication failed');
-            }
-
-            const result = await response.json();
-            
-            // Store the session data
-            if (result.session) {
-              localStorage.setItem('daygen:authToken', result.session.access_token);
-              localStorage.setItem('daygen:refreshToken', result.session.refresh_token);
-            }
-
-            // Refresh user profile
-            await refreshUser();
-            // Redirect to main app
-            navigate('/');
-            return;
-          } catch (googleError) {
-            console.error('Google OAuth callback error:', googleError);
-            setError(googleError instanceof Error ? googleError.message : 'Google authentication failed');
+          if (exchangeError) {
+            console.error('Exchange code error:', exchangeError);
+            setError(exchangeError.message ?? 'Google authentication failed');
             return;
           }
+
+          activeSession = data.session;
+        } else {
+          const { data, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) {
+            console.error('Session lookup error:', sessionError);
+            setError(sessionError.message);
+            return;
+          }
+          activeSession = data.session;
         }
 
-        if (error) {
-          setError(`Authentication error: ${error}`);
-          return;
-        }
-
-        // Handle Supabase auth callback
-        const { data, error: supabaseError } = await supabase.auth.getSession();
-        
-        if (supabaseError) {
-          console.error('Auth callback error:', supabaseError);
-          setError(supabaseError.message);
-          return;
-        }
-
-        if (data.session) {
-          // User is authenticated, ensure profile is created in backend
+        if (activeSession?.access_token) {
           try {
-            const response = await fetch(getApiUrl('/api/auth/oauth-callback'), {
+            await fetch(getApiUrl('/api/auth/oauth-callback'), {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                access_token: data.session.access_token,
-                refresh_token: data.session.refresh_token,
+                access_token: activeSession.access_token,
+                refresh_token: activeSession.refresh_token ?? undefined,
               }),
             });
-
-            if (!response.ok) {
-              console.error('Failed to create user profile in backend');
-            }
-          } catch (profileError) {
-            console.error('Error creating user profile:', profileError);
+          } catch (syncError) {
+            console.warn('Failed to synchronize backend session:', syncError);
           }
+        }
 
-          // Refresh user profile
+        if (activeSession?.user) {
           await refreshUser();
-          // Redirect to main app
           navigate('/');
         } else {
-          // No session, redirect to login
           navigate('/login');
         }
       } catch (err) {
@@ -105,15 +75,17 @@ export default function AuthCallback() {
       }
     };
 
-    handleAuthCallback();
-  }, [navigate, refreshUser]);
+    void handleAuthCallback();
+  }, [navigate, refreshUser, searchParams]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-theme-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-text mx-auto mb-4"></div>
-          <p className="text-theme-text font-raleway">Completing authentication...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-text mx-auto mb-4" />
+          <p className="text-theme-text font-raleway">
+            Completing authentication...
+          </p>
         </div>
       </div>
     );
@@ -124,7 +96,9 @@ export default function AuthCallback() {
       <div className="min-h-screen bg-theme-black flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-400 text-xl mb-4">⚠️</div>
-          <p className="text-theme-text font-raleway mb-4">Authentication Error</p>
+          <p className="text-theme-text font-raleway mb-4">
+            Authentication Error
+          </p>
           <p className="text-theme-light font-raleway text-sm mb-6">{error}</p>
           <button
             onClick={() => navigate('/login')}

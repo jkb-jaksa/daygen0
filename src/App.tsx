@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
-import { AuthProvider } from "./auth/AuthProvider";
 import { useFooter } from "./contexts/useFooter";
 import { layout, text, buttons, headings, glass } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
@@ -328,11 +327,10 @@ function RouteFallback() {
 
 export default function App() {
   const { isFooterVisible } = useFooter();
-  
+
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <div>
+    <BrowserRouter>
+      <div>
         <Suspense fallback={null}>
           <GlobalSvgDefs />
         </Suspense>
@@ -384,8 +382,7 @@ export default function App() {
             <Footer />
           </Suspense>
         )}
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+      </div>
+    </BrowserRouter>
   );
 }
