@@ -103,6 +103,8 @@ type StyleOption = {
 
 type StyleSectionId = "lifestyle" | "formal" | "artistic";
 
+type StyleGender = "male" | "female" | "unisex";
+
 type StyleSection = {
   id: StyleSectionId;
   name: string;
@@ -122,49 +124,92 @@ const STYLE_GRADIENTS = [
   "linear-gradient(135deg, rgba(30,64,175,0.5) 0%, rgba(59,130,246,0.45) 50%, rgba(248,113,113,0.4) 100%)",
 ];
 
-const createPlaceholderStyles = (sectionId: StyleSectionId, sectionName: string): StyleOption[] =>
+const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string }> = [
+  { id: "lifestyle", name: "Lifestyle" },
+  { id: "formal", name: "Formal" },
+  { id: "artistic", name: "Artistic" },
+];
+
+const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [
+  { id: "female", label: "Female" },
+  { id: "male", label: "Male" },
+  { id: "unisex", label: "All" },
+];
+
+const createPlaceholderStyles = (
+  gender: StyleGender,
+  sectionId: StyleSectionId,
+  sectionName: string,
+): StyleOption[] =>
   Array.from({ length: 20 }, (_, index) => {
     const gradient = STYLE_GRADIENTS[index % STYLE_GRADIENTS.length];
     const label = `${sectionName} Style ${index + 1}`;
     return {
-      id: `${sectionId}-${index + 1}`,
+      id: `${gender}-${sectionId}-${index + 1}`,
       name: label,
-      prompt: `${sectionName.toLowerCase()} inspired placeholder prompt ${index + 1}`,
+      prompt: `${gender} ${sectionName.toLowerCase()} inspired placeholder prompt ${index + 1}`,
       previewGradient: gradient,
     };
   });
 
-const STYLE_SECTIONS: StyleSection[] = [
-  {
-    id: "lifestyle",
-    name: "Lifestyle",
-    options: createPlaceholderStyles("lifestyle", "Lifestyle"),
-  },
-  {
-    id: "formal",
-    name: "Formal",
-    options: createPlaceholderStyles("formal", "Formal"),
-  },
-  {
-    id: "artistic",
-    name: "Artistic",
-    options: createPlaceholderStyles("artistic", "Artistic"),
-  },
-];
+const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
+  STYLE_SECTION_DEFINITIONS.map(({ id, name }) => ({
+    id,
+    name,
+    options: createPlaceholderStyles(gender, id, name),
+  }));
 
-type SelectedStylesMap = Record<StyleSectionId, StyleOption[]>;
+const STYLE_SECTIONS_BY_GENDER: Record<StyleGender, StyleSection[]> = {
+  male: createStyleSectionsForGender("male"),
+  female: createStyleSectionsForGender("female"),
+  unisex: createStyleSectionsForGender("unisex"),
+};
 
-const createEmptySelectedStyles = (): SelectedStylesMap => ({
+type SelectedStylesMap = Record<StyleGender, Record<StyleSectionId, StyleOption[]>>;
+
+const createEmptyStyleSectionSelection = (): Record<StyleSectionId, StyleOption[]> => ({
   lifestyle: [],
   formal: [],
   artistic: [],
 });
 
-const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
-  lifestyle: [...styles.lifestyle],
-  formal: [...styles.formal],
-  artistic: [...styles.artistic],
+const createEmptySelectedStyles = (): SelectedStylesMap => ({
+  male: createEmptyStyleSectionSelection(),
+  female: createEmptyStyleSectionSelection(),
+  unisex: createEmptyStyleSectionSelection(),
 });
+
+const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
+  male: {
+    lifestyle: [...styles.male.lifestyle],
+    formal: [...styles.male.formal],
+    artistic: [...styles.male.artistic],
+  },
+  female: {
+    lifestyle: [...styles.female.lifestyle],
+    formal: [...styles.female.formal],
+    artistic: [...styles.female.artistic],
+  },
+  unisex: {
+    lifestyle: [...styles.unisex.lifestyle],
+    formal: [...styles.unisex.formal],
+    artistic: [...styles.unisex.artistic],
+  },
+});
+
+const findFirstSelectedStyle = (
+  styles: SelectedStylesMap,
+): { gender: StyleGender; sectionId: StyleSectionId } | null => {
+  for (const { id: gender } of STYLE_GENDER_OPTIONS) {
+    const sections = styles[gender];
+    for (const { id } of STYLE_SECTION_DEFINITIONS) {
+      if (sections[id].length > 0) {
+        return { gender, sectionId: id };
+      }
+    }
+  }
+  return null;
+};
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
@@ -538,6 +583,7 @@ const Create: React.FC = () => {
   const [selectedStyles, setSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
   const [tempSelectedStyles, setTempSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
+  const [activeStyleGender, setActiveStyleGender] = useState<StyleGender>("unisex");
   const [activeStyleSection, setActiveStyleSection] = useState<StyleSectionId>("lifestyle");
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
@@ -586,9 +632,13 @@ const Create: React.FC = () => {
     // Initialize temp selection with current selection
     setTempSelectedStyles(cloneSelectedStyles(selectedStyles));
 
-    const firstSectionWithSelection = STYLE_SECTIONS.find(section => selectedStyles[section.id].length > 0);
-    if (firstSectionWithSelection) {
-      setActiveStyleSection(firstSectionWithSelection.id);
+    const firstSelection = findFirstSelectedStyle(selectedStyles);
+    if (firstSelection) {
+      setActiveStyleGender(firstSelection.gender);
+      setActiveStyleSection(firstSelection.sectionId);
+    } else {
+      setActiveStyleGender("unisex");
+      setActiveStyleSection(STYLE_SECTION_DEFINITIONS[0]?.id ?? "lifestyle");
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -613,7 +663,7 @@ const Create: React.FC = () => {
   const applyStyleToPrompt = useCallback(
     (basePrompt: string) => {
       const selectedPrompts = Object.values(selectedStyles)
-        .flat()
+        .flatMap(sections => Object.values(sections).flat())
         .map(style => style.prompt.trim())
         .filter(Boolean);
 
@@ -636,15 +686,32 @@ const Create: React.FC = () => {
     }
   };
 
-  const selectedStylesList = useMemo(() => Object.values(selectedStyles).flat(), [selectedStyles]);
+  const selectedStylesList = useMemo(
+    () =>
+      Object.values(selectedStyles).flatMap(sections =>
+        Object.values(sections).flat(),
+      ),
+    [selectedStyles],
+  );
   const totalSelectedStyles = selectedStylesList.length;
   const totalTempSelectedStyles = useMemo(
-    () => Object.values(tempSelectedStyles).reduce((count, styles) => count + styles.length, 0),
+    () =>
+      Object.values(tempSelectedStyles).reduce(
+        (count, sections) =>
+          count + Object.values(sections).reduce((sectionCount, styles) => sectionCount + styles.length, 0),
+        0,
+      ),
     [tempSelectedStyles],
   );
   const activeStyleSectionData = useMemo(
-    () => STYLE_SECTIONS.find(section => section.id === activeStyleSection) ?? STYLE_SECTIONS[0],
-    [activeStyleSection],
+    () => {
+      const sectionsForGender = STYLE_SECTIONS_BY_GENDER[activeStyleGender];
+      return (
+        sectionsForGender.find(section => section.id === activeStyleSection) ??
+        sectionsForGender[0]
+      );
+    },
+    [activeStyleGender, activeStyleSection],
   );
   const selectedStylesLabel = useMemo(() => {
     if (totalSelectedStyles === 0) {
@@ -664,9 +731,9 @@ const Create: React.FC = () => {
     return `${first?.name ?? ""}, ${second?.name ?? ""} + ${totalSelectedStyles - 2} more`.trim();
   }, [selectedStylesList, totalSelectedStyles]);
 
-  const handleToggleTempStyle = (sectionId: StyleSectionId, style: StyleOption) => {
+  const handleToggleTempStyle = (gender: StyleGender, sectionId: StyleSectionId, style: StyleOption) => {
     setTempSelectedStyles(prev => {
-      const sectionStyles = prev[sectionId];
+      const sectionStyles = prev[gender][sectionId];
       const exists = sectionStyles.some(option => option.id === style.id);
       const updatedSectionStyles = exists
         ? sectionStyles.filter(option => option.id !== style.id)
@@ -674,7 +741,10 @@ const Create: React.FC = () => {
 
       return {
         ...prev,
-        [sectionId]: updatedSectionStyles,
+        [gender]: {
+          ...prev[gender],
+          [sectionId]: updatedSectionStyles,
+        },
       };
     });
   };
@@ -688,6 +758,8 @@ const Create: React.FC = () => {
   const handleClearStyles = () => {
     setSelectedStyles(createEmptySelectedStyles());
     setTempSelectedStyles(createEmptySelectedStyles());
+    setActiveStyleGender("unisex");
+    setActiveStyleSection("lifestyle");
     setIsStyleModalOpen(false);
     focusStyleButton();
   };
@@ -7916,11 +7988,47 @@ const handleGenerate = async () => {
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
-                            <div className="flex flex-1 flex-col gap-2 overflow-hidden">
+                            <div className="flex flex-1 flex-col gap-3 overflow-hidden">
                               <div className="flex flex-wrap items-center gap-2">
-                                {STYLE_SECTIONS.map(section => {
+                                {STYLE_GENDER_OPTIONS.map(option => {
+                                  const isActive = option.id === activeStyleGender;
+                                  const genderSelectedCount = Object.values(tempSelectedStyles[option.id]).reduce(
+                                    (count, styles) => count + styles.length,
+                                    0,
+                                  );
+                                  return (
+                                    <button
+                                      key={option.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveStyleGender(option.id);
+                                        const sections = tempSelectedStyles[option.id];
+                                        const firstWithSelection = (Object.entries(sections).find(([, styles]) => styles.length > 0)?.[0] as StyleSectionId | undefined);
+                                        setActiveStyleSection(prev => firstWithSelection ?? prev ?? STYLE_SECTION_DEFINITIONS[0].id);
+                                      }}
+                                      className={`rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                                        isActive
+                                          ? 'bg-theme-text text-n-black border border-theme-text'
+                                          : `${glass.promptDark} text-n-white hover:text-n-text hover:border-theme-text/70`
+                                      }`}
+                                      aria-pressed={isActive}
+                                    >
+                                      <span>{option.label}</span>
+                                      {genderSelectedCount > 0 && (
+                                        <span className={`ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
+                                          isActive ? 'bg-theme-text text-n-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                                        }`}>
+                                          {genderSelectedCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {STYLE_SECTION_DEFINITIONS.map(section => {
                                   const isActive = section.id === activeStyleSectionData.id;
-                                  const sectionSelectedCount = tempSelectedStyles[section.id].length;
+                                  const sectionSelectedCount = tempSelectedStyles[activeStyleGender][section.id].length;
                                   return (
                                     <button
                                       key={section.id}
@@ -7948,12 +8056,12 @@ const handleGenerate = async () => {
                               <div className="flex-1 overflow-y-auto">
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
                                   {activeStyleSectionData.options.map(option => {
-                                    const isActive = tempSelectedStyles[activeStyleSectionData.id].some(style => style.id === option.id);
+                                    const isActive = tempSelectedStyles[activeStyleGender][activeStyleSectionData.id].some(style => style.id === option.id);
                                     return (
                                       <button
                                         key={option.id}
                                         type="button"
-                                        onClick={() => handleToggleTempStyle(activeStyleSectionData.id, option)}
+                                        onClick={() => handleToggleTempStyle(activeStyleGender, activeStyleSectionData.id, option)}
                                         className="w-full text-left group"
                                       >
                                         <div
