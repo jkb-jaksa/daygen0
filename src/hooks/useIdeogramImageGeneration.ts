@@ -116,7 +116,7 @@ export const useIdeogramImageGeneration = () => {
         try {
           const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
             headers: {
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           });
 
@@ -221,7 +221,7 @@ export const useIdeogramImageGeneration = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             prompt: options.prompt,

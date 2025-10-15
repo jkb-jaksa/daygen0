@@ -4982,7 +4982,7 @@ const handleGenerate = async () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
               prompt: finalPrompt,
@@ -5010,7 +5010,7 @@ const handleGenerate = async () => {
             for (let attempt = 0; attempt < 60; attempt += 1) {
               const statusResponse = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
                 headers: {
-                  Authorization: `Bearer ${token}`,
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
               });
 
