@@ -7369,32 +7369,6 @@ const handleGenerate = async () => {
                       Chat Mode
                     </div>
                   </div>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        ref={promptsButtonRef}
-                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group parallax-small`}
-                        onMouseEnter={(e) => {
-                          showHoverTooltip(e.currentTarget, 'prompts-tooltip');
-                        }}
-                        onMouseLeave={() => {
-                          hideHoverTooltip('prompts-tooltip');
-                        }}
-                        onPointerMove={onPointerMove}
-                        onPointerEnter={onPointerEnter}
-                        onPointerLeave={onPointerLeave}
-                      >
-                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      </button>
-                      <div
-                        data-tooltip-for="prompts-tooltip"
-                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                      >
-                        Your Prompts
-                      </div>
-                    </div>
 
                 <div className="relative">
                   <button
@@ -7403,11 +7377,27 @@ const handleGenerate = async () => {
                     aria-label="Add reference image"
                     disabled={!isGemini}
                     className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                    onMouseEnter={(e) => {
-                      if (isGemini) showHoverTooltip(e.currentTarget, 'reference-tooltip');
+                    onMouseEnter={() => {
+                      if (isGemini && typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          // Reset inline styles to match CSS-defined positioning
+                          tooltip.style.top = '0px';
+                          tooltip.style.left = '50%';
+                          tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                          tooltip.classList.remove('opacity-0');
+                          tooltip.classList.add('opacity-100');
+                        }
+                      }
                     }}
                     onMouseLeave={() => {
-                      hideHoverTooltip('reference-tooltip');
+                      if (typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          tooltip.classList.remove('opacity-100');
+                          tooltip.classList.add('opacity-0');
+                        }
+                      }
                     }}
                     onPointerMove={onPointerMove}
                     onPointerEnter={onPointerEnter}
@@ -8654,6 +8644,48 @@ const handleGenerate = async () => {
                     Batch size
                   </div>
                 </div>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={promptsButtonRef}
+                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 parallax-small`}
+                        onMouseEnter={() => {
+                          if (typeof document !== 'undefined') {
+                            const tooltip = document.querySelector(`[data-tooltip-for="prompts-tooltip"]`) as HTMLElement | null;
+                            if (tooltip) {
+                              // Reset inline styles to match CSS-defined positioning
+                              tooltip.style.top = '0px';
+                              tooltip.style.left = '50%';
+                              tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                              tooltip.classList.remove('opacity-0');
+                              tooltip.classList.add('opacity-100');
+                            }
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (typeof document !== 'undefined') {
+                            const tooltip = document.querySelector(`[data-tooltip-for="prompts-tooltip"]`) as HTMLElement | null;
+                            if (tooltip) {
+                              tooltip.classList.remove('opacity-100');
+                              tooltip.classList.add('opacity-0');
+                            }
+                          }
+                        }}
+                        onPointerMove={onPointerMove}
+                        onPointerEnter={onPointerEnter}
+                        onPointerLeave={onPointerLeave}
+                      >
+                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
+                      </button>
+                      <div
+                        data-tooltip-for="prompts-tooltip"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Your Prompts
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
