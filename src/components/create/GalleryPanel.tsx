@@ -684,7 +684,7 @@ export function GalleryPanel({
           <button
             type="button"
             onClick={toggleSelectMode}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal ${
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light ${
               isSelectMode ? "!bg-theme-mid/20 !text-theme-text !border-theme-mid/40" : ""
             }`}
           >
@@ -694,7 +694,7 @@ export function GalleryPanel({
             type="button"
             onClick={toggleSelectAllVisible}
             disabled={filteredGallery.length === 0}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {allVisibleSelected ? "Unselect all" : "Select all"}
           </button>
@@ -702,7 +702,7 @@ export function GalleryPanel({
             type="button"
             onClick={clearImageSelection}
             disabled={!hasSelection}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Clear selection
           </button>
@@ -722,7 +722,7 @@ export function GalleryPanel({
               <button
                 type="button"
                 onClick={event => toggleBulkActionsMenu(event.currentTarget)}
-                className={`${buttons.subtle} !h-8 gap-1.5 text-theme-white !font-normal`}
+                className={`${buttons.subtle} !h-8 gap-1.5 text-theme-white !font-light`}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
                 <span>Actions</span>

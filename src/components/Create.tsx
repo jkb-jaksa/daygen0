@@ -5240,7 +5240,7 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -5249,7 +5249,7 @@ const handleGenerate = async () => {
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -5285,8 +5285,8 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Create New Folder</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Create New Folder</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -5361,10 +5361,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : (publishConfirmation.count === 1 
@@ -5398,10 +5398,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : (unpublishConfirmation.count === 1 
@@ -5435,10 +5435,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Download className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {downloadConfirmation.count === 1 
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download ${downloadConfirmation.count} images?`}
@@ -5470,8 +5470,8 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Manage Folders</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
@@ -7551,7 +7551,7 @@ const handleGenerate = async () => {
                               tabIndex={0}
                               className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
                                 isDraggingAvatar
-                                  ? 'border-brand bg-brand/10'
+                                  ? 'border-theme-text bg-theme-text/10'
                                   : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
                               }`}
                               onDragOver={(event) => {
@@ -7739,7 +7739,7 @@ const handleGenerate = async () => {
                               tabIndex={0}
                               className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
                                 isDraggingProduct
-                                  ? 'border-brand bg-brand/10'
+                                  ? 'border-theme-text bg-theme-text/10'
                                   : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
                               }`}
                               onDragOver={event => {
@@ -7974,7 +7974,7 @@ const handleGenerate = async () => {
                                             }}
                                           />
                                           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
-                                            <span className="text-sm font-normal font-raleway text-theme-text">{option.name}</span>
+                                            <span className="text-sm font-light font-raleway text-theme-text">{option.name}</span>
                                             {isActive && <Check className="h-3.5 w-3.5 text-theme-text" />}
                                           </div>
                                         </div>
@@ -8711,19 +8711,19 @@ const handleGenerate = async () => {
                       onDragOver={handleAvatarButtonDragOver}
                       onDragLeave={handleAvatarButtonDragLeave}
                       onDrop={handleAvatarButtonDrop}
-                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-20 w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small relative overflow-hidden`}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
                     >
                       {!selectedAvatar && (
                         <>
-                          <div className="flex-1 flex items-center justify-center mt-3">
-                            <Users className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
-                            <Plus className="w-5 h-5 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
+                          <div className="flex-1 flex items-center justify-center mt-2 sm:mt-2 md:mt-2.5 lg:mt-3">
+                            <Users className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <Plus className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-raleway text-n-text">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
                               Avatar
                             </span>
                           </div>
@@ -8743,7 +8743,7 @@ const handleGenerate = async () => {
                             }
                           />
                           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
-                            <span className="text-sm font-raleway text-n-text text-center">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
                               {selectedAvatar.name}
                             </span>
                           </div>
@@ -8761,7 +8761,7 @@ const handleGenerate = async () => {
                         title="Remove avatar"
                         aria-label="Remove avatar"
                       >
-                        <X className="w-3.5 h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                        <X className="w-3 h-3 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                       </button>
                     )}
                   </div>
@@ -8783,19 +8783,19 @@ const handleGenerate = async () => {
                       onDragOver={handleProductButtonDragOver}
                       onDragLeave={handleProductButtonDragLeave}
                       onDrop={handleProductButtonDrop}
-                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-brand/30 border-brand border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-20 w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small relative overflow-hidden`}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
                     >
                       {!selectedProduct && (
                         <>
-                          <div className="flex-1 flex items-center justify-center mt-3">
-                            <Package className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
-                            <Plus className="w-5 h-5 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
+                          <div className="flex-1 flex items-center justify-center mt-2 sm:mt-2 md:mt-2.5 lg:mt-3">
+                            <Package className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <Plus className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-raleway text-n-text">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
                               Product
                             </span>
                           </div>
@@ -8811,7 +8811,7 @@ const handleGenerate = async () => {
                             title={selectedProduct.name}
                           />
                           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
-                            <span className="text-sm font-raleway text-n-text text-center">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
                               {selectedProduct.name}
                             </span>
                           </div>
@@ -8829,7 +8829,7 @@ const handleGenerate = async () => {
                         title="Remove product"
                         aria-label="Remove product"
                       >
-                        <X className="w-3.5 h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                        <X className="w-3 h-3 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                       </button>
                     )}
                   </div>
@@ -8839,7 +8839,7 @@ const handleGenerate = async () => {
                       type="button"
                       ref={stylesButtonRef}
                       onClick={() => setIsStyleModalOpen(true)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-20 w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 rounded-xl transition-all duration-200 group gap-1 px-1.5 pt-1.5 pb-1 parallax-small`}
                       aria-label="Select style"
                       aria-expanded={isStyleModalOpen}
                       onPointerMove={onPointerMove}
@@ -8848,12 +8848,12 @@ const handleGenerate = async () => {
                     >
                       {totalSelectedStyles === 0 && (
                         <>
-                          <div className="flex-1 flex items-center justify-center mt-3">
-                            <Palette className="w-5 h-5 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
-                            <LayoutGrid className="w-5 h-5 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
+                          <div className="flex-1 flex items-center justify-center mt-2 sm:mt-2 md:mt-2.5 lg:mt-3">
+                            <Palette className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 flex-shrink-0 text-n-white group-hover:text-n-text group-hover:hidden transition-colors duration-100" />
+                            <LayoutGrid className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 flex-shrink-0 text-n-text hidden group-hover:block transition-colors duration-100" />
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-raleway text-n-text">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
                               Style
                             </span>
                           </div>
@@ -8862,13 +8862,13 @@ const handleGenerate = async () => {
                       {totalSelectedStyles > 0 && (
                         <>
                           <div className="flex-1 flex items-center justify-center">
-                            <span className="text-2xl font-raleway font-bold text-n-text">
+                            <span className="text-lg sm:text-xl md:text-2xl lg:text-2xl font-raleway font-bold text-n-text">
                               {totalSelectedStyles}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Palette className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
-                            <span className="text-sm font-raleway text-n-text text-center px-1">
+                            <Palette className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 lg:w-3.5 lg:h-3.5 flex-shrink-0 text-n-text transition-colors duration-100" />
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center px-1">
                               {selectedStylesLabel ? selectedStylesLabel.split(' ').slice(0, 2).join(' ') : 'Style'}
                             </span>
                           </div>
@@ -8886,7 +8886,7 @@ const handleGenerate = async () => {
                         title="Remove styles"
                         aria-label="Remove styles"
                       >
-                        <X className="w-2.5 h-2.5 text-n-text" />
+                        <X className="w-2.5 h-2.5 sm:w-2.5 sm:h-2.5 md:w-2.5 md:h-2.5 lg:w-2.5 lg:h-2.5 text-n-text" />
                       </button>
                     )}
                   </div>
@@ -8904,7 +8904,7 @@ const handleGenerate = async () => {
                 <button
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
+                  className={`btn btn-white font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
                   aria-label={`${generateButtonLabel} (uses 1 credit)`}
                 >
                   <span className="text-n-black text-sm sm:text-base font-raleway font-medium">
@@ -9239,8 +9239,8 @@ const handleGenerate = async () => {
               <div className="space-y-4 text-center">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete Avatar</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -9271,8 +9271,8 @@ const handleGenerate = async () => {
               <div className="space-y-4 text-center">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Product</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete Product</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete "{productToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -9587,10 +9587,10 @@ const handleGenerate = async () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">
                     Remove from Saved Prompts
                   </h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to remove this prompt from your saved prompts?
                   </p>
                 </div>

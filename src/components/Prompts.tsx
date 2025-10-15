@@ -103,7 +103,7 @@ export default function Prompts() {
             <div className="flex-1">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                <h2 className="text-xl font-raleway font-normal text-theme-text">Prompts</h2>
+                <h2 className="text-xl font-raleway font-light text-theme-text">Prompts</h2>
                 <p className="mt-2 text-sm font-raleway text-theme-white">
                   Coming soon.
                 </p>

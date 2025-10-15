@@ -270,7 +270,7 @@ export function Grid() {
                 key={index}
                 type="button"
                 onClick={() => setActive(item.label)}
-                className={`group inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-normal transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
+                className={`group inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-light transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
                   isActive ? "bg-theme-dark/60 text-theme-text" : "text-theme-white hover:text-theme-text"
                 }`}
                 aria-pressed={isActive}

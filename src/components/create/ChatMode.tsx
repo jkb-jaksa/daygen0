@@ -881,8 +881,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <MessageCircle className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Start new chat</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Start new chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Name your conversation to keep things organized.
                   </p>
                   <input
@@ -912,8 +912,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Pencil className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Rename chat</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Rename chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Give this chat a new name to make it easier to find later.
                   </p>
                   <input
@@ -943,8 +943,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete chat</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete “{chatToDelete.title || "New chat"}”? This action cannot be undone.
                   </p>
                 </div>
@@ -967,7 +967,7 @@ const ChatMode: React.FC = () => {
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />
-                <h2 className="text-base font-raleway font-normal text-theme-white">History</h2>
+                <h2 className="text-base font-raleway font-light text-theme-white">History</h2>
               </div>
               <button
                 type="button"
@@ -1004,7 +1004,7 @@ const ChatMode: React.FC = () => {
                           aria-pressed={isActive}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className={`truncate text-sm font-raleway font-normal ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                            <span className={`truncate text-sm font-raleway font-light ${isActive ? "text-theme-text" : "text-theme-white"}`}>
                               {session.title || "New chat"}
                             </span>
                             <div className="flex items-center gap-1">
@@ -1745,7 +1745,7 @@ const ChatMode: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="submit"
-                        className="btn btn-orange btn-compact font-raleway text-base font-medium parallax-large disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={!input.trim()}
                       >
                         <Send className="h-4 w-4" />

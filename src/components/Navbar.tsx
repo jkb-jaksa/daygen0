@@ -292,7 +292,7 @@ export default function Navbar() {
                   key={item.label}
                   to={item.path}
                   className={({ isActive }) =>
-                    `parallax-small transition-colors duration-200 px-2 py-1 rounded font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
+                    `parallax-small transition-colors duration-200 px-2 py-1 rounded font-light ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
@@ -348,7 +348,7 @@ export default function Navbar() {
                 </div>
                 <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
                 <button 
-                  className="hidden sm:block parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-normal"
+                  className="hidden sm:block parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-light"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -357,7 +357,7 @@ export default function Navbar() {
                 >
                   Pricing
                 </button>
-                <button className="btn btn-orange btn-compact font-raleway text-base font-medium parallax-large" onClick={()=>setShowAuth("login")}>
+                <button className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large" onClick={()=>setShowAuth("login")}>
                   Sign In
                 </button>
               </>
@@ -405,15 +405,15 @@ export default function Navbar() {
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="hidden xl:inline font-raleway text-sm font-normal">
+                  <span className="hidden xl:inline font-raleway text-sm font-light">
                     Credits: {user.credits}
                   </span>
-                  <span className="lg:inline xl:hidden font-raleway text-sm font-normal">{user.credits}</span>
+                  <span className="lg:inline xl:hidden font-raleway text-sm font-light">{user.credits}</span>
                 </button>
                 
                 {/* Upgrade Button */}
                 <button 
-                  className="hidden lg:flex btn btn-orange btn-compact items-center gap-1.5 font-raleway text-base font-medium parallax-large"
+                  className="hidden lg:flex btn btn-white btn-compact items-center gap-1.5 font-raleway text-base font-medium parallax-large"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -446,7 +446,7 @@ export default function Navbar() {
                         {(user.displayName || user.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{user.displayName || user.email}</span>
+                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-light">{user.displayName || user.email}</span>
                   </button>
                 </div>
               </>
@@ -489,7 +489,7 @@ export default function Navbar() {
           <div className={`${layout.container} py-6 min-h-[220px] text-base text-theme-text`}>
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-theme-text">
-                <div className="text-base font-normal font-raleway mb-4">
+                <div className="text-base font-light font-raleway mb-4">
                   {activeMenu}
                 </div>
                 {activeMenu === "create" ? (
@@ -498,7 +498,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <category.Icon className="w-4 h-4" />
@@ -516,7 +516,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <item.Icon className="w-4 h-4" />
@@ -532,7 +532,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
                         <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
                           <item.Icon className="w-4 h-4" />
@@ -598,7 +598,7 @@ export default function Navbar() {
                         setMobileNavOpen(false);
                         navigate('/upgrade');
                       }}
-                      className="btn btn-orange w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
+                      className="btn btn-white w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
                     >
                       Upgrade
                     </button>
@@ -653,7 +653,7 @@ export default function Navbar() {
                         setMobileNavOpen(false);
                         setShowAuth('login');
                       }}
-                      className="btn btn-orange w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
+                      className="btn btn-white w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
                     >
                       Sign In
                     </button>
@@ -729,7 +729,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               My account
@@ -741,7 +741,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               My works
@@ -753,7 +753,7 @@ export default function Navbar() {
                 logOut();
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-normal"
+              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
               role="menuitem"
             >
               Log out

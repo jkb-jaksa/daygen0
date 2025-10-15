@@ -439,7 +439,7 @@ body {
 
 .region-two-pane__title {
   font-size: var(--font-size-heading-sm);
-  font-weight: 400;
+  font-weight: 300;
   color: var(--theme-text);
   font-family: var(--font-raleway, "Raleway", sans-serif);
   margin: 0;
@@ -509,7 +509,7 @@ body {
 .home-hero-description {
   font-size: clamp(1.05rem, 0.95rem + 0.8vw, 1.35rem);
   color: var(--theme-white);
-  font-weight: 400;
+  font-weight: 300;
   margin-inline: 0;
   max-inline-size: min(var(--line-length-max), 100%);
 }
@@ -2037,7 +2037,7 @@ html[data-theme="day"] .faq-section {
   text-align: left;
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.4;
   cursor: pointer;
 }
@@ -2081,7 +2081,7 @@ html[data-theme="day"] .faq-section {
   color: var(--theme-white);
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 0.95rem;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.65;
 }
 
@@ -2111,7 +2111,7 @@ html[data-theme="day"] .faq-section {
 
 /* Sidebar section headers with letter spacing */
 .sidebar-section-header {
-  font-weight: 400;
+  font-weight: 300;
   letter-spacing: 0.1em;
 }
 
@@ -2150,7 +2150,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 8px;
   border: 1px solid var(--theme-mid);
   font-size: 12px;
-  font-weight: normal;
+  font-weight: 300;
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);

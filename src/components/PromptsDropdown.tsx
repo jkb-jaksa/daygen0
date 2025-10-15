@@ -394,7 +394,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="space-y-6">
               <div className="space-y-3 text-center">
                 <Pencil className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Edit Prompt
                 </h3>
                 <p className="text-base font-raleway text-n-white">
@@ -447,10 +447,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Delete Prompt
                 </h3>
-                <p className="text-base font-raleway font-normal text-n-white">
+                <p className="text-base font-raleway font-light text-n-white">
                   Are you sure you want to delete this prompt? This action cannot be undone.
                 </p>
               </div>
@@ -484,10 +484,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Delete Recent Prompt
                 </h3>
-                <p className="text-base font-raleway font-normal text-n-white">
+                <p className="text-base font-raleway font-light text-n-white">
                   Are you sure you want to delete this prompt from your recent prompts? This action cannot be undone.
                 </p>
               </div>
@@ -520,7 +520,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="space-y-6">
               <div className="space-y-3 text-center">
                 <BookmarkPlus className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Add Prompt
                 </h3>
                 <p className="text-base font-raleway text-n-white">

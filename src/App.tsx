@@ -82,7 +82,7 @@ function UseCaseCard({
       />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
-          <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-xl font-light tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@ function ComingSoonPanel({ label, className }: { label: string; className?: stri
   const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
   return (
     <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""}`}>
-      <h2 className="text-xl font-raleway font-normal text-theme-text">{formattedLabel}</h2>
+      <h2 className="text-xl font-raleway font-light text-theme-text">{formattedLabel}</h2>
       <p className="mt-2 text-sm font-raleway text-theme-white">Coming soon.</p>
     </div>
   );

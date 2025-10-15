@@ -664,7 +664,7 @@ const AvatarCard: React.FC<{
                 : isSpotlight
                   ? "text-2xl"
                   : "text-xl"
-            } font-raleway font-normal text-white`}
+            } font-raleway font-light text-white`}
           >
             {item.name}
           </h3>
@@ -2281,7 +2281,7 @@ const Explore: React.FC = () => {
               <div className="max-w-2xl space-y-6">
                 <p className={`${text.eyebrow} text-theme-white/70`}>Community</p>
                 <div className="space-y-4">
-                  <h2 className="text-balance font-raleway text-4xl font-normal text-theme-white sm:text-5xl md:text-6xl">
+                  <h2 className="text-balance font-raleway text-4xl font-light text-theme-white sm:text-5xl md:text-6xl">
                     Discover the daygen community gallery
                   </h2>
                   <p className="max-w-xl font-raleway text-lg text-theme-white/75">
@@ -2305,7 +2305,7 @@ const Explore: React.FC = () => {
                     <Sparkles className="size-4" aria-hidden="true" />
                     Trending
                   </div>
-                  <p className="mt-3 text-3xl font-normal text-theme-white">3.2K+</p>
+                  <p className="mt-3 text-3xl font-light text-theme-white">3.2K+</p>
                   <p className="text-xs text-theme-white/60">new images shared this week</p>
                 </div>
                 <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
@@ -2313,7 +2313,7 @@ const Explore: React.FC = () => {
                     <Users className="size-4" aria-hidden="true" />
                     Creators
                   </div>
-                  <p className="mt-3 text-3xl font-normal text-theme-white">870</p>
+                  <p className="mt-3 text-3xl font-light text-theme-white">870</p>
                   <p className="text-xs text-theme-white/60">featured artists this month</p>
                 </div>
                 <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
@@ -2420,7 +2420,7 @@ const Explore: React.FC = () => {
 
                 <div className="flex flex-col gap-6">
                   <div className="space-y-3">
-                    <h3 className="text-xl font-raleway font-normal text-theme-text">Add to a folder</h3>
+                    <h3 className="text-xl font-raleway font-light text-theme-text">Add to a folder</h3>
                     <p className="text-sm text-theme-white">
                       Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
                     </p>
@@ -2755,8 +2755,8 @@ const Explore: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Remove from gallery?</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Remove from gallery?</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     This will remove the image from your saved gallery and any folders it's in.
                   </p>
                 </div>
