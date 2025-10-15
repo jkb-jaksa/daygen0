@@ -82,7 +82,7 @@ function UseCaseCard({
       />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
-          <h2 className="text-xl font-light tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
     </div>
@@ -188,7 +188,7 @@ function Home() {
                     <p className={`${headings.tripleHeading.description} text-left mt-0 mb-1`}>
                       Master all the best Creative AI Tools in one place.
                     </p>
-                    <div className="home-hero-actions flex flex-wrap gap-3">
+                    <div className="home-hero-actions flex flex-wrap gap-2">
                       <Link to="/learn/use-cases" className={buttons.ghost}>
                         Learn
                       </Link>

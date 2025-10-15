@@ -6957,7 +6957,7 @@ const handleGenerate = async () => {
                           <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200" onClick={focusPromptBar}>
                             <div className="flex flex-col items-center gap-2 text-center px-2">
                               <VideoIcon className="w-8 h-8 text-theme-light" />
-                              <div className="text-theme-light font-raleway text-base">Create something amazing.</div>
+                              <div className="text-theme-light font-raleway text-base font-light">Create something amazing.</div>
                             </div>
                           </div>
                         );
@@ -7290,7 +7290,7 @@ const handleGenerate = async () => {
                       <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="flex flex-col items-center gap-2 text-center px-2">
                           <ImageIcon className="w-8 h-8 text-theme-light" />
-                          <div className="text-theme-light font-raleway text-base">Create something amazing.</div>
+                          <div className="text-theme-light font-raleway text-base font-light">Create something amazing.</div>
                         </div>
                       </div>
                     );
