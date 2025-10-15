@@ -95,15 +95,16 @@ export const useChatGPTImageGeneration = () => {
     }));
 
     try {
-      if (!token) {
-        const message = 'Please sign in to generate images.';
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: message,
-        }));
-        throw new Error(message);
-      }
+      // TEMPORARILY DISABLED: Authentication check
+      // if (!token) {
+      //   const message = 'Please sign in to generate images.';
+      //   setState(prev => ({
+      //     ...prev,
+      //     isLoading: false,
+      //     error: message,
+      //   }));
+      //   throw new Error(message);
+      // }
 
       const { prompt, n = 1, size = '1024x1024', quality = 'high', background = 'transparent' } = options;
 

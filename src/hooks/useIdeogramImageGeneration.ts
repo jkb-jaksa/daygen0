@@ -195,16 +195,17 @@ export const useIdeogramImageGeneration = () => {
       }));
 
       try {
-        if (!token) {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: AUTH_ERROR_MESSAGE,
-            progress: undefined,
-            progressValue: undefined,
-          }));
-          throw new Error(AUTH_ERROR_MESSAGE);
-        }
+        // TEMPORARILY DISABLED: Authentication check
+        // if (!token) {
+        //   setState((prev) => ({
+        //     ...prev,
+        //     isLoading: false,
+        //     error: AUTH_ERROR_MESSAGE,
+        //     progress: undefined,
+        //     progressValue: undefined,
+        //   }));
+        //   throw new Error(AUTH_ERROR_MESSAGE);
+        // }
 
         const providerOptions: Record<string, unknown> = {};
         if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;

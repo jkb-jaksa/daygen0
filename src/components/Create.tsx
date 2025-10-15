@@ -4973,9 +4973,10 @@ const handleGenerate = async () => {
           });
           img = reveResult;
         } else if (isRecraftModel) {
-          if (!token) {
-            throw new Error('Please sign in to generate images.');
-          }
+          // TEMPORARILY DISABLED: Authentication check
+          // if (!token) {
+          //   throw new Error('Please sign in to generate images.');
+          // }
 
           const response = await fetch(getApiUrl('/api/image/recraft'), {
             method: 'POST',

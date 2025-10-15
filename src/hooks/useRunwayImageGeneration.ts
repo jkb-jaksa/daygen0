@@ -97,15 +97,16 @@ export const useRunwayImageGeneration = () => {
     }));
 
     try {
-      if (!token) {
-        const message = 'Please sign in to generate images.';
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: message,
-        }));
-        throw new Error(message);
-      }
+      // TEMPORARILY DISABLED: Authentication check
+      // if (!token) {
+      //   const message = 'Please sign in to generate images.';
+      //   setState(prev => ({
+      //     ...prev,
+      //     isLoading: false,
+      //     error: message,
+      //   }));
+      //   throw new Error(message);
+      // }
 
       const { prompt, uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
 

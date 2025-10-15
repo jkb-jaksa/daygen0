@@ -462,18 +462,19 @@ export const useGeminiImageGeneration = () => {
     });
 
     try {
-      if (!token) {
-        const message = 'Please sign in to generate images.';
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: message,
-          status: 'failed',
-          progress: 0,
-        }));
-        stopProgressController({ status: 'failed' });
-        throw new Error(message);
-      }
+      // TEMPORARILY DISABLED: Authentication check
+      // if (!token) {
+      //   const message = 'Please sign in to generate images.';
+      //   setState(prev => ({
+      //     ...prev,
+      //     isLoading: false,
+      //     error: message,
+      //     status: 'failed',
+      //     progress: 0,
+      //   }));
+      //   stopProgressController({ status: 'failed' });
+      //   throw new Error(message);
+      // }
 
       const { prompt, model, imageData, references, temperature, outputLength, topP, aspectRatio } = options;
 
