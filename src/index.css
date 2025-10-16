@@ -1810,7 +1810,9 @@ html[data-theme="day"] .PromptDescriptionBarTop {
    Homepage hero redesign
    ------------------------------------------------------------- */
 .home-page {
-  background: 
+  position: relative;
+  min-height: 100dvh;
+  background:
     linear-gradient(
       to bottom,
       #0e0f10 0%,
@@ -1822,10 +1824,36 @@ html[data-theme="day"] .PromptDescriptionBarTop {
       #070808 85%,
       var(--theme-black) 100%
     );
-  background-attachment: fixed;
   background-repeat: no-repeat;
-  background-size: 100% 100%;
-  min-height: 100vh;
+  background-size: cover;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.home-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 55% at 95% 0%, rgba(34, 211, 238, 0.4) 0%, rgba(34, 211, 238, 0) 70%),
+    radial-gradient(60% 60% at 82% 6%, rgba(59, 130, 246, 0.38) 0%, rgba(59, 130, 246, 0) 72%),
+    radial-gradient(50% 50% at 88% 18%, rgba(239, 68, 68, 0.32) 0%, rgba(239, 68, 68, 0) 72%),
+    radial-gradient(48% 48% at 70% 10%, rgba(251, 191, 36, 0.32) 0%, rgba(251, 191, 36, 0) 70%);
+  filter: blur(0px);
+  opacity: 0.85;
+}
+
+.home-page::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.4;
 }
 
 html[data-theme="day"] .home-page {
@@ -1841,10 +1869,15 @@ html[data-theme="day"] .home-page {
       #fdfdfe 85%,
       var(--theme-black) 100%
     );
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  min-height: 100vh;
+}
+
+html[data-theme="day"] .home-page::before {
+  background:
+    radial-gradient(55% 55% at 95% 0%, rgba(59, 130, 246, 0.28) 0%, rgba(59, 130, 246, 0) 70%),
+    radial-gradient(60% 60% at 82% 6%, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0) 72%),
+    radial-gradient(50% 50% at 88% 18%, rgba(236, 72, 153, 0.28) 0%, rgba(236, 72, 153, 0) 72%),
+    radial-gradient(48% 48% at 70% 10%, rgba(96, 165, 250, 0.28) 0%, rgba(96, 165, 250, 0) 70%);
+  opacity: 0.75;
 }
 
 
@@ -1873,7 +1906,12 @@ html[data-theme="day"] .home-page {
   position: absolute;
   inset: 0;
   background: radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(140deg, rgba(3, 188, 189, 0.10), rgba(184, 192, 192, 0.06));
+    linear-gradient(140deg, 
+      rgba(34, 211, 238, 0.10) 0%, 
+      rgba(59, 130, 246, 0.08) 33%,
+      rgba(239, 68, 68, 0.07) 66%,
+      rgba(251, 191, 36, 0.06) 100%
+    );
   mix-blend-mode: screen;
   opacity: 0.6;
   pointer-events: none;
@@ -1915,23 +1953,29 @@ html[data-theme="day"] .home-page {
 .home-hero-title {
   position: relative;
   letter-spacing: -0.02em;
-  text-shadow: 0 16px 56px rgba(3, 188, 189, 0.35), 0 12px 46px rgba(184, 192, 192, 0.2);
 }
 
 .home-hero-line {
   width: clamp(8rem, 40%, 14rem);
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(3, 188, 189, 0.85), rgba(184, 192, 192, 0.9));
-  opacity: 0.9;
-  mix-blend-mode: screen;
+  background: linear-gradient(90deg, 
+    rgba(0, 160, 190, 0.85) 0%, 
+    rgba(0, 70, 200, 0.85) 33%, 
+    rgba(200, 0, 0, 0.85) 66%, 
+    rgba(200, 150, 0, 0.85) 100%
+  );
+  opacity: 1;
+  mix-blend-mode: normal;
   margin: 0 auto;
+  position: relative;
+  top: -20px;
+  left: 80px;
 }
 
 .home-hero-subheading {
   font-weight: 500;
   letter-spacing: -0.01em;
-  text-shadow: 0 8px 32px rgba(184, 192, 192, 0.3);
 }
 
 /* Animation and pulse glow animations removed */
