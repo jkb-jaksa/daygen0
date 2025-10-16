@@ -630,32 +630,40 @@ html[data-theme="day"] body {
 /* Subtle gradient for main page backgrounds */
 .bg-theme-black-subtle {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #0e0f10 0%,
       #101112 15%,
-      #0e0f10 30%,
-      #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
-  background-attachment: fixed, fixed;
+      #0e0f10 25%,
+      #0c0d0e 40%,
+      #0a0b0c 55%,
+      #080909 70%,
+      #070808 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
   background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 html[data-theme="day"] .bg-theme-black-subtle {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #dce5e5 0%,
       #e4ebeb 15%,
-      #ebf1f1 30%,
-      #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
-  background-attachment: fixed, fixed;
+      #ebf1f1 25%,
+      #f2f6f6 40%,
+      #f8fafb 55%,
+      #fbfcfd 70%,
+      #fdfdfe 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
   background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 /* Section divider day mode styling - target border-b specifically */
@@ -1803,32 +1811,40 @@ html[data-theme="day"] .PromptDescriptionBarTop {
    ------------------------------------------------------------- */
 .home-page {
   background: 
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #0e0f10 0%,
       #101112 15%,
-      #0e0f10 30%,
-      #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
-  background-attachment: fixed, fixed;
+      #0e0f10 25%,
+      #0c0d0e 40%,
+      #0a0b0c 55%,
+      #080909 70%,
+      #070808 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
   background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 html[data-theme="day"] .home-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #dce5e5 0%,
       #e4ebeb 15%,
-      #ebf1f1 30%,
-      #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
-  background-attachment: fixed, fixed;
+      #ebf1f1 25%,
+      #f2f6f6 40%,
+      #f8fafb 55%,
+      #fbfcfd 70%,
+      #fdfdfe 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
   background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 

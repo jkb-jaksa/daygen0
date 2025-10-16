@@ -176,7 +176,7 @@ function Home() {
   return (
     <div className={`${layout.page} home-page`}>
       {/* Colorful gradient with grain - top right corner decoration */}
-      <div className="fixed pointer-events-none z-0 overflow-hidden" style={{ top: '-60px', right: '-40px', width: '70vw', height: '65vh', maxWidth: '1100px', maxHeight: '700px' }}>
+      <div className="fixed pointer-events-none z-0 overflow-hidden" style={{ top: '-140px', right: '-40px', width: '70vw', height: '65vh', maxWidth: '1100px', maxHeight: '700px' }}>
         {/* Cyan blob */}
         <div 
           className="absolute"
