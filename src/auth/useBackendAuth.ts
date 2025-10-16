@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { BackendAuthContext } from './BackendAuthContext';
+import { BackendAuthContext } from './contexts/BackendAuthContext';
 
 export function useBackendAuth() {
   const context = useContext(BackendAuthContext);
