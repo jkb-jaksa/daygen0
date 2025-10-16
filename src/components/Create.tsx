@@ -8123,7 +8123,7 @@ const handleGenerate = async () => {
                                         key={option.id}
                                         type="button"
                                         onClick={() => handleToggleTempStyle(activeStyleGender, activeStyleSectionData.id, option)}
-                                        className="w-full text-left group"
+                                        className="w-full text-left group parallax-small"
                                       >
                                         <div
                                           className={`relative overflow-hidden rounded-xl border transition-colors duration-200 ${
