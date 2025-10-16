@@ -28,7 +28,7 @@ interface SupabaseAuthContextValue {
   refreshUser: () => Promise<void>;
 }
 
-const SupabaseAuthContext = createContext<SupabaseAuthContextValue | undefined>(undefined);
+export const SupabaseAuthContext = createContext<SupabaseAuthContextValue | undefined>(undefined);
 
 export function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);

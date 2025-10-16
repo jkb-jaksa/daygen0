@@ -26,7 +26,7 @@ interface BackendAuthContextValue {
   refreshUser: () => Promise<void>;
 }
 
-const BackendAuthContext = createContext<BackendAuthContextValue | undefined>(undefined);
+export const BackendAuthContext = createContext<BackendAuthContextValue | undefined>(undefined);
 
 export function BackendAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<BackendUser | null>(null);

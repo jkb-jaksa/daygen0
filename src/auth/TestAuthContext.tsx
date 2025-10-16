@@ -24,7 +24,7 @@ interface TestAuthContextValue {
   refreshUser: () => Promise<void>;
 }
 
-const TestAuthContext = createContext<TestAuthContextValue | undefined>(undefined);
+export const TestAuthContext = createContext<TestAuthContextValue | undefined>(undefined);
 
 export function TestAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TestUser | null>(null);
