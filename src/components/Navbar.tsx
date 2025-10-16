@@ -414,7 +414,6 @@ export default function Navbar() {
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
-<<<<<<< HEAD
                   <span className="hidden xl:inline font-raleway text-sm font-normal">
                     Credits: {currentUser.credits}
                   </span>
@@ -456,7 +455,6 @@ export default function Navbar() {
                         {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>
                     )}
-<<<<<<< HEAD
                     <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.displayName || currentUser.email}</span>
                   </button>
                 </div>

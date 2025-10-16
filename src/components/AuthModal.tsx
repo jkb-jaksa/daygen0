@@ -147,7 +147,6 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
       <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
-<<<<<<< HEAD
             <h3 className="text-theme-text font-raleway font-normal text-xl">{mode === "login" ? "Sign In" : "Create Account"}</h3>
             <p className="text-theme-light text-sm font-raleway font-normal">Welcome to DayGen</p>
             <button onClick={onClose} className="absolute top-6 right-6 text-theme-light hover:text-theme-text transition-colors">✕</button>

@@ -82,7 +82,7 @@ export interface IdeogramDescribeOptions {
   model_version?: 'V_2' | 'V_3';
 }
 
-const AUTH_ERROR_MESSAGE = 'Please sign in to generate Ideogram images.';
+// const AUTH_ERROR_MESSAGE = 'Please sign in to generate Ideogram images.';
 
 export const useIdeogramImageGeneration = () => {
   const { token, user } = useAuth();

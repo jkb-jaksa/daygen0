@@ -38,7 +38,7 @@ export interface ReveImageGenerationOptions {
   avatarImageId?: string;
 }
 
-const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
+// const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
 const UNSUPPORTED_MESSAGE = 'Reve image editing is not yet available in the backend integration.';
 
 export const useReveImageGeneration = () => {

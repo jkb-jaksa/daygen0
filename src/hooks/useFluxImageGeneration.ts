@@ -50,7 +50,7 @@ export interface FluxImageGenerationOptions {
   avatarImageId?: string;
 }
 
-const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
+// const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
 
 export const useFluxImageGeneration = () => {
   const { token, user } = useAuth();

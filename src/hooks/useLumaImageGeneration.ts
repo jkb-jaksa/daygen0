@@ -32,7 +32,7 @@ export interface LumaImageGenerationOptions {
   avatarId?: string;
 }
 
-const AUTH_ERROR_MESSAGE = 'Please sign in to generate Luma images.';
+// const AUTH_ERROR_MESSAGE = 'Please sign in to generate Luma images.';
 const DEFAULT_ASPECT_RATIO = '16:9';
 
 export function useLumaImageGeneration() {

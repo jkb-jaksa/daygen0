@@ -36,7 +36,7 @@ export interface QwenGenerateOptions {
   avatarImageId?: string;
 }
 
-const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
+// const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
 const UNSUPPORTED_MESSAGE = 'Qwen image editing is not yet available in the backend integration.';
 
 export const useQwenImageGeneration = () => {
