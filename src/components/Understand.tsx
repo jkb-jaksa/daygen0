@@ -244,7 +244,7 @@ export default function Understand() {
                     {/* Create section */}
                     {createCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-normal text-theme-text">create</h2>
+                        <h2 className="text-xl font-raleway font-light text-theme-text">create</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={createCases} />
                         </Suspense>
@@ -254,7 +254,7 @@ export default function Understand() {
                     {/* Edit section */}
                     {editCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-normal text-theme-text">edit</h2>
+                        <h2 className="text-xl font-raleway font-light text-theme-text">edit</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={editCases} />
                         </Suspense>
@@ -264,7 +264,7 @@ export default function Understand() {
                     {/* Personalize section */}
                     {personalizeCases.length > 0 && (
                       <div>
-                        <h2 className="text-xl font-raleway font-normal text-theme-text">personalize</h2>
+                        <h2 className="text-xl font-raleway font-light text-theme-text">personalize</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={personalizeCases} />
                         </Suspense>
@@ -273,7 +273,7 @@ export default function Understand() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-raleway font-normal text-theme-text">
+                    <h2 className="text-2xl font-raleway font-light text-theme-text">
                       {activeCategory === "image" 
                         ? "image use cases" 
                         : activeCategory === "text"

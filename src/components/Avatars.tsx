@@ -1,4 +1,15 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef, type FormEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+} from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
@@ -15,22 +26,28 @@ import {
   MoreHorizontal,
   Download,
   Copy,
+  Loader2,
+  Upload,
   Folder as FolderIcon,
   FolderPlus,
   Lock,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
-import { layout, text, buttons, inputs, glass, headings } from "../styles/designSystem";
+import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
+const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
+import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
-import type { AvatarSelection, StoredAvatar } from "./avatars/types";
+import type { AvatarImage, AvatarSelection, StoredAvatar } from "./avatars/types";
 import { debugError } from "../utils/debug";
-import { createAvatarRecord, findAvatarBySlug, normalizeStoredAvatars } from "../utils/avatars";
+import { createAvatarRecord, findAvatarBySlug, normalizeStoredAvatars, withUpdatedAvatarImages } from "../utils/avatars";
+import { createCardImageStyle } from "../utils/cardImageStyle";
 
 type AvatarNavigationState = {
   openAvatarCreator?: boolean;
@@ -39,7 +56,88 @@ type AvatarNavigationState = {
 };
 
 const defaultSubtitle =
-  "Craft a consistent look for your brand, team, or characters. Upload a portrait or reuse something you've already made.";
+  "Craft a consistent look for your brand, team, or characters.";
+
+const MAX_AVATAR_IMAGES = 5;
+const AVATAR_ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const AVATAR_ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
+
+const LOCAL_AVATAR_STORAGE_KEY = "daygen.avatar-cache";
+
+const getFileExtension = (file: File): string | null => {
+  const name = file.name ?? "";
+  const lastDot = name.lastIndexOf(".");
+  if (lastDot === -1 || lastDot === name.length - 1) {
+    return null;
+  }
+  return name.slice(lastDot + 1).toLowerCase();
+};
+
+const isSupportedAvatarFile = (file: File): boolean => {
+  if (file.type && AVATAR_ALLOWED_TYPES.has(file.type)) {
+    return true;
+  }
+  const extension = getFileExtension(file);
+  if (!extension) return false;
+  return AVATAR_ALLOWED_EXTENSIONS.has(extension);
+};
+
+const readCachedAvatars = (): StoredAvatar[] | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LOCAL_AVATAR_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredAvatar[];
+  } catch (error) {
+    debugError("Failed to read cached avatars", error);
+    return null;
+  }
+};
+
+const writeCachedAvatars = (records: StoredAvatar[]) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_AVATAR_STORAGE_KEY, JSON.stringify(records));
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      // Clear the cache if quota is exceeded to allow the app to continue
+      debugError("localStorage quota exceeded, clearing avatar cache", error);
+      try {
+        window.localStorage.removeItem(LOCAL_AVATAR_STORAGE_KEY);
+      } catch (clearError) {
+        debugError("Failed to clear avatar cache", clearError);
+      }
+    } else {
+      debugError("Failed to write cached avatars", error);
+    }
+  }
+};
+
+const validateAvatarFile = (file: File): string | null => {
+  if (!isSupportedAvatarFile(file)) {
+    return "Please choose a JPEG, PNG, or WebP image file.";
+  }
+
+  const maxSize = 50 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return "File size must be less than 50MB.";
+  }
+
+  if (file.size === 0) {
+    return "The selected file is empty.";
+  }
+
+  return null;
+};
+
+const readFileAsDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
+};
 
 // Portal component for avatar action menu
 const ImageActionMenuPortal: React.FC<{
@@ -58,8 +156,10 @@ const ImageActionMenuPortal: React.FC<{
     const updatePosition = () => {
       if (!anchorEl) return;
       const rect = anchorEl.getBoundingClientRect();
+      const verticalOffset = 2;
+
       setPos({
-        top: rect.bottom + 8,
+        top: rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(200, rect.width),
       });
@@ -125,9 +225,9 @@ const ImageActionMenuPortal: React.FC<{
 
 
 const deriveSuggestedName = (raw?: string) => {
-  if (!raw) return "New Avatar";
+  if (!raw) return "";
   const cleaned = raw.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
-  if (!cleaned) return "New Avatar";
+  if (!cleaned) return "";
   const words = cleaned.split(" ");
   const slice = words.slice(0, 4).join(" ");
   return slice.charAt(0).toUpperCase() + slice.slice(1);
@@ -147,6 +247,7 @@ export default function Avatars() {
   const [selection, setSelection] = useState<AvatarSelection | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
@@ -184,6 +285,26 @@ export default function Avatars() {
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isAvatarFullSizeOpen, setIsAvatarFullSizeOpen] = useState<boolean>(false);
+  const [activeAvatarImageId, setActiveAvatarImageId] = useState<string | null>(null);
+  const avatarImageInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
+  const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
+  const [uploadingAvatarIds, setUploadingAvatarIds] = useState<Set<string>>(new Set());
+  const avatarsRef = useRef<StoredAvatar[]>(avatars);
+  const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
+  const hasAvatars = avatars.length > 0;
+  const { images: remoteGalleryImages } = useGalleryImages();
+
+  useEffect(() => {
+    avatarsRef.current = avatars;
+  }, [avatars]);
+
+  const openAvatarCreator = useCallback(() => {
+    setIsPanelOpen(true);
+    if (!selection) {
+      setAvatarName(deriveSuggestedName());
+    }
+  }, [selection]);
 
   useEffect(() => {
     const state = location.state as AvatarNavigationState | null;
@@ -229,11 +350,18 @@ export default function Avatars() {
 
   const persistAvatars = useCallback(
     async (records: StoredAvatar[]) => {
+      // Always update ref first, regardless of cache/storage success
+      avatarsRef.current = records;
+      
+      // Try to write to cache (may fail due to quota)
+      writeCachedAvatars(records);
+      
+      // Try to persist to remote storage
       if (!storagePrefix) return;
       try {
         await setPersistedValue(storagePrefix, "avatars", records);
       } catch (error) {
-        debugError("Failed to persist avatars", error);
+        debugError("Failed to persist avatars to remote storage", error);
       }
     },
     [storagePrefix],
@@ -254,36 +382,59 @@ export default function Avatars() {
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
-      if (!storagePrefix) return;
       try {
-        const [storedAvatars, storedGallery, storedFolders] = await Promise.all([
-          getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
-          getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
-          getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),
-        ]);
-        if (!isMounted) return;
+        if (storagePrefix) {
+          const [storedAvatars, storedGallery, storedFolders] = await Promise.all([
+            getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
+            getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
+            getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),
+          ]);
+          if (!isMounted) return;
 
-        if (storedAvatars) {
-          const normalized = normalizeStoredAvatars(storedAvatars, { ownerId: user?.id ?? undefined });
-          setAvatars(normalized);
-          if (storedAvatars.some(avatar => !avatar.slug || (!avatar.ownerId && user?.id))) {
-            void persistAvatars(normalized);
+          if (storedAvatars) {
+            const normalized = normalizeStoredAvatars(storedAvatars, { ownerId: user?.id ?? undefined });
+            setAvatars(normalized);
+            writeCachedAvatars(normalized);
+            if (storedAvatars.some(avatar => !avatar.slug || (!avatar.ownerId && user?.id))) {
+              void persistAvatars(normalized);
+            }
+          } else {
+            const cached = readCachedAvatars();
+            if (cached) {
+              const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
+              setAvatars(normalized);
+              writeCachedAvatars(normalized);
+            }
           }
-        }
 
-        if (storedGallery) {
-          setGalleryImages(hydrateStoredGallery(storedGallery));
-        }
+          if (storedGallery) {
+            setGalleryImages(hydrateStoredGallery(storedGallery));
+          }
 
-        if (storedFolders) {
-          setFolders(storedFolders.map(folder => ({
-            ...folder,
-            createdAt: new Date(folder.createdAt),
-            videoIds: folder.videoIds || [],
-          })));
+          if (storedFolders) {
+            setFolders(storedFolders.map(folder => ({
+              ...folder,
+              createdAt: new Date(folder.createdAt),
+              videoIds: folder.videoIds || [],
+            })));
+          }
+        } else {
+          const cached = readCachedAvatars();
+          if (cached) {
+            const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
+            if (!isMounted) return;
+            setAvatars(normalized);
+            writeCachedAvatars(normalized);
+          }
         }
       } catch (error) {
         debugError("Failed to load avatar data", error);
+        const cached = readCachedAvatars();
+        if (cached && isMounted) {
+          const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
+          setAvatars(normalized);
+          writeCachedAvatars(normalized);
+        }
       }
     };
 
@@ -293,9 +444,296 @@ export default function Avatars() {
     };
   }, [storagePrefix, user?.id, persistAvatars]);
 
+  useEffect(() => {
+    if (!remoteGalleryImages.length) return;
+    setGalleryImages(prev => {
+      const existingMap = new Map(prev.map(image => [image.url, image]));
+      const remoteUrlSet = new Set(remoteGalleryImages.map(image => image.url));
+      const merged = remoteGalleryImages.map(image => {
+        const existing = existingMap.get(image.url);
+        if (!existing) {
+          return image;
+        }
+        return {
+          ...image,
+          avatarId: existing.avatarId ?? image.avatarId,
+          productId: existing.productId ?? image.productId,
+        };
+      });
+      const extras = prev.filter(image => !remoteUrlSet.has(image.url));
+      return [...merged, ...extras];
+    });
+  }, [remoteGalleryImages]);
+
+  useEffect(() => {
+    if (galleryImages.length === 0) return;
+    void persistGalleryImages(galleryImages);
+  }, [galleryImages, persistGalleryImages]);
+
+  const commitAvatarUpdate = useCallback(
+    (
+      avatarId: string,
+      updater: (images: AvatarImage[]) => AvatarImage[],
+      nextPrimaryId?: string,
+    ): StoredAvatar | null => {
+      let updatedAvatar: StoredAvatar | null = null;
+
+      setAvatars(prev => {
+        const updated = prev.map(record => {
+          if (record.id !== avatarId) {
+            return record;
+          }
+          const next = withUpdatedAvatarImages(record, updater, nextPrimaryId);
+          updatedAvatar = next;
+          return next;
+        });
+        if (updatedAvatar) {
+          void persistAvatars(updated);
+          // Synchronize modal state immediately with the same computed avatar
+          setCreationsModalAvatar(current =>
+            current && current.id === avatarId ? updatedAvatar : current,
+          );
+        }
+        return updated;
+      });
+
+      return updatedAvatar;
+    },
+    [persistAvatars],
+  );
+
+  const handleAddAvatarImages = useCallback(
+    async (
+      avatarId: string,
+      files: File[],
+      source: AvatarImage["source"] = "upload",
+      sourceId?: string,
+    ) => {
+      if (!files.length) {
+        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
+        return;
+      }
+
+      // Check if this avatar is already uploading - if so, queue the files
+      setUploadingAvatarIds(prev => {
+        if (prev.has(avatarId)) {
+          // Queue these files for later processing
+          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
+          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
+          return prev;
+        }
+        // Mark as uploading
+        const next = new Set(prev);
+        next.add(avatarId);
+        return next;
+      });
+
+      // If already uploading, the files have been queued and we return
+      if (uploadingAvatarIds.has(avatarId)) {
+        return;
+      }
+
+      try {
+        // Process current batch
+        await processAvatarImageBatch(avatarId, files, source, sourceId);
+
+        // Process any queued files
+        while (pendingUploadsRef.current.has(avatarId)) {
+          const queuedFiles = pendingUploadsRef.current.get(avatarId) || [];
+          if (queuedFiles.length === 0) {
+            pendingUploadsRef.current.delete(avatarId);
+            break;
+          }
+          pendingUploadsRef.current.delete(avatarId);
+          await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
+        }
+      } finally {
+        // Clear upload state
+        setUploadingAvatarIds(prev => {
+          const next = new Set(prev);
+          next.delete(avatarId);
+          return next;
+        });
+        pendingUploadsRef.current.delete(avatarId);
+      }
+    },
+    [uploadingAvatarIds],
+  );
+
+  const processAvatarImageBatch = useCallback(
+    async (
+      avatarId: string,
+      files: File[],
+      source: AvatarImage["source"] = "upload",
+      sourceId?: string,
+    ) => {
+      // Get the latest avatar state using functional update
+      let targetAvatar: StoredAvatar | null = null;
+      let availableSlots = 0;
+      let avatarsExist = false;
+
+      setAvatars(prev => {
+        avatarsExist = prev.length > 0;
+        targetAvatar = prev.find(avatar => avatar.id === avatarId) || null;
+        if (targetAvatar) {
+          availableSlots = Math.max(0, MAX_AVATAR_IMAGES - targetAvatar.images.length);
+        }
+        return prev;
+      });
+
+      if (!targetAvatar) {
+        // Only show error if avatars have been loaded (not initial empty state)
+        if (avatarsExist) {
+          setAvatarImageUploadError("We couldn't find that avatar.");
+        }
+        return;
+      }
+
+      if (availableSlots <= 0) {
+        setAvatarImageUploadError(`You can add up to ${MAX_AVATAR_IMAGES} images per avatar.`);
+        return;
+      }
+
+      const imageFiles = files.filter(isSupportedAvatarFile);
+      if (!imageFiles.length) {
+        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
+        return;
+      }
+
+      const limitedFiles = imageFiles.slice(0, availableSlots);
+      const skippedByLimit = imageFiles.length > limitedFiles.length;
+      const skippedByTypeCount = files.length - imageFiles.length;
+
+      const validFiles: File[] = [];
+      let validationError: string | null = null;
+      for (const file of limitedFiles) {
+        const error = validateAvatarFile(file);
+        if (error) {
+          if (!validationError) {
+            validationError = error;
+          }
+          continue;
+        }
+        validFiles.push(file);
+      }
+
+      if (!validFiles.length) {
+        setAvatarImageUploadError(validationError ?? "Please choose a JPEG, PNG, or WebP image file.");
+        return;
+      }
+
+      setAvatarImageUploadError(null);
+
+      try {
+        const newImages: AvatarImage[] = await Promise.all(
+          validFiles.map(async (file, index) => ({
+            id: `avatar-img-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+            url: await readFileAsDataUrl(file),
+            createdAt: new Date().toISOString(),
+            source,
+            sourceId,
+          })),
+        );
+
+        // Use commitAvatarUpdate which now properly synchronizes all state
+        const result = commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
+        
+        if (!result) {
+          throw new Error("Failed to update avatar");
+        }
+
+        let statusMessage: string | null = null;
+        if (validationError && validFiles.length < limitedFiles.length) {
+          statusMessage = `Some files were skipped: ${validationError}`;
+        } else if (skippedByLimit) {
+          const addedCount = validFiles.length;
+          statusMessage = `Only ${addedCount} ${addedCount === 1 ? "image was" : "images were"} added because you reached the limit.`;
+        } else if (skippedByTypeCount > 0) {
+          statusMessage = skippedByTypeCount === 1
+            ? "One file was skipped because it isn't a supported image."
+            : `${skippedByTypeCount} files were skipped because they aren't supported images.`;
+        }
+
+        if (statusMessage) {
+          setAvatarImageUploadError(statusMessage);
+        }
+      } catch (error) {
+        debugError("Failed to add avatar image", error);
+        setAvatarImageUploadError("We couldn't read that image. Try uploading a different file.");
+        // On error, we don't need to rollback since commitAvatarUpdate only runs if file processing succeeds
+      }
+    },
+    [commitAvatarUpdate],
+  );
+
+  const handleRemoveAvatarImage = useCallback(
+    (avatarId: string, imageId: string) => {
+      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
+      if (!targetAvatar) {
+        setAvatarImageUploadError("We couldn't find that avatar.");
+        return;
+      }
+      if (targetAvatar.images.length <= 1) {
+        setAvatarImageUploadError("An avatar must keep at least one image.");
+        return;
+      }
+      setAvatarImageUploadError(null);
+      commitAvatarUpdate(
+        avatarId,
+        images => images.filter(image => image.id !== imageId),
+        targetAvatar.primaryImageId === imageId ? undefined : targetAvatar.primaryImageId,
+      );
+    },
+    [commitAvatarUpdate],
+  );
+
+  const handleSetPrimaryAvatarImage = useCallback(
+    (avatarId: string, imageId: string) => {
+      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
+      if (!targetAvatar) {
+        setAvatarImageUploadError("We couldn't find that avatar.");
+        return;
+      }
+      if (!targetAvatar.images.some(image => image.id === imageId)) {
+        setAvatarImageUploadError("We couldn't find that image.");
+        return;
+      }
+      setAvatarImageUploadError(null);
+      commitAvatarUpdate(avatarId, images => images, imageId);
+    },
+    [commitAvatarUpdate],
+  );
+
+  const openAvatarImageUploader = useCallback(() => {
+    if (!creationsModalAvatar) return;
+    if (creationsModalAvatar.images.length >= MAX_AVATAR_IMAGES) {
+      setAvatarImageUploadError(`You can add up to ${MAX_AVATAR_IMAGES} images per avatar.`);
+      return;
+    }
+    setAvatarImageUploadError(null);
+    setAvatarImageUploadTarget(creationsModalAvatar.id);
+    avatarImageInputRef.current?.click();
+  }, [creationsModalAvatar]);
+
+  const handleAvatarImageInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const { files } = event.target;
+      const targetId = avatarImageUploadTarget ?? creationsModalAvatar?.id ?? null;
+      if (!files?.length || !targetId) {
+        event.target.value = "";
+        return;
+      }
+
+      void handleAddAvatarImages(targetId, Array.from(files));
+      event.target.value = "";
+      setAvatarImageUploadTarget(null);
+    },
+    [avatarImageUploadTarget, creationsModalAvatar, handleAddAvatarImages],
+  );
+
   const processImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Please choose an image file.");
+    if (!isSupportedAvatarFile(file)) {
+      setUploadError("Please choose a JPEG, PNG, or WebP image file.");
       return;
     }
 
@@ -305,19 +743,31 @@ export default function Avatars() {
       const result = reader.result;
       if (typeof result === "string") {
         setSelection({ imageUrl: result, source: "upload" });
+        setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
       }
     };
     reader.onerror = () => {
-      setUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      setUploadError("We couldn't read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
   }, []);
 
   const handleSaveAvatar = useCallback(() => {
-    if (!selection || !avatarName.trim()) return;
+    if (!selection) return;
+    const normalizedName = avatarName.trim() || "New Avatar";
+
+    // Check for duplicate avatar names (case-insensitive)
+    const isDuplicate = avatars.some(
+      avatar => avatar.name.toLowerCase() === normalizedName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      setUploadError("An avatar with this name already exists");
+      return;
+    }
 
     const record = createAvatarRecord({
-      name: avatarName.trim(),
+      name: normalizedName,
       imageUrl: selection.imageUrl,
       source: selection.source,
       sourceId: selection.sourceId,
@@ -346,6 +796,14 @@ export default function Avatars() {
     setIsDragging(false);
   }, []);
 
+  const handleAvatarNameChange = useCallback((name: string) => {
+    setAvatarName(name);
+    // Clear duplicate name error when user changes the name
+    if (uploadError === "An avatar with this name already exists") {
+      setUploadError(null);
+    }
+  }, [uploadError]);
+
   const startRenaming = useCallback((avatar: StoredAvatar) => {
     setEditingAvatarId(avatar.id);
     setEditingName(avatar.name);
@@ -361,11 +819,11 @@ export default function Avatars() {
       event.preventDefault();
       if (!editingAvatarId) return;
       const trimmed = editingName.trim();
-      if (!trimmed) return;
+      const normalizedName = trimmed || "New Avatar";
 
       setAvatars(prev => {
         const updated = prev.map(record =>
-          record.id === editingAvatarId ? { ...record, name: trimmed } : record,
+          record.id === editingAvatarId ? { ...record, name: normalizedName } : record,
         );
         void persistAvatars(updated);
         return updated;
@@ -373,7 +831,7 @@ export default function Avatars() {
 
       // Update the modal avatar if it's currently open and matches the renamed avatar
       if (creationsModalAvatar && creationsModalAvatar.id === editingAvatarId) {
-        setCreationsModalAvatar(prev => prev ? { ...prev, name: trimmed } : null);
+        setCreationsModalAvatar(prev => prev ? { ...prev, name: normalizedName } : null);
       }
 
       setEditingAvatarId(null);
@@ -684,14 +1142,34 @@ export default function Avatars() {
     setSelectedFullImage(null);
   }, []);
 
-  const openAvatarFullSizeView = useCallback(() => {
+  const openAvatarFullSizeView = useCallback((imageId: string) => {
+    setActiveAvatarImageId(imageId);
     setIsAvatarFullSizeOpen(true);
   }, []);
 
   const closeAvatarFullSizeView = useCallback(() => {
     setIsAvatarFullSizeOpen(false);
+    setActiveAvatarImageId(null);
   }, []);
 
+  const navigateAvatarImage = useCallback(
+    (direction: "prev" | "next") => {
+      if (!creationsModalAvatar) return;
+      const images = creationsModalAvatar.images;
+      if (images.length < 2) return;
+      const currentId = activeAvatarImageId ?? creationsModalAvatar.primaryImageId;
+      const currentIndex = Math.max(
+        0,
+        images.findIndex(image => image.id === currentId),
+      );
+      const nextIndex =
+        direction === "prev"
+          ? (currentIndex > 0 ? currentIndex - 1 : images.length - 1)
+          : (currentIndex < images.length - 1 ? currentIndex + 1 : 0);
+      setActiveAvatarImageId(images[nextIndex]?.id ?? images[0]?.id ?? null);
+    },
+    [activeAvatarImageId, creationsModalAvatar],
+  );
 
   const confirmUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
@@ -738,6 +1216,9 @@ export default function Avatars() {
   const closeCreationsModal = useCallback(() => {
     setCreationsModalAvatar(null);
     setMissingAvatarSlug(null);
+    setAvatarImageUploadError(null);
+    setAvatarImageUploadTarget(null);
+    setActiveAvatarImageId(null);
     if (avatarSlug) {
       navigate("/create/avatars", { replace: true });
     }
@@ -765,8 +1246,7 @@ export default function Avatars() {
     [navigate],
   );
 
-  const hasGalleryImages = galleryImages.length > 0;
-  const disableSave = !selection || !avatarName.trim();
+  const disableSave = !selection;
   const subtitle = useMemo(() => defaultSubtitle, []);
 
   const renderAvatarCard = (
@@ -775,34 +1255,42 @@ export default function Avatars() {
   ) => {
     const disableModalTrigger = options?.disableModalTrigger ?? false;
     const keyPrefix = options?.keyPrefix ?? "avatar";
+    const isEditing = editingAvatarId === avatar.id;
+    const isInteractive = !(disableModalTrigger || isEditing);
+    const displayName = avatar.name.trim() ? avatar.name : "Enter name...";
+
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
         className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
-          disableModalTrigger ? "" : " cursor-pointer"
+          isInteractive ? " cursor-pointer" : ""
         }`}
-        role={disableModalTrigger ? undefined : "button"}
-        tabIndex={disableModalTrigger ? -1 : 0}
-        aria-label={disableModalTrigger ? undefined : `View creations for ${avatar.name}`}
+        role={isInteractive ? "button" : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
+        aria-label={isInteractive ? `View creations for ${displayName}` : undefined}
         onClick={
-          disableModalTrigger
-            ? undefined
-            : () => {
+          isInteractive
+            ? () => {
                 openCreationsModal(avatar);
               }
+            : undefined
         }
         onKeyDown={
-          disableModalTrigger
-            ? undefined
-            : event => {
+          isInteractive
+            ? event => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   openCreationsModal(avatar);
                 }
               }
+            : undefined
         }
       >
-        <div className="relative aspect-square overflow-hidden">
+        <div
+          className="relative aspect-square overflow-hidden card-media-frame"
+          data-has-image={Boolean(avatar.imageUrl)}
+          style={createCardImageStyle(avatar.imageUrl)}
+        >
           <div className="absolute left-2 top-2 z-10">
             <button
               type="button"
@@ -826,7 +1314,7 @@ export default function Avatars() {
               title="Edit Avatar"
               aria-label="Edit Avatar"
             >
-              <Edit className="w-3.5 h-3.5" />
+              <Edit className="w-3 h-3" />
             </button>
             <ImageActionMenuPortal
               anchorEl={disableModalTrigger 
@@ -842,7 +1330,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToImage(avatar);
@@ -858,7 +1346,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleNavigateToVideo(avatar);
@@ -901,7 +1389,7 @@ export default function Avatars() {
               title="More options"
               aria-label="More options"
             >
-              <MoreHorizontal className="w-3.5 h-3.5" />
+              <MoreHorizontal className="w-3 h-3" />
             </button>
             <ImageActionMenuPortal
               anchorEl={avatarMoreMenu?.avatarId === avatar.id ? avatarMoreMenu?.anchor ?? null : null}
@@ -911,7 +1399,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDownloadImage(avatar.imageUrl);
@@ -923,7 +1411,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleCopyLink(avatar.imageUrl);
@@ -935,7 +1423,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleManageFolders(avatar.imageUrl);
@@ -947,7 +1435,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   setAvatarToPublish(avatar);
@@ -962,72 +1450,120 @@ export default function Avatars() {
           <img
             src={avatar.imageUrl}
             alt={avatar.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover relative z-[1]"
             loading="lazy"
           />
-          <div className="absolute bottom-0 left-0 right-0 hidden lg:block">
-            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
-              {editingAvatarId === avatar.id ? (
-                <form
-                  className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
-                  onSubmit={submitRename}
-                >
-                  <input
-                    className={inputs.compact}
-                    value={editingName}
-                    onChange={event => setEditingName(event.target.value)}
-                    onKeyDown={event => {
-                      if (event.key === "Escape") {
-                        event.preventDefault();
-                        cancelRenaming();
-                      }
-                    }}
-                    autoFocus
-                  />
-                  <div className="flex items-center gap-2">
+          <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
+            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-2.5">
+              <div className="flex h-[32px] items-center gap-2">
+                {editingAvatarId === avatar.id ? (
+                  <form
+                    className="flex h-full flex-1 items-center gap-2"
+                    onSubmit={submitRename}
+                    onClick={event => event.stopPropagation()}
+                  >
+                    <input
+                      className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                      placeholder="Enter name..."
+                      value={editingName}
+                      onChange={event => setEditingName(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          cancelRenaming();
+                        }
+                      }}
+                      autoFocus
+                    />
                     <button
                       type="submit"
-                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
+                      className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
                     >
                       <Check className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      className="text-theme-white/70 hover:text-theme-text transition-colors duration-200"
-                      onClick={cancelRenaming}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-raleway font-normal text-theme-text">{avatar.name}</p>
-                    <button
-                      type="button"
-                      className={`text-theme-white/70 hover:text-theme-text transition-colors duration-200 ${
-                        disableModalTrigger 
-                          ? 'opacity-100' 
-                          : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      onClick={() => startRenaming(avatar)}
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                  </div>
-                  {avatar.published && (
-                    <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                      <div className="flex items-center gap-1">
+                  </form>
+                ) : (
+                  <>
+                    <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-light text-theme-text">
+                      {displayName}
+                    </p>
+                    {!disableModalTrigger && (
+                      <button
+                        type="button"
+                        className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          startRenaming(avatar);
+                        }}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                    {avatar.published && (
+                      <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                         <Globe className="w-3 h-3 text-theme-text" />
                         <span className="leading-none">Public</span>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Mobile version of avatar name and publish status */}
+        <div className="lg:hidden space-y-3 px-4 py-4">
+          {editingAvatarId === avatar.id ? (
+            <form
+              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5"
+              onSubmit={submitRename}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <input
+                className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                placeholder="Enter name..."
+                value={editingName}
+                onChange={event => setEditingName(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    cancelRenaming();
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+            </form>
+          ) : (
+            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5">
+                <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-light text-theme-text">
+                  {displayName}
+              </p>
+              {!disableModalTrigger && (
+                <button
+                  type="button"
+                  className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    startRenaming(avatar);
+                  }}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+              {avatar.published && (
+                <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
+                  <Globe className="w-3 h-3 text-theme-text" />
+                  <span className="leading-none">Public</span>
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -1050,13 +1586,23 @@ export default function Avatars() {
     return items;
   }, [creationsModalAvatar, galleryImages]);
 
+  const activeAvatarImage = useMemo(() => {
+    if (!creationsModalAvatar) return null;
+    const candidateId = activeAvatarImageId ?? creationsModalAvatar.primaryImageId;
+    return creationsModalAvatar.images.find(image => image.id === candidateId) ?? creationsModalAvatar.images[0] ?? null;
+  }, [activeAvatarImageId, creationsModalAvatar]);
+
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
       className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
-      <div className="relative aspect-square overflow-hidden">
+      <div
+        className="relative aspect-square overflow-hidden card-media-frame"
+        data-has-image={Boolean(image.url)}
+        style={createCardImageStyle(image.url)}
+      >
         <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
           <div className="relative">
             <button
@@ -1073,7 +1619,7 @@ export default function Avatars() {
               title="Edit image"
               aria-label="Edit image"
             >
-              <Edit className="w-3.5 h-3.5" />
+              <Edit className="w-3 h-3" />
             </button>
             <ImageActionMenuPortal
               anchorEl={galleryEditMenu?.imageUrl === image.url ? galleryEditMenu?.anchor ?? null : null}
@@ -1083,7 +1629,7 @@ export default function Avatars() {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleEditCreation(image);
@@ -1095,7 +1641,7 @@ export default function Avatars() {
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   navigate("/create/video", {
@@ -1140,7 +1686,7 @@ export default function Avatars() {
             title="More options"
             aria-label="More options"
           >
-            <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
           </button>
           <ImageActionMenuPortal
             anchorEl={creationMoreMenu?.imageUrl === image.url ? creationMoreMenu?.anchor ?? null : null}
@@ -1150,7 +1696,7 @@ export default function Avatars() {
           >
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleDownloadImage(image.url);
@@ -1162,7 +1708,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleCopyLink(image.url);
@@ -1174,7 +1720,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleManageFolders(image.url);
@@ -1186,7 +1732,7 @@ export default function Avatars() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleCreationPublish(image.url);
@@ -1201,13 +1747,13 @@ export default function Avatars() {
         <img
           src={image.url}
           alt={image.prompt || "Avatar creation"}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover relative z-[1]"
           loading="lazy"
         />
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100 hidden lg:block">
           <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
             <div className="space-y-2">
-              <p className="text-sm font-raleway text-theme-white leading-relaxed line-clamp-3">
+              <p className="text-xs font-raleway text-theme-white leading-relaxed line-clamp-3">
                 {image.prompt || "Untitled creation"}
               </p>
               <div className="flex items-center justify-between text-xs font-raleway text-theme-white/70">
@@ -1245,6 +1791,440 @@ export default function Avatars() {
     </div>
   );
 
+  const renderListView = () => (
+    <>
+      <header className="max-w-3xl text-left">
+        <div className={`${headings.tripleHeading.container} text-left`}>
+          <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
+            <Users className="h-4 w-4 text-theme-white/60" />
+            Avatars
+          </p>
+          <h1
+            className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
+          >
+            Create your <span className="text-theme-text">Avatar</span>.
+          </h1>
+          <p className={`${headings.tripleHeading.description} -mb-4`}>
+            {subtitle}
+          </p>
+        </div>
+      </header>
+
+      {!hasAvatars && (
+        <div className="w-full">
+          <Suspense fallback={null}>
+            <AvatarCreationOptions
+              selection={selection}
+              uploadError={uploadError}
+              isDragging={isDragging}
+              avatarName={avatarName}
+              disableSave={disableSave}
+              onAvatarNameChange={handleAvatarNameChange}
+              onSave={handleSaveAvatar}
+              onClearSelection={() => setSelection(null)}
+              onProcessFile={processImageFile}
+              onDragStateChange={setIsDragging}
+              onUploadError={setUploadError}
+            />
+          </Suspense>
+        </div>
+      )}
+
+      {hasAvatars && (
+        <div className="w-full max-w-6xl space-y-5">
+          <div className="flex items-center gap-2 text-left">
+            <h2 className="text-2xl font-light font-raleway text-theme-text">Your Avatars</h2>
+            <button
+              type="button"
+              className={iconButtons.lg}
+              onClick={openAvatarCreator}
+              aria-label="Create Avatar"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
+            {avatars.map(avatar => renderAvatarCard(avatar))}
+          </div>
+        </div>
+      )}
+
+      {missingAvatarSlug && (
+        <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
+          <p className="text-sm font-raleway text-theme-white/80">
+            We couldn't find an avatar for <span className="font-semibold text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
+          </p>
+          <button
+            type="button"
+            className={`mt-4 ${buttons.glassPrompt}`}
+            onClick={() => navigate("/create/avatars", { replace: true })}
+          >
+            <Users className="h-4 w-4" />
+            Back to all avatars
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  const renderProfileView = () => {
+    if (!creationsModalAvatar) return null;
+    const avatarImages = creationsModalAvatar.images;
+    const creationImages = creationModalItems
+      .filter(item => item.kind === "image")
+      .map(item => item.image);
+    const imageSlots = Array.from({ length: MAX_AVATAR_IMAGES });
+    const firstEmptySlotIndex = avatarImages.length < MAX_AVATAR_IMAGES ? avatarImages.length : null;
+
+    const extractFilesFromDataTransfer = (dataTransfer: DataTransfer | null): File[] => {
+      if (!dataTransfer) return [];
+      if (dataTransfer.items && dataTransfer.items.length > 0) {
+        const fromItems = Array.from(dataTransfer.items)
+          .filter(item => item.kind === "file")
+          .map(item => item.getAsFile())
+          .filter((file): file is File => Boolean(file));
+        if (fromItems.length > 0) {
+          return fromItems;
+        }
+      }
+      return Array.from(dataTransfer.files ?? []);
+    };
+
+    const focusFirstEmptySlot = () => {
+      if (firstEmptySlotIndex !== null) {
+        setDraggingOverSlot(firstEmptySlotIndex);
+      } else {
+        setDraggingOverSlot(null);
+      }
+    };
+
+    const maybeClearDraggingState = (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX;
+      const y = event.clientY;
+      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+        setDraggingOverSlot(null);
+      }
+    };
+
+    const handleSlotDrop = (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setDraggingOverSlot(null);
+      if (!creationsModalAvatar) return;
+      const droppedFiles = extractFilesFromDataTransfer(event.dataTransfer ?? null);
+      void handleAddAvatarImages(creationsModalAvatar.id, droppedFiles);
+    };
+
+    return (
+      <div className="flex flex-col gap-8">
+        <header className="max-w-3xl text-left">
+          <button
+            type="button"
+            className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
+            onClick={closeCreationsModal}
+          >
+            ← Back to Avatars
+          </button>
+          <div className={`${headings.tripleHeading.container} text-left`}>
+            <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
+            <div className="flex flex-wrap items-center gap-3">
+              {editingAvatarId === creationsModalAvatar.id ? (
+                <form
+                  className="flex h-12 items-center gap-2 rounded-3xl border border-theme-mid bg-theme-black/60 px-4"
+                  onSubmit={submitRename}
+                >
+                  <input
+                    className="bg-transparent text-3xl font-raleway text-theme-text focus:outline-none"
+                    value={editingName}
+                    onChange={event => setEditingName(event.target.value)}
+                    autoFocus
+                    placeholder="Enter name..."
+                  />
+                  <button
+                    type="submit"
+                    className="text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                    onClick={cancelRenaming}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                    {creationsModalAvatar.name}
+                  </h1>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
+                      onClick={() => startRenaming(creationsModalAvatar)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget)}
+                      className="image-action-btn parallax-large"
+                      title="Avatar actions"
+                      aria-label="Avatar actions"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </button>
+                    <ImageActionMenuPortal
+                      anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
+                      open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
+                      onClose={closeModalAvatarEditMenu}
+                      zIndex={1200}
+                    >
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNavigateToImage(creationsModalAvatar);
+                    closeModalAvatarEditMenu();
+                  }}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Create image
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNavigateToVideo(creationsModalAvatar);
+                    closeModalAvatarEditMenu();
+                  }}
+                >
+                  <Camera className="h-4 w-4" />
+                  Make video
+                </button>
+              </ImageActionMenuPortal>
+                    <button
+                      type="button"
+                      onClick={(event) => toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget)}
+                      className="image-action-btn parallax-large"
+                      title="More options"
+                      aria-label="More options"
+                    >
+                      <MoreHorizontal className="w-3 h-3" />
+                    </button>
+                    <ImageActionMenuPortal
+                      anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                      open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
+                      onClose={closeAvatarMoreMenu}
+                      zIndex={1200}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDownloadImage(creationsModalAvatar.imageUrl);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleCopyLink(creationsModalAvatar.imageUrl);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleManageFolders(creationsModalAvatar.imageUrl);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <FolderIcon className="h-4 w-4" />
+                        Manage folders
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setAvatarToPublish(creationsModalAvatar);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Globe className="h-4 w-4" />
+                        {creationsModalAvatar.published ? "Unpublish" : "Publish"}
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-300 transition-colors duration-200 hover:text-rose-200"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setAvatarToDelete(creationsModalAvatar);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete avatar
+                      </button>
+                    </ImageActionMenuPortal>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <p className={`${headings.tripleHeading.description} -mb-4`}>
+              Manage creations with your Avatar.
+            </p>
+          </div>
+        </header>
+
+        <div className="w-full max-w-6xl space-y-5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-light font-raleway text-theme-text">Avatar Images</h2>
+            <span className="text-xs font-raleway text-theme-white">
+              {avatarImages.length}/{MAX_AVATAR_IMAGES} images
+            </span>
+          </div>
+          <div className="flex gap-4">
+            {imageSlots.map((_, index) => {
+              const image = avatarImages[index];
+              if (!image) {
+                return (
+                  <div
+                    key={`placeholder-${index}`}
+                    className={`flex aspect-square w-60 h-60 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
+                      draggingOverSlot === index
+                        ? "border-brand drag-active"
+                        : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
+                    }`}
+                    onClick={openAvatarImageUploader}
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      focusFirstEmptySlot();
+                    }}
+                    onDragLeave={maybeClearDraggingState}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onDrop={handleSlotDrop}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openAvatarImageUploader();
+                      }
+                    }}
+                    aria-label="Upload avatar image"
+                  >
+                    {uploadingAvatarIds.has(creationsModalAvatar.id) ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Upload className="h-5 w-5" />
+                    )}
+                  </div>
+                );
+              }
+
+              const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+
+              return (
+                <div key={image.id} className="flex flex-col items-center gap-2">
+                  <div
+                    className="relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      focusFirstEmptySlot();
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onDragLeave={maybeClearDraggingState}
+                    onDrop={handleSlotDrop}
+                  >
+                    <img
+                      src={image.url}
+                      alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                      className="h-full w-full object-cover cursor-pointer"
+                      onClick={() => openAvatarFullSizeView(image.id)}
+                    />
+                    {isPrimary && (
+                      <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-1 text-[10px] font-raleway text-theme-text`}>
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
+                    {!isPrimary && (
+                      <button
+                        type="button"
+                        className="rounded-full border border-theme-mid px-2 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
+                        onClick={() => handleSetPrimaryAvatarImage(creationsModalAvatar.id, image.id)}
+                      >
+                        Set primary
+                      </button>
+                    )}
+                    {avatarImages.length > 1 && (
+                      <button
+                        type="button"
+                        className="rounded-full border border-theme-mid px-2 py-1 text-rose-200 transition-colors duration-200 hover:border-rose-300 hover:text-rose-100"
+                        onClick={() => handleRemoveAvatarImage(creationsModalAvatar.id, image.id)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {avatarImageUploadError && (
+            <p className="text-sm font-raleway text-rose-300">{avatarImageUploadError}</p>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-raleway text-theme-text">
+            Creations with {creationsModalAvatar.name}
+          </h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {creationImages.map(image => renderCreationImageCard(image))}
+          </div>
+          {creationImages.length === 0 && (
+            <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+              <p className="text-sm font-raleway text-theme-light">
+                Generate a new image with this avatar to see it appear here.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (!creationsModalAvatar) return;
 
@@ -1260,6 +2240,9 @@ export default function Avatars() {
       } else if (isFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         event.preventDefault();
         navigateFullSizeImage(event.key === "ArrowLeft" ? 'prev' : 'next');
+      } else if (isAvatarFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        navigateAvatarImage(event.key === "ArrowLeft" ? "prev" : "next");
       }
     };
 
@@ -1267,66 +2250,28 @@ export default function Avatars() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView]);
+  }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView, navigateAvatarImage]);
+
+  const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
+  const showProfileView = Boolean(creationsModalAvatar);
 
   return (
     <div className={layout.page}>
-      <div className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
-        <section className={`${layout.container} flex flex-col gap-10 items-center`}>
-          <header className="max-w-3xl text-center">
-            <div className={`${headings.tripleHeading.container} text-center`}>
-              <p className={`${headings.tripleHeading.eyebrow} justify-center`}>
-                <Users className="h-4 w-4 text-theme-white/60" />
-                avatars
-              </p>
-              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Create your Avatar.</h1>
-              <p className={headings.tripleHeading.description}>{subtitle}</p>
-            </div>
-            <div className="mt-8">
-              <button
-              type="button"
-              className={buttons.primary}
-              onClick={() => {
-                setIsPanelOpen(true);
-                if (!selection) {
-                  setAvatarName(deriveSuggestedName());
-                }
-              }}
-            >
-              <Users className="h-5 w-5" />
-              Create Avatar
-            </button>
-            </div>
-          </header>
+      <div className={layout.backdrop} aria-hidden />
+      <section className={`relative z-10 ${sectionLayoutClass}`}>
+        <div className={`${layout.container} flex flex-col gap-10`}>
+          {showProfileView ? renderProfileView() : renderListView()}
+        </div>
+      </section>
 
-          {missingAvatarSlug && (
-            <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
-              <p className="text-sm font-raleway text-theme-white/80">
-                We couldn't find an avatar for <span className="font-semibold text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
-              </p>
-              <button
-                type="button"
-                className={`mt-4 ${buttons.glassPrompt}`}
-                onClick={() => navigate("/create/avatars", { replace: true })}
-              >
-                <Users className="h-4 w-4" />
-                Back to all avatars
-              </button>
-            </div>
-          )}
-
-          <div className="w-full max-w-6xl space-y-5">
-            <div className="space-y-2 text-left">
-              <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
-            </div>
-            {avatars.length > 0 && (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
-                {avatars.map(avatar => renderAvatarCard(avatar))}
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
+      <input
+        ref={avatarImageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleAvatarImageInputChange}
+      />
 
       {isPanelOpen && (
         <Suspense fallback={null}>
@@ -1337,12 +2282,9 @@ export default function Avatars() {
             isDragging={isDragging}
             avatarName={avatarName}
             disableSave={disableSave}
-            galleryImages={galleryImages}
-            hasGalleryImages={hasGalleryImages}
             onClose={resetPanel}
-            onAvatarNameChange={setAvatarName}
+            onAvatarNameChange={handleAvatarNameChange}
             onSave={handleSaveAvatar}
-            onSelectFromGallery={(imageUrl) => setSelection({ imageUrl, source: 'gallery', sourceId: imageUrl })}
             onClearSelection={() => setSelection(null)}
             onProcessFile={processImageFile}
             onDragStateChange={setIsDragging}
@@ -1350,229 +2292,102 @@ export default function Avatars() {
           />
         </Suspense>
       )}
-
-      {creationsModalAvatar && (
-        <div
-          className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
-          onClick={closeCreationsModal}
-        >
-          <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-theme-dark bg-theme-black/90 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-              onClick={closeCreationsModal}
-              aria-label="Close Avatar creations"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex flex-col gap-6 p-6 lg:p-8">
-              <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-raleway text-theme-text">
-                  Creations with {creationsModalAvatar.name}
-                </h2>
-                <p className="text-sm font-raleway text-theme-white">
-                  Manage creations with your Avatar.
-                </p>
-              </div>
-
-              {/* Main Avatar Display */}
-              <div className="flex justify-start">
-                <div 
-                  className="w-1/3 sm:w-1/5 lg:w-1/6 cursor-pointer"
-                  onClick={openAvatarFullSizeView}
-                >
-                  {renderAvatarCard(creationsModalAvatar, { disableModalTrigger: true, keyPrefix: "modal-avatar" })}
-                </div>
-              </div>
-
-              {/* Other Creations Grid */}
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 justify-items-center">
-                {creationModalItems
-                  .filter(item => item.kind === "image")
-                  .map(item => renderCreationImageCard(item.image))}
-              </div>
-
-              {creationModalItems.filter(item => item.kind === "image").length === 0 && (
-                <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
-                  <p className="text-sm font-raleway text-theme-white/70">
-                    Generate a new image with this avatar to see it appear here.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Full-size avatar modal */}
-      {isAvatarFullSizeOpen && creationsModalAvatar && (
+      {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
         <div
           className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-center justify-center p-4"
           onClick={closeAvatarFullSizeView}
         >
-          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={creationsModalAvatar.imageUrl} 
-              alt={creationsModalAvatar.name} 
-              className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+          <div
+            className="relative max-w-[95vw] max-h-[90vh] group flex items-center justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {creationsModalAvatar.images.length > 1 && (
+              <>
+                <button
+                  onClick={() => navigateAvatarImage("prev")}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  title="Previous image"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                </button>
+                <button
+                  onClick={() => navigateAvatarImage("next")}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  title="Next image"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                </button>
+              </>
+            )}
+
+            <img
+              src={activeAvatarImage.url}
+              alt={`${creationsModalAvatar.name} avatar view`}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
             />
-            
-            {/* Action buttons - only show on hover */}
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-              <div className={`pointer-events-auto ${
-                modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
+
+            <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+              {creationsModalAvatar.primaryImageId !== activeAvatarImage.id && (
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
-                  }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
-                  title="Edit Avatar"
-                  aria-label="Edit Avatar"
+                  className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
+                  onClick={() => handleSetPrimaryAvatarImage(creationsModalAvatar.id, activeAvatarImage.id)}
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Check className="h-3 w-3" />
+                  Set primary
                 </button>
-                <ImageActionMenuPortal
-                  anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
-                  open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
-                  onClose={closeModalAvatarEditMenu}
-                  zIndex={10700}
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleNavigateToImage(creationsModalAvatar);
-                      closeModalAvatarEditMenu();
-                    }}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    Create image
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleNavigateToVideo(creationsModalAvatar);
-                      closeModalAvatarEditMenu();
-                    }}
-                  >
-                    <Camera className="h-4 w-4" />
-                    Make video
-                  </button>
-                </ImageActionMenuPortal>
-              </div>
-              <div className={`pointer-events-auto ${
-                avatarMoreMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
+              )}
+              {creationsModalAvatar.images.length > 1 && (
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
+                  className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-rose-200 hover:border-rose-300`}
+                  onClick={() => {
+                    handleRemoveAvatarImage(creationsModalAvatar.id, activeAvatarImage.id);
+                    closeAvatarFullSizeView();
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
-                  title="More options"
-                  aria-label="More options"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <Trash2 className="h-3 w-3" />
+                  Remove
                 </button>
-                <ImageActionMenuPortal
-                  anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
-                  open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
-                  onClose={closeAvatarMoreMenu}
-                  zIndex={10700}
+              )}
+              {creationsModalAvatar.primaryImageId === activeAvatarImage.id && (
+                <span className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text`}
                 >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleDownloadImage(creationsModalAvatar.imageUrl);
-                      closeAvatarMoreMenu();
-                    }}
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleCopyLink(creationsModalAvatar.imageUrl);
-                      closeAvatarMoreMenu();
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy link
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleManageFolders(creationsModalAvatar.imageUrl);
-                      closeAvatarMoreMenu();
-                    }}
-                  >
-                    <FolderIcon className="h-4 w-4" />
-                    Manage folders
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setAvatarToPublish(creationsModalAvatar);
-                      closeAvatarMoreMenu();
-                    }}
-                  >
-                    <Globe className="h-4 w-4" />
-                    {creationsModalAvatar.published ? 'Unpublish' : 'Publish'}
-                  </button>
-                </ImageActionMenuPortal>
-              </div>
+                  <Users className="h-3 w-3" />
+                  Primary image
+                </span>
+              )}
             </div>
-            
-            {/* Info bar - only on hover */}
-            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
-              avatarMoreMenu?.avatarId === creationsModalAvatar.id || modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-            }`}>
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-base font-raleway leading-relaxed font-semibold">
-                    {creationsModalAvatar.name}
-                  </div>
-                  {creationsModalAvatar.published && (
-                    <div className="mt-2 flex justify-center">
-                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-3 h-3 text-theme-text" />
-                          <span className="leading-none">Public</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+
+            <div className="absolute right-4 top-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
+                onClick={() => handleDownloadImage(activeAvatarImage.url)}
+              >
+                <Download className="h-3 w-3" />
+                Download
+              </button>
+              <button
+                type="button"
+                className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
+                onClick={() => handleCopyLink(activeAvatarImage.url)}
+              >
+                <Copy className="h-3 w-3" />
+                Copy link
+              </button>
+              <button
+                type="button"
+                className={`${glass.promptDark} inline-flex items-center justify-center rounded-full p-2 text-theme-text hover:border-theme-text`}
+                onClick={closeAvatarFullSizeView}
+                aria-label="Close avatar image"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </div>
-            
-            <button
-              onClick={closeAvatarFullSizeView}
-              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
-              aria-label="Close full size view"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </div>
       )}
@@ -1627,11 +2442,11 @@ export default function Avatars() {
                     event.stopPropagation();
                     toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="Edit image"
                   aria-label="Edit image"
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Edit className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={galleryEditMenu?.imageUrl === selectedFullImage.url ? galleryEditMenu?.anchor ?? null : null}
@@ -1641,7 +2456,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleEditCreation(selectedFullImage);
@@ -1653,7 +2468,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate("/create/video", {
@@ -1679,7 +2494,7 @@ export default function Avatars() {
                     event.stopPropagation();
                     confirmDeleteImage(selectedFullImage);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="Delete image" 
                   aria-label="Delete image"
                 >
@@ -1691,11 +2506,11 @@ export default function Avatars() {
                     event.stopPropagation();
                     toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
                   title="More options" 
                   aria-label="More options"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
                   anchorEl={creationMoreMenu?.imageUrl === selectedFullImage.url ? creationMoreMenu?.anchor ?? null : null}
@@ -1705,7 +2520,7 @@ export default function Avatars() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDownloadImage(selectedFullImage.url);
@@ -1717,7 +2532,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleCopyLink(selectedFullImage.url);
@@ -1729,7 +2544,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleManageFolders(selectedFullImage.url);
@@ -1741,7 +2556,7 @@ export default function Avatars() {
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       toggleCreationPublish(selectedFullImage.url);
@@ -1825,10 +2640,10 @@ export default function Avatars() {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   Publish Image
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to publish this image? It will be visible to other users.
                 </p>
               </div>
@@ -1858,10 +2673,10 @@ export default function Avatars() {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   Unpublish Image
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to unpublish this image? It will no longer be visible to other users.
                 </p>
               </div>
@@ -1891,8 +2706,8 @@ export default function Avatars() {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Manage Folders</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Check folders to add or remove this item from.
                 </p>
               </div>
@@ -2006,8 +2821,8 @@ export default function Avatars() {
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Delete Avatar</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                 </p>
               </div>
@@ -2038,10 +2853,10 @@ export default function Avatars() {
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {avatarToPublish.published 
                     ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
                     : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
@@ -2076,8 +2891,8 @@ export default function Avatars() {
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete image</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Delete image</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to delete this image? This action cannot be undone.
                 </p>
               </div>

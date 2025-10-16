@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
-import { layout, text, buttons, headings, glass } from "./styles/designSystem";
+import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
 
@@ -74,10 +74,16 @@ function UseCaseCard({
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >
-      <img src={imageUrl} alt={imageAlt} className="h-48 w-full object-cover" />
+      <img
+        src={imageUrl}
+        alt={imageAlt}
+        loading="lazy"
+        decoding="async"
+        className="h-48 w-full object-cover"
+      />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
-          <h2 className="text-[16px] font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
     </div>
@@ -98,7 +104,7 @@ function ComingSoonPanel({ label, className }: { label: string; className?: stri
   const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
   return (
     <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""}`}>
-      <h2 className="text-xl font-raleway font-normal text-theme-text">{formattedLabel}</h2>
+      <h2 className="text-xl font-raleway font-light text-theme-text">{formattedLabel}</h2>
       <p className="mt-2 text-sm font-raleway text-theme-white">Coming soon.</p>
     </div>
   );
@@ -170,20 +176,80 @@ function Home() {
 
   return (
     <div className={`${layout.page} home-page`}>
+      {/* Colorful gradient with grain - top right corner decoration */}
+      <div className="fixed pointer-events-none z-0 overflow-hidden" style={{ top: '-140px', right: '-40px', width: '70vw', height: '65vh', maxWidth: '1100px', maxHeight: '700px' }}>
+        {/* Cyan blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '-15%',
+            right: '-15%',
+            width: '70%',
+            height: '70%',
+            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.38) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        {/* Blue blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '-5%',
+            right: '12%',
+            width: '72%',
+            height: '72%',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.38) 0%, transparent 70%)',
+            filter: 'blur(85px)',
+          }}
+        />
+        {/* Red blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '15%',
+            right: '10%',
+            width: '60%',
+            height: '60%',
+            background: 'radial-gradient(circle, rgba(239, 68, 68, 0.32) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        {/* Amber blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '8%',
+            right: '35%',
+            width: '55%',
+            height: '55%',
+            background: 'radial-gradient(circle, rgba(251, 191, 36, 0.32) 0%, transparent 70%)',
+            filter: 'blur(85px)',
+          }}
+        />
+        {/* Grain overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' opacity=\'0.15\'/%3E%3C/svg%3E")',
+            mixBlendMode: 'overlay',
+            opacity: 0.5,
+          }}
+        />
+      </div>
       <div className="relative z-10">
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
             <div className="flex flex-col gap-4">
-              <div className="home-hero relative z-10">
-                <div className="home-hero-copy flex max-w-5xl flex-col gap-2">
-                    <div className="flex flex-col gap-2 lg:max-w-xl">
+              <div className="home-hero relative z-10 w-full">
+                <div className="flex items-start justify-between gap-4 w-full">
+                  <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
-                      Your Daily AI Generations.
+                      Your <span className={brandColors.orange}>Daily</span> AI Generations.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-left mt-0 mb-1`}>
                       Master all the best Creative AI Tools in one place.
                     </p>
-                    <div className="home-hero-actions flex flex-wrap gap-3">
+                    <div className="home-hero-actions flex flex-wrap gap-2">
                       <Link to="/learn/use-cases" className={buttons.ghost}>
                         Learn
                       </Link>
@@ -192,11 +258,14 @@ function Home() {
                       </Link>
                     </div>
                   </div>
+                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-light`}>
+                    day<span className={brandColors.orange}>gen</span>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
-                  className={`${glass.surface} flex flex-col rounded-3xl border-theme-dark p-4 lg:h-full`}
+                  className={`${glass.surface} rounded-3xl border-theme-dark p-4 lg:h-full`}
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >
@@ -243,9 +312,9 @@ function Home() {
                           imageAlt="Artistic images example"
                         />
                         <UseCaseCard
-                          title="product visualizations"
+                          title="product placement"
                           imageUrl="/product visualizations.png"
-                          imageAlt="Product visualizations example"
+                          imageAlt="Product placement example"
                         />
                         <UseCaseCard
                           title="virtual try-on"

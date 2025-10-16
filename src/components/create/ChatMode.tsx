@@ -18,6 +18,7 @@ import {
   Users,
   Wand2,
   X,
+  Scan,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -34,6 +35,9 @@ import type { AvatarSelection, StoredAvatar } from "../avatars/types";
 import { createAvatarRecord, normalizeStoredAvatars } from "../../utils/avatars";
 import { getPersistedValue, setPersistedValue } from "../../lib/clientStorage";
 import { getToolLogo, hasToolLogo } from "../../utils/toolLogos";
+import { AspectRatioDropdown } from "../AspectRatioDropdown";
+import type { AspectRatioOption, GeminiAspectRatio } from "../../types/aspectRatio";
+import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../../data/aspectRatios";
 
 const AvatarCreationModal = lazy(() => import("../avatars/AvatarCreationModal"));
 const SettingsMenu = lazy(() => import("./SettingsMenu"));
@@ -148,18 +152,6 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
   },
 ] as const;
 
-type GeminiAspectRatio =
-  | "1:1"
-  | "2:3"
-  | "3:2"
-  | "3:4"
-  | "4:3"
-  | "4:5"
-  | "5:4"
-  | "9:16"
-  | "16:9"
-  | "21:9";
-
 const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
@@ -244,6 +236,7 @@ const ChatMode: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
   const [fluxModel, setFluxModel] = useState<"flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max">(
     "flux-pro-1.1",
   );
@@ -265,6 +258,7 @@ const ChatMode: React.FC = () => {
   const productButtonRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
 
   const currentModel = useMemo(() => {
     return IMAGE_MODEL_OPTIONS.find(model => model.id === selectedModel) ?? IMAGE_MODEL_OPTIONS[0];
@@ -277,6 +271,36 @@ const ChatMode: React.FC = () => {
   const isQwenModel = selectedModel === "qwen-image";
   const isLumaPhotonImageModel =
     selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
+
+  const aspectRatioConfig = useMemo<{
+    options: ReadonlyArray<AspectRatioOption>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+  } | null>(() => {
+    if (isGeminiModel) {
+      return {
+        options: GEMINI_ASPECT_RATIO_OPTIONS,
+        selectedValue: geminiAspectRatio,
+        onSelect: value => setGeminiAspectRatio(value as GeminiAspectRatio),
+      };
+    }
+
+    if (isQwenModel) {
+      return {
+        options: QWEN_ASPECT_RATIO_OPTIONS,
+        selectedValue: qwenSize,
+        onSelect: setQwenSize,
+      };
+    }
+
+    return null;
+  }, [isGeminiModel, geminiAspectRatio, isQwenModel, qwenSize]);
+
+  useEffect(() => {
+    if (!aspectRatioConfig) {
+      setIsAspectRatioMenuOpen(false);
+    }
+  }, [aspectRatioConfig]);
 
   useEffect(() => {
     setFooterVisible(false);
@@ -635,15 +659,26 @@ const ChatMode: React.FC = () => {
     const reader = new FileReader();
     reader.onload = async loadEvent => {
       const imageUrl = loadEvent.target?.result as string;
+      const createdAt = new Date().toISOString();
+      const imageId = `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const record: StoredAvatar = {
         id: `product-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         slug: `product-${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, ""),
         imageUrl,
-        createdAt: new Date().toISOString(),
+        createdAt,
         source: "upload",
         published: false,
         ownerId: user?.id,
+        primaryImageId: imageId,
+        images: [
+          {
+            id: imageId,
+            url: imageUrl,
+            createdAt,
+            source: "upload",
+          },
+        ],
       };
 
       const updated = [record, ...storedProducts];
@@ -846,8 +881,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <MessageCircle className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Start new chat</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Start new chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Name your conversation to keep things organized.
                   </p>
                   <input
@@ -877,8 +912,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Pencil className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Rename chat</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Rename chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Give this chat a new name to make it easier to find later.
                   </p>
                   <input
@@ -908,8 +943,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete chat</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete chat</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete “{chatToDelete.title || "New chat"}”? This action cannot be undone.
                   </p>
                 </div>
@@ -928,11 +963,11 @@ const ChatMode: React.FC = () => {
       )}
       <div className={`${layout.container} pb-6`}>
         <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-3">
-          <aside className="hidden h-full w-40 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
+          <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />
-                <h2 className="text-base font-raleway font-normal text-theme-white">History</h2>
+                <h2 className="text-base font-raleway font-light text-theme-white">History</h2>
               </div>
               <button
                 type="button"
@@ -969,7 +1004,7 @@ const ChatMode: React.FC = () => {
                           aria-pressed={isActive}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className={`truncate text-sm font-raleway font-normal ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                            <span className={`truncate text-sm font-raleway font-light ${isActive ? "text-theme-text" : "text-theme-white"}`}>
                               {session.title || "New chat"}
                             </span>
                             <div className="flex items-center gap-1">
@@ -1105,13 +1140,13 @@ const ChatMode: React.FC = () => {
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
-                        <div
-                          data-tooltip-for="reference-tooltip-chat"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
-                          style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                        >
-                          Upload Reference Image
-                        </div>
+                      <div
+                        data-tooltip-for="reference-tooltip-chat"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Reference Image
+                      </div>
                       </div>
                       <button
                         ref={avatarButtonRef}
@@ -1130,6 +1165,8 @@ const ChatMode: React.FC = () => {
                             <img
                               src={selectedAvatar.imageUrl}
                               alt={selectedAvatar.name}
+                              loading="lazy"
+                              decoding="async"
                               className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                             />
                             <button
@@ -1160,6 +1197,8 @@ const ChatMode: React.FC = () => {
                             <img
                               src={selectedProduct.imageUrl}
                               alt={selectedProduct.name}
+                              loading="lazy"
+                              decoding="async"
                               className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                             />
                             <button
@@ -1208,6 +1247,8 @@ const ChatMode: React.FC = () => {
                                 <img
                                   src={preview}
                                   alt={`Reference ${index + 1}`}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
                                 />
                                 <button
@@ -1288,14 +1329,14 @@ const ChatMode: React.FC = () => {
                               })}
                             </div>
                           ) : (
-                            <div className="rounded-2xl border border-theme-dark bg-theme-black p-4 text-sm font-raleway text-theme-white">
+                            <div className="rounded-2xl border border-theme-dark bg-theme-black p-4 text-sm font-raleway text-theme-light">
                               You haven't saved any Avatars yet. Visit the Avatars page to create one.
                             </div>
                           )}
                           {storedAvatars.length === 0 && (
                             <button
                               type="button"
-                              className={`w-full ${buttons.glassPromptCompact}`}
+                              className="w-full inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                               onClick={() => {
                                 navigate("/create/avatars");
                                 setIsAvatarPickerOpen(false);
@@ -1376,7 +1417,7 @@ const ChatMode: React.FC = () => {
                               })}
                             </div>
                           ) : (
-                            <div className="rounded-2xl border border-theme-dark bg-theme-black p-4 text-sm font-raleway text-theme-white">
+                            <div className="rounded-2xl border border-theme-dark bg-theme-black p-4 text-sm font-raleway text-theme-light">
                               You haven't added any Products yet. Click the + button above to add one.
                             </div>
                           )}
@@ -1396,8 +1437,78 @@ const ChatMode: React.FC = () => {
                           onRemoveRecentPrompt={removeRecentPrompt}
                           onUpdateSavedPrompt={updatePrompt}
                           onAddSavedPrompt={savePrompt}
-                          onSaveRecentPrompt={handleSaveRecentPrompt}
-                        />
+                      onSaveRecentPrompt={handleSaveRecentPrompt}
+                    />
+                      <button
+                        ref={modelSelectorRef}
+                        type="button"
+                        onClick={() => setIsModelSelectorOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
+                        aria-haspopup="listbox"
+                        aria-expanded={isModelSelectorOpen}
+                      >
+                        {hasToolLogo(currentModel.name) ? (
+                          <img
+                            src={getToolLogo(currentModel.name)!}
+                            alt={`${currentModel.name} logo`}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-4 w-4 flex-shrink-0 rounded object-contain"
+                          />
+                        ) : (
+                          <currentModel.Icon className="h-4 w-4 flex-shrink-0" />
+                        )}
+                        <span className="hidden xl:inline whitespace-nowrap text-sm text-theme-text">
+                          {currentModel.name}
+                        </span>
+                      </button>
+                      <AvatarPickerPortal
+                        anchorRef={modelSelectorRef}
+                        open={isModelSelectorOpen}
+                        onClose={() => setIsModelSelectorOpen(false)}
+                      >
+                        <div className="space-y-2">
+                          {IMAGE_MODEL_OPTIONS.map(model => {
+                            const isActive = model.id === selectedModel;
+                            return (
+                              <button
+                                key={model.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedModel(model.id);
+                                  setIsModelSelectorOpen(false);
+                                }}
+                                className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-150 ${
+                                  isActive
+                                    ? "border-theme-text bg-theme-text/10 text-theme-text"
+                                    : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
+                                }`}
+                              >
+                                {hasToolLogo(model.name) ? (
+                                  <img
+                                    src={getToolLogo(model.name)!}
+                                    alt={`${model.name} logo`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-5 w-5 flex-shrink-0 rounded object-contain"
+                                  />
+                                ) : (
+                                  <model.Icon
+                                    className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-theme-text" : "text-theme-white"}`}
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className={`truncate text-sm font-raleway ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                                    {model.name}
+                                  </div>
+                                  <div className="truncate text-xs font-raleway text-theme-light">{model.desc}</div>
+                                </div>
+                                {isActive && <Check className="h-4 w-4 flex-shrink-0 text-theme-text" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </AvatarPickerPortal>
                       <button
                         ref={settingsRef}
                         type="button"
@@ -1556,72 +1667,40 @@ const ChatMode: React.FC = () => {
                           />
                         </Suspense>
                       )}
-                      <button
-                        ref={modelSelectorRef}
-                        type="button"
-                        onClick={() => setIsModelSelectorOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
-                        aria-haspopup="listbox"
-                        aria-expanded={isModelSelectorOpen}
-                      >
-                        {hasToolLogo(currentModel.name) ? (
-                          <img
-                            src={getToolLogo(currentModel.name)!}
-                            alt={`${currentModel.name} logo`}
-                            className="h-4 w-4 flex-shrink-0 rounded object-contain"
+                      {aspectRatioConfig && (
+                        <div className="relative">
+                          <button
+                            ref={aspectRatioButtonRef}
+                            type="button"
+                            onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                            className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
+                            aria-label="Aspect ratio"
+                            onMouseEnter={(event) => {
+                              showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip-chat');
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip('aspect-ratio-tooltip-chat');
+                            }}
+                          >
+                            <Scan className="h-3.5 w-3.5" />
+                          </button>
+                          <div
+                            data-tooltip-for="aspect-ratio-tooltip-chat"
+                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                          >
+                            Aspect Ratio
+                          </div>
+                          <AspectRatioDropdown
+                            anchorRef={aspectRatioButtonRef}
+                            open={isAspectRatioMenuOpen}
+                            onClose={() => setIsAspectRatioMenuOpen(false)}
+                            options={aspectRatioConfig.options}
+                            selectedValue={aspectRatioConfig.selectedValue}
+                            onSelect={aspectRatioConfig.onSelect}
                           />
-                        ) : (
-                          <currentModel.Icon className="h-4 w-4 flex-shrink-0" />
-                        )}
-                        <span className="hidden xl:inline whitespace-nowrap text-sm text-theme-text">
-                          {currentModel.name}
-                        </span>
-                      </button>
-                      <AvatarPickerPortal
-                        anchorRef={modelSelectorRef}
-                        open={isModelSelectorOpen}
-                        onClose={() => setIsModelSelectorOpen(false)}
-                      >
-                        <div className="space-y-2">
-                          {IMAGE_MODEL_OPTIONS.map(model => {
-                            const isActive = model.id === selectedModel;
-                            return (
-                              <button
-                                key={model.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedModel(model.id);
-                                  setIsModelSelectorOpen(false);
-                                }}
-                                className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-150 ${
-                                  isActive
-                                    ? "border-theme-text bg-theme-text/10 text-theme-text"
-                                    : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
-                                }`}
-                              >
-                                {hasToolLogo(model.name) ? (
-                                  <img
-                                    src={getToolLogo(model.name)!}
-                                    alt={`${model.name} logo`}
-                                    className="h-5 w-5 flex-shrink-0 rounded object-contain"
-                                  />
-                                ) : (
-                                  <model.Icon
-                                    className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-theme-text" : "text-theme-white"}`}
-                                  />
-                                )}
-                                <div className="min-w-0 flex-1">
-                                  <div className={`truncate text-sm font-raleway ${isActive ? "text-theme-text" : "text-theme-white"}`}>
-                                    {model.name}
-                                  </div>
-                                  <div className="truncate text-xs font-raleway text-theme-light">{model.desc}</div>
-                                </div>
-                                {isActive && <Check className="h-4 w-4 flex-shrink-0 text-theme-text" />}
-                              </button>
-                            );
-                          })}
                         </div>
-                      </AvatarPickerPortal>
+                      )}
                       <div className="relative hidden lg:block">
                         <div
                           role="group"
@@ -1666,7 +1745,7 @@ const ChatMode: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="submit"
-                        className="btn btn-orange btn-compact font-raleway text-base font-medium parallax-large disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={!input.trim()}
                       >
                         <Send className="h-4 w-4" />

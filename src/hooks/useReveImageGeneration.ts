@@ -12,6 +12,7 @@ export interface ReveGeneratedImage {
   references?: string[];
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface ReveImageGenerationState {
@@ -34,6 +35,7 @@ export interface ReveImageGenerationOptions {
   seed?: number;
   references?: string[];
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
@@ -59,7 +61,7 @@ export const useReveImageGeneration = () => {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
 
@@ -79,6 +81,7 @@ export const useReveImageGeneration = () => {
             references: options.references || undefined,
             ownerId: user?.id,
             avatarId: options.avatarId,
+            avatarImageId: options.avatarImageId,
           };
         }
 
@@ -105,16 +108,17 @@ export const useReveImageGeneration = () => {
       }));
 
       try {
-        if (!token) {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: AUTH_ERROR_MESSAGE,
-            jobStatus: null,
-            progress: undefined,
-          }));
-          throw new Error(AUTH_ERROR_MESSAGE);
-        }
+        // TEMPORARILY DISABLED: Authentication check
+        // if (!token) {
+        //   setState((prev) => ({
+        //     ...prev,
+        //     isLoading: false,
+        //     error: AUTH_ERROR_MESSAGE,
+        //     jobStatus: null,
+        //     progress: undefined,
+        //   }));
+        //   throw new Error(AUTH_ERROR_MESSAGE);
+        // }
 
         const providerOptions: Record<string, unknown> = {};
         if (options.width !== undefined) providerOptions.width = options.width;
@@ -129,7 +133,7 @@ export const useReveImageGeneration = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             prompt: options.prompt,
@@ -199,6 +203,7 @@ export const useReveImageGeneration = () => {
           references: options.references || undefined,
           ownerId: user?.id,
           avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
         };
 
         setState((prev) => ({

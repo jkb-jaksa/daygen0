@@ -14,6 +14,7 @@ export interface ChatGPTGeneratedImage {
   background: string;
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface ChatGPTImageGenerationState {
@@ -29,6 +30,7 @@ export interface ChatGPTImageGenerationOptions {
   quality?: 'standard' | 'high';
   background?: 'transparent' | 'white' | 'black';
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export const useChatGPTImageGeneration = () => {
@@ -49,7 +51,7 @@ export const useChatGPTImageGeneration = () => {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
 
@@ -69,6 +71,7 @@ export const useChatGPTImageGeneration = () => {
             background: options.background ?? 'transparent',
             ownerId: user?.id,
             avatarId: options.avatarId,
+            avatarImageId: options.avatarImageId,
           };
         }
 
@@ -92,15 +95,16 @@ export const useChatGPTImageGeneration = () => {
     }));
 
     try {
-      if (!token) {
-        const message = 'Please sign in to generate images.';
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: message,
-        }));
-        throw new Error(message);
-      }
+      // TEMPORARILY DISABLED: Authentication check
+      // if (!token) {
+      //   const message = 'Please sign in to generate images.';
+      //   setState(prev => ({
+      //     ...prev,
+      //     isLoading: false,
+      //     error: message,
+      //   }));
+      //   throw new Error(message);
+      // }
 
       const { prompt, n = 1, size = '1024x1024', quality = 'high', background = 'transparent' } = options;
 
@@ -113,7 +117,7 @@ export const useChatGPTImageGeneration = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           prompt,
@@ -175,6 +179,7 @@ export const useChatGPTImageGeneration = () => {
         background,
         ownerId: user?.id,
         avatarId: options.avatarId,
+        avatarImageId: options.avatarImageId,
       };
 
       setState(prev => ({

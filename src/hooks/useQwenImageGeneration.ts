@@ -15,6 +15,7 @@ export interface QwenGeneratedImage {
   watermark?: boolean;
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface QwenImageGenerationState {
@@ -32,6 +33,7 @@ export interface QwenGenerateOptions {
   prompt_extend?: boolean;
   watermark?: boolean;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
@@ -56,7 +58,7 @@ export const useQwenImageGeneration = () => {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
 
@@ -78,6 +80,7 @@ export const useQwenImageGeneration = () => {
             watermark: options.watermark,
             ownerId: user?.id,
             avatarId: options.avatarId,
+            avatarImageId: options.avatarImageId,
           };
 
           return [image];
@@ -105,15 +108,16 @@ export const useQwenImageGeneration = () => {
       }));
 
       try {
-        if (!token) {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: AUTH_ERROR_MESSAGE,
-            progress: undefined,
-          }));
-          throw new Error(AUTH_ERROR_MESSAGE);
-        }
+        // TEMPORARILY DISABLED: Authentication check
+        // if (!token) {
+        //   setState((prev) => ({
+        //     ...prev,
+        //     isLoading: false,
+        //     error: AUTH_ERROR_MESSAGE,
+        //     progress: undefined,
+        //   }));
+        //   throw new Error(AUTH_ERROR_MESSAGE);
+        // }
 
         const providerOptions: Record<string, unknown> = {};
         if (options.size) providerOptions.size = options.size;
@@ -126,7 +130,7 @@ export const useQwenImageGeneration = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             prompt: options.prompt,
@@ -182,6 +186,7 @@ export const useQwenImageGeneration = () => {
           watermark: options.watermark,
           ownerId: user?.id,
           avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
         };
 
         setState((prev) => ({

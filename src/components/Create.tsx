@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -27,9 +27,11 @@ import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
+const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
+import { AspectRatioDropdown } from "./AspectRatioDropdown";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
@@ -42,6 +44,7 @@ import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
 import { layout, buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
+import { useParallaxHover } from "../hooks/useParallaxHover";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
 import { useLumaImageGeneration } from "../hooks/useLumaImageGeneration";
@@ -72,19 +75,198 @@ import type {
 } from "./create/types";
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { StoredAvatar, AvatarSelection } from "./avatars/types";
+import type { StoredProduct, ProductSelection } from "./products/types";
 import AvatarBadge from "./avatars/AvatarBadge";
+import ProductBadge from "./products/ProductBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
+import { createProductRecord, normalizeStoredProducts } from "../utils/products";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT_GAP } from "./create/layoutConstants";
 import { ToolInfoHover } from "./ToolInfoHover";
 import CircularProgressRing from "./CircularProgressRing";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
+import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
+import {
+  GEMINI_ASPECT_RATIO_OPTIONS,
+  VIDEO_ASPECT_RATIO_OPTIONS,
+  BASIC_ASPECT_RATIO_OPTIONS,
+  WAN_ASPECT_RATIO_OPTIONS,
+  QWEN_ASPECT_RATIO_OPTIONS,
+} from "../data/aspectRatios";
+
+type StyleOption = {
+  id: string;
+  name: string;
+  prompt: string;
+  previewGradient?: string;
+  image?: string;
+};
+
+type StyleSectionId = "lifestyle" | "formal" | "artistic";
+
+type StyleGender = "male" | "female" | "unisex";
+
+type StyleSection = {
+  id: StyleSectionId;
+  name: string;
+  options: StyleOption[];
+};
+
+const STYLE_GRADIENTS = [
+  "linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)",
+  "linear-gradient(135deg, rgba(251,191,36,0.35) 0%, rgba(79,70,229,0.55) 100%)",
+  "linear-gradient(135deg, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.6) 50%, rgba(236,72,153,0.45) 100%)",
+  "linear-gradient(135deg, rgba(148,163,184,0.35) 0%, rgba(226,232,240,0.6) 100%)",
+  "linear-gradient(135deg, rgba(110,231,183,0.35) 0%, rgba(103,232,249,0.5) 100%)",
+  "linear-gradient(135deg, rgba(251,191,36,0.4) 0%, rgba(248,113,113,0.5) 60%, rgba(96,165,250,0.45) 100%)",
+  "linear-gradient(135deg, rgba(217,119,6,0.4) 0%, rgba(180,83,9,0.5) 100%)",
+  "linear-gradient(135deg, rgba(236,72,153,0.45) 0%, rgba(168,85,247,0.5) 50%, rgba(14,165,233,0.4) 100%)",
+  "linear-gradient(135deg, rgba(251,207,232,0.45) 0%, rgba(196,181,253,0.5) 50%, rgba(165,243,252,0.4) 100%)",
+  "linear-gradient(135deg, rgba(30,64,175,0.5) 0%, rgba(59,130,246,0.45) 50%, rgba(248,113,113,0.4) 100%)",
+];
+
+const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string; image: string }> = [
+  { id: "lifestyle", name: "Lifestyle", image: "/lifestyle images.png" },
+  { id: "formal", name: "Formal", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80" },
+  { id: "artistic", name: "Artistic", image: "/artistic images.png" },
+];
+
+const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [
+  { id: "female", label: "Female" },
+  { id: "male", label: "Male" },
+  { id: "unisex", label: "All" },
+];
+
+const LIFESTYLE_STYLES_UNISEX: StyleOption[] = [
+  {
+    id: "unisex-lifestyle-black-suit-studio",
+    name: "Black Suit Studio",
+    prompt: "professional studio photography setup, black suit attire, clean minimalist background, professional lighting, high-end fashion photography style",
+    image: "/black_suit_studio setup.png",
+  },
+  {
+    id: "unisex-lifestyle-french-balcony",
+    name: "French Balcony",
+    prompt: "elegant French balcony setting, charming Parisian architecture, wrought iron railings, romantic European atmosphere, natural daylight",
+    image: "/french_balcony.png",
+  },
+  {
+    id: "unisex-lifestyle-boat-coastal-town",
+    name: "Boat in Coastal Town",
+    prompt: "charming coastal town setting, traditional fishing boat, waterfront architecture, maritime atmosphere, golden hour lighting, seaside lifestyle photography",
+    image: "/boat_in_coastal_town.png",
+  },
+  {
+    id: "unisex-lifestyle-brick-wall",
+    name: "Brick in the Wall",
+    prompt: "urban street photography, exposed brick wall background, industrial aesthetic, gritty urban atmosphere, natural lighting, contemporary lifestyle photography",
+    image: "/brick_in_the_wall.png",
+  },
+  {
+    id: "unisex-lifestyle-smoking-hot",
+    name: "Smoking Hot",
+    prompt: "dramatic lifestyle photography, warm lighting, sultry atmosphere, high contrast, fashion-forward styling, bold and confident mood",
+    image: "/smoking_hot.png",
+  },
+  {
+    id: "unisex-lifestyle-sun-and-sea",
+    name: "Sun and Sea",
+    prompt: "beach lifestyle photography, sunny coastal setting, ocean waves, bright natural lighting, summer vibes, relaxed seaside atmosphere",
+    image: "/sun_and_sea.png",
+  },
+];
+
+const createPlaceholderStyles = (
+  gender: StyleGender,
+  sectionId: StyleSectionId,
+  sectionName: string,
+): StyleOption[] =>
+  Array.from({ length: 20 }, (_, index) => {
+    const gradient = STYLE_GRADIENTS[index % STYLE_GRADIENTS.length];
+    const label = `${sectionName} Style ${index + 1}`;
+    return {
+      id: `${gender}-${sectionId}-${index + 1}`,
+      name: label,
+      prompt: `${gender} ${sectionName.toLowerCase()} inspired placeholder prompt ${index + 1}`,
+      previewGradient: gradient,
+    };
+  });
+
+const createLifestyleStyles = (gender: StyleGender): StyleOption[] => {
+  if (gender === "unisex") {
+    return LIFESTYLE_STYLES_UNISEX;
+  }
+  // For male and female, return placeholder styles for now
+  return createPlaceholderStyles(gender, "lifestyle", "Lifestyle");
+};
+
+const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
+  STYLE_SECTION_DEFINITIONS.map(({ id, name }) => ({
+    id,
+    name,
+    options: id === "lifestyle" 
+      ? createLifestyleStyles(gender)
+      : createPlaceholderStyles(gender, id, name),
+  }));
+
+const STYLE_SECTIONS_BY_GENDER: Record<StyleGender, StyleSection[]> = {
+  male: createStyleSectionsForGender("male"),
+  female: createStyleSectionsForGender("female"),
+  unisex: createStyleSectionsForGender("unisex"),
+};
+
+type SelectedStylesMap = Record<StyleGender, Record<StyleSectionId, StyleOption[]>>;
+
+const createEmptyStyleSectionSelection = (): Record<StyleSectionId, StyleOption[]> => ({
+  lifestyle: [],
+  formal: [],
+  artistic: [],
+});
+
+const createEmptySelectedStyles = (): SelectedStylesMap => ({
+  male: createEmptyStyleSectionSelection(),
+  female: createEmptyStyleSectionSelection(),
+  unisex: createEmptyStyleSectionSelection(),
+});
+
+const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
+  male: {
+    lifestyle: [...styles.male.lifestyle],
+    formal: [...styles.male.formal],
+    artistic: [...styles.male.artistic],
+  },
+  female: {
+    lifestyle: [...styles.female.lifestyle],
+    formal: [...styles.female.formal],
+    artistic: [...styles.female.artistic],
+  },
+  unisex: {
+    lifestyle: [...styles.unisex.lifestyle],
+    formal: [...styles.unisex.formal],
+    artistic: [...styles.unisex.artistic],
+  },
+});
+
+const findFirstSelectedStyle = (
+  styles: SelectedStylesMap,
+): { gender: StyleGender; sectionId: StyleSectionId } | null => {
+  for (const { id: gender } of STYLE_GENDER_OPTIONS) {
+    const sections = styles[gender];
+    for (const { id } of STYLE_SECTION_DEFINITIONS) {
+      if (sections[id].length > 0) {
+        return { gender, sectionId: id };
+      }
+    }
+  }
+  return null;
+};
 
 const CATEGORY_TO_PATH: Record<string, string> = {
   text: "/create/text",
   image: "/create/image",
   video: "/create/video",
   avatars: "/create/avatars",
+  products: "/create/products",
   audio: "/create/audio",
   gallery: "/gallery",
   uploads: "/gallery/uploads",
@@ -106,7 +288,7 @@ type ActiveGenerationJob = {
   jobId?: string | null;
 };
 
-const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio"]);
+const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio", "avatars", "products"]);
 
 const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
   public: "gallery",
@@ -171,10 +353,7 @@ const AI_MODELS = [
 ];
 
 const DEFAULT_REFERENCE_LIMIT = 3;
-const MAX_REFERENCES_WITH_AVATAR = 2;
 const PROMPT_TEXTAREA_MAX_HEIGHT = 160;
-
-type GeminiAspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
 
 // Portal component for model menu to avoid clipping by parent containers
 const ModelMenuPortal: React.FC<{
@@ -210,8 +389,10 @@ const ModelMenuPortal: React.FC<{
       // Position above if there's more space above, otherwise position below
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
 
+      const verticalOffset = 2;
+
       setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
         transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
@@ -322,8 +503,10 @@ const ImageActionMenuPortal: React.FC<{
     const updatePosition = () => {
       if (!anchorEl) return;
       const rect = anchorEl.getBoundingClientRect();
+      const verticalOffset = 2;
+
       setPos({
-        top: rect.bottom + 8,
+        top: rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(200, rect.width),
       });
@@ -426,30 +609,218 @@ const Create: React.FC = () => {
   const refsInputRef = useRef<HTMLInputElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement | null>(null);
   const settingsRef = useRef<HTMLButtonElement | null>(null);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
+  const avatarQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const productQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
+  const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
+  
+  // Parallax hover effect for buttons
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
+  const [selectedAvatarImageId, setSelectedAvatarImageId] = useState<string | null>(null);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
+  const [selectedStyles, setSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
+  const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+  const [tempSelectedStyles, setTempSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
+  const [activeStyleGender, setActiveStyleGender] = useState<StyleGender>("unisex");
+  const [activeStyleSection, setActiveStyleSection] = useState<StyleSectionId>("lifestyle");
+  const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+  const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
+  const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
   // Product state
-  const [storedProducts, setStoredProducts] = useState<StoredAvatar[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<StoredAvatar | null>(null);
+  const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
+  const [pendingProductId, setPendingProductId] = useState<string | null>(null);
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<StoredAvatar | null>(null);
-  const referenceLimit = selectedAvatar ? MAX_REFERENCES_WITH_AVATAR : DEFAULT_REFERENCE_LIMIT;
+  const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
+  const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
+  const referenceLimit = useMemo(() => {
+    const usedSlots = (selectedAvatar ? 1 : 0) + (selectedProduct ? 1 : 0);
+    return Math.max(0, DEFAULT_REFERENCE_LIMIT - usedSlots);
+  }, [selectedAvatar, selectedProduct]);
+  const selectedAvatarImage = useMemo(() => {
+    if (!selectedAvatar) return null;
+    const targetId = selectedAvatarImageId ?? selectedAvatar.primaryImageId;
+    return selectedAvatar.images.find(image => image.id === targetId) ?? selectedAvatar.images[0] ?? null;
+  }, [selectedAvatar, selectedAvatarImageId]);
+  const selectedAvatarImageIndex = useMemo(() => {
+    if (!selectedAvatar) return null;
+    const activeId = selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId;
+    const index = selectedAvatar.images.findIndex(image => image.id === activeId);
+    return index >= 0 ? index : null;
+  }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
+  const activeAvatarImageId = useMemo(() => {
+    if (!selectedAvatar) return null;
+    return selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId ?? selectedAvatar.images[0]?.id ?? null;
+  }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
   // Avatar creation modal state
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+  const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
+  const [avatarGalleryOpenTrigger, setAvatarGalleryOpenTrigger] = useState(0);
+  const [isProductCreationModalOpen, setIsProductCreationModalOpen] = useState(false);
+  const [productSelection, setProductSelection] = useState<ProductSelection | null>(null);
+  const [productUploadError, setProductUploadError] = useState<string | null>(null);
+  const [isDraggingProduct, setIsDraggingProduct] = useState(false);
+  const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+
+  useEffect(() => {
+    if (!isStyleModalOpen || typeof document === 'undefined') {
+      return;
+    }
+
+    // Initialize temp selection with current selection
+    setTempSelectedStyles(cloneSelectedStyles(selectedStyles));
+
+    const firstSelection = findFirstSelectedStyle(selectedStyles);
+    if (firstSelection) {
+      setActiveStyleGender(firstSelection.gender);
+      setActiveStyleSection(firstSelection.sectionId);
+    } else {
+      setActiveStyleGender("unisex");
+      setActiveStyleSection(STYLE_SECTION_DEFINITIONS[0]?.id ?? "lifestyle");
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsStyleModalOpen(false);
+        if (stylesButtonRef.current) {
+          stylesButtonRef.current.focus();
+        }
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isStyleModalOpen, selectedStyles]);
+
+  const applyStyleToPrompt = useCallback(
+    (basePrompt: string) => {
+      const selectedPrompts = Object.values(selectedStyles)
+        .flatMap(sections => Object.values(sections).flat())
+        .map(style => style.prompt.trim())
+        .filter(Boolean);
+
+      if (selectedPrompts.length === 0) {
+        return basePrompt;
+      }
+
+      const formattedPrompts = selectedPrompts
+        .map((prompt, index) => `${index + 1}. ${prompt}`)
+        .join("\n");
+
+      return `${basePrompt}\n\nStyle:\n${formattedPrompts}`;
+    },
+    [selectedStyles],
+  );
+
+  const focusStyleButton = () => {
+    if (stylesButtonRef.current) {
+      stylesButtonRef.current.focus();
+    }
+  };
+
+  const selectedStylesList = useMemo(
+    () =>
+      Object.values(selectedStyles).flatMap(sections =>
+        Object.values(sections).flat(),
+      ),
+    [selectedStyles],
+  );
+  const totalSelectedStyles = selectedStylesList.length;
+  const totalTempSelectedStyles = useMemo(
+    () =>
+      Object.values(tempSelectedStyles).reduce(
+        (count, sections) =>
+          count + Object.values(sections).reduce((sectionCount, styles) => sectionCount + styles.length, 0),
+        0,
+      ),
+    [tempSelectedStyles],
+  );
+  const activeStyleSectionData = useMemo(
+    () => {
+      const sectionsForGender = STYLE_SECTIONS_BY_GENDER[activeStyleGender];
+      return (
+        sectionsForGender.find(section => section.id === activeStyleSection) ??
+        sectionsForGender[0]
+      );
+    },
+    [activeStyleGender, activeStyleSection],
+  );
+  const selectedStylesLabel = useMemo(() => {
+    if (totalSelectedStyles === 0) {
+      return null;
+    }
+
+    if (totalSelectedStyles === 1) {
+      return selectedStylesList[0]?.name ?? null;
+    }
+
+    if (totalSelectedStyles === 2) {
+      const [first, second] = selectedStylesList;
+      return `${first?.name ?? ""}, ${second?.name ?? ""}`.trim();
+    }
+
+    const [first, second] = selectedStylesList;
+    return `${first?.name ?? ""}, ${second?.name ?? ""} + ${totalSelectedStyles - 2} more`.trim();
+  }, [selectedStylesList, totalSelectedStyles]);
+
+  const firstSelectedStyle = useMemo(() => {
+    if (totalSelectedStyles === 0) return null;
+    return selectedStylesList[0] ?? null;
+  }, [selectedStylesList, totalSelectedStyles]);
+
+  const handleToggleTempStyle = (gender: StyleGender, sectionId: StyleSectionId, style: StyleOption) => {
+    setTempSelectedStyles(prev => {
+      const sectionStyles = prev[gender][sectionId];
+      const exists = sectionStyles.some(option => option.id === style.id);
+      const updatedSectionStyles = exists
+        ? sectionStyles.filter(option => option.id !== style.id)
+        : [...sectionStyles, style];
+
+      return {
+        ...prev,
+        [gender]: {
+          ...prev[gender],
+          [sectionId]: updatedSectionStyles,
+        },
+      };
+    });
+  };
+
+  const handleApplyStyles = () => {
+    setSelectedStyles(cloneSelectedStyles(tempSelectedStyles));
+    setIsStyleModalOpen(false);
+    focusStyleButton();
+  };
+
+  const handleClearStyles = () => {
+    setSelectedStyles(createEmptySelectedStyles());
+    setTempSelectedStyles(createEmptySelectedStyles());
+    setActiveStyleGender("unisex");
+    setActiveStyleSection("lifestyle");
+    setIsStyleModalOpen(false);
+    focusStyleButton();
+  };
 
   const avatarMap = useMemo(() => {
     const map = new Map<string, StoredAvatar>();
@@ -458,7 +829,15 @@ const Create: React.FC = () => {
     }
     return map;
   }, [storedAvatars]);
+  const productMap = useMemo(() => {
+    const map = new Map<string, StoredProduct>();
+    for (const product of storedProducts) {
+      map.set(product.id, product);
+    }
+    return map;
+  }, [storedProducts]);
   const [avatarName, setAvatarName] = useState("");
+  const [productName, setProductName] = useState("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
 const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
@@ -489,11 +868,96 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [qwenSize, setQwenSize] = useState<string>('1328*1328');
   const [qwenPromptExtend, setQwenPromptExtend] = useState<boolean>(true);
   const [qwenWatermark, setQwenWatermark] = useState<boolean>(false);
+  
+  // Video and aspect ratio state (must be declared before aspectRatioConfig useMemo)
+  const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
+  const [seedanceRatio, setSeedanceRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [klingAspectRatio, setKlingAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [wanSize, setWanSize] = useState<string>('1920*1080');
+  
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  
+  const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
+
+  const aspectRatioConfig = useMemo<{
+    options: ReadonlyArray<AspectRatioOption>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+  } | null>(() => {
+    if (isGemini) {
+      return {
+        options: GEMINI_ASPECT_RATIO_OPTIONS,
+        selectedValue: geminiAspectRatio,
+        onSelect: value => setGeminiAspectRatio(value as GeminiAspectRatio),
+      };
+    }
+
+    if (isVeo) {
+      return {
+        options: VIDEO_ASPECT_RATIO_OPTIONS,
+        selectedValue: videoAspectRatio,
+        onSelect: value => setVideoAspectRatio(value as "16:9" | "9:16"),
+      };
+    }
+
+    if (isSeedance) {
+      return {
+        options: BASIC_ASPECT_RATIO_OPTIONS,
+        selectedValue: seedanceRatio,
+        onSelect: value => setSeedanceRatio(value as "16:9" | "9:16" | "1:1"),
+      };
+    }
+
+    if (isKlingVideo) {
+      return {
+        options: BASIC_ASPECT_RATIO_OPTIONS,
+        selectedValue: klingAspectRatio,
+        onSelect: value => setKlingAspectRatio(value as "16:9" | "9:16" | "1:1"),
+      };
+    }
+
+    if (isWanVideo) {
+      return {
+        options: WAN_ASPECT_RATIO_OPTIONS,
+        selectedValue: wanSize,
+        onSelect: setWanSize,
+      };
+    }
+
+    if (isQwen) {
+      return {
+        options: QWEN_ASPECT_RATIO_OPTIONS,
+        selectedValue: qwenSize,
+        onSelect: setQwenSize,
+      };
+    }
+
+    return null;
+  }, [
+    isGemini,
+    geminiAspectRatio,
+    isVeo,
+    videoAspectRatio,
+    isSeedance,
+    seedanceRatio,
+    isKlingVideo,
+    klingAspectRatio,
+    isWanVideo,
+    wanSize,
+    isQwen,
+    qwenSize,
+  ]);
+
+  useEffect(() => {
+    if (!aspectRatioConfig) {
+      setIsAspectRatioMenuOpen(false);
+    }
+  }, [aspectRatioConfig]);
+
+  const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
+  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+
   // Video generation state
-  const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
   const [videoNegativePrompt, setVideoNegativePrompt] = useState<string>('');
   const [videoSeed, setVideoSeed] = useState<number | undefined>(undefined);
@@ -505,7 +969,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [runwayModel, setRunwayModel] = useState<'runway-gen4' | 'runway-gen4-turbo'>('runway-gen4');
   
   // Wan-specific state
-  const [wanSize, setWanSize] = useState<string>('1920*1080');
   const [wanNegativePrompt, setWanNegativePrompt] = useState<string>('');
   const [wanPromptExtend, setWanPromptExtend] = useState<boolean>(true);
   const [wanWatermark, setWanWatermark] = useState<boolean>(false);
@@ -522,7 +985,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   // Kling-specific state
   const [klingModel, setKlingModel] = useState<'kling-v2.1-master' | 'kling-v2-master'>('kling-v2.1-master');
-  const [klingAspectRatio, setKlingAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [klingDuration, setKlingDuration] = useState<5 | 10>(5);
   const [klingNegativePrompt, setKlingNegativePrompt] = useState<string>('');
   const [klingCfgScale, setKlingCfgScale] = useState<number>(0.8);
@@ -552,7 +1014,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   
   // Seedance-specific state
   const [seedanceMode, setSeedanceMode] = useState<'t2v' | 'i2v-first' | 'i2v-first-last'>('t2v');
-  const [seedanceRatio, setSeedanceRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [seedanceDuration, setSeedanceDuration] = useState<number>(5);
   const [seedanceResolution, setSeedanceResolution] = useState<'1080p' | '720p'>('1080p');
   const [seedanceFps, setSeedanceFps] = useState<number>(24);
@@ -575,13 +1036,18 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [currentInspirationIndex, setCurrentInspirationIndex] = useState<number>(0);
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null);
   const [fullSizeContext, setFullSizeContext] = useState<'gallery' | 'inspirations'>('gallery');
-  const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
-  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
 
   const setActiveCategory = useCallback((category: string, options?: { skipRoute?: boolean }) => {
     if (category === "avatars") {
       if (!options?.skipRoute && location.pathname !== "/create/avatars") {
         navigate("/create/avatars");
+      }
+      return;
+    }
+
+    if (category === "products") {
+      if (!options?.skipRoute && location.pathname !== "/create/products") {
+        navigate("/create/products");
       }
       return;
     }
@@ -656,7 +1122,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     models: [],
     types: [],
     folder: 'all',
-    avatar: 'all'
+    avatar: 'all',
+    product: 'all'
   });
   const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
@@ -682,6 +1149,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       // Avatar filter
       if (galleryFilters.avatar !== 'all') {
         if (item.avatarId !== galleryFilters.avatar) {
+          return false;
+        }
+      }
+
+      if (galleryFilters.product !== 'all') {
+        if (item.productId !== galleryFilters.product) {
           return false;
         }
       }
@@ -723,6 +1196,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       // Avatar filter
       if (galleryFilters.avatar !== 'all') {
         if (item.avatarId !== galleryFilters.avatar) {
+          return false;
+        }
+      }
+
+      if (galleryFilters.product !== 'all') {
+        if (item.productId !== galleryFilters.product) {
           return false;
         }
       }
@@ -823,6 +1302,13 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return storedAvatars.map(avatar => ({
       id: avatar.id,
       name: avatar.name,
+    }));
+  };
+
+  const getAvailableProducts = () => {
+    return storedProducts.map(product => ({
+      id: product.id,
+      name: product.name,
     }));
   };
   
@@ -1127,6 +1613,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         'image',
         'video',
         'avatars',
+        'products',
         'audio',
         'gallery',
         'uploads',
@@ -1265,6 +1752,22 @@ const [batchSize, setBatchSize] = useState<number>(1);
     };
   }, [creationsModalAvatar]);
 
+  useEffect(() => {
+    if (!creationsModalProduct) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCreationsModalProduct(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [creationsModalProduct]);
+
   
   // Use the Gemini image generation hook
   const {
@@ -1375,6 +1878,72 @@ const [batchSize, setBatchSize] = useState<number>(1);
     generateVideo: generateKlingVideo, // Kept for future backend integration
     reset: resetKlingVideo,
   } = useKlingVideoGeneration();
+
+  const { showGenerateSpinner, generateButtonLabel } = useMemo(() => {
+    const isWanGenerating =
+      isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
+    const isHailuoGenerating =
+      isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
+    const isLumaGenerating =
+      (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
+    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
+
+    const showSpinner =
+      isButtonSpinning ||
+      isVideoGenerating ||
+      isVideoPolling ||
+      isRunwayVideoGenerating ||
+      isWanGenerating ||
+      isHailuoGenerating ||
+      isKlingGenerating ||
+      seedanceLoading ||
+      isLumaGenerating;
+
+    const label = activeCategory === "video"
+      ? selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
+        ? "Generating..."
+        : selectedModel === "seedance-1.0-pro" && seedanceLoading
+          ? "Generating..."
+          : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
+            ? "Generating..."
+            : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
+              ? "Generating..."
+              : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
+                ? "Generating..."
+                : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
+                  ? "Generating..."
+                  : isVideoGenerating
+                    ? "Starting..."
+                    : isVideoPolling
+                      ? "Generating..."
+                      : "Generate"
+      : "Generate";
+
+    return { showGenerateSpinner: showSpinner, generateButtonLabel: label };
+  }, [
+    activeCategory,
+    selectedModel,
+    runwayVideoStatus,
+    seedanceLoading,
+    isHailuoVideo,
+    hailuoStatus,
+    hailuoIsPolling,
+    isWanVideo,
+    wanStatus,
+    wanIsPolling,
+    isKlingVideo,
+    klingStatus,
+    klingIsPolling,
+    isLumaRay,
+    lumaVideoLoading,
+    lumaVideoPolling,
+    isLumaPhoton,
+    lumaImageLoading,
+    isVideoGenerating,
+    isVideoPolling,
+    isRunwayVideoGenerating,
+    isButtonSpinning,
+  ]);
 
   const clearAllGenerationErrors = useCallback(() => {
     clearGeminiError();
@@ -1620,6 +2189,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         if (isMounted) {
           setStoredAvatars([]);
           setSelectedAvatar(null);
+          setSelectedAvatarImageId(null);
           setPendingAvatarId(null);
         }
         return;
@@ -1663,6 +2233,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     const match = storedAvatars.find(avatar => avatar.id === pendingAvatarId);
     if (match) {
       setSelectedAvatar(match);
+      setSelectedAvatarImageId(match.primaryImageId ?? match.images[0]?.id ?? null);
       setPendingAvatarId(null);
     } else if (storedAvatars.length > 0) {
       setPendingAvatarId(null);
@@ -1674,12 +2245,21 @@ const [batchSize, setBatchSize] = useState<number>(1);
     const match = storedAvatars.find(avatar => avatar.id === selectedAvatar.id);
     if (!match) {
       setSelectedAvatar(null);
+      setSelectedAvatarImageId(null);
       return;
     }
     if (match !== selectedAvatar) {
       setSelectedAvatar(match);
+      setSelectedAvatarImageId(prev => {
+        if (prev && match.images.some(image => image.id === prev)) {
+          return prev;
+        }
+        return match.primaryImageId ?? match.images[0]?.id ?? null;
+      });
+    } else if (selectedAvatarImageId && !match.images.some(image => image.id === selectedAvatarImageId)) {
+      setSelectedAvatarImageId(match.primaryImageId ?? match.images[0]?.id ?? null);
     }
-  }, [selectedAvatar, storedAvatars]);
+  }, [selectedAvatar, selectedAvatarImageId, storedAvatars]);
 
   // Load products from storage
   useEffect(() => {
@@ -1695,10 +2275,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
 
       try {
-        const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, "products");
+        const stored = await getPersistedValue<StoredProduct[]>(storagePrefix, "products");
         if (!isMounted) return;
 
-        const normalized = normalizeStoredAvatars(stored ?? [], { ownerId: user?.id ?? undefined });
+        const normalized = normalizeStoredProducts(stored ?? [], { ownerId: user?.id ?? undefined });
         setStoredProducts(normalized);
 
         const needsPersist =
@@ -1738,6 +2318,29 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setSelectedProduct(match);
     }
   }, [selectedProduct, storedProducts]);
+
+  useEffect(() => {
+    if (!pendingProductId) return;
+    const match = storedProducts.find(product => product.id === pendingProductId);
+    if (match) {
+      setSelectedProduct(match);
+      setPendingProductId(null);
+    } else if (storedProducts.length > 0) {
+      setPendingProductId(null);
+    }
+  }, [pendingProductId, storedProducts]);
+
+  useEffect(() => {
+    if (!creationsModalProduct) return;
+    const match = storedProducts.find(product => product.id === creationsModalProduct.id);
+    if (!match) {
+      setCreationsModalProduct(null);
+      return;
+    }
+    if (match !== creationsModalProduct) {
+      setCreationsModalProduct(match);
+    }
+  }, [creationsModalProduct, storedProducts]);
 
   useEffect(() => {
     if (activeCategory !== "image" && isAvatarPickerOpen) {
@@ -2528,6 +3131,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         selectedModel: modelFromState,
         focusPromptBar: shouldFocus,
         avatarId,
+        productId,
       } = locationState;
 
       if (modelFromState) {
@@ -2562,6 +3166,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       if (avatarId) {
         setPendingAvatarId(avatarId);
+      }
+
+      if (productId) {
+        setPendingProductId(productId);
       }
 
       navigate(location.pathname, { replace: true, state: null });
@@ -2732,12 +3340,15 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const renderEditButton = (menuId: string, image: GalleryImageLike): React.JSX.Element => {
     const isOpen = imageActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
+    const isFullSize = menuId.startsWith('fullsize-actions-');
 
     return (
       <div className="relative">
         <button
           type="button"
           className={`image-action-btn parallax-large transition-opacity duration-100 ${
+            isFullSize ? 'image-action-btn--fullsize ' : ''
+          }${
             anyMenuOpen 
               ? 'opacity-100 pointer-events-auto' 
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2750,7 +3361,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             toggleImageActionMenu(menuId, event.currentTarget, image);
           }}
         >
-          <Edit className="w-3.5 h-3.5" />
+          <Edit className="w-3 h-3" />
         </button>
         <ImageActionMenuPortal
           anchorEl={isOpen ? imageActionMenu?.anchor ?? null : null}
@@ -2759,7 +3370,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleEditMenuSelect();
@@ -2770,7 +3381,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleCreateAvatarFromMenu(image);
@@ -2781,7 +3392,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUseAsReferenceFromMenu();
@@ -2792,7 +3403,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleUsePromptAgain();
@@ -2803,7 +3414,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               setActiveCategory("video");
@@ -2825,12 +3436,15 @@ const [batchSize, setBatchSize] = useState<number>(1);
   ): React.JSX.Element => {
     const isOpen = moreActionMenu?.id === menuId;
     const anyMenuOpen = imageActionMenu?.id === menuId || moreActionMenu?.id === menuId;
+    const isFullSize = menuId.startsWith('fullsize-actions-');
 
     return (
       <div className="relative">
         <button
           type="button"
           className={`image-action-btn parallax-large transition-opacity duration-100 ${
+            isFullSize ? 'image-action-btn--fullsize ' : ''
+          }${
             anyMenuOpen 
               ? 'opacity-100 pointer-events-auto' 
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2843,7 +3457,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             toggleMoreActionMenu(menuId, event.currentTarget, image);
           }}
         >
-          <MoreHorizontal className="w-3.5 h-3.5" />
+          <MoreHorizontal className="w-3 h-3" />
         </button>
         <ImageActionMenuPortal
           anchorEl={isOpen ? moreActionMenu?.anchor ?? null : null}
@@ -2852,7 +3466,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={async (event) => {
               event.stopPropagation();
               try {
@@ -2878,7 +3492,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           <a
             href={image.url}
             download
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               closeMoreActionMenu();
@@ -2889,7 +3503,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           </a>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
             onClick={(event) => {
               event.stopPropagation();
               handleAddToFolder(image.url);
@@ -2902,7 +3516,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           {context !== 'inspirations' && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-2 py-2 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleImagePublicStatus(image.url);
@@ -2994,7 +3608,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             <div className="w-full p-4">
               <div className="mb-2">
                 <div className="relative">
-                  <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                  <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                     {img.prompt}
                     <button
                       data-copy-button="true"
@@ -3083,7 +3697,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               )}
               {/* Model Badge and Public Indicator */}
               <div className="flex justify-between items-center mt-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 md:gap-2">
                   <Suspense fallback={null}>
                     <ModelBadge model={img.model ?? 'unknown'} size="md" />
                   </Suspense>
@@ -3094,6 +3708,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
                       onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
                     />
                   )}
+                  {(() => {
+                    const productForImage = img.productId ? productMap.get(img.productId) : undefined;
+                    if (!productForImage) return null;
+                    return (
+                      <ProductBadge
+                        product={productForImage}
+                        onClick={() => setCreationsModalProduct(productForImage)}
+                      />
+                    );
+                  })()}
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -3160,7 +3784,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               aria-pressed={isSelected}
               aria-label={isSelected ? 'Unselect image' : 'Select image'}
             >
-              {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+              {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
             </button>
           </div>
           {!isSelectMode && (
@@ -3188,7 +3812,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   title="Delete image"
                   aria-label="Delete image"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
                 <button
                   type="button"
@@ -3205,7 +3829,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                 >
                   <Heart
-                    className={`heart-icon w-3.5 h-3.5 transition-colors duration-100 ${
+                    className={`heart-icon w-3 h-3 transition-colors duration-100 ${
                       favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                     }`}
                   />
@@ -3289,26 +3913,22 @@ const [batchSize, setBatchSize] = useState<number>(1);
     (avatar: StoredAvatar) => {
       setPendingAvatarId(null);
       setSelectedAvatar(avatar);
+      setSelectedAvatarImageId(avatar.primaryImageId ?? avatar.images[0]?.id ?? null);
       setIsAvatarPickerOpen(false);
-      if (referenceFiles.length > MAX_REFERENCES_WITH_AVATAR) {
-        const trimmedFiles = referenceFiles.slice(0, MAX_REFERENCES_WITH_AVATAR);
-        const trimmedPreviews = referencePreviews.slice(0, MAX_REFERENCES_WITH_AVATAR);
-        referencePreviews.slice(MAX_REFERENCES_WITH_AVATAR).forEach(url => URL.revokeObjectURL(url));
-        setReferenceFiles(trimmedFiles);
-        setReferencePreviews(trimmedPreviews);
-      }
     },
-    [referenceFiles, referencePreviews],
+    [],
   );
 
   const clearSelectedAvatar = useCallback(() => {
     setSelectedAvatar(null);
+    setSelectedAvatarImageId(null);
     setPendingAvatarId(null);
     setIsAvatarPickerOpen(false);
   }, []);
 
   const handleProductSelect = useCallback(
-    (product: StoredAvatar) => {
+    (product: StoredProduct) => {
+      setPendingProductId(null);
       setSelectedProduct(product);
       setIsProductPickerOpen(false);
     },
@@ -3317,27 +3937,49 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const clearSelectedProduct = useCallback(() => {
     setSelectedProduct(null);
+    setPendingProductId(null);
     setIsProductPickerOpen(false);
   }, []);
 
+  useEffect(() => {
+    if (referenceFiles.length <= referenceLimit) {
+      return;
+    }
+
+    setReferenceFiles(prev => {
+      if (prev.length <= referenceLimit) return prev;
+      return prev.slice(0, referenceLimit);
+    });
+
+    setReferencePreviews(prev => {
+      if (prev.length <= referenceLimit) return prev;
+      prev.slice(referenceLimit).forEach(url => URL.revokeObjectURL(url));
+      return prev.slice(0, referenceLimit);
+    });
+  }, [referenceFiles, referenceLimit]);
+
   const confirmDeleteProduct = useCallback(async () => {
     if (!productToDelete || !storagePrefix) return;
-    
+
     const updatedProducts = storedProducts.filter(p => p.id !== productToDelete.id);
     setStoredProducts(updatedProducts);
-    
+
     if (selectedProduct?.id === productToDelete.id) {
       clearSelectedProduct();
     }
-    
+
+    if (creationsModalProduct?.id === productToDelete.id) {
+      setCreationsModalProduct(null);
+    }
+
     try {
       await setPersistedValue(storagePrefix, "products", updatedProducts);
     } catch (error) {
       debugError("Failed to persist products", error);
     }
-    
+
     setProductToDelete(null);
-  }, [productToDelete, storedProducts, selectedProduct, storagePrefix, clearSelectedProduct]);
+  }, [productToDelete, storedProducts, selectedProduct, storagePrefix, clearSelectedProduct, creationsModalProduct]);
 
   const confirmDeleteAvatar = useCallback(async () => {
     if (!avatarToDelete || !storagePrefix) return;
@@ -3347,6 +3989,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     
     if (selectedAvatar?.id === avatarToDelete.id) {
       setSelectedAvatar(null);
+      setSelectedAvatarImageId(null);
     }
     
     try {
@@ -3359,7 +4002,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   }, [avatarToDelete, storedAvatars, selectedAvatar, storagePrefix]);
 
   // Avatar creation modal handlers
-  const validateAvatarFile = useCallback((file: File): string | null => {
+  const validateImageFile = useCallback((file: File): string | null => {
     // Check MIME type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
@@ -3393,9 +4036,36 @@ const [batchSize, setBatchSize] = useState<number>(1);
     });
   }, []);
 
-  const processAvatarImageFile = useCallback(async (file: File) => {
+  const openAvatarCreationModal = useCallback(
+    (options?: { openGallery?: boolean; resetSelection?: boolean; resetName?: boolean }) => {
+      setIsAvatarPickerOpen(false);
+      if (options?.resetSelection !== false) {
+        setAvatarSelection(null);
+      }
+      if (options?.resetName !== false) {
+        setAvatarName("");
+      }
+      setAvatarUploadError(null);
+      setIsDraggingAvatar(false);
+      if (options?.openGallery) {
+        setAvatarGalleryOpenTrigger(prev => prev + 1);
+      }
+      setIsAvatarCreationModalOpen(true);
+    },
+    [
+      setIsAvatarPickerOpen,
+      setAvatarSelection,
+      setAvatarName,
+      setAvatarUploadError,
+      setIsDraggingAvatar,
+      setAvatarGalleryOpenTrigger,
+      setIsAvatarCreationModalOpen,
+    ],
+  );
+
+  const processAvatarImageFile = useCallback(async (file: File, options?: { openCreationModal?: boolean; resetName?: boolean }) => {
     // Pre-validate the file
-    const validationError = validateAvatarFile(file);
+    const validationError = validateImageFile(file);
     if (validationError) {
       setAvatarUploadError(validationError);
       return;
@@ -3432,13 +4102,51 @@ const [batchSize, setBatchSize] = useState<number>(1);
       const result = reader.result;
       if (typeof result === "string") {
         setAvatarSelection({ imageUrl: result, source: "upload" });
+        if (options?.openCreationModal) {
+          openAvatarCreationModal({
+            openGallery: false,
+            resetName: options.resetName,
+            resetSelection: false,
+          });
+        }
       }
     };
     reader.onerror = () => {
     setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
-  }, [validateAvatarFile, getImageDimensions]);
+  }, [validateImageFile, getImageDimensions, openAvatarCreationModal, setAvatarSelection, setAvatarUploadError]);
+
+  const handleAvatarQuickUpload = useCallback((file: File | null) => {
+    if (!file) return;
+    setIsDraggingAvatar(false);
+    void processAvatarImageFile(file, { openCreationModal: true });
+  }, [processAvatarImageFile, setIsDraggingAvatar]);
+
+  const handleAvatarButtonDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverAvatarButton(true);
+  }, []);
+
+  const handleAvatarButtonDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverAvatarButton(false);
+  }, []);
+
+  const handleAvatarButtonDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverAvatarButton(false);
+    
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      handleAvatarQuickUpload(imageFile);
+    }
+  }, [handleAvatarQuickUpload]);
 
   const handleSaveNewAvatar = useCallback(async () => {
     if (!avatarSelection || !avatarName.trim() || !storagePrefix) return;
@@ -3454,6 +4162,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     const updatedAvatars = [record, ...storedAvatars];
     setStoredAvatars(updatedAvatars);
+    setPendingAvatarId(record.id);
 
     try {
       await setPersistedValue(storagePrefix, "avatars", updatedAvatars);
@@ -3466,6 +4175,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarSelection(null);
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
+    setAvatarGalleryOpenTrigger(0);
   }, [avatarName, avatarSelection, storedAvatars, storagePrefix, user?.id]);
 
   const resetAvatarCreationPanel = useCallback(() => {
@@ -3474,6 +4184,141 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setAvatarSelection(null);
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
+    setAvatarGalleryOpenTrigger(0);
+  }, []);
+
+  const processProductImageFile = useCallback(
+    async (file: File, options?: { openCreationModal?: boolean; resetName?: boolean }) => {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        setProductUploadError(validationError);
+        return;
+      }
+
+      try {
+        const { width, height } = await getImageDimensions(file);
+        const maxDimension = 8192;
+        const minDimension = 64;
+
+        if (width > maxDimension || height > maxDimension) {
+          setProductUploadError(
+            `Image dimensions (${width}x${height}) are too large. Maximum allowed: ${maxDimension}x${maxDimension}.`,
+          );
+          return;
+        }
+
+        if (width < minDimension || height < minDimension) {
+          setProductUploadError(
+            `Image dimensions (${width}x${height}) are too small. Minimum required: ${minDimension}x${minDimension}.`,
+          );
+          return;
+        }
+      } catch {
+        setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+        return;
+      }
+
+      setProductUploadError(null);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          setProductSelection({ imageUrl: result, source: "upload" });
+          if (options?.openCreationModal) {
+            if (options.resetName !== false) {
+              setProductName("");
+            }
+            setIsProductCreationModalOpen(true);
+            setIsProductPickerOpen(false);
+          }
+        }
+      };
+      reader.onerror = () => {
+        setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      };
+      reader.readAsDataURL(file);
+    },
+    [
+      getImageDimensions,
+      validateImageFile,
+      setProductSelection,
+      setProductName,
+      setIsProductCreationModalOpen,
+      setIsProductPickerOpen,
+      setProductUploadError,
+    ],
+  );
+
+  const handleProductQuickUpload = useCallback(
+    (file: File | null) => {
+      if (!file) return;
+      setIsDraggingProduct(false);
+      void processProductImageFile(file, { openCreationModal: true });
+    },
+    [processProductImageFile, setIsDraggingProduct],
+  );
+
+  const handleProductButtonDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverProductButton(true);
+  }, []);
+
+  const handleProductButtonDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverProductButton(false);
+  }, []);
+
+  const handleProductButtonDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverProductButton(false);
+    
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      handleProductQuickUpload(imageFile);
+    }
+  }, [handleProductQuickUpload]);
+
+  const handleSaveNewProduct = useCallback(async () => {
+    if (!productSelection || !productName.trim() || !storagePrefix) return;
+
+    const record = createProductRecord({
+      name: productName.trim(),
+      imageUrl: productSelection.imageUrl,
+      source: productSelection.source,
+      sourceId: productSelection.sourceId,
+      ownerId: user?.id ?? undefined,
+      existingProducts: storedProducts,
+    });
+
+    const updatedProducts = [record, ...storedProducts];
+    setStoredProducts(updatedProducts);
+    setPendingProductId(record.id);
+
+    try {
+      await setPersistedValue(storagePrefix, "products", updatedProducts);
+    } catch (error) {
+      debugError("Failed to persist products", error);
+    }
+
+    setIsProductCreationModalOpen(false);
+    setProductName("");
+    setProductSelection(null);
+    setProductUploadError(null);
+    setIsDraggingProduct(false);
+  }, [productSelection, productName, storagePrefix, user?.id, storedProducts]);
+
+  const resetProductCreationPanel = useCallback(() => {
+    setIsProductCreationModalOpen(false);
+    setProductName("");
+    setProductSelection(null);
+    setProductUploadError(null);
+    setIsDraggingProduct(false);
   }, []);
 
   const handleRefsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -3627,9 +4472,11 @@ const handleGenerate = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) return;
 
+    const finalPrompt = applyStyleToPrompt(trimmedPrompt);
+
     debugLog('[Create] Starting Wan video generation, setting isButtonSpinning to true');
 
-    setWanVideoPrompt(trimmedPrompt);
+    setWanVideoPrompt(finalPrompt);
 
     if (spinnerTimeoutRef.current) {
       clearTimeout(spinnerTimeoutRef.current);
@@ -3876,6 +4723,8 @@ const handleGenerate = async () => {
       return;
     }
 
+    const finalPrompt = applyStyleToPrompt(trimmedPrompt);
+
     // Check if model is supported
     if (isComingSoon) {
       alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Reve, Recraft, Veo, and Seedance models are available.');
@@ -3896,7 +4745,13 @@ const handleGenerate = async () => {
     const referencesForGeneration = referenceFiles.slice(0);
     if (selectedAvatar) {
       try {
-        const avatarFile = await urlToFile(selectedAvatar.imageUrl, `${selectedAvatar.id}.png`);
+        const avatarImageToUse =
+          selectedAvatarImage ??
+          selectedAvatar.images.find(image => image.id === (selectedAvatarImageId ?? selectedAvatar.primaryImageId)) ??
+          selectedAvatar.images[0];
+        const avatarSourceUrl = avatarImageToUse?.url ?? selectedAvatar.imageUrl;
+        const avatarFileName = `${selectedAvatar.id}-${avatarImageToUse?.id ?? "primary"}.png`;
+        const avatarFile = await urlToFile(avatarSourceUrl, avatarFileName);
         referencesForGeneration.unshift(avatarFile);
       } catch (error) {
         debugError('Failed to prepare avatar reference for generation', error);
@@ -3932,16 +4787,16 @@ const handleGenerate = async () => {
     modelForGeneration === "luma-photon-1" ||
     modelForGeneration === "luma-photon-flash-1";
 
-  const jobMeta: ActiveGenerationJob = {
-    id: generationId,
-    prompt: trimmedPrompt,
-    model: modelForGeneration,
-    startedAt: Date.now(),
-    progress: 1,
-    backendProgress: 0,
-    backendProgressUpdatedAt: Date.now(),
-    status: 'queued',
-  };
+    const jobMeta: ActiveGenerationJob = {
+      id: generationId,
+      prompt: finalPrompt,
+      model: modelForGeneration,
+      startedAt: Date.now(),
+      progress: 1,
+      backendProgress: 0,
+      backendProgressUpdatedAt: Date.now(),
+      status: 'queued',
+    };
 
   // Only add to activeGenerationQueue if we're not handling video models that manage their own state
   const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
@@ -4069,7 +4924,7 @@ const handleGenerate = async () => {
 
         if (isGeminiModel) {
           img = await generateGeminiImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: modelForGeneration,
             imageData,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
@@ -4078,19 +4933,21 @@ const handleGenerate = async () => {
             topP: topPForGeneration,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
             clientJobId: generationId,
             onProgress: handleGeminiProgress,
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: fluxModel as FluxModel,
             width: 1024,
             height: 1024,
             useWebhook: false,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           };
 
@@ -4111,20 +4968,22 @@ const handleGenerate = async () => {
           img = fluxResult;
         } else if (isChatGPTModel) {
           img = await generateChatGPTImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             size: '1024x1024',
             quality: 'high',
             background: 'transparent',
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
         } else if (isIdeogramModel) {
           const ideogramResult = await generateIdeogramImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             aspect_ratio: '1:1',
             rendering_speed: 'DEFAULT',
             num_images: 1,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           if (!ideogramResult || ideogramResult.length === 0) {
@@ -4133,11 +4992,12 @@ const handleGenerate = async () => {
           img = ideogramResult[0];
         } else if (isQwenModel) {
           const qwenResult = await generateQwenImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             size: qwenSizeForGeneration,
             prompt_extend: qwenPromptExtendForGeneration,
             watermark: qwenWatermarkForGeneration,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           if (!qwenResult || qwenResult.length === 0) {
@@ -4146,12 +5006,13 @@ const handleGenerate = async () => {
           img = qwenResult[0];
         } else if (isRunwayModel) {
           const runwayResult = await generateRunwayImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: runwayModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
             uiModel: runwayModel,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             ratio: "1920:1080",
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           img = runwayResult;
@@ -4159,28 +5020,30 @@ const handleGenerate = async () => {
           throw new Error('Runway video generation is not yet supported in this backend integration.');
         } else if (isReveModel) {
           const reveResult = await generateReveImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: "reve-image-1.0",
             width: 1024,
             height: 1024,
             references: referenceDataUrls.length ? referenceDataUrls : undefined,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
           img = reveResult;
         } else if (isRecraftModel) {
-          if (!token) {
-            throw new Error('Please sign in to generate images.');
-          }
+          // TEMPORARILY DISABLED: Authentication check
+          // if (!token) {
+          //   throw new Error('Please sign in to generate images.');
+          // }
 
           const response = await fetch(getApiUrl('/api/image/recraft'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
-              prompt: trimmedPrompt,
+              prompt: finalPrompt,
               model: recraftModel,
               providerOptions: {
                 style: 'realistic_image',
@@ -4205,7 +5068,7 @@ const handleGenerate = async () => {
             for (let attempt = 0; attempt < 60; attempt += 1) {
               const statusResponse = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
                 headers: {
-                  Authorization: `Bearer ${token}`,
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
               });
 
@@ -4232,11 +5095,12 @@ const handleGenerate = async () => {
 
             img = {
               url: jobResultUrl,
-              prompt: trimmedPrompt,
+              prompt: finalPrompt,
               model: recraftModel,
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
               avatarId: selectedAvatar?.id,
+              avatarImageId: activeAvatarImageId ?? undefined,
               productId: selectedProduct?.id,
             };
           } else {
@@ -4247,11 +5111,12 @@ const handleGenerate = async () => {
 
             img = {
               url: dataUrl,
-              prompt: trimmedPrompt,
+              prompt: finalPrompt,
               model: recraftModel,
               timestamp: new Date().toISOString(),
               ownerId: user?.id,
               avatarId: selectedAvatar?.id,
+              avatarImageId: activeAvatarImageId ?? undefined,
               productId: selectedProduct?.id,
             };
           }
@@ -4262,9 +5127,10 @@ const handleGenerate = async () => {
               : lumaPhotonModel;
 
           const lumaResult = await generateLumaImage({
-            prompt: trimmedPrompt,
+            prompt: finalPrompt,
             model: resolvedLumaModel,
             avatarId: selectedAvatar?.id,
+            avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
           });
 
@@ -4505,7 +5371,7 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -4514,7 +5380,7 @@ const handleGenerate = async () => {
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -4550,8 +5416,8 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Create New Folder</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Create New Folder</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -4626,10 +5492,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : (publishConfirmation.count === 1 
@@ -4663,10 +5529,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : (unpublishConfirmation.count === 1 
@@ -4700,10 +5566,10 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Download className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   {downloadConfirmation.count === 1 
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download ${downloadConfirmation.count} images?`}
@@ -4735,8 +5601,8 @@ const handleGenerate = async () => {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <h3 className="text-xl font-raleway font-light text-theme-text">Manage Folders</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
                   Check folders to add or remove {selectedImagesForFolder.length > 1 ? 'these items' : 'this item'} from.
                 </p>
               </div>
@@ -5161,6 +6027,7 @@ const handleGenerate = async () => {
                       getAvailableFolders={getAvailableFolders}
                       folders={folders}
                       getAvailableAvatars={getAvailableAvatars}
+                      getAvailableProducts={getAvailableProducts}
                       toggleSelectMode={toggleSelectMode}
                       toggleSelectAllVisible={toggleSelectAllVisible}
                       filteredGallery={filteredGallery}
@@ -5254,7 +6121,7 @@ const handleGenerate = async () => {
                               <div className="w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
+                                    <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 pl-1">
                                       {upload.file.name}
                                     </p>
                                     <p className="text-theme-white/60 text-xs font-raleway mt-1">
@@ -5276,7 +6143,7 @@ const handleGenerate = async () => {
                                 title="Delete upload" 
                                 aria-label="Delete upload"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3 h-3" />
                               </button>
                               <a 
                                 href={upload.previewUrl} 
@@ -5285,7 +6152,7 @@ const handleGenerate = async () => {
                                 title="Download image" 
                                 aria-label="Download image"
                               >
-                                <Download className="w-3.5 h-3.5" />
+                                <Download className="w-3 h-3" />
                               </a>
                             </div>
                           </div>
@@ -5385,7 +6252,7 @@ const handleGenerate = async () => {
                                 <div className="w-full p-4">
                                   <div className="mb-2">
                                     <div className="relative">
-                                      <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-2 pl-1">
+                                      <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 pl-1">
                                         {img.prompt || 'Generated image'}
                                         {img.prompt && (
                                           <>
@@ -5440,7 +6307,7 @@ const handleGenerate = async () => {
                                       </p>
                                       {/* Model Badge and Public Indicator */}
                                       <div className="flex justify-between items-center mt-2">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 md:gap-2">
                                           <Suspense fallback={null}>
                                             <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                           </Suspense>
@@ -5452,6 +6319,16 @@ const handleGenerate = async () => {
                                               <AvatarBadge
                                                 avatar={avatarForImage}
                                                 onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                              />
+                                            );
+                                          })()}
+                                          {(() => {
+                                            const productForImage = img.productId ? productMap.get(img.productId) : undefined;
+                                            if (!productForImage) return null;
+                                            return (
+                                              <ProductBadge
+                                                product={productForImage}
+                                                onClick={() => setCreationsModalProduct(productForImage)}
                                               />
                                             );
                                           })()}
@@ -5513,7 +6390,7 @@ const handleGenerate = async () => {
                                   aria-pressed={isSelected}
                                   aria-label={isSelected ? 'Unselect image' : 'Select image'}
                                 >
-                                  {isSelected ? <Check className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                                  {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                                 </button>
                                 {!isSelectMode && (
                                   <div className={`ml-auto flex items-center gap-0.5 ${
@@ -5538,7 +6415,7 @@ const handleGenerate = async () => {
                                     title="Delete image" 
                                     aria-label="Delete image"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-3 h-3" />
                                   </button>
                                   <button 
                                     type="button" 
@@ -5555,7 +6432,7 @@ const handleGenerate = async () => {
                                     aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                                   >
                                     <Heart 
-                                      className={`heart-icon w-3.5 h-3.5 transition-colors duration-100 ${
+                                      className={`heart-icon w-3 h-3 transition-colors duration-100 ${
                                         favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                                       }`} 
                                     />
@@ -5754,7 +6631,7 @@ const handleGenerate = async () => {
                             title="Delete folder" 
                             aria-label="Delete folder"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
@@ -5846,7 +6723,7 @@ const handleGenerate = async () => {
                               <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         data-copy-button="true"
@@ -5973,15 +6850,15 @@ const handleGenerate = async () => {
                                   event.stopPropagation();
                                   confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
                                 }}
-                                className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                                  imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                }`}
-                                title="Delete image" 
-                                aria-label="Delete image"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
+                              className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                                imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}`
+                                  ? 'opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                              }`}
+                              title="Delete image" 
+                              aria-label="Delete image"
+                            >
+                              <Trash2 className="w-3 h-3" />
                               </button>
                               <button 
                                 type="button" 
@@ -5996,11 +6873,11 @@ const handleGenerate = async () => {
                                 }`}
                                 title={favorites.has(img.url) ? "Remove from liked" : "Add to liked"} 
                                 aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
-                              >
-                                <Heart 
-                                  className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                                    favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                                  }`} 
+                            >
+                              <Heart 
+                                className={`heart-icon w-3 h-3 transition-colors duration-200 ${
+                                  favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                }`}
                                 />
                               </button>
                               {renderMoreButton(
@@ -6132,7 +7009,7 @@ const handleGenerate = async () => {
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
-                                        <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                        <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                           {seedanceVideo.prompt}
                                         </p>
                                       </div>
@@ -6169,7 +7046,7 @@ const handleGenerate = async () => {
                                   <div className="relative z-10 w-full p-4">
                                     <div className="mb-2">
                                       <div className="relative">
-                                        <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                        <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                           {video.prompt}
                                         </p>
                                       </div>
@@ -6211,7 +7088,7 @@ const handleGenerate = async () => {
                           <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200" onClick={focusPromptBar}>
                             <div className="flex flex-col items-center gap-2 text-center px-2">
                               <VideoIcon className="w-8 h-8 text-theme-light" />
-                              <div className="text-theme-light font-raleway text-base">Create something amazing.</div>
+                              <div className="text-theme-light font-raleway text-base font-light">Create something amazing.</div>
                             </div>
                           </div>
                         );
@@ -6294,8 +7171,7 @@ const handleGenerate = async () => {
                               size={58}
                               strokeWidth={4}
                               showPercentage
-                              className="drop-shadow-[0_0_18px_rgba(255,102,0,0.35)]"
-                              textColor="var(--theme-orange-1)"
+                              className="drop-shadow-[0_0_18px_rgba(168,176,176,0.35)]"
                             />
                             <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
                               {statusLabel}
@@ -6336,7 +7212,7 @@ const handleGenerate = async () => {
                               <div className="relative z-10 w-full p-4">
                                 <div className="mb-2">
                                   <div className="relative">
-                                    <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                                       {img.prompt}
                                       <button
                                         data-copy-button="true"
@@ -6425,7 +7301,7 @@ const handleGenerate = async () => {
                                 )}
                                 {/* Model Badge and Public Indicator */}
                                 <div className="flex justify-between items-center mt-2">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 md:gap-2">
                                     <Suspense fallback={null}>
                                       <ModelBadge model={img.model ?? 'unknown'} size="md" />
                                     </Suspense>
@@ -6437,6 +7313,16 @@ const handleGenerate = async () => {
                                         <AvatarBadge
                                           avatar={avatarForImage}
                                           onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                        />
+                                      );
+                                    })()}
+                                    {(() => {
+                                      const productForImage = img.productId ? productMap.get(img.productId) : undefined;
+                                      if (!productForImage) return null;
+                                      return (
+                                        <ProductBadge
+                                          product={productForImage}
+                                          onClick={() => setCreationsModalProduct(productForImage)}
                                         />
                                       );
                                     })()}
@@ -6490,15 +7376,15 @@ const handleGenerate = async () => {
                                 event.stopPropagation();
                                 confirmDeleteImage(img.url, img.savedFrom ? 'inspirations' : 'gallery');
                               }}
-                              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                                imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
-                                  ? 'opacity-100 pointer-events-auto'
-                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                              }`}
-                              title="Delete image" 
-                              aria-label="Delete image"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
+                            className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                              imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}`
+                                ? 'opacity-100 pointer-events-auto'
+                                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                            }`}
+                            title="Delete image" 
+                            aria-label="Delete image"
+                          >
+                            <Trash2 className="w-3 h-3" />
                             </button>
                             <button 
                               type="button" 
@@ -6515,7 +7401,7 @@ const handleGenerate = async () => {
                               aria-label={favorites.has(img.url) ? "Remove from liked" : "Add to liked"}
                             >
                               <Heart 
-                                className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
+                                className={`heart-icon w-3 h-3 transition-colors duration-200 ${
                                   favorites.has(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                                 }`} 
                               />
@@ -6535,7 +7421,7 @@ const handleGenerate = async () => {
                       <div key={`ph-${idx}`} className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200" onClick={focusPromptBar}>
                         <div className="flex flex-col items-center gap-2 text-center px-2">
                           <ImageIcon className="w-8 h-8 text-theme-light" />
-                          <div className="text-theme-light font-raleway text-base">Create something amazing.</div>
+                          <div className="text-theme-light font-raleway text-base font-light">Create something amazing.</div>
                         </div>
                       </div>
                     );
@@ -6567,6 +7453,9 @@ const handleGenerate = async () => {
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => { if (!isGemini) return; e.preventDefault(); setIsDragging(false); const files = Array.from(e.dataTransfer.files || []); if (files.length) { handleAddReferenceFiles(files); } }}
             >
+              <div className="flex gap-3 items-stretch">
+                {/* Left section: Textarea + Controls */}
+                <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
               <div className="mb-1">
                 <textarea
@@ -6589,7 +7478,7 @@ const handleGenerate = async () => {
                     <button
                       type="button"
                       onClick={() => navigate('/create/chat')}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
                       aria-label="Chat mode"
                       onMouseEnter={(e) => {
                         showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
@@ -6597,6 +7486,9 @@ const handleGenerate = async () => {
                       onMouseLeave={() => {
                         hideHoverTooltip('chat-mode-tooltip');
                       }}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
                       <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
                     </button>
@@ -6608,35 +7500,55 @@ const handleGenerate = async () => {
                       Chat Mode
                     </div>
                   </div>
+
                 <div className="relative">
                   <button
                     type="button"
                     onClick={isGemini ? handleRefsClick : undefined}
                     aria-label="Add reference image"
                     disabled={!isGemini}
-                    className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200`}
-                    onMouseEnter={(e) => {
-                      if (isGemini) showHoverTooltip(e.currentTarget, 'reference-tooltip');
+                    className={`${isGemini ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    onMouseEnter={() => {
+                      if (isGemini && typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          // Reset inline styles to match CSS-defined positioning
+                          tooltip.style.top = '0px';
+                          tooltip.style.left = '50%';
+                          tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                          tooltip.classList.remove('opacity-0');
+                          tooltip.classList.add('opacity-100');
+                        }
+                      }
                     }}
                     onMouseLeave={() => {
-                      hideHoverTooltip('reference-tooltip');
+                      if (typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          tooltip.classList.remove('opacity-100');
+                          tooltip.classList.add('opacity-0');
+                        }
+                      }
                     }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
                   >
                     <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
                   </button>
-                  <div
-                    data-tooltip-for="reference-tooltip"
-                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                  >
-                    Upload Reference Image
-                  </div>
+                <div
+                  data-tooltip-for="reference-tooltip"
+                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                >
+                  Reference Image
+                </div>
                 </div>
 
                 {/* Reference images display - right next to Add reference button */}
                 {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referencePreviews.length}/{referenceLimit}):</div>
+                    <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referencePreviews.length + (selectedAvatar ? 1 : 0) + (selectedProduct ? 1 : 0)}/{DEFAULT_REFERENCE_LIMIT}):</div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((url, idx) => (
                         <div key={idx} className="relative group">
@@ -6668,108 +7580,16 @@ const handleGenerate = async () => {
 
                 {activeCategory === "image" && (
                   <>
-                    <button
-                      type="button"
-                      ref={avatarButtonRef}
-                      onClick={() => setIsAvatarPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                    >
-                      <Users className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Avatar</span>
-                    </button>
-
-                    {/* Selected Avatar display - right next to Select Avatar button */}
-                    {selectedAvatar && (
-                      <div className="flex items-center gap-2">
-                        <div className="hidden lg:block text-sm text-n-text font-raleway">Avatar:</div>
-                        <div className="relative group">
-                          <img
-                            src={selectedAvatar.imageUrl}
-                            alt={selectedAvatar.name}
-                            loading="lazy"
-                            className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
-                            title={selectedAvatar.name}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearSelectedAvatar();
-                            }}
-                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                            title="Remove avatar"
-                          >
-                            <X className="w-2.5 h-2.5 text-n-text" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      ref={productButtonRef}
-                      onClick={() => setIsProductPickerOpen(prev => !prev)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                    >
-                      <Package className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Product</span>
-                    </button>
-
-                    {/* Selected Product display - right next to Product button */}
-                    {selectedProduct && (
-                      <div className="flex items-center gap-2">
-                        <div className="hidden lg:block text-sm text-n-text font-raleway">Product:</div>
-                        <div className="relative group">
-                          <img
-                            src={selectedProduct.imageUrl}
-                            alt={selectedProduct.name}
-                            loading="lazy"
-                            className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
-                            title={selectedProduct.name}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearSelectedProduct();
-                            }}
-                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                            title="Remove product"
-                          >
-                            <X className="w-2.5 h-2.5 text-n-text" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="relative">
-                      <button
-                        type="button"
-                        ref={promptsButtonRef}
-                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 group`}
-                        onMouseEnter={(e) => {
-                          showHoverTooltip(e.currentTarget, 'prompts-tooltip');
-                        }}
-                        onMouseLeave={() => {
-                          hideHoverTooltip('prompts-tooltip');
-                        }}
-                      >
-                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                      </button>
-                      <div
-                        data-tooltip-for="prompts-tooltip"
-                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                      >
-                        Your Prompts
-                      </div>
-                    </div>
+                    {storedAvatars.length > 0 && (
                     <AvatarPickerPortal
                       anchorRef={avatarButtonRef}
                       open={isAvatarPickerOpen}
                       onClose={() => setIsAvatarPickerOpen(false)}
                     >
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        {storedAvatars.length > 0 ? (
+                          <>
+                        <div className="flex items-center justify-between px-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -6780,25 +7600,24 @@ const handleGenerate = async () => {
                           >
                             Your Avatars
                           </button>
-                          <button
-                            type="button"
-                            className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={() => {
-                              setIsAvatarPickerOpen(false);
-                              setIsAvatarCreationModalOpen(true);
-                              setAvatarName("");
-                            }}
-                            aria-label="Create a new Avatar"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAvatarUploadError(null);
+                                  avatarQuickUploadInputRef.current?.click();
+                                }}
+                                className="p-1 rounded-lg hover:bg-theme-text/10 transition-colors duration-200"
+                                title="Add new avatar"
+                                aria-label="Add new avatar"
+                              >
+                                <Plus className="h-4 w-4 text-theme-text" />
+                              </button>
                         </div>
-                        {storedAvatars.length > 0 ? (
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
                               return (
-                                <div className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                <div key={avatar.id} className="flex items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleAvatarSelect(avatar)}
@@ -6817,7 +7636,6 @@ const handleGenerate = async () => {
                                     <div className="min-w-0 flex-1 text-left">
                                       <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
                                     </div>
-                                    {isActive && <Check className="h-4 w-4 text-theme-text" />}
                                   </button>
                                   <div className="flex items-center gap-1">
                                     <button
@@ -6845,20 +7663,98 @@ const handleGenerate = async () => {
                                     >
                                       <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                                     </button>
+                                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
+                          </>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
-                            You haven't saved any Avatars yet. Visit the Avatars page to create one.
+                          <>
+                            <div className="flex items-center justify-center px-1">
+                              <span className="text-base font-raleway text-theme-text">
+                                Upload Avatar
+                              </span>
+                            </div>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                                isDraggingAvatar
+                                  ? 'border-theme-text bg-theme-text/10'
+                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                              }`}
+                              onDragOver={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setAvatarUploadError(null);
+                                setIsDraggingAvatar(true);
+                              }}
+                              onDragLeave={() => {
+                                setIsDraggingAvatar(false);
+                              }}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setIsDraggingAvatar(false);
+                                const files = Array.from(event.dataTransfer?.files ?? []);
+                                const file = files.find(item => item.type.startsWith('image/')) ?? null;
+                                if (!file) {
+                                  setAvatarUploadError('Please choose an image file.');
+                                  return;
+                                }
+                                setAvatarUploadError(null);
+                                handleAvatarQuickUpload(file);
+                              }}
+                              onClick={() => {
+                                setAvatarUploadError(null);
+                                avatarQuickUploadInputRef.current?.click();
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setAvatarUploadError(null);
+                                  avatarQuickUploadInputRef.current?.click();
+                                }
+                              }}
+                              onPaste={(event) => {
+                                const items = Array.from(event.clipboardData?.items ?? []);
+                                const file = items.find(item => item.type.startsWith('image/'))?.getAsFile() ?? null;
+                                if (!file) {
+                                  return;
+                                }
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setAvatarUploadError(null);
+                                handleAvatarQuickUpload(file);
+                              }}
+                            >
+                              <Upload className="w-5 h-5 text-n-white mb-0" />
+                              <p className="text-sm text-n-white mb-0">
+                                Drop your image.
+                              </p>
+                              <button
+                                type="button"
+                                className={`${buttons.primary} !w-fit !h-auto !px-2 !py-2 text-sm inline-flex items-center gap-1.5 rounded-lg`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setAvatarUploadError(null);
+                                  avatarQuickUploadInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="w-3 h-3" />
+                                Upload
+                              </button>
+                            {avatarUploadError && (
+                              <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                {avatarUploadError}
+                              </p>
+                            )}
                           </div>
-                        )}
-                        {!storedAvatars.length && (
                           <button
                             type="button"
-                            className={`w-full ${buttons.glassPromptCompact}`}
+                            className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                             onClick={() => {
                               navigate('/create/avatars');
                               setIsAvatarPickerOpen(false);
@@ -6867,66 +7763,49 @@ const handleGenerate = async () => {
                             <Users className="h-4 w-4" />
                             Go to Avatars
                           </button>
+                          </>
                         )}
                       </div>
                     </AvatarPickerPortal>
+                    )}
+                    {storedProducts.length > 0 && (
                     <AvatarPickerPortal
                       anchorRef={productButtonRef}
                       open={isProductPickerOpen}
                       onClose={() => setIsProductPickerOpen(false)}
                     >
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-base font-raleway text-theme-text">
-                            Your Products
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file || !storagePrefix) return;
-                              
-                              const reader = new FileReader();
-                              reader.onload = async (event) => {
-                                const imageUrl = event.target?.result as string;
-                                const newProduct: StoredAvatar = {
-                                  id: `product-${Date.now()}`,
-                                  slug: `product-${Date.now()}`,
-                                  name: file.name.replace(/\.[^/.]+$/, ""),
-                                  imageUrl,
-                                  createdAt: new Date().toISOString(),
-                                  source: "upload",
-                                  published: false,
-                                  ownerId: user?.id,
-                                };
-                                const updated = [...storedProducts, newProduct];
-                                setStoredProducts(updated);
-                                await setPersistedValue(storagePrefix, "products", updated);
-                              };
-                              reader.readAsDataURL(file);
-                              e.target.value = '';
-                            }}
-                            style={{ display: 'none' }}
-                            id="product-upload"
-                          />
-                          <label htmlFor="product-upload">
-                            <button
-                              type="button"
-                              className="inline-flex size-7 items-center justify-center rounded-full border border-theme-mid/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text"
-                              onClick={() => document.getElementById('product-upload')?.click()}
-                              aria-label="Add a new Product"
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </button>
-                          </label>
-                        </div>
                         {storedProducts.length > 0 ? (
+                          <>
+                        <div className="flex items-center justify-between px-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProductPickerOpen(false);
+                              navigate('/create/products');
+                            }}
+                            className="text-base font-raleway text-theme-text cursor-pointer"
+                          >
+                            Your Products
+                          </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProductUploadError(null);
+                                  productQuickUploadInputRef.current?.click();
+                                }}
+                                className="p-1 rounded-lg hover:bg-theme-text/10 transition-colors duration-200"
+                                title="Add new product"
+                                aria-label="Add new product"
+                              >
+                                <Plus className="h-4 w-4 text-theme-text" />
+                              </button>
+                        </div>
                           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                             {storedProducts.map(product => {
                               const isActive = selectedProduct?.id === product.id;
                               return (
-                                <div key={product.id} className="flex w-full items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                <div key={product.id} className="flex items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
                                   <button
                                     type="button"
                                     onClick={() => handleProductSelect(product)}
@@ -6945,13 +7824,25 @@ const handleGenerate = async () => {
                                     <div className="min-w-0 flex-1 text-left">
                                       <p className="truncate text-sm font-raleway text-theme-white">{product.name}</p>
                                     </div>
-                                    {isActive && <Check className="h-4 w-4 text-theme-text" />}
                                   </button>
                                   <div className="flex items-center gap-1">
                                     <button
                                       type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setCreationsModalProduct(product);
+                                        setIsProductPickerOpen(false);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
+                                      title="View creations"
+                                      aria-label="View creations with this Product"
+                                    >
+                                      <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
                                         setProductToDelete(product);
                                       }}
                                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
@@ -6960,18 +7851,154 @@ const handleGenerate = async () => {
                                     >
                                       <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                                     </button>
+                                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
+                          </>
                         ) : (
-                          <div className="rounded-2xl border border-theme-mid/60 bg-theme-black/60 p-4 text-sm font-raleway text-theme-white/70">
-                            You haven't added any Products yet. Click the + button above to add one.
-                          </div>
+                          <>
+                            <div className="flex items-center justify-center px-1">
+                              <span className="text-base font-raleway text-theme-text">
+                                Upload Product
+                              </span>
+                            </div>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className={`flex w-fit cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-4 text-center font-raleway text-theme-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-0 ${
+                                isDraggingProduct
+                                  ? 'border-theme-text bg-theme-text/10'
+                                  : 'border-theme-white/20 bg-theme-black/40 hover:border-theme-text/40 focus-visible:border-theme-text/70'
+                              }`}
+                              onDragOver={event => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setProductUploadError(null);
+                                setIsDraggingProduct(true);
+                              }}
+                              onDragLeave={() => {
+                                setIsDraggingProduct(false);
+                              }}
+                              onDrop={event => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setIsDraggingProduct(false);
+                                const files = Array.from(event.dataTransfer?.files ?? []);
+                                const file = files.find(item => item.type.startsWith('image/')) ?? null;
+                                if (!file) {
+                                  setProductUploadError('Please choose an image file.');
+                                  return;
+                                }
+                                setProductUploadError(null);
+                                handleProductQuickUpload(file);
+                              }}
+                              onClick={() => {
+                                setProductUploadError(null);
+                                productQuickUploadInputRef.current?.click();
+                              }}
+                              onKeyDown={event => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setProductUploadError(null);
+                                  productQuickUploadInputRef.current?.click();
+                                }
+                              }}
+                              onPaste={event => {
+                                const items = Array.from(event.clipboardData?.items ?? []);
+                                const file = items.find(item => item.type.startsWith('image/'))?.getAsFile() ?? null;
+                                if (!file) {
+                                  return;
+                                }
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setProductUploadError(null);
+                                handleProductQuickUpload(file);
+                              }}
+                            >
+                              <Upload className="w-5 h-5 text-n-white mb-0" />
+                              <p className="text-sm text-n-white mb-0">
+                                Drop your image.
+                              </p>
+                              <button
+                                type="button"
+                                className={`${buttons.primary} !w-fit !h-auto !px-2 !py-2 text-sm inline-flex items-center gap-1.5 rounded-lg`}
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  setProductUploadError(null);
+                                  productQuickUploadInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="w-3 h-3" />
+                                Upload
+                              </button>
+                              {productUploadError && (
+                                <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                  {productUploadError}
+                                </p>
+                              )}
+                            </div>
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
+                            onClick={() => {
+                              navigate('/create/products');
+                              setIsProductPickerOpen(false);
+                            }}
+                          >
+                            <Package className="h-4 w-4" />
+                            Go to Products
+                          </button>
+                          </>
                         )}
                       </div>
                     </AvatarPickerPortal>
+                    )}
+                    
+                    {/* Avatar file input - always in DOM */}
+                    <input
+                      ref={avatarQuickUploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        event.target.value = '';
+                        if (!file) {
+                          return;
+                        }
+                        if (!file.type.startsWith('image/')) {
+                          setAvatarUploadError('Please choose an image file.');
+                          return;
+                        }
+                        setAvatarUploadError(null);
+                        handleAvatarQuickUpload(file);
+                      }}
+                    />
+                    
+                    {/* Product file input - always in DOM */}
+                    <input
+                      ref={productQuickUploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={event => {
+                        const file = event.target.files?.[0] ?? null;
+                        event.target.value = '';
+                        if (!file) {
+                          return;
+                        }
+                        if (!file.type.startsWith('image/')) {
+                          setProductUploadError('Please choose an image file.');
+                          return;
+                        }
+                        setProductUploadError(null);
+                        handleProductQuickUpload(file);
+                      }}
+                    />
+                    
                     <PromptsDropdown
                       isOpen={isPromptsDropdownOpen}
                       onClose={() => setIsPromptsDropdownOpen(false)}
@@ -6988,165 +8015,181 @@ const handleGenerate = async () => {
                       onAddSavedPrompt={savePrompt}
                       onSaveRecentPrompt={savePromptToLibrary}
                     />
+                    {isStyleModalOpen &&
+                      createPortal(
+                        <div
+                          className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
+                          role="dialog"
+                          aria-modal="true"
+                          aria-labelledby="style-modal-heading"
+                          onClick={() => {
+                            setIsStyleModalOpen(false);
+                            focusStyleButton();
+                          }}
+                        >
+                          <div
+                            className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-mid px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
+                            onClick={event => event.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-between mb-4">
+                              <h2 id="style-modal-heading" className="text-lg font-raleway text-theme-text">
+                                Style
+                              </h2>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsStyleModalOpen(false);
+                                  focusStyleButton();
+                                }}
+                                className="inline-flex size-8 items-center justify-center rounded-full border border-theme-mid bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                aria-label="Close style"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="flex flex-1 flex-col gap-3 overflow-hidden">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {STYLE_GENDER_OPTIONS.map(option => {
+                                  const isActive = option.id === activeStyleGender;
+                                  const genderSelectedCount = Object.values(tempSelectedStyles[option.id]).reduce(
+                                    (count, styles) => count + styles.length,
+                                    0,
+                                  );
+                                  return (
+                                    <button
+                                      key={option.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveStyleGender(option.id);
+                                        const sections = tempSelectedStyles[option.id];
+                                        const firstWithSelection = (Object.entries(sections).find(([, styles]) => styles.length > 0)?.[0] as StyleSectionId | undefined);
+                                        setActiveStyleSection(prev => firstWithSelection ?? prev ?? STYLE_SECTION_DEFINITIONS[0].id);
+                                      }}
+                                      className={`rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                                        isActive
+                                          ? 'bg-theme-text text-theme-black border border-theme-text'
+                                          : `${glass.promptDark} text-theme-white hover:text-theme-text hover:border-theme-text/70`
+                                      }`}
+                                      aria-pressed={isActive}
+                                    >
+                                      <span>{option.label}</span>
+                                      {genderSelectedCount > 0 && (
+                                        <span className={`ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
+                                          isActive ? 'bg-theme-text text-theme-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                                        }`}>
+                                          {genderSelectedCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {STYLE_SECTION_DEFINITIONS.map(section => {
+                                  const isActive = section.id === activeStyleSectionData.id;
+                                  const sectionSelectedCount = tempSelectedStyles[activeStyleGender][section.id].length;
+                                  return (
+                                    <button
+                                      key={section.id}
+                                      type="button"
+                                      onClick={() => setActiveStyleSection(section.id)}
+                                      className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                                        isActive
+                                          ? 'bg-theme-text text-theme-black border border-theme-text'
+                                          : `${glass.promptDark} text-theme-white hover:text-theme-text hover:border-theme-text/70`
+                                      }`}
+                                      aria-pressed={isActive}
+                                    >
+                                      <img 
+                                        src={section.image} 
+                                        alt={`${section.name} category`}
+                                        className="w-5 h-5 rounded object-cover flex-shrink-0"
+                                      />
+                                      <span>{section.name}</span>
+                                      {sectionSelectedCount > 0 && (
+                                        <span className={`ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
+                                          isActive ? 'bg-theme-text text-theme-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                                        }`}>
+                                          {sectionSelectedCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex-1 overflow-y-auto">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
+                                  {activeStyleSectionData.options.map(option => {
+                                    const isActive = tempSelectedStyles[activeStyleGender][activeStyleSectionData.id].some(style => style.id === option.id);
+                                    return (
+                                      <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => handleToggleTempStyle(activeStyleGender, activeStyleSectionData.id, option)}
+                                        className="w-full text-left group parallax-small"
+                                      >
+                                        <div
+                                          className={`relative overflow-hidden rounded-xl border transition-colors duration-200 ${
+                                            isActive
+                                              ? 'border-theme-text'
+                                              : 'border-theme-mid group-hover:border-theme-text'
+                                          }`}
+                                        >
+                                          <div
+                                            role="img"
+                                            aria-label={`${option.name} style placeholder`}
+                                            className="w-full aspect-square"
+                                            style={{
+                                              backgroundImage: option.image ? `url(${encodeURI(option.image)})` : option.previewGradient,
+                                              backgroundSize: 'cover',
+                                              backgroundPosition: 'center',
+                                            }}
+                                          />
+                                          <div className="absolute bottom-0 left-0 right-0 z-10">
+                                            <div className="PromptDescriptionBar rounded-b-xl px-3 py-2">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <span className="text-sm font-[300] font-raleway text-theme-text">{option.name}</span>
+                                                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <p className="mt-3 text-sm font-raleway text-theme-white">
+                                  Style adds ready-made prompt guidance that layers on top of your description. Select any combination
+                                  that fits your vision.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsStyleModalOpen(false);
+                                  focusStyleButton();
+                                }}
+                                className={buttons.ghost}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleApplyStyles}
+                                disabled={totalTempSelectedStyles === 0}
+                                className={buttons.primary}
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </div>
+                        </div>,
+                        document.body,
+                      )}
                   </>
                 )}
-                <div className="relative settings-dropdown">
-                  <button
-                    ref={settingsRef}
-                    type="button"
-                    onClick={toggleSettings}
-                    title="Settings"
-                    aria-label="Settings"
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-                  >
-                    <Settings className="w-4 h-4 text-n-text" />
-                  </button>
-                  
-                  {/* Settings Dropdown Portal */}
-                  {isSettingsOpen && (
-                    <Suspense fallback={null}>
-                      <SettingsMenu
-                        anchorRef={settingsRef}
-                        open={isSettingsOpen}
-                        onClose={() => setIsSettingsOpen(false)}
-                        common={{
-                          batchSize,
-                          onBatchSizeChange: value => setBatchSize(value),
-                          min: 1,
-                          max: 4,
-                        }}
-                        flux={{
-                          enabled: isFlux,
-                          model: fluxModel,
-                          onModelChange: setFluxModel,
-                        }}
-                        veo={{
-                          enabled: isVeo,
-                          aspectRatio: videoAspectRatio,
-                          onAspectRatioChange: setVideoAspectRatio,
-                          model: videoModel,
-                          onModelChange: setVideoModel,
-                          negativePrompt: videoNegativePrompt,
-                          onNegativePromptChange: setVideoNegativePrompt,
-                          seed: videoSeed,
-                          onSeedChange: setVideoSeed,
-                        }}
-                        hailuo={{
-                          enabled: isHailuoVideo,
-                          duration: hailuoDuration,
-                          onDurationChange: setHailuoDuration,
-                          resolution: hailuoResolution,
-                          onResolutionChange: setHailuoResolution,
-                          promptOptimizer: hailuoPromptOptimizer,
-                          onPromptOptimizerChange: setHailuoPromptOptimizer,
-                          fastPretreatment: hailuoFastPretreatment,
-                          onFastPretreatmentChange: setHailuoFastPretreatment,
-                          watermark: hailuoWatermark,
-                          onWatermarkChange: setHailuoWatermark,
-                          firstFrame: hailuoFirstFrame,
-                          onFirstFrameChange: setHailuoFirstFrame,
-                          lastFrame: hailuoLastFrame,
-                          onLastFrameChange: setHailuoLastFrame,
-                        }}
-                        wan={{
-                          enabled: isWanVideo,
-                          size: wanSize,
-                          onSizeChange: setWanSize,
-                          negativePrompt: wanNegativePrompt,
-                          onNegativePromptChange: setWanNegativePrompt,
-                          promptExtend: wanPromptExtend,
-                          onPromptExtendChange: setWanPromptExtend,
-                          watermark: wanWatermark,
-                          onWatermarkChange: setWanWatermark,
-                          seed: wanSeed,
-                          onSeedChange: setWanSeed,
-                        }}
-                        kling={{
-                          enabled: isKlingVideo,
-                          model: klingModel,
-                          onModelChange: setKlingModel,
-                          aspectRatio: klingAspectRatio,
-                          onAspectRatioChange: setKlingAspectRatio,
-                          duration: klingDuration,
-                          onDurationChange: setKlingDuration,
-                          mode: klingMode,
-                          onModeChange: setKlingMode,
-                          cfgScale: klingCfgScale,
-                          onCfgScaleChange: setKlingCfgScale,
-                          negativePrompt: klingNegativePrompt,
-                          onNegativePromptChange: setKlingNegativePrompt,
-                          cameraType: klingCameraType,
-                          onCameraTypeChange: setKlingCameraType,
-                          cameraConfig: klingCameraConfig,
-                          onCameraConfigChange: (updates) => setKlingCameraConfig((prev) => ({ ...prev, ...updates })),
-                          statusMessage: klingStatusMessage,
-                        }}
-                        seedance={{
-                          enabled: isSeedance,
-                          mode: seedanceMode,
-                          onModeChange: setSeedanceMode,
-                          ratio: seedanceRatio,
-                          onRatioChange: setSeedanceRatio,
-                          duration: seedanceDuration,
-                          onDurationChange: setSeedanceDuration,
-                          resolution: seedanceResolution,
-                          onResolutionChange: setSeedanceResolution,
-                          fps: seedanceFps,
-                          onFpsChange: setSeedanceFps,
-                          cameraFixed: seedanceCamerafixed,
-                          onCameraFixedChange: setSeedanceCamerafixed,
-                          seed: seedanceSeed,
-                          onSeedChange: setSeedanceSeed,
-                          firstFrame: seedanceFirstFrame,
-                          onFirstFrameChange: setSeedanceFirstFrame,
-                          lastFrame: seedanceLastFrame,
-                          onLastFrameChange: setSeedanceLastFrame,
-                        }}
-                        recraft={{
-                          enabled: isRecraft,
-                          model: recraftModel,
-                          onModelChange: setRecraftModel,
-                        }}
-                        runway={{
-                          enabled: isRunway,
-                          model: runwayModel,
-                          onModelChange: setRunwayModel,
-                        }}
-                        gemini={{
-                          enabled: isGemini,
-                          temperature,
-                          onTemperatureChange: setTemperature,
-                          outputLength,
-                          onOutputLengthChange: setOutputLength,
-                          topP,
-                          onTopPChange: setTopP,
-                          aspectRatio: geminiAspectRatio,
-                          onAspectRatioChange: setGeminiAspectRatio,
-                        }}
-                        qwen={{
-                          enabled: isQwen,
-                          size: qwenSize,
-                          onSizeChange: setQwenSize,
-                          promptExtend: qwenPromptExtend,
-                          onPromptExtendChange: setQwenPromptExtend,
-                          watermark: qwenWatermark,
-                          onWatermarkChange: setQwenWatermark,
-                        }}
-                        lumaPhoton={{
-                          enabled: isLumaPhoton,
-                          model: lumaPhotonModel,
-                          onModelChange: setLumaPhotonModel,
-                        }}
-                        lumaRay={{
-                          enabled: isLumaRay,
-                          variant: lumaRayVariant,
-                          onVariantChange: setLumaRayVariant,
-                        }}
-                      />
-                    </Suspense>
-                  )}
-
-                </div>
 
                 {/* Model Selector */}
                 <div className="relative model-selector flex-shrink-0">
@@ -7154,7 +8197,10 @@ const handleGenerate = async () => {
                     ref={modelSelectorRef}
                     type="button"
                     onClick={toggleModelSelector}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small`}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
                   >
                     {(() => {
                       const currentModel = getCurrentModel();
@@ -7532,6 +8578,204 @@ const handleGenerate = async () => {
                     )}
                   </ModelMenuPortal>
                 </div>
+                <div className="relative settings-dropdown">
+                  <button
+                    ref={settingsRef}
+                    type="button"
+                    onClick={toggleSettings}
+                    title="Settings"
+                    aria-label="Settings"
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 parallax-small`}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
+                  >
+                    <Settings className="w-4 h-4 text-n-text" />
+                  </button>
+                  
+                  {/* Settings Dropdown Portal */}
+                  {isSettingsOpen && (
+                    <Suspense fallback={null}>
+                      <SettingsMenu
+                        anchorRef={settingsRef}
+                        open={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
+                        common={{
+                          batchSize,
+                          onBatchSizeChange: value => setBatchSize(value),
+                          min: 1,
+                          max: 4,
+                        }}
+                        flux={{
+                          enabled: isFlux,
+                          model: fluxModel,
+                          onModelChange: setFluxModel,
+                        }}
+                        veo={{
+                          enabled: isVeo,
+                          aspectRatio: videoAspectRatio,
+                          onAspectRatioChange: setVideoAspectRatio,
+                          model: videoModel,
+                          onModelChange: setVideoModel,
+                          negativePrompt: videoNegativePrompt,
+                          onNegativePromptChange: setVideoNegativePrompt,
+                          seed: videoSeed,
+                          onSeedChange: setVideoSeed,
+                        }}
+                        hailuo={{
+                          enabled: isHailuoVideo,
+                          duration: hailuoDuration,
+                          onDurationChange: setHailuoDuration,
+                          resolution: hailuoResolution,
+                          onResolutionChange: setHailuoResolution,
+                          promptOptimizer: hailuoPromptOptimizer,
+                          onPromptOptimizerChange: setHailuoPromptOptimizer,
+                          fastPretreatment: hailuoFastPretreatment,
+                          onFastPretreatmentChange: setHailuoFastPretreatment,
+                          watermark: hailuoWatermark,
+                          onWatermarkChange: setHailuoWatermark,
+                          firstFrame: hailuoFirstFrame,
+                          onFirstFrameChange: setHailuoFirstFrame,
+                          lastFrame: hailuoLastFrame,
+                          onLastFrameChange: setHailuoLastFrame,
+                        }}
+                        wan={{
+                          enabled: isWanVideo,
+                          size: wanSize,
+                          onSizeChange: setWanSize,
+                          negativePrompt: wanNegativePrompt,
+                          onNegativePromptChange: setWanNegativePrompt,
+                          promptExtend: wanPromptExtend,
+                          onPromptExtendChange: setWanPromptExtend,
+                          watermark: wanWatermark,
+                          onWatermarkChange: setWanWatermark,
+                          seed: wanSeed,
+                          onSeedChange: setWanSeed,
+                        }}
+                        kling={{
+                          enabled: isKlingVideo,
+                          model: klingModel,
+                          onModelChange: setKlingModel,
+                          aspectRatio: klingAspectRatio,
+                          onAspectRatioChange: setKlingAspectRatio,
+                          duration: klingDuration,
+                          onDurationChange: setKlingDuration,
+                          mode: klingMode,
+                          onModeChange: setKlingMode,
+                          cfgScale: klingCfgScale,
+                          onCfgScaleChange: setKlingCfgScale,
+                          negativePrompt: klingNegativePrompt,
+                          onNegativePromptChange: setKlingNegativePrompt,
+                          cameraType: klingCameraType,
+                          onCameraTypeChange: setKlingCameraType,
+                          cameraConfig: klingCameraConfig,
+                          onCameraConfigChange: (updates) => setKlingCameraConfig((prev) => ({ ...prev, ...updates })),
+                          statusMessage: klingStatusMessage,
+                        }}
+                        seedance={{
+                          enabled: isSeedance,
+                          mode: seedanceMode,
+                          onModeChange: setSeedanceMode,
+                          ratio: seedanceRatio,
+                          onRatioChange: setSeedanceRatio,
+                          duration: seedanceDuration,
+                          onDurationChange: setSeedanceDuration,
+                          resolution: seedanceResolution,
+                          onResolutionChange: setSeedanceResolution,
+                          fps: seedanceFps,
+                          onFpsChange: setSeedanceFps,
+                          cameraFixed: seedanceCamerafixed,
+                          onCameraFixedChange: setSeedanceCamerafixed,
+                          seed: seedanceSeed,
+                          onSeedChange: setSeedanceSeed,
+                          firstFrame: seedanceFirstFrame,
+                          onFirstFrameChange: setSeedanceFirstFrame,
+                          lastFrame: seedanceLastFrame,
+                          onLastFrameChange: setSeedanceLastFrame,
+                        }}
+                        recraft={{
+                          enabled: isRecraft,
+                          model: recraftModel,
+                          onModelChange: setRecraftModel,
+                        }}
+                        runway={{
+                          enabled: isRunway,
+                          model: runwayModel,
+                          onModelChange: setRunwayModel,
+                        }}
+                        gemini={{
+                          enabled: isGemini,
+                          temperature,
+                          onTemperatureChange: setTemperature,
+                          outputLength,
+                          onOutputLengthChange: setOutputLength,
+                          topP,
+                          onTopPChange: setTopP,
+                          aspectRatio: geminiAspectRatio,
+                          onAspectRatioChange: setGeminiAspectRatio,
+                        }}
+                        qwen={{
+                          enabled: isQwen,
+                          size: qwenSize,
+                          onSizeChange: setQwenSize,
+                          promptExtend: qwenPromptExtend,
+                          onPromptExtendChange: setQwenPromptExtend,
+                          watermark: qwenWatermark,
+                          onWatermarkChange: setQwenWatermark,
+                        }}
+                        lumaPhoton={{
+                          enabled: isLumaPhoton,
+                          model: lumaPhotonModel,
+                          onModelChange: setLumaPhotonModel,
+                        }}
+                        lumaRay={{
+                          enabled: isLumaRay,
+                          variant: lumaRayVariant,
+                          onVariantChange: setLumaRayVariant,
+                        }}
+                      />
+                    </Suspense>
+                  )}
+
+                </div>
+                {aspectRatioConfig && (
+                  <div className="relative">
+                    <button
+                      ref={aspectRatioButtonRef}
+                      type="button"
+                      onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
+                      aria-label="Aspect ratio"
+                      onMouseEnter={event => {
+                        showHoverTooltip(event.currentTarget, 'aspect-ratio-tooltip');
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip('aspect-ratio-tooltip');
+                      }}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
+                    >
+                      <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                      <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
+                    </button>
+                    <div
+                      data-tooltip-for="aspect-ratio-tooltip"
+                      className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                      style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    >
+                      Aspect Ratio
+                    </div>
+                    <AspectRatioDropdown
+                      anchorRef={aspectRatioButtonRef}
+                      open={isAspectRatioMenuOpen}
+                      onClose={() => setIsAspectRatioMenuOpen(false)}
+                      options={aspectRatioConfig.options}
+                      selectedValue={aspectRatioConfig.selectedValue}
+                      onSelect={aspectRatioConfig.onSelect}
+                    />
+                  </div>
+                )}
                 <div className="relative batch-size-selector hidden lg:flex flex-shrink-0">
                   <div
                     role="group"
@@ -7576,9 +8820,283 @@ const handleGenerate = async () => {
                     Batch size
                   </div>
                 </div>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        ref={promptsButtonRef}
+                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 parallax-small`}
+                        onMouseEnter={() => {
+                          if (typeof document !== 'undefined') {
+                            const tooltip = document.querySelector(`[data-tooltip-for="prompts-tooltip"]`) as HTMLElement | null;
+                            if (tooltip) {
+                              // Reset inline styles to match CSS-defined positioning
+                              tooltip.style.top = '0px';
+                              tooltip.style.left = '50%';
+                              tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                              tooltip.classList.remove('opacity-0');
+                              tooltip.classList.add('opacity-100');
+                            }
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (typeof document !== 'undefined') {
+                            const tooltip = document.querySelector(`[data-tooltip-for="prompts-tooltip"]`) as HTMLElement | null;
+                            if (tooltip) {
+                              tooltip.classList.remove('opacity-100');
+                              tooltip.classList.add('opacity-0');
+                            }
+                          }
+                        }}
+                        onPointerMove={onPointerMove}
+                        onPointerEnter={onPointerEnter}
+                        onPointerLeave={onPointerLeave}
+                      >
+                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
+                      </button>
+                      <div
+                        data-tooltip-for="prompts-tooltip"
+                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                        style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                      >
+                        Your Prompts
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              {/* Generate button on right */}
+            {/* Right section: Avatar, Product, Style, Generate */}
+            <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+              {activeCategory === "image" && (
+                <>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={avatarButtonRef}
+                      onClick={() => {
+                        if (storedAvatars.length === 0) {
+                          // Direct upload when no avatars exist
+                          setAvatarUploadError(null);
+                          avatarQuickUploadInputRef.current?.click();
+                        } else {
+                          // Show picker when avatars exist
+                          setIsAvatarPickerOpen(prev => !prev);
+                        }
+                      }}
+                      onDragOver={handleAvatarButtonDragOver}
+                      onDragLeave={handleAvatarButtonDragLeave}
+                      onDrop={handleAvatarButtonDrop}
+                      onMouseEnter={() => setIsAvatarButtonHovered(true)}
+                      onMouseLeave={() => setIsAvatarButtonHovered(false)}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
+                    >
+                      {!selectedAvatar && (
+                        <>
+                          <div className="flex-1 flex items-center justify-center lg:mt-3">
+                            {isAvatarButtonHovered ? (
+                              <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            ) : (
+                              <Users className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            )}
+                          </div>
+                          <div className="hidden lg:flex items-center gap-1">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                              Avatar
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {selectedAvatar && (
+                        <>
+                          <img
+                            src={selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
+                            alt={selectedAvatar.name}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                            title={
+                              selectedAvatarImageIndex !== null
+                                ? `${selectedAvatar.name} — Variation ${selectedAvatarImageIndex + 1}`
+                                : selectedAvatar.name
+                            }
+                          />
+                          <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                              {selectedAvatar.name}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                    {selectedAvatar && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearSelectedAvatar();
+                        }}
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                        title="Remove avatar"
+                        aria-label="Remove avatar"
+                      >
+                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={productButtonRef}
+                      onClick={() => {
+                        if (storedProducts.length === 0) {
+                          // Direct upload when no products exist
+                          setProductUploadError(null);
+                          productQuickUploadInputRef.current?.click();
+                        } else {
+                          // Show picker when products exist
+                          setIsProductPickerOpen(prev => !prev);
+                        }
+                      }}
+                      onDragOver={handleProductButtonDragOver}
+                      onDragLeave={handleProductButtonDragLeave}
+                      onDrop={handleProductButtonDrop}
+                      onMouseEnter={() => setIsProductButtonHovered(true)}
+                      onMouseLeave={() => setIsProductButtonHovered(false)}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
+                    >
+                      {!selectedProduct && (
+                        <>
+                          <div className="flex-1 flex items-center justify-center lg:mt-3">
+                            {isProductButtonHovered ? (
+                              <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            ) : (
+                              <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            )}
+                          </div>
+                          <div className="hidden lg:flex items-center gap-1">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                              Product
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {selectedProduct && (
+                        <>
+                          <img
+                            src={selectedProduct.imageUrl}
+                            alt={selectedProduct.name}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                            title={selectedProduct.name}
+                          />
+                          <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                              {selectedProduct.name}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                    {selectedProduct && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearSelectedProduct();
+                        }}
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                        title="Remove product"
+                        aria-label="Remove product"
+                      >
+                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={stylesButtonRef}
+                      onClick={() => setIsStyleModalOpen(true)}
+                      onMouseEnter={() => setIsStyleButtonHovered(true)}
+                      onMouseLeave={() => setIsStyleButtonHovered(false)}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
+                      aria-label="Select style"
+                      aria-expanded={isStyleModalOpen}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
+                    >
+                      {!firstSelectedStyle && (
+                        <>
+                          <div className="flex-1 flex items-center justify-center lg:mt-3">
+                            {isStyleButtonHovered ? (
+                              <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            ) : (
+                              <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            )}
+                          </div>
+                          <div className="hidden lg:flex items-center gap-1">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                              Style
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {firstSelectedStyle && (
+                        <>
+                          {firstSelectedStyle.image ? (
+                            <img
+                              src={firstSelectedStyle.image}
+                              alt={firstSelectedStyle.name}
+                              loading="lazy"
+                              className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                              title={firstSelectedStyle.name}
+                            />
+                          ) : (
+                            <div
+                              className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl"
+                              style={{
+                                backgroundImage: firstSelectedStyle.previewGradient,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                              }}
+                            />
+                          )}
+                          <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                              {firstSelectedStyle.name}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                    {firstSelectedStyle && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleClearStyles();
+                        }}
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                        title="Remove styles"
+                        aria-label="Remove styles"
+                      >
+                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Generate button */}
               <Tooltip text={!prompt.trim()
                 ? "Enter your prompt to generate"
                 : !hasGenerationCapacity
@@ -7586,48 +9104,27 @@ const handleGenerate = async () => {
                   : isComingSoon
                     ? "This model is coming soon!"
                     : ""}>
-                <button 
+                <button
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
-                  className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
+                  aria-label={`${generateButtonLabel} (uses 1 credit)`}
                 >
-                  {(() => {
-                    const isWanGenerating = isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling);
-                    const isHailuoGenerating = isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling);
-                    const isLumaGenerating = (isLumaRay && (lumaVideoLoading || lumaVideoPolling)) || (isLumaPhoton && lumaImageLoading);
-                    const isKlingGenerating = isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling);
-                    const showSpinner = isButtonSpinning || isVideoGenerating || isVideoPolling || isRunwayVideoGenerating || isWanGenerating || isHailuoGenerating || isKlingGenerating || seedanceLoading || isLumaGenerating;
-                    return showSpinner ? (
+                  <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
+                    {generateButtonLabel}
+                  </span>
+                  <div className="flex items-center gap-0 sm:gap-1">
+                    {showGenerateSpinner ? (
                       <Loader2 className="w-4 h-4 animate-spin text-n-black" />
                     ) : (
                       <Sparkles className="w-4 h-4 text-n-black" />
-                    );
-                  })()}
-                  <span className="text-n-black hidden sm:inline">
-                    {activeCategory === "video" ? 
-                      (selectedModel === "runway-video-gen4" && (runwayVideoStatus || 'idle') === 'running'
-                        ? "Generating..."
-                        : selectedModel === "seedance-1.0-pro" && seedanceLoading
-                          ? "Generating..."
-                          : selectedModel === "hailuo-02" && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)
-                            ? "Generating..."
-                          : selectedModel === "wan-video-2.2" && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)
-                            ? "Generating..."
-                          : selectedModel === "kling-video" && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling)
-                            ? "Generating..."
-                            : isLumaRay && (lumaVideoLoading || lumaVideoPolling)
-                            ? "Generating..."
-                            : isVideoGenerating
-                              ? "Starting..."
-                              : isVideoPolling
-                                ? "Generating..."
-                                : "Generate") : 
-                      "Generate"
-                    }
-                  </span>
+                    )}
+                    <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                  </div>
                 </button>
               </Tooltip>
-              </div>
+            </div>
+            </div>
             </div>
           )}
           
@@ -7779,7 +9276,7 @@ const handleGenerate = async () => {
                       <button
                         type="button"
                         onClick={() => confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext)}
-                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                        className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -7792,7 +9289,7 @@ const handleGenerate = async () => {
                       <button 
                         type="button" 
                         onClick={() => toggleFavorite(activeFullSizeImage.url)} 
-                        className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
+                        className={`image-action-btn image-action-btn--fullsize parallax-large favorite-toggle transition-opacity duration-100 ${
                           imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -7855,8 +9352,8 @@ const handleGenerate = async () => {
                             </>
                           )}
                         </div>
-                        <div className="mt-2 flex justify-center items-center gap-2">
-                          <div className="flex items-center gap-2">
+                        <div className="mt-2 flex justify-center items-center gap-1 md:gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             <Suspense fallback={null}>
                               <ModelBadge 
                                 model={(selectedFullImage || generatedImage)?.model || 'unknown'} 
@@ -7872,6 +9369,18 @@ const handleGenerate = async () => {
                                 <AvatarBadge
                                   avatar={avatarForImage}
                                   onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                />
+                              );
+                            })()}
+                            {(() => {
+                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
+                              if (!img?.productId) return null;
+                              const productForImage = productMap.get(img.productId);
+                              if (!productForImage) return null;
+                              return (
+                                <ProductBadge
+                                  product={productForImage}
+                                  onClick={() => setCreationsModalProduct(productForImage)}
                                 />
                               );
                             })()}
@@ -7933,8 +9442,8 @@ const handleGenerate = async () => {
               <div className="space-y-4 text-center">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete Avatar</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -7965,8 +9474,8 @@ const handleGenerate = async () => {
               <div className="space-y-4 text-center">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Product</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete Product</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to delete "{productToDelete.name}"? This action cannot be undone.
                   </p>
                 </div>
@@ -8005,7 +9514,163 @@ const handleGenerate = async () => {
                 type="button"
                 className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
                 onClick={() => setCreationsModalAvatar(null)}
-                aria-label="Close Avatar creations"
+                aria-label="Close Avatar details"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-raleway text-theme-text">
+                      Avatar: {creationsModalAvatar.name}
+                    </h2>
+                    <p className="text-sm font-raleway text-theme-white">
+                      Choose which avatar image you want to send with your next prompt.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className={buttons.ghost}
+                      onClick={() => {
+                        navigate(`/create/avatars/${creationsModalAvatar.slug}`);
+                        setCreationsModalAvatar(null);
+                      }}
+                    >
+                      Manage avatar
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {creationsModalAvatar.images.map((image, index) => {
+                      const isSelectedForPrompt =
+                        selectedAvatar?.id === creationsModalAvatar.id
+                          ? (selectedAvatarImageId ?? creationsModalAvatar.primaryImageId) === image.id
+                          : false;
+                      const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                      return (
+                        <div key={image.id} className="flex flex-col items-center gap-2">
+                          <div
+                            className={`relative aspect-square w-32 overflow-hidden rounded-2xl border ${
+                              isSelectedForPrompt ? 'border-theme-text ring-2 ring-theme-text/50' : 'border-theme-dark'
+                            } bg-theme-black/60`}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute left-2 top-2 flex flex-col gap-1">
+                              {isPrimary && (
+                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                  Primary
+                                </span>
+                              )}
+                              {isSelectedForPrompt && (
+                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                  In use
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
+                            <button
+                              type="button"
+                              className={`rounded-full border px-3 py-1 transition-colors duration-200 ${
+                                isSelectedForPrompt
+                                  ? 'border-theme-text text-theme-text'
+                                  : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
+                              }`}
+                              onClick={() => {
+                                setSelectedAvatar(creationsModalAvatar);
+                                setSelectedAvatarImageId(image.id);
+                                setCreationsModalAvatar(null);
+                              }}
+                            >
+                              {isSelectedForPrompt ? 'Using for prompts' : 'Use for prompts'}
+                            </button>
+                            <a
+                              href={image.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
+                            >
+                              Open
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs font-raleway text-theme-white/60">
+                    You can add or edit avatar images from the manage avatar page.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-lg font-raleway text-theme-text">
+                    Creations with {creationsModalAvatar.name}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {gallery
+                      .filter(img => img.avatarId === creationsModalAvatar.id)
+                      .map(image => (
+                        <div key={image.url} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                          <img
+                            src={image.url}
+                            alt={image.prompt || 'Generated image'}
+                            loading="lazy"
+                            className="h-full w-full object-cover cursor-pointer"
+                            onClick={() => {
+                              setSelectedFullImage(image);
+                              setIsFullSizeOpen(true);
+                            }}
+                          />
+                          {image.avatarImageId && (
+                            <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                              Variation {Math.max(1, creationsModalAvatar.images.findIndex(img => img.id === image.avatarImageId) + 1)}
+                            </span>
+                          )}
+                          <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                  {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
+                    <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                      <p className="text-sm font-raleway text-theme-light">
+                        Generate a new image with this avatar to see it appear here.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {creationsModalProduct && (
+          <div
+            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+            onClick={() => setCreationsModalProduct(null)}
+          >
+            <div
+              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                onClick={() => setCreationsModalProduct(null)}
+                aria-label="Close Product creations"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -8013,32 +9678,30 @@ const handleGenerate = async () => {
               <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
                 <div className="flex flex-col gap-2">
                   <h2 className="text-2xl font-raleway text-theme-text">
-                    Creations with {creationsModalAvatar.name}
+                    Creations with {creationsModalProduct.name}
                   </h2>
                   <p className="text-sm font-raleway text-theme-white">
-                    Manage creations with your Avatar.
+                    Manage creations featuring this product.
                   </p>
                 </div>
 
-                {/* Main Avatar Display */}
                 <div className="flex justify-start">
                   <div className="w-1/3 sm:w-1/5 lg:w-1/6">
                     <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
                       <img
-                        src={creationsModalAvatar.imageUrl}
-                        alt={creationsModalAvatar.name}
+                        src={creationsModalProduct.imageUrl}
+                        alt={creationsModalProduct.name}
                         loading="lazy"
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalAvatar.name}</p>
+                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
                   </div>
                 </div>
 
-                {/* Creations Grid */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {gallery
-                    .filter(img => img.avatarId === creationsModalAvatar.id)
+                    .filter(img => img.productId === creationsModalProduct.id)
                     .map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
                         <img
@@ -8060,10 +9723,10 @@ const handleGenerate = async () => {
                     ))}
                 </div>
 
-                {gallery.filter(img => img.avatarId === creationsModalAvatar.id).length === 0 && (
-                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-6 text-center">
-                    <p className="text-sm font-raleway text-theme-white/70">
-                      Generate a new image with this avatar to see it appear here.
+                {gallery.filter(img => img.productId === creationsModalProduct.id).length === 0 && (
+                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                    <p className="text-sm font-raleway text-theme-light">
+                      Generate a new image with this product to see it appear here.
                     </p>
                   </div>
                 )}
@@ -8092,6 +9755,30 @@ const handleGenerate = async () => {
               onProcessFile={processAvatarImageFile}
               onDragStateChange={setIsDraggingAvatar}
               onUploadError={setAvatarUploadError}
+              galleryOpenTrigger={avatarGalleryOpenTrigger}
+            />
+          </Suspense>
+        )}
+
+        {isProductCreationModalOpen && (
+          <Suspense fallback={null}>
+            <ProductCreationModal
+              open={isProductCreationModalOpen}
+              selection={productSelection}
+              uploadError={productUploadError}
+              isDragging={isDraggingProduct}
+              productName={productName}
+              disableSave={!productSelection || !productName.trim()}
+              galleryImages={gallery}
+              hasGalleryImages={gallery.length > 0}
+              onClose={resetProductCreationPanel}
+              onProductNameChange={setProductName}
+              onSave={handleSaveNewProduct}
+              onSelectFromGallery={(imageUrl) => setProductSelection({ imageUrl, source: 'gallery', sourceId: imageUrl })}
+              onClearSelection={() => setProductSelection(null)}
+              onProcessFile={processProductImageFile}
+              onDragStateChange={setIsDraggingProduct}
+              onUploadError={setProductUploadError}
             />
           </Suspense>
         )}
@@ -8103,10 +9790,10 @@ const handleGenerate = async () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">
                     Remove from Saved Prompts
                   </h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <p className="text-base font-raleway font-light text-theme-white">
                     Are you sure you want to remove this prompt from your saved prompts?
                   </p>
                 </div>

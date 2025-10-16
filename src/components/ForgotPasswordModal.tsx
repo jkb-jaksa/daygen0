@@ -55,10 +55,10 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
       <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
-            <h3 className="text-theme-text font-raleway font-normal text-xl">
+            <h3 className="text-theme-text font-raleway font-light text-xl">
               {success ? "Check your email" : "Reset password"}
             </h3>
-            <p className="text-theme-light text-sm font-raleway font-normal">
+            <p className="text-theme-light text-sm font-raleway font-light">
               {success 
                 ? "We've sent you a link to reset your password." 
                 : "Enter your email address and we'll send you a link to reset your password."

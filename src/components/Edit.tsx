@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark, Scan } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -21,6 +21,9 @@ import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
 import { ToolInfoHover } from "./ToolInfoHover";
+import { AspectRatioDropdown } from "./AspectRatioDropdown";
+import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
+import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../data/aspectRatios";
 
 // AI Model data for Edit section - all supported text-to-image models
 const AI_MODELS = [
@@ -88,8 +91,10 @@ const ModelMenuPortal: React.FC<{
       // Position above if there's more space above, otherwise position below
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
 
+      const verticalOffset = 2;
+
       setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
         transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
@@ -192,25 +197,11 @@ export default function Edit() {
   
   // Prompt bar state
   const [prompt, setPrompt] = useState<string>("");
+  const [geminiAspectRatio, setGeminiAspectRatio] = useState<GeminiAspectRatio>("1:1");
+  const [qwenSize, setQwenSize] = useState<string>("1328*1328");
   const [isDragging, setIsDragging] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
-  const referenceDisplayItems = useMemo(() => {
-    const items: { url: string; isPrimary: boolean; index?: number }[] = [];
-    if (previewUrl) {
-      items.push({ url: previewUrl, isPrimary: true });
-    }
-    referencePreviews.forEach((url, idx) => {
-      items.push({ url, isPrimary: false, index: idx });
-    });
-    return items;
-  }, [previewUrl, referencePreviews]);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
-  const [isButtonSpinning, setIsButtonSpinning] = useState(false);
-  const [temperature, setTemperature] = useState(0.8);
-  const [topP, setTopP] = useState(0.95);
-  const [topK, setTopK] = useState(64);
   const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-2.5-flash-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
@@ -230,11 +221,67 @@ export default function Edit() {
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [allPaths, setAllPaths] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
   const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
+
+  const isGemini = selectedModel === "gemini-2.5-flash-image";
+  const isFlux = isFluxModelId(selectedModel);
+  const isChatGPT = selectedModel === "chatgpt-image";
+  const isIdeogram = selectedModel === "ideogram";
+  const isQwen = selectedModel === "qwen-image";
+  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
+  const isReve = selectedModel === "reve-image";
+
+  const referenceDisplayItems = useMemo(() => {
+    const items: { url: string; isPrimary: boolean; index?: number }[] = [];
+    if (previewUrl) {
+      items.push({ url: previewUrl, isPrimary: true });
+    }
+    referencePreviews.forEach((url, idx) => {
+      items.push({ url, isPrimary: false, index: idx });
+    });
+    return items;
+  }, [previewUrl, referencePreviews]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
+  const aspectRatioConfig = useMemo<{
+    options: ReadonlyArray<AspectRatioOption>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+  } | null>(() => {
+    if (isGemini) {
+      return {
+        options: GEMINI_ASPECT_RATIO_OPTIONS,
+        selectedValue: geminiAspectRatio,
+        onSelect: value => setGeminiAspectRatio(value as GeminiAspectRatio),
+      };
+    }
+
+    if (isQwen) {
+      return {
+        options: QWEN_ASPECT_RATIO_OPTIONS,
+        selectedValue: qwenSize,
+        onSelect: setQwenSize,
+      };
+    }
+
+    return null;
+  }, [isGemini, geminiAspectRatio, isQwen, qwenSize]);
+
+  useEffect(() => {
+    if (!aspectRatioConfig) {
+      setIsAspectRatioMenuOpen(false);
+    }
+  }, [aspectRatioConfig]);
+  const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
+  const [isButtonSpinning, setIsButtonSpinning] = useState(false);
+  const [temperature, setTemperature] = useState(0.8);
+  const [topP, setTopP] = useState(0.95);
+  const [topK, setTopK] = useState(64);
   
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const promptsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
   const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -295,15 +342,6 @@ export default function Edit() {
     clearError: clearReveError,
     clearGeneratedImage: clearReveImage,
   } = useReveImageGeneration();
-
-  // Determine which model is selected and get the appropriate state
-  const isGemini = selectedModel === "gemini-2.5-flash-image";
-  const isFlux = isFluxModelId(selectedModel);
-  const isChatGPT = selectedModel === "chatgpt-image";
-  const isIdeogram = selectedModel === "ideogram";
-  const isQwen = selectedModel === "qwen-image";
-  const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
-  const isReve = selectedModel === "reve-image";
 
   // Get the current error and generated image based on selected model
   const currentError = isGemini ? geminiError : 
@@ -433,6 +471,7 @@ export default function Edit() {
           temperature,
           topP,
           outputLength: topK,
+          aspectRatio: geminiAspectRatio,
         });
       } else if (isFluxModelId(selectedModel)) {
         const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
@@ -460,7 +499,7 @@ export default function Edit() {
       } else if (isQwen) {
         await generateQwenImage({
           prompt: trimmedPrompt,
-          size: '1024x1024',
+          size: qwenSize,
           prompt_extend: true,
           watermark: false,
         });
@@ -1341,7 +1380,7 @@ export default function Edit() {
                       }}
                       title="Adjust brush size"
                     />
-                    <span className="text-theme-white text-xs font-mono font-normal min-w-[2rem] text-center">
+                    <span className="text-theme-white text-xs font-mono font-light min-w-[2rem] text-center">
                       {brushSize}px
                     </span>
                   </div>
@@ -1486,8 +1525,8 @@ export default function Edit() {
             <button
               type="button"
               onClick={handleRefsClick}
-              title="Add reference image"
-              aria-label="Add reference image"
+              title="Reference Image"
+              aria-label="Reference Image"
               disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
               className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-n-black/20 text-n-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
             >
@@ -1569,20 +1608,6 @@ export default function Edit() {
               onAddSavedPrompt={savePrompt}
               onSaveRecentPrompt={savePromptToLibrary}
             />
-
-            {/* Settings button */}
-            <div className="relative settings-dropdown">
-              <button
-                ref={settingsRef}
-                type="button"
-                onClick={toggleSettings}
-                title="Settings"
-                aria-label="Settings"
-                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-              >
-                <Settings className="w-4 h-4 text-n-text" />
-              </button>
-            </div>
 
             {/* Model Selector */}
             <div className="relative model-selector">
@@ -1669,21 +1694,65 @@ export default function Edit() {
                 })}
               </ModelMenuPortal>
             </div>
+
+            {/* Settings button */}
+            <div className="relative settings-dropdown">
+              <button
+                ref={settingsRef}
+                type="button"
+                onClick={toggleSettings}
+                title="Settings"
+                aria-label="Settings"
+                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+              >
+                <Settings className="w-4 h-4 text-n-text" />
+              </button>
+            </div>
+
+            {aspectRatioConfig && (
+              <div className="relative">
+                <button
+                  ref={aspectRatioButtonRef}
+                  type="button"
+                  onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                  aria-label="Aspect ratio"
+                  title="Aspect ratio"
+                >
+                  <Scan className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
+                </button>
+                <AspectRatioDropdown
+                  anchorRef={aspectRatioButtonRef}
+                  open={isAspectRatioMenuOpen}
+                  onClose={() => setIsAspectRatioMenuOpen(false)}
+                  options={aspectRatioConfig.options}
+                  selectedValue={aspectRatioConfig.selectedValue}
+                  onSelect={aspectRatioConfig.onSelect}
+                />
+              </div>
+            )}
           </div>
             
             {/* Generate button on right */}
             <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
-              <button 
+              <button
                 onClick={handleGenerateImage}
                 disabled={!prompt.trim()}
-                className={`btn btn-orange font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60`}
+                className={`btn btn-white font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
+                aria-label={`${isButtonSpinning ? "Generating..." : "Generate"} (uses 1 credit)`}
               >
-                {isButtonSpinning ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                <span>Generate</span>
+                <span className="text-sm sm:text-base font-raleway font-medium">
+                  {isButtonSpinning ? "Generating..." : "Generate"}
+                </span>
+                <div className="flex items-center gap-1">
+                  {isButtonSpinning ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                </div>
               </button>
             </Tooltip>
           </div>
@@ -1793,10 +1862,10 @@ export default function Edit() {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                <h3 className="text-xl font-raleway font-light text-theme-text">
                   Remove from Saved Prompts
                 </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
+                <p className="text-base font-raleway font-light text-theme-white">
                   Are you sure you want to remove this prompt from your saved prompts?
                 </p>
               </div>

@@ -56,7 +56,7 @@ export function useLumaImageGeneration() {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
 
@@ -100,14 +100,15 @@ export function useLumaImageGeneration() {
       }));
 
       try {
-        if (!token) {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: AUTH_ERROR_MESSAGE,
-          }));
-          throw new Error(AUTH_ERROR_MESSAGE);
-        }
+        // TEMPORARILY DISABLED: Authentication check
+        // if (!token) {
+        //   setState((prev) => ({
+        //     ...prev,
+        //     isLoading: false,
+        //     error: AUTH_ERROR_MESSAGE,
+        //   }));
+        //   throw new Error(AUTH_ERROR_MESSAGE);
+        // }
 
         const providerOptions: Record<string, unknown> = {};
 
@@ -140,7 +141,7 @@ export function useLumaImageGeneration() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             prompt: options.prompt,

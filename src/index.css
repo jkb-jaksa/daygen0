@@ -218,24 +218,24 @@ html[data-theme="day"] .animate-gradient-colors {
   --n-text: #FAFAFA;
   --n-text-rgb: 250 250 250;
   /* Slightly darken n-white globally (very subtle) */
-  --n-white: #A8B0B0;
-  --n-white-rgb: 168 176 176;
+  --n-white: #B0B8B8;
+  --n-white-rgb: 176 184 184;
   /* Slightly lighter for improved contrast hierarchy (nudged up) */
-  --n-light: #969b9b;
-  --n-light-rgb: 150 155 155;
+  --n-light: #858a8a;
+  --n-light-rgb: 133 138 138;
   /* Mid tone: made a bit lighter for hover/border contrast */
-  --n-mid: #373e3e;
-  --n-mid-rgb: 55 62 62;
+  --n-mid: #2d3333;
+  --n-mid-rgb: 45 51 51;
   --n-dark: #1b1d1d;
   --n-dark-rgb: 27 29 29;
   --n-black: #060806;
   --n-black-rgb: 6 8 6;
 
   /* Brand orange colors */
-  --n-orange-1: #FF9947;
-  --n-orange-1-rgb: 255 153 71;
-  --n-orange-2: #FF8C42;
-  --n-orange-2-rgb: 255 140 66;
+  --n-orange-1: #FF8C00;
+  --n-orange-1-rgb: 255 140 0;
+  --n-orange-2: #FF8C00;
+  --n-orange-2-rgb: 255 140 0;
 
   /* Daygen palette – day (light) */
   --d-text: #010202;
@@ -251,10 +251,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --d-black: #f8fbfb;
   --d-black-rgb: 248 251 251;
 
-  --d-orange-1: #FF8C42;
-  --d-orange-1-rgb: 255 140 66;
-  --d-orange-2: #FF7A2E;
-  --d-orange-2-rgb: 255 122 46;
+  --d-orange-1: #FF8C00;
+  --d-orange-1-rgb: 255 140 0;
+  --d-orange-2: #FF8C00;
+  --d-orange-2-rgb: 255 140 0;
   
   /* Brand cyan color */
   --brand-cyan: rgb(3,188,189);
@@ -293,10 +293,10 @@ html[data-theme="day"] .animate-gradient-colors {
   --accent-cyan-ring: rgba(3, 188, 189, 0.5);
   --accent-cyan-text: #8cebeb;
 
-  --accent-orange-bg: rgba(255, 153, 71, 0.18);
-  --accent-orange-border: rgba(255, 153, 71, 0.42);
-  --accent-orange-ring: rgba(255, 153, 71, 0.5);
-  --accent-orange-text: #ffcb9f;
+  --accent-orange-bg: rgba(255, 140, 0, 0.18);
+  --accent-orange-border: rgba(255, 140, 0, 0.42);
+  --accent-orange-ring: rgba(255, 140, 0, 0.5);
+  --accent-orange-text: #ffb366;
 
   --accent-lime-bg: rgba(182, 242, 127, 0.18);
   --accent-lime-border: rgba(182, 242, 127, 0.4);
@@ -439,7 +439,7 @@ body {
 
 .region-two-pane__title {
   font-size: var(--font-size-heading-sm);
-  font-weight: 400;
+  font-weight: 300;
   color: var(--theme-text);
   font-family: var(--font-raleway, "Raleway", sans-serif);
   margin: 0;
@@ -509,16 +509,9 @@ body {
 .home-hero-description {
   font-size: clamp(1.05rem, 0.95rem + 0.8vw, 1.35rem);
   color: var(--theme-white);
-  font-weight: 400;
+  font-weight: 300;
   margin-inline: 0;
   max-inline-size: min(var(--line-length-max), 100%);
-}
-
-.home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: var(--space-3);
 }
 
 .wrap-anywhere {
@@ -536,11 +529,6 @@ picture {
 }
 
 @container hero (width >= 48rem) {
-  .home-hero-actions {
-    justify-content: flex-start;
-    gap: var(--space-4);
-  }
-
   .home-hero-copy {
     gap: var(--space-4);
   }
@@ -592,17 +580,17 @@ picture {
 
 .range-brand { -webkit-appearance: none; appearance: none; background: transparent; }
 .range-brand:focus { outline: none; }
-.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--theme-orange-1); cursor: pointer; border: none; transform: translateY(-50%); }
-.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--theme-orange-1); cursor: pointer; border: none; transform: translateY(-50%); }
+.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--theme-text); cursor: pointer; border: none; transform: translateY(-50%); }
+.range-brand::-moz-range-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--theme-text); cursor: pointer; border: none; transform: translateY(-50%); }
 .range-brand::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background:
-  radial-gradient(circle at 0 50%, var(--theme-orange-1) 2px, transparent 3px) repeat-x,
-  linear-gradient(90deg, var(--theme-orange-1), rgba(184,192,192,0.5));
+  radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
+  linear-gradient(90deg, var(--theme-text), rgba(184,192,192,0.5));
   background-size: 12px 4px, 100% 4px;
   background-position: 0 0, 0 0;
 }
 .range-brand::-moz-range-track { height: 4px; border-radius: 999px; background:
-  radial-gradient(circle at 0 50%, var(--theme-orange-1) 2px, transparent 3px) repeat-x,
-  linear-gradient(90deg, var(--theme-orange-1), rgba(184,192,192,0.5));
+  radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
+  linear-gradient(90deg, var(--theme-text), rgba(184,192,192,0.5));
   background-size: 12px 4px, 100% 4px;
   background-position: 0 0, 0 0;
 }
@@ -619,6 +607,8 @@ html, body {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 html[data-theme="day"],
@@ -633,33 +623,47 @@ html[data-theme="day"] body {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 /* Subtle gradient for main page backgrounds */
 .bg-theme-black-subtle {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #0e0f10 0%,
       #101112 15%,
-      #0e0f10 30%,
-      #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
+      #0e0f10 25%,
+      #0c0d0e 40%,
+      #0a0b0c 55%,
+      #080909 70%,
+      #070808 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 html[data-theme="day"] .bg-theme-black-subtle {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #dce5e5 0%,
       #e4ebeb 15%,
-      #ebf1f1 30%,
-      #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
+      #ebf1f1 25%,
+      #f2f6f6 40%,
+      #f8fafb 55%,
+      #fbfcfd 70%,
+      #fdfdfe 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 /* Section divider day mode styling - target border-b specifically */
@@ -693,6 +697,15 @@ html[data-theme="day"] .border-b.border-theme-black {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   will-change: transform;
   z-index: 1;
+}
+
+/* Override button padding and min-width on small screens to allow responsive classes to work properly */
+@media (max-width: 639px) {
+  .btn {
+    padding-left: 16px;
+    padding-right: 16px;
+    min-width: 0;
+  }
 }
 
 /* Compact button variant for tighter vertical spaces like the navbar */
@@ -821,7 +834,7 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.1) 75%,
       rgba(0, 0, 0, 0.2) 100%
     ),
-    #FF9947;
+    #FF8C00;
   border: none;
   color: #060806;
   flex-shrink: 0;
@@ -840,7 +853,7 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.15) 75%,
       rgba(0, 0, 0, 0.25) 100%
     ),
-    color-mix(in srgb, #FF9947 78%, white 22%);
+    color-mix(in srgb, #FF8C00 78%, white 22%);
   border: none;
   color: #060806;
   box-shadow: 
@@ -858,7 +871,7 @@ html[data-theme="day"] .prompt-surface {
       rgba(0, 0, 0, 0.2) 75%,
       rgba(0, 0, 0, 0.3) 100%
     ),
-    color-mix(in srgb, #FF9947 70%, black 30%);
+    color-mix(in srgb, #FF8C00 70%, black 30%);
   border: none;
   color: #060806;
   box-shadow: 
@@ -872,23 +885,19 @@ html[data-theme="day"] .prompt-surface {
 .panel-warm-bg {
   background:
     linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
-    var(--theme-orange-1);
+    #FF8C00;
 }
 
 /* Warm gradient utility - solid orange */
 .bg-warm-gradient {
-  background: var(--theme-orange-1);
+  background: #FF8C00;
 }
 
 
 
-/* Text warm gradient - solid orange with 3D effect */
+/* Text warm gradient - solid orange */
 .text-warm-gradient {
-  color: var(--theme-orange-1);
-  text-shadow: 
-    0 1px 2px rgba(255, 255, 255, 0.3),
-    0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #FF8C00;
 }
 
 /* Simple reusable fade-in utility for 200ms transitions */
@@ -1018,31 +1027,19 @@ html[data-theme="day"] .text-white-gradient {
   }
 }
 
-/* Brand orange text utility - solid orange with 3D effect */
+/* Brand orange text utility */
 .text-theme-orange { 
-  color: var(--theme-orange-1);
-  text-shadow: 
-    0 1px 2px rgba(255, 255, 255, 0.3),
-    0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #FF8C00;
 }
 
-/* Softer, lighter warm for active states with 3D effect */
+/* Softer, lighter warm for active states */
 .text-theme-orange-soft { 
-  color: color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
-  text-shadow: 
-    0 1px 2px rgba(255, 255, 255, 0.25),
-    0 -1px 2px rgba(0, 0, 0, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.08);
+  color: color-mix(in srgb, #FF8C00 78%, white 22%);
 }
 
-/* Brand color - primary orange with 3D effect */
+/* Brand color - primary orange */
 .text-brand { 
-  color: var(--theme-orange-1);
-  text-shadow: 
-    0 1px 2px rgba(255, 255, 255, 0.3),
-    0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #FF8C00;
 }
 
 /* Cyan button styles */
@@ -1093,13 +1090,9 @@ html[data-theme="day"] .text-white-gradient {
   }
 }
 
-/* Lighter text color classes for pricing with 3D effect */
+/* Lighter text color classes for pricing */
 .text-orange-lighter {
-  color: color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
-  text-shadow: 
-    0 1px 2px rgba(255, 255, 255, 0.25),
-    0 -1px 2px rgba(0, 0, 0, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.08);
+  color: color-mix(in srgb, #FF8C00 78%, white 22%);
 }
 
 .text-cyan-lighter {
@@ -1451,7 +1444,7 @@ html[data-theme="day"] .card-overlay-gradient {
 
 /* Special parallax for positioned elements (like scroll up button) */
 .parallax-force-positioned:hover {
-  transform: translateY(-50%) translateZ(150px) scale(1.01) !important;
+  transform: translateY(-50%) scale(1.01) !important;
   transition: transform 0.1s !important;
 }
 
@@ -1466,6 +1459,49 @@ html[data-theme="day"] .card-overlay-gradient {
   transition: transform 0.1s;
 }
 
+/* Shared backdrop for media cards (avatars, products, gallery tiles) */
+.card-media-frame {
+  position: relative;
+  overflow: hidden;
+  background-color: rgb(var(--theme-black-rgb) / 0.25);
+}
+
+.card-media-frame::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  background-image: var(--card-image-url);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(26px);
+  opacity: 0.45;
+  transform: scale(1.12);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-media-frame[data-has-image="false"]::before {
+  display: none;
+}
+
+.card-media-frame > img {
+  position: relative;
+  z-index: 1;
+}
+
+.card-media-frame:hover::before,
+.card-media-frame.parallax-active::before {
+  opacity: 0.55;
+  filter: blur(24px);
+}
+
+html[data-theme="day"] .card-media-frame::before {
+  opacity: 0.35;
+  filter: blur(22px);
+}
+
 /* Prompt bar hover/interaction styles */
 .promptbar {
   transition: border-color 0.2s ease;
@@ -1475,7 +1511,7 @@ html[data-theme="day"] .card-overlay-gradient {
   border-color: var(--theme-light);
 }
 .promptbar.drag-active {
-  border-color: var(--theme-orange-1);
+  border-color: var(--theme-text);
   border-width: 1px;
 }
 
@@ -1487,15 +1523,31 @@ html[data-theme="day"] .card-overlay-gradient {
   border-radius: 9999px;
   color: var(--theme-white);
   display: inline-grid;
-  height: 32px; /* match footer size-8 */
+  height: 28px; /* compact size for grid/default view */
   justify-content: center;
-  padding: 0.375rem; /* 6px padding ensures icon doesn't touch edges */
+  padding: 0.25rem; /* aligns with Tailwind p-1 */
   place-items: center;
   transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s;
-  width: 32px; /* match footer size-8 */
+  width: 28px; /* compact size for grid/default view */
   -webkit-backdrop-filter: blur(32px);
   backdrop-filter: blur(32px);
   perspective: 1000px;
+}
+
+.image-action-btn svg {
+  height: 0.875rem; /* ensure icons render consistently */
+  width: 0.875rem;
+}
+
+.image-action-btn--fullsize {
+  height: 32px; /* slightly larger inside full-size modals */
+  padding: 0.375rem;
+  width: 32px;
+}
+
+.image-action-btn--fullsize svg {
+  height: 1rem;
+  width: 1rem;
 }
 .image-action-btn:hover {
   background: var(--glass-dark-bg);
@@ -1547,6 +1599,9 @@ html[data-theme="day"] .card-overlay-gradient {
   display: inline-flex;
   gap: 0.4rem;
   justify-content: center;
+  height: 32px;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
   width: auto;
@@ -1635,21 +1690,21 @@ select option:not(:disabled) {
 
 select option:hover,
 select option:not(:disabled):hover {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
 
 select option:checked,
 select option:not(:disabled):checked {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
 
 select option:focus,
 select option:not(:disabled):focus {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1657,7 +1712,7 @@ select option:not(:disabled):focus {
 /* For WebKit browsers (Chrome, Safari, Edge) */
 select option:checked:focus,
 select option:not(:disabled):checked:focus {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1665,7 +1720,7 @@ select option:not(:disabled):checked:focus {
 /* For Firefox */
 select option:checked:focus-visible,
 select option:not(:disabled):checked:focus-visible {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1681,12 +1736,12 @@ select option::-webkit-scrollbar-track {
 }
 
 select option::-webkit-scrollbar-thumb {
-  background: var(--theme-orange-1);
+  background: var(--theme-text);
   border-radius: 4px;
 }
 
 select option::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--theme-orange-1) 78%, white 22%);
+  background: color-mix(in srgb, var(--theme-text) 78%, white 22%);
 }
 
 /* Force override for all select elements in the app */
@@ -1697,13 +1752,13 @@ select option::-webkit-scrollbar-thumb:hover {
 }
 
 * select option:hover {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
 
 * select option:checked {
-  background-color: var(--theme-orange-1) !important;
+  background-color: var(--theme-text) !important;
   color: var(--theme-black) !important;
   background-image: none !important;
 }
@@ -1756,28 +1811,40 @@ html[data-theme="day"] .PromptDescriptionBarTop {
    ------------------------------------------------------------- */
 .home-page {
   background: 
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #0e0f10 0%,
       #101112 15%,
-      #0e0f10 30%,
-      #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
+      #0e0f10 25%,
+      #0c0d0e 40%,
+      #0a0b0c 55%,
+      #080909 70%,
+      #070808 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 html[data-theme="day"] .home-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    linear-gradient(
+      to bottom,
       #dce5e5 0%,
       #e4ebeb 15%,
-      #ebf1f1 30%,
-      #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
-    var(--theme-black);
+      #ebf1f1 25%,
+      #f2f6f6 40%,
+      #f8fafb 55%,
+      #fbfcfd 70%,
+      #fdfdfe 85%,
+      var(--theme-black) 100%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 
@@ -1877,13 +1944,6 @@ html[data-theme="day"] .home-page {
   margin-right: 0;
 }
 
-.home-hero-actions {
-  display: grid;
-  grid-auto-flow: row;
-  gap: 0.75rem;
-  justify-content: flex-start;
-}
-
 .home-hero-actions .btn {
   min-width: 152px;
   box-shadow: 0 12px 30px -15px rgba(3, 188, 189, 0.25);
@@ -1891,15 +1951,6 @@ html[data-theme="day"] .home-page {
 
 .home-hero-actions .btn-orange {
   box-shadow: 0 12px 28px -12px rgba(184, 192, 192, 0.35);
-}
-
-@media (min-width: 640px) {
-  .home-hero-actions {
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    gap: 1rem;
-    justify-content: flex-start;
-  }
 }
 
 /* -------------------------------------------------------------
@@ -1995,13 +2046,13 @@ html[data-theme="day"] .faq-section {
   text-align: left;
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.4;
   cursor: pointer;
 }
 
 .faq-card__trigger:focus-visible {
-  outline: 2px solid var(--theme-orange-1);
+  outline: 2px solid var(--theme-text);
   outline-offset: 4px;
 }
 
@@ -2039,7 +2090,7 @@ html[data-theme="day"] .faq-section {
   color: var(--theme-white);
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 0.95rem;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.65;
 }
 
@@ -2069,7 +2120,7 @@ html[data-theme="day"] .faq-section {
 
 /* Sidebar section headers with letter spacing */
 .sidebar-section-header {
-  font-weight: 400;
+  font-weight: 300;
   letter-spacing: 0.1em;
 }
 
@@ -2108,7 +2159,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 8px;
   border: 1px solid var(--theme-mid);
   font-size: 12px;
-  font-weight: normal;
+  font-weight: 300;
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);

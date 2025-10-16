@@ -16,6 +16,7 @@ export interface IdeogramGeneratedImage {
   negativePrompt?: string;
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface IdeogramImageGenerationState {
@@ -37,6 +38,7 @@ export interface IdeogramGenerateOptions {
   style_type?: 'AUTO' | 'GENERAL' | 'REALISTIC' | 'DESIGN' | 'FICTION';
   negative_prompt?: string;
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface IdeogramEditOptions {
@@ -104,6 +106,7 @@ export const useIdeogramImageGeneration = () => {
       styleType: string | undefined,
       negativePrompt: string | undefined,
       avatarId: string | undefined,
+      avatarImageId: string | undefined,
       ownerId: string | undefined,
     ): Promise<IdeogramGeneratedImage[]> => {
       const maxAttempts = 60; // 5 minutes with 5-second intervals
@@ -113,7 +116,7 @@ export const useIdeogramImageGeneration = () => {
         try {
           const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
             headers: {
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           });
 
@@ -192,16 +195,17 @@ export const useIdeogramImageGeneration = () => {
       }));
 
       try {
-        if (!token) {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: AUTH_ERROR_MESSAGE,
-            progress: undefined,
-            progressValue: undefined,
-          }));
-          throw new Error(AUTH_ERROR_MESSAGE);
-        }
+        // TEMPORARILY DISABLED: Authentication check
+        // if (!token) {
+        //   setState((prev) => ({
+        //     ...prev,
+        //     isLoading: false,
+        //     error: AUTH_ERROR_MESSAGE,
+        //     progress: undefined,
+        //     progressValue: undefined,
+        //   }));
+        //   throw new Error(AUTH_ERROR_MESSAGE);
+        // }
 
         const providerOptions: Record<string, unknown> = {};
         if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
@@ -217,7 +221,7 @@ export const useIdeogramImageGeneration = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             prompt: options.prompt,
@@ -258,6 +262,7 @@ export const useIdeogramImageGeneration = () => {
             options.style_type,
             options.negative_prompt,
             options.avatarId,
+            options.avatarImageId,
             user?.id,
           );
 

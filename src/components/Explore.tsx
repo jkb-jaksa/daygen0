@@ -464,18 +464,19 @@ const ImageActionMenuPortal: React.FC<{
     if (!open || !anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
     const width = Math.max(200, rect.width);
-    const margin = 8;
+    const horizontalMargin = 8;
+    const verticalOffset = 2;
 
     const availableLeft = Math.max(
-      margin,
+      horizontalMargin,
       (typeof window !== "undefined"
-        ? window.innerWidth - width - margin
+        ? window.innerWidth - width - horizontalMargin
         : rect.left)
     );
-    const left = Math.min(Math.max(margin, rect.left), availableLeft);
+    const left = Math.min(Math.max(horizontalMargin, rect.left), availableLeft);
 
     setPos({
-      top: rect.bottom + margin,
+      top: rect.bottom + verticalOffset,
       left,
       width,
     });
@@ -491,8 +492,9 @@ const ImageActionMenuPortal: React.FC<{
       const anchorRect = anchorEl.getBoundingClientRect();
       const menuRect = menuRef.current.getBoundingClientRect();
       const width = Math.max(200, anchorRect.width);
-      const margin = 8;
-      
+      const horizontalMargin = 8;
+      const verticalOffset = 2;
+
       let top;
       if (isRecreateMenu) {
         // For recreate menu, always position above the button
@@ -504,12 +506,12 @@ const ImageActionMenuPortal: React.FC<{
       } else {
         // Position below the button for other menus (full-size view)
         // Reduce margin to bring dropdown closer to button
-        top = anchorRect.bottom + 2;
+        top = anchorRect.bottom + verticalOffset;
       }
-      
-      const availableLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
+
+      const availableLeft = Math.max(horizontalMargin, window.innerWidth - menuRect.width - horizontalMargin);
       const left = Math.min(
-        Math.max(margin, anchorRect.left),
+        Math.max(horizontalMargin, anchorRect.left),
         availableLeft
       );
 
@@ -662,7 +664,7 @@ const AvatarCard: React.FC<{
                 : isSpotlight
                   ? "text-2xl"
                   : "text-xl"
-            } font-raleway font-normal text-white`}
+            } font-raleway font-light text-white`}
           >
             {item.name}
           </h3>
@@ -864,7 +866,7 @@ const CustomMultiSelect: React.FC<{
                   onClick={() => toggleOption(option.value)}
                   className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
                     isSelected
-                      ? "bg-[color:var(--theme-text)] border-[color:var(--theme-text)]/70 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
+                      ? "bg-[color:var(--theme-text)] border-0 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
                       : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
                   }`}
                 >
@@ -2005,7 +2007,7 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2017,7 +2019,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2029,7 +2031,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -2110,7 +2112,7 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await copyImageLink(item);
@@ -2121,7 +2123,7 @@ const Explore: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await downloadImage(item);
@@ -2147,7 +2149,7 @@ const Explore: React.FC = () => {
                       <div className="w-full p-4">
                         <div className="mb-2">
                           <div className="relative">
-                            <p className="text-theme-text text-sm font-raleway leading-relaxed line-clamp-3 pl-1">
+                            <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                               {item.prompt}
                               <button
                                 data-copy-button="true"
@@ -2279,7 +2281,7 @@ const Explore: React.FC = () => {
               <div className="max-w-2xl space-y-6">
                 <p className={`${text.eyebrow} text-theme-white/70`}>Community</p>
                 <div className="space-y-4">
-                  <h2 className="text-balance font-raleway text-4xl font-normal text-theme-white sm:text-5xl md:text-6xl">
+                  <h2 className="text-balance font-raleway text-4xl font-light text-theme-white sm:text-5xl md:text-6xl">
                     Discover the daygen community gallery
                   </h2>
                   <p className="max-w-xl font-raleway text-lg text-theme-white/75">
@@ -2303,7 +2305,7 @@ const Explore: React.FC = () => {
                     <Sparkles className="size-4" aria-hidden="true" />
                     Trending
                   </div>
-                  <p className="mt-3 text-3xl font-normal text-theme-white">3.2K+</p>
+                  <p className="mt-3 text-3xl font-light text-theme-white">3.2K+</p>
                   <p className="text-xs text-theme-white/60">new images shared this week</p>
                 </div>
                 <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
@@ -2311,7 +2313,7 @@ const Explore: React.FC = () => {
                     <Users className="size-4" aria-hidden="true" />
                     Creators
                   </div>
-                  <p className="mt-3 text-3xl font-normal text-theme-white">870</p>
+                  <p className="mt-3 text-3xl font-light text-theme-white">870</p>
                   <p className="text-xs text-theme-white/60">featured artists this month</p>
                 </div>
                 <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
@@ -2418,7 +2420,7 @@ const Explore: React.FC = () => {
 
                 <div className="flex flex-col gap-6">
                   <div className="space-y-3">
-                    <h3 className="text-xl font-raleway font-normal text-theme-text">Add to a folder</h3>
+                    <h3 className="text-xl font-raleway font-light text-theme-text">Add to a folder</h3>
                     <p className="text-sm text-theme-white">
                       Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
                     </p>
@@ -2587,7 +2589,7 @@ const Explore: React.FC = () => {
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2599,7 +2601,7 @@ const Explore: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2611,7 +2613,7 @@ const Explore: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -2645,7 +2647,7 @@ const Explore: React.FC = () => {
                       aria-label={selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                     >
                       <Heart
-                        className={`w-3.5 h-3.5 transition-colors duration-100 ${
+                        className={`w-3 h-3 transition-colors duration-100 ${
                           selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
                         }`}
                         aria-hidden="true"
@@ -2659,7 +2661,7 @@ const Explore: React.FC = () => {
                           event.stopPropagation();
                           toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                         }}
-                        className="image-action-btn parallax-large pointer-events-auto"
+                        className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
                         aria-label="More options"
                       >
                         <MoreHorizontal className="size-4" aria-hidden="true" />
@@ -2672,7 +2674,7 @@ const Explore: React.FC = () => {
                       >
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                           onClick={async (event) => {
                             event.stopPropagation();
                             await copyImageLink(selectedFullImage);
@@ -2683,7 +2685,7 @@ const Explore: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                           onClick={async (event) => {
                             event.stopPropagation();
                             await downloadImage(selectedFullImage);
@@ -2698,7 +2700,7 @@ const Explore: React.FC = () => {
                   <button
                     type="button"
                     onClick={closeFullSizeView}
-                    className="image-action-btn parallax-large pointer-events-auto"
+                    className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
                     aria-label="Close"
                   >
                     <X className="size-4" aria-hidden="true" />
@@ -2753,8 +2755,8 @@ const Explore: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Remove from gallery?</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
+                  <h3 className="text-xl font-raleway font-light text-theme-text">Remove from gallery?</h3>
+                  <p className="text-base font-raleway font-light text-theme-white">
                     This will remove the image from your saved gallery and any folders it's in.
                   </p>
                 </div>

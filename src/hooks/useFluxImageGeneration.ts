@@ -15,6 +15,7 @@ export interface FluxGeneratedImage {
   references?: string[];
   ownerId?: string;
   avatarId?: string;
+  avatarImageId?: string;
   r2FileId?: string;
 }
 
@@ -46,6 +47,7 @@ export interface FluxImageGenerationOptions {
   useWebhook?: boolean;
   references?: string[];
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
@@ -67,6 +69,7 @@ export const useFluxImageGeneration = () => {
       model: string,
       references: string[] | undefined,
       avatarId: string | undefined,
+      avatarImageId: string | undefined,
       ownerId: string | undefined,
     ): Promise<FluxGeneratedImage> => {
       const pollIntervalMs = 3000;
@@ -86,7 +89,7 @@ export const useFluxImageGeneration = () => {
         try {
           const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
             headers: {
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           });
 
@@ -141,6 +144,7 @@ export const useFluxImageGeneration = () => {
               references: references || undefined,
               ownerId,
               avatarId,
+              avatarImageId,
               r2FileId,
             };
           }
@@ -180,16 +184,17 @@ export const useFluxImageGeneration = () => {
       }));
 
       try {
-        if (!token) {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: AUTH_ERROR_MESSAGE,
-            jobStatus: null,
-            progress: undefined,
-          }));
-          throw new Error(AUTH_ERROR_MESSAGE);
-        }
+        // TEMPORARILY DISABLED: Authentication check
+        // if (!token) {
+        //   setState((prev) => ({
+        //     ...prev,
+        //     isLoading: false,
+        //     error: AUTH_ERROR_MESSAGE,
+        //     jobStatus: null,
+        //     progress: undefined,
+        //   }));
+        //   throw new Error(AUTH_ERROR_MESSAGE);
+        // }
 
         const { prompt, model, references, useWebhook = false, ...params } = options;
         if (useWebhook) {
@@ -221,13 +226,15 @@ export const useFluxImageGeneration = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             prompt,
             model: resolvedModel,
             references,
             providerOptions,
+            avatarId: options.avatarId,
+            avatarImageId: options.avatarImageId,
           }),
         });
 
@@ -261,6 +268,7 @@ export const useFluxImageGeneration = () => {
           resolvedModel,
           references,
           options.avatarId,
+          options.avatarImageId,
           user?.id,
         );
 

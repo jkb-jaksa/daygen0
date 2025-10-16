@@ -171,8 +171,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
       // Position above if there's more space above, otherwise position below
       const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
       
+      const verticalOffset = 2;
+
       setPos({
-        top: shouldPositionAbove ? rect.top - 8 : rect.bottom + 8,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: 384,
         transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)',
@@ -392,7 +394,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="space-y-6">
               <div className="space-y-3 text-center">
                 <Pencil className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Edit Prompt
                 </h3>
                 <p className="text-base font-raleway text-n-white">
@@ -445,10 +447,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Delete Prompt
                 </h3>
-                <p className="text-base font-raleway font-normal text-n-white">
+                <p className="text-base font-raleway font-light text-n-white">
                   Are you sure you want to delete this prompt? This action cannot be undone.
                 </p>
               </div>
@@ -482,10 +484,10 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Delete Recent Prompt
                 </h3>
-                <p className="text-base font-raleway font-normal text-n-white">
+                <p className="text-base font-raleway font-light text-n-white">
                   Are you sure you want to delete this prompt from your recent prompts? This action cannot be undone.
                 </p>
               </div>
@@ -518,7 +520,7 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
             <div className="space-y-6">
               <div className="space-y-3 text-center">
                 <BookmarkPlus className="w-10 h-10 mx-auto text-n-text" />
-                <h3 className="text-xl font-raleway font-normal text-n-text">
+                <h3 className="text-xl font-raleway font-light text-n-text">
                   Add Prompt
                 </h3>
                 <p className="text-base font-raleway text-n-white">

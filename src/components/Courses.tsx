@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
-import { layout, glass, text as textStyles, inputs } from "../styles/designSystem";
+import { layout, glass, text as textStyles, inputs, headings } from "../styles/designSystem";
 
 const LEARN_LINKS = [
   { to: "/learn/use-cases", label: "Use cases" },
@@ -30,14 +30,16 @@ export default function Courses() {
         <div className={`${layout.container}`}>
           {/* Title and subtitle section */}
           <header className="mb-6">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-theme-light font-raleway">
-              <BookOpen className="h-4 w-4" />
-              Learn
-            </p>
-            <h1 className={`${textStyles.sectionHeading} mt-3 text-3xl sm:text-4xl text-theme-text`}>Courses</h1>
-            <p className="mt-3 max-w-2xl text-base font-raleway font-normal leading-relaxed text-theme-white">
-              Coming soon.
-            </p>
+            <div className={headings.tripleHeading.container}>
+              <p className={headings.tripleHeading.eyebrow}>
+                <BookOpen className="h-4 w-4" />
+                Learn
+              </p>
+              <h1 className={`${textStyles.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>Courses</h1>
+              <p className={headings.tripleHeading.description}>
+                Coming soon.
+              </p>
+            </div>
           </header>
 
           {/* Navigation buttons */}
@@ -101,7 +103,7 @@ export default function Courses() {
             <div className="flex-1">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                <h2 className="text-xl font-raleway font-normal text-theme-text">Courses</h2>
+                <h2 className="text-xl font-raleway font-light text-theme-text">Courses</h2>
                 <p className="mt-2 text-sm font-raleway text-theme-white">
                   Coming soon.
                 </p>

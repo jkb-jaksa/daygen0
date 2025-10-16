@@ -286,7 +286,7 @@ const tools: readonly LearnToolPage[] = [
   {
     slug: "ideogram",
     name: "Ideogram",
-    tagline: "Great for product visualizations and person swaps.",
+    tagline: "Great for product placement and person swaps.",
     overview:
       "Ideogram 3.0 delivers photorealistic generations with industry-leading typography rendering. It's ideal for campaigns that combine people, products, and text in a single composition.",
     categories: ["image"],

@@ -25,9 +25,9 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
     >
       {/* No overlay */}
       <div className="relative z-10 flex items-center gap-2">
-        <div className="text-theme-text text-xl font-normal font-raleway text-balance wrap-anywhere leading-tight">{title}</div>
+        <div className="text-theme-text text-xl font-light font-raleway text-balance wrap-anywhere leading-tight">{title}</div>
       </div>
-      <p className="relative z-10 mt-1 text-theme-white text-base font-normal font-raleway leading-relaxed break-words">{subtitle}</p>
+      <p className="relative z-10 mt-1 text-theme-white text-base font-light font-raleway leading-relaxed break-words">{subtitle}</p>
       <div className="flex-1" />
       <div className="parallax-isolate">
         <button

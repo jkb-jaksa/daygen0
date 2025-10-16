@@ -36,6 +36,8 @@ export type GalleryImageLike = {
   isPublic?: boolean;
   savedFrom?: SavedCreator;
   avatarId?: string;
+  productId?: string;
+  avatarImageId?: string;
 };
 
 export type GalleryVideoLike = {
@@ -50,6 +52,8 @@ export type GalleryVideoLike = {
   type: "video";
   operationName?: string;
   avatarId?: string; // Avatar ID for filtering
+  productId?: string; // Product ID for filtering
+  avatarImageId?: string;
 };
 
 export type StoredGalleryImage = {
@@ -62,6 +66,8 @@ export type StoredGalleryImage = {
   isPublic?: boolean;
   savedFrom?: SavedCreator;
   avatarId?: string;
+  productId?: string;
+  avatarImageId?: string;
 };
 
 export type PendingGalleryItem = {
@@ -75,14 +81,6 @@ export type PendingGalleryItem = {
   backendProgressUpdatedAt?: number;
   status?: 'queued' | 'processing' | 'completed' | 'failed';
   jobId?: string | null;
-};
-
-export type SerializedUpload = {
-  id: string;
-  fileName: string;
-  fileType: string;
-  previewUrl: string;
-  uploadDate: string;
 };
 
 export type SerializedFolder = {
@@ -100,6 +98,7 @@ export type CreateNavigationState = {
   selectedModel?: string;
   focusPromptBar?: boolean;
   avatarId?: string;
+  productId?: string;
 };
 
 export type GalleryFilters = {
@@ -109,18 +108,12 @@ export type GalleryFilters = {
   types: string[]; // Changed from 'type' to 'types' to support multiselect (values: 'image', 'video')
   folder: string;
   avatar: string;
+  product: string;
 };
 
 export type ImageActionMenuState = { id: string; anchor: HTMLElement | null } | null;
 
 export type BulkActionsMenuState = { anchor: HTMLElement | null } | null;
-
-export type UploadItem = {
-  id: string;
-  file: File;
-  previewUrl: string;
-  uploadDate: Date;
-};
 
 export type FolderThumbnailDialogState = { show: boolean; folderId: string | null };
 

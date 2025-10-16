@@ -12,6 +12,7 @@ export interface GeneratedImage {
   references?: string[]; // Base64 data URLs for reference images used
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export interface ImageGenerationState {
@@ -28,6 +29,7 @@ export interface ImageGenerationOptions {
   ratio?: string; // Aspect ratio like "1920:1080"
   seed?: number; // Optional seed for reproducible results
   avatarId?: string;
+  avatarImageId?: string;
 }
 
 export const useRunwayImageGeneration = () => {
@@ -45,6 +47,7 @@ export const useRunwayImageGeneration = () => {
       model: string,
       references: string[],
       avatarId: string | undefined,
+      avatarImageId: string | undefined,
       ownerId: string | undefined,
     ): Promise<GeneratedImage> => {
       const maxAttempts = 60;
@@ -52,7 +55,7 @@ export const useRunwayImageGeneration = () => {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
 
@@ -70,6 +73,7 @@ export const useRunwayImageGeneration = () => {
             references: references.length ? references : undefined,
             ownerId,
             avatarId,
+            avatarImageId,
           };
         }
 
@@ -93,15 +97,16 @@ export const useRunwayImageGeneration = () => {
     }));
 
     try {
-      if (!token) {
-        const message = 'Please sign in to generate images.';
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: message,
-        }));
-        throw new Error(message);
-      }
+      // TEMPORARILY DISABLED: Authentication check
+      // if (!token) {
+      //   const message = 'Please sign in to generate images.';
+      //   setState(prev => ({
+      //     ...prev,
+      //     isLoading: false,
+      //     error: message,
+      //   }));
+      //   throw new Error(message);
+      // }
 
       const { prompt, uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
 
@@ -114,12 +119,14 @@ export const useRunwayImageGeneration = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ 
           prompt, 
           model: uiModel,
           references, 
+          avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
           providerOptions: {
             ratio,
             seed,
@@ -162,6 +169,7 @@ export const useRunwayImageGeneration = () => {
           uiModel,
           references,
           options.avatarId,
+          options.avatarImageId,
           user?.id,
         );
 
@@ -187,6 +195,7 @@ export const useRunwayImageGeneration = () => {
         references: references || undefined,
         ownerId: user?.id,
         avatarId: options.avatarId,
+        avatarImageId: options.avatarImageId,
       };
 
       setState(prev => ({

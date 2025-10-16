@@ -20,6 +20,8 @@ export const serializeGallery = (
     isPublic: item.isPublic,
     savedFrom: item.savedFrom,
     avatarId: item.avatarId,
+    productId: item.productId,
+    avatarImageId: item.avatarImageId,
     ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
   }));
 
@@ -36,6 +38,8 @@ export const hydrateStoredGallery = (
       isPublic: item.isPublic ?? false,
       savedFrom: item.savedFrom,
       avatarId: item.avatarId,
+      productId: item.productId,
+      avatarImageId: item.avatarImageId,
     };
 
     if (item.model?.startsWith("flux") || item.model?.startsWith("reve")) {
