@@ -1,5 +1,5 @@
 import { buttons, inputs } from "../styles/designSystem";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../auth/useAuth";
 import { useState, useCallback } from "react";
 import GoogleSignIn from "./GoogleSignIn";
 

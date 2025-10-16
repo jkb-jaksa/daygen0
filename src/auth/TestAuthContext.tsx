@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useEffect, useState, useCallback } from 'react';
 
 export interface TestUser {
   id: string;
@@ -159,10 +159,3 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useTestAuth() {
-  const context = useContext(TestAuthContext);
-  if (context === undefined) {
-    throw new Error('useTestAuth must be used within a TestAuthProvider');
-  }
-  return context;
-}

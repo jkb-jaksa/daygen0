@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useEffect, useState, useCallback } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl } from '../utils/api';
@@ -254,10 +254,3 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   );
 }
 
-export function useSupabaseAuth() {
-  const context = useContext(SupabaseAuthContext);
-  if (context === undefined) {
-    throw new Error('useSupabaseAuth must be used within a SupabaseAuthProvider');
-  }
-  return context;
-}

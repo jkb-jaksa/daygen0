@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useEffect, useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 
 export interface BackendUser {
@@ -237,10 +237,3 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
   );
 }
 
-export function useBackendAuth() {
-  const context = useContext(BackendAuthContext);
-  if (context === undefined) {
-    throw new Error('useBackendAuth must be used within a BackendAuthProvider');
-  }
-  return context;
-}

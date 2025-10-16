@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSupabaseAuth } from '../auth/SupabaseAuthContext';
+import { useSupabaseAuth } from '../auth/useSupabaseAuth';
 import { buttons, inputs } from '../styles/designSystem';
 
 interface SupabasePasswordResetProps {
