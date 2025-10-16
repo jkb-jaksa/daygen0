@@ -1,32 +1,8 @@
-import React, { createContext, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { BackendAuthContext, type BackendUser } from './contexts/BackendAuthContext';
 
-export interface BackendUser {
-  id: string;
-  email: string;
-  displayName: string | null;
-  credits: number;
-  profileImage: string | null;
-  role: 'USER' | 'ADMIN';
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface BackendAuthContextValue {
-  user: BackendUser | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
-  signInWithPassword: (email: string, password: string) => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-
-export const BackendAuthContext = createContext<BackendAuthContextValue | undefined>(undefined);
+// Context moved to ./contexts/BackendAuthContext to satisfy react-refresh/only-export-components
 
 export function BackendAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<BackendUser | null>(null);

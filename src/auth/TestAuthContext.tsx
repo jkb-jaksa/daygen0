@@ -1,30 +1,7 @@
-import React, { createContext, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { TestAuthContext, type TestUser } from './contexts/TestAuthContext';
 
-export interface TestUser {
-  id: string;
-  email: string;
-  displayName: string | null;
-  credits: number;
-  profileImage: string | null;
-  role: 'USER' | 'ADMIN';
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface TestAuthContextValue {
-  user: TestUser | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
-  signInWithPassword: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-
-export const TestAuthContext = createContext<TestAuthContextValue | undefined>(undefined);
+// Context moved to ./contexts/TestAuthContext to satisfy react-refresh/only-export-components
 
 export function TestAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TestUser | null>(null);
