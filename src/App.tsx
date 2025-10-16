@@ -175,6 +175,66 @@ function Home() {
 
   return (
     <div className={`${layout.page} home-page`}>
+      {/* Colorful gradient with grain - top right corner decoration */}
+      <div className="fixed pointer-events-none z-0 overflow-hidden" style={{ top: '-60px', right: '-40px', width: '70vw', height: '65vh', maxWidth: '1100px', maxHeight: '700px' }}>
+        {/* Cyan blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '-15%',
+            right: '-15%',
+            width: '70%',
+            height: '70%',
+            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.38) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        {/* Blue blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '-5%',
+            right: '12%',
+            width: '72%',
+            height: '72%',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.38) 0%, transparent 70%)',
+            filter: 'blur(85px)',
+          }}
+        />
+        {/* Red blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '15%',
+            right: '10%',
+            width: '60%',
+            height: '60%',
+            background: 'radial-gradient(circle, rgba(239, 68, 68, 0.32) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        {/* Amber blob */}
+        <div 
+          className="absolute"
+          style={{
+            top: '8%',
+            right: '35%',
+            width: '55%',
+            height: '55%',
+            background: 'radial-gradient(circle, rgba(251, 191, 36, 0.32) 0%, transparent 70%)',
+            filter: 'blur(85px)',
+          }}
+        />
+        {/* Grain overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' opacity=\'0.15\'/%3E%3C/svg%3E")',
+            mixBlendMode: 'overlay',
+            opacity: 0.5,
+          }}
+        />
+      </div>
       <div className="relative z-10">
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>

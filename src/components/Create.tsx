@@ -635,6 +635,9 @@ const Create: React.FC = () => {
   const [tempSelectedStyles, setTempSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
   const [activeStyleGender, setActiveStyleGender] = useState<StyleGender>("unisex");
   const [activeStyleSection, setActiveStyleSection] = useState<StyleSectionId>("lifestyle");
+  const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+  const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
+  const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
@@ -8884,6 +8887,8 @@ const handleGenerate = async () => {
                       onDragOver={handleAvatarButtonDragOver}
                       onDragLeave={handleAvatarButtonDragLeave}
                       onDrop={handleAvatarButtonDrop}
+                      onMouseEnter={() => setIsAvatarButtonHovered(true)}
+                      onMouseLeave={() => setIsAvatarButtonHovered(false)}
                       className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
@@ -8892,7 +8897,11 @@ const handleGenerate = async () => {
                       {!selectedAvatar && (
                         <>
                           <div className="flex-1 flex items-center justify-center lg:mt-3">
-                            <Users className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            {isAvatarButtonHovered ? (
+                              <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            ) : (
+                              <Users className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            )}
                           </div>
                           <div className="hidden lg:flex items-center gap-1">
                             <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
@@ -8955,6 +8964,8 @@ const handleGenerate = async () => {
                       onDragOver={handleProductButtonDragOver}
                       onDragLeave={handleProductButtonDragLeave}
                       onDrop={handleProductButtonDrop}
+                      onMouseEnter={() => setIsProductButtonHovered(true)}
+                      onMouseLeave={() => setIsProductButtonHovered(false)}
                       className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
@@ -8963,7 +8974,11 @@ const handleGenerate = async () => {
                       {!selectedProduct && (
                         <>
                           <div className="flex-1 flex items-center justify-center lg:mt-3">
-                            <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            {isProductButtonHovered ? (
+                              <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            ) : (
+                              <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            )}
                           </div>
                           <div className="hidden lg:flex items-center gap-1">
                             <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
@@ -9010,6 +9025,8 @@ const handleGenerate = async () => {
                       type="button"
                       ref={stylesButtonRef}
                       onClick={() => setIsStyleModalOpen(true)}
+                      onMouseEnter={() => setIsStyleButtonHovered(true)}
+                      onMouseLeave={() => setIsStyleButtonHovered(false)}
                       className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
                       aria-label="Select style"
                       aria-expanded={isStyleModalOpen}
@@ -9020,7 +9037,11 @@ const handleGenerate = async () => {
                       {!firstSelectedStyle && (
                         <>
                           <div className="flex-1 flex items-center justify-center lg:mt-3">
-                            <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            {isStyleButtonHovered ? (
+                              <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            ) : (
+                              <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                            )}
                           </div>
                           <div className="hidden lg:flex items-center gap-1">
                             <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">

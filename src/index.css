@@ -607,6 +607,8 @@ html, body {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 html[data-theme="day"],
@@ -621,6 +623,8 @@ html[data-theme="day"] body {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 /* Subtle gradient for main page backgrounds */
@@ -635,6 +639,8 @@ html[data-theme="day"] body {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 html[data-theme="day"] .bg-theme-black-subtle {
@@ -648,6 +654,8 @@ html[data-theme="day"] .bg-theme-black-subtle {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 /* Section divider day mode styling - target border-b specifically */
@@ -1804,6 +1812,8 @@ html[data-theme="day"] .PromptDescriptionBarTop {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 html[data-theme="day"] .home-page {
@@ -1817,6 +1827,8 @@ html[data-theme="day"] .home-page {
       var(--theme-black) 80%
     ),
     var(--theme-black);
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat;
 }
 
 
