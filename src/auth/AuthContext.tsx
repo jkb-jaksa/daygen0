@@ -241,25 +241,14 @@ const handleAuthSuccess = useCallback(
   }, []);
 
   const mockSignIn = useCallback(() => {
-    const mockToken = `mock-dev-token-${Date.now()}`;
-    const mockUser: User = {
-      id: "mock-user-123",
-      authUserId: "mock-auth-456",
-      email: "test@daygen.local",
-      displayName: "Test User",
-      credits: 1000,
-      profileImage: null,
-      role: "USER",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    localStorage.setItem(TOKEN_STORAGE_KEY, mockToken);
-    localStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
-    sessionStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
-    setToken(mockToken);
-    setUser(mockUser);
-  }, []);
+    // Use real credentials for quick testing access
+    const email = 'jstach.net@gmail.com';
+    const password = 'Aosw3dina4';
+    
+    signIn(email, password).catch((error) => {
+      console.error('Quick sign in failed:', error);
+    });
+  }, [signIn]);
 
   const storagePrefix = useMemo(
     () => `daygen:${user?.id ?? 'guest'}:`,

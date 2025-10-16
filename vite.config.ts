@@ -23,13 +23,13 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: useProxy ? {
         '/api': {
-          target: 'http://localhost:3000',
+          target: 'https://daygen-backend-365299591811.europe-central2.run.app',
           changeOrigin: true,
           secure: false,
           // keep path as-is (no rewrite) so /api/* maps directly
         },
         '/health': {
-          target: 'http://localhost:3000',
+          target: 'https://daygen-backend-365299591811.europe-central2.run.app',
           changeOrigin: true,
           secure: false,
         },

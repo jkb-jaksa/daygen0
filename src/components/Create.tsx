@@ -124,10 +124,10 @@ const STYLE_GRADIENTS = [
   "linear-gradient(135deg, rgba(30,64,175,0.5) 0%, rgba(59,130,246,0.45) 50%, rgba(248,113,113,0.4) 100%)",
 ];
 
-const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string }> = [
-  { id: "lifestyle", name: "Lifestyle" },
-  { id: "formal", name: "Formal" },
-  { id: "artistic", name: "Artistic" },
+const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string; image: string }> = [
+  { id: "lifestyle", name: "Lifestyle", image: "/lifestyle images.png" },
+  { id: "formal", name: "Formal", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80" },
+  { id: "artistic", name: "Artistic", image: "/artistic images.png" },
 ];
 
 const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [
@@ -8035,16 +8035,21 @@ const handleGenerate = async () => {
                                       key={section.id}
                                       type="button"
                                       onClick={() => setActiveStyleSection(section.id)}
-                                      className={`rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                                      className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
                                         isActive
                                           ? 'bg-theme-text text-n-black border border-theme-text'
                                           : `${glass.promptDark} text-n-white hover:text-n-text hover:border-theme-text/70`
                                       }`}
                                       aria-pressed={isActive}
                                     >
+                                      <img 
+                                        src={section.image} 
+                                        alt={`${section.name} category`}
+                                        className="w-5 h-5 rounded object-cover flex-shrink-0"
+                                      />
                                       <span>{section.name}</span>
                                       {sectionSelectedCount > 0 && (
-                                        <span className={`ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
+                                        <span className={`ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
                                           isActive ? 'bg-theme-text text-n-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
                                         }`}>
                                           {sectionSelectedCount}

@@ -514,13 +514,6 @@ body {
   max-inline-size: min(var(--line-length-max), 100%);
 }
 
-.home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: var(--space-3);
-}
-
 .wrap-anywhere {
   overflow-wrap: anywhere;
 }
@@ -536,11 +529,6 @@ picture {
 }
 
 @container hero (width >= 48rem) {
-  .home-hero-actions {
-    justify-content: flex-start;
-    gap: var(--space-4);
-  }
-
   .home-hero-copy {
     gap: var(--space-4);
   }
@@ -693,6 +681,15 @@ html[data-theme="day"] .border-b.border-theme-black {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   will-change: transform;
   z-index: 1;
+}
+
+/* Override button padding and min-width on small screens to allow responsive classes to work properly */
+@media (max-width: 639px) {
+  .btn {
+    padding-left: 16px;
+    padding-right: 16px;
+    min-width: 0;
+  }
 }
 
 /* Compact button variant for tighter vertical spaces like the navbar */
@@ -1919,13 +1916,6 @@ html[data-theme="day"] .home-page {
   margin-right: 0;
 }
 
-.home-hero-actions {
-  display: grid;
-  grid-auto-flow: row;
-  gap: 0.75rem;
-  justify-content: flex-start;
-}
-
 .home-hero-actions .btn {
   min-width: 152px;
   box-shadow: 0 12px 30px -15px rgba(3, 188, 189, 0.25);
@@ -1933,15 +1923,6 @@ html[data-theme="day"] .home-page {
 
 .home-hero-actions .btn-orange {
   box-shadow: 0 12px 28px -12px rgba(184, 192, 192, 0.35);
-}
-
-@media (min-width: 640px) {
-  .home-hero-actions {
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    gap: 1rem;
-    justify-content: flex-start;
-  }
 }
 
 /* -------------------------------------------------------------
