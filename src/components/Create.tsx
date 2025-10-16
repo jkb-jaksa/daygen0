@@ -98,7 +98,8 @@ type StyleOption = {
   id: string;
   name: string;
   prompt: string;
-  previewGradient: string;
+  previewGradient?: string;
+  image?: string;
 };
 
 type StyleSectionId = "lifestyle" | "formal" | "artistic";
@@ -136,6 +137,45 @@ const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = 
   { id: "unisex", label: "All" },
 ];
 
+const LIFESTYLE_STYLES_UNISEX: StyleOption[] = [
+  {
+    id: "unisex-lifestyle-black-suit-studio",
+    name: "Black Suit Studio",
+    prompt: "professional studio photography setup, black suit attire, clean minimalist background, professional lighting, high-end fashion photography style",
+    image: "/black_suit_studio setup.png",
+  },
+  {
+    id: "unisex-lifestyle-french-balcony",
+    name: "French Balcony",
+    prompt: "elegant French balcony setting, charming Parisian architecture, wrought iron railings, romantic European atmosphere, natural daylight",
+    image: "/french_balcony.png",
+  },
+  {
+    id: "unisex-lifestyle-boat-coastal-town",
+    name: "Boat in Coastal Town",
+    prompt: "charming coastal town setting, traditional fishing boat, waterfront architecture, maritime atmosphere, golden hour lighting, seaside lifestyle photography",
+    image: "/boat_in_coastal_town.png",
+  },
+  {
+    id: "unisex-lifestyle-brick-wall",
+    name: "Brick in the Wall",
+    prompt: "urban street photography, exposed brick wall background, industrial aesthetic, gritty urban atmosphere, natural lighting, contemporary lifestyle photography",
+    image: "/brick_in_the_wall.png",
+  },
+  {
+    id: "unisex-lifestyle-smoking-hot",
+    name: "Smoking Hot",
+    prompt: "dramatic lifestyle photography, warm lighting, sultry atmosphere, high contrast, fashion-forward styling, bold and confident mood",
+    image: "/smoking_hot.png",
+  },
+  {
+    id: "unisex-lifestyle-sun-and-sea",
+    name: "Sun and Sea",
+    prompt: "beach lifestyle photography, sunny coastal setting, ocean waves, bright natural lighting, summer vibes, relaxed seaside atmosphere",
+    image: "/sun_and_sea.png",
+  },
+];
+
 const createPlaceholderStyles = (
   gender: StyleGender,
   sectionId: StyleSectionId,
@@ -152,11 +192,21 @@ const createPlaceholderStyles = (
     };
   });
 
+const createLifestyleStyles = (gender: StyleGender): StyleOption[] => {
+  if (gender === "unisex") {
+    return LIFESTYLE_STYLES_UNISEX;
+  }
+  // For male and female, return placeholder styles for now
+  return createPlaceholderStyles(gender, "lifestyle", "Lifestyle");
+};
+
 const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
   STYLE_SECTION_DEFINITIONS.map(({ id, name }) => ({
     id,
     name,
-    options: createPlaceholderStyles(gender, id, name),
+    options: id === "lifestyle" 
+      ? createLifestyleStyles(gender)
+      : createPlaceholderStyles(gender, id, name),
   }));
 
 const STYLE_SECTIONS_BY_GENDER: Record<StyleGender, StyleSection[]> = {
@@ -729,6 +779,11 @@ const Create: React.FC = () => {
 
     const [first, second] = selectedStylesList;
     return `${first?.name ?? ""}, ${second?.name ?? ""} + ${totalSelectedStyles - 2} more`.trim();
+  }, [selectedStylesList, totalSelectedStyles]);
+
+  const firstSelectedStyle = useMemo(() => {
+    if (totalSelectedStyles === 0) return null;
+    return selectedStylesList[0] ?? null;
   }, [selectedStylesList, totalSelectedStyles]);
 
   const handleToggleTempStyle = (gender: StyleGender, sectionId: StyleSectionId, style: StyleOption) => {
@@ -7970,7 +8025,7 @@ const handleGenerate = async () => {
                           }}
                         >
                           <div
-                            className={`${glass.prompt} w-full max-w-4xl rounded-3xl border border-theme-mid px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
+                            className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-mid px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
                             onClick={event => event.stopPropagation()}
                           >
                             <div className="flex items-center justify-between mb-4">
@@ -8009,15 +8064,15 @@ const handleGenerate = async () => {
                                       }}
                                       className={`rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
                                         isActive
-                                          ? 'bg-theme-text text-n-black border border-theme-text'
-                                          : `${glass.promptDark} text-n-white hover:text-n-text hover:border-theme-text/70`
+                                          ? 'bg-theme-text text-theme-black border border-theme-text'
+                                          : `${glass.promptDark} text-theme-white hover:text-theme-text hover:border-theme-text/70`
                                       }`}
                                       aria-pressed={isActive}
                                     >
                                       <span>{option.label}</span>
                                       {genderSelectedCount > 0 && (
                                         <span className={`ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
-                                          isActive ? 'bg-theme-text text-n-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                                          isActive ? 'bg-theme-text text-theme-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
                                         }`}>
                                           {genderSelectedCount}
                                         </span>
@@ -8037,8 +8092,8 @@ const handleGenerate = async () => {
                                       onClick={() => setActiveStyleSection(section.id)}
                                       className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
                                         isActive
-                                          ? 'bg-theme-text text-n-black border border-theme-text'
-                                          : `${glass.promptDark} text-n-white hover:text-n-text hover:border-theme-text/70`
+                                          ? 'bg-theme-text text-theme-black border border-theme-text'
+                                          : `${glass.promptDark} text-theme-white hover:text-theme-text hover:border-theme-text/70`
                                       }`}
                                       aria-pressed={isActive}
                                     >
@@ -8050,7 +8105,7 @@ const handleGenerate = async () => {
                                       <span>{section.name}</span>
                                       {sectionSelectedCount > 0 && (
                                         <span className={`ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium border-0 ${
-                                          isActive ? 'bg-theme-text text-n-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                                          isActive ? 'bg-theme-text text-theme-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
                                         }`}>
                                           {sectionSelectedCount}
                                         </span>
@@ -8082,14 +8137,18 @@ const handleGenerate = async () => {
                                             aria-label={`${option.name} style placeholder`}
                                             className="w-full aspect-square"
                                             style={{
-                                              backgroundImage: option.previewGradient,
+                                              backgroundImage: option.image ? `url(${encodeURI(option.image)})` : option.previewGradient,
                                               backgroundSize: 'cover',
                                               backgroundPosition: 'center',
                                             }}
                                           />
-                                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
-                                            <span className="text-sm font-light font-raleway text-theme-text">{option.name}</span>
-                                            {isActive && <Check className="h-3.5 w-3.5 text-theme-text" />}
+                                          <div className="absolute bottom-0 left-0 right-0 z-10">
+                                            <div className="PromptDescriptionBar rounded-b-xl px-3 py-2">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <span className="text-sm font-[300] font-raleway text-theme-text">{option.name}</span>
+                                                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
+                                              </div>
+                                            </div>
                                           </div>
                                         </div>
                                       </button>
@@ -8958,7 +9017,7 @@ const handleGenerate = async () => {
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
                     >
-                      {totalSelectedStyles === 0 && (
+                      {!firstSelectedStyle && (
                         <>
                           <div className="flex-1 flex items-center justify-center lg:mt-3">
                             <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
@@ -8970,34 +9029,46 @@ const handleGenerate = async () => {
                           </div>
                         </>
                       )}
-                      {totalSelectedStyles > 0 && (
+                      {firstSelectedStyle && (
                         <>
-                          <div className="flex-1 flex items-center justify-center">
-                            <span className="text-sm lg:text-2xl font-raleway font-bold text-n-text">
-                              {totalSelectedStyles}
-                            </span>
-                          </div>
-                          <div className="hidden lg:flex items-center gap-1">
-                            <Palette className="w-3.5 h-3.5 flex-shrink-0 text-theme-white transition-colors duration-100" />
-                            <span className="text-sm font-raleway text-n-text text-center px-1">
-                              {selectedStylesLabel ? selectedStylesLabel.split(' ').slice(0, 2).join(' ') : 'Style'}
+                          {firstSelectedStyle.image ? (
+                            <img
+                              src={firstSelectedStyle.image}
+                              alt={firstSelectedStyle.name}
+                              loading="lazy"
+                              className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                              title={firstSelectedStyle.name}
+                            />
+                          ) : (
+                            <div
+                              className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl"
+                              style={{
+                                backgroundImage: firstSelectedStyle.previewGradient,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                              }}
+                            />
+                          )}
+                          <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                              {firstSelectedStyle.name}
                             </span>
                           </div>
                         </>
                       )}
                     </button>
-                    {totalSelectedStyles > 0 && (
+                    {firstSelectedStyle && (
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleClearStyles();
                         }}
-                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
                         title="Remove styles"
                         aria-label="Remove styles"
                       >
-                        <X className="w-2.5 h-2.5 text-n-text" />
+                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                       </button>
                     )}
                   </div>
