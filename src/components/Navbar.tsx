@@ -65,7 +65,7 @@ export default function Navbar() {
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
-  const { user, logOut } = useAuth();
+  const { user, logOut, mockSignIn } = useAuth();
   const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -357,6 +357,14 @@ export default function Navbar() {
                 >
                   Pricing
                 </button>
+                {mockSignIn && (
+                  <button 
+                    className={`${buttons.ghost} btn-compact font-raleway text-base font-medium`}
+                    onClick={mockSignIn}
+                  >
+                    Quick Sign In
+                  </button>
+                )}
                 <button className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large" onClick={()=>setShowAuth("login")}>
                   Sign In
                 </button>
@@ -648,6 +656,17 @@ export default function Navbar() {
                     >
                       Pricing
                     </button>
+                    {mockSignIn && (
+                      <button
+                        onClick={() => {
+                          setMobileNavOpen(false);
+                          mockSignIn();
+                        }}
+                        className={`${buttons.ghost} w-full justify-center font-raleway text-base font-medium`}
+                      >
+                        Quick Sign In
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setMobileNavOpen(false);

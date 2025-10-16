@@ -30,6 +30,7 @@ type AuthContextValue = {
   updateProfile: (patch: UpdateProfilePayload) => Promise<User>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
+  mockSignIn?: () => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

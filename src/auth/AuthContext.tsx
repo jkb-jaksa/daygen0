@@ -240,6 +240,27 @@ const handleAuthSuccess = useCallback(
     }
   }, []);
 
+  const mockSignIn = useCallback(() => {
+    const mockToken = `mock-dev-token-${Date.now()}`;
+    const mockUser: User = {
+      id: "mock-user-123",
+      authUserId: "mock-auth-456",
+      email: "test@daygen.local",
+      displayName: "Test User",
+      credits: 1000,
+      profileImage: null,
+      role: "USER",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    localStorage.setItem(TOKEN_STORAGE_KEY, mockToken);
+    localStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
+    sessionStorage.setItem(AUTHENTICATED_FLAG_KEY, 'true');
+    setToken(mockToken);
+    setUser(mockUser);
+  }, []);
+
   const storagePrefix = useMemo(
     () => `daygen:${user?.id ?? 'guest'}:`,
     [user?.id],
@@ -258,6 +279,7 @@ const handleAuthSuccess = useCallback(
     updateProfile,
     requestPasswordReset,
     resetPassword,
+    mockSignIn,
   }), [
     isLoading,
     logOut,
@@ -270,6 +292,7 @@ const handleAuthSuccess = useCallback(
     user,
     requestPasswordReset,
     resetPassword,
+    mockSignIn,
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
