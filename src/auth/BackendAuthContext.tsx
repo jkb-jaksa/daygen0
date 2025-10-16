@@ -75,7 +75,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
       throw new Error(await extractErrorMessage(response));
     }
 
-    const data = await response.json();
+    await response.json();
     return { needsEmailConfirmation: true };
   }, []);
 

@@ -30,7 +30,7 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TestUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
+  const signUp = useCallback(async (email: string, _password: string, displayName?: string) => {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -53,7 +53,7 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
     return { needsEmailConfirmation: true };
   }, []);
 
-  const signInWithPassword = useCallback(async (email: string, password: string) => {
+  const signInWithPassword = useCallback(async (email: string) => {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -107,7 +107,7 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Password reset email sent to:', email);
   }, []);
 
-  const updatePassword = useCallback(async (newPassword: string) => {
+  const updatePassword = useCallback(async () => {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     

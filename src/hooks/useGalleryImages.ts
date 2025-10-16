@@ -44,18 +44,17 @@ export const useGalleryImages = () => {
     };
   }, []);
 
-  // Fetch gallery images from backend
-  const fetchGalleryImages = useCallback(async () => {
-    if (!token) {
-      setState(prev => ({ ...prev, images: [], error: 'Not authenticated' }));
-      return;
-    }
+    // Fetch gallery images from backend
+    const fetchGalleryImages = useCallback(async () => {
+      if (!token) {
+        setState(prev => ({ ...prev, images: [], error: 'Not authenticated' }));
+        return;
+      }
 
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-    try {
-      const apiUrl = getApiUrl('/api/r2files');
-      debugLog('[gallery] Fetching images from:', apiUrl);
+      try {
+        const apiUrl = getApiUrl('/api/r2files');
 
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -69,12 +68,11 @@ export const useGalleryImages = () => {
         throw new Error(`Failed to fetch gallery images: ${response.status}`);
       }
 
-      const data = await response.json();
-      debugLog('[gallery] Fetched images:', data);
+        const data = await response.json();
 
       const galleryImages = data.items?.map(convertR2FileToGalleryImage) || [];
       const seen = new Set<string>();
-      const dedupedImages = galleryImages.filter((image) => {
+      const dedupedImages = galleryImages.filter((image: GalleryImageLike) => {
         const key = image.jobId || image.url;
         if (!key) {
           return true;
@@ -92,7 +90,6 @@ export const useGalleryImages = () => {
         error: null,
       });
     } catch (error) {
-      debugError('[gallery] Failed to fetch images:', error);
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -158,8 +155,10 @@ export const useGalleryImages = () => {
 
   // Load images on mount and when token changes
   useEffect(() => {
-    fetchGalleryImages();
-  }, [fetchGalleryImages]);
+    if (token) {
+      fetchGalleryImages();
+    }
+  }, [token, fetchGalleryImages]);
 
   return {
     ...state,

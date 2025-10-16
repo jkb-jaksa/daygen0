@@ -6,7 +6,6 @@ import {
   AuthContext,
   type AuthContextValue,
   type User as AppUser,
-  type UpdateProfilePayload,
 } from './context';
 
 type SessionTokens = {
@@ -31,7 +30,7 @@ const createFallbackUser = (authUser: SupabaseUser): AppUser => ({
   updatedAt: authUser.updated_at ?? authUser.created_at,
 });
 
-const normalizeBackendUser = (payload: any): AppUser => ({
+const normalizeBackendUser = (payload: Record<string, unknown>): AppUser => ({
   id: payload.id as string,
   authUserId:
     (payload.authUserId as string | undefined) ??
@@ -398,6 +397,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     requestPasswordReset,
     resetPassword,
   };
+
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

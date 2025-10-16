@@ -2,7 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface GoogleSignInProps {
-  onSuccess: (user: any) => void;
+  onSuccess: (user: unknown) => void;
   onError: (error: string) => void;
   disabled?: boolean;
   className?: string;

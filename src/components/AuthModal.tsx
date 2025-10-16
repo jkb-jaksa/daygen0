@@ -22,7 +22,6 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   const { 
     signUp, 
     signIn,
-    logOut,
     requestPasswordReset 
   } = useAuth();
 
@@ -48,7 +47,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
     }
   }, [mode, email, password, displayName, signUp, signIn, onClose]);
 
-  const handleGoogleSignInSuccess = useCallback((user: any) => {
+  const handleGoogleSignInSuccess = useCallback(() => {
     setError(null);
     onClose();
   }, [onClose]);

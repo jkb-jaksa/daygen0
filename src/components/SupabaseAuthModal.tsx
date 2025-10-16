@@ -20,12 +20,11 @@ export default function SupabaseAuthModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
+  const [, setNeedsEmailConfirmation] = useState(false);
 
   const {
     signUp,
     signInWithPassword,
-    signInWithMagicLink,
   } = useSupabaseAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {

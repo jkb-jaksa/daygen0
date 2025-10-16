@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import SupabasePasswordUpdate from '../components/SupabasePasswordUpdate';
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
+  useSearchParams();
   const navigate = useNavigate();
   const [isValidSession, setIsValidSession] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
