@@ -75,7 +75,7 @@ export default function Courses() {
 
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
-            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
+            <nav className={`${glass.promptDark} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
               aria-label="Courses categories">
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {

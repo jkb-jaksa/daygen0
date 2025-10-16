@@ -1096,7 +1096,7 @@ export default function Edit() {
   );
 
   return (
-    <div className={layout.page}>
+    <div className={`${layout.page} edit-page`}>
       {/* Background overlay to show gradient behind navbar */}
       <div className={layout.backdrop} aria-hidden="true" />
       

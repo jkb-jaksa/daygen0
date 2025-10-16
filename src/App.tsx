@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
+import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
@@ -205,7 +206,7 @@ function Home() {
               </div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
-                  className={`${glass.surface} rounded-3xl border-theme-dark p-4 lg:h-full`}
+                  className={`${glass.promptDark} rounded-3xl border-theme-dark p-4 lg:h-full`}
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >

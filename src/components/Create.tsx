@@ -5356,7 +5356,7 @@ const handleGenerate = async () => {
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
-    <div className={layout.page}>
+    <div className={`${layout.page} create-page`}>
       {/* Copy notification */}
       {copyNotification && (
         <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
