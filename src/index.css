@@ -334,7 +334,7 @@ html[data-theme="day"] .animate-gradient-colors {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.68);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.6);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -377,7 +377,7 @@ html[data-theme="day"] {
   --glass-base-bg: rgb(var(--d-dark-rgb) / 0.65);
   --glass-surface-bg: rgb(var(--d-black-rgb) / 0.85);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.68);
+  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.6);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -671,6 +671,41 @@ html[data-theme="day"] .border-b.border-theme-black {
   border-bottom-color: var(--theme-light) !important;
 }
 
+/* Footer gradient background - same subtle effect without viewport height */
+.footer-gradient-bg {
+  background:
+    linear-gradient(
+      to bottom,
+      #0e0f10 0%,
+      #101112 15%,
+      #0e0f10 25%,
+      #0c0d0e 40%,
+      #0a0b0c 55%,
+      #080909 70%,
+      #070808 85%,
+      var(--theme-black) 100%
+    );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+html[data-theme="day"] .footer-gradient-bg {
+  background:
+    linear-gradient(
+      to bottom,
+      #dce5e5 0%,
+      #e4ebeb 15%,
+      #ebf1f1 25%,
+      #f2f6f6 40%,
+      #f8fafb 55%,
+      #fbfcfd 70%,
+      #fdfdfe 85%,
+      var(--theme-black) 100%
+    );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
 
 
 
@@ -760,7 +795,7 @@ html[data-theme="day"] .border-b.border-theme-black {
   --glass-base-bg: rgb(var(--theme-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--theme-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.68);
+  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.6);
   --glass-prompt-bg: rgb(var(--theme-mid-rgb) / 0.85);
   --glass-prompt-text: var(--theme-text);
   --glass-prompt-text-rgb: var(--theme-text-rgb);
@@ -789,7 +824,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.68);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.6);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -817,7 +852,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.68);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.6);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
