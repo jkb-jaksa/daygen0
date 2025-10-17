@@ -1743,7 +1743,8 @@ select option::-webkit-scrollbar-thumb:hover {
 
 /* Prompt Description Bar Effect */
 .PromptDescriptionBar,
-.PromptDescriptionBarTop {
+.PromptDescriptionBarTop,
+.UseCaseDescription {
   --prompt-bar-gradient-direction: to top;
   --prompt-bar-color-rgb: var(--theme-black-rgb);
   backdrop-filter: blur(28px);
@@ -1756,14 +1757,14 @@ html[data-theme="night"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.88) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.68) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.50) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.35) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.18) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.10) 100%
+    rgb(var(--prompt-bar-color-rgb) / 1.0) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.98) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.96) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.92) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.86) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.76) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.62) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.48) 100%
   );
 }
 
@@ -1771,16 +1772,6 @@ html[data-theme="night"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-<<<<<<< HEAD
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.72) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.62) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.52) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.38) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.26) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.08) 100%
-=======
     rgb(var(--prompt-bar-color-rgb) / 0.96) 0%,
     rgb(var(--prompt-bar-color-rgb) / 0.92) 10%,
     rgb(var(--prompt-bar-color-rgb) / 0.84) 25%,
@@ -1789,7 +1780,6 @@ html[data-theme="night"] .PromptDescriptionBarTop {
     rgb(var(--prompt-bar-color-rgb) / 0.42) 80%,
     rgb(var(--prompt-bar-color-rgb) / 0.22) 95%,
     rgb(var(--prompt-bar-color-rgb) / 0.12) 100%
->>>>>>> 31879a3 (Unify learn section gradients with homepage and footer)
   );
 }
 
@@ -1797,14 +1787,14 @@ html[data-theme="day"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to bottom;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.68) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.63) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.54) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.45) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.32) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.22) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.10) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.06) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.98) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.96) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.92) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.86) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.78) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.66) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.52) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.40) 100%
   );
 }
 
@@ -1812,16 +1802,6 @@ html[data-theme="day"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to bottom;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-<<<<<<< HEAD
-    rgb(var(--prompt-bar-color-rgb) / 0.54) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.49) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.42) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.34) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.24) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.16) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.08) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.04) 100%
-=======
     rgb(var(--prompt-bar-color-rgb) / 0.78) 0%,
     rgb(var(--prompt-bar-color-rgb) / 0.73) 10%,
     rgb(var(--prompt-bar-color-rgb) / 0.64) 25%,
@@ -1830,7 +1810,37 @@ html[data-theme="day"] .PromptDescriptionBarTop {
     rgb(var(--prompt-bar-color-rgb) / 0.28) 80%,
     rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
     rgb(var(--prompt-bar-color-rgb) / 0.08) 100%
->>>>>>> 31879a3 (Unify learn section gradients with homepage and footer)
+  );
+}
+
+/* Use Case Description - Darker/Less Transparent */
+html[data-theme="night"] .UseCaseDescription {
+  --prompt-bar-gradient-direction: to top;
+  background: linear-gradient(
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 1.0) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.98) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.96) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.92) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.86) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.76) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.62) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.48) 100%
+  );
+}
+
+html[data-theme="day"] .UseCaseDescription {
+  --prompt-bar-gradient-direction: to bottom;
+  background: linear-gradient(
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 0.98) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.96) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.92) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.86) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.78) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.66) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.52) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.40) 100%
   );
 }
 

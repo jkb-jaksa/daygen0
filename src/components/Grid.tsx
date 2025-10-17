@@ -270,19 +270,21 @@ export function Grid() {
                 key={index}
                 type="button"
                 onClick={() => setActive(item.label)}
-                className={`group inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-light transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
+                className={`group inline-flex min-w-0 overflow-hidden items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-light transition duration-200 focus:outline-none ${
                   isActive ? "bg-theme-dark/60 text-theme-text" : "text-theme-white hover:text-theme-text"
                 }`}
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.sidebarIcon} hover:border-theme-mid ${
-                    isActive ? "border-theme-mid" : ""
+                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${
+                    isActive 
+                      ? "border border-theme-mid bg-theme-mid/30 text-theme-text" 
+                      : `${glass.sidebarIcon} hover:border-theme-mid`
                   }`}
                 >
                   {item.icon}
                 </div>
-                <span>{item.label}</span>
+                <span className="text-inherit">{item.label}</span>
               </button>
             );
           })}

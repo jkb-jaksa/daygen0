@@ -83,7 +83,7 @@ function UseCaseCard({
         className="h-48 w-full object-cover"
       />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
-        <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
+        <div className="UseCaseDescription relative z-10 px-4 py-1.5 rounded-2xl">
           <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
@@ -219,9 +219,9 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
+                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none ${
                               isActive
-                                ? "border border-theme-mid bg-theme-white/10 text-theme-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                                ? "border border-theme-mid bg-theme-white/10 text-theme-text"
                                 : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
                             }`}
                           >
