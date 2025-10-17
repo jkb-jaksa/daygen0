@@ -1757,14 +1757,14 @@ html[data-theme="night"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.88) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.68) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.50) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.35) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.18) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.10) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.95) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.90) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.82) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.74) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.60) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.45) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.28) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.18) 100%
   );
 }
 
@@ -1818,14 +1818,14 @@ html[data-theme="night"] .UseCaseDescription {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.88) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.68) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.50) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.35) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.18) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.10) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.95) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.90) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.82) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.74) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.60) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.45) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.28) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.18) 100%
   );
 }
 
