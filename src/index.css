@@ -671,39 +671,31 @@ html[data-theme="day"] .border-b.border-theme-black {
   border-bottom-color: var(--theme-light) !important;
 }
 
-/* Footer gradient background - same subtle effect without viewport height */
+/* Footer gradient background - same subtle effect as FAQ section */
 .footer-gradient-bg {
   background:
-    linear-gradient(
-      to bottom,
+    radial-gradient(
+      ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
-      #0e0f10 25%,
-      #0c0d0e 40%,
-      #0a0b0c 55%,
-      #080909 70%,
-      #070808 85%,
-      var(--theme-black) 100%
-    );
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+      #0e0f10 30%,
+      #0c0d0e 50%,
+      var(--theme-black) 80%
+    ),
+    var(--theme-black);
 }
 
 html[data-theme="day"] .footer-gradient-bg {
   background:
-    linear-gradient(
-      to bottom,
+    radial-gradient(
+      ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
-      #ebf1f1 25%,
-      #f2f6f6 40%,
-      #f8fafb 55%,
-      #fbfcfd 70%,
-      #fdfdfe 85%,
-      var(--theme-black) 100%
-    );
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+      #ebf1f1 30%,
+      #f2f6f6 50%,
+      var(--theme-black) 80%
+    ),
+    var(--theme-black);
 }
 
 
@@ -1803,28 +1795,6 @@ select option::-webkit-scrollbar-thumb:hover {
 .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to top;
   --prompt-bar-color-rgb: var(--theme-black-rgb);
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgba(0, 0, 0, 0.86) 0%,
-    rgba(0, 0, 0, 0.81) 10%,
-    rgba(0, 0, 0, 0.71) 25%,
-    rgba(0, 0, 0, 0.62) 40%,
-    rgba(0, 0, 0, 0.43) 60%,
-    rgba(0, 0, 0, 0.29) 80%,
-    rgba(0, 0, 0, 0.14) 95%,
-    rgba(0, 0, 0, 0.095) 100%
-  );
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.86) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.81) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.71) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.62) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.43) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.29) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.095) 100%
-  );
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   height: fit-content;
@@ -1834,11 +1804,33 @@ select option::-webkit-scrollbar-thumb:hover {
 html[data-theme="night"] .PromptDescriptionBar,
 html[data-theme="night"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to top;
+  background: linear-gradient(
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 0.92) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.88) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.78) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.68) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.50) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.35) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.18) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.10) 100%
+  );
 }
 
 html[data-theme="day"] .PromptDescriptionBar,
 html[data-theme="day"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to bottom;
+  background: linear-gradient(
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 0.68) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.63) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.54) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.45) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.32) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.22) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.10) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.06) 100%
+  );
 }
 
 /* -------------------------------------------------------------
