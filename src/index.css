@@ -1801,8 +1801,7 @@ select option::-webkit-scrollbar-thumb:hover {
   contain: layout style;
 }
 
-html[data-theme="night"] .PromptDescriptionBar,
-html[data-theme="night"] .PromptDescriptionBarTop {
+html[data-theme="night"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
@@ -1817,8 +1816,22 @@ html[data-theme="night"] .PromptDescriptionBarTop {
   );
 }
 
-html[data-theme="day"] .PromptDescriptionBar,
-html[data-theme="day"] .PromptDescriptionBarTop {
+html[data-theme="night"] .PromptDescriptionBarTop {
+  --prompt-bar-gradient-direction: to top;
+  background: linear-gradient(
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 0.78) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.72) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.62) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.52) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.38) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.26) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.08) 100%
+  );
+}
+
+html[data-theme="day"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to bottom;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
@@ -1830,6 +1843,21 @@ html[data-theme="day"] .PromptDescriptionBarTop {
     rgb(var(--prompt-bar-color-rgb) / 0.22) 80%,
     rgb(var(--prompt-bar-color-rgb) / 0.10) 95%,
     rgb(var(--prompt-bar-color-rgb) / 0.06) 100%
+  );
+}
+
+html[data-theme="day"] .PromptDescriptionBarTop {
+  --prompt-bar-gradient-direction: to bottom;
+  background: linear-gradient(
+    var(--prompt-bar-gradient-direction),
+    rgb(var(--prompt-bar-color-rgb) / 0.54) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.49) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.42) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.34) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.24) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.16) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.08) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.04) 100%
   );
 }
 
