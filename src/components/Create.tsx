@@ -4924,6 +4924,15 @@ const handleGenerate = async () => {
         let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
         if (isGeminiModel) {
+          // Debug: Log avatar state before generation
+          console.log('[DEBUG] Avatar state before generation:', {
+            selectedAvatar: selectedAvatar,
+            selectedAvatarId: selectedAvatar?.id,
+            activeAvatarImageId: activeAvatarImageId,
+            selectedProduct: selectedProduct,
+            selectedProductId: selectedProduct?.id
+          });
+          
           img = await generateGeminiImage({
             prompt: finalPrompt,
             model: modelForGeneration,
