@@ -558,7 +558,7 @@ export default function Products() {
         pendingUploadsRef.current.delete(productId);
       }
     },
-    [uploadingProductIds],
+    [uploadingProductIds, processProductImageBatch],
   );
 
   const processProductImageBatch = useCallback(

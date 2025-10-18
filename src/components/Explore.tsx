@@ -1603,7 +1603,7 @@ const Explore: React.FC = () => {
     });
   };
 
-  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryItems, galleryFilters]);
+  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryItems, galleryFilters, filterGalleryItems]);
 
   const initialBatchSize = useMemo(() => 9, []);
   const [visibleCount, setVisibleCount] = useState(initialBatchSize);
@@ -1669,7 +1669,7 @@ const Explore: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, currentImageIndex, filteredGallery]);
+  }, [isFullSizeOpen, currentImageIndex, filteredGallery, navigateFullSizeImage]);
 
   return (
     <div className={`${layout.page} explore-page`}>

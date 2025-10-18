@@ -558,7 +558,7 @@ export default function Avatars() {
         pendingUploadsRef.current.delete(avatarId);
       }
     },
-    [uploadingAvatarIds],
+    [uploadingAvatarIds, processAvatarImageBatch],
   );
 
   const processAvatarImageBatch = useCallback(

@@ -438,7 +438,7 @@ const ModelMenuPortal: React.FC<{
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onClose]);
+  }, [open, onClose, anchorRef]);
 
   if (!open) return null;
 
@@ -1224,12 +1224,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
     });
   };
   
-  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars]);
+  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars, filterGalleryItems]);
   const filteredVideoGallery = useMemo(() => {
     const filtered = filterVideoGalleryItems(videoGallery);
     // Removed debug log that was running on every render
     return filtered;
-  }, [videoGallery, galleryFilters, favorites, folders, storedAvatars]);
+  }, [videoGallery, galleryFilters, favorites, folders, storedAvatars, filterVideoGalleryItems]);
   const inspirationsGallery = useMemo(() => {
     return inspirations
       .slice()
@@ -1599,7 +1599,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       debugLog('[Create] Adding video to gallery:', videoWithOperation);
       setVideoGallery(prev => [videoWithOperation, ...prev]);
     }
-  }, [generatedVideo, videoOperationName]);
+  }, [generatedVideo, videoOperationName, isVideoGenerating]);
 
 
   // Handle category switching from external navigation (e.g., navbar)
@@ -1669,7 +1669,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, gallery.length, currentGalleryIndex]);
+  }, [isFullSizeOpen, gallery.length, currentGalleryIndex, navigateFullSizeImage, navigateGallery]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -2178,7 +2178,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     void loadPersistedState();
 
-  }, [storagePrefix]);
+  }, [storagePrefix, refreshStorageEstimate]);
 
   // Gallery is now managed by backend, no need for client-side backup
 
@@ -2406,7 +2406,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
   };
 
-  const persistUploadedImages = async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
+  const persistUploadedImages = useCallback(async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
     setUploadedImages(uploads);
     try {
       const serializableUploads: SerializedUpload[] = uploads.map(upload => ({
@@ -2421,7 +2421,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     } catch (error) {
       debugError('Failed to persist uploaded images', error);
     }
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   // Gallery persistence is now handled by the backend API
 
@@ -5363,7 +5363,7 @@ const handleGenerate = async () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show]);
+  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show, confirmBulkDownload, confirmBulkPublish, confirmBulkUnpublish, handleDeleteConfirmed]);
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
