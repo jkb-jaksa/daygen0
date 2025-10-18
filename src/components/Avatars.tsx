@@ -2945,5 +2945,3 @@ export default function Avatars() {
     </div>
   );
 }
-
-export type { StoredAvatar };
