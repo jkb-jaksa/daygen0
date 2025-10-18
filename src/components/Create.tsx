@@ -1669,7 +1669,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, gallery.length, currentGalleryIndex, navigateFullSizeImage, navigateGallery]);
+  }, [isFullSizeOpen, gallery.length, currentGalleryIndex]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -5363,7 +5363,7 @@ const handleGenerate = async () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show, confirmBulkDownload, confirmBulkPublish, confirmBulkUnpublish, handleDeleteConfirmed]);
+  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show]);
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (

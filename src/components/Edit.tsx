@@ -910,7 +910,7 @@ export default function Edit() {
       document.removeEventListener('mousemove', handleImageMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isImageDragging, dragStart, isMoveMode, handleImageMouseMove, handleMouseUp]);
+  }, [isImageDragging, dragStart, isMoveMode]);
 
   // Set up canvas for mask drawing
   useEffect(() => {
@@ -981,7 +981,7 @@ export default function Edit() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [allPaths, redoStack, undoStroke, redoStroke]);
+  }, [allPaths, redoStack]);
 
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {

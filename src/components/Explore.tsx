@@ -1669,7 +1669,7 @@ const Explore: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, currentImageIndex, filteredGallery, navigateFullSizeImage]);
+  }, [isFullSizeOpen, currentImageIndex, filteredGallery]);
 
   return (
     <div className={`${layout.page} explore-page`}>
