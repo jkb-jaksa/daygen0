@@ -503,64 +503,6 @@ export default function Avatars() {
     [persistAvatars],
   );
 
-  const handleAddAvatarImages = useCallback(
-    async (
-      avatarId: string,
-      files: File[],
-      source: AvatarImage["source"] = "upload",
-      sourceId?: string,
-    ) => {
-      if (!files.length) {
-        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
-        return;
-      }
-
-      // Check if this avatar is already uploading - if so, queue the files
-      setUploadingAvatarIds(prev => {
-        if (prev.has(avatarId)) {
-          // Queue these files for later processing
-          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
-          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
-          return prev;
-        }
-        // Mark as uploading
-        const next = new Set(prev);
-        next.add(avatarId);
-        return next;
-      });
-
-      // If already uploading, the files have been queued and we return
-      if (uploadingAvatarIds.has(avatarId)) {
-        return;
-      }
-
-      try {
-        // Process current batch
-        await processAvatarImageBatch(avatarId, files, source, sourceId);
-
-        // Process any queued files
-        while (pendingUploadsRef.current.has(avatarId)) {
-          const queuedFiles = pendingUploadsRef.current.get(avatarId) || [];
-          if (queuedFiles.length === 0) {
-            pendingUploadsRef.current.delete(avatarId);
-            break;
-          }
-          pendingUploadsRef.current.delete(avatarId);
-          await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
-        }
-      } finally {
-        // Clear upload state
-        setUploadingAvatarIds(prev => {
-          const next = new Set(prev);
-          next.delete(avatarId);
-          return next;
-        });
-        pendingUploadsRef.current.delete(avatarId);
-      }
-    },
-    [uploadingAvatarIds, processAvatarImageBatch],
-  );
-
   const processAvatarImageBatch = useCallback(
     async (
       avatarId: string,
@@ -665,6 +607,64 @@ export default function Avatars() {
       }
     },
     [commitAvatarUpdate],
+  );
+
+  const handleAddAvatarImages = useCallback(
+    async (
+      avatarId: string,
+      files: File[],
+      source: AvatarImage["source"] = "upload",
+      sourceId?: string,
+    ) => {
+      if (!files.length) {
+        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
+        return;
+      }
+
+      // Check if this avatar is already uploading - if so, queue the files
+      setUploadingAvatarIds(prev => {
+        if (prev.has(avatarId)) {
+          // Queue these files for later processing
+          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
+          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
+          return prev;
+        }
+        // Mark as uploading
+        const next = new Set(prev);
+        next.add(avatarId);
+        return next;
+      });
+
+      // If already uploading, the files have been queued and we return
+      if (uploadingAvatarIds.has(avatarId)) {
+        return;
+      }
+
+      try {
+        // Process current batch
+        await processAvatarImageBatch(avatarId, files, source, sourceId);
+
+        // Process any queued files
+        while (pendingUploadsRef.current.has(avatarId)) {
+          const queuedFiles = pendingUploadsRef.current.get(avatarId) || [];
+          if (queuedFiles.length === 0) {
+            pendingUploadsRef.current.delete(avatarId);
+            break;
+          }
+          pendingUploadsRef.current.delete(avatarId);
+          await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
+        }
+      } finally {
+        // Clear upload state
+        setUploadingAvatarIds(prev => {
+          const next = new Set(prev);
+          next.delete(avatarId);
+          return next;
+        });
+        pendingUploadsRef.current.delete(avatarId);
+      }
+    },
+    [uploadingAvatarIds, processAvatarImageBatch],
   );
 
   const handleRemoveAvatarImage = useCallback(
