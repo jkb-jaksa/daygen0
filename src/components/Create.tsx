@@ -8048,7 +8048,7 @@ const handleGenerate = async () => {
                           }}
                         >
                           <div
-                            className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-mid px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
+                            className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-dark px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
                             onClick={event => event.stopPropagation()}
                           >
                             <div className="flex items-center justify-between mb-4">
@@ -8169,7 +8169,6 @@ const handleGenerate = async () => {
                                             <div className="PromptDescriptionBar rounded-b-xl px-3 py-2">
                                               <div className="flex items-center justify-between gap-2">
                                                 <span className="text-sm font-[300] font-raleway text-theme-text">{option.name}</span>
-                                                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                               </div>
                                             </div>
                                           </div>
