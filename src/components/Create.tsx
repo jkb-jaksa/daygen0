@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -8895,7 +8895,11 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => {
-                        if (storedAvatars.length === 0) {
+                        if (selectedAvatar) {
+                          // Open full-size view when avatar is selected
+                          setSelectedReferenceImage(selectedAvatarImage?.url ?? selectedAvatar.imageUrl);
+                          setIsFullSizeOpen(true);
+                        } else if (storedAvatars.length === 0) {
                           // Direct upload when no avatars exist
                           setAvatarUploadError(null);
                           avatarQuickUploadInputRef.current?.click();
@@ -8972,7 +8976,11 @@ const handleGenerate = async () => {
                       type="button"
                       ref={productButtonRef}
                       onClick={() => {
-                        if (storedProducts.length === 0) {
+                        if (selectedProduct) {
+                          // Open full-size view when product is selected
+                          setSelectedReferenceImage(selectedProduct.imageUrl);
+                          setIsFullSizeOpen(true);
+                        } else if (storedProducts.length === 0) {
                           // Direct upload when no products exist
                           setProductUploadError(null);
                           productQuickUploadInputRef.current?.click();
@@ -9278,6 +9286,33 @@ const handleGenerate = async () => {
                         <span className="truncate text-xs font-raleway text-theme-text">{(activeFullSizeImage as GalleryImageLike).savedFrom!.name}</span>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Profile button - only show for avatar/product reference images */}
+                {selectedReferenceImage && (selectedAvatar || selectedProduct) && (
+                  <div className="absolute top-4 left-4 pointer-events-auto z-10">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedAvatar) {
+                          navigate(`/create/avatars/${selectedAvatar.slug}`);
+                        } else if (selectedProduct) {
+                          navigate(`/create/products/${selectedProduct.slug}`);
+                        }
+                        setIsFullSizeOpen(false);
+                        setSelectedReferenceImage(null);
+                      }}
+                      className="image-action-btn image-action-btn--fullsize parallax-large transition-colors duration-200"
+                      title={selectedAvatar ? "View avatar profile" : "View product profile"}
+                      aria-label={selectedAvatar ? "View avatar profile" : "View product profile"}
+                    >
+                      {selectedAvatar ? (
+                        <User className="w-4 h-4" />
+                      ) : (
+                        <Package className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
                 )}
 
