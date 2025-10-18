@@ -85,6 +85,7 @@ import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT
 import { ToolInfoHover } from "./ToolInfoHover";
 import CircularProgressRing from "./CircularProgressRing";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
+import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
 import {
   GEMINI_ASPECT_RATIO_OPTIONS,
@@ -565,7 +566,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1200,
       }}
-      className={`${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -3764,7 +3765,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
         </div>
 
-        <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+        <div className="image-gallery-actions absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
           <div className="flex flex-col items-start gap-2">
             <button
               type="button"
@@ -6371,7 +6372,7 @@ const handleGenerate = async () => {
                                 {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                               </div>
                               
-                              <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+                              <div className="image-gallery-actions absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
                                 <button
                                   type="button"
                                   onClick={(event) => {
@@ -6838,7 +6839,7 @@ const handleGenerate = async () => {
                             {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                           </div>
                           
-                          <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
+                          <div className={`image-gallery-actions absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
                             imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                           }`}>
                             {renderHoverPrimaryActions()}
@@ -7364,7 +7365,7 @@ const handleGenerate = async () => {
                             {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                           </div>
                           
-                        <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 ${
+                        <div className={`image-gallery-actions absolute top-2 left-2 right-2 flex items-center justify-between gap-1 ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         }`}>
                           {renderHoverPrimaryActions()}
@@ -9263,7 +9264,7 @@ const handleGenerate = async () => {
 
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+                  <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
                     <div className={`pointer-events-auto ${
                       imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
@@ -9407,6 +9408,26 @@ const handleGenerate = async () => {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              
+              {/* Vertical Gallery Navigation */}
+              {(selectedFullImage || generatedImage) && (() => {
+                const currentImages = fullSizeContext === 'inspirations' ? inspirations : gallery;
+                const currentUrl = (selectedFullImage?.url || generatedImage?.url) as string;
+                const currentIdx = currentImages.findIndex(img => img.url === currentUrl);
+                
+                return (
+                  <VerticalGalleryNav
+                    images={currentImages}
+                    currentIndex={currentIdx}
+                    onNavigate={(index) => {
+                      if (index >= 0 && index < currentImages.length) {
+                        setSelectedFullImage(currentImages[index]);
+                        setCurrentGalleryIndex(index);
+                      }
+                    }}
+                  />
+                );
+              })()}
             </div>
           )}
 

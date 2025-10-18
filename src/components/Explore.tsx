@@ -46,6 +46,7 @@ import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { debugError } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
+import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import type {
   Folder,
   GalleryImageLike,
@@ -591,7 +592,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1100,
       }}
-      className={`${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
     >
       {children}
     </div>,
@@ -1980,7 +1981,7 @@ const Explore: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
-                    <div className="absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                    <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
                       <div className="relative">
                         <button
                           type="button"
@@ -2046,7 +2047,7 @@ const Explore: React.FC = () => {
                     </div>
 
                     <div
-                      className={`absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
+                      className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
                         isMenuActive
                           ? 'opacity-100 pointer-events-auto'
                           : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
@@ -2561,7 +2562,7 @@ const Explore: React.FC = () => {
               />
               
               {/* Action buttons */}
-              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
+              <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
                 {/* Left side - Recreate button */}
                 <div className="relative">
                   <button
@@ -2739,6 +2740,18 @@ const Explore: React.FC = () => {
                 </div>
               </div>
             </div>
+            
+            {/* Vertical Gallery Navigation */}
+            <VerticalGalleryNav
+              images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}
+              currentIndex={currentImageIndex}
+              onNavigate={(index) => {
+                if (index >= 0 && index < filteredGallery.length) {
+                  setSelectedFullImage(filteredGallery[index]);
+                  setCurrentImageIndex(index);
+                }
+              }}
+            />
           </div>
         )}
 

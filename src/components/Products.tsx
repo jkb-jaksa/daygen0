@@ -48,6 +48,7 @@ import type { ProductImage, ProductSelection, StoredProduct } from "./products/t
 import { debugError } from "../utils/debug";
 import { createProductRecord, findProductBySlug, normalizeStoredProducts, withUpdatedProductImages } from "../utils/products";
 import { createCardImageStyle } from "../utils/cardImageStyle";
+import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 
 type ProductNavigationState = {
   openProductCreator?: boolean;
@@ -215,7 +216,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: zIndex,
       }}
-      className={`${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
     >
       {children}
     </div>,
@@ -1291,7 +1292,7 @@ export default function Products() {
           data-has-image={Boolean(product.imageUrl)}
           style={createCardImageStyle(product.imageUrl)}
         >
-          <div className="absolute left-2 top-2 z-10">
+          <div className="image-gallery-actions absolute left-2 top-2 z-10">
             <button
               type="button"
               onClick={(event) => {
@@ -1362,7 +1363,7 @@ export default function Products() {
               </button>
             </ImageActionMenuPortal>
           </div>
-          <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <div className="image-gallery-actions absolute right-2 top-2 z-10 flex gap-1">
             <button
               type="button"
               onClick={(event) => {
@@ -1603,7 +1604,7 @@ export default function Products() {
         data-has-image={Boolean(image.url)}
         style={createCardImageStyle(image.url)}
       >
-        <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
+        <div className="image-gallery-actions absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
           <div className="relative">
             <button
               type="button"
@@ -1659,7 +1660,7 @@ export default function Products() {
             </ImageActionMenuPortal>
           </div>
         </div>
-        <div className="absolute right-2 top-2 z-10 flex gap-1">
+        <div className="image-gallery-actions absolute right-2 top-2 z-10 flex gap-1">
           <button
             type="button"
             onClick={(event) => {
@@ -2329,7 +2330,7 @@ export default function Products() {
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
             />
 
-            <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+            <div className="image-gallery-actions absolute left-4 top-4 flex flex-wrap items-center gap-2">
               {creationsModalProduct.primaryImageId !== activeProductImage.id && (
                 <button
                   type="button"
@@ -2362,7 +2363,7 @@ export default function Products() {
               )}
             </div>
 
-            <div className="absolute right-4 top-4 flex flex-wrap items-center gap-2">
+            <div className="image-gallery-actions absolute right-4 top-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
@@ -2630,6 +2631,24 @@ export default function Products() {
               <X className="w-4 h-4" />
             </button>
           </div>
+          
+          {/* Vertical Gallery Navigation */}
+          {(() => {
+            const productImages = galleryImages.filter(img => img.productId === creationsModalProduct.id);
+            const currentIdx = productImages.findIndex(img => img.url === selectedFullImage.url);
+            
+            return (
+              <VerticalGalleryNav
+                images={productImages}
+                currentIndex={currentIdx}
+                onNavigate={(index) => {
+                  if (index >= 0 && index < productImages.length) {
+                    setSelectedFullImage(productImages[index]);
+                  }
+                }}
+              />
+            );
+          })()}
         </div>
       )}
 
