@@ -5158,6 +5158,16 @@ const handleGenerate = async () => {
         debugLog('[Create] Starting batch item', { iteration: iteration + 1, total: effectiveBatchSize, model: modelForGeneration });
         const img = await runSingleGeneration();
         if (img?.url) {
+          // Debug: Log what's being sent to backend
+          console.log('Generated image data being sent to backend:', {
+            imageUrl: img.url,
+            avatarId: img.avatarId,
+            avatarImageId: img.avatarImageId,
+            productId: img.productId,
+            model: img.model,
+            prompt: img.prompt?.substring(0, 50) + '...'
+          });
+
           if (shouldTrackJob && !isGeminiModel) {
             const completionRatio = (iteration + 1) / effectiveBatchSize;
             const targetProgress = Math.min(98, 45 + completionRatio * 50);

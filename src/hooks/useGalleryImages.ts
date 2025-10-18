@@ -13,6 +13,9 @@ export interface R2FileResponse {
   prompt?: string;
   model?: string;
   isPublic?: boolean;
+  avatarId?: string;
+  avatarImageId?: string;
+  productId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +44,9 @@ export const useGalleryImages = () => {
       ownerId: undefined, // Will be set by the backend
       jobId: r2File.id,
       isPublic: r2File.isPublic ?? false,
+      avatarId: r2File.avatarId,
+      avatarImageId: r2File.avatarImageId,
+      productId: r2File.productId,
     };
   }, []);
 
@@ -70,7 +76,19 @@ export const useGalleryImages = () => {
 
         const data = await response.json();
 
-      const galleryImages = data.items?.map(convertR2FileToGalleryImage) || [];
+      const galleryImages = data.items?.map((r2File) => {
+        console.log('Backend response for image:', {
+          id: r2File.id,
+          hasAvatarId: !!r2File.avatarId,
+          avatarId: r2File.avatarId,
+          hasAvatarImageId: !!r2File.avatarImageId,
+          avatarImageId: r2File.avatarImageId,
+          hasProductId: !!r2File.productId,
+          productId: r2File.productId,
+          allFields: Object.keys(r2File)
+        });
+        return convertR2FileToGalleryImage(r2File);
+      }) || [];
       const seen = new Set<string>();
       const dedupedImages = galleryImages.filter((image: GalleryImageLike) => {
         const key = image.jobId || image.url;

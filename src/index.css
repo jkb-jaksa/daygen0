@@ -1599,6 +1599,37 @@ html[data-theme="day"] .card-media-frame::before {
   z-index: 60;
 }
 
+/* Day mode specific border colors for image gallery action buttons and dropdowns */
+html[data-theme="day"] .image-gallery-actions .image-action-btn {
+  border-color: var(--theme-mid);
+}
+
+html[data-theme="day"] .image-gallery-actions .nav-arrow-btn {
+  border-color: var(--theme-mid);
+}
+
+html[data-theme="day"] .image-gallery-actions-menu {
+  border-color: var(--theme-mid) !important;
+}
+
+/* Day mode hover states for image gallery action buttons */
+html[data-theme="day"] .image-gallery-actions .image-action-btn:hover {
+  border-color: var(--theme-light);
+}
+
+html[data-theme="day"] .image-gallery-actions .nav-arrow-btn:hover {
+  border-color: var(--theme-light);
+}
+
+/* Day mode border colors for gallery images */
+html[data-theme="day"] .group.border-theme-dark {
+  border-color: var(--theme-mid) !important;
+}
+
+html[data-theme="day"] .group.border-theme-dark:hover {
+  border-color: var(--theme-light) !important;
+}
+
 /* Isolate button transforms from parent parallax effects */
 .parallax-isolate {
   transform: translateZ(0);
