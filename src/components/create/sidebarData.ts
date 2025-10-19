@@ -3,7 +3,7 @@ import {
   Edit,
   LayoutGrid,
   Image as ImageIcon,
-  Users,
+  User,
   Video as VideoIcon,
   Volume2,
   Sparkles,
@@ -26,7 +26,7 @@ export const CREATE_CATEGORIES: SidebarEntry[] = [
 
 export const LIBRARY_CATEGORIES: SidebarEntry[] = [
   { key: "gallery", label: "gallery", Icon: LayoutGrid },
-  { key: "avatars", label: "avatars", Icon: Users },
+  { key: "avatars", label: "avatars", Icon: User },
   { key: "products", label: "products", Icon: Package },
   { key: "inspirations", label: "inspirations", Icon: Sparkles },
 ];

@@ -31,7 +31,7 @@ import {
   Palette,
   Share2,
   Sparkles,
-  Users,
+  User,
   Settings,
   ChevronDown,
   Edit,
@@ -2311,7 +2311,7 @@ const Explore: React.FC = () => {
                 </div>
                 <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
                   <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
-                    <Users className="size-4" aria-hidden="true" />
+                    <User className="size-4" aria-hidden="true" />
                     Creators
                   </div>
                   <p className="mt-3 text-3xl font-light text-theme-white">870</p>

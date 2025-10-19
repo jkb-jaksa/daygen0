@@ -5,7 +5,7 @@ import { useFooter } from "./contexts/useFooter";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
-import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
+import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, User, Volume2 } from "lucide-react";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -95,7 +95,7 @@ const HOME_CATEGORIES = [
   { id: "text", label: "text", Icon: EditIcon },
   { id: "image", label: "image", Icon: ImageIcon },
   { id: "video", label: "video", Icon: VideoIcon },
-  { id: "avatars", label: "avatars", Icon: Users },
+  { id: "avatars", label: "avatars", Icon: User },
   { id: "audio", label: "audio", Icon: Volume2 },
 ] as const;
 

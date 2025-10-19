@@ -1,4 +1,4 @@
-import { Edit, Image, Video, Users, Volume2, Search } from "lucide-react";
+import { Edit, Image, Video, User, Volume2, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -18,7 +18,7 @@ export function Grid() {
     { icon: <Edit className="size-4" />, label: "text" },
     { icon: <Image className="size-4" />, label: "image" },
     { icon: <Video className="size-4" />, label: "video" },
-    { icon: <Users className="size-4" />, label: "avatars" },
+    { icon: <User className="size-4" />, label: "avatars" },
     { icon: <Volume2 className="size-4" />, label: "audio" },
   ];
 

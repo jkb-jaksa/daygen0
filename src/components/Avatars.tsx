@@ -14,7 +14,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
 import {
-  Users,
+  User,
   X,
   Pencil,
   Trash2,
@@ -1797,7 +1797,7 @@ export default function Avatars() {
       <header className="max-w-3xl text-left">
         <div className={`${headings.tripleHeading.container} text-left`}>
           <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
-            <Users className="h-4 w-4 text-theme-white/60" />
+            <User className="h-4 w-4 text-theme-white/60" />
             Avatars
           </p>
           <h1
@@ -1860,7 +1860,7 @@ export default function Avatars() {
             className={`mt-4 ${buttons.glassPrompt}`}
             onClick={() => navigate("/create/avatars", { replace: true })}
           >
-            <Users className="h-4 w-4" />
+            <User className="h-4 w-4" />
             Back to all avatars
           </button>
         </div>
@@ -2357,7 +2357,7 @@ export default function Avatars() {
               {creationsModalAvatar.primaryImageId === activeAvatarImage.id && (
                 <span className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text`}
                 >
-                  <Users className="h-3 w-3" />
+                  <User className="h-3 w-3" />
                   Primary image
                 </span>
               )}

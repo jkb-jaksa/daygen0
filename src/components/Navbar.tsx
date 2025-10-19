@@ -1,4 +1,4 @@
-import { Search, Edit, Image as ImageIcon, Video as VideoIcon, Users, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, SunMedium, Moon, Package, LayoutGrid } from "lucide-react";
+import { Search, Edit, Image as ImageIcon, Video as VideoIcon, User, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, SunMedium, Moon, Package, LayoutGrid } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -47,7 +47,7 @@ const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
 
 
 const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
-  { to: "/learn/use-cases", label: "use cases", Icon: Users },
+  { to: "/learn/use-cases", label: "use cases", Icon: User },
   { to: "/learn/tools", label: "tools", Icon: Edit },
   { to: "/learn/prompts", label: "prompts", Icon: FileText },
   { to: "/learn/courses", label: "courses", Icon: GraduationCap },
@@ -55,7 +55,7 @@ const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideI
 
 const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
   { to: "/gallery", label: "gallery", Icon: LayoutGrid },
-  { to: "/create/avatars", label: "avatars", Icon: Users },
+  { to: "/create/avatars", label: "avatars", Icon: User },
   { to: "/create/products", label: "products", Icon: Package },
 ];
 

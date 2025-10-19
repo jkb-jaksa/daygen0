@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { X, Users } from "lucide-react";
+import { X, User } from "lucide-react";
 import type { AvatarSelection } from "./types";
 import AvatarCreationOptions from "./AvatarCreationOptions";
 import { glass } from "../../styles/designSystem";
@@ -54,7 +54,7 @@ function AvatarCreationModalComponent({
         <div className="flex max-h-full flex-col gap-4 overflow-y-auto p-4 lg:p-6">
           <div className="space-y-2">
             <h2 className="flex items-center gap-2 text-2xl font-raleway text-theme-text">
-              <Users className="h-6 w-6" />
+              <User className="h-6 w-6" />
               Create Avatar
             </h2>
             <p className="text-sm font-raleway text-theme-white">

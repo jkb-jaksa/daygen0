@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { Users } from "lucide-react";
+import { User } from "lucide-react";
 import type { StoredAvatar } from "./types";
 import { glass } from "../../styles/designSystem";
 
@@ -29,7 +29,7 @@ export default function AvatarBadge({ avatar, onClick, className }: AvatarBadgeP
         />
       </span>
       <span className="max-w-[8rem] truncate text-left">{avatar.name}</span>
-      <Users className="h-3.5 w-3.5 shrink-0" />
+      <User className="h-3.5 w-3.5 shrink-0" />
     </button>
   );
 }

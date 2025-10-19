@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -3388,7 +3388,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               handleCreateAvatarFromMenu(image);
             }}
           >
-            <Users className="h-4 w-4" />
+            <User className="h-4 w-4" />
             Create Avatar
           </button>
           <button
@@ -7865,7 +7865,7 @@ const handleGenerate = async () => {
                               setIsAvatarPickerOpen(false);
                             }}
                           >
-                            <Users className="h-4 w-4" />
+                            <User className="h-4 w-4" />
                             Go to Avatars
                           </button>
                           </>
@@ -8997,7 +8997,7 @@ const handleGenerate = async () => {
                       onDrop={handleAvatarButtonDrop}
                       onMouseEnter={() => setIsAvatarButtonHovered(true)}
                       onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
@@ -9008,7 +9008,7 @@ const handleGenerate = async () => {
                             {isAvatarButtonHovered ? (
                               <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
                             ) : (
-                              <Users className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                              <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
                             )}
                           </div>
                           <div className="hidden lg:flex items-center gap-1">
@@ -9078,7 +9078,7 @@ const handleGenerate = async () => {
                       onDrop={handleProductButtonDrop}
                       onMouseEnter={() => setIsProductButtonHovered(true)}
                       onMouseLeave={() => setIsProductButtonHovered(false)}
-                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
@@ -9139,7 +9139,7 @@ const handleGenerate = async () => {
                       onClick={() => setIsStyleModalOpen(true)}
                       onMouseEnter={() => setIsStyleButtonHovered(true)}
                       onMouseLeave={() => setIsStyleButtonHovered(false)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 ${firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
                       aria-label="Select style"
                       aria-expanded={isStyleModalOpen}
                       onPointerMove={onPointerMove}
@@ -9510,12 +9510,12 @@ const handleGenerate = async () => {
                         <div className="flex items-center gap-1">
                           {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
                             <>
-                              <Package className="w-3 h-3 text-theme-text" />
+                              <Package className="w-3 h-3" />
                               <span className="leading-none">{selectedProduct.name}</span>
                             </>
                           ) : selectedAvatar ? (
                             <>
-                              <Users className="w-3 h-3 text-theme-text" />
+                              <User className="w-3 h-3" />
                               <span className="leading-none">{selectedAvatar.name}</span>
                             </>
                           ) : null}

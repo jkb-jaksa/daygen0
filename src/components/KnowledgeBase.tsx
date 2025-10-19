@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
+import { Edit, Image as ImageIcon, Video as VideoIcon, User, BookOpen, Volume2, Search } from "lucide-react";
 import { layout, glass, text as textStyles, inputs, headings } from "../styles/designSystem";
 import { getToolLogo } from "../utils/toolLogos";
 import { getLearnToolByName, slugifyLearnTool } from "../data/learnTools";
@@ -17,7 +17,7 @@ const CATEGORIES = [
   { id: "text", label: "text", Icon: Edit },
   { id: "image", label: "image", Icon: ImageIcon },
   { id: "video", label: "video", Icon: VideoIcon },
-  { id: "avatars", label: "avatars", Icon: Users },
+  { id: "avatars", label: "avatars", Icon: User },
   { id: "audio", label: "audio", Icon: Volume2 },
 ] as const;
 

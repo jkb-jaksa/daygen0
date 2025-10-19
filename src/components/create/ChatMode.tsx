@@ -15,7 +15,7 @@ import {
   Shapes,
   Sparkles,
   Trash2,
-  Users,
+  User,
   Wand2,
   X,
   Scan,
@@ -1155,7 +1155,7 @@ const ChatMode: React.FC = () => {
                         className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
                         aria-label="Choose avatar"
                       >
-                        <Users className="h-3.5 w-3.5" />
+                        <User className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Avatar</span>
                       </button>
                       {selectedAvatar && (
@@ -1342,7 +1342,7 @@ const ChatMode: React.FC = () => {
                                 setIsAvatarPickerOpen(false);
                               }}
                             >
-                              <Users className="h-4 w-4" />
+                              <User className="h-4 w-4" />
                               Go to Avatars
                             </button>
                           )}
