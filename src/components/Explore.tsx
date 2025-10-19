@@ -1955,7 +1955,7 @@ const Explore: React.FC = () => {
         {activeGalleryView === 'creations' ? (
           <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
-            <div className="grid gap-1 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
                 const isSaved = savedImageUrls.has(item.imageUrl);
@@ -2227,7 +2227,7 @@ const Explore: React.FC = () => {
             ) : (
               <>
                 {topAvatars.length > 0 && (
-                  <div className="grid gap-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                  <div className="grid gap-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                     <AvatarCard
                       key={topAvatars[0].id}
                       item={topAvatars[0]}
@@ -2237,7 +2237,7 @@ const Explore: React.FC = () => {
                       isFavorite={avatarFavorites.has(topAvatars[0].id)}
                       onToggleFavorite={toggleAvatarFavorite}
                     />
-                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
                       {topAvatars.slice(1).map((avatar, index) => (
                         <AvatarCard
                           key={avatar.id}
@@ -2254,7 +2254,7 @@ const Explore: React.FC = () => {
                 )}
 
                 {remainingAvatars.length > 0 && (
-                  <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     {remainingAvatars.map((avatar, index) => (
                       <AvatarCard
                         key={avatar.id}

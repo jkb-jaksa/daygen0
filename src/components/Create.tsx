@@ -5545,21 +5545,6 @@ const handleGenerate = async () => {
         </div>
       )}
 
-      {/* Migration error indicator */}
-      {migrationStatus.completed && migrationStatus.errors.length > 0 && (
-        <div className={`fixed top-4 right-4 z-[100] px-4 py-3 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[20px] max-w-sm`}>
-          <div className="flex items-center space-x-3">
-            <X className="w-4 h-4 text-red-400" />
-            <div>
-              <div className="font-medium text-red-400">Migration completed with errors</div>
-              <div className="text-xs text-theme-mid">
-                {migrationStatus.errors.length} images failed to migrate
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
@@ -6036,7 +6021,7 @@ const handleGenerate = async () => {
                   <label className="block text-sm font-raleway text-theme-text">
                     Or select from Folder Images.
                   </label>
-                  <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
+                  <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
                     {(() => {
                       const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
                       if (!folder) return null;
@@ -6272,7 +6257,7 @@ const handleGenerate = async () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
                         {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
                       </div>
                     )}
@@ -6305,7 +6290,7 @@ const handleGenerate = async () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -6416,7 +6401,7 @@ const handleGenerate = async () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -6708,7 +6693,7 @@ const handleGenerate = async () => {
                             New Folder
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -6897,7 +6882,7 @@ const handleGenerate = async () => {
                       </div>
                     </div>
                     
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -7137,7 +7122,7 @@ const handleGenerate = async () => {
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
                     
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
@@ -7323,7 +7308,7 @@ const handleGenerate = async () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                    <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 ${location.pathname.startsWith('/create') ? 'gap-2' : 'gap-1'} w-full p-1`} style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
