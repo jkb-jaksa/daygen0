@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
-import { glass } from '../../styles/designSystem';
+import { glass, buttons } from '../../styles/designSystem';
 
 interface SubscriptionInfo {
   id: string;
@@ -113,13 +113,13 @@ export function SubscriptionManager() {
   if (!subscription) {
     return (
       <div className={`${glass.surface} p-6`}>
-        <h3 className="text-lg font-raleway text-theme-text mb-4">No Active Subscription</h3>
-        <p className="text-theme-white mb-4">
+        <h3 className="text-lg font-raleway font-light text-theme-text">Free Plan</h3>
+        <p className="text-theme-white font-raleway font-light mb-4">
           You don't have an active subscription. Subscribe to get monthly credits and premium features.
         </p>
         <button
           onClick={() => window.location.href = '/upgrade'}
-          className="btn btn-cyan"
+          className={buttons.primary}
         >
           View Plans
         </button>

@@ -47,7 +47,6 @@ export function ProfileCard({
       <h3 className="text-lg font-raleway mb-3 text-theme-text">Profile</h3>
 
       <div className="mb-4">
-        <label className="block text-sm text-theme-white mb-2 font-raleway">Picture</label>
         <input
           ref={fileInputRef}
           type="file"
@@ -56,47 +55,49 @@ export function ProfileCard({
           className="hidden"
         />
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="relative group cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Update profile picture"
-          >
-            {user.profileImage ? (
-              <img
-                src={user.profileImage}
-                alt="Profile"
-                className="size-12 rounded-full object-cover border-2 border-theme-dark group-hover:opacity-80 transition-opacity"
-              />
-            ) : (
-              <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-bold font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
-                {(user.displayName || user.email)[0]?.toUpperCase()}
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-theme-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-              <Upload className="size-4 text-theme-text" />
-            </div>
-            {isUploadingPic && (
-              <div className="pointer-events-none absolute inset-0 bg-theme-black/70 rounded-full flex items-center justify-center">
-                <div className="text-theme-text text-xs font-raleway">Uploading...</div>
-              </div>
-            )}
-          </button>
-          {user.profileImage && (
+          <div className="relative">
             <button
               type="button"
-              onClick={() => {
-                void onRemoveProfilePic();
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
+              className="relative group cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Update profile picture"
             >
-              <X className="w-4 h-4 rounded-full" />
-              Remove
+              {user.profileImage ? (
+                <img
+                  src={user.profileImage}
+                  alt="Profile"
+                  className="size-12 rounded-full object-cover border-2 border-theme-dark group-hover:opacity-80 transition-opacity"
+                />
+              ) : (
+                <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-bold font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
+                  {(user.displayName || user.email)[0]?.toUpperCase()}
+                </div>
+              )}
+              <div className="pointer-events-none absolute inset-0 bg-theme-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                <Upload className="size-4 text-theme-text" />
+              </div>
+              {isUploadingPic && (
+                <div className="pointer-events-none absolute inset-0 bg-theme-black/70 rounded-full flex items-center justify-center">
+                  <div className="text-theme-text text-xs font-raleway">Uploading...</div>
+                </div>
+              )}
             </button>
-          )}
+            {user.profileImage && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void onRemoveProfilePic();
+                }}
+                className="absolute -top-1 -right-1 size-5 rounded-full bg-theme-black/80 border border-theme-dark flex items-center justify-center transition-colors duration-200 group"
+                aria-label="Remove profile picture"
+              >
+                <X className="w-3 h-3 text-theme-white group-hover:text-theme-text" />
+              </button>
+            )}
+          </div>
         </div>
         {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
-        <p className="mt-2 text-xs font-raleway text-theme-white/60">Profile pictures update immediately when you complete cropping.</p>
       </div>
 
       <form
