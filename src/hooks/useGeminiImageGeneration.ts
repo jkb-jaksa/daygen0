@@ -13,6 +13,8 @@ export interface GeneratedImage {
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
   avatarImageId?: string;
+  productId?: string;
+  styleId?: string;
   r2FileId?: string;
 }
 
@@ -96,6 +98,8 @@ export interface ImageGenerationOptions {
   aspectRatio?: string;
   avatarId?: string;
   avatarImageId?: string;
+  productId?: string;
+  styleId?: string;
   clientJobId?: string;
   onProgress?: (update: ImageGenerationProgressUpdate) => void;
 }
@@ -624,6 +628,8 @@ export const useGeminiImageGeneration = () => {
         ownerId: user?.id,
         avatarId: options.avatarId,
         avatarImageId: options.avatarImageId,
+        productId: options.productId,
+        styleId: options.styleId,
       };
 
       stopProgressController({

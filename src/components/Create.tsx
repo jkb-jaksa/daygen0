@@ -77,8 +77,10 @@ import type {
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { StoredAvatar, AvatarSelection } from "./avatars/types";
 import type { StoredProduct, ProductSelection } from "./products/types";
+import type { StoredStyle } from "./styles/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import ProductBadge from "./products/ProductBadge";
+import StyleBadge from "./styles/StyleBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { createProductRecord, normalizeStoredProducts } from "../utils/products";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
@@ -257,6 +259,40 @@ const findFirstSelectedStyle = (
     for (const { id } of STYLE_SECTION_DEFINITIONS) {
       if (sections[id].length > 0) {
         return { gender, sectionId: id };
+      }
+    }
+  }
+  return null;
+};
+
+const getSelectedStyleId = (styles: SelectedStylesMap): string | null => {
+  for (const { id: gender } of STYLE_GENDER_OPTIONS) {
+    const sections = styles[gender];
+    for (const { id: sectionId } of STYLE_SECTION_DEFINITIONS) {
+      const selectedInSection = sections[sectionId];
+      if (selectedInSection.length > 0) {
+        return selectedInSection[0].id;
+      }
+    }
+  }
+  return null;
+};
+
+const styleIdToStoredStyle = (styleId: string): StoredStyle | null => {
+  for (const { id: gender } of STYLE_GENDER_OPTIONS) {
+    const sections = STYLE_SECTIONS_BY_GENDER[gender];
+    for (const section of sections) {
+      const styleOption = section.options.find(opt => opt.id === styleId);
+      if (styleOption) {
+        return {
+          id: styleOption.id,
+          name: styleOption.name,
+          prompt: styleOption.prompt,
+          gender,
+          section: section.id,
+          imageUrl: styleOption.image,
+          previewGradient: styleOption.previewGradient,
+        };
       }
     }
   }
@@ -1135,7 +1171,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     types: [],
     folder: 'all',
     avatar: 'all',
-    product: 'all'
+    product: 'all',
+    style: 'all'
   });
   const maxGalleryTiles = 16; // ensures enough placeholders to fill the grid
   const galleryRef = useRef<HTMLDivElement | null>(null);
@@ -3766,6 +3803,18 @@ const [batchSize, setBatchSize] = useState<number>(1);
                       />
                     );
                   })()}
+                  {(() => {
+                    const styleForImage = img.styleId ? styleIdToStoredStyle(img.styleId) : null;
+                    if (!styleForImage) return null;
+                    return (
+                      <StyleBadge
+                        style={styleForImage}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      />
+                    );
+                  })()}
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -5007,6 +5056,7 @@ const handleGenerate = async () => {
             avatarId: selectedAvatar?.id,
             avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
+            styleId: getSelectedStyleId(selectedStyles) ?? undefined,
             clientJobId: specificGenerationId,
             onProgress: createProgressHandler(specificGenerationId),
           });
@@ -6512,6 +6562,18 @@ const handleGenerate = async () => {
                                               />
                                             );
                                           })()}
+                                          {(() => {
+                                            const styleForImage = img.styleId ? styleIdToStoredStyle(img.styleId) : null;
+                                            if (!styleForImage) return null;
+                                            return (
+                                              <StyleBadge
+                                                style={styleForImage}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                }}
+                                              />
+                                            );
+                                          })()}
                                         </div>
                                         {img.isPublic && (
                                           <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -7516,6 +7578,18 @@ const handleGenerate = async () => {
                                             setSelectedReferenceImage(productForImage.imageUrl);
                                             setSelectedProduct(productForImage); // Set the product so profile button works
                                             setIsFullSizeOpen(true);
+                                          }}
+                                        />
+                                      );
+                                    })()}
+                                    {(() => {
+                                      const styleForImage = img.styleId ? styleIdToStoredStyle(img.styleId) : null;
+                                      if (!styleForImage) return null;
+                                      return (
+                                        <StyleBadge
+                                          style={styleForImage}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                           }}
                                         />
                                       );

@@ -17,6 +17,7 @@ export interface IdeogramGeneratedImage {
   ownerId?: string;
   avatarId?: string;
   avatarImageId?: string;
+  styleId?: string;
 }
 
 export interface IdeogramImageGenerationState {
@@ -39,6 +40,8 @@ export interface IdeogramGenerateOptions {
   negative_prompt?: string;
   avatarId?: string;
   avatarImageId?: string;
+  productId?: string;
+  styleId?: string;
 }
 
 export interface IdeogramEditOptions {

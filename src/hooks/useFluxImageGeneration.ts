@@ -48,6 +48,8 @@ export interface FluxImageGenerationOptions {
   references?: string[];
   avatarId?: string;
   avatarImageId?: string;
+  productId?: string;
+  styleId?: string;
 }
 
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';

@@ -16,6 +16,7 @@ export interface QwenGeneratedImage {
   ownerId?: string;
   avatarId?: string;
   avatarImageId?: string;
+  styleId?: string;
 }
 
 export interface QwenImageGenerationState {
@@ -34,6 +35,8 @@ export interface QwenGenerateOptions {
   watermark?: boolean;
   avatarId?: string;
   avatarImageId?: string;
+  productId?: string;
+  styleId?: string;
 }
 
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';

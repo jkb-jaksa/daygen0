@@ -38,6 +38,7 @@ export type GalleryImageLike = {
   avatarId?: string;
   productId?: string;
   avatarImageId?: string;
+  styleId?: string;
 };
 
 export type GalleryVideoLike = {
@@ -54,6 +55,7 @@ export type GalleryVideoLike = {
   avatarId?: string; // Avatar ID for filtering
   productId?: string; // Product ID for filtering
   avatarImageId?: string;
+  styleId?: string;
 };
 
 export type StoredGalleryImage = {
@@ -68,6 +70,7 @@ export type StoredGalleryImage = {
   avatarId?: string;
   productId?: string;
   avatarImageId?: string;
+  styleId?: string;
 };
 
 export type PendingGalleryItem = {
@@ -99,6 +102,7 @@ export type CreateNavigationState = {
   focusPromptBar?: boolean;
   avatarId?: string;
   productId?: string;
+  styleId?: string;
 };
 
 export type GalleryFilters = {
@@ -109,6 +113,7 @@ export type GalleryFilters = {
   folder: string;
   avatar: string;
   product: string;
+  style: string;
 };
 
 export type ImageActionMenuState = { id: string; anchor: HTMLElement | null } | null;
