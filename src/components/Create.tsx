@@ -9276,7 +9276,7 @@ const handleGenerate = async () => {
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
                   className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
-                  aria-label={`${generateButtonLabel} (uses 1 credit)`}
+                  aria-label={`${generateButtonLabel} (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
                 >
                   <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
                     {generateButtonLabel}
