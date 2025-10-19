@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
-import { useAuth } from '../../auth/useAuth';
 import { glass } from '../../styles/designSystem';
 
 interface SubscriptionInfo {

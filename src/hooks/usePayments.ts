@@ -2,11 +2,6 @@ import { useState } from 'react';
 import { getApiUrl } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
 
-interface CreateCheckoutSessionDto {
-  type: 'one_time' | 'subscription';
-  packageId: string;
-}
-
 interface PaymentHistoryItem {
   id: string;
   amount: number;

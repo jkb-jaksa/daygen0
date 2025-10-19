@@ -402,5 +402,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Re-export useAuth for convenience
-export { useAuth } from './useAuth';
