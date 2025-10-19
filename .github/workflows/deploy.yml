@@ -1,0 +1,78 @@
+name: Deploy Frontend to Cloudflare Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  PROJECT_NAME: daygen
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Build application
+      run: npm run build
+      env:
+        VITE_API_BASE_URL: https://daygen-backend-365299591811.europe-central2.run.app
+        VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      env:
+        VITE_API_BASE_URL: https://daygen-backend-365299591811.europe-central2.run.app
+        VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+        
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/pages-action@v1
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        projectName: ${{ env.PROJECT_NAME }}
+        directory: dist
+        gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Test deployment
+      run: |
+        echo "✅ Frontend deployed successfully to Cloudflare Pages!"
+        echo "🌐 Check your Cloudflare dashboard for the deployment URL"

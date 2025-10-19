@@ -28,7 +28,8 @@ export function useStripeConfig() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch(getApiUrl('/api/payments/config'));
+        // Use public endpoint that doesn't require authentication
+        const response = await fetch(getApiUrl('/api/public-payments/config'));
         if (!response.ok) {
           throw new Error('Failed to fetch Stripe config');
         }

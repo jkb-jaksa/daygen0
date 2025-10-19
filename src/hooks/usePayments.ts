@@ -25,10 +25,10 @@ interface SubscriptionInfo {
 export function usePayments() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const createCheckoutSession = async (type: 'one_time' | 'subscription', packageId: string) => {
-    if (!user) {
+    if (!user || !token) {
       throw new Error('User not authenticated');
     }
 
@@ -40,7 +40,7 @@ export function usePayments() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ type, packageId }),
       });
@@ -64,14 +64,14 @@ export function usePayments() {
   };
 
   const getPaymentHistory = async (): Promise<PaymentHistoryItem[]> => {
-    if (!user) {
+    if (!user || !token) {
       throw new Error('User not authenticated');
     }
 
     try {
       const response = await fetch(getApiUrl('/api/payments/history'), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -87,14 +87,14 @@ export function usePayments() {
   };
 
   const getSubscription = async (): Promise<SubscriptionInfo | null> => {
-    if (!user) {
+    if (!user || !token) {
       throw new Error('User not authenticated');
     }
 
     try {
       const response = await fetch(getApiUrl('/api/payments/subscription'), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -102,7 +102,19 @@ export function usePayments() {
         throw new Error('Failed to fetch subscription');
       }
 
-      return await response.json();
+      // Handle empty response or null subscription
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        return null;
+      }
+
+      try {
+        const data = JSON.parse(text);
+        return data;
+      } catch (parseError) {
+        console.error('Error parsing subscription response:', parseError);
+        return null;
+      }
     } catch (err) {
       console.error('Error fetching subscription:', err);
       throw err;
@@ -110,7 +122,7 @@ export function usePayments() {
   };
 
   const cancelSubscription = async (): Promise<void> => {
-    if (!user) {
+    if (!user || !token) {
       throw new Error('User not authenticated');
     }
 
@@ -121,7 +133,7 @@ export function usePayments() {
       const response = await fetch(getApiUrl('/api/payments/subscription/cancel'), {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -140,14 +152,13 @@ export function usePayments() {
 
   const getSessionStatus = async (sessionId: string) => {
     try {
-      const response = await fetch(getApiUrl(`/api/payments/session/${sessionId}`), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
-        },
-      });
+      // Use public endpoint that doesn't require authentication
+      const response = await fetch(getApiUrl(`/api/public-payments/session/${sessionId}`));
 
       if (!response.ok) {
-        throw new Error('Failed to fetch session status');
+        const errorText = await response.text();
+        console.error('Session status API error:', response.status, errorText);
+        throw new Error(`Failed to fetch session status: ${response.status} ${errorText}`);
       }
 
       return await response.json();

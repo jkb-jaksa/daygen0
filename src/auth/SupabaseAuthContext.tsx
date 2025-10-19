@@ -11,13 +11,15 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserProfile = useCallback(async (authUser: User): Promise<SupabaseUser> => {
+  const fetchUserProfile = useCallback(async (authUser: User, currentSession?: Session | null): Promise<SupabaseUser> => {
+    const activeSession = currentSession || session;
+    
     try {
       // Try backend first, fallback to basic user info
       const response = await fetch(getApiUrl('/api/auth/me'), {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${session?.access_token}`,
+          Authorization: `Bearer ${activeSession?.access_token}`,
         },
       });
 
@@ -40,7 +42,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       createdAt: authUser.created_at,
       updatedAt: authUser.updated_at || authUser.created_at,
     };
-  }, [session?.access_token]);
+  }, [session]);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
     try {
@@ -104,7 +106,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       }
 
       if (data.user) {
-        const profile = await fetchUserProfile(data.user);
+        const profile = await fetchUserProfile(data.user, data.session);
         setUser(profile);
       }
     } catch (error) {
@@ -179,17 +181,17 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   const refreshUser = useCallback(async () => {
     if (session?.user) {
-      const profile = await fetchUserProfile(session.user);
+      const profile = await fetchUserProfile(session.user, session);
       setUser(profile);
     }
-  }, [session?.user, fetchUserProfile]);
+  }, [session, fetchUserProfile]);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        fetchUserProfile(session.user).then(setUser);
+        fetchUserProfile(session.user, session).then(setUser);
       }
       setIsLoading(false);
     });
@@ -200,7 +202,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     } = supabase.auth.onAuthStateChange(async (_, session) => {
       setSession(session);
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user);
+        const profile = await fetchUserProfile(session.user, session);
         setUser(profile);
       } else {
         setUser(null);
