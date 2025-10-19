@@ -452,7 +452,7 @@ export function GalleryPanel({
 
   return (
     <div className="w-full">
-      <div className={`mb-4 p-3 ${glass.promptDark} rounded-[20px]`}>
+      <div className={`mb-4 p-3 ${glass.promptDark} rounded-2xl`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-theme-text" />
@@ -496,7 +496,7 @@ export function GalleryPanel({
         </div>
 
         {/* Main filter grid: Modality, Model, Avatar, Product, Folder */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
             <CustomMultiSelect
@@ -679,7 +679,7 @@ export function GalleryPanel({
         )}
       </div>
 
-      <div className={`${glass.promptDark} rounded-[20px] mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
+      <div className={`${glass.promptDark} rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -824,7 +824,7 @@ export function GalleryPanel({
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 w-full p-1">
         {filteredGallery.map((img, idx) => renderGalleryItem(img, idx))}
 
         {gallery.length === 0 && (

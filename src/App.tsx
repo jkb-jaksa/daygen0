@@ -2,9 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
+import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
-import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Users, Volume2 } from "lucide-react";
+import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, User, Volume2 } from "lucide-react";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -71,7 +72,7 @@ function UseCaseCard({
 
   return (
     <div 
-      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] overflow-hidden"
+      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -84,7 +85,7 @@ function UseCaseCard({
         className="h-48 w-full object-cover"
       />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
-        <div className="PromptDescriptionBarTop relative z-10 px-4 py-1.5 rounded-2xl">
+        <div className="UseCaseDescription relative z-10 px-4 py-1.5 rounded-2xl">
           <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
@@ -96,7 +97,7 @@ const HOME_CATEGORIES = [
   { id: "text", label: "text", Icon: EditIcon },
   { id: "image", label: "image", Icon: ImageIcon },
   { id: "video", label: "video", Icon: VideoIcon },
-  { id: "avatars", label: "avatars", Icon: Users },
+  { id: "avatars", label: "avatars", Icon: User },
   { id: "audio", label: "audio", Icon: Volume2 },
 ] as const;
 
@@ -178,66 +179,6 @@ function Home() {
 
   return (
     <div className={`${layout.page} home-page`}>
-      {/* Colorful gradient with grain - top right corner decoration */}
-      <div className="fixed pointer-events-none z-0 overflow-hidden" style={{ top: '-140px', right: '-40px', width: '70vw', height: '65vh', maxWidth: '1100px', maxHeight: '700px' }}>
-        {/* Cyan blob */}
-        <div 
-          className="absolute"
-          style={{
-            top: '-15%',
-            right: '-15%',
-            width: '70%',
-            height: '70%',
-            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.38) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-          }}
-        />
-        {/* Blue blob */}
-        <div 
-          className="absolute"
-          style={{
-            top: '-5%',
-            right: '12%',
-            width: '72%',
-            height: '72%',
-            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.38) 0%, transparent 70%)',
-            filter: 'blur(85px)',
-          }}
-        />
-        {/* Red blob */}
-        <div 
-          className="absolute"
-          style={{
-            top: '15%',
-            right: '10%',
-            width: '60%',
-            height: '60%',
-            background: 'radial-gradient(circle, rgba(239, 68, 68, 0.32) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-          }}
-        />
-        {/* Amber blob */}
-        <div 
-          className="absolute"
-          style={{
-            top: '8%',
-            right: '35%',
-            width: '55%',
-            height: '55%',
-            background: 'radial-gradient(circle, rgba(251, 191, 36, 0.32) 0%, transparent 70%)',
-            filter: 'blur(85px)',
-          }}
-        />
-        {/* Grain overlay */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' opacity=\'0.15\'/%3E%3C/svg%3E")',
-            mixBlendMode: 'overlay',
-            opacity: 0.5,
-          }}
-        />
-      </div>
       <div className="relative z-10">
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
@@ -267,7 +208,7 @@ function Home() {
               </div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
-                  className={`${glass.surface} rounded-3xl border-theme-dark p-4 lg:h-full`}
+                  className={`${glass.promptDark} rounded-3xl border-theme-dark p-4 lg:h-full`}
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >
@@ -280,9 +221,9 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
+                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none ${
                               isActive
-                                ? "border border-theme-mid bg-theme-white/10 text-theme-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                                ? "border border-theme-mid bg-theme-white/10 text-theme-text"
                                 : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
                             }`}
                           >
@@ -297,7 +238,7 @@ function Home() {
                 <div className="flex-1 lg:h-full" ref={contentRef}>
                   {isImageCategory ? (
                     <div className="w-full">
-                      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                      <div className="grid gap-1 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         <UseCaseCard
                           title="lifestyle images"
                           imageUrl="/lifestyle images.png"

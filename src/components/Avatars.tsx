@@ -14,7 +14,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
 import {
-  Users,
+  User,
   X,
   Pencil,
   Trash2,
@@ -48,6 +48,7 @@ import type { AvatarImage, AvatarSelection, StoredAvatar } from "./avatars/types
 import { debugError } from "../utils/debug";
 import { createAvatarRecord, findAvatarBySlug, normalizeStoredAvatars, withUpdatedAvatarImages } from "../utils/avatars";
 import { createCardImageStyle } from "../utils/cardImageStyle";
+import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 
 type AvatarNavigationState = {
   openAvatarCreator?: boolean;
@@ -215,7 +216,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: zIndex,
       }}
-      className={`${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
     >
       {children}
     </div>,
@@ -502,64 +503,6 @@ export default function Avatars() {
     [persistAvatars],
   );
 
-  const handleAddAvatarImages = useCallback(
-    async (
-      avatarId: string,
-      files: File[],
-      source: AvatarImage["source"] = "upload",
-      sourceId?: string,
-    ) => {
-      if (!files.length) {
-        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
-        return;
-      }
-
-      // Check if this avatar is already uploading - if so, queue the files
-      setUploadingAvatarIds(prev => {
-        if (prev.has(avatarId)) {
-          // Queue these files for later processing
-          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
-          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
-          return prev;
-        }
-        // Mark as uploading
-        const next = new Set(prev);
-        next.add(avatarId);
-        return next;
-      });
-
-      // If already uploading, the files have been queued and we return
-      if (uploadingAvatarIds.has(avatarId)) {
-        return;
-      }
-
-      try {
-        // Process current batch
-        await processAvatarImageBatch(avatarId, files, source, sourceId);
-
-        // Process any queued files
-        while (pendingUploadsRef.current.has(avatarId)) {
-          const queuedFiles = pendingUploadsRef.current.get(avatarId) || [];
-          if (queuedFiles.length === 0) {
-            pendingUploadsRef.current.delete(avatarId);
-            break;
-          }
-          pendingUploadsRef.current.delete(avatarId);
-          await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
-        }
-      } finally {
-        // Clear upload state
-        setUploadingAvatarIds(prev => {
-          const next = new Set(prev);
-          next.delete(avatarId);
-          return next;
-        });
-        pendingUploadsRef.current.delete(avatarId);
-      }
-    },
-    [uploadingAvatarIds],
-  );
-
   const processAvatarImageBatch = useCallback(
     async (
       avatarId: string,
@@ -664,6 +607,64 @@ export default function Avatars() {
       }
     },
     [commitAvatarUpdate],
+  );
+
+  const handleAddAvatarImages = useCallback(
+    async (
+      avatarId: string,
+      files: File[],
+      source: AvatarImage["source"] = "upload",
+      sourceId?: string,
+    ) => {
+      if (!files.length) {
+        setAvatarImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
+        return;
+      }
+
+      // Check if this avatar is already uploading - if so, queue the files
+      setUploadingAvatarIds(prev => {
+        if (prev.has(avatarId)) {
+          // Queue these files for later processing
+          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
+          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
+          return prev;
+        }
+        // Mark as uploading
+        const next = new Set(prev);
+        next.add(avatarId);
+        return next;
+      });
+
+      // If already uploading, the files have been queued and we return
+      if (uploadingAvatarIds.has(avatarId)) {
+        return;
+      }
+
+      try {
+        // Process current batch
+        await processAvatarImageBatch(avatarId, files, source, sourceId);
+
+        // Process any queued files
+        while (pendingUploadsRef.current.has(avatarId)) {
+          const queuedFiles = pendingUploadsRef.current.get(avatarId) || [];
+          if (queuedFiles.length === 0) {
+            pendingUploadsRef.current.delete(avatarId);
+            break;
+          }
+          pendingUploadsRef.current.delete(avatarId);
+          await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
+        }
+      } finally {
+        // Clear upload state
+        setUploadingAvatarIds(prev => {
+          const next = new Set(prev);
+          next.delete(avatarId);
+          return next;
+        });
+        pendingUploadsRef.current.delete(avatarId);
+      }
+    },
+    [uploadingAvatarIds, processAvatarImageBatch],
   );
 
   const handleRemoveAvatarImage = useCallback(
@@ -1262,7 +1263,7 @@ export default function Avatars() {
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
+        className={`group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
           isInteractive ? " cursor-pointer" : ""
         }`}
         role={isInteractive ? "button" : undefined}
@@ -1291,7 +1292,7 @@ export default function Avatars() {
           data-has-image={Boolean(avatar.imageUrl)}
           style={createCardImageStyle(avatar.imageUrl)}
         >
-          <div className="absolute left-2 top-2 z-10">
+          <div className="image-gallery-actions absolute left-2 top-2 z-10">
             <button
               type="button"
               onClick={(event) => {
@@ -1362,7 +1363,7 @@ export default function Avatars() {
               </button>
             </ImageActionMenuPortal>
           </div>
-          <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <div className="image-gallery-actions absolute right-2 top-2 z-10 flex gap-1">
             <button
               type="button"
               onClick={(event) => {
@@ -1454,7 +1455,7 @@ export default function Avatars() {
             loading="lazy"
           />
           <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
-            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-2.5">
+            <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
               <div className="flex h-[32px] items-center gap-2">
                 {editingAvatarId === avatar.id ? (
                   <form
@@ -1515,7 +1516,7 @@ export default function Avatars() {
         <div className="lg:hidden space-y-3 px-4 py-4">
           {editingAvatarId === avatar.id ? (
             <form
-              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5"
+              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5"
               onSubmit={submitRename}
               onClick={(event) => event.stopPropagation()}
             >
@@ -1540,7 +1541,7 @@ export default function Avatars() {
               </button>
             </form>
           ) : (
-            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5">
+            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5">
                 <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-light text-theme-text">
                   {displayName}
               </p>
@@ -1595,7 +1596,7 @@ export default function Avatars() {
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
-      className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
       <div
@@ -1603,7 +1604,7 @@ export default function Avatars() {
         data-has-image={Boolean(image.url)}
         style={createCardImageStyle(image.url)}
       >
-        <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
+        <div className="image-gallery-actions absolute left-2 top-2 z-10 flex flex-col items-start gap-2">
           <div className="relative">
             <button
               type="button"
@@ -1659,7 +1660,7 @@ export default function Avatars() {
             </ImageActionMenuPortal>
           </div>
         </div>
-        <div className="absolute right-2 top-2 z-10 flex gap-1">
+        <div className="image-gallery-actions absolute right-2 top-2 z-10 flex gap-1">
           <button
             type="button"
             onClick={(event) => {
@@ -1751,7 +1752,7 @@ export default function Avatars() {
           loading="lazy"
         />
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100 hidden lg:block">
-          <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
+          <div className="PromptDescriptionBar rounded-b-2xl px-4 py-4">
             <div className="space-y-2">
               <p className="text-xs font-raleway text-theme-white leading-relaxed line-clamp-3">
                 {image.prompt || "Untitled creation"}
@@ -1796,7 +1797,7 @@ export default function Avatars() {
       <header className="max-w-3xl text-left">
         <div className={`${headings.tripleHeading.container} text-left`}>
           <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
-            <Users className="h-4 w-4 text-theme-white/60" />
+            <User className="h-4 w-4 text-theme-white/60" />
             Avatars
           </p>
           <h1
@@ -1843,14 +1844,14 @@ export default function Avatars() {
               <Plus className="h-5 w-5" />
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
             {avatars.map(avatar => renderAvatarCard(avatar))}
           </div>
         </div>
       )}
 
       {missingAvatarSlug && (
-        <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
+        <div className="w-full max-w-3xl rounded-2xl border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
           <p className="text-sm font-raleway text-theme-white/80">
             We couldn't find an avatar for <span className="font-semibold text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
           </p>
@@ -1859,7 +1860,7 @@ export default function Avatars() {
             className={`mt-4 ${buttons.glassPrompt}`}
             onClick={() => navigate("/create/avatars", { replace: true })}
           >
-            <Users className="h-4 w-4" />
+            <User className="h-4 w-4" />
             Back to all avatars
           </button>
         </div>
@@ -2210,11 +2211,11 @@ export default function Avatars() {
           <h2 className="text-2xl font-raleway text-theme-text">
             Creations with {creationsModalAvatar.name}
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
             {creationImages.map(image => renderCreationImageCard(image))}
           </div>
           {creationImages.length === 0 && (
-            <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+            <div className="rounded-2xl border border-theme-dark bg-theme-black/70 p-4 text-center">
               <p className="text-sm font-raleway text-theme-light">
                 Generate a new image with this avatar to see it appear here.
               </p>
@@ -2329,7 +2330,7 @@ export default function Avatars() {
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
             />
 
-            <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+            <div className="image-gallery-actions absolute left-4 top-4 flex flex-wrap items-center gap-2">
               {creationsModalAvatar.primaryImageId !== activeAvatarImage.id && (
                 <button
                   type="button"
@@ -2356,13 +2357,13 @@ export default function Avatars() {
               {creationsModalAvatar.primaryImageId === activeAvatarImage.id && (
                 <span className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text`}
                 >
-                  <Users className="h-3 w-3" />
+                  <User className="h-3 w-3" />
                   Primary image
                 </span>
               )}
             </div>
 
-            <div className="absolute right-4 top-4 flex flex-wrap items-center gap-2">
+            <div className="image-gallery-actions absolute right-4 top-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
@@ -2604,10 +2605,6 @@ export default function Avatars() {
                           size="md" 
                         />
                       </Suspense>
-                      <AvatarBadge
-                        avatar={creationsModalAvatar}
-                        onClick={() => navigate(`/create/avatars/${creationsModalAvatar.slug}`)}
-                      />
                     </div>
                     {selectedFullImage.isPublic && (
                       <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -2630,6 +2627,24 @@ export default function Avatars() {
               <X className="w-4 h-4" />
             </button>
           </div>
+          
+          {/* Vertical Gallery Navigation */}
+          {(() => {
+            const avatarImages = galleryImages.filter(img => img.avatarId === creationsModalAvatar.id);
+            const currentIdx = avatarImages.findIndex(img => img.url === selectedFullImage.url);
+            
+            return (
+              <VerticalGalleryNav
+                images={avatarImages}
+                currentIndex={currentIdx}
+                onNavigate={(index) => {
+                  if (index >= 0 && index < avatarImages.length) {
+                    setSelectedFullImage(avatarImages[index]);
+                  }
+                }}
+              />
+            );
+          })()}
         </div>
       )}
 
@@ -2926,5 +2941,3 @@ export default function Avatars() {
     </div>
   );
 }
-
-export type { StoredAvatar };

@@ -31,7 +31,7 @@ import {
   Palette,
   Share2,
   Sparkles,
-  Users,
+  User,
   Settings,
   ChevronDown,
   Edit,
@@ -46,6 +46,7 @@ import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { debugError } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
+import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import type {
   Folder,
   GalleryImageLike,
@@ -591,7 +592,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1100,
       }}
-      className={`${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
     >
       {children}
     </div>,
@@ -619,7 +620,7 @@ const AvatarCard: React.FC<{
   const isFeature = variant === "feature";
   const isSpotlight = variant === "spotlight";
   const padding = isFeature ? "p-8 sm:p-10" : isSpotlight ? "p-6 sm:p-7" : "p-6";
-  const radius = isFeature ? "rounded-[32px]" : "rounded-[24px]";
+  const radius = "rounded-2xl";
   const minHeight = isFeature ? "min-h-[420px]" : isSpotlight ? "min-h-[280px]" : "min-h-[260px]";
 
   return (
@@ -1602,7 +1603,7 @@ const Explore: React.FC = () => {
     });
   };
 
-  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryItems, galleryFilters]);
+  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryItems, galleryFilters, filterGalleryItems]);
 
   const initialBatchSize = useMemo(() => 9, []);
   const [visibleCount, setVisibleCount] = useState(initialBatchSize);
@@ -1954,14 +1955,14 @@ const Explore: React.FC = () => {
         {activeGalleryView === 'creations' ? (
           <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-1 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
                 const isSaved = savedImageUrls.has(item.imageUrl);
                 return (
                   <article
                     key={item.id}
-                    className="group relative overflow-hidden rounded-[28px] border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
                     onClick={(event) => {
                       // Check if the click came from a copy button
                       const target = event.target as HTMLElement;
@@ -1980,7 +1981,7 @@ const Explore: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
-                    <div className="absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                    <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
                       <div className="relative">
                         <button
                           type="button"
@@ -2046,7 +2047,7 @@ const Explore: React.FC = () => {
                     </div>
 
                     <div
-                      className={`absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
+                      className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
                         isMenuActive
                           ? 'opacity-100 pointer-events-auto'
                           : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
@@ -2199,7 +2200,7 @@ const Explore: React.FC = () => {
         <section className="relative pb-12 -mt-6">
           <div className={`${layout.container} space-y-8`}>
             {filteredAvatars.length === 0 ? (
-              <div className={`rounded-[28px] border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
+              <div className={`rounded-2xl border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
                 <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
                 <p className="mt-2 text-sm text-theme-white/70">
                   Publish one from the avatars studio or adjust your filters to explore more community styles.
@@ -2226,7 +2227,7 @@ const Explore: React.FC = () => {
             ) : (
               <>
                 {topAvatars.length > 0 && (
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                  <div className="grid gap-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                     <AvatarCard
                       key={topAvatars[0].id}
                       item={topAvatars[0]}
@@ -2236,7 +2237,7 @@ const Explore: React.FC = () => {
                       isFavorite={avatarFavorites.has(topAvatars[0].id)}
                       onToggleFavorite={toggleAvatarFavorite}
                     />
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-1">
                       {topAvatars.slice(1).map((avatar, index) => (
                         <AvatarCard
                           key={avatar.id}
@@ -2253,7 +2254,7 @@ const Explore: React.FC = () => {
                 )}
 
                 {remainingAvatars.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
                     {remainingAvatars.map((avatar, index) => (
                       <AvatarCard
                         key={avatar.id}
@@ -2310,7 +2311,7 @@ const Explore: React.FC = () => {
                 </div>
                 <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
                   <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
-                    <Users className="size-4" aria-hidden="true" />
+                    <User className="size-4" aria-hidden="true" />
                     Creators
                   </div>
                   <p className="mt-3 text-3xl font-light text-theme-white">870</p>
@@ -2364,11 +2365,11 @@ const Explore: React.FC = () => {
           <div
             className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 px-4 py-8"
             onClick={closeSavePrompt}
-          >
-            <div
-              className={`${glass.promptDark} relative w-full max-w-3xl rounded-[28px] border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
-              onClick={event => event.stopPropagation()}
             >
+              <div
+                className={`${glass.promptDark} relative w-full max-w-3xl rounded-2xl border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+                onClick={event => event.stopPropagation()}
+              >
               <button
                 type="button"
                 onClick={closeSavePrompt}
@@ -2561,7 +2562,7 @@ const Explore: React.FC = () => {
               />
               
               {/* Action buttons */}
-              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
+              <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
                 {/* Left side - Recreate button */}
                 <div className="relative">
                   <button
@@ -2739,6 +2740,18 @@ const Explore: React.FC = () => {
                 </div>
               </div>
             </div>
+            
+            {/* Vertical Gallery Navigation */}
+            <VerticalGalleryNav
+              images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}
+              currentIndex={currentImageIndex}
+              onNavigate={(index) => {
+                if (index >= 0 && index < filteredGallery.length) {
+                  setSelectedFullImage(filteredGallery[index]);
+                  setCurrentImageIndex(index);
+                }
+              }}
+            />
           </div>
         )}
 

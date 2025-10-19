@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -86,6 +86,7 @@ import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_CONTENT
 import { ToolInfoHover } from "./ToolInfoHover";
 import CircularProgressRing from "./CircularProgressRing";
 import { AvatarPickerPortal } from "./create/AvatarPickerPortal";
+import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
 import {
   GEMINI_ASPECT_RATIO_OPTIONS,
@@ -438,7 +439,7 @@ const ModelMenuPortal: React.FC<{
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onClose]);
+  }, [open, onClose, anchorRef]);
 
   if (!open) return null;
 
@@ -566,7 +567,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1200,
       }}
-      className={`${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -1233,12 +1234,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
     });
   };
   
-  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars]);
+  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars, filterGalleryItems]);
   const filteredVideoGallery = useMemo(() => {
     const filtered = filterVideoGalleryItems(videoGallery);
     // Removed debug log that was running on every render
     return filtered;
-  }, [videoGallery, galleryFilters, favorites, folders, storedAvatars]);
+  }, [videoGallery, galleryFilters, favorites, folders, storedAvatars, filterVideoGalleryItems]);
   const inspirationsGallery = useMemo(() => {
     return inspirations
       .slice()
@@ -1608,7 +1609,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       debugLog('[Create] Adding video to gallery:', videoWithOperation);
       setVideoGallery(prev => [videoWithOperation, ...prev]);
     }
-  }, [generatedVideo, videoOperationName]);
+  }, [generatedVideo, videoOperationName, isVideoGenerating]);
 
 
   // Handle category switching from external navigation (e.g., navbar)
@@ -1659,16 +1660,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (isFullSizeOpen) {
+        if (isFullSizeOpen && !selectedReferenceImage) {
           navigateFullSizeImage('prev');
-        } else {
+        } else if (!isFullSizeOpen) {
           navigateGallery('prev');
         }
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        if (isFullSizeOpen) {
+        if (isFullSizeOpen && !selectedReferenceImage) {
           navigateFullSizeImage('next');
-        } else {
+        } else if (!isFullSizeOpen) {
           navigateGallery('next');
         }
       }
@@ -1678,7 +1679,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, gallery.length, currentGalleryIndex]);
+  }, [isFullSizeOpen, selectedReferenceImage, gallery.length, currentGalleryIndex]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -2187,7 +2188,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     void loadPersistedState();
 
-  }, [storagePrefix]);
+  }, [storagePrefix, refreshStorageEstimate]);
 
   // Auto-migrate base64 images to R2 when needed
   useEffect(() => {
@@ -2430,7 +2431,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
   };
 
-  const persistUploadedImages = async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
+  const persistUploadedImages = useCallback(async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
     setUploadedImages(uploads);
     try {
       const serializableUploads: SerializedUpload[] = uploads.map(upload => ({
@@ -2445,7 +2446,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     } catch (error) {
       debugError('Failed to persist uploaded images', error);
     }
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   // Gallery persistence is now handled by the backend API
 
@@ -3412,7 +3413,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               handleCreateAvatarFromMenu(image);
             }}
           >
-            <Users className="h-4 w-4" />
+            <User className="h-4 w-4" />
             Create Avatar
           </button>
           <button
@@ -3582,7 +3583,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return (
       <div
         key={`${context}-${img.url}-${idx}`}
-        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
+        className={`group relative rounded-2xl overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
             : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
@@ -3623,7 +3624,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto !hidden items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
             onClick={(e) => {
@@ -3730,7 +3731,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   {avatarForImage && (
                     <AvatarBadge
                       avatar={avatarForImage}
-                      onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // If avatarImageId exists, find that specific image in the avatar's images array
+                        const avatarImageUrl = img.avatarImageId 
+                          ? avatarForImage.images?.find(avatarImg => avatarImg.id === img.avatarImageId)?.url 
+                          : avatarForImage.imageUrl; // fallback to primary image if no specific image ID
+                        setSelectedReferenceImage(avatarImageUrl ?? avatarForImage.imageUrl);
+                        setSelectedAvatar(avatarForImage); // Set the avatar so profile button works
+                        setIsFullSizeOpen(true);
+                      }}
                     />
                   )}
                   {(() => {
@@ -3739,7 +3749,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
                     return (
                       <ProductBadge
                         product={productForImage}
-                        onClick={() => setCreationsModalProduct(productForImage)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedReferenceImage(productForImage.imageUrl);
+                          setSelectedProduct(productForImage); // Set the product so profile button works
+                          setIsFullSizeOpen(true);
+                        }}
                       />
                     );
                   })()}
@@ -3789,7 +3804,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
         </div>
 
-        <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+        <div className="image-gallery-actions absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
           <div className="flex flex-col items-start gap-2">
             <button
               type="button"
@@ -4756,16 +4771,26 @@ const handleGenerate = async () => {
       return;
     }
 
-    if (activeGenerationQueue.length >= MAX_PARALLEL_GENERATIONS) {
-      setCopyNotification(`You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once.`);
+    const modelForGeneration = selectedModel;
+    const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
+
+    // Check if adding this batch would exceed the maximum parallel generations
+    if (activeGenerationQueue.length + effectiveBatchSize > MAX_PARALLEL_GENERATIONS) {
+      const availableSlots = MAX_PARALLEL_GENERATIONS - activeGenerationQueue.length;
+      if (availableSlots <= 0) {
+        setCopyNotification(`You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once. Please wait for some to complete.`);
+      } else {
+        setCopyNotification(`You can only add ${availableSlots} more generation${availableSlots > 1 ? 's' : ''} (${MAX_PARALLEL_GENERATIONS} max).`);
+      }
       setTimeout(() => setCopyNotification(null), 2500);
       return;
     }
-
-    const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const modelForGeneration = selectedModel;
-    const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
-  debugLog('[Create] handleGenerateImage called', { model: modelForGeneration, batchSize: effectiveBatchSize });
+    // Create multiple generation IDs for batch processing
+    const timestamp = Date.now();
+    const generationIds = Array.from({ length: effectiveBatchSize }, (_, i) => 
+      `gen-${timestamp}-${i}-${Math.random().toString(36).slice(2, 10)}`
+    );
+  debugLog('[Create] handleGenerateImage called', { model: modelForGeneration, batchSize: effectiveBatchSize, generationIds });
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
     if (selectedAvatar) {
@@ -4812,38 +4837,42 @@ const handleGenerate = async () => {
     modelForGeneration === "luma-photon-1" ||
     modelForGeneration === "luma-photon-flash-1";
 
-    const jobMeta: ActiveGenerationJob = {
-      id: generationId,
+  // Only add to activeGenerationQueue if we're not handling video models that manage their own state
+  const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
+
+  // Create a job for each batch item
+  if (shouldTrackJob) {
+    const jobMetas: ActiveGenerationJob[] = generationIds.map(genId => ({
+      id: genId,
       prompt: finalPrompt,
       model: modelForGeneration,
       startedAt: Date.now(),
       progress: 1,
       backendProgress: 0,
       backendProgressUpdatedAt: Date.now(),
-      status: 'queued',
-    };
+      status: 'processing' as ActiveGenerationStatus,
+    }));
 
-  // Only add to activeGenerationQueue if we're not handling video models that manage their own state
-  const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
-
-  if (shouldTrackJob) {
     setActiveGenerationQueue(prev => {
-      const next = [...prev, jobMeta];
+      const next = [...prev, ...jobMetas];
       return next.map(job =>
-        job.id === generationId
+        generationIds.includes(job.id)
           ? {
               ...job,
-              status: 'processing',
+              status: 'processing' as ActiveGenerationStatus,
               progress: Math.max(job.progress, 4),
             }
           : job,
       );
     });
 
-    startProgressAnimation(generationId, {
-      max: 97,
-      step: 1.1,
-      interval: 620,
+    // Start progress animation for each job
+    generationIds.forEach(genId => {
+      startProgressAnimation(genId, {
+        max: 97,
+        step: 1.1,
+        interval: 620,
+      });
     });
   }
     if (spinnerTimeoutRef.current) {
@@ -4855,14 +4884,15 @@ const handleGenerate = async () => {
       spinnerTimeoutRef.current = null;
     }, 1000);
 
-    const handleGeminiProgress = (update: ImageGenerationProgressUpdate) => {
-      if (update.clientJobId && update.clientJobId !== generationId) {
+    // Create progress handler factory for individual jobs
+    const createProgressHandler = (specificGenerationId: string) => (update: ImageGenerationProgressUpdate) => {
+      if (update.clientJobId && update.clientJobId !== specificGenerationId) {
         return;
       }
 
       setActiveGenerationQueue(prev =>
         prev.map(job => {
-          if (job.id !== generationId) {
+          if (job.id !== specificGenerationId) {
             return job;
           }
 
@@ -4911,7 +4941,7 @@ const handleGenerate = async () => {
       );
 
       if (update.status === 'completed' || update.status === 'failed') {
-        stopProgressAnimation(generationId);
+        stopProgressAnimation(specificGenerationId);
       }
     };
 
@@ -4944,10 +4974,19 @@ const handleGenerate = async () => {
         isChatGPTModel 
       });
 
-  const runSingleGeneration = async () => {
+  const runSingleGeneration = async (specificGenerationId: string) => {
         let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
         if (isGeminiModel) {
+          // Debug: Log avatar state before generation
+          console.log('[DEBUG] Avatar state before generation:', {
+            selectedAvatar: selectedAvatar,
+            selectedAvatarId: selectedAvatar?.id,
+            activeAvatarImageId: activeAvatarImageId,
+            selectedProduct: selectedProduct,
+            selectedProductId: selectedProduct?.id
+          });
+          
           img = await generateGeminiImage({
             prompt: finalPrompt,
             model: modelForGeneration,
@@ -4960,8 +4999,8 @@ const handleGenerate = async () => {
             avatarId: selectedAvatar?.id,
             avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
-            clientJobId: generationId,
-            onProgress: handleGeminiProgress,
+            clientJobId: specificGenerationId,
+            onProgress: createProgressHandler(specificGenerationId),
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
@@ -5178,58 +5217,143 @@ const handleGenerate = async () => {
       let successfulGenerations = 0;
       let promptSaved = false;
 
-      for (let iteration = 0; iteration < effectiveBatchSize; iteration += 1) {
-        debugLog('[Create] Starting batch item', { iteration: iteration + 1, total: effectiveBatchSize, model: modelForGeneration });
-        const img = await runSingleGeneration();
-        if (img?.url) {
-          if (shouldTrackJob && !isGeminiModel) {
-            const completionRatio = (iteration + 1) / effectiveBatchSize;
-            const targetProgress = Math.min(98, 45 + completionRatio * 50);
+      // Run all generations in parallel
+      debugLog('[Create] Starting parallel batch generation', { 
+        count: effectiveBatchSize, 
+        model: modelForGeneration,
+        generationIds 
+      });
+
+      const generationPromises = generationIds.map(async (genId, index) => {
+        try {
+          debugLog('[Create] Starting batch item', { 
+            iteration: index + 1, 
+            total: effectiveBatchSize, 
+            model: modelForGeneration,
+            generationId: genId 
+          });
+          
+          const img = await runSingleGeneration(genId);
+          
+          if (img?.url) {
+            // Debug: Log what's being sent to backend
+            console.log('Generated image data being sent to backend:', {
+              imageUrl: img.url,
+              avatarId: img.avatarId,
+              avatarImageId: img.avatarImageId,
+              productId: img.productId,
+              model: img.model,
+              prompt: img.prompt?.substring(0, 50) + '...'
+            });
+
+            const galleryImage: GalleryImageLike = {
+              url: img.url,
+              prompt: img.prompt ?? finalPrompt ?? trimmedPrompt,
+              model: img.model ?? modelForGeneration,
+              timestamp: img.timestamp ?? new Date().toISOString(),
+              ownerId:
+                'ownerId' in img && typeof img.ownerId === 'string'
+                  ? img.ownerId
+                  : user?.id ?? undefined,
+              references:
+                'references' in img
+                  ? (img as { references?: string[] | undefined }).references
+                  : undefined,
+              isPublic:
+                'isPublic' in img
+                  ? Boolean((img as { isPublic?: boolean }).isPublic)
+                  : false,
+              avatarId:
+                (
+                  'avatarId' in img
+                    ? (img as { avatarId?: string | null }).avatarId ?? undefined
+                    : undefined
+                ) ?? selectedAvatar?.id ?? undefined,
+              avatarImageId:
+                (
+                  'avatarImageId' in img
+                    ? (img as { avatarImageId?: string | null }).avatarImageId ?? undefined
+                    : undefined
+                ) ?? activeAvatarImageId ?? undefined,
+              productId:
+                (
+                  'productId' in img
+                    ? (img as { productId?: string | null }).productId ?? undefined
+                    : undefined
+                ) ?? selectedProduct?.id ?? undefined,
+              jobId:
+                'jobId' in img
+                  ? (img as { jobId?: string | null }).jobId ?? undefined
+                  : undefined,
+            };
+
+            updateGalleryImages([], {}, { upsert: [galleryImage] });
+
+            // Update progress for this specific job
+            if (shouldTrackJob && !isGeminiModel) {
+              setActiveGenerationQueue(prev =>
+                prev.map(job => {
+                  if (job.id !== genId) {
+                    return job;
+                  }
+                  return {
+                    ...job,
+                    progress: 100,
+                    backendProgress: 100,
+                    backendProgressUpdatedAt: Date.now(),
+                    status: 'completed' as ActiveGenerationStatus,
+                  };
+                }),
+              );
+              stopProgressAnimation(genId);
+            }
+
+            debugLog('New image generated, refreshing gallery...');
+            await fetchGalleryImages();
+
+            return { success: true, genId, img };
+          }
+          
+          return { success: false, genId, error: 'No image URL returned' };
+        } catch (error) {
+          debugError(`Error generating image for job ${genId}:`, error);
+          
+          // Mark this specific job as failed
+          if (shouldTrackJob) {
+            stopProgressAnimation(genId);
             setActiveGenerationQueue(prev =>
-              prev.map(job => {
-                if (job.id !== generationId) {
-                  return job;
-                }
-                const currentBackend = job.backendProgress ?? 0;
-                const nextBackend = Math.max(currentBackend, targetProgress);
-                return {
-                  ...job,
-                  progress: Math.max(job.progress, targetProgress),
-                  backendProgress: nextBackend,
-                  backendProgressUpdatedAt:
-                    nextBackend > currentBackend ? Date.now() : job.backendProgressUpdatedAt,
-                  status: 'processing',
-                };
-              }),
+              prev.map(job =>
+                job.id === genId
+                  ? {
+                      ...job,
+                      status: 'failed' as ActiveGenerationStatus,
+                      progress: Math.max(job.progress, 100),
+                      backendProgress: 100,
+                      backendProgressUpdatedAt: Date.now(),
+                    }
+                  : job,
+              ),
             );
           }
-
-          successfulGenerations += 1;
-          debugLog('New image generated, refreshing gallery...');
-          await fetchGalleryImages();
-
-          if (!promptSaved) {
-            addPrompt(trimmedPrompt);
-            promptSaved = true;
-          }
+          
+          return { success: false, genId, error: error instanceof Error ? error.message : String(error) };
         }
-      }
+      });
 
-      if (shouldTrackJob && !isGeminiModel) {
-        setActiveGenerationQueue(prev =>
-          prev.map(job =>
-            job.id === generationId
-              ? {
-                  ...job,
-                  progress: 100,
-                  backendProgress: 100,
-                  backendProgressUpdatedAt: Date.now(),
-                  status: 'completed',
-                }
-              : job,
-          ),
-        );
-        stopProgressAnimation(generationId);
+      // Wait for all generations to complete
+      const results = await Promise.allSettled(generationPromises);
+
+      // Process results
+      results.forEach((result) => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          successfulGenerations += 1;
+        }
+      });
+
+      // Save prompt once if any generation succeeded
+      if (successfulGenerations > 0 && !promptSaved) {
+        addPrompt(trimmedPrompt);
+        promptSaved = true;
       }
 
       if (successfulGenerations > 1) {
@@ -5237,17 +5361,22 @@ const handleGenerate = async () => {
         setTimeout(() => setCopyNotification(null), 2000);
       }
     } catch (error) {
-      debugError('Error generating image:', error);
+      debugError('Error in batch generation:', error);
       // Clear any previous errors from all hooks
       clearAllGenerationErrors();
+      
+      // Mark all jobs as failed if there's a catastrophic error
       if (shouldTrackJob) {
-        stopProgressAnimation(generationId);
+        generationIds.forEach(genId => {
+          stopProgressAnimation(genId);
+        });
+        
         setActiveGenerationQueue(prev =>
           prev.map(job =>
-            job.id === generationId
+            generationIds.includes(job.id)
               ? {
                   ...job,
-                  status: 'failed',
+                  status: 'failed' as ActiveGenerationStatus,
                   progress: Math.max(job.progress, 100),
                   backendProgress: 100,
                   backendProgressUpdatedAt: Date.now(),
@@ -5262,10 +5391,14 @@ const handleGenerate = async () => {
         spinnerTimeoutRef.current = null;
       }
       setIsButtonSpinning(false);
-      // Only remove from activeGenerationQueue if we added it in the first place
+      
+      // Remove all completed/failed jobs from activeGenerationQueue
       if (shouldTrackJob) {
-        stopProgressAnimation(generationId);
-        setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
+        generationIds.forEach(genId => {
+          stopProgressAnimation(genId);
+        });
+        
+        setActiveGenerationQueue(prev => prev.filter(job => !generationIds.includes(job.id)));
       }
     }
   };
@@ -5381,10 +5514,10 @@ const handleGenerate = async () => {
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
-    <div className={layout.page}>
+    <div className={`${layout.page} create-page`}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-2xl`}>
           {copyNotification}
         </div>
       )}
@@ -5430,7 +5563,7 @@ const handleGenerate = async () => {
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
@@ -5475,7 +5608,7 @@ const handleGenerate = async () => {
       {/* New folder dialog */}
       {newFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -5551,7 +5684,7 @@ const handleGenerate = async () => {
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
@@ -5588,7 +5721,7 @@ const handleGenerate = async () => {
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
@@ -5625,7 +5758,7 @@ const handleGenerate = async () => {
       {/* Download confirmation dialog */}
       {downloadConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Download className="default-orange-icon mx-auto" />
@@ -5660,7 +5793,7 @@ const handleGenerate = async () => {
       {/* Add to folder dialog */}
       {addToFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -5830,7 +5963,7 @@ const handleGenerate = async () => {
       {/* Folder thumbnail selection dialog */}
       {folderThumbnailDialog.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
                 <FolderIcon className="default-orange-icon mx-auto" />
@@ -5903,7 +6036,7 @@ const handleGenerate = async () => {
                   <label className="block text-sm font-raleway text-theme-text">
                     Or select from Folder Images.
                   </label>
-                  <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                  <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
                     {(() => {
                       const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
                       if (!folder) return null;
@@ -6139,7 +6272,7 @@ const handleGenerate = async () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
                         {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
                       </div>
                     )}
@@ -6172,7 +6305,7 @@ const handleGenerate = async () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -6283,7 +6416,7 @@ const handleGenerate = async () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -6381,7 +6514,16 @@ const handleGenerate = async () => {
                                             return (
                                               <AvatarBadge
                                                 avatar={avatarForImage}
-                                                onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  // If avatarImageId exists, find that specific image in the avatar's images array
+                                                  const avatarImageUrl = img.avatarImageId 
+                                                    ? avatarForImage.images?.find(avatarImg => avatarImg.id === img.avatarImageId)?.url 
+                                                    : avatarForImage.imageUrl; // fallback to primary image if no specific image ID
+                                                  setSelectedReferenceImage(avatarImageUrl ?? avatarForImage.imageUrl);
+                                                  setSelectedAvatar(avatarForImage); // Set the avatar so profile button works
+                                                  setIsFullSizeOpen(true);
+                                                }}
                                               />
                                             );
                                           })()}
@@ -6391,7 +6533,12 @@ const handleGenerate = async () => {
                                             return (
                                               <ProductBadge
                                                 product={productForImage}
-                                                onClick={() => setCreationsModalProduct(productForImage)}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedReferenceImage(productForImage.imageUrl);
+                                                  setSelectedProduct(productForImage); // Set the product so profile button works
+                                                  setIsFullSizeOpen(true);
+                                                }}
                                               />
                                             );
                                           })()}
@@ -6434,7 +6581,7 @@ const handleGenerate = async () => {
                                 {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                               </div>
                               
-                              <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
+                              <div className="image-gallery-actions absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
                                 <button
                                   type="button"
                                   onClick={(event) => {
@@ -6561,7 +6708,7 @@ const handleGenerate = async () => {
                             New Folder
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -6750,7 +6897,7 @@ const handleGenerate = async () => {
                       </div>
                     </div>
                     
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -6901,7 +7048,7 @@ const handleGenerate = async () => {
                             {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                           </div>
                           
-                          <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
+                          <div className={`image-gallery-actions absolute top-2 left-2 right-2 flex items-center justify-between gap-1 transition-opacity duration-100 ${
                             imageActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` || moreActionMenu?.id === `folder-actions-${selectedFolder}-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                           }`}>
                             {renderHoverPrimaryActions()}
@@ -6990,7 +7137,7 @@ const handleGenerate = async () => {
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
                     
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
@@ -7176,7 +7323,7 @@ const handleGenerate = async () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -7375,7 +7522,16 @@ const handleGenerate = async () => {
                                       return (
                                         <AvatarBadge
                                           avatar={avatarForImage}
-                                          onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            // If avatarImageId exists, find that specific image in the avatar's images array
+                                            const avatarImageUrl = img.avatarImageId 
+                                              ? avatarForImage.images?.find(avatarImg => avatarImg.id === img.avatarImageId)?.url 
+                                              : avatarForImage.imageUrl; // fallback to primary image if no specific image ID
+                                            setSelectedReferenceImage(avatarImageUrl ?? avatarForImage.imageUrl);
+                                            setSelectedAvatar(avatarForImage); // Set the avatar so profile button works
+                                            setIsFullSizeOpen(true);
+                                          }}
                                         />
                                       );
                                     })()}
@@ -7385,7 +7541,12 @@ const handleGenerate = async () => {
                                       return (
                                         <ProductBadge
                                           product={productForImage}
-                                          onClick={() => setCreationsModalProduct(productForImage)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedReferenceImage(productForImage.imageUrl);
+                                            setSelectedProduct(productForImage); // Set the product so profile button works
+                                            setIsFullSizeOpen(true);
+                                          }}
                                         />
                                       );
                                     })()}
@@ -7427,7 +7588,7 @@ const handleGenerate = async () => {
                             {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}
                           </div>
                           
-                        <div className={`absolute top-2 left-2 right-2 flex items-center justify-between gap-1 ${
+                        <div className={`image-gallery-actions absolute top-2 left-2 right-2 flex items-center justify-between gap-1 ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         }`}>
                           {renderHoverPrimaryActions()}
@@ -7823,7 +7984,7 @@ const handleGenerate = async () => {
                               setIsAvatarPickerOpen(false);
                             }}
                           >
-                            <Users className="h-4 w-4" />
+                            <User className="h-4 w-4" />
                             Go to Avatars
                           </button>
                           </>
@@ -8091,7 +8252,7 @@ const handleGenerate = async () => {
                           }}
                         >
                           <div
-                            className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-mid px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
+                            className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-dark px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
                             onClick={event => event.stopPropagation()}
                           >
                             <div className="flex items-center justify-between mb-4">
@@ -8181,7 +8342,7 @@ const handleGenerate = async () => {
                                 })}
                               </div>
                               <div className="flex-1 overflow-y-auto">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 pb-4">
                                   {activeStyleSectionData.options.map(option => {
                                     const isActive = tempSelectedStyles[activeStyleGender][activeStyleSectionData.id].some(style => style.id === option.id);
                                     return (
@@ -8212,7 +8373,6 @@ const handleGenerate = async () => {
                                             <div className="PromptDescriptionBar rounded-b-xl px-3 py-2">
                                               <div className="flex items-center justify-between gap-2">
                                                 <span className="text-sm font-[300] font-raleway text-theme-text">{option.name}</span>
-                                                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                               </div>
                                             </div>
                                           </div>
@@ -8938,7 +9098,11 @@ const handleGenerate = async () => {
                       type="button"
                       ref={avatarButtonRef}
                       onClick={() => {
-                        if (storedAvatars.length === 0) {
+                        if (selectedAvatar) {
+                          // Open full-size view when avatar is selected
+                          setSelectedReferenceImage(selectedAvatarImage?.url ?? selectedAvatar.imageUrl);
+                          setIsFullSizeOpen(true);
+                        } else if (storedAvatars.length === 0) {
                           // Direct upload when no avatars exist
                           setAvatarUploadError(null);
                           avatarQuickUploadInputRef.current?.click();
@@ -8952,7 +9116,7 @@ const handleGenerate = async () => {
                       onDrop={handleAvatarButtonDrop}
                       onMouseEnter={() => setIsAvatarButtonHovered(true)}
                       onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                      className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
@@ -8963,7 +9127,7 @@ const handleGenerate = async () => {
                             {isAvatarButtonHovered ? (
                               <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
                             ) : (
-                              <Users className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                              <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
                             )}
                           </div>
                           <div className="hidden lg:flex items-center gap-1">
@@ -9015,7 +9179,11 @@ const handleGenerate = async () => {
                       type="button"
                       ref={productButtonRef}
                       onClick={() => {
-                        if (storedProducts.length === 0) {
+                        if (selectedProduct) {
+                          // Open full-size view when product is selected
+                          setSelectedReferenceImage(selectedProduct.imageUrl);
+                          setIsFullSizeOpen(true);
+                        } else if (storedProducts.length === 0) {
                           // Direct upload when no products exist
                           setProductUploadError(null);
                           productQuickUploadInputRef.current?.click();
@@ -9029,7 +9197,7 @@ const handleGenerate = async () => {
                       onDrop={handleProductButtonDrop}
                       onMouseEnter={() => setIsProductButtonHovered(true)}
                       onMouseLeave={() => setIsProductButtonHovered(false)}
-                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : 'hover:bg-n-text/20 border border-n-mid/30'} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                      className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                       onPointerMove={onPointerMove}
                       onPointerEnter={onPointerEnter}
                       onPointerLeave={onPointerLeave}
@@ -9090,7 +9258,7 @@ const handleGenerate = async () => {
                       onClick={() => setIsStyleModalOpen(true)}
                       onMouseEnter={() => setIsStyleButtonHovered(true)}
                       onMouseLeave={() => setIsStyleButtonHovered(false)}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 ${firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
                       aria-label="Select style"
                       aria-expanded={isStyleModalOpen}
                       onPointerMove={onPointerMove}
@@ -9171,7 +9339,7 @@ const handleGenerate = async () => {
                   onClick={handleGenerate}
                   disabled={!hasGenerationCapacity || !prompt.trim() || isVideoGenerating || isVideoPolling || seedanceLoading || lumaVideoLoading || lumaVideoPolling || (isLumaPhoton && lumaImageLoading) || (isWanVideo && (wanStatus === 'creating' || wanStatus === 'queued' || wanStatus === 'polling' || wanIsPolling)) || (isHailuoVideo && (hailuoStatus === 'creating' || hailuoStatus === 'queued' || hailuoStatus === 'polling' || hailuoIsPolling)) || (isKlingVideo && (klingStatus === 'creating' || klingStatus === 'polling' || klingIsPolling))}
                   className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
-                  aria-label={`${generateButtonLabel} (uses 1 credit)`}
+                  aria-label={`${generateButtonLabel} (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
                 >
                   <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
                     {generateButtonLabel}
@@ -9182,7 +9350,7 @@ const handleGenerate = async () => {
                     ) : (
                       <Sparkles className="w-4 h-4 text-n-black" />
                     )}
-                    <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                    <span className="text-sm font-raleway font-medium text-n-black">{batchSize}</span>
                   </div>
                 </button>
               </Tooltip>
@@ -9326,7 +9494,7 @@ const handleGenerate = async () => {
 
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+                  <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
                     <div className={`pointer-events-auto ${
                       imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
@@ -9423,30 +9591,6 @@ const handleGenerate = async () => {
                                 size="md" 
                               />
                             </Suspense>
-                            {(() => {
-                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
-                              if (!img?.avatarId) return null;
-                              const avatarForImage = avatarMap.get(img.avatarId);
-                              if (!avatarForImage) return null;
-                              return (
-                                <AvatarBadge
-                                  avatar={avatarForImage}
-                                  onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
-                                />
-                              );
-                            })()}
-                            {(() => {
-                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
-                              if (!img?.productId) return null;
-                              const productForImage = productMap.get(img.productId);
-                              if (!productForImage) return null;
-                              return (
-                                <ProductBadge
-                                  product={productForImage}
-                                  onClick={() => setCreationsModalProduct(productForImage)}
-                                />
-                              );
-                            })()}
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -9462,6 +9606,44 @@ const handleGenerate = async () => {
                   </div>
                 )}
                 
+                {/* Avatar/Product name badge - show for reference images */}
+                {selectedReferenceImage && (selectedAvatar || selectedProduct) && (
+                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
+                    <div className="flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectedProduct && selectedReferenceImage === selectedProduct.imageUrl) {
+                            navigate(`/create/products/${selectedProduct.slug}`);
+                          } else if (selectedAvatar) {
+                            navigate(`/create/avatars/${selectedAvatar.slug}`);
+                          }
+                          setIsFullSizeOpen(false);
+                          setSelectedReferenceImage(null);
+                        }}
+                        className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-theme-dark/60 hover:text-theme-text transition-colors duration-200 cursor-pointer`}
+                        title={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
+                        aria-label={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
+                      >
+                        <div className="flex items-center gap-1">
+                          {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
+                            <>
+                              <Package className="w-3 h-3" />
+                              <span className="leading-none">{selectedProduct.name}</span>
+                            </>
+                          ) : selectedAvatar ? (
+                            <>
+                              <User className="w-3 h-3" />
+                              <span className="leading-none">{selectedAvatar.name}</span>
+                            </>
+                          ) : null}
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 <button
                   onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
                   className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
@@ -9470,6 +9652,26 @@ const handleGenerate = async () => {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              
+              {/* Vertical Gallery Navigation */}
+              {(selectedFullImage || generatedImage) && (() => {
+                const currentImages = fullSizeContext === 'inspirations' ? inspirations : gallery;
+                const currentUrl = (selectedFullImage?.url || generatedImage?.url) as string;
+                const currentIdx = currentImages.findIndex(img => img.url === currentUrl);
+                
+                return (
+                  <VerticalGalleryNav
+                    images={currentImages}
+                    currentIndex={currentIdx}
+                    onNavigate={(index) => {
+                      if (index >= 0 && index < currentImages.length) {
+                        setSelectedFullImage(currentImages[index]);
+                        setCurrentGalleryIndex(index);
+                      }
+                    }}
+                  />
+                );
+              })()}
             </div>
           )}
 
@@ -9678,7 +9880,7 @@ const handleGenerate = async () => {
                   <h3 className="text-lg font-raleway text-theme-text">
                     Creations with {creationsModalAvatar.name}
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
                     {gallery
                       .filter(img => img.avatarId === creationsModalAvatar.id)
                       .map(image => (
@@ -9762,7 +9964,7 @@ const handleGenerate = async () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
                   {gallery
                     .filter(img => img.productId === creationsModalProduct.id)
                     .map((img, idx) => (

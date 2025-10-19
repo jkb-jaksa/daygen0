@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Edit, Image as ImageIcon, Video as VideoIcon, Users, BookOpen, Volume2, Search } from "lucide-react";
+import { Edit, Image as ImageIcon, Video as VideoIcon, User, BookOpen, Volume2, Search } from "lucide-react";
 import { layout, glass, text as textStyles, inputs, headings } from "../styles/designSystem";
 
 const LEARN_LINKS = [
@@ -14,7 +14,7 @@ const CATEGORIES = [
   { id: "text", label: "text", Icon: Edit },
   { id: "image", label: "image", Icon: ImageIcon },
   { id: "video", label: "video", Icon: VideoIcon },
-  { id: "avatars", label: "avatars", Icon: Users },
+  { id: "avatars", label: "avatars", Icon: User },
   { id: "audio", label: "audio", Icon: Volume2 },
 ] as const;
 
@@ -75,7 +75,7 @@ export default function Prompts() {
 
           {/* Two columns below */}
           <div className="flex flex-col gap-6 lg:flex-row">
-            <nav className={`${glass.surface} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
+            <nav className={`${glass.promptDark} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
               aria-label="Prompts categories">
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {
@@ -86,9 +86,9 @@ export default function Prompts() {
                       <button
                         type="button"
                         onClick={() => setActiveCategory(category.id)}
-                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black ${
+                        className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none ${
                           isActive
-                            ? "border border-theme-mid bg-theme-white/10 text-theme-white shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                            ? "border border-theme-mid bg-theme-white/10 text-theme-text"
                             : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
                         }`}
                       >

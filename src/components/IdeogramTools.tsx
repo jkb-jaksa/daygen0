@@ -662,9 +662,9 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
               Clear All
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
             {generatedImages.map((image, index) => (
-              <div key={index} className={`${glass.base} rounded-lg overflow-hidden`}>
+              <div key={index} className={`${glass.base} rounded-2xl overflow-hidden`}>
                 <img
                   src={image.url}
                   alt={`Generated image ${index + 1}`}

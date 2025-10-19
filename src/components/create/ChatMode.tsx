@@ -15,7 +15,7 @@ import {
   Shapes,
   Sparkles,
   Trash2,
-  Users,
+  User,
   Wand2,
   X,
   Scan,
@@ -876,7 +876,7 @@ const ChatMode: React.FC = () => {
         >
           {isCreateModalOpen && (
             <div
-              className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] px-6 py-12 transition-colors duration-200`}
+              className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] px-6 py-12 transition-colors duration-200`}
             >
               <div className="text-center space-y-4">
                 <div className="space-y-3">
@@ -907,7 +907,7 @@ const ChatMode: React.FC = () => {
           )}
           {chatToRename && (
             <div
-              className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] px-6 py-12 transition-colors duration-200`}
+              className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] px-6 py-12 transition-colors duration-200`}
             >
               <div className="text-center space-y-4">
                 <div className="space-y-3">
@@ -938,7 +938,7 @@ const ChatMode: React.FC = () => {
           )}
           {chatToDelete && (
             <div
-              className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] px-6 py-12 transition-colors duration-200`}
+              className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] px-6 py-12 transition-colors duration-200`}
             >
               <div className="text-center space-y-4">
                 <div className="space-y-3">
@@ -963,7 +963,7 @@ const ChatMode: React.FC = () => {
       )}
       <div className={`${layout.container} pb-6`}>
         <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-3">
-          <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-[24px] border border-theme-dark bg-theme-black p-4 lg:flex">
+          <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-2xl border border-theme-dark bg-theme-black p-4 lg:flex">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />
@@ -1045,7 +1045,7 @@ const ChatMode: React.FC = () => {
             </div>
           </aside>
           <section className="flex min-h-full flex-1 flex-col gap-4">
-            <div className="flex-1 overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black">
+            <div className="flex-1 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black">
               <div className="flex h-full flex-col">
                 <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
                   {activeSession?.messages.map(message => (
@@ -1087,7 +1087,7 @@ const ChatMode: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
               <form onSubmit={handleSubmit} className="border-t border-theme-dark px-4 py-4">
-                <div className={`rounded-[20px] px-4 py-3 ${glass.prompt}`}>
+                <div className={`rounded-2xl px-4 py-3 ${glass.prompt}`}>
                   <div className="mb-1">
                     <textarea
                       ref={textareaRef}
@@ -1155,7 +1155,7 @@ const ChatMode: React.FC = () => {
                         className={`${glass.promptBorderless} flex h-8 items-center justify-center gap-2 rounded-full px-2 text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text lg:px-3`}
                         aria-label="Choose avatar"
                       >
-                        <Users className="h-3.5 w-3.5" />
+                        <User className="h-3.5 w-3.5" />
                         <span className="hidden whitespace-nowrap text-sm lg:inline">Avatar</span>
                       </button>
                       {selectedAvatar && (
@@ -1342,7 +1342,7 @@ const ChatMode: React.FC = () => {
                                 setIsAvatarPickerOpen(false);
                               }}
                             >
-                              <Users className="h-4 w-4" />
+                              <User className="h-4 w-4" />
                               Go to Avatars
                             </button>
                           )}

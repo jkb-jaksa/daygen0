@@ -14,8 +14,8 @@ export default function Footer() {
   return (
     <footer>
       {/* Footer panel */}
-      <section className="relative bg-theme-black-subtle overflow-hidden border-t border-theme-dark">
-        <div className={`${layout.container} pt-8 pb-40 relative z-0`}>
+      <section className="relative footer-gradient-bg overflow-hidden border-t border-theme-dark">
+        <div className={`${layout.container} pt-8 pb-80 relative z-0`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}
             <div className="pt-4">
@@ -34,24 +34,24 @@ export default function Footer() {
             </div>
           </div>
         </div>
-
-        {/* Copyright bar - moved inside footer container */}
-        <div className={`${glass.promptDark} w-full mt-8 py-4`}>
-          <div className={`${layout.container} relative flex items-center justify-between`}>
-            <span className="text-b-white font-raleway font-light text-center flex-1">
-              © <span className="font-light">2025</span> — <span className="text-b-text font-light">daygen</span>
-            </span>
-            {/* Back-to-top button - aligned with search bar in navbar */}
-            <button
-              onClick={scrollToTop}
-              aria-label="Back to top"
-              className="image-action-btn parallax-force-positioned focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black"
-            >
-              <ChevronUp className="size-4" />
-            </button>
-          </div>
-        </div>
       </section>
+      
+      {/* Copyright bar - extends to bottom of footer */}
+      <div className={`${glass.promptDark} w-full py-4`}>
+        <div className={`${layout.container} relative flex items-center justify-between`}>
+          <span className="text-b-white font-raleway font-light text-center flex-1">
+            © <span className="font-light">2025</span> — <span className="text-b-text font-light">daygen</span>
+          </span>
+          {/* Back-to-top button - aligned with search bar in navbar */}
+          <button
+            onClick={scrollToTop}
+            aria-label="Back to top"
+            className="image-action-btn parallax-force-positioned focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black"
+          >
+            <ChevronUp className="size-4" />
+          </button>
+        </div>
+      </div>
     </footer>
   );
 }

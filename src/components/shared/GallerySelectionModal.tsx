@@ -58,7 +58,7 @@ function GallerySelectionModalComponent({
     <div className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-4">
       <div
         ref={modalRef}
-        className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[32px] border border-theme-dark bg-theme-black/90 shadow-2xl flex flex-col"
+        className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/90 shadow-2xl flex flex-col"
       >
         <button
           type="button"
@@ -91,7 +91,7 @@ function GallerySelectionModalComponent({
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {filteredImages.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
               {filteredImages.map((image) => {
                 const isSelected = selectedImageUrl === image.url;
                 return (

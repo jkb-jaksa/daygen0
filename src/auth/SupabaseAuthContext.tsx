@@ -118,22 +118,24 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   const signInWithGoogle = useCallback(async () => {
     try {
-      const response = await fetch(getApiUrl('/api/auth/google'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Use Supabase's native OAuth flow for Google authentication
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to initiate Google OAuth');
+      if (error) {
+        throw new Error(error.message || 'Failed to initiate Google OAuth');
       }
 
-      const { authUrl } = await response.json();
-      
-      // Redirect to Google OAuth
-      window.location.href = authUrl;
+      // Supabase automatically redirects to Google OAuth consent screen
+      // No need to manually redirect - the signInWithOAuth method handles it
     } catch (error) {
       console.error('Google OAuth error:', error);
       throw error;

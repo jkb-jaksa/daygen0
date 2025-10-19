@@ -79,7 +79,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
   );
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-theme-black-subtle text-theme-text">
+    <main className="relative min-h-screen overflow-hidden bg-theme-black-subtle text-theme-text edit-page">
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pt-[calc(var(--nav-h,4rem)+16px)] pb-16 lg:flex-row lg:items-stretch lg:justify-between lg:gap-20 lg:px-8">
         <section className="flex w-full flex-col justify-start gap-8 lg:max-w-xl mt-2">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-theme-mid/40 bg-theme-black/40 px-4 py-2 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-theme-white/70">
