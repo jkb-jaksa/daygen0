@@ -1029,6 +1029,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     deleteImage: deleteGalleryImage,
     fetchGalleryImages,
     updateImages: updateGalleryImages,
+    removeImages: removeGalleryImages,
     hasBase64Images,
     needsMigration,
   } = useGalleryImages();
@@ -2742,7 +2743,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
           }
         })();
       } else {
-        // Use backend API for gallery deletion
+        // Optimistically remove images from frontend immediately
+        removeGalleryImages(deleteConfirmation.imageUrls);
+
+        // Use backend API for gallery deletion in background
         const deletePromises = deleteConfirmation.imageUrls.map((url) => {
           // Find the image by URL to get its ID
           const imageToDelete = gallery.find(img => img.url === url);
@@ -2752,12 +2756,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
           return Promise.resolve(false);
         });
 
-        try {
-          await Promise.all(deletePromises);
-          debugLog('Gallery images deleted successfully');
-        } catch (error) {
-          debugError('Failed to delete gallery images:', error);
-        }
+        // Run backend deletion in background, don't wait for it
+        void Promise.all(deletePromises)
+          .then(() => {
+            debugLog('Gallery images deleted successfully from backend');
+          })
+          .catch((error) => {
+            debugError('Failed to delete gallery images from backend:', error);
+            // Images are already removed from frontend, so we don't restore them
+            // User can refresh to see if they're still on backend
+          });
       }
 
       const nextFavorites = new Set(favorites);
@@ -5519,29 +5527,6 @@ const handleGenerate = async () => {
       {copyNotification && (
         <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-2xl`}>
           {copyNotification}
-        </div>
-      )}
-
-      {/* Migration status indicator */}
-      {migrationStatus.isRunning && (
-        <div className={`fixed top-4 right-4 z-[100] px-4 py-3 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[20px] max-w-sm`}>
-          <div className="flex items-center space-x-3">
-            <Loader2 className="w-4 h-4 animate-spin text-theme-light" />
-            <div>
-              <div className="font-medium">Migrating images to cloud storage</div>
-              <div className="text-xs text-theme-mid">
-                {migrationStatus.migratedImages} of {migrationStatus.totalImages} images migrated
-              </div>
-              {migrationStatus.progress > 0 && (
-                <div className="w-full bg-theme-dark rounded-full h-1 mt-2">
-                  <div 
-                    className="bg-theme-light h-1 rounded-full transition-all duration-300"
-                    style={{ width: `${migrationStatus.progress}%` }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       )}
 

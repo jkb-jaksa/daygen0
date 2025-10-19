@@ -327,6 +327,20 @@ export const useGalleryImages = () => {
     [],
   );
 
+  // Remove images from state immediately (optimistic update)
+  const removeImages = useCallback((imageUrls: string[]) => {
+    if (imageUrls.length === 0) return;
+
+    const urlsToRemove = new Set(imageUrls);
+
+    setState(prev => ({
+      ...prev,
+      images: prev.images.filter(img => !urlsToRemove.has(img.url)),
+    }));
+
+    debugLog(`[gallery] Removed ${imageUrls.length} images from state`);
+  }, []);
+
   // Load images on mount and when token changes
   useEffect(() => {
     if (token) {
@@ -339,5 +353,6 @@ export const useGalleryImages = () => {
     fetchGalleryImages,
     deleteImage,
     updateImages,
+    removeImages,
   };
 };
