@@ -2605,10 +2605,6 @@ export default function Avatars() {
                           size="md" 
                         />
                       </Suspense>
-                      <AvatarBadge
-                        avatar={creationsModalAvatar}
-                        onClick={() => navigate(`/create/avatars/${creationsModalAvatar.slug}`)}
-                      />
                     </div>
                     {selectedFullImage.isPublic && (
                       <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>

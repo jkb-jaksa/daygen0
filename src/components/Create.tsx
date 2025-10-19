@@ -3706,7 +3706,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
                   {avatarForImage && (
                     <AvatarBadge
                       avatar={avatarForImage}
-                      onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // If avatarImageId exists, find that specific image in the avatar's images array
+                        const avatarImageUrl = img.avatarImageId 
+                          ? avatarForImage.images?.find(avatarImg => avatarImg.id === img.avatarImageId)?.url 
+                          : avatarForImage.imageUrl; // fallback to primary image if no specific image ID
+                        setSelectedReferenceImage(avatarImageUrl ?? avatarForImage.imageUrl);
+                        setSelectedAvatar(avatarForImage); // Set the avatar so profile button works
+                        setIsFullSizeOpen(true);
+                      }}
                     />
                   )}
                   {(() => {
@@ -3715,7 +3724,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
                     return (
                       <ProductBadge
                         product={productForImage}
-                        onClick={() => setCreationsModalProduct(productForImage)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedReferenceImage(productForImage.imageUrl);
+                          setSelectedProduct(productForImage); // Set the product so profile button works
+                          setIsFullSizeOpen(true);
+                        }}
                       />
                     );
                   })()}
@@ -5177,6 +5191,49 @@ const handleGenerate = async () => {
             prompt: img.prompt?.substring(0, 50) + '...'
           });
 
+          const galleryImage: GalleryImageLike = {
+            url: img.url,
+            prompt: img.prompt ?? finalPrompt ?? trimmedPrompt,
+            model: img.model ?? modelForGeneration,
+            timestamp: img.timestamp ?? new Date().toISOString(),
+            ownerId:
+              'ownerId' in img && typeof img.ownerId === 'string'
+                ? img.ownerId
+                : user?.id ?? undefined,
+            references:
+              'references' in img
+                ? (img as { references?: string[] | undefined }).references
+                : undefined,
+            isPublic:
+              'isPublic' in img
+                ? Boolean((img as { isPublic?: boolean }).isPublic)
+                : false,
+            avatarId:
+              (
+                'avatarId' in img
+                  ? (img as { avatarId?: string | null }).avatarId ?? undefined
+                  : undefined
+              ) ?? selectedAvatar?.id ?? undefined,
+            avatarImageId:
+              (
+                'avatarImageId' in img
+                  ? (img as { avatarImageId?: string | null }).avatarImageId ?? undefined
+                  : undefined
+              ) ?? activeAvatarImageId ?? undefined,
+            productId:
+              (
+                'productId' in img
+                  ? (img as { productId?: string | null }).productId ?? undefined
+                  : undefined
+              ) ?? selectedProduct?.id ?? undefined,
+            jobId:
+              'jobId' in img
+                ? (img as { jobId?: string | null }).jobId ?? undefined
+                : undefined,
+          };
+
+          updateGalleryImages([], {}, { upsert: [galleryImage] });
+
           if (shouldTrackJob && !isGeminiModel) {
             const completionRatio = (iteration + 1) / effectiveBatchSize;
             const targetProgress = Math.min(98, 45 + completionRatio * 50);
@@ -6338,7 +6395,16 @@ const handleGenerate = async () => {
                                             return (
                                               <AvatarBadge
                                                 avatar={avatarForImage}
-                                                onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  // If avatarImageId exists, find that specific image in the avatar's images array
+                                                  const avatarImageUrl = img.avatarImageId 
+                                                    ? avatarForImage.images?.find(avatarImg => avatarImg.id === img.avatarImageId)?.url 
+                                                    : avatarForImage.imageUrl; // fallback to primary image if no specific image ID
+                                                  setSelectedReferenceImage(avatarImageUrl ?? avatarForImage.imageUrl);
+                                                  setSelectedAvatar(avatarForImage); // Set the avatar so profile button works
+                                                  setIsFullSizeOpen(true);
+                                                }}
                                               />
                                             );
                                           })()}
@@ -6348,7 +6414,12 @@ const handleGenerate = async () => {
                                             return (
                                               <ProductBadge
                                                 product={productForImage}
-                                                onClick={() => setCreationsModalProduct(productForImage)}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedReferenceImage(productForImage.imageUrl);
+                                                  setSelectedProduct(productForImage); // Set the product so profile button works
+                                                  setIsFullSizeOpen(true);
+                                                }}
                                               />
                                             );
                                           })()}
@@ -7332,7 +7403,16 @@ const handleGenerate = async () => {
                                       return (
                                         <AvatarBadge
                                           avatar={avatarForImage}
-                                          onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            // If avatarImageId exists, find that specific image in the avatar's images array
+                                            const avatarImageUrl = img.avatarImageId 
+                                              ? avatarForImage.images?.find(avatarImg => avatarImg.id === img.avatarImageId)?.url 
+                                              : avatarForImage.imageUrl; // fallback to primary image if no specific image ID
+                                            setSelectedReferenceImage(avatarImageUrl ?? avatarForImage.imageUrl);
+                                            setSelectedAvatar(avatarForImage); // Set the avatar so profile button works
+                                            setIsFullSizeOpen(true);
+                                          }}
                                         />
                                       );
                                     })()}
@@ -7342,7 +7422,12 @@ const handleGenerate = async () => {
                                       return (
                                         <ProductBadge
                                           product={productForImage}
-                                          onClick={() => setCreationsModalProduct(productForImage)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedReferenceImage(productForImage.imageUrl);
+                                            setSelectedProduct(productForImage); // Set the product so profile button works
+                                            setIsFullSizeOpen(true);
+                                          }}
                                         />
                                       );
                                     })()}
@@ -9414,30 +9499,6 @@ const handleGenerate = async () => {
                                 size="md" 
                               />
                             </Suspense>
-                            {(() => {
-                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
-                              if (!img?.avatarId) return null;
-                              const avatarForImage = avatarMap.get(img.avatarId);
-                              if (!avatarForImage) return null;
-                              return (
-                                <AvatarBadge
-                                  avatar={avatarForImage}
-                                  onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
-                                />
-                              );
-                            })()}
-                            {(() => {
-                              const img = (selectedFullImage || generatedImage) as GalleryImageLike;
-                              if (!img?.productId) return null;
-                              const productForImage = productMap.get(img.productId);
-                              if (!productForImage) return null;
-                              return (
-                                <ProductBadge
-                                  product={productForImage}
-                                  onClick={() => setCreationsModalProduct(productForImage)}
-                                />
-                              );
-                            })()}
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>

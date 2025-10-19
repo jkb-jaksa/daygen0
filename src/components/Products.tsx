@@ -503,64 +503,6 @@ export default function Products() {
     [persistProducts],
   );
 
-  const handleAddProductImages = useCallback(
-    async (
-      productId: string,
-      files: File[],
-      source: ProductImage["source"] = "upload",
-      sourceId?: string,
-    ) => {
-      if (!files.length) {
-        setProductImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
-        return;
-      }
-
-      // Check if this product is already uploading - if so, queue the files
-      setUploadingProductIds(prev => {
-        if (prev.has(productId)) {
-          // Queue these files for later processing
-          const currentQueue = pendingUploadsRef.current.get(productId) || [];
-          pendingUploadsRef.current.set(productId, [...currentQueue, ...files]);
-          return prev;
-        }
-        // Mark as uploading
-        const next = new Set(prev);
-        next.add(productId);
-        return next;
-      });
-
-      // If already uploading, the files have been queued and we return
-      if (uploadingProductIds.has(productId)) {
-        return;
-      }
-
-      try {
-        // Process current batch
-        await processProductImageBatch(productId, files, source, sourceId);
-
-        // Process any queued files
-        while (pendingUploadsRef.current.has(productId)) {
-          const queuedFiles = pendingUploadsRef.current.get(productId) || [];
-          if (queuedFiles.length === 0) {
-            pendingUploadsRef.current.delete(productId);
-            break;
-          }
-          pendingUploadsRef.current.delete(productId);
-          await processProductImageBatch(productId, queuedFiles, source, sourceId);
-        }
-      } finally {
-        // Clear upload state
-        setUploadingProductIds(prev => {
-          const next = new Set(prev);
-          next.delete(productId);
-          return next;
-        });
-        pendingUploadsRef.current.delete(productId);
-      }
-    },
-    [uploadingProductIds, processProductImageBatch],
-  );
-
   const processProductImageBatch = useCallback(
     async (
       productId: string,
@@ -665,6 +607,64 @@ export default function Products() {
       }
     },
     [commitProductUpdate],
+  );
+
+  const handleAddProductImages = useCallback(
+    async (
+      productId: string,
+      files: File[],
+      source: ProductImage["source"] = "upload",
+      sourceId?: string,
+    ) => {
+      if (!files.length) {
+        setProductImageUploadError("Please choose a JPEG, PNG, or WebP image file.");
+        return;
+      }
+
+      // Check if this product is already uploading - if so, queue the files
+      setUploadingProductIds(prev => {
+        if (prev.has(productId)) {
+          // Queue these files for later processing
+          const currentQueue = pendingUploadsRef.current.get(productId) || [];
+          pendingUploadsRef.current.set(productId, [...currentQueue, ...files]);
+          return prev;
+        }
+        // Mark as uploading
+        const next = new Set(prev);
+        next.add(productId);
+        return next;
+      });
+
+      // If already uploading, the files have been queued and we return
+      if (uploadingProductIds.has(productId)) {
+        return;
+      }
+
+      try {
+        // Process current batch
+        await processProductImageBatch(productId, files, source, sourceId);
+
+        // Process any queued files
+        while (pendingUploadsRef.current.has(productId)) {
+          const queuedFiles = pendingUploadsRef.current.get(productId) || [];
+          if (queuedFiles.length === 0) {
+            pendingUploadsRef.current.delete(productId);
+            break;
+          }
+          pendingUploadsRef.current.delete(productId);
+          await processProductImageBatch(productId, queuedFiles, source, sourceId);
+        }
+      } finally {
+        // Clear upload state
+        setUploadingProductIds(prev => {
+          const next = new Set(prev);
+          next.delete(productId);
+          return next;
+        });
+        pendingUploadsRef.current.delete(productId);
+      }
+    },
+    [uploadingProductIds, processProductImageBatch],
   );
 
   const handleRemoveProductImage = useCallback(
@@ -2605,10 +2605,6 @@ export default function Products() {
                           size="md" 
                         />
                       </Suspense>
-                      <ProductBadge
-                        product={creationsModalProduct}
-                        onClick={() => navigate(`/create/products/${creationsModalProduct.slug}`)}
-                      />
                     </div>
                     {selectedFullImage.isPublic && (
                       <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>

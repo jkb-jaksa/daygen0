@@ -26,6 +26,27 @@ export interface GalleryImagesState {
   error: string | null;
 }
 
+const getImageKey = (image: GalleryImageLike): string | null => {
+  if (image.jobId && image.jobId.trim().length > 0) {
+    return image.jobId;
+  }
+  if (image.url && image.url.trim().length > 0) {
+    return image.url;
+  }
+  return null;
+};
+
+const mergeImageDetails = (
+  existing: GalleryImageLike,
+  incoming: GalleryImageLike,
+): GalleryImageLike => ({
+  ...existing,
+  ...incoming,
+  avatarId: incoming.avatarId ?? existing.avatarId,
+  avatarImageId: incoming.avatarImageId ?? existing.avatarImageId,
+  productId: incoming.productId ?? existing.productId,
+});
+
 export const useGalleryImages = () => {
   const { token } = useAuth();
   const [state, setState] = useState<GalleryImagesState>({
@@ -102,10 +123,41 @@ export const useGalleryImages = () => {
         return true;
       });
 
-      setState({
-        images: dedupedImages,
-        isLoading: false,
-        error: null,
+      setState(prev => {
+        if (prev.images.length === 0) {
+          return {
+            images: dedupedImages,
+            isLoading: false,
+            error: null,
+          };
+        }
+
+        const existingByKey = new Map<string, GalleryImageLike>();
+        for (const image of prev.images) {
+          const key = getImageKey(image);
+          if (!key) continue;
+          if (!existingByKey.has(key)) {
+            existingByKey.set(key, image);
+          }
+        }
+
+        const mergedImages = dedupedImages.map(image => {
+          const key = getImageKey(image);
+          if (!key) {
+            return image;
+          }
+          const existing = existingByKey.get(key);
+          if (!existing) {
+            return image;
+          }
+          return mergeImageDetails(existing, image);
+        });
+
+        return {
+          images: mergedImages,
+          isLoading: false,
+          error: null,
+        };
       });
     } catch (error) {
       setState(prev => ({
@@ -157,19 +209,61 @@ export const useGalleryImages = () => {
     }
   }, [token]);
 
-  const updateImages = useCallback((imageUrls: string[], updates: Partial<GalleryImageLike>) => {
-    if (imageUrls.length === 0) return;
+  const updateImages = useCallback(
+    (
+      imageUrls: string[],
+      updates: Partial<GalleryImageLike>,
+      options?: { upsert?: GalleryImageLike[] },
+    ) => {
+      const hasUpdates = imageUrls.length > 0;
+      const upserts = options?.upsert ?? [];
+      if (!hasUpdates && upserts.length === 0) {
+        return;
+      }
 
-    const urlSet = new Set(imageUrls);
-    setState(prev => ({
-      ...prev,
-      images: prev.images.map(image =>
-        (image.url && urlSet.has(image.url))
-          ? { ...image, ...updates }
-          : image,
-      ),
-    }));
-  }, []);
+      const urlSet = new Set(imageUrls);
+
+      setState(prev => {
+        const existingByKey = new Map<string, number>();
+
+        const nextImages = prev.images.map((image, index) => {
+          const key = getImageKey(image);
+          if (key) {
+            existingByKey.set(key, index);
+          }
+
+          if (hasUpdates && image.url && urlSet.has(image.url)) {
+            return { ...image, ...updates };
+          }
+          return image;
+        });
+
+        if (upserts.length > 0) {
+          for (const incoming of upserts) {
+            const key = getImageKey(incoming);
+            if (!key) {
+              nextImages.push(incoming);
+              continue;
+            }
+
+            const existingIndex = existingByKey.get(key);
+            if (existingIndex !== undefined) {
+              nextImages[existingIndex] = mergeImageDetails(nextImages[existingIndex], incoming);
+            } else {
+              existingByKey.set(key, nextImages.length);
+              nextImages.push(incoming);
+            }
+          }
+        }
+
+        return {
+          ...prev,
+          images: nextImages,
+        };
+      });
+    },
+    [],
+  );
 
   // Load images on mount and when token changes
   useEffect(() => {
