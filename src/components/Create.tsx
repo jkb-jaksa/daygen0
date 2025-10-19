@@ -3599,7 +3599,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
         {img.prompt && !isSelectMode && (
           <div
-            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
+            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto !hidden items-end z-10 ${
               isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
             onClick={(e) => {
@@ -5917,7 +5917,7 @@ const handleGenerate = async () => {
                   <label className="block text-sm font-raleway text-theme-text">
                     Or select from Folder Images.
                   </label>
-                  <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                  <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
                     {(() => {
                       const folder = folders.find(f => f.id === folderThumbnailDialog.folderId);
                       if (!folder) return null;
@@ -6153,7 +6153,7 @@ const handleGenerate = async () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
                         {inspirationsGallery.map((img, idx) => renderLibraryGalleryItem(img, idx, 'inspirations'))}
                       </div>
                     )}
@@ -6186,7 +6186,7 @@ const handleGenerate = async () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                         {uploadedImages.map((upload, idx) => (
                           <div key={`upload-${upload.id}-${idx}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large">
                             <img src={upload.previewUrl} alt={upload.file.name} loading="lazy" className="w-full aspect-square object-cover" onClick={() => { setSelectedReferenceImage(upload.previewUrl); setIsFullSizeOpen(true); }} />
@@ -6297,7 +6297,7 @@ const handleGenerate = async () => {
                       }
                       
                       return (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
@@ -6589,7 +6589,7 @@ const handleGenerate = async () => {
                             New Folder
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
                         {folders.map((folder) => (
                       <div key={`folder-card-${folder.id}`} className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small" onClick={() => { setSelectedFolder(folder.id); setActiveCategory("folder-view"); }}>
                         <div className="w-full aspect-square relative">
@@ -6778,7 +6778,7 @@ const handleGenerate = async () => {
                       </div>
                     </div>
                     
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {(() => {
                       const folder = folders.find(f => f.id === selectedFolder);
                       if (!folder) return null;
@@ -7018,7 +7018,7 @@ const handleGenerate = async () => {
                 {activeCategory === "video" && (
                   <div className="relative" data-category="video">
                     
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                       {[...Array(Math.max(0, maxGalleryTiles)).fill(null)].map((_, idx) => {
                         const isPlaceholder = idx >= filteredVideoGallery.length;
                         const isRunwayGenerating = isRunwayVideoGenerating && idx === 0;
@@ -7204,7 +7204,7 @@ const handleGenerate = async () => {
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1" style={{ contain: 'layout style', isolation: 'isolate' }}>
                     {[...activeGenerationQueue.map<PendingGalleryItem>(job => ({ pending: true, ...job })), ...gallery, ...Array(Math.max(0, maxGalleryTiles - gallery.length - activeGenerationQueue.length)).fill(null)].map((item, idx) => {
                     const isPlaceholder = item === null;
                     const isPending = typeof item === 'object' && item !== null && 'pending' in item;
@@ -8223,7 +8223,7 @@ const handleGenerate = async () => {
                                 })}
                               </div>
                               <div className="flex-1 overflow-y-auto">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 pb-4">
                                   {activeStyleSectionData.options.map(option => {
                                     const isActive = tempSelectedStyles[activeStyleGender][activeStyleSectionData.id].some(style => style.id === option.id);
                                     return (
@@ -9761,7 +9761,7 @@ const handleGenerate = async () => {
                   <h3 className="text-lg font-raleway text-theme-text">
                     Creations with {creationsModalAvatar.name}
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
                     {gallery
                       .filter(img => img.avatarId === creationsModalAvatar.id)
                       .map(image => (
@@ -9845,7 +9845,7 @@ const handleGenerate = async () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
                   {gallery
                     .filter(img => img.productId === creationsModalProduct.id)
                     .map((img, idx) => (

@@ -496,7 +496,7 @@ export function GalleryPanel({
         </div>
 
         {/* Main filter grid: Modality, Model, Avatar, Product, Folder */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
             <CustomMultiSelect
@@ -824,7 +824,7 @@ export function GalleryPanel({
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full p-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 w-full p-1">
         {filteredGallery.map((img, idx) => renderGalleryItem(img, idx))}
 
         {gallery.length === 0 && (
