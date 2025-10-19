@@ -1,46 +1,61 @@
 # DayGen
 
-A modern AI-powered content generation platform featuring image and video generation capabilities.
+A modern AI-powered content generation platform featuring comprehensive image and video generation capabilities with a beautiful, intuitive interface.
 
 ## 🚀 Features
 
 ### Image Generation
-- **Gemini 2.0**: Google's latest text-to-image model with experimental preview support
-- **FLUX Models**: High-quality image generation with multiple variants (Pro 1.1, Ultra, Kontext)
-- **Ideogram V3**: Advanced text-to-image with turbo mode
-- **Recraft v2/v3**: Professional image generation with multiple styles
-- **Reve**: Fast image generation, editing, and remixing
-- **Qwen Image**: Alibaba's text-to-image generation via DashScope
-- **Runway Gen-4**: Professional image generation
-- **DALL·E**: OpenAI's image generation API
+- **Gemini 2.5 Flash**: Google's latest text-to-image model with experimental preview support
+- **FLUX Models**: High-quality image generation with multiple variants (Pro 1.1, Ultra, Kontext Pro/Max)
+- **Ideogram V3**: Advanced text-to-image with turbo mode and style presets
+- **Recraft v2/v3**: Professional image generation with multiple styles and editing capabilities
+- **Reve**: Fast image generation, editing, and remixing with advanced controls
+- **Qwen Image**: Alibaba's text-to-image generation via DashScope API
+- **Runway Gen-4**: Professional image generation with cinematic quality
+- **DALL·E**: OpenAI's image generation API with multiple model variants
+- **Luma AI**: Dream Shaper, Realistic Vision, and Photon models for various styles
 
 ### Video Generation
-- **Veo 3**: Google's latest cinematic video generation
+- **Veo 3**: Google's latest cinematic video generation with advanced prompting
 - **Kling**: Advanced video generation with multiple models and camera controls
-- **Runway Gen-4 Video**: Professional video generation
-- **Wan 2.2**: Alibaba's text-to-video generation
-- **Hailuo 02**: MiniMax video generation with frame control
-- **Seedance 1.0 Pro**: High-quality video generation
-- **Luma Ray 2**: Professional video generation
+- **Runway Gen-4 Video**: Professional video generation with style consistency
+- **Wan 2.2**: Alibaba's text-to-video generation with high quality output
+- **Hailuo 02**: MiniMax video generation with frame control and editing
+- **Seedance 1.0 Pro**: High-quality video generation with smooth motion
+- **Luma Ray 2**: Professional video generation with advanced features
 
-### Additional Features
-- User authentication and profile management
-- Gallery system for saved generations
-- Prompt history and saved prompts
-- Digital avatar creation
-- Multiple aspect ratios and quality settings
-- Negative prompt support
-- Real-time generation status updates
+### Core Features
+- **User Authentication**: Supabase Auth with Google OAuth integration
+- **Gallery System**: Personal gallery with organization, folders, and sharing
+- **Prompt Management**: Save, organize, and reuse prompts with history
+- **Digital Avatars**: Create and manage AI-generated avatars
+- **Product Visualization**: Generate product mockups and visualizations
+- **Real-time Updates**: WebSocket integration for live generation status
+- **Credit System**: Flexible pricing with credit packages and subscriptions
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+
+### Advanced Features
+- **Batch Processing**: Generate multiple images/videos simultaneously
+- **Style Presets**: Pre-configured styles for different use cases
+- **Aspect Ratio Control**: Multiple aspect ratios for different platforms
+- **Negative Prompts**: Fine-tune generation with negative prompting
+- **Image Editing**: Built-in editor with cropping, filters, and adjustments
+- **Export Options**: Multiple export formats and quality settings
+- **Sharing**: Direct sharing to social media and export options
+- **Usage Analytics**: Track generation history and credit usage
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React + TypeScript + Vite
-- **Styling**: Tailwind CSS
-- **State Management**: React Context API
-- **Backend**: NestJS (separate repository)
-- **Database**: PostgreSQL with Prisma ORM
-- **Storage**: Cloudflare R2
-- **Deployment**: Vercel (Frontend), Google Cloud Run (Backend)
+- **Frontend**: React 19 + TypeScript + Vite
+- **Styling**: Tailwind CSS with custom design system
+- **State Management**: React Context API with custom hooks
+- **Routing**: React Router v7 with lazy loading
+- **UI Components**: Custom components with Lucide React icons
+- **Animation**: Framer Motion for smooth animations
+- **Storage**: IndexedDB for local caching + Cloudflare R2
+- **Authentication**: Supabase Auth with JWT backend integration
+- **Payments**: Stripe integration for credits and subscriptions
+- **Deployment**: Vercel with edge functions
 
 ## 🚀 Getting Started
 

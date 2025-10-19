@@ -10,7 +10,7 @@ export function PaymentSuccess() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const { getSessionStatus } = usePayments();
-  const [sessionStatus, setSessionStatus] = useState<any>(null);
+  const [sessionStatus, setSessionStatus] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

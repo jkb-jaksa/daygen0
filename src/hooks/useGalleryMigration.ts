@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { getApiUrl } from '../utils/api';
 import { getPersistedValue, setPersistedValue } from '../lib/clientStorage';
-import { serializeGallery, hydrateStoredGallery } from '../utils/galleryStorage';
+import { hydrateStoredGallery } from '../utils/galleryStorage';
 import type { GalleryImageLike, StoredGalleryImage } from '../components/create/types';
 import { debugLog, debugError } from '../utils/debug';
 

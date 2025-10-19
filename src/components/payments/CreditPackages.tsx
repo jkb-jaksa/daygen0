@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, Star, Crown } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
 import { useStripeConfig } from '../../hooks/useStripeConfig';
-import { cards, glass } from '../../styles/designSystem';
+import { cards } from '../../styles/designSystem';
 import useParallaxHover from '../../hooks/useParallaxHover';
 
 interface CreditPackagesProps {

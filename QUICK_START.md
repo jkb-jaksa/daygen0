@@ -2,7 +2,7 @@
 
 ## ✅ Status: Ready to Use!
 
-Your frontend is now fully connected to the NestJS backend on Google Cloud.
+Your frontend is now fully connected to the NestJS backend with comprehensive AI generation capabilities.
 
 ## 🚀 Start Development
 
@@ -14,44 +14,61 @@ Open http://localhost:5173 in your browser.
 
 ## 🔐 Authentication
 
-1. Sign up with email and password (min 8 characters)
-2. You'll receive 3 free credits
-3. Start generating!
+1. **Sign up** with email and password (min 8 characters)
+2. **Google OAuth** - Sign in with Google for quick access
+3. You'll receive **20 free credits** to start
+4. **Start generating** immediately!
 
 ## 🎨 Generate Images
 
-1. Enter a prompt (e.g., "A serene mountain landscape at sunset")
-2. Select an AI model from the dropdown
-3. Click "Generate"
-4. Wait for the magic ✨
-5. Your image appears and is saved to your gallery
+1. **Navigate** to `/create/image` or click "Create" in the navbar
+2. **Enter a prompt** (e.g., "A serene mountain landscape at sunset")
+3. **Select an AI model** from the dropdown
+4. **Choose aspect ratio** and quality settings
+5. **Click "Generate"** and wait for the magic ✨
+6. **Your image appears** and is automatically saved to your gallery
+
+## 🎬 Generate Videos
+
+1. **Navigate** to `/create/video` or select video from create menu
+2. **Enter a video prompt** (e.g., "A cat playing with a ball of yarn")
+3. **Select video model** and duration
+4. **Configure camera movements** and style
+5. **Click "Generate"** and wait for processing
+6. **Preview and download** your video
 
 ## 💳 Credit System
 
-- Each generation costs **1 credit**
-- New users get **3 free credits**
-- Check your remaining credits in the top-right corner
+- **Image generation**: 1 credit per image
+- **Video generation**: 5-10 credits per video (varies by model)
+- **New users**: 20 free credits
+- **Credit packages**: Buy more credits as needed
+- **Subscriptions**: Monthly plans for heavy users
+- **Check balance**: Top-right corner shows remaining credits
 
 ## 🔧 Available AI Models
 
 ### Image Generation
-- **Gemini 2.5 Flash** - Fast and versatile
-- **FLUX Pro 1.1** - High quality
-- **ChatGPT Image (DALL-E 3)** - Popular choice
-- **Runway Gen-4** - Professional grade
-- **Ideogram V3** - Great for text in images
-- **Qwen Image** - Alibaba's model
-- **Rêve** - Artistic style
-- **Recraft V3** - Brand and layout control
-- **Luma Photon** - Latest and fast
+- **Gemini 2.5 Flash** - Google's latest, fast and versatile
+- **FLUX Pro 1.1** - Black Forest Labs, highest quality
+- **FLUX Ultra** - Premium quality with advanced features
+- **FLUX Kontext** - Context-aware generation
+- **ChatGPT Image (DALL-E 3)** - OpenAI's popular model
+- **Runway Gen-4** - Professional cinematic quality
+- **Ideogram V3** - Excellent for text in images
+- **Qwen Image** - Alibaba's high-quality model
+- **Reve** - Artistic and creative styles
+- **Recraft V3** - Perfect for brand and layout control
+- **Luma Photon** - Latest and fastest generation
 
 ### Video Generation
-- **Veo 3** - Google's cinematic model
-- **Runway Gen-4 Video** - Professional video
-- **Wan 2.2** - Alibaba video
-- **Hailuo 02** - MiniMax video
-- **Kling** - ByteDance hyper-realistic
-- **Luma Ray 2** - High quality video
+- **Veo 3** - Google's cinematic video generation
+- **Runway Gen-4 Video** - Professional video with consistency
+- **Wan 2.2** - Alibaba's high-quality video generation
+- **Hailuo 02** - MiniMax video with frame control
+- **Kling** - ByteDance's hyper-realistic video
+- **Luma Ray 2** - High-quality video with advanced features
+- **Seedance 1.0 Pro** - Smooth motion video generation
 
 ## 🧪 Test Backend Connection
 

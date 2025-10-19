@@ -16,9 +16,8 @@ interface SubscriptionInfo {
 
 export function SubscriptionManager() {
   const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
-  const { user } = useAuth();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);

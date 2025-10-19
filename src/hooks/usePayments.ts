@@ -14,7 +14,7 @@ interface PaymentHistoryItem {
   status: string;
   type: string;
   createdAt: string;
-  metadata?: any;
+  metadata?: unknown;
 }
 
 interface SubscriptionInfo {

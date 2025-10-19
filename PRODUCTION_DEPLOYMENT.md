@@ -1,58 +1,307 @@
 # Production Deployment Guide
 
-## Environment Variables Setup
+## 🚀 Frontend Deployment (Vercel)
 
-### Frontend (Vercel)
+### Environment Variables Setup
+
 In your Vercel dashboard for the **frontend** project:
 
 1. Go to Project Settings → Environment Variables
 2. Add these variables:
 
+```bash
+# Backend API URL
+VITE_API_BASE_URL=https://your-backend-domain.run.app
+
+# Supabase Configuration
+VITE_SUPABASE_URL=your-supabase-project-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Stripe Configuration
+VITE_STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+
+# Optional: Analytics
+VITE_GOOGLE_ANALYTICS_ID=your-ga-id
 ```
-VITE_API_BASE_URL=https://your-backend-domain.vercel.app
-```
 
-### Backend (Vercel)
-In your Vercel dashboard for the **backend** project:
+### Deployment Steps
 
-1. Go to Project Settings → Environment Variables
-2. Add these variables:
+1. **Connect Repository**:
+   - Connect your GitHub repository to Vercel
+   - Set build command: `npm run build`
+   - Set output directory: `dist`
 
-```
-# Required
-NEXT_PUBLIC_BASE_URL=https://your-frontend-domain.vercel.app
-JWT_SECRET=your-super-secret-jwt-key-here
-DATABASE_URL=your-supabase-database-url
+2. **Configure Domain**:
+   - Add custom domain in Vercel dashboard
+   - Update DNS records as instructed
 
-# Email Service (choose one)
-SENDGRID_API_KEY=your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+3. **Deploy**:
+   - Push to main branch triggers automatic deployment
+   - Monitor build logs for any issues
 
-# Or AWS SES
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-AWS_REGION=us-east-1
+## 🚀 Backend Deployment (Google Cloud Run)
 
-# Or SMTP
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+### Environment Variables Setup
 
-# Storage (if using R2)
+In your Google Cloud Run service configuration:
+
+```bash
+# Database Configuration
+DATABASE_URL=postgresql://user:pass@host:port/db
+DIRECT_URL=postgresql://user:pass@host:port/db
+SHADOW_DATABASE_URL=postgresql://user:pass@host:port/shadow_db
+
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key-32-chars-minimum
+SUPABASE_URL=your-supabase-project-url
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Storage Configuration
 R2_ACCOUNT_ID=your-r2-account-id
 R2_ACCESS_KEY_ID=your-r2-access-key
 R2_SECRET_ACCESS_KEY=your-r2-secret-key
 R2_BUCKET_NAME=your-bucket-name
 R2_PUBLIC_URL=https://your-bucket.r2.dev
 
-# API Keys for AI providers
-OPENAI_API_KEY=your-openai-key
-GEMINI_API_KEY=your-gemini-key
-BFL_API_KEY=your-bfl-key
-IDEOGRAM_API_KEY=your-ideogram-key
-# ... other provider keys
+# Payment Processing
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+FRONTEND_URL=https://your-frontend-domain.vercel.app
+
+# Google Cloud Tasks
+GOOGLE_CLOUD_PROJECT_ID=your-gcp-project-id
+GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json
+
+# AI Provider API Keys
+BFL_API_KEY=your-bfl-api-key
+GEMINI_API_KEY=your-gemini-api-key
+IDEOGRAM_API_KEY=your-ideogram-api-key
+DASHSCOPE_API_KEY=your-dashscope-api-key
+RUNWAY_API_KEY=your-runway-api-key
+OPENAI_API_KEY=your-openai-api-key
+REVE_API_KEY=your-reve-api-key
+RECRAFT_API_KEY=your-recraft-api-key
+LUMA_API_KEY=your-luma-api-key
+
+# Optional: Email Service
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 ```
+
+### Deployment Steps
+
+1. **Build Docker Image**:
+   ```bash
+   cd daygen-backend
+   docker build -t gcr.io/your-project/daygen-backend .
+   ```
+
+2. **Push to Google Container Registry**:
+   ```bash
+   docker push gcr.io/your-project/daygen-backend
+   ```
+
+3. **Deploy to Cloud Run**:
+   ```bash
+   gcloud run deploy daygen-backend \
+     --image gcr.io/your-project/daygen-backend \
+     --platform managed \
+     --region europe-central2 \
+     --allow-unauthenticated \
+     --memory 2Gi \
+     --cpu 2 \
+     --max-instances 10
+   ```
+
+4. **Set up Custom Domain**:
+   - Configure custom domain in Cloud Run
+   - Update DNS records
+
+## 🔧 Database Setup
+
+### Supabase (Recommended)
+
+1. **Create Project**:
+   - Go to [supabase.com](https://supabase.com)
+   - Create new project
+   - Note down URL and API keys
+
+2. **Run Migrations**:
+   ```bash
+   cd daygen-backend
+   npx prisma db push
+   ```
+
+3. **Set up RLS Policies**:
+   - Enable Row Level Security
+   - Configure policies for data access
+
+### Alternative: Cloud SQL
+
+1. **Create PostgreSQL Instance**:
+   - Go to Google Cloud Console
+   - Create Cloud SQL PostgreSQL instance
+   - Note connection details
+
+2. **Configure Connection**:
+   - Update DATABASE_URL with Cloud SQL details
+   - Run migrations
+
+## 📊 Storage Setup (Cloudflare R2)
+
+1. **Create R2 Bucket**:
+   - Go to Cloudflare dashboard
+   - Create R2 bucket
+   - Configure public access
+
+2. **Generate API Keys**:
+   - Create R2 API token
+   - Configure CORS for your domain
+
+3. **Test Upload**:
+   - Verify file uploads work
+   - Check public URL access
+
+## 💳 Payment Setup (Stripe)
+
+1. **Create Stripe Account**:
+   - Go to [stripe.com](https://stripe.com)
+   - Complete account setup
+   - Get API keys
+
+2. **Configure Webhooks**:
+   - Add webhook endpoint: `https://your-backend-domain.run.app/webhooks/stripe`
+   - Select events: `checkout.session.completed`, `invoice.payment_succeeded`, etc.
+
+3. **Test Payments**:
+   - Use Stripe test mode
+   - Verify webhook delivery
+
+## 🔐 Security Configuration
+
+1. **CORS Setup**:
+   - Configure allowed origins
+   - Set up proper headers
+
+2. **Rate Limiting**:
+   - Implement rate limiting for API endpoints
+   - Use Google Cloud Armor if needed
+
+3. **SSL/TLS**:
+   - Ensure HTTPS everywhere
+   - Configure proper certificates
+
+## 📈 Monitoring & Logging
+
+1. **Google Cloud Logging**:
+   - Monitor application logs
+   - Set up alerts for errors
+
+2. **Health Checks**:
+   - Configure health check endpoints
+   - Set up uptime monitoring
+
+3. **Performance Monitoring**:
+   - Monitor response times
+   - Track error rates
+
+## 🧪 Testing Production
+
+1. **Smoke Tests**:
+   - Test authentication flow
+   - Verify image generation
+   - Check payment processing
+
+2. **Load Testing**:
+   - Test with multiple concurrent users
+   - Monitor resource usage
+
+3. **Security Testing**:
+   - Test for common vulnerabilities
+   - Verify input validation
+
+## 🔄 CI/CD Pipeline
+
+### GitHub Actions Setup
+
+1. **Frontend Deployment**:
+   ```yaml
+   # .github/workflows/deploy-frontend.yml
+   name: Deploy Frontend
+   on:
+     push:
+       branches: [main]
+       paths: ['daygen0/**']
+   jobs:
+     deploy:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v3
+         - uses: actions/setup-node@v3
+         - run: cd daygen0 && npm ci && npm run build
+         - uses: amondnet/vercel-action@v20
+   ```
+
+2. **Backend Deployment**:
+   ```yaml
+   # .github/workflows/deploy-backend.yml
+   name: Deploy Backend
+   on:
+     push:
+       branches: [main]
+       paths: ['daygen-backend/**']
+   jobs:
+     deploy:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v3
+         - uses: actions/setup-node@v3
+         - run: cd daygen-backend && npm ci && npm run build
+         - uses: google-github-actions/setup-gcloud@v0
+         - run: gcloud run deploy daygen-backend --source=daygen-backend
+   ```
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **CORS Errors**:
+   - Check CORS configuration in backend
+   - Verify frontend URL is allowed
+
+2. **Database Connection**:
+   - Verify DATABASE_URL format
+   - Check network connectivity
+
+3. **File Upload Issues**:
+   - Verify R2 configuration
+   - Check bucket permissions
+
+4. **Payment Failures**:
+   - Verify Stripe webhook configuration
+   - Check API key validity
+
+### Monitoring Commands
+
+```bash
+# Check backend health
+curl https://your-backend-domain.run.app/health
+
+# Check logs
+gcloud logs read --service=daygen-backend --limit=50
+
+# Check Cloud Run service
+gcloud run services describe daygen-backend --region=europe-central2
+```
+
+## 📚 Additional Resources
+
+- [Vercel Deployment Guide](https://vercel.com/docs)
+- [Google Cloud Run Documentation](https://cloud.google.com/run/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Stripe Integration Guide](https://stripe.com/docs)
+- [Cloudflare R2 Documentation](https://developers.cloudflare.com/r2/)
 
 ## Email Integration Implementation
 
