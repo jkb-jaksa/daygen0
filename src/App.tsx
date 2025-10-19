@@ -236,7 +236,7 @@ function Home() {
                 <div className="flex-1 lg:h-full" ref={contentRef}>
                   {isImageCategory ? (
                     <div className="w-full">
-                      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                      <div className="grid gap-1 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         <UseCaseCard
                           title="lifestyle images"
                           imageUrl="/lifestyle images.png"
