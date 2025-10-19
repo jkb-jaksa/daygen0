@@ -327,6 +327,29 @@ export const useGalleryImages = () => {
     [],
   );
 
+  // Remove images from state immediately (optimistic update)
+  const removeImages = useCallback((imageUrls: string[]) => {
+    if (imageUrls.length === 0) return;
+
+    const urlsToRemove = new Set(imageUrls);
+
+    setState(prev => {
+      const filtered = prev.images.filter(img => !urlsToRemove.has(img.url));
+      
+      // Persist to local storage so deletion survives page refresh
+      if (storagePrefix) {
+        void setPersistedValue(storagePrefix, 'gallery', serializeGallery(filtered));
+      }
+      
+      return {
+        ...prev,
+        images: filtered,
+      };
+    });
+
+    debugLog(`[gallery] Removed ${imageUrls.length} images from state and storage`);
+  }, [storagePrefix]);
+
   // Load images on mount and when token changes
   useEffect(() => {
     if (token) {
@@ -339,5 +362,6 @@ export const useGalleryImages = () => {
     fetchGalleryImages,
     deleteImage,
     updateImages,
+    removeImages,
   };
 };
