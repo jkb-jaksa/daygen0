@@ -9279,7 +9279,7 @@ const handleGenerate = async () => {
                   aria-label={`${generateButtonLabel} (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
                 >
                   <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
-                    {generateButtonLabel} ({batchSize} credit{batchSize > 1 ? 's' : ''})
+                    {generateButtonLabel}
                   </span>
                   <div className="flex items-center gap-0 sm:gap-1">
                     {showGenerateSpinner ? (
@@ -9287,7 +9287,7 @@ const handleGenerate = async () => {
                     ) : (
                       <Sparkles className="w-4 h-4 text-n-black" />
                     )}
-                    <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                    <span className="text-sm font-raleway font-medium text-n-black">{batchSize}</span>
                   </div>
                 </button>
               </Tooltip>
