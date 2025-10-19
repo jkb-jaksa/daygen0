@@ -1437,7 +1437,7 @@ export default function Edit() {
           {/* Generated Image Display */}
           {currentGeneratedImage && (
             <div className="w-full max-w-lg mx-auto mt-4">
-              <div className="relative rounded-[32px] overflow-hidden bg-theme-black border border-theme-mid">
+              <div className="relative rounded-2xl overflow-hidden bg-theme-black border border-theme-mid">
                 <img 
                   src={currentGeneratedImage.url} 
                   alt="Generated image" 
@@ -1460,7 +1460,7 @@ export default function Edit() {
           {currentError && (
             <div className="w-full max-w-lg mx-auto mt-4">
               <div
-                className="relative rounded-[32px] overflow-hidden bg-theme-black border border-red-500/50"
+                className="relative rounded-2xl overflow-hidden bg-theme-black border border-red-500/50"
                 role="status"
                 aria-live="assertive"
                 aria-atomic="true"

@@ -3558,7 +3558,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return (
       <div
         key={`${context}-${img.url}-${idx}`}
-        className={`group relative rounded-[24px] overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
+        className={`group relative rounded-2xl overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
             : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
@@ -5436,7 +5436,7 @@ const handleGenerate = async () => {
     <div className={`${layout.page} create-page`}>
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-2xl`}>
           {copyNotification}
         </div>
       )}
@@ -5444,7 +5444,7 @@ const handleGenerate = async () => {
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
@@ -5489,7 +5489,7 @@ const handleGenerate = async () => {
       {/* New folder dialog */}
       {newFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -5565,7 +5565,7 @@ const handleGenerate = async () => {
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
@@ -5602,7 +5602,7 @@ const handleGenerate = async () => {
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
@@ -5639,7 +5639,7 @@ const handleGenerate = async () => {
       {/* Download confirmation dialog */}
       {downloadConfirmation.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Download className="default-orange-icon mx-auto" />
@@ -5674,7 +5674,7 @@ const handleGenerate = async () => {
       {/* Add to folder dialog */}
       {addToFolderDialog && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -5844,7 +5844,7 @@ const handleGenerate = async () => {
       {/* Folder thumbnail selection dialog */}
       {folderThumbnailDialog.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3 relative">
                 <FolderIcon className="default-orange-icon mx-auto" />

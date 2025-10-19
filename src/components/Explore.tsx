@@ -620,7 +620,7 @@ const AvatarCard: React.FC<{
   const isFeature = variant === "feature";
   const isSpotlight = variant === "spotlight";
   const padding = isFeature ? "p-8 sm:p-10" : isSpotlight ? "p-6 sm:p-7" : "p-6";
-  const radius = isFeature ? "rounded-[32px]" : "rounded-[24px]";
+  const radius = "rounded-2xl";
   const minHeight = isFeature ? "min-h-[420px]" : isSpotlight ? "min-h-[280px]" : "min-h-[260px]";
 
   return (
@@ -1955,14 +1955,14 @@ const Explore: React.FC = () => {
         {activeGalleryView === 'creations' ? (
           <section className="relative pb-12 -mt-6">
           <div className={`${layout.container}`}>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-1 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {
                 const isMenuActive = moreActionMenu?.id === item.id;
                 const isSaved = savedImageUrls.has(item.imageUrl);
                 return (
                   <article
                     key={item.id}
-                    className="group relative overflow-hidden rounded-[28px] border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
                     onClick={(event) => {
                       // Check if the click came from a copy button
                       const target = event.target as HTMLElement;
@@ -2200,7 +2200,7 @@ const Explore: React.FC = () => {
         <section className="relative pb-12 -mt-6">
           <div className={`${layout.container} space-y-8`}>
             {filteredAvatars.length === 0 ? (
-              <div className={`rounded-[28px] border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
+              <div className={`rounded-2xl border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
                 <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
                 <p className="mt-2 text-sm text-theme-white/70">
                   Publish one from the avatars studio or adjust your filters to explore more community styles.
@@ -2227,7 +2227,7 @@ const Explore: React.FC = () => {
             ) : (
               <>
                 {topAvatars.length > 0 && (
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                  <div className="grid gap-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                     <AvatarCard
                       key={topAvatars[0].id}
                       item={topAvatars[0]}
@@ -2237,7 +2237,7 @@ const Explore: React.FC = () => {
                       isFavorite={avatarFavorites.has(topAvatars[0].id)}
                       onToggleFavorite={toggleAvatarFavorite}
                     />
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-1">
                       {topAvatars.slice(1).map((avatar, index) => (
                         <AvatarCard
                           key={avatar.id}
@@ -2254,7 +2254,7 @@ const Explore: React.FC = () => {
                 )}
 
                 {remainingAvatars.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
                     {remainingAvatars.map((avatar, index) => (
                       <AvatarCard
                         key={avatar.id}
@@ -2365,11 +2365,11 @@ const Explore: React.FC = () => {
           <div
             className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 px-4 py-8"
             onClick={closeSavePrompt}
-          >
-            <div
-              className={`${glass.promptDark} relative w-full max-w-3xl rounded-[28px] border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
-              onClick={event => event.stopPropagation()}
             >
+              <div
+                className={`${glass.promptDark} relative w-full max-w-3xl rounded-2xl border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+                onClick={event => event.stopPropagation()}
+              >
               <button
                 type="button"
                 onClick={closeSavePrompt}

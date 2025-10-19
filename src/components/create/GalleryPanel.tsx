@@ -452,7 +452,7 @@ export function GalleryPanel({
 
   return (
     <div className="w-full">
-      <div className={`mb-4 p-3 ${glass.promptDark} rounded-[20px]`}>
+      <div className={`mb-4 p-3 ${glass.promptDark} rounded-2xl`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-theme-text" />
@@ -679,7 +679,7 @@ export function GalleryPanel({
         )}
       </div>
 
-      <div className={`${glass.promptDark} rounded-[20px] mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
+      <div className={`${glass.promptDark} rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

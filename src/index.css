@@ -1392,7 +1392,7 @@ html[data-theme="day"] .card-overlay-gradient {
 /* Keep Tailwind translate/rotate/skew while scaling on hover */
 .parallax-mid:hover,
 .parallax-mid.parallax-active {
-  transform: scale(1.008);
+  transform: scale(1.005);
   transition: transform 0.1s;
 }
 
@@ -1404,14 +1404,14 @@ html[data-theme="day"] .card-overlay-gradient {
 /* More pronounced effect for large elements */
 .parallax-large:hover,
 .parallax-large.parallax-active {
-  transform: translateZ(150px) scale(1.01);
+  transform: translateZ(150px) scale(1.006);
   transition: transform 0.1s;
 }
 
 /* Remove translateZ jump on glass surfaces to avoid hover flicker */
 .glass-liquid.parallax-large:hover,
 .glass-liquid.parallax-large.parallax-active {
-  transform: scale(1.01);
+  transform: scale(1.006);
 }
 
 /* Force parallax effect for footer icons - bypasses reduced motion */
@@ -1433,7 +1433,7 @@ html[data-theme="day"] .card-overlay-gradient {
 
 .parallax-small:hover,
 .parallax-small.parallax-active {
-  transform: translateZ(100px) scale(1.004);
+  transform: translateZ(25px) scale(1.001);
   transition: transform 0.1s;
 }
 

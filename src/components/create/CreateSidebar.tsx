@@ -27,7 +27,7 @@ function CreateSidebarComponent({
     <div className="hidden lg:block" style={{ width: SIDEBAR_WIDTH }}>
       <nav
         aria-label="Create navigation"
-        className={`${glass.promptDark} rounded-[20px] lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] lg:z-30 px-3 py-4`}
+        className={`${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] lg:z-30 px-3 py-4`}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
         <aside className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">

@@ -1263,7 +1263,7 @@ export default function Products() {
     return (
       <div
         key={`${keyPrefix}-${product.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
+        className={`group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
           isInteractive ? " cursor-pointer" : ""
         }`}
         role={isInteractive ? "button" : undefined}
@@ -1455,7 +1455,7 @@ export default function Products() {
             loading="lazy"
           />
           <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
-            <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-2.5">
+            <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
               <div className="flex h-[32px] items-center gap-2">
                 {editingProductId === product.id ? (
                   <form
@@ -1516,7 +1516,7 @@ export default function Products() {
         <div className="lg:hidden space-y-3 px-4 py-4">
           {editingProductId === product.id ? (
             <form
-              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5"
+              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5"
               onSubmit={submitRename}
               onClick={(event) => event.stopPropagation()}
             >
@@ -1541,7 +1541,7 @@ export default function Products() {
               </button>
             </form>
           ) : (
-            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-[24px] px-4 py-2.5">
+            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5">
                 <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-light text-theme-text">
                   {displayName}
               </p>
@@ -1596,7 +1596,7 @@ export default function Products() {
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
-      className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
       <div
@@ -1752,7 +1752,7 @@ export default function Products() {
           loading="lazy"
         />
         <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100 hidden lg:block">
-          <div className="PromptDescriptionBar rounded-b-[24px] px-4 py-4">
+          <div className="PromptDescriptionBar rounded-b-2xl px-4 py-4">
             <div className="space-y-2">
               <p className="text-xs font-raleway text-theme-white leading-relaxed line-clamp-3">
                 {image.prompt || "Untitled creation"}
@@ -1844,14 +1844,14 @@ export default function Products() {
               <Plus className="h-5 w-5" />
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
             {products.map(product => renderProductCard(product))}
           </div>
         </div>
       )}
 
       {missingProductSlug && (
-        <div className="w-full max-w-3xl rounded-[24px] border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
+        <div className="w-full max-w-3xl rounded-2xl border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
           <p className="text-sm font-raleway text-theme-white/80">
             We couldn't find a product for <span className="font-semibold text-theme-text">{missingProductSlug}</span>. It may have been renamed or deleted.
           </p>
@@ -2211,11 +2211,11 @@ export default function Products() {
           <h2 className="text-2xl font-raleway text-theme-text">
             Creations with {creationsModalProduct.name}
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
             {creationImages.map(image => renderCreationImageCard(image))}
           </div>
           {creationImages.length === 0 && (
-            <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+            <div className="rounded-2xl border border-theme-dark bg-theme-black/70 p-4 text-center">
               <p className="text-sm font-raleway text-theme-light">
                 Generate a new image with this product to see it appear here.
               </p>
