@@ -4746,16 +4746,26 @@ const handleGenerate = async () => {
       return;
     }
 
-    if (activeGenerationQueue.length >= MAX_PARALLEL_GENERATIONS) {
-      setCopyNotification(`You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once.`);
+    const modelForGeneration = selectedModel;
+    const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
+
+    // Check if adding this batch would exceed the maximum parallel generations
+    if (activeGenerationQueue.length + effectiveBatchSize > MAX_PARALLEL_GENERATIONS) {
+      const availableSlots = MAX_PARALLEL_GENERATIONS - activeGenerationQueue.length;
+      if (availableSlots <= 0) {
+        setCopyNotification(`You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once. Please wait for some to complete.`);
+      } else {
+        setCopyNotification(`You can only add ${availableSlots} more generation${availableSlots > 1 ? 's' : ''} (${MAX_PARALLEL_GENERATIONS} max).`);
+      }
       setTimeout(() => setCopyNotification(null), 2500);
       return;
     }
-
-    const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const modelForGeneration = selectedModel;
-    const effectiveBatchSize = Math.min(Math.max(batchSize, 1), 4);
-  debugLog('[Create] handleGenerateImage called', { model: modelForGeneration, batchSize: effectiveBatchSize });
+    // Create multiple generation IDs for batch processing
+    const timestamp = Date.now();
+    const generationIds = Array.from({ length: effectiveBatchSize }, (_, i) => 
+      `gen-${timestamp}-${i}-${Math.random().toString(36).slice(2, 10)}`
+    );
+  debugLog('[Create] handleGenerateImage called', { model: modelForGeneration, batchSize: effectiveBatchSize, generationIds });
     const fileForGeneration = selectedFile;
     const referencesForGeneration = referenceFiles.slice(0);
     if (selectedAvatar) {
@@ -4802,38 +4812,42 @@ const handleGenerate = async () => {
     modelForGeneration === "luma-photon-1" ||
     modelForGeneration === "luma-photon-flash-1";
 
-    const jobMeta: ActiveGenerationJob = {
-      id: generationId,
+  // Only add to activeGenerationQueue if we're not handling video models that manage their own state
+  const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
+
+  // Create a job for each batch item
+  if (shouldTrackJob) {
+    const jobMetas: ActiveGenerationJob[] = generationIds.map(genId => ({
+      id: genId,
       prompt: finalPrompt,
       model: modelForGeneration,
       startedAt: Date.now(),
       progress: 1,
       backendProgress: 0,
       backendProgressUpdatedAt: Date.now(),
-      status: 'queued',
-    };
+      status: 'processing' as ActiveGenerationStatus,
+    }));
 
-  // Only add to activeGenerationQueue if we're not handling video models that manage their own state
-  const shouldTrackJob = !(activeCategory === "video" && (selectedModel === "runway-video-gen4" || selectedModel === "wan-video-2.2" || selectedModel === "hailuo-02" || selectedModel === "kling-video"));
-
-  if (shouldTrackJob) {
     setActiveGenerationQueue(prev => {
-      const next = [...prev, jobMeta];
+      const next = [...prev, ...jobMetas];
       return next.map(job =>
-        job.id === generationId
+        generationIds.includes(job.id)
           ? {
               ...job,
-              status: 'processing',
+              status: 'processing' as ActiveGenerationStatus,
               progress: Math.max(job.progress, 4),
             }
           : job,
       );
     });
 
-    startProgressAnimation(generationId, {
-      max: 97,
-      step: 1.1,
-      interval: 620,
+    // Start progress animation for each job
+    generationIds.forEach(genId => {
+      startProgressAnimation(genId, {
+        max: 97,
+        step: 1.1,
+        interval: 620,
+      });
     });
   }
     if (spinnerTimeoutRef.current) {
@@ -4845,14 +4859,15 @@ const handleGenerate = async () => {
       spinnerTimeoutRef.current = null;
     }, 1000);
 
-    const handleGeminiProgress = (update: ImageGenerationProgressUpdate) => {
-      if (update.clientJobId && update.clientJobId !== generationId) {
+    // Create progress handler factory for individual jobs
+    const createProgressHandler = (specificGenerationId: string) => (update: ImageGenerationProgressUpdate) => {
+      if (update.clientJobId && update.clientJobId !== specificGenerationId) {
         return;
       }
 
       setActiveGenerationQueue(prev =>
         prev.map(job => {
-          if (job.id !== generationId) {
+          if (job.id !== specificGenerationId) {
             return job;
           }
 
@@ -4901,7 +4916,7 @@ const handleGenerate = async () => {
       );
 
       if (update.status === 'completed' || update.status === 'failed') {
-        stopProgressAnimation(generationId);
+        stopProgressAnimation(specificGenerationId);
       }
     };
 
@@ -4934,7 +4949,7 @@ const handleGenerate = async () => {
         isChatGPTModel 
       });
 
-  const runSingleGeneration = async () => {
+  const runSingleGeneration = async (specificGenerationId: string) => {
         let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
         if (isGeminiModel) {
@@ -4959,8 +4974,8 @@ const handleGenerate = async () => {
             avatarId: selectedAvatar?.id,
             avatarImageId: activeAvatarImageId ?? undefined,
             productId: selectedProduct?.id,
-            clientJobId: generationId,
-            onProgress: handleGeminiProgress,
+            clientJobId: specificGenerationId,
+            onProgress: createProgressHandler(specificGenerationId),
           });
         } else if (isFluxModel) {
           const fluxParams: FluxImageGenerationOptions = {
@@ -5177,111 +5192,143 @@ const handleGenerate = async () => {
       let successfulGenerations = 0;
       let promptSaved = false;
 
-      for (let iteration = 0; iteration < effectiveBatchSize; iteration += 1) {
-        debugLog('[Create] Starting batch item', { iteration: iteration + 1, total: effectiveBatchSize, model: modelForGeneration });
-        const img = await runSingleGeneration();
-        if (img?.url) {
-          // Debug: Log what's being sent to backend
-          console.log('Generated image data being sent to backend:', {
-            imageUrl: img.url,
-            avatarId: img.avatarId,
-            avatarImageId: img.avatarImageId,
-            productId: img.productId,
-            model: img.model,
-            prompt: img.prompt?.substring(0, 50) + '...'
+      // Run all generations in parallel
+      debugLog('[Create] Starting parallel batch generation', { 
+        count: effectiveBatchSize, 
+        model: modelForGeneration,
+        generationIds 
+      });
+
+      const generationPromises = generationIds.map(async (genId, index) => {
+        try {
+          debugLog('[Create] Starting batch item', { 
+            iteration: index + 1, 
+            total: effectiveBatchSize, 
+            model: modelForGeneration,
+            generationId: genId 
           });
+          
+          const img = await runSingleGeneration(genId);
+          
+          if (img?.url) {
+            // Debug: Log what's being sent to backend
+            console.log('Generated image data being sent to backend:', {
+              imageUrl: img.url,
+              avatarId: img.avatarId,
+              avatarImageId: img.avatarImageId,
+              productId: img.productId,
+              model: img.model,
+              prompt: img.prompt?.substring(0, 50) + '...'
+            });
 
-          const galleryImage: GalleryImageLike = {
-            url: img.url,
-            prompt: img.prompt ?? finalPrompt ?? trimmedPrompt,
-            model: img.model ?? modelForGeneration,
-            timestamp: img.timestamp ?? new Date().toISOString(),
-            ownerId:
-              'ownerId' in img && typeof img.ownerId === 'string'
-                ? img.ownerId
-                : user?.id ?? undefined,
-            references:
-              'references' in img
-                ? (img as { references?: string[] | undefined }).references
-                : undefined,
-            isPublic:
-              'isPublic' in img
-                ? Boolean((img as { isPublic?: boolean }).isPublic)
-                : false,
-            avatarId:
-              (
-                'avatarId' in img
-                  ? (img as { avatarId?: string | null }).avatarId ?? undefined
-                  : undefined
-              ) ?? selectedAvatar?.id ?? undefined,
-            avatarImageId:
-              (
-                'avatarImageId' in img
-                  ? (img as { avatarImageId?: string | null }).avatarImageId ?? undefined
-                  : undefined
-              ) ?? activeAvatarImageId ?? undefined,
-            productId:
-              (
-                'productId' in img
-                  ? (img as { productId?: string | null }).productId ?? undefined
-                  : undefined
-              ) ?? selectedProduct?.id ?? undefined,
-            jobId:
-              'jobId' in img
-                ? (img as { jobId?: string | null }).jobId ?? undefined
-                : undefined,
-          };
+            const galleryImage: GalleryImageLike = {
+              url: img.url,
+              prompt: img.prompt ?? finalPrompt ?? trimmedPrompt,
+              model: img.model ?? modelForGeneration,
+              timestamp: img.timestamp ?? new Date().toISOString(),
+              ownerId:
+                'ownerId' in img && typeof img.ownerId === 'string'
+                  ? img.ownerId
+                  : user?.id ?? undefined,
+              references:
+                'references' in img
+                  ? (img as { references?: string[] | undefined }).references
+                  : undefined,
+              isPublic:
+                'isPublic' in img
+                  ? Boolean((img as { isPublic?: boolean }).isPublic)
+                  : false,
+              avatarId:
+                (
+                  'avatarId' in img
+                    ? (img as { avatarId?: string | null }).avatarId ?? undefined
+                    : undefined
+                ) ?? selectedAvatar?.id ?? undefined,
+              avatarImageId:
+                (
+                  'avatarImageId' in img
+                    ? (img as { avatarImageId?: string | null }).avatarImageId ?? undefined
+                    : undefined
+                ) ?? activeAvatarImageId ?? undefined,
+              productId:
+                (
+                  'productId' in img
+                    ? (img as { productId?: string | null }).productId ?? undefined
+                    : undefined
+                ) ?? selectedProduct?.id ?? undefined,
+              jobId:
+                'jobId' in img
+                  ? (img as { jobId?: string | null }).jobId ?? undefined
+                  : undefined,
+            };
 
-          updateGalleryImages([], {}, { upsert: [galleryImage] });
+            updateGalleryImages([], {}, { upsert: [galleryImage] });
 
-          if (shouldTrackJob && !isGeminiModel) {
-            const completionRatio = (iteration + 1) / effectiveBatchSize;
-            const targetProgress = Math.min(98, 45 + completionRatio * 50);
+            // Update progress for this specific job
+            if (shouldTrackJob && !isGeminiModel) {
+              setActiveGenerationQueue(prev =>
+                prev.map(job => {
+                  if (job.id !== genId) {
+                    return job;
+                  }
+                  return {
+                    ...job,
+                    progress: 100,
+                    backendProgress: 100,
+                    backendProgressUpdatedAt: Date.now(),
+                    status: 'completed' as ActiveGenerationStatus,
+                  };
+                }),
+              );
+              stopProgressAnimation(genId);
+            }
+
+            debugLog('New image generated, refreshing gallery...');
+            await fetchGalleryImages();
+
+            return { success: true, genId, img };
+          }
+          
+          return { success: false, genId, error: 'No image URL returned' };
+        } catch (error) {
+          debugError(`Error generating image for job ${genId}:`, error);
+          
+          // Mark this specific job as failed
+          if (shouldTrackJob) {
+            stopProgressAnimation(genId);
             setActiveGenerationQueue(prev =>
-              prev.map(job => {
-                if (job.id !== generationId) {
-                  return job;
-                }
-                const currentBackend = job.backendProgress ?? 0;
-                const nextBackend = Math.max(currentBackend, targetProgress);
-                return {
-                  ...job,
-                  progress: Math.max(job.progress, targetProgress),
-                  backendProgress: nextBackend,
-                  backendProgressUpdatedAt:
-                    nextBackend > currentBackend ? Date.now() : job.backendProgressUpdatedAt,
-                  status: 'processing',
-                };
-              }),
+              prev.map(job =>
+                job.id === genId
+                  ? {
+                      ...job,
+                      status: 'failed' as ActiveGenerationStatus,
+                      progress: Math.max(job.progress, 100),
+                      backendProgress: 100,
+                      backendProgressUpdatedAt: Date.now(),
+                    }
+                  : job,
+              ),
             );
           }
-
-          successfulGenerations += 1;
-          debugLog('New image generated, refreshing gallery...');
-          await fetchGalleryImages();
-
-          if (!promptSaved) {
-            addPrompt(trimmedPrompt);
-            promptSaved = true;
-          }
+          
+          return { success: false, genId, error: error instanceof Error ? error.message : String(error) };
         }
-      }
+      });
 
-      if (shouldTrackJob && !isGeminiModel) {
-        setActiveGenerationQueue(prev =>
-          prev.map(job =>
-            job.id === generationId
-              ? {
-                  ...job,
-                  progress: 100,
-                  backendProgress: 100,
-                  backendProgressUpdatedAt: Date.now(),
-                  status: 'completed',
-                }
-              : job,
-          ),
-        );
-        stopProgressAnimation(generationId);
+      // Wait for all generations to complete
+      const results = await Promise.allSettled(generationPromises);
+
+      // Process results
+      results.forEach((result) => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          successfulGenerations += 1;
+        }
+      });
+
+      // Save prompt once if any generation succeeded
+      if (successfulGenerations > 0 && !promptSaved) {
+        addPrompt(trimmedPrompt);
+        promptSaved = true;
       }
 
       if (successfulGenerations > 1) {
@@ -5289,17 +5336,22 @@ const handleGenerate = async () => {
         setTimeout(() => setCopyNotification(null), 2000);
       }
     } catch (error) {
-      debugError('Error generating image:', error);
+      debugError('Error in batch generation:', error);
       // Clear any previous errors from all hooks
       clearAllGenerationErrors();
+      
+      // Mark all jobs as failed if there's a catastrophic error
       if (shouldTrackJob) {
-        stopProgressAnimation(generationId);
+        generationIds.forEach(genId => {
+          stopProgressAnimation(genId);
+        });
+        
         setActiveGenerationQueue(prev =>
           prev.map(job =>
-            job.id === generationId
+            generationIds.includes(job.id)
               ? {
                   ...job,
-                  status: 'failed',
+                  status: 'failed' as ActiveGenerationStatus,
                   progress: Math.max(job.progress, 100),
                   backendProgress: 100,
                   backendProgressUpdatedAt: Date.now(),
@@ -5314,10 +5366,14 @@ const handleGenerate = async () => {
         spinnerTimeoutRef.current = null;
       }
       setIsButtonSpinning(false);
-      // Only remove from activeGenerationQueue if we added it in the first place
+      
+      // Remove all completed/failed jobs from activeGenerationQueue
       if (shouldTrackJob) {
-        stopProgressAnimation(generationId);
-        setActiveGenerationQueue(prev => prev.filter(job => job.id !== generationId));
+        generationIds.forEach(genId => {
+          stopProgressAnimation(genId);
+        });
+        
+        setActiveGenerationQueue(prev => prev.filter(job => !generationIds.includes(job.id)));
       }
     }
   };
