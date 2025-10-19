@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, Users, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -1650,16 +1650,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (isFullSizeOpen) {
+        if (isFullSizeOpen && !selectedReferenceImage) {
           navigateFullSizeImage('prev');
-        } else {
+        } else if (!isFullSizeOpen) {
           navigateGallery('prev');
         }
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        if (isFullSizeOpen) {
+        if (isFullSizeOpen && !selectedReferenceImage) {
           navigateFullSizeImage('next');
-        } else {
+        } else if (!isFullSizeOpen) {
           navigateGallery('next');
         }
       }
@@ -1669,7 +1669,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, gallery.length, currentGalleryIndex]);
+  }, [isFullSizeOpen, selectedReferenceImage, gallery.length, currentGalleryIndex]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -9373,33 +9373,6 @@ const handleGenerate = async () => {
                   </div>
                 )}
 
-                {/* Profile button - only show for avatar/product reference images */}
-                {selectedReferenceImage && (selectedAvatar || selectedProduct) && (
-                  <div className="absolute top-4 left-4 pointer-events-auto z-10">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedAvatar) {
-                          navigate(`/create/avatars/${selectedAvatar.slug}`);
-                        } else if (selectedProduct) {
-                          navigate(`/create/products/${selectedProduct.slug}`);
-                        }
-                        setIsFullSizeOpen(false);
-                        setSelectedReferenceImage(null);
-                      }}
-                      className="image-action-btn image-action-btn--fullsize parallax-large transition-colors duration-200"
-                      title={selectedAvatar ? "View avatar profile" : "View product profile"}
-                      aria-label={selectedAvatar ? "View avatar profile" : "View product profile"}
-                    >
-                      {selectedAvatar ? (
-                        <User className="w-4 h-4" />
-                      ) : (
-                        <Package className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                )}
-
                 {/* Action buttons - only show for generated images, not reference images */}
                 {activeFullSizeImage && (
                   <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
@@ -9510,6 +9483,44 @@ const handleGenerate = async () => {
                           )}
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Avatar/Product name badge - show for reference images */}
+                {selectedReferenceImage && (selectedAvatar || selectedProduct) && (
+                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
+                    <div className="flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectedProduct && selectedReferenceImage === selectedProduct.imageUrl) {
+                            navigate(`/create/products/${selectedProduct.slug}`);
+                          } else if (selectedAvatar) {
+                            navigate(`/create/avatars/${selectedAvatar.slug}`);
+                          }
+                          setIsFullSizeOpen(false);
+                          setSelectedReferenceImage(null);
+                        }}
+                        className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-theme-dark/60 hover:text-theme-text transition-colors duration-200 cursor-pointer`}
+                        title={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
+                        aria-label={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
+                      >
+                        <div className="flex items-center gap-1">
+                          {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
+                            <>
+                              <Package className="w-3 h-3 text-theme-text" />
+                              <span className="leading-none">{selectedProduct.name}</span>
+                            </>
+                          ) : selectedAvatar ? (
+                            <>
+                              <Users className="w-3 h-3 text-theme-text" />
+                              <span className="leading-none">{selectedAvatar.name}</span>
+                            </>
+                          ) : null}
+                        </div>
+                      </button>
                     </div>
                   </div>
                 )}
