@@ -70,7 +70,7 @@ function UseCaseCard({
 
   return (
     <div 
-      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-[1.5rem] overflow-hidden"
+      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
