@@ -2307,19 +2307,19 @@ export default function Products() {
               <>
                 <button
                   onClick={() => navigateProductImage("prev")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                   title="Previous image"
                   aria-label="Previous image"
                 >
-                  <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                 </button>
                 <button
                   onClick={() => navigateProductImage("next")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                   title="Next image"
                   aria-label="Next image"
                 >
-                  <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
                 </button>
               </>
             )}
@@ -2407,19 +2407,19 @@ export default function Products() {
                 <>
                   <button
                     onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Previous image (←)"
                     aria-label="Previous image"
                   >
-                    <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                    <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                   <button
                     onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Next image (→)"
                     aria-label="Next image"
                   >
-                    <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                    <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                 </>
               );
