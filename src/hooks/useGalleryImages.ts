@@ -2,7 +2,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog, debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
+import { getPersistedValue, setPersistedValue } from '../lib/clientStorage';
+import { serializeGallery, hydrateStoredGallery, isBase64Url } from '../utils/galleryStorage';
 import type { GalleryImageLike } from '../components/create/types';
+import type { StoredGalleryImage } from '../components/create/types';
 
 export interface R2FileResponse {
   id: string;
@@ -21,14 +24,18 @@ export interface GalleryImagesState {
   images: GalleryImageLike[];
   isLoading: boolean;
   error: string | null;
+  hasBase64Images: boolean;
+  needsMigration: boolean;
 }
 
 export const useGalleryImages = () => {
-  const { token } = useAuth();
+  const { token, storagePrefix } = useAuth();
   const [state, setState] = useState<GalleryImagesState>({
     images: [],
     isLoading: false,
     error: null,
+    hasBase64Images: false,
+    needsMigration: false,
   });
 
   // Convert R2File response to GalleryImageLike format
@@ -44,18 +51,86 @@ export const useGalleryImages = () => {
     };
   }, []);
 
-    // Fetch gallery images from backend
-    const fetchGalleryImages = useCallback(async () => {
-      if (!token) {
-        setState(prev => ({ ...prev, images: [], error: 'Not authenticated' }));
-        return;
+  // Load local cached images
+  const loadLocalImages = useCallback(async (): Promise<GalleryImageLike[]> => {
+    if (!storagePrefix) return [];
+
+    try {
+      const storedGallery = await getPersistedValue<StoredGalleryImage[]>(storagePrefix, 'gallery');
+      if (!storedGallery || !Array.isArray(storedGallery)) {
+        return [];
       }
+      return hydrateStoredGallery(storedGallery);
+    } catch (error) {
+      debugError('Failed to load local gallery images:', error);
+      return [];
+    }
+  }, [storagePrefix]);
 
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+  // Merge R2 images with local cache, prioritizing R2 URLs
+  const mergeImages = useCallback((r2Images: GalleryImageLike[], localImages: GalleryImageLike[]): GalleryImageLike[] => {
+    const r2ImageMap = new Map<string, GalleryImageLike>();
+    const localImageMap = new Map<string, GalleryImageLike>();
 
-      try {
-        const apiUrl = getApiUrl('/api/r2files');
+    // Index R2 images by jobId or URL
+    r2Images.forEach(image => {
+      const key = image.jobId || image.url;
+      if (key) {
+        r2ImageMap.set(key, image);
+      }
+    });
 
+    // Index local images by jobId or URL
+    localImages.forEach(image => {
+      const key = image.jobId || image.url;
+      if (key) {
+        localImageMap.set(key, image);
+      }
+    });
+
+    const mergedImages: GalleryImageLike[] = [];
+    const processedKeys = new Set<string>();
+
+    // Add all R2 images first (these take priority)
+    r2Images.forEach(image => {
+      const key = image.jobId || image.url;
+      if (key && !processedKeys.has(key)) {
+        mergedImages.push(image);
+        processedKeys.add(key);
+      }
+    });
+
+    // Add local images that don't have R2 equivalents
+    localImages.forEach(image => {
+      const key = image.jobId || image.url;
+      if (key && !processedKeys.has(key)) {
+        // Only add non-base64 local images, or base64 images that don't have R2 equivalents
+        if (!isBase64Url(image.url) || !r2ImageMap.has(key)) {
+          mergedImages.push(image);
+          processedKeys.add(key);
+        }
+      }
+    });
+
+    return mergedImages;
+  }, []);
+
+  // Fetch gallery images from backend
+  const fetchGalleryImages = useCallback(async () => {
+    if (!token) {
+      setState(prev => ({ ...prev, images: [], error: 'Not authenticated' }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      // Load local images first for immediate display
+      const localImages = await loadLocalImages();
+      const hasBase64Images = localImages.some(image => isBase64Url(image.url));
+
+      // Fetch from R2 API
+      const apiUrl = getApiUrl('/api/r2files');
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -68,11 +143,15 @@ export const useGalleryImages = () => {
         throw new Error(`Failed to fetch gallery images: ${response.status}`);
       }
 
-        const data = await response.json();
+      const data = await response.json();
+      const r2Images = data.items?.map(convertR2FileToGalleryImage) || [];
 
-      const galleryImages = data.items?.map(convertR2FileToGalleryImage) || [];
+      // Merge R2 images with local cache, prioritizing R2 URLs
+      const mergedImages = mergeImages(r2Images, localImages);
+
+      // Remove duplicates
       const seen = new Set<string>();
-      const dedupedImages = galleryImages.filter((image: GalleryImageLike) => {
+      const dedupedImages = mergedImages.filter((image: GalleryImageLike) => {
         const key = image.jobId || image.url;
         if (!key) {
           return true;
@@ -84,19 +163,45 @@ export const useGalleryImages = () => {
         return true;
       });
 
+      // Update local storage to remove base64 images that now have R2 equivalents
+      if (r2Images.length > 0 && storagePrefix) {
+        try {
+          const updatedLocalImages = localImages.filter(image => {
+            const key = image.jobId || image.url;
+            // Keep non-base64 images, or base64 images that don't have R2 equivalents
+            return !isBase64Url(image.url) || !r2Images.some((r2Image: GalleryImageLike) => (r2Image.jobId || r2Image.url) === key);
+          });
+
+          if (updatedLocalImages.length !== localImages.length) {
+            await setPersistedValue(storagePrefix, 'gallery', serializeGallery(updatedLocalImages));
+            debugLog(`Removed ${localImages.length - updatedLocalImages.length} base64 images from local storage`);
+          }
+        } catch (error) {
+          debugError('Failed to update local storage:', error);
+        }
+      }
+
       setState({
         images: dedupedImages,
         isLoading: false,
         error: null,
+        hasBase64Images,
+        needsMigration: hasBase64Images && r2Images.length > 0,
       });
     } catch (error) {
-      setState(prev => ({
-        ...prev,
+      // Fallback to local images if R2 fetch fails
+      const localImages = await loadLocalImages();
+      const hasBase64Images = localImages.some(image => isBase64Url(image.url));
+
+      setState({
+        images: localImages,
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to fetch gallery images',
-      }));
+        hasBase64Images,
+        needsMigration: hasBase64Images,
+      });
     }
-  }, [token, convertR2FileToGalleryImage]);
+  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryImage, mergeImages]);
 
   // Delete an image (soft delete)
   const deleteImage = useCallback(async (imageId: string) => {

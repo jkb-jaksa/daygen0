@@ -11,6 +11,7 @@ import type {
   ImageGenerationStatus,
 } from "../hooks/useGeminiImageGeneration";
 import { useGalleryImages } from "../hooks/useGalleryImages";
+import { useGalleryMigration } from "../hooks/useGalleryMigration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import type { FluxGeneratedImage, FluxImageGenerationOptions } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
@@ -1027,7 +1028,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
     deleteImage: deleteGalleryImage,
     fetchGalleryImages,
     updateImages: updateGalleryImages,
+    hasBase64Images,
+    needsMigration,
   } = useGalleryImages();
+
+  // Migration hook for base64 to R2 conversion
+  const {
+    status: migrationStatus,
+    migrateImages,
+    resetStatus: resetMigrationStatus,
+  } = useGalleryMigration();
   const [inspirations, setInspirations] = useState<GalleryImageLike[]>([]);
   const [videoGallery, setVideoGallery] = useState<GalleryVideoLike[]>([]);
   const [wanVideoPrompt, setWanVideoPrompt] = useState<string>('');
@@ -2178,6 +2188,21 @@ const [batchSize, setBatchSize] = useState<number>(1);
     void loadPersistedState();
 
   }, [storagePrefix]);
+
+  // Auto-migrate base64 images to R2 when needed
+  useEffect(() => {
+    if (needsMigration && !migrationStatus.isRunning && !migrationStatus.completed) {
+      debugLog('Starting automatic migration of base64 images to R2');
+      migrateImages().then(success => {
+        if (success) {
+          debugLog('Migration completed successfully, refreshing gallery');
+          fetchGalleryImages();
+        } else {
+          debugWarn('Migration failed, some images may still be base64');
+        }
+      });
+    }
+  }, [needsMigration, migrationStatus.isRunning, migrationStatus.completed, migrateImages, fetchGalleryImages]);
 
   // Gallery is now managed by backend, no need for client-side backup
 
@@ -5361,6 +5386,44 @@ const handleGenerate = async () => {
       {copyNotification && (
         <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
           {copyNotification}
+        </div>
+      )}
+
+      {/* Migration status indicator */}
+      {migrationStatus.isRunning && (
+        <div className={`fixed top-4 right-4 z-[100] px-4 py-3 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[20px] max-w-sm`}>
+          <div className="flex items-center space-x-3">
+            <Loader2 className="w-4 h-4 animate-spin text-theme-light" />
+            <div>
+              <div className="font-medium">Migrating images to cloud storage</div>
+              <div className="text-xs text-theme-mid">
+                {migrationStatus.migratedImages} of {migrationStatus.totalImages} images migrated
+              </div>
+              {migrationStatus.progress > 0 && (
+                <div className="w-full bg-theme-dark rounded-full h-1 mt-2">
+                  <div 
+                    className="bg-theme-light h-1 rounded-full transition-all duration-300"
+                    style={{ width: `${migrationStatus.progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Migration error indicator */}
+      {migrationStatus.completed && migrationStatus.errors.length > 0 && (
+        <div className={`fixed top-4 right-4 z-[100] px-4 py-3 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[20px] max-w-sm`}>
+          <div className="flex items-center space-x-3">
+            <X className="w-4 h-4 text-red-400" />
+            <div>
+              <div className="font-medium text-red-400">Migration completed with errors</div>
+              <div className="text-xs text-theme-mid">
+                {migrationStatus.errors.length} images failed to migrate
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

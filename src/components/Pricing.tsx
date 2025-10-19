@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Check, Zap, Crown, Sparkles, Star } from "lucide-react";
 import { layout, cards, glass } from "../styles/designSystem";
 import useParallaxHover from "../hooks/useParallaxHover";
+import CreditPackages from "./payments/CreditPackages";
+import { usePayments } from "../hooks/usePayments";
 
 type PricingTier = {
   id: string;
@@ -142,7 +144,7 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
 ];
 
 
-function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSelected: boolean; onSelect: () => void }) {
+function PricingCard({ tier, isSelected, onSelect, onPurchase }: { tier: PricingTier; isSelected: boolean; onSelect: () => void; onPurchase?: () => void }) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
   return (
@@ -227,9 +229,12 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
         {/* CTA Button */}
         <div className="mt-auto parallax-isolate">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (tier.id === 'free') {
                 window.location.href = '/';
+              } else if (onPurchase) {
+                onPurchase();
               }
             }}
             className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
@@ -251,8 +256,18 @@ function PricingCard({ tier, isSelected, onSelect }: { tier: PricingTier; isSele
 export default function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'credits' | 'subscriptions'>('credits');
+  const { createCheckoutSession } = usePayments();
 
   const currentTiers = billingPeriod === 'yearly' ? YEARLY_PRICING_TIERS : PRICING_TIERS;
+
+  const handleSubscriptionPurchase = async (planId: string) => {
+    try {
+      await createCheckoutSession('subscription', planId);
+    } catch (error) {
+      console.error('Subscription purchase failed:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -269,39 +284,70 @@ export default function Pricing() {
               Unlock the full potential of daily generations.
             </p>
 
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <span className={`text-base font-raleway transition-colors ${billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white'}`}>
-                Monthly
-              </span>
+            {/* Tab Toggle */}
+            <div className="flex items-center justify-center gap-2 mb-8">
               <button
-                onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-                className="relative w-14 h-7 bg-theme-dark rounded-full border border-theme-mid transition-colors duration-200 hover:border-theme-text parallax-large"
+                onClick={() => setActiveTab('credits')}
+                className={`px-6 py-2 rounded-lg font-raleway transition-colors duration-200 ${
+                  activeTab === 'credits'
+                    ? 'bg-theme-text text-theme-black'
+                    : 'text-theme-white hover:text-theme-text'
+                }`}
               >
-                <div
-                  className={`absolute top-0.5 left-0.5 w-6 h-6 bg-theme-white rounded-full transition-transform duration-200 ${
-                    billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'
-                  }`}
-                />
+                Buy Credits
               </button>
-              <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white'}`}>
-                Yearly
-                <span className="ml-1 text-xs text-theme-white font-raleway">(Save 20%)</span>
-              </span>
+              <button
+                onClick={() => setActiveTab('subscriptions')}
+                className={`px-6 py-2 rounded-lg font-raleway transition-colors duration-200 ${
+                  activeTab === 'subscriptions'
+                    ? 'bg-theme-text text-theme-black'
+                    : 'text-theme-white hover:text-theme-text'
+                }`}
+              >
+                Subscriptions
+              </button>
             </div>
+
+            {/* Billing Toggle - Only show for subscriptions */}
+            {activeTab === 'subscriptions' && (
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <span className={`text-base font-raleway transition-colors ${billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+                  className="relative w-14 h-7 bg-theme-dark rounded-full border border-theme-mid transition-colors duration-200 hover:border-theme-text parallax-large"
+                >
+                  <div
+                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-theme-white rounded-full transition-transform duration-200 ${
+                      billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white'}`}>
+                  Yearly
+                  <span className="ml-1 text-xs text-theme-white font-raleway">(Save 20%)</span>
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Pricing Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
-            {currentTiers.map((tier) => (
-              <PricingCard 
-                key={`${tier.id}-${billingPeriod}`} 
-                tier={tier} 
-                isSelected={selectedPlan === tier.id}
-                onSelect={() => setSelectedPlan(tier.id)}
-              />
-            ))}
-          </div>
+          {/* Content based on active tab */}
+          {activeTab === 'credits' ? (
+            <CreditPackages />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
+              {currentTiers.map((tier) => (
+                <PricingCard 
+                  key={`${tier.id}-${billingPeriod}`} 
+                  tier={tier} 
+                  isSelected={selectedPlan === tier.id}
+                  onSelect={() => setSelectedPlan(tier.id)}
+                  onPurchase={() => handleSubscriptionPurchase(tier.id)}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Additional Info */}
           <div className="mt-16 text-center">

@@ -28,6 +28,8 @@ const ResetPasswordPage = lazy(() => import("./components/ResetPasswordPage"));
 const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
+const PaymentCancel = lazy(() => import("./components/payments/PaymentCancel"));
 
 function NavbarFallback() {
   return (
@@ -442,6 +444,8 @@ export default function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

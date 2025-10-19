@@ -2,16 +2,44 @@ import type { GalleryImageLike, StoredGalleryImage } from "../components/create/
 import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
 import type { ReveGeneratedImage } from "../hooks/useReveImageGeneration";
 import { normalizeModelId } from './modelUtils';
+import { debugWarn } from './debug';
 
 const isJobBackedImage = (
   item: GalleryImageLike,
 ): item is FluxGeneratedImage | ReveGeneratedImage =>
   "jobId" in item && typeof item.jobId === "string";
 
+/**
+ * Check if a URL is a base64 data URL
+ */
+export const isBase64Url = (url: string): boolean => {
+  return url.startsWith('data:image/');
+};
+
+/**
+ * Filter out base64 images from a gallery array
+ */
+export const filterBase64Images = (images: GalleryImageLike[]): GalleryImageLike[] => {
+  return images.filter(image => !isBase64Url(image.url));
+};
+
+/**
+ * Filter to only base64 images from a gallery array
+ */
+export const filterOnlyBase64Images = (images: GalleryImageLike[]): GalleryImageLike[] => {
+  return images.filter(image => isBase64Url(image.url));
+};
+
 export const serializeGallery = (
   items: GalleryImageLike[],
-): StoredGalleryImage[] =>
-  items.map(item => ({
+): StoredGalleryImage[] => {
+  // Warn if we're persisting base64 images
+  const base64Images = filterOnlyBase64Images(items);
+  if (base64Images.length > 0) {
+    debugWarn(`Serializing ${base64Images.length} base64 images to storage. Consider migrating to R2.`);
+  }
+
+  return items.map(item => ({
     url: item.url,
     prompt: item.prompt,
     model: item.model,
@@ -24,6 +52,7 @@ export const serializeGallery = (
     avatarImageId: item.avatarImageId,
     ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
   }));
+};
 
 export const hydrateStoredGallery = (
   items: StoredGalleryImage[],

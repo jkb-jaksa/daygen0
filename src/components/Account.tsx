@@ -13,6 +13,7 @@ import { getDestinationLabel, safeNext } from "../utils/navigation";
 import { ProfileCard } from "./account/ProfileCard";
 import { AtAGlance } from "./account/AtAGlance";
 import { useToast } from "../hooks/useToast";
+import SubscriptionManager from "./payments/SubscriptionManager";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
@@ -563,6 +564,11 @@ export default function Account() {
         />
 
         <AtAGlance generatedCount={gallery.length} creditsRemaining={user.credits} />
+      </section>
+
+      {/* Subscription Management */}
+      <section className="max-w-5xl mx-auto mt-8">
+        <SubscriptionManager />
       </section>
 
       <ProfileCropModal
