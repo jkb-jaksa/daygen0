@@ -9320,7 +9320,7 @@ const handleGenerate = async () => {
                     ) : (
                       <Sparkles className="w-4 h-4 text-n-black" />
                     )}
-                    <span className="text-sm font-raleway font-medium text-n-black">{batchSize}</span>
+                    <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-n-black">{batchSize}</span>
                   </div>
                 </button>
               </Tooltip>
