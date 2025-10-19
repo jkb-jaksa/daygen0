@@ -9279,7 +9279,7 @@ const handleGenerate = async () => {
                   aria-label={`${generateButtonLabel} (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
                 >
                   <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
-                    {generateButtonLabel}
+                    {generateButtonLabel} ({batchSize} credit{batchSize > 1 ? 's' : ''})
                   </span>
                   <div className="flex items-center gap-0 sm:gap-1">
                     {showGenerateSpinner ? (
