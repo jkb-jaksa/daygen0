@@ -55,7 +55,7 @@ A modern AI-powered content generation platform featuring comprehensive image an
 - **Storage**: IndexedDB for local caching + Cloudflare R2
 - **Authentication**: Supabase Auth with JWT backend integration
 - **Payments**: Stripe integration for credits and subscriptions
-- **Deployment**: Vercel with edge functions
+- **Deployment**: Cloudflare Pages
 
 ## 🚀 Getting Started
 
@@ -111,7 +111,7 @@ The backend is in a separate repository: [daygen-backend](https://github.com/skr
 
 ## 🌐 Live Demo
 
-Visit [daygen0.vercel.app](https://daygen0.vercel.app)
+Visit the live application at your deployed Cloudflare Pages URL
 
 ## 📄 License
 

@@ -1,12 +1,12 @@
 # Production Deployment Guide
 
-## 🚀 Frontend Deployment (Vercel)
+## 🚀 Frontend Deployment (Cloudflare Pages)
 
 ### Environment Variables Setup
 
-In your Vercel dashboard for the **frontend** project:
+In your Cloudflare Pages dashboard for the **frontend** project:
 
-1. Go to Project Settings → Environment Variables
+1. Go to Settings → Environment Variables
 2. Add these variables:
 
 ```bash
@@ -27,17 +27,22 @@ VITE_GOOGLE_ANALYTICS_ID=your-ga-id
 ### Deployment Steps
 
 1. **Connect Repository**:
-   - Connect your GitHub repository to Vercel
+   - Connect your GitHub repository to Cloudflare Pages
    - Set build command: `npm run build`
    - Set output directory: `dist`
+   - Framework preset: `Vite`
 
 2. **Configure Domain**:
-   - Add custom domain in Vercel dashboard
+   - Add custom domain in Cloudflare Pages dashboard
    - Update DNS records as instructed
 
 3. **Deploy**:
    - Push to main branch triggers automatic deployment
    - Monitor build logs for any issues
+
+4. **Wrangler Configuration**:
+   - The project includes `wrangler.jsonc` for Cloudflare Pages configuration
+   - Ensure environment variables are properly set in `vars` section
 
 ## 🚀 Backend Deployment (Google Cloud Run)
 
@@ -67,7 +72,7 @@ R2_PUBLIC_URL=https://your-bucket.r2.dev
 # Payment Processing
 STRIPE_SECRET_KEY=your-stripe-secret-key
 STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-FRONTEND_URL=https://your-frontend-domain.vercel.app
+FRONTEND_URL=https://your-frontend-domain.pages.dev
 
 # Google Cloud Tasks
 GOOGLE_CLOUD_PROJECT_ID=your-gcp-project-id
@@ -240,7 +245,10 @@ SENDGRID_FROM_EMAIL=noreply@yourdomain.com
          - uses: actions/checkout@v3
          - uses: actions/setup-node@v3
          - run: cd daygen0 && npm ci && npm run build
-         - uses: amondnet/vercel-action@v20
+         - uses: cloudflare/wrangler-action@v3
+           with:
+             apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+             accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
    ```
 
 2. **Backend Deployment**:
@@ -297,7 +305,7 @@ gcloud run services describe daygen-backend --region=europe-central2
 
 ## 📚 Additional Resources
 
-- [Vercel Deployment Guide](https://vercel.com/docs)
+- [Cloudflare Pages Documentation](https://developers.cloudflare.com/pages/)
 - [Google Cloud Run Documentation](https://cloud.google.com/run/docs)
 - [Supabase Documentation](https://supabase.com/docs)
 - [Stripe Integration Guide](https://stripe.com/docs)
@@ -470,5 +478,5 @@ gcloud run services describe daygen-backend --region=europe-central2
 
 If issues arise:
 1. Revert to console.log for password reset
-2. Update `NEXT_PUBLIC_BASE_URL` to point to a working frontend
-3. Check Vercel function logs for errors
+2. Update `VITE_API_BASE_URL` to point to a working backend
+3. Check Cloudflare Pages deployment logs for errors
