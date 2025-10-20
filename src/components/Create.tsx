@@ -9828,8 +9828,17 @@ const handleGenerate = async () => {
                     currentIndex={currentIdx}
                     onNavigate={(index) => {
                       if (index >= 0 && index < currentImages.length) {
-                        setSelectedFullImage(currentImages[index]);
+                        const newImage = currentImages[index];
+                        setSelectedFullImage(newImage);
                         setCurrentGalleryIndex(index);
+                        
+                        // Update URL if the new image has a jobId
+                        if (newImage && newImage.jobId) {
+                          navigate(`/create/image/${newImage.jobId}`, { replace: false });
+                        } else if (jobId) {
+                          // Clear jobId from URL if navigating to an image without one
+                          navigate('/create/image', { replace: false });
+                        }
                       }
                     }}
                   />
