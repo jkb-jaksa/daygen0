@@ -667,30 +667,22 @@ html[data-theme="day"] .border-b.border-theme-black {
   border-bottom-color: var(--theme-light) !important;
 }
 
-/* Footer gradient background - same subtle effect as FAQ section */
+/* Footer gradient background - jaksa gradient (overlapping radials) */
 .footer-gradient-bg {
-  background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
-      #0e0f10 0%,
-      #101112 15%,
-      #0e0f10 30%,
-      #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+  background: 
+    radial-gradient(ellipse 800px 600px at 20% 80%, hsla(342, 92%, 72%, 0.44) 0%, transparent 50%),
+    radial-gradient(ellipse 750px 550px at 40% 30%, hsla(48, 95%, 70%, 0.48) 0%, transparent 50%),
+    radial-gradient(ellipse 600px 700px at 60% 90%, hsla(226, 95%, 72%, 0.44) 0%, transparent 50%),
+    radial-gradient(ellipse 700px 500px at 80% 20%, hsla(182, 85%, 70%, 0.48) 0%, transparent 50%),
     var(--theme-black);
 }
 
 html[data-theme="day"] .footer-gradient-bg {
-  background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
-      #dce5e5 0%,
-      #e4ebeb 15%,
-      #ebf1f1 30%,
-      #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+  background: 
+    radial-gradient(ellipse 800px 600px at 20% 80%, hsla(342, 92%, 72%, 0.60) 0%, transparent 50%),
+    radial-gradient(ellipse 750px 550px at 40% 30%, hsla(48, 95%, 70%, 0.65) 0%, transparent 50%),
+    radial-gradient(ellipse 600px 700px at 60% 90%, hsla(226, 95%, 72%, 0.60) 0%, transparent 50%),
+    radial-gradient(ellipse 700px 500px at 80% 20%, hsla(182, 85%, 70%, 0.65) 0%, transparent 50%),
     var(--theme-black);
 }
 
