@@ -1115,16 +1115,22 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setActiveCategoryState((current) => (current === derived ? current : derived));
   }, [location.pathname]);
   
-  // Control footer visibility based on activeCategory
+  // Control footer visibility based on activeCategory or route
   useEffect(() => {
-    const hideFooterSections = ['text', 'image', 'video', 'audio'];
-    setFooterVisible(!hideFooterSections.includes(activeCategory));
+    const isGalleryRoute = location.pathname.startsWith('/gallery');
+    
+    if (isGalleryRoute) {
+      setFooterVisible(false);
+    } else {
+      const hideFooterSections = ['text', 'image', 'video', 'audio'];
+      setFooterVisible(!hideFooterSections.includes(activeCategory));
+    }
 
     // Cleanup: show footer when component unmounts
     return () => {
       setFooterVisible(true);
     };
-  }, [activeCategory, setFooterVisible]);
+  }, [activeCategory, location.pathname, setFooterVisible]);
 
   const MAX_PARALLEL_GENERATIONS = 5;
   const LONG_POLL_THRESHOLD_MS = 90000;
