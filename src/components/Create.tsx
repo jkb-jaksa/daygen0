@@ -8011,54 +8011,93 @@ const handleGenerate = async () => {
                             {storedAvatars.map(avatar => {
                               const isActive = selectedAvatar?.id === avatar.id;
                               return (
-                                <div key={avatar.id} className="flex items-center gap-3 rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAvatarSelect(avatar)}
-                                    className={`flex flex-1 items-center gap-3 ${
-                                      isActive
-                                        ? 'text-theme-text'
-                                        : 'text-white'
-                                    }`}
-                                  >
-                                    <img
-                                      src={avatar.imageUrl}
-                                      alt={avatar.name}
-                                      loading="lazy"
-                                      className="h-10 w-10 rounded-lg object-cover"
-                                    />
-                                    <div className="min-w-0 flex-1 text-left">
-                                      <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
+                                <div key={avatar.id} className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10">
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAvatarSelect(avatar)}
+                                      className={`flex flex-1 items-center gap-3 ${
+                                        isActive
+                                          ? 'text-theme-text'
+                                          : 'text-white'
+                                      }`}
+                                    >
+                                      <img
+                                        src={avatar.imageUrl}
+                                        alt={avatar.name}
+                                        loading="lazy"
+                                        className="h-10 w-10 rounded-lg object-cover"
+                                      />
+                                      <div className="min-w-0 flex-1 text-left">
+                                        <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
+                                      </div>
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setCreationsModalAvatar(avatar);
+                                          setIsAvatarPickerOpen(false);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
+                                        title="View creations"
+                                        aria-label="View creations with this Avatar"
+                                      >
+                                        <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAvatarToDelete(avatar);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
+                                        title="Delete Avatar"
+                                        aria-label="Delete Avatar"
+                                      >
+                                        <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                      </button>
+                                      {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                     </div>
-                                  </button>
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCreationsModalAvatar(avatar);
-                                        setIsAvatarPickerOpen(false);
-                                      }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
-                                      title="View creations"
-                                      aria-label="View creations with this Avatar"
-                                    >
-                                      <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setAvatarToDelete(avatar);
-                                      }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-theme-text/10 rounded-full"
-                                      title="Delete Avatar"
-                                      aria-label="Delete Avatar"
-                                    >
-                                      <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
-                                    </button>
-                                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                   </div>
+                                  {/* Avatar version thumbnails */}
+                                  {avatar.images.length > 1 && (
+                                    <div className="mt-2 flex flex-row gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent">
+                                      {avatar.images.map((image, index) => {
+                                        const isSelectedVersion = isActive && selectedAvatarImageId === image.id;
+                                        const isPrimary = image.id === avatar.primaryImageId;
+                                        return (
+                                          <button
+                                            key={image.id}
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setPendingAvatarId(null);
+                                              setSelectedAvatar(avatar);
+                                              setSelectedAvatarImageId(image.id);
+                                              setIsAvatarPickerOpen(false);
+                                            }}
+                                            className={`flex-shrink-0 h-8 w-8 rounded-md overflow-hidden border transition-colors duration-200 cursor-pointer ${
+                                              isSelectedVersion
+                                                ? 'border-2 border-theme-text'
+                                                : isPrimary
+                                                ? 'border border-theme-text/60 hover:border-theme-text'
+                                                : 'border border-theme-mid hover:border-theme-text'
+                                            }`}
+                                            title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
+                                          >
+                                            <img
+                                              src={image.url}
+                                              alt={`${avatar.name} version ${index + 1}`}
+                                              className="h-full w-full object-cover"
+                                              loading="lazy"
+                                            />
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
