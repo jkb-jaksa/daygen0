@@ -460,7 +460,17 @@ export default function Navbar() {
                 </div>
               </>
             )}
-            <div className="flex items-center gap-0">
+            <div className="flex items-center gap-2">
+              {/* Mobile Credit Indicator */}
+              {user && (
+                <div className="lg:hidden flex items-center gap-1 bg-theme-dark/50 border border-theme-mid rounded-full px-2 py-1">
+                  <CreditCard className="w-3 h-3 text-cyan-400" />
+                  <span className="font-raleway text-xs text-theme-text">
+                    {user.credits?.toLocaleString() || 0}
+                  </span>
+                </div>
+              )}
+              
               <button
                 type="button"
                 className={`lg:hidden ${iconButtons.xl} sm:${iconButtons.sm}`}

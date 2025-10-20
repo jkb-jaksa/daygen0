@@ -3,6 +3,8 @@ import { getApiUrl } from '../utils/api';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
+import { useCreditCheck } from './useCreditCheck';
+import { InsufficientCreditsModal } from '../components/modals/InsufficientCreditsModal';
 
 export interface GeneratedImage {
   url: string;
@@ -102,6 +104,13 @@ export interface ImageGenerationOptions {
 
 export const useGeminiImageGeneration = () => {
   const { token, user } = useAuth();
+  const { 
+    checkCredits, 
+    showInsufficientCreditsModal, 
+    creditCheckData, 
+    handleBuyCredits, 
+    handleCloseModal 
+  } = useCreditCheck();
   const [state, setState] = useState<ImageGenerationState>({
     isLoading: false,
     error: null,
@@ -438,6 +447,12 @@ export const useGeminiImageGeneration = () => {
   }, [token, updateControllerWithBackend, stopProgressController]);
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
+    // Check credits before starting generation
+    const creditCheck = checkCredits(1, 'image generation');
+    if (!creditCheck.hasCredits) {
+      return; // Modal will be shown by useCreditCheck hook
+    }
+
     // Reset state completely for each new generation
     setState({
       isLoading: true,
@@ -706,5 +721,9 @@ export const useGeminiImageGeneration = () => {
     clearError,
     clearGeneratedImage,
     reset,
+    showInsufficientCreditsModal,
+    creditCheckData,
+    handleBuyCredits,
+    handleCloseModal,
   };
 };

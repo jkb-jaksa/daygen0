@@ -6,14 +6,22 @@ const NETWORK_ERROR_PATTERNS = [
   'network connection was lost',
 ];
 
-export const OFFLINE_MESSAGE = "You’re offline. Reconnect and retry.";
-export const NETWORK_RETRY_MESSAGE = "We couldn’t reach the server. Check your connection and try again.";
-export const PLAN_LIMIT_MESSAGE = "You’ve hit your plan limit. Upgrade or try a lower-cost model.";
+export const OFFLINE_MESSAGE = "You're offline. Reconnect and retry.";
+export const NETWORK_RETRY_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
+export const PLAN_LIMIT_MESSAGE = "You've hit your plan limit. Upgrade or try a lower-cost model.";
 export const SESSION_EXPIRED_MESSAGE = "Your session expired. Log back in to continue.";
-export const UPLOAD_FAILURE_MESSAGE = "We couldn’t read that image. Re-upload or use a different format.";
-export const DOWNLOAD_FAILURE_MESSAGE = "We couldn’t download the file. Save image locally instead.";
-export const GOOGLE_EMAIL_MESSAGE = "We couldn’t read your Google email—try email login instead.";
+export const UPLOAD_FAILURE_MESSAGE = "We couldn't read that image. Re-upload or use a different format.";
+export const DOWNLOAD_FAILURE_MESSAGE = "We couldn't download the file. Save image locally instead.";
+export const GOOGLE_EMAIL_MESSAGE = "We couldn't read your Google email—try email login instead.";
 export const INVALID_CREDENTIALS_MESSAGE = "Check your email & password, then try again.";
+
+// Payment-related error messages
+export const PAYMENT_FAILED_MESSAGE = "Your payment failed. Please check your payment method and try again.";
+export const PAYMENT_CANCELLED_MESSAGE = "Payment was cancelled. No charges were made.";
+export const PAYMENT_PROCESSING_MESSAGE = "Your payment is being processed. This may take a few minutes.";
+export const INSUFFICIENT_CREDITS_MESSAGE = "You don't have enough credits. Purchase more credits to continue.";
+export const SUBSCRIPTION_EXISTS_MESSAGE = "You already have an active subscription. Use the upgrade option instead.";
+export const WEBHOOK_DELAY_MESSAGE = "Payment confirmation is taking longer than expected. Don't worry, we're processing it.";
 
 export type AuthErrorContext = "login" | "signup" | "forgot-password" | "reset-password";
 
@@ -41,6 +49,29 @@ const SESSION_EXPIRED_PATTERNS = [
 const GOOGLE_EMAIL_PATTERNS = [
   "google",
   "email",
+];
+
+const PAYMENT_ERROR_PATTERNS = [
+  "payment failed",
+  "card declined",
+  "insufficient funds",
+  "expired card",
+  "invalid card",
+  "payment method",
+];
+
+const SUBSCRIPTION_ERROR_PATTERNS = [
+  "already have",
+  "active subscription",
+  "duplicate subscription",
+  "subscription exists",
+];
+
+const WEBHOOK_DELAY_PATTERNS = [
+  "webhook",
+  "processing",
+  "pending",
+  "delayed",
 ];
 
 export function isOffline(): boolean {
@@ -173,5 +204,55 @@ export function resolveGenerationCatchError(error: unknown, fallback?: string): 
   if (error instanceof Error && normalizeMessage(error.message)) {
     return error.message;
   }
-  return fallback ?? "We couldn’t generate that. Try again in a moment.";
+  return fallback ?? "We couldn't generate that. Try again in a moment.";
+}
+
+export function resolvePaymentErrorMessage(error: unknown, context?: "subscription" | "credits" | "general"): string {
+  const offlineMessage = getOfflineOrNetworkMessage(error);
+  if (offlineMessage) {
+    return offlineMessage;
+  }
+
+  const raw = error instanceof Error ? error.message : String(error);
+  const normalized = normalizeMessage(raw);
+  const lower = normalized.toLowerCase();
+
+  if (!normalized) {
+    return PAYMENT_FAILED_MESSAGE;
+  }
+
+  // Check for subscription-specific errors
+  if (context === "subscription" && SUBSCRIPTION_ERROR_PATTERNS.some(pattern => lower.includes(pattern))) {
+    return SUBSCRIPTION_EXISTS_MESSAGE;
+  }
+
+  // Check for credit-related errors
+  if (lower.includes("insufficient") && lower.includes("credit")) {
+    return INSUFFICIENT_CREDITS_MESSAGE;
+  }
+
+  // Check for payment method errors
+  if (PAYMENT_ERROR_PATTERNS.some(pattern => lower.includes(pattern))) {
+    return PAYMENT_FAILED_MESSAGE;
+  }
+
+  // Check for webhook delay patterns
+  if (WEBHOOK_DELAY_PATTERNS.some(pattern => lower.includes(pattern))) {
+    return WEBHOOK_DELAY_MESSAGE;
+  }
+
+  // Check for cancellation
+  if (lower.includes("cancelled") || lower.includes("canceled")) {
+    return PAYMENT_CANCELLED_MESSAGE;
+  }
+
+  return normalized || PAYMENT_FAILED_MESSAGE;
+}
+
+export function resolveSubscriptionErrorMessage(error: unknown): string {
+  return resolvePaymentErrorMessage(error, "subscription");
+}
+
+export function resolveCreditErrorMessage(error: unknown): string {
+  return resolvePaymentErrorMessage(error, "credits");
 }

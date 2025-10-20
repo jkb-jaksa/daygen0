@@ -7,6 +7,9 @@ import {
   type AuthContextValue,
   type User as AppUser,
 } from './context';
+import { useSessionMonitor } from '../hooks/useSessionMonitor';
+import { useCrossTabSync } from '../hooks/useCrossTabSync';
+import { SessionTimeoutModal } from '../components/modals/SessionTimeoutModal';
 
 type SessionTokens = {
   accessToken?: string | null;
@@ -225,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const logOut = useCallback(async () => {
+  const logOutInternal = useCallback(async () => {
     const accessToken = session?.access_token;
     if (accessToken) {
       try {
@@ -273,6 +276,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(activeSession);
     return profile;
   }, [session, fetchUserProfile]);
+
+  // Cross-tab synchronization
+  const { notifyCreditsUpdate, notifyUserLogout } = useCrossTabSync({
+    user,
+    refreshUser,
+    logOut: logOutInternal,
+  });
+
+  const logOut = useCallback(async () => {
+    await logOutInternal();
+    notifyUserLogout();
+  }, [logOutInternal, notifyUserLogout]);
+
+  // Notify other tabs when credits change
+  useEffect(() => {
+    if (user?.credits !== undefined) {
+      notifyCreditsUpdate(user.credits);
+    }
+  }, [user?.credits, notifyCreditsUpdate]);
 
   const updateProfile = useCallback<
     AuthContextValue['updateProfile']
@@ -382,6 +404,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void getInitialSession();
   }, [fetchUserProfile]);
 
+  // Session monitoring for timeout warnings
+  const { 
+    showTimeoutModal, 
+    timeRemaining, 
+    handleStayLoggedIn, 
+    handleLogout 
+  } = useSessionMonitor({
+    token: session?.access_token ?? null,
+    logOut,
+    config: {
+      warningTimeMinutes: 5,
+      checkIntervalMs: 30000
+    }
+  });
+
   const value: AuthContextValue = {
     user,
     token: session?.access_token ?? null,
@@ -399,6 +436,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <SessionTimeoutModal
+        isOpen={showTimeoutModal}
+        timeRemaining={timeRemaining}
+        onStayLoggedIn={handleStayLoggedIn}
+        onLogout={handleLogout}
+      />
+    </AuthContext.Provider>
+  );
 }
 

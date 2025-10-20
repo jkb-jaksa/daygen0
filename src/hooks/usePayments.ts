@@ -20,6 +20,7 @@ interface SubscriptionInfo {
   cancelAtPeriodEnd: boolean;
   credits: number;
   createdAt: string;
+  stripePriceId: string;
 }
 
 export function usePayments() {
@@ -133,13 +134,33 @@ export function usePayments() {
       const response = await fetch(getApiUrl('/api/payments/subscription/cancel'), {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to cancel subscription');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to cancel subscription';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Parse response to ensure it's valid JSON
+      const responseText = await response.text();
+      if (responseText) {
+        try {
+          JSON.parse(responseText);
+        } catch {
+          // Response is not JSON, but that's okay for cancel endpoint
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';

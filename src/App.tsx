@@ -2,10 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
+import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
+import { useWelcomeModal } from "./hooks/useWelcomeModal";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, User, Volume2 } from "lucide-react";
+import { CreditWarningBanner } from "./components/CreditWarningBanner";
+import { WelcomeModal } from "./components/onboarding/WelcomeModal";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -30,7 +34,7 @@ const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
-const PaymentCancel = lazy(() => import("./components/payments/PaymentCancel"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 
 function NavbarFallback() {
   return (
@@ -337,66 +341,105 @@ function RouteFallback() {
   );
 }
 
-export default function App() {
+function AppContent() {
   const { isFooterVisible } = useFooter();
+  const { 
+    showLowWarning, 
+    showUrgentWarning, 
+    currentCredits, 
+    lowThreshold, 
+    urgentThreshold,
+    handleBuyCredits,
+    handleSubscribe,
+    handleDismiss
+  } = useCreditWarningBanner();
+  const { 
+    showWelcomeModal, 
+    handleCloseWelcomeModal, 
+    handleStartCreating 
+  } = useWelcomeModal();
 
   return (
-    <BrowserRouter>
-      <div>
+    <div>
+      <Suspense fallback={null}>
+        <GlobalSvgDefs />
+      </Suspense>
+      <Suspense fallback={<NavbarFallback />}>
+        <Navbar />
+      </Suspense>
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/learn" element={<LearnLayout />}>
+              <Route index element={<Navigate to="use-cases" replace />} />
+              <Route path="use-cases" element={<Understand />} />
+              <Route path="tools" element={<KnowledgeBase />} />
+              <Route path="prompts" element={<Prompts />} />
+              <Route path="courses" element={<Courses />} />
+            </Route>
+            <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+            <Route path="/learn/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+            <Route path="/knowledge-base" element={<Navigate to="/learn/tools" replace />} />
+            <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
+            <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
+            <Route path="/digital-copy" element={<DigitalCopy />} />
+            <Route path="/create/*" element={<CreateRoutes />} />
+            <Route path="/gallery/*" element={<GalleryRoutes />} />
+            <Route path="/upgrade" element={<Upgrade />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route
+              path="/edit"
+              element={(
+                <RequireAuth>
+                  <Edit />
+                </RequireAuth>
+              )}
+            />
+            <Route path="/account" element={<Account />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </main>
+      {isFooterVisible && (
         <Suspense fallback={null}>
-          <GlobalSvgDefs />
+          <Footer />
         </Suspense>
-        <Suspense fallback={<NavbarFallback />}>
-          <Navbar />
-        </Suspense>
-        <main id="main-content" tabIndex={-1} className="focus:outline-none">
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/learn" element={<LearnLayout />}>
-                <Route index element={<Navigate to="use-cases" replace />} />
-                <Route path="use-cases" element={<Understand />} />
-                <Route path="tools" element={<KnowledgeBase />} />
-                <Route path="prompts" element={<Prompts />} />
-                <Route path="courses" element={<Courses />} />
-              </Route>
-              <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
-              <Route path="/learn/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
-              <Route path="/knowledge-base" element={<Navigate to="/learn/tools" replace />} />
-              <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
-              <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
-              <Route path="/about-us" element={<AboutUs />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
-              <Route path="/digital-copy" element={<DigitalCopy />} />
-              <Route path="/create/*" element={<CreateRoutes />} />
-              <Route path="/gallery/*" element={<GalleryRoutes />} />
-              <Route path="/upgrade" element={<Upgrade />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route
-                path="/edit"
-                element={(
-                  <RequireAuth>
-                    <Edit />
-                  </RequireAuth>
-                )}
-              />
-              <Route path="/account" element={<Account />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/auth/reset-password" element={<ResetPassword />} />
-              <Route path="/payment/success" element={<PaymentSuccess />} />
-              <Route path="/payment/cancel" element={<PaymentCancel />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </main>
-        {isFooterVisible && (
-          <Suspense fallback={null}>
-            <Footer />
-          </Suspense>
-        )}
-      </div>
+      )}
+      
+      {/* Credit Warning Banner */}
+      <CreditWarningBanner
+        isOpen={showLowWarning || showUrgentWarning}
+        isUrgent={showUrgentWarning}
+        currentCredits={currentCredits}
+        threshold={showUrgentWarning ? urgentThreshold : lowThreshold}
+        onBuyCredits={handleBuyCredits}
+        onSubscribe={handleSubscribe}
+        onDismiss={handleDismiss}
+      />
+      
+      {/* Welcome Modal */}
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={handleCloseWelcomeModal}
+        onStartCreating={handleStartCreating}
+      />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

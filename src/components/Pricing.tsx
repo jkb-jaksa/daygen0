@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { Check, Zap, Crown, Sparkles, Star } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Check, Zap, Crown, Sparkles, Star, ArrowUp, ArrowDown } from "lucide-react";
 import { layout, cards, glass } from "../styles/designSystem";
 import useParallaxHover from "../hooks/useParallaxHover";
 import CreditPackages from "./payments/CreditPackages";
 import { usePayments } from "../hooks/usePayments";
+import { useAuth } from "../auth/useAuth";
+import { resolveSubscriptionErrorMessage } from "../utils/errorMessages";
+import { getApiUrl } from "../utils/api";
 
 type PricingTier = {
   id: string;
@@ -144,19 +147,59 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
 ];
 
 
-function PricingCard({ tier, isSelected, onSelect, onPurchase }: { tier: PricingTier; isSelected: boolean; onSelect: () => void; onPurchase?: () => void }) {
+function PricingCard({ 
+  tier, 
+  isSelected, 
+  onSelect, 
+  onPurchase, 
+  isCurrentPlan, 
+  isUpgrade, 
+  isDowngrade,
+  onUpgrade,
+  onDowngrade 
+}: { 
+  tier: PricingTier; 
+  isSelected: boolean; 
+  onSelect: () => void; 
+  onPurchase?: () => void;
+  isCurrentPlan?: boolean;
+  isUpgrade?: boolean;
+  isDowngrade?: boolean;
+  onUpgrade?: () => void;
+  onDowngrade?: () => void;
+}) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
   return (
     <div
-      onClick={onSelect}
-      onPointerMove={onPointerMove}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      className={`${cards.shell} ${isSelected ? 'border-theme-light pricing-selected' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow`}
+      onClick={isCurrentPlan ? undefined : onSelect}
+      onPointerMove={isCurrentPlan ? undefined : onPointerMove}
+      onPointerEnter={isCurrentPlan ? undefined : onPointerEnter}
+      onPointerLeave={isCurrentPlan ? undefined : onPointerLeave}
+      className={`${cards.shell} ${
+        isCurrentPlan 
+          ? 'border-green-400 bg-green-400/5 pricing-current' 
+          : isSelected 
+            ? 'border-theme-light pricing-selected' 
+            : ''
+      } group relative overflow-hidden p-6 ${
+        isCurrentPlan ? 'cursor-default' : 'cursor-pointer'
+      } transition-all duration-200 ${
+        isCurrentPlan ? '' : 'parallax-small mouse-glow'
+      }`}
     >
+      {/* Current Plan badge */}
+      {isCurrentPlan && (
+        <div className="absolute top-4 right-6 z-10">
+          <div className="flex items-center gap-1.5 bg-green-400 text-theme-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
+            <Check className="w-4 h-4 fill-current" />
+            Current Plan
+          </div>
+        </div>
+      )}
+
       {/* Popular badge */}
-      {tier.popular && (
+      {tier.popular && !isCurrentPlan && (
         <div className="absolute top-4 right-6 z-10">
           <div className="flex items-center gap-1.5 bg-brand-cyan text-theme-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
             <Star className="w-4 h-4 fill-current" />
@@ -166,7 +209,7 @@ function PricingCard({ tier, isSelected, onSelect, onPurchase }: { tier: Pricing
       )}
 
       {/* Best Value badge */}
-      {tier.bestValue && (
+      {tier.bestValue && !isCurrentPlan && (
         <div className="absolute top-4 right-6 z-10">
           <div className="flex items-center gap-1.5 bg-brand-red text-theme-black px-4 py-1.5 rounded-full text-sm font-raleway font-medium shadow-lg">
             <Crown className="w-4 h-4 fill-current" />
@@ -228,25 +271,54 @@ function PricingCard({ tier, isSelected, onSelect, onPurchase }: { tier: Pricing
 
         {/* CTA Button */}
         <div className="mt-auto parallax-isolate">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (tier.id === 'free') {
-                window.location.href = '/';
-              } else if (onPurchase) {
-                onPurchase();
-              }
-            }}
-            className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
-              tier.id === 'free' 
-                ? 'btn-cyan' 
-                : tier.id === 'pro'
-                ? 'btn-cyan'
-                : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
-            }`}
-          >
-            {tier.id === 'free' ? 'Get Started' : 'Upgrade Now'}
-          </button>
+          {isCurrentPlan ? (
+            <div className="flex items-center justify-center gap-2 text-green-400 font-raleway bg-green-400/10 py-3 px-4 rounded-lg border border-green-400/20">
+              <Check className="w-5 h-5" />
+              <span className="font-medium">Current Plan</span>
+            </div>
+          ) : isUpgrade ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpgrade?.();
+              }}
+              className="w-full btn btn-cyan font-raleway text-base transition-colors duration-200 parallax-large flex items-center justify-center gap-2"
+            >
+              <ArrowUp className="w-4 h-4" />
+              Upgrade Now
+            </button>
+          ) : isDowngrade ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDowngrade?.();
+              }}
+              className="w-full btn btn-yellow font-raleway text-base transition-colors duration-200 parallax-large flex items-center justify-center gap-2"
+            >
+              <ArrowDown className="w-4 h-4" />
+              Downgrade
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (tier.id === 'free') {
+                  window.location.href = '/';
+                } else if (onPurchase) {
+                  onPurchase();
+                }
+              }}
+              className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
+                tier.id === 'free' 
+                  ? 'btn-cyan' 
+                  : tier.id === 'pro'
+                  ? 'btn-cyan'
+                  : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
+              }`}
+            >
+              {tier.id === 'free' ? 'Get Started' : 'Subscribe'}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -257,16 +329,253 @@ export default function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'credits' | 'subscriptions'>('credits');
-  const { createCheckoutSession } = usePayments();
+  const [currentSubscription, setCurrentSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const { createCheckoutSession, getSubscription } = usePayments();
+  const { user } = useAuth();
 
   const currentTiers = billingPeriod === 'yearly' ? YEARLY_PRICING_TIERS : PRICING_TIERS;
 
+  // Map stripePriceId to plan tier
+  const getCurrentPlanFromSubscription = () => {
+    if (!currentSubscription?.stripePriceId) {
+      return null;
+    }
+
+    const stripePriceId = currentSubscription.stripePriceId;
+    
+    // Check for yearly plans first
+    if (stripePriceId.includes('yearly') || stripePriceId.includes('year')) {
+      if (stripePriceId.includes('pro')) {
+        return { id: 'pro-yearly', name: 'Pro', billingPeriod: 'yearly' };
+      } else if (stripePriceId.includes('enterprise')) {
+        return { id: 'enterprise-yearly', name: 'Enterprise', billingPeriod: 'yearly' };
+      }
+    }
+    
+    // Check for monthly plans
+    if (stripePriceId.includes('pro')) {
+      return { id: 'pro', name: 'Pro', billingPeriod: 'monthly' };
+    } else if (stripePriceId.includes('enterprise')) {
+      return { id: 'enterprise', name: 'Enterprise', billingPeriod: 'monthly' };
+    }
+    
+    return null;
+  };
+
+  // Filter tiers based on current subscription
+  const getFilteredTiers = () => {
+    if (!currentSubscription) {
+      // No subscription - show all tiers
+      return currentTiers;
+    }
+
+    const currentPlan = getCurrentPlanFromSubscription();
+    if (!currentPlan) {
+      // Can't determine current plan - show all tiers
+      return currentTiers;
+    }
+
+    // Define tier hierarchy
+    const tierHierarchy = { 
+      'free': 0, 
+      'pro': 1, 
+      'pro-yearly': 1, 
+      'enterprise': 2, 
+      'enterprise-yearly': 2 
+    };
+
+    const currentTierLevel = tierHierarchy[currentPlan.id as keyof typeof tierHierarchy] || 0;
+
+    // Filter to show only current tier and higher tiers
+    return currentTiers.filter(tier => {
+      const tierLevel = tierHierarchy[tier.id as keyof typeof tierHierarchy] || 0;
+      return tierLevel >= currentTierLevel;
+    });
+  };
+
+  const filteredTiers = getFilteredTiers();
+
+  // Fetch current subscription on mount
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      if (user) {
+        try {
+          const subscription = await getSubscription();
+          setCurrentSubscription(subscription);
+          
+          // Set billing period based on current subscription
+          if (subscription?.stripePriceId) {
+            const currentPlan = getCurrentPlanFromSubscription();
+            if (currentPlan?.billingPeriod) {
+              setBillingPeriod(currentPlan.billingPeriod as 'monthly' | 'yearly');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch subscription:', error);
+        }
+      }
+    };
+
+    fetchSubscription();
+  }, [user, getSubscription]);
+
   const handleSubscriptionPurchase = async (planId: string) => {
     try {
+      setLoading(true);
       await createCheckoutSession('subscription', planId);
     } catch (error) {
       console.error('Subscription purchase failed:', error);
+      const errorMessage = resolveSubscriptionErrorMessage(error);
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleUpgrade = async (planId: string) => {
+    try {
+      setLoading(true);
+      // Call the upgrade endpoint
+      const response = await fetch(getApiUrl('/api/payments/subscription/upgrade'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('daygen:authToken')}`,
+        },
+        body: JSON.stringify({ planId }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Upgrade failed';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Parse response to ensure it's valid JSON
+      const responseText = await response.text();
+      if (responseText) {
+        try {
+          JSON.parse(responseText);
+        } catch {
+          // Response is not JSON, but that's okay for upgrade endpoint
+        }
+      }
+
+      // Refresh subscription data
+      const subscription = await getSubscription();
+      setCurrentSubscription(subscription);
+      
+      alert('Subscription upgraded successfully!');
+    } catch (error) {
+      console.error('Upgrade failed:', error);
+      const errorMessage = resolveSubscriptionErrorMessage(error);
+      alert(`Upgrade failed: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDowngrade = async (planId: string) => {
+    const confirmed = window.confirm(
+      'Downgrades take effect at the end of your current billing period. Continue?'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      // Call the upgrade endpoint (same endpoint handles downgrades)
+      const response = await fetch(getApiUrl('/api/payments/subscription/upgrade'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('daygen:authToken')}`,
+        },
+        body: JSON.stringify({ planId }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Downgrade failed';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Parse response to ensure it's valid JSON
+      const responseText = await response.text();
+      if (responseText) {
+        try {
+          JSON.parse(responseText);
+        } catch {
+          // Response is not JSON, but that's okay for downgrade endpoint
+        }
+      }
+
+      // Refresh subscription data
+      const subscription = await getSubscription();
+      setCurrentSubscription(subscription);
+      
+      alert('Subscription will be downgraded at the end of your current billing period.');
+    } catch (error) {
+      console.error('Downgrade failed:', error);
+      const errorMessage = resolveSubscriptionErrorMessage(error);
+      alert(`Downgrade failed: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Determine plan states
+  const getPlanState = (tierId: string) => {
+    if (!currentSubscription) {
+      return { isCurrentPlan: false, isUpgrade: false, isDowngrade: false };
+    }
+
+    const currentPlan = getCurrentPlanFromSubscription();
+    if (!currentPlan) {
+      return { isCurrentPlan: false, isUpgrade: false, isDowngrade: false };
+    }
+
+    // Check if this is the current plan (exact match)
+    if (tierId === currentPlan.id) {
+      return { isCurrentPlan: true, isUpgrade: false, isDowngrade: false };
+    }
+
+    // Define tier hierarchy for comparison
+    const tierHierarchy = { 
+      'free': 0, 
+      'pro': 1, 
+      'pro-yearly': 1, 
+      'enterprise': 2, 
+      'enterprise-yearly': 2 
+    };
+
+    const currentTierLevel = tierHierarchy[currentPlan.id as keyof typeof tierHierarchy] || 0;
+    const targetTierLevel = tierHierarchy[tierId as keyof typeof tierHierarchy] || 0;
+
+    if (targetTierLevel > currentTierLevel) {
+      return { isCurrentPlan: false, isUpgrade: true, isDowngrade: false };
+    } else if (targetTierLevel < currentTierLevel) {
+      return { isCurrentPlan: false, isUpgrade: false, isDowngrade: true };
+    }
+
+    return { isCurrentPlan: false, isUpgrade: false, isDowngrade: false };
   };
 
   return (
@@ -334,18 +643,34 @@ export default function Pricing() {
 
           {/* Content based on active tab */}
           {activeTab === 'credits' ? (
-            <CreditPackages />
+            <div>
+              <CreditPackages />
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
-              {currentTiers.map((tier) => (
-                <PricingCard 
-                  key={`${tier.id}-${billingPeriod}`} 
-                  tier={tier} 
-                  isSelected={selectedPlan === tier.id}
-                  onSelect={() => setSelectedPlan(tier.id)}
-                  onPurchase={() => handleSubscriptionPurchase(tier.id)}
-                />
-              ))}
+              {loading ? (
+                <div className="col-span-full flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-text"></div>
+                </div>
+              ) : (
+                filteredTiers.map((tier) => {
+                  const planState = getPlanState(tier.id);
+                  return (
+                    <PricingCard 
+                      key={`${tier.id}-${billingPeriod}`} 
+                      tier={tier} 
+                      isSelected={selectedPlan === tier.id}
+                      onSelect={() => setSelectedPlan(tier.id)}
+                      onPurchase={() => handleSubscriptionPurchase(tier.id)}
+                      isCurrentPlan={planState.isCurrentPlan}
+                      isUpgrade={planState.isUpgrade}
+                      isDowngrade={planState.isDowngrade}
+                      onUpgrade={() => handleUpgrade(tier.id)}
+                      onDowngrade={() => handleDowngrade(tier.id)}
+                    />
+                  );
+                })
+              )}
             </div>
           )}
 

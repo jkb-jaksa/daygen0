@@ -3,6 +3,8 @@ import { getApiUrl } from '../utils/api';
 import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
+import { useCreditCheck } from './useCreditCheck';
+import { InsufficientCreditsModal } from '../components/modals/InsufficientCreditsModal';
 
 export interface GeneratedImage {
   url: string;
@@ -34,6 +36,13 @@ export interface ImageGenerationOptions {
 
 export const useRunwayImageGeneration = () => {
   const { token, user } = useAuth();
+  const { 
+    checkCredits, 
+    showInsufficientCreditsModal, 
+    creditCheckData, 
+    handleBuyCredits, 
+    handleCloseModal 
+  } = useCreditCheck();
   const [state, setState] = useState<ImageGenerationState>({
     isLoading: false,
     error: null,
@@ -90,6 +99,12 @@ export const useRunwayImageGeneration = () => {
   );
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
+    // Check credits before starting generation
+    const creditCheck = checkCredits(1, 'image generation');
+    if (!creditCheck.hasCredits) {
+      return; // Modal will be shown by useCreditCheck hook
+    }
+
     setState(prev => ({
       ...prev,
       isLoading: true,
@@ -239,5 +254,9 @@ export const useRunwayImageGeneration = () => {
     generateImage,
     clearError,
     clearImage,
+    showInsufficientCreditsModal,
+    creditCheckData,
+    handleBuyCredits,
+    handleCloseModal,
   };
 };
