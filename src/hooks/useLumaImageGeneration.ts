@@ -8,6 +8,7 @@ export interface LumaGeneratedImage extends GeneratedImage {
   generationId?: string | null;
   state?: string | null;
   contentType?: string | null;
+  jobId?: string;
 }
 
 interface LumaImageGenerationState {
@@ -76,6 +77,7 @@ export function useLumaImageGeneration() {
             generationId: job.id ?? null,
             state: job.status,
             contentType: null,
+            jobId,
           };
         }
 

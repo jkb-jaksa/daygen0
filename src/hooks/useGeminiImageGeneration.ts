@@ -16,6 +16,7 @@ export interface GeneratedImage {
   productId?: string;
   styleId?: string;
   r2FileId?: string;
+  jobId?: string;
 }
 
 export type ImageGenerationStatus =
@@ -417,6 +418,7 @@ export const useGeminiImageGeneration = () => {
             avatarId,
             avatarImageId,
             r2FileId,
+            jobId,
           };
         }
 

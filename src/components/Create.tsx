@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
   GeneratedImage,
@@ -633,6 +633,7 @@ const Create: React.FC = () => {
   const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
   const location = useLocation();
+  const { jobId } = useParams<{ jobId?: string }>();
   const galleryModelOptions = useMemo(() => AI_MODELS.map(({ id, name }) => ({ id, name })), []);
   
   // Prompt history
@@ -3129,10 +3130,16 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const openImageAtIndex = (index: number) => {
     // Only open if the index is valid and within gallery bounds
     if (index >= 0 && index < gallery.length && gallery[index]) {
-      setSelectedFullImage(gallery[index]);
+      const image = gallery[index];
+      setSelectedFullImage(image);
       setCurrentGalleryIndex(index);
       setFullSizeContext('gallery');
       setIsFullSizeOpen(true);
+      
+      // Update URL if image has a jobId
+      if (image.jobId && !jobId) {
+        navigate(`/create/image/${image.jobId}`, { replace: false });
+      }
     }
   };
 
@@ -3151,7 +3158,17 @@ const [batchSize, setBatchSize] = useState<number>(1);
     } else {
       setCurrentGalleryIndex(newIndex);
     }
-    setSelectedFullImage(collection[newIndex]);
+    
+    const newImage = collection[newIndex];
+    setSelectedFullImage(newImage);
+    
+    // Update URL if the new image has a jobId
+    if (newImage && newImage.jobId) {
+      navigate(`/create/image/${newImage.jobId}`, { replace: false });
+    } else if (jobId) {
+      // Clear jobId from URL if navigating to an image without one
+      navigate('/create/image', { replace: false });
+    }
   };
 
 
@@ -3248,6 +3265,105 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     void applyStateFromNavigation();
   }, [location.state, location.pathname, navigate, clearGeminiImage, clearFluxImage, clearChatGPTImage]);
+
+  // Handle job ID parameter from URL
+  useEffect(() => {
+    if (!jobId) {
+      return;
+    }
+
+    // Skip fetch if we're already viewing an image (just navigating between images)
+    if (isFullSizeOpen) {
+      return;
+    }
+
+    const fetchJobById = async () => {
+      try {
+        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Job not found');
+        }
+
+        const job = await response.json();
+
+        if (job.status !== 'COMPLETED' || !job.resultUrl) {
+          throw new Error('Job is not completed or has no result');
+        }
+
+        // Extract metadata
+        const metadata = job.metadata || {};
+        const prompt = typeof metadata.prompt === 'string' ? metadata.prompt : '';
+        const model = typeof metadata.model === 'string' ? metadata.model : '';
+        
+        // Create a GalleryImageLike object
+        const imageData: GalleryImageLike = {
+          url: job.resultUrl,
+          prompt,
+          model,
+          timestamp: job.createdAt || new Date().toISOString(),
+          jobId,
+          ownerId: job.userId,
+        };
+
+        // Open in existing full-size viewer
+        setSelectedFullImage(imageData);
+        setIsFullSizeOpen(true);
+      } catch (error) {
+        debugError('Error fetching job:', error);
+        showToast('Job not found or has expired');
+        navigate('/create/image', { replace: true });
+      }
+    };
+
+    void fetchJobById();
+  }, [jobId, token, navigate, showToast, isFullSizeOpen]);
+
+  // Navigate to job URL after successful generation
+  useEffect(() => {
+    if (geminiImage?.jobId && !jobId) {
+      navigate(`/create/image/${geminiImage.jobId}`, { replace: false });
+    }
+  }, [geminiImage, jobId, navigate]);
+
+  useEffect(() => {
+    if (fluxImage?.jobId && !jobId) {
+      navigate(`/create/image/${fluxImage.jobId}`, { replace: false });
+    }
+  }, [fluxImage, jobId, navigate]);
+
+  useEffect(() => {
+    if (chatgptImage?.jobId && !jobId) {
+      navigate(`/create/image/${chatgptImage.jobId}`, { replace: false });
+    }
+  }, [chatgptImage, jobId, navigate]);
+
+  useEffect(() => {
+    if (reveImage?.jobId && !jobId) {
+      navigate(`/create/image/${reveImage.jobId}`, { replace: false });
+    }
+  }, [reveImage, jobId, navigate]);
+
+  useEffect(() => {
+    if (lumaImage?.jobId && !jobId) {
+      navigate(`/create/image/${lumaImage.jobId}`, { replace: false });
+    }
+  }, [lumaImage, jobId, navigate]);
+
+  const closeFullSizeViewer = useCallback(() => {
+    setIsFullSizeOpen(false);
+    setSelectedFullImage(null);
+    setSelectedReferenceImage(null);
+    
+    // Clear job URL if we're on one
+    if (jobId) {
+      navigate('/create/image', { replace: false });
+    }
+  }, [jobId, navigate]);
 
   const closeImageActionMenu = () => {
     setImageActionMenu(null);
@@ -3363,9 +3479,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     const triggeredFromFullSize = imageActionMenu?.id?.startsWith('fullsize');
     handleUseAsReference(imageActionMenuImage).then(() => {
       if (triggeredFromFullSize) {
-        setIsFullSizeOpen(false);
-        setSelectedFullImage(null);
-        setSelectedReferenceImage(null);
+        closeFullSizeViewer();
       }
     });
     closeImageActionMenu();
@@ -3396,9 +3510,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     applyPromptFromHistory(imageActionMenuImage.prompt ?? '');
 
     if (triggeredFromFullSize) {
-      setIsFullSizeOpen(false);
-      setSelectedFullImage(null);
-      setSelectedReferenceImage(null);
+      closeFullSizeViewer();
     }
 
     closeImageActionMenu();
@@ -3541,12 +3653,20 @@ const [batchSize, setBatchSize] = useState<number>(1);
             onClick={async (event) => {
               event.stopPropagation();
               try {
-                // Import the share utilities
-                const { makeRemixUrl, withUtm, copyLink } = await import("../lib/shareUtils");
                 const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-                const remixUrl = makeRemixUrl(baseUrl, image.prompt || "");
-                const trackedUrl = withUtm(remixUrl, "copy");
-                await copyLink(trackedUrl);
+                let urlToShare: string;
+                
+                // If image has a jobId, use the job URL
+                if (image.jobId) {
+                  urlToShare = `${baseUrl}/create/image/${image.jobId}`;
+                } else {
+                  // Fallback to the remix URL
+                  const { makeRemixUrl, withUtm } = await import("../lib/shareUtils");
+                  const remixUrl = makeRemixUrl(baseUrl, image.prompt || "");
+                  urlToShare = withUtm(remixUrl, "copy");
+                }
+                
+                await navigator.clipboard.writeText(urlToShare);
                 setCopyNotification('Link copied!');
                 setTimeout(() => setCopyNotification(null), 2000);
                 closeMoreActionMenu();
@@ -9462,7 +9582,7 @@ const handleGenerate = async () => {
           {isFullSizeOpen && (selectedFullImage || generatedImage || selectedReferenceImage) && (
             <div
               className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
-              onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
+              onClick={closeFullSizeViewer}
             >
               <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
                 {/* Navigation arrows for full-size modal */}
@@ -9663,8 +9783,7 @@ const handleGenerate = async () => {
                           } else if (selectedAvatar) {
                             navigate(`/create/avatars/${selectedAvatar.slug}`);
                           }
-                          setIsFullSizeOpen(false);
-                          setSelectedReferenceImage(null);
+                          closeFullSizeViewer();
                         }}
                         className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-theme-dark/60 hover:text-theme-text transition-colors duration-200 cursor-pointer`}
                         title={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
@@ -9689,7 +9808,7 @@ const handleGenerate = async () => {
                 )}
                 
                 <button
-                  onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); setSelectedReferenceImage(null); }}
+                  onClick={closeFullSizeViewer}
                   className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
                   aria-label="Close full size view"
                 >

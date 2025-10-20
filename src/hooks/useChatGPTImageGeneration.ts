@@ -16,6 +16,7 @@ export interface ChatGPTGeneratedImage {
   avatarId?: string;
   avatarImageId?: string;
   styleId?: string;
+  jobId?: string;
 }
 
 export interface ChatGPTImageGenerationState {
@@ -75,6 +76,7 @@ export const useChatGPTImageGeneration = () => {
             ownerId: user?.id,
             avatarId: options.avatarId,
             avatarImageId: options.avatarImageId,
+            jobId,
           };
         }
 

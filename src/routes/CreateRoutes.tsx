@@ -24,6 +24,7 @@ export default function CreateRoutes() {
           <Route path=":productSlug" element={<Products />} />
         </Route>
         <Route path="chat" element={<ChatMode />} />
+        <Route path="image/:jobId" element={<Create />} />
         <Route path=":category" element={<Create />} />
         <Route path="*" element={<Navigate to="image" replace />} />
       </Routes>
