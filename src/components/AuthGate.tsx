@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Lock, ArrowRight } from 'lucide-react';
+import { LogIn, Lock } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { glass } from '../styles/designSystem';
 

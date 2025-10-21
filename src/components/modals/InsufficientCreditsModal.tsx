@@ -18,7 +18,6 @@ export function InsufficientCreditsModal({
   onBuyCredits,
   currentCredits,
   requiredCredits,
-  operationName = 'generation'
 }: InsufficientCreditsModalProps) {
   if (!isOpen) return null;
 

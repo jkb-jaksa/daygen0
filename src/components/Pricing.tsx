@@ -337,7 +337,19 @@ export default function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'credits' | 'subscriptions'>('credits');
-  const [currentSubscription, setCurrentSubscription] = useState<any>(null);
+  const [currentSubscription, setCurrentSubscription] = useState<{
+    id: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    credits: number;
+    createdAt: string;
+    stripePriceId: string;
+    planId: string | null;
+    planName: string | null;
+    billingPeriod: 'monthly' | 'yearly';
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;

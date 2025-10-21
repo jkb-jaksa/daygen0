@@ -3,7 +3,7 @@ import type { User } from '../auth/context';
 
 interface CrossTabMessage {
   type: 'auth_update' | 'credits_update' | 'session_expired' | 'user_logout';
-  data?: any;
+  data?: unknown;
   timestamp: number;
 }
 
@@ -57,7 +57,7 @@ export function useCrossTabSync({ user, refreshUser, logOut }: UseCrossTabSyncPa
     if (!channelRef.current) return;
 
     const handleMessage = async (event: MessageEvent<CrossTabMessage>) => {
-      const { type, data, timestamp } = event.data;
+      const { type, timestamp } = event.data;
 
       // Ignore messages older than 5 seconds to prevent stale updates
       if (Date.now() - timestamp > 5000) {

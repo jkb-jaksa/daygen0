@@ -16,14 +16,12 @@ export function CreditWarningBanner({
   isOpen,
   isUrgent,
   currentCredits,
-  threshold,
   onBuyCredits,
   onSubscribe,
   onDismiss
 }: CreditWarningBannerProps) {
   if (!isOpen) return null;
 
-  const isLowWarning = !isUrgent;
   const bgColor = isUrgent ? 'bg-red-500/10' : 'bg-orange-500/10';
   const borderColor = isUrgent ? 'border-red-500/50' : 'border-orange-500/50';
   const textColor = isUrgent ? 'text-red-400' : 'text-orange-400';

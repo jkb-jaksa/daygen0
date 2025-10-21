@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { useGeminiImageGeneration } from '../hooks/useGeminiImageGeneration';
 
 // Mock the useAuth hook
@@ -29,7 +30,9 @@ describe('useGeminiImageGeneration', () => {
   });
 
   it('initializes with correct default state', () => {
-    const { result } = renderHook(() => useGeminiImageGeneration());
+    const { result } = renderHook(() => useGeminiImageGeneration(), {
+      wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>
+    });
     
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBe(null);
@@ -40,7 +43,9 @@ describe('useGeminiImageGeneration', () => {
   });
 
   it('resets state completely on new generation', async () => {
-    const { result } = renderHook(() => useGeminiImageGeneration());
+    const { result } = renderHook(() => useGeminiImageGeneration(), {
+      wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>
+    });
     
     // Mock a successful response
     (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
@@ -83,7 +88,9 @@ describe('useGeminiImageGeneration', () => {
   });
 
   it('handles progress updates smoothly', async () => {
-    const { result } = renderHook(() => useGeminiImageGeneration());
+    const { result } = renderHook(() => useGeminiImageGeneration(), {
+      wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>
+    });
     
     // Mock initial response
     (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
@@ -143,7 +150,9 @@ describe('useGeminiImageGeneration', () => {
   });
 
   it('clears progress controller on new generation', async () => {
-    const { result } = renderHook(() => useGeminiImageGeneration());
+    const { result } = renderHook(() => useGeminiImageGeneration(), {
+      wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>
+    });
     
     // Mock responses
     (global.fetch as vi.MockedFunction<typeof fetch>).mockResolvedValueOnce({
@@ -184,7 +193,9 @@ describe('useGeminiImageGeneration', () => {
   });
 
   it('handles errors gracefully', async () => {
-    const { result } = renderHook(() => useGeminiImageGeneration());
+    const { result } = renderHook(() => useGeminiImageGeneration(), {
+      wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>
+    });
     
     // Mock error response
     (global.fetch as vi.MockedFunction<typeof fetch>).mockRejectedValueOnce(new Error('Network error'));

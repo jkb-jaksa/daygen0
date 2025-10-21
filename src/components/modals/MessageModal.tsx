@@ -1,5 +1,4 @@
 import React from 'react';
-import { LucideIcon, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { glass, buttons } from '../../styles/designSystem';
 
 interface MessageModalProps {

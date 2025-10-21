@@ -4,7 +4,6 @@ import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 import { useCreditCheck } from './useCreditCheck';
-import { InsufficientCreditsModal } from '../components/modals/InsufficientCreditsModal';
 
 export interface GeneratedImage {
   url: string;

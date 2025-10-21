@@ -1,6 +1,5 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, CreditCard, X } from 'lucide-react';
-import { glass } from '../../styles/designSystem';
 import { PAYMENT_FAILED_MESSAGE } from '../../utils/errorMessages';
 
 interface PaymentStatusBannerProps {
@@ -25,7 +24,6 @@ export function PaymentStatusBanner({
 }: PaymentStatusBannerProps) {
   if (!isOpen || failedPayments.length === 0) return null;
 
-  const totalFailedAmount = failedPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   return (
     <div className="fixed top-4 left-4 right-4 z-40 bg-red-500/10 border border-red-500/50 rounded-lg p-4">
