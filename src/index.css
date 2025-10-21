@@ -670,19 +670,19 @@ html[data-theme="day"] .border-b.border-theme-black {
 /* Footer gradient background - jaksa gradient (overlapping radials) */
 .footer-gradient-bg {
   background: 
-    radial-gradient(ellipse 800px 600px at 20% 80%, hsla(342, 92%, 72%, 0.44) 0%, transparent 50%),
-    radial-gradient(ellipse 750px 550px at 40% 30%, hsla(48, 95%, 70%, 0.48) 0%, transparent 50%),
-    radial-gradient(ellipse 600px 700px at 60% 90%, hsla(226, 95%, 72%, 0.44) 0%, transparent 50%),
-    radial-gradient(ellipse 700px 500px at 80% 20%, hsla(182, 85%, 70%, 0.48) 0%, transparent 50%),
+    radial-gradient(ellipse 800px 600px at 20% 80%, hsla(0, 84%, 60%, 0.44) 0%, transparent 50%),
+    radial-gradient(ellipse 750px 550px at 40% 30%, hsla(43, 96%, 56%, 0.48) 0%, transparent 50%),
+    radial-gradient(ellipse 600px 700px at 60% 90%, hsla(217, 91%, 60%, 0.44) 0%, transparent 50%),
+    radial-gradient(ellipse 700px 500px at 80% 20%, hsla(188, 85%, 53%, 0.48) 0%, transparent 50%),
     var(--theme-black);
 }
 
 html[data-theme="day"] .footer-gradient-bg {
   background: 
-    radial-gradient(ellipse 800px 600px at 20% 80%, hsla(342, 92%, 72%, 0.60) 0%, transparent 50%),
-    radial-gradient(ellipse 750px 550px at 40% 30%, hsla(48, 95%, 70%, 0.65) 0%, transparent 50%),
-    radial-gradient(ellipse 600px 700px at 60% 90%, hsla(226, 95%, 72%, 0.60) 0%, transparent 50%),
-    radial-gradient(ellipse 700px 500px at 80% 20%, hsla(182, 85%, 70%, 0.65) 0%, transparent 50%),
+    radial-gradient(ellipse 800px 600px at 20% 80%, hsla(0, 84%, 60%, 0.60) 0%, transparent 50%),
+    radial-gradient(ellipse 750px 550px at 40% 30%, hsla(43, 96%, 56%, 0.65) 0%, transparent 50%),
+    radial-gradient(ellipse 600px 700px at 60% 90%, hsla(217, 91%, 60%, 0.60) 0%, transparent 50%),
+    radial-gradient(ellipse 700px 500px at 80% 20%, hsla(188, 85%, 53%, 0.65) 0%, transparent 50%),
     var(--theme-black);
 }
 

@@ -1532,7 +1532,7 @@ export default function Avatars() {
                     onClick={event => event.stopPropagation()}
                   >
                     <input
-                      className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                      className="flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:outline-none"
                       placeholder="Enter name..."
                       value={editingName}
                       onChange={event => setEditingName(event.target.value)}
@@ -1589,7 +1589,7 @@ export default function Avatars() {
               onClick={(event) => event.stopPropagation()}
             >
               <input
-                className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                className="flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:outline-none"
                 placeholder="Enter name..."
                 value={editingName}
                 onChange={event => setEditingName(event.target.value)}
@@ -2002,11 +2002,11 @@ export default function Avatars() {
             <div className="flex flex-wrap items-center gap-3">
               {editingAvatarId === creationsModalAvatar.id ? (
                 <form
-                  className="flex h-12 items-center gap-2 rounded-3xl border border-theme-mid bg-theme-black/60 px-4"
+                  className="flex items-center gap-2"
                   onSubmit={submitRename}
                 >
                   <input
-                    className="bg-transparent text-3xl font-raleway text-theme-text focus:outline-none"
+                    className="bg-transparent text-[2rem] sm:text-[2.5rem] font-light font-raleway text-theme-text focus:outline-none"
                     value={editingName}
                     onChange={event => setEditingName(event.target.value)}
                     autoFocus
