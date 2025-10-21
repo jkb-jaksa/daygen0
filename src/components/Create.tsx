@@ -655,6 +655,7 @@ const Create: React.FC = () => {
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
+  const programmaticImageOpenRef = useRef(false);
   
   // Parallax hover effect for buttons
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
@@ -3142,9 +3143,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setFullSizeContext('gallery');
       setIsFullSizeOpen(true);
       
-      // Update URL if image has a jobId
-      if (image.jobId && !jobId) {
-        navigate(`/create/image/${image.jobId}`, { replace: false });
+      // Update URL if image has a jobId (always navigate, even if we're already on a job URL)
+      if (image.jobId) {
+        programmaticImageOpenRef.current = true;
+        navigate(`/job/${image.jobId}`, { replace: false });
       }
     }
   };
@@ -3170,10 +3172,13 @@ const [batchSize, setBatchSize] = useState<number>(1);
     
     // Update URL if the new image has a jobId
     if (newImage && newImage.jobId) {
-      navigate(`/create/image/${newImage.jobId}`, { replace: false });
+      programmaticImageOpenRef.current = true;
+      navigate(`/job/${newImage.jobId}`, { replace: false });
     } else if (jobId) {
       // Clear jobId from URL if navigating to an image without one
-      navigate('/create/image', { replace: false });
+      // Navigate back to the appropriate context
+      const isGalleryContext = location.pathname.startsWith('/gallery');
+      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
     }
   };
 
@@ -3272,17 +3277,36 @@ const [batchSize, setBatchSize] = useState<number>(1);
     void applyStateFromNavigation();
   }, [location.state, location.pathname, navigate, clearGeminiImage, clearFluxImage, clearChatGPTImage]);
 
-  // Handle job ID parameter from URL
+  // Handle job ID parameter from URL (only fetch from backend if NOT opened programmatically)
   useEffect(() => {
     if (!jobId) {
       return;
     }
 
-    // Skip fetch if we're already viewing an image (just navigating between images)
-    if (isFullSizeOpen) {
+    // Skip if this was a programmatic open (user clicked image in gallery)
+    if (programmaticImageOpenRef.current) {
+      programmaticImageOpenRef.current = false;
       return;
     }
 
+    // Skip fetch if we're already viewing this specific image
+    if (isFullSizeOpen && selectedFullImage?.jobId === jobId) {
+      return;
+    }
+
+    // Check if this image already exists in our gallery or inspirations
+    const imageInGallery = gallery.find(img => img.jobId === jobId);
+    const imageInInspirations = inspirations.find(img => img.jobId === jobId);
+    const existingImage = imageInGallery || imageInInspirations;
+
+    // If image exists locally, just open it without fetching
+    if (existingImage) {
+      setSelectedFullImage(existingImage);
+      setIsFullSizeOpen(true);
+      return;
+    }
+
+    // Only fetch from backend if image doesn't exist locally (e.g. shared link)
     const fetchJobById = async () => {
       try {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
@@ -3327,36 +3351,36 @@ const [batchSize, setBatchSize] = useState<number>(1);
     };
 
     void fetchJobById();
-  }, [jobId, token, navigate, showToast, isFullSizeOpen]);
+  }, [jobId, token, navigate, showToast, isFullSizeOpen, selectedFullImage, gallery, inspirations]);
 
   // Navigate to job URL after successful generation
   useEffect(() => {
     if (geminiImage?.jobId && !jobId) {
-      navigate(`/create/image/${geminiImage.jobId}`, { replace: false });
+      navigate(`/job/${geminiImage.jobId}`, { replace: false });
     }
   }, [geminiImage, jobId, navigate]);
 
   useEffect(() => {
     if (fluxImage?.jobId && !jobId) {
-      navigate(`/create/image/${fluxImage.jobId}`, { replace: false });
+      navigate(`/job/${fluxImage.jobId}`, { replace: false });
     }
   }, [fluxImage, jobId, navigate]);
 
   useEffect(() => {
     if (chatgptImage?.jobId && !jobId) {
-      navigate(`/create/image/${chatgptImage.jobId}`, { replace: false });
+      navigate(`/job/${chatgptImage.jobId}`, { replace: false });
     }
   }, [chatgptImage, jobId, navigate]);
 
   useEffect(() => {
     if (reveImage?.jobId && !jobId) {
-      navigate(`/create/image/${reveImage.jobId}`, { replace: false });
+      navigate(`/job/${reveImage.jobId}`, { replace: false });
     }
   }, [reveImage, jobId, navigate]);
 
   useEffect(() => {
     if (lumaImage?.jobId && !jobId) {
-      navigate(`/create/image/${lumaImage.jobId}`, { replace: false });
+      navigate(`/job/${lumaImage.jobId}`, { replace: false });
     }
   }, [lumaImage, jobId, navigate]);
 
@@ -3365,11 +3389,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setSelectedFullImage(null);
     setSelectedReferenceImage(null);
     
-    // Clear job URL if we're on one
+    // Clear job URL if we're on one and navigate back to appropriate context
     if (jobId) {
-      navigate('/create/image', { replace: false });
+      const isGalleryContext = location.pathname.startsWith('/gallery') || location.pathname.startsWith('/job');
+      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
     }
-  }, [jobId, navigate]);
+  }, [jobId, navigate, location.pathname]);
 
   const closeImageActionMenu = () => {
     setImageActionMenu(null);
@@ -3753,7 +3778,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     return (
       <div
-        key={`${context}-${img.url}-${idx}`}
+        key={img.jobId || img.timestamp || `${context}-${img.url}-${idx}`}
         className={`group relative rounded-2xl overflow-hidden border transition-all duration-100 ${isSelectMode ? 'cursor-pointer' : ''} ${isSelectMode ? '' : 'parallax-large'} ${
           isSelected
             ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
@@ -3789,6 +3814,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
               }
               setSelectedFullImage(img);
               setIsFullSizeOpen(true);
+              
+              // Navigate to job URL if image has a jobId
+              if (img.jobId) {
+                programmaticImageOpenRef.current = true;
+                navigate(`/job/${img.jobId}`, { replace: false });
+              }
             }
           }}
         />
@@ -6353,6 +6384,7 @@ const handleGenerate = async () => {
                   onSelectCategory={(category) => setActiveCategory(category)}
                   onOpenMyFolders={handleMyFoldersClick}
                   reservedBottomSpace={promptBarReservedSpace}
+                  isFullSizeOpen={isFullSizeOpen}
                 />
               </Suspense>
               <div className="w-full mb-4" ref={galleryRef}>
@@ -6566,7 +6598,7 @@ const handleGenerate = async () => {
                           {folderImages.map((img, idx) => {
                             const isSelected = selectedImages.has(img.url);
                             return (
-                            <div key={`folder-image-${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
+                            <div key={img.jobId || img.timestamp || `${img.url}-${idx}`} className={`group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={(event) => {
                               // Check if the click came from a copy button
                               const target = event.target;
                               if (target instanceof Element && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
@@ -6903,7 +6935,7 @@ const handleGenerate = async () => {
                                 <div className="absolute top-2 left-2 bg-theme-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
                                     <img
-                                      key={idx}
+                                      key={`${imageId}-${idx}`}
                                       src={imageId}
                                       alt={`${folder.name} thumbnail ${idx + 2}`}
                                       loading="lazy"
@@ -6951,7 +6983,7 @@ const handleGenerate = async () => {
                                 <div className="absolute top-2 left-2 bg-theme-black/80 rounded-lg p-1 flex gap-1">
                                   {folder.imageIds.slice(1, 4).map((imageId: string, idx: number) => (
                                     <img
-                                      key={idx}
+                                      key={`${imageId}-${idx}`}
                                       src={imageId}
                                       alt={`${folder.name} thumbnail ${idx + 2}`}
                                       loading="lazy"
@@ -9626,17 +9658,19 @@ const handleGenerate = async () => {
           {/* Full-size image modal */}
           {isFullSizeOpen && (selectedFullImage || generatedImage || selectedReferenceImage) && (
             <div
-              className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
+              className="fixed inset-0 z-[60] glass-liquid willchange-backdrop isolate backdrop-blur-[40px] bg-[color:var(--glass-dark-bg)] flex items-center justify-center p-4"
               onClick={closeFullSizeViewer}
             >
-              <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
+              <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                {/* Image container */}
+                <div className="relative group flex items-start justify-center mt-14">
                 {/* Navigation arrows for full-size modal */}
                 {(fullSizeContext === 'inspirations' ? inspirations.length : gallery.length) > 1 &&
                   (selectedFullImage || generatedImage) && (
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                        className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
@@ -9644,7 +9678,7 @@ const handleGenerate = async () => {
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                        className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >
@@ -9657,7 +9691,7 @@ const handleGenerate = async () => {
                   src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string}
                   alt="Full size"
                   loading="lazy"
-                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                    className="max-w-[calc(100vw-20rem)] max-h-[85vh] object-contain rounded-lg"
                   style={{ objectPosition: 'top' }}
                 />
                 
@@ -9701,64 +9735,18 @@ const handleGenerate = async () => {
                   </div>
                 )}
 
-                {/* Action buttons - only show for generated images, not reference images */}
-                {activeFullSizeImage && (
-                  <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-                    <div className={`pointer-events-auto ${
-                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                    }`}>
-                      {renderHoverPrimaryActions()}
-                    </div>
-                    <div className={`flex items-center gap-0.5 pointer-events-auto ${
-                      imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                    }`}>
-                      {renderEditButton(`fullsize-actions-${activeFullSizeImage.url}`, activeFullSizeImage)}
+                  {/* Close button - positioned on right side of image */}
                       <button
-                        type="button"
-                        onClick={() => confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext)}
-                        className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                          imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
-                            ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                        }`}
-                        title="Delete image" 
-                        aria-label="Delete image"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
+                    onClick={closeFullSizeViewer}
+                    className="absolute -top-3 -right-3 p-1.5 rounded-full bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
                       </button>
-                      <button 
-                        type="button" 
-                        onClick={() => toggleFavorite(activeFullSizeImage.url)} 
-                        className={`image-action-btn image-action-btn--fullsize parallax-large favorite-toggle transition-opacity duration-100 ${
-                          imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage.url}`
-                            ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                        }`}
-                        title={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"} 
-                        aria-label={favorites.has(activeFullSizeImage.url) ? "Remove from liked" : "Add to liked"}
-                      >
-                        <Heart 
-                          className={`heart-icon w-3.5 h-3.5 transition-colors duration-200 ${
-                            favorites.has(activeFullSizeImage.url) 
-                              ? "fill-red-500 text-red-500" 
-                              : "text-current fill-none"
-                          }`} 
-                        />
-                      </button>
-                      {renderMoreButton(
-                        `fullsize-actions-${activeFullSizeImage.url}`,
-                        activeFullSizeImage,
-                        activeFullSizeContext,
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Model and metadata info - only on hover, positioned in bottom right of prompt box */}
+
+                  {/* Model and metadata info - only on hover, positioned at bottom of image */}
                 {(selectedFullImage || generatedImage) && (
-                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
-                    imageActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` || moreActionMenu?.id === `fullsize-actions-${activeFullSizeImage?.url}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}>
+                    <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
                     <div className="flex items-center justify-center">
                       <div className="text-center">
                         <div className="text-sm font-raleway leading-relaxed">
@@ -9814,52 +9802,213 @@ const handleGenerate = async () => {
                     </div>
                   </div>
                 )}
-                
-                {/* Avatar/Product name badge - show for reference images */}
-                {selectedReferenceImage && (selectedAvatar || selectedProduct) && (
-                  <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
-                    <div className="flex items-center justify-center">
+                </div>
+
+              </div>
+
+              {/* Right sidebar with actions */}
+              {activeFullSizeImage && (
+                <aside className={`${glass.promptDark} w-[240px] rounded-2xl p-4 flex flex-col gap-2 overflow-y-auto fixed right-24 z-30`} style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+                  {/* Icon-only action bar at top */}
+                  <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
+                    <a
+                      href={activeFullSizeImage.url}
+                      download
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Download"
+                      aria-label="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+                          let urlToShare: string;
+                          
+                          if (activeFullSizeImage.jobId) {
+                            urlToShare = `${baseUrl}/create/image/${activeFullSizeImage.jobId}`;
+                          } else {
+                            const { makeRemixUrl, withUtm } = await import("../lib/shareUtils");
+                            const remixUrl = makeRemixUrl(baseUrl, activeFullSizeImage.prompt || "");
+                            urlToShare = withUtm(remixUrl, "copy");
+                          }
+                          
+                          await navigator.clipboard.writeText(urlToShare);
+                          setCopyNotification('Link copied!');
+                          setTimeout(() => setCopyNotification(null), 2000);
+                        } catch (error) {
+                          debugError('Failed to copy link:', error);
+                          setCopyNotification('Failed to copy link');
+                          setTimeout(() => setCopyNotification(null), 2000);
+                        }
+                      }}
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      title="Copy link"
+                      aria-label="Copy link"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToFolder(activeFullSizeImage.url);
+                      }}
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      title="Manage folders"
+                      aria-label="Manage folders"
+                    >
+                      <FolderPlus className="w-4 h-4" />
+                    </button>
+                    {activeFullSizeContext !== 'inspirations' && (
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (selectedProduct && selectedReferenceImage === selectedProduct.imageUrl) {
-                            navigate(`/create/products/${selectedProduct.slug}`);
-                          } else if (selectedAvatar) {
-                            navigate(`/create/avatars/${selectedAvatar.slug}`);
-                          }
-                          closeFullSizeViewer();
+                          toggleImagePublicStatus(activeFullSizeImage.url);
                         }}
-                        className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway hover:bg-theme-dark/60 hover:text-theme-text transition-colors duration-200 cursor-pointer`}
-                        title={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
-                        aria-label={selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? "View product profile" : "View avatar profile"}
+                        className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                        title={activeFullSizeImage.isPublic ? "Unpublish" : "Publish"}
+                        aria-label={activeFullSizeImage.isPublic ? "Unpublish" : "Publish"}
                       >
-                        <div className="flex items-center gap-1">
-                          {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
-                            <>
-                              <Package className="w-3 h-3" />
-                              <span className="leading-none">{selectedProduct.name}</span>
-                            </>
-                          ) : selectedAvatar ? (
-                            <>
-                              <User className="w-3 h-3" />
-                              <span className="leading-none">{selectedAvatar.name}</span>
-                            </>
-                          ) : null}
-                        </div>
+                        {activeFullSizeImage.isPublic ? (
+                          <Lock className="w-4 h-4" />
+                        ) : (
+                          <Globe className="w-4 h-4" />
+                        )}
                       </button>
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(activeFullSizeImage.url);
+                      }}
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      title={favorites.has(activeFullSizeImage.url) ? "Unlike" : "Like"}
+                      aria-label={favorites.has(activeFullSizeImage.url) ? "Unlike" : "Like"}
+                    >
+                      <Heart 
+                        className={`w-4 h-4 transition-colors duration-200 ${
+                          favorites.has(activeFullSizeImage.url) 
+                            ? "fill-red-500 text-red-500" 
+                            : "text-current fill-none"
+                        }`} 
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext);
+                      }}
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      title="Delete"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
-                
-                <button
-                  onClick={closeFullSizeViewer}
-                  className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
-                  aria-label="Close full size view"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+
+                  {/* Edit actions */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditMenuSelect();
+                      }}
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                    >
+                      <Edit className="w-4 h-4 flex-shrink-0" />
+                      Edit image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCreateAvatarFromMenu(activeFullSizeImage);
+                      }}
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                    >
+                      <User className="w-4 h-4 flex-shrink-0" />
+                      Create Avatar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUseAsReferenceFromMenu();
+                      }}
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                    >
+                      <Copy className="w-4 h-4 flex-shrink-0" />
+                      Use as reference
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUsePromptAgain();
+                      }}
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                    >
+                      <RefreshCw className="w-4 h-4 flex-shrink-0" />
+                      Use the same prompt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveCategory("video");
+                        closeFullSizeViewer();
+                      }}
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                    >
+                      <Camera className="w-4 h-4 flex-shrink-0" />
+                      Make video
+                    </button>
+                  </div>
+                </aside>
+              )}
+
+              {/* Sidebar for reference images (Avatar/Product) */}
+              {selectedReferenceImage && !activeFullSizeImage && (selectedAvatar || selectedProduct) && (
+                <aside className={`${glass.promptDark} w-[240px] rounded-2xl p-4 flex flex-col gap-2 overflow-y-auto fixed right-24 z-30`} style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+                  {/* Avatar/Product info */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (selectedProduct && selectedReferenceImage === selectedProduct.imageUrl) {
+                          navigate(`/create/products/${selectedProduct.slug}`);
+                        } else if (selectedAvatar) {
+                          navigate(`/create/avatars/${selectedAvatar.slug}`);
+                        }
+                        closeFullSizeViewer();
+                      }}
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                    >
+                        {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
+                          <>
+                          <Package className="w-4 h-4" />
+                          View {selectedProduct.name}
+                          </>
+                        ) : selectedAvatar ? (
+                          <>
+                          <User className="w-4 h-4" />
+                          View {selectedAvatar.name}
+                          </>
+                        ) : null}
+                    </button>
+                  </div>
+                </aside>
+              )}
               
               {/* Vertical Gallery Navigation */}
               {(selectedFullImage || generatedImage) && (() => {
@@ -9879,10 +10028,12 @@ const handleGenerate = async () => {
                         
                         // Update URL if the new image has a jobId
                         if (newImage && newImage.jobId) {
-                          navigate(`/create/image/${newImage.jobId}`, { replace: false });
+                          programmaticImageOpenRef.current = true;
+                          navigate(`/job/${newImage.jobId}`, { replace: false });
                         } else if (jobId) {
                           // Clear jobId from URL if navigating to an image without one
-                          navigate('/create/image', { replace: false });
+                          const isGalleryContext = location.pathname.startsWith('/gallery');
+                          navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
                         }
                       }
                     }}
