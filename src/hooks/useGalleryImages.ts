@@ -20,6 +20,7 @@ export interface R2FileResponse {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  jobId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +34,9 @@ export interface GalleryImagesState {
 }
 
 const getImageKey = (image: GalleryImageLike): string | null => {
+  if (image.r2FileId && image.r2FileId.trim().length > 0) {
+    return image.r2FileId;
+  }
   if (image.jobId && image.jobId.trim().length > 0) {
     return image.jobId;
   }
@@ -72,7 +76,8 @@ export const useGalleryImages = () => {
       model: r2File.model,
       timestamp: r2File.createdAt,
       ownerId: undefined, // Will be set by the backend
-      jobId: r2File.id,
+      jobId: r2File.jobId || undefined, // Only set if we have a real job ID
+      r2FileId: r2File.id,
       isPublic: r2File.isPublic ?? false,
       avatarId: r2File.avatarId,
       avatarImageId: r2File.avatarImageId,
@@ -259,7 +264,7 @@ export const useGalleryImages = () => {
       // Remove the image from local state
       setState(prev => ({
         ...prev,
-        images: prev.images.filter(img => img.jobId !== imageId),
+        images: prev.images.filter(img => img.r2FileId !== imageId),
       }));
 
       debugLog('[gallery] Image deleted successfully');
@@ -289,20 +294,36 @@ export const useGalleryImages = () => {
       const urlSet = new Set(imageUrls);
 
       setState(prev => {
-        const existingByKey = new Map<string, number>();
+        // First, deduplicate existing images
+        const seenKeys = new Set<string>();
+        const deduplicatedImages: GalleryImageLike[] = [];
+        
+        for (const image of prev.images) {
+          const key = getImageKey(image);
+          if (key && !seenKeys.has(key)) {
+            seenKeys.add(key);
+            deduplicatedImages.push(image);
+          } else if (!key) {
+            // Keep images without keys
+            deduplicatedImages.push(image);
+          }
+        }
 
-        const nextImages = prev.images.map((image, index) => {
+        // Now build the index from deduplicated images
+        const existingByKey = new Map<string, number>();
+        const nextImages = deduplicatedImages.map((image, index) => {
           const key = getImageKey(image);
           if (key) {
             existingByKey.set(key, index);
           }
-
+          
           if (hasUpdates && image.url && urlSet.has(image.url)) {
             return { ...image, ...updates };
           }
           return image;
         });
 
+        // Apply upserts (existing logic remains the same)
         if (upserts.length > 0) {
           for (const incoming of upserts) {
             const key = getImageKey(incoming);

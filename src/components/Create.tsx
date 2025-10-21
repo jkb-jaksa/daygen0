@@ -1695,6 +1695,47 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
   }, [activeCategory, selectedModel]);
 
+  const navigateFullSizeImage = (direction: 'prev' | 'next') => {
+    const collection = fullSizeContext === 'inspirations' ? inspirations : gallery;
+    const totalImages = collection.length;
+    if (totalImages === 0) return;
+
+    const currentIndex = fullSizeContext === 'inspirations' ? currentInspirationIndex : currentGalleryIndex;
+    const newIndex = direction === 'prev'
+      ? (currentIndex > 0 ? currentIndex - 1 : totalImages - 1)
+      : (currentIndex < totalImages - 1 ? currentIndex + 1 : 0);
+
+    if (fullSizeContext === 'inspirations') {
+      setCurrentInspirationIndex(newIndex);
+    } else {
+      setCurrentGalleryIndex(newIndex);
+    }
+    
+    const newImage = collection[newIndex];
+    setSelectedFullImage(newImage);
+    
+    // Update URL if the new image has a jobId
+    if (newImage && newImage.jobId) {
+      navigate(`/create/image/${newImage.jobId}`, { replace: false });
+    } else if (jobId) {
+      // Clear jobId from URL if navigating to an image without one
+      navigate('/create/image', { replace: false });
+    }
+  };
+
+  const navigateGallery = (direction: 'prev' | 'next') => {
+    const totalImages = gallery.length;
+    if (totalImages === 0) return;
+    
+    setCurrentGalleryIndex(prev => {
+      if (direction === 'prev') {
+        return prev > 0 ? prev - 1 : totalImages - 1;
+      } else {
+        return prev < totalImages - 1 ? prev + 1 : 0;
+      }
+    });
+  };
+
   // Keyboard navigation for gallery
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -3119,20 +3160,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
   };
 
-  // Gallery navigation functions
-  const navigateGallery = (direction: 'prev' | 'next') => {
-    const totalImages = gallery.length;
-    if (totalImages === 0) return;
-    
-    setCurrentGalleryIndex(prev => {
-      if (direction === 'prev') {
-        return prev > 0 ? prev - 1 : totalImages - 1;
-      } else {
-        return prev < totalImages - 1 ? prev + 1 : 0;
-      }
-    });
-  };
-
   const openImageAtIndex = (index: number) => {
     // Only open if the index is valid and within gallery bounds
     if (index >= 0 && index < gallery.length && gallery[index]) {
@@ -3148,35 +3175,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
     }
   };
-
-  const navigateFullSizeImage = (direction: 'prev' | 'next') => {
-    const collection = fullSizeContext === 'inspirations' ? inspirations : gallery;
-    const totalImages = collection.length;
-    if (totalImages === 0) return;
-
-    const currentIndex = fullSizeContext === 'inspirations' ? currentInspirationIndex : currentGalleryIndex;
-    const newIndex = direction === 'prev'
-      ? (currentIndex > 0 ? currentIndex - 1 : totalImages - 1)
-      : (currentIndex < totalImages - 1 ? currentIndex + 1 : 0);
-
-    if (fullSizeContext === 'inspirations') {
-      setCurrentInspirationIndex(newIndex);
-    } else {
-      setCurrentGalleryIndex(newIndex);
-    }
-    
-    const newImage = collection[newIndex];
-    setSelectedFullImage(newImage);
-    
-    // Update URL if the new image has a jobId
-    if (newImage && newImage.jobId) {
-      navigate(`/create/image/${newImage.jobId}`, { replace: false });
-    } else if (jobId) {
-      // Clear jobId from URL if navigating to an image without one
-      navigate('/create/image', { replace: false });
-    }
-  };
-
 
   // Helper function to convert image URL to File object
   const urlToFile = async (url: string, filename: string): Promise<File> => {
@@ -3284,6 +3282,19 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
 
     const fetchJobById = async () => {
+      // Skip if no jobId
+      if (!jobId) {
+        return;
+      }
+      
+      // Check if this looks like an R2 file ID (starts with 'c' and is 25 chars long)
+      // Real job IDs are different format
+      if (jobId.length === 25 && jobId.startsWith('c')) {
+        debugLog('Skipping job fetch - this appears to be an R2 file ID, not a job ID');
+        navigate('/create/image', { replace: true });
+        return;
+      }
+      
       try {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
           headers: {
@@ -3292,7 +3303,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
         });
 
         if (!response.ok) {
-          throw new Error('Job not found');
+          // For old gallery images without jobs, just skip fetching
+          debugLog('Job not found, likely an old gallery image');
+          navigate('/create/image', { replace: true });
+          return;
         }
 
         const job = await response.json();
@@ -3320,8 +3334,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
         setSelectedFullImage(imageData);
         setIsFullSizeOpen(true);
       } catch (error) {
-        debugError('Error fetching job:', error);
-        showToast('Job not found or has expired');
+        debugLog('Error fetching job:', error);
+        // Don't show error toast for missing jobs (old images)
         navigate('/create/image', { replace: true });
       }
     };

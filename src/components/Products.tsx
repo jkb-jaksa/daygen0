@@ -242,7 +242,6 @@ export default function Products() {
 
 
   const [products, setProducts] = useState<StoredProduct[]>([]);
-  const [galleryImages, setGalleryImages] = useState<GalleryImageLike[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [productName, setProductName] = useState("");
   const [selection, setSelection] = useState<ProductSelection | null>(null);
@@ -294,7 +293,7 @@ export default function Products() {
   const productsRef = useRef<StoredProduct[]>(products);
   const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
   const hasProducts = products.length > 0;
-  const { images: remoteGalleryImages } = useGalleryImages();
+  const { images: galleryImages } = useGalleryImages();
 
   useEffect(() => {
     productsRef.current = products;
@@ -368,17 +367,6 @@ export default function Products() {
     [storagePrefix],
   );
 
-  const persistGalleryImages = useCallback(
-    async (records: GalleryImageLike[]) => {
-      if (!storagePrefix) return;
-      try {
-        await setPersistedValue(storagePrefix, "gallery", serializeGallery(records));
-      } catch (error) {
-        debugError("Failed to persist gallery", error);
-      }
-    },
-    [storagePrefix],
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -408,9 +396,6 @@ export default function Products() {
             }
           }
 
-          if (storedGallery) {
-            setGalleryImages(hydrateStoredGallery(storedGallery));
-          }
 
           if (storedFolders) {
             setFolders(storedFolders.map(folder => ({
@@ -445,31 +430,6 @@ export default function Products() {
     };
   }, [storagePrefix, user?.id, persistProducts]);
 
-  useEffect(() => {
-    if (!remoteGalleryImages.length) return;
-    setGalleryImages(prev => {
-      const existingMap = new Map(prev.map(image => [image.url, image]));
-      const remoteUrlSet = new Set(remoteGalleryImages.map(image => image.url));
-      const merged = remoteGalleryImages.map(image => {
-        const existing = existingMap.get(image.url);
-        if (!existing) {
-          return image;
-        }
-        return {
-          ...image,
-          productId: existing.productId ?? image.productId,
-          avatarId: existing.avatarId ?? image.avatarId,
-        };
-      });
-      const extras = prev.filter(image => !remoteUrlSet.has(image.url));
-      return [...merged, ...extras];
-    });
-  }, [remoteGalleryImages]);
-
-  useEffect(() => {
-    if (galleryImages.length === 0) return;
-    void persistGalleryImages(galleryImages);
-  }, [galleryImages, persistGalleryImages]);
 
   const commitProductUpdate = useCallback(
     (
@@ -849,21 +809,7 @@ export default function Products() {
       return updated;
     });
 
-    setGalleryImages(prev => {
-      let mutated = false;
-      const updated = prev.map(image => {
-        if (image.productId === productToDelete.id) {
-          mutated = true;
-          return { ...image, productId: undefined };
-        }
-        return image;
-      });
-      if (mutated) {
-        void persistGalleryImages(updated);
-        return updated;
-      }
-      return prev;
-    });
+    // Gallery images are now managed by the centralized useGalleryImages hook
 
     if (creationsModalProduct?.id === productToDelete.id) {
       setCreationsModalProduct(null);
@@ -877,21 +823,13 @@ export default function Products() {
       setEditingName("");
     }
     setProductToDelete(null);
-  }, [productSlug, productToDelete, creationsModalProduct, editingProductId, navigate, persistProducts, persistGalleryImages]);
+  }, [productSlug, productToDelete, creationsModalProduct, editingProductId, navigate, persistProducts]);
 
   const confirmPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
       const imageUrl = publishConfirmation.imageUrl;
 
-      setGalleryImages(prev => {
-        const next = prev.map(image =>
-          image.url === imageUrl
-            ? { ...image, isPublic: true }
-            : image,
-        );
-        void persistGalleryImages(next);
-        return next;
-      });
+      // Gallery images are now managed by the centralized useGalleryImages hook
 
       setSelectedFullImage(prev => (prev && prev.url === imageUrl ? { ...prev, isPublic: true } : prev));
       setCopyNotification("Image published!");
@@ -913,7 +851,7 @@ export default function Products() {
     });
 
     setProductToPublish(null);
-  }, [productToPublish, persistProducts, publishConfirmation.imageUrl, persistGalleryImages]);
+  }, [productToPublish, persistProducts, publishConfirmation.imageUrl]);
 
   const handleNavigateToImage = useCallback(
     (product: StoredProduct) => {
@@ -1012,14 +950,9 @@ export default function Products() {
   const handleDeleteImageConfirmed = useCallback(() => {
     if (!imageToDelete) return;
     
-    setGalleryImages(prev => {
-      const updated = prev.filter(img => img.url !== imageToDelete.url);
-      void persistGalleryImages(updated);
-      return updated;
-    });
     
     setImageToDelete(null);
-  }, [imageToDelete, persistGalleryImages]);
+  }, [imageToDelete]);
 
   const handleDeleteImageCancelled = useCallback(() => {
     setImageToDelete(null);
@@ -1174,15 +1107,7 @@ export default function Products() {
 
   const confirmUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
-      setGalleryImages(prev => {
-        const next = prev.map(image =>
-          image.url === unpublishConfirmation.imageUrl
-            ? { ...image, isPublic: false }
-            : image,
-        );
-        void persistGalleryImages(next);
-        return next;
-      });
+      // Gallery images are now managed by the centralized useGalleryImages hook
       setSelectedFullImage(prev => (
         prev && prev.url === unpublishConfirmation.imageUrl
           ? { ...prev, isPublic: false }
@@ -1192,7 +1117,7 @@ export default function Products() {
       setTimeout(() => setCopyNotification(null), 2000);
     }
     setUnpublishConfirmation({show: false, count: 0});
-  }, [unpublishConfirmation.imageUrl, persistGalleryImages]);
+  }, [unpublishConfirmation.imageUrl]);
 
   const cancelPublish = useCallback(() => {
     setPublishConfirmation({show: false, count: 0});
