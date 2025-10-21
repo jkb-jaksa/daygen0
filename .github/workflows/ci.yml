@@ -46,26 +46,5 @@ jobs:
         path: dist/
         retention-days: 1
 
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-        
-    - name: Deploy to Cloudflare Pages
-      uses: cloudflare/pages-action@v1
-      with:
-        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        projectName: daygen
-        directory: dist
-        gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+  # Note: Deployment is handled by Cloudflare Pages automatically via wrangler.jsonc
+  # No additional deployment step needed in GitHub Actions
