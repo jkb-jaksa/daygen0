@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
-import { glass } from '../../styles/designSystem';
-import ConfirmationModal from '../modals/ConfirmationModal';
+import { glass, buttons } from '../../styles/designSystem';
 
 interface SubscriptionInfo {
   id: string;
@@ -12,56 +11,15 @@ interface SubscriptionInfo {
   cancelAtPeriodEnd: boolean;
   credits: number;
   createdAt: string;
-  stripePriceId: string;
-  planId: string | null;
-  planName: string | null;
-  billingPeriod: 'monthly' | 'yearly';
-}
-
-interface PaymentHistoryItem {
-  id: string;
-  amount: number;
-  credits: number;
-  status: string;
-  type: string;
-  createdAt: string;
-  metadata?: unknown;
 }
 
 export function SubscriptionManager() {
-  const { getSubscription, cancelSubscription, removeCancellation, getPaymentHistory } = usePayments();
+  const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const [removingCancellation, setRemovingCancellation] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-
-  // Map stripePriceId to plan details
-  const getPlanDetails = (stripePriceId: string) => {
-    const planMapping = {
-      'price_pro': { id: 'pro', name: 'Pro' },
-      'price_enterprise': { id: 'enterprise', name: 'Enterprise' },
-      'price_pro-yearly': { id: 'pro-yearly', name: 'Pro' },
-      'price_enterprise-yearly': { id: 'enterprise-yearly', name: 'Enterprise' },
-    };
-    
-    const plan = planMapping[stripePriceId as keyof typeof planMapping];
-    if (plan) {
-      return {
-        planId: plan.id,
-        planName: plan.name,
-        billingPeriod: plan.id.includes('yearly') ? 'yearly' as const : 'monthly' as const
-      };
-    }
-    
-    return {
-      planId: null,
-      planName: null,
-      billingPeriod: 'monthly' as const
-    };
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,20 +29,7 @@ export function SubscriptionManager() {
           getPaymentHistory(),
         ]);
         
-        // Enhance subscription data with plan details if not already present
-        if (subData && subData.stripePriceId && (!subData.planName || !subData.planId)) {
-          const planDetails = getPlanDetails(subData.stripePriceId);
-          console.log('Mapping plan details:', { stripePriceId: subData.stripePriceId, planDetails });
-          setSubscription({
-            ...subData,
-            planId: subData.planId || planDetails.planId,
-            planName: subData.planName || planDetails.planName,
-            billingPeriod: subData.billingPeriod || planDetails.billingPeriod
-          });
-        } else {
-          console.log('Using existing subscription data:', subData);
-          setSubscription(subData);
-        }
+        setSubscription(subData);
         setPaymentHistory(historyData);
       } catch (err) {
         console.error('Error fetching subscription data:', err);
@@ -97,17 +42,15 @@ export function SubscriptionManager() {
     fetchData();
   }, [getSubscription, getPaymentHistory]);
 
-  const handleCancelSubscription = () => {
+  const handleCancelSubscription = async () => {
     if (!subscription) return;
-    setShowCancelModal(true);
-  };
 
-  const confirmCancelSubscription = async () => {
-    if (!subscription) return;
+    if (!confirm('Are you sure you want to cancel your subscription? You will lose access to your monthly credits at the end of the current billing period.')) {
+      return;
+    }
 
     setCancelling(true);
     setError(null);
-    setShowCancelModal(false);
 
     try {
       await cancelSubscription();
@@ -119,25 +62,6 @@ export function SubscriptionManager() {
       setError('Failed to cancel subscription');
     } finally {
       setCancelling(false);
-    }
-  };
-
-  const handleRemoveCancellation = async () => {
-    if (!subscription) return;
-
-    setRemovingCancellation(true);
-    setError(null);
-
-    try {
-      await removeCancellation();
-      // Refresh subscription data
-      const subData = await getSubscription();
-      setSubscription(subData);
-    } catch (err) {
-      console.error('Error removing cancellation:', err);
-      setError('Failed to remove cancellation');
-    } finally {
-      setRemovingCancellation(false);
     }
   };
 
@@ -189,13 +113,13 @@ export function SubscriptionManager() {
   if (!subscription) {
     return (
       <div className={`${glass.surface} p-6`}>
-        <h3 className="text-lg font-raleway text-theme-text mb-4">No Active Subscription</h3>
-        <p className="text-theme-white mb-4">
+        <h3 className="text-lg font-raleway font-light text-theme-text">Free Plan</h3>
+        <p className="text-theme-white font-raleway font-light mb-4">
           You don't have an active subscription. Subscribe to get monthly credits and premium features.
         </p>
         <button
           onClick={() => window.location.href = '/upgrade'}
-          className="btn btn-cyan"
+          className={buttons.primary}
         >
           View Plans
         </button>
@@ -208,14 +132,7 @@ export function SubscriptionManager() {
       {/* Current Subscription */}
       <div className={`${glass.surface} p-6`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
-            {(subscription.planName || subscription.stripePriceId) && (
-              <span className="px-3 py-1 bg-theme-mid/20 border border-theme-mid rounded-full text-sm font-raleway text-theme-white">
-                {subscription.planName || getPlanDetails(subscription.stripePriceId).planName} {subscription.billingPeriod === 'yearly' ? 'Yearly' : 'Monthly'}
-              </span>
-            )}
-          </div>
+          <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
           <span className={`text-sm font-raleway ${getStatusColor(subscription.status)}`}>
             {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
           </span>
@@ -262,31 +179,7 @@ export function SubscriptionManager() {
             {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
           </button>
         )}
-
-        {subscription.cancelAtPeriodEnd && (
-          <button
-            onClick={handleRemoveCancellation}
-            disabled={removingCancellation}
-            className="btn btn-cyan text-sm"
-          >
-            {removingCancellation ? 'Removing Cancellation...' : 'Remove Cancellation'}
-          </button>
-        )}
       </div>
-
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={confirmCancelSubscription}
-        title="Cancel Subscription"
-        message="Are you sure you want to cancel your subscription? You will lose access to your monthly credits at the end of the current billing period."
-        confirmText="Cancel Subscription"
-        cancelText="Keep Subscription"
-        icon={AlertCircle}
-        iconColor="text-orange-400"
-        isLoading={cancelling}
-      />
 
       {/* Payment History */}
       <div className={`${glass.surface} p-6`}>
@@ -296,7 +189,7 @@ export function SubscriptionManager() {
           <p className="text-theme-white">No payment history found.</p>
         ) : (
           <div className="space-y-3">
-            {paymentHistory.slice(0, 10).map((payment: PaymentHistoryItem) => (
+            {paymentHistory.slice(0, 10).map((payment) => (
               <div
                 key={payment.id}
                 className="flex items-center justify-between py-2 border-b border-theme-dark/50 last:border-b-0"

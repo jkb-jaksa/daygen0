@@ -19,6 +19,7 @@ export interface R2FileResponse {
   avatarId?: string;
   avatarImageId?: string;
   productId?: string;
+  styleId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +51,7 @@ const mergeImageDetails = (
   avatarId: incoming.avatarId ?? existing.avatarId,
   avatarImageId: incoming.avatarImageId ?? existing.avatarImageId,
   productId: incoming.productId ?? existing.productId,
+  styleId: incoming.styleId ?? existing.styleId,
 });
 
 export const useGalleryImages = () => {
@@ -75,6 +77,7 @@ export const useGalleryImages = () => {
       avatarId: r2File.avatarId,
       avatarImageId: r2File.avatarImageId,
       productId: r2File.productId,
+      styleId: r2File.styleId,
     };
   }, []);
 

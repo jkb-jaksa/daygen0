@@ -15,6 +15,7 @@ export interface GeneratedImage {
   ownerId?: string; // Optional user ID who generated the image
   avatarId?: string;
   avatarImageId?: string;
+  styleId?: string;
 }
 
 export interface ImageGenerationState {
@@ -32,6 +33,8 @@ export interface ImageGenerationOptions {
   seed?: number; // Optional seed for reproducible results
   avatarId?: string;
   avatarImageId?: string;
+  productId?: string;
+  styleId?: string;
 }
 
 export const useRunwayImageGeneration = () => {

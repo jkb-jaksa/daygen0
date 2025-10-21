@@ -294,6 +294,8 @@ export default function Avatars() {
   const avatarsRef = useRef<StoredAvatar[]>(avatars);
   const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
   const hasAvatars = avatars.length > 0;
+  const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
+  const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
   const { images: remoteGalleryImages } = useGalleryImages();
 
   useEffect(() => {
@@ -701,6 +703,37 @@ export default function Avatars() {
       }
       setAvatarImageUploadError(null);
       commitAvatarUpdate(avatarId, images => images, imageId);
+    },
+    [commitAvatarUpdate],
+  );
+
+  const handleReorderAvatarImages = useCallback(
+    (avatarId: string, draggedImageId: string, targetIndex: number) => {
+      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
+      if (!targetAvatar) {
+        setAvatarImageUploadError("We couldn't find that avatar.");
+        return;
+      }
+
+      const currentImages = targetAvatar.images;
+      const draggedImage = currentImages.find(image => image.id === draggedImageId);
+      if (!draggedImage) {
+        setAvatarImageUploadError("We couldn't find the dragged image.");
+        return;
+      }
+
+      // Remove the dragged image from its current position
+      const filteredImages = currentImages.filter(image => image.id !== draggedImageId);
+      
+      // Insert the dragged image at the target position
+      const reorderedImages = [
+        ...filteredImages.slice(0, targetIndex),
+        draggedImage,
+        ...filteredImages.slice(targetIndex),
+      ];
+
+      setAvatarImageUploadError(null);
+      commitAvatarUpdate(avatarId, () => reorderedImages);
     },
     [commitAvatarUpdate],
   );
@@ -1454,6 +1487,41 @@ export default function Avatars() {
             className="h-full w-full object-cover relative z-[1]"
             loading="lazy"
           />
+          {/* Avatar version thumbnails */}
+          {avatar.images.length > 1 && (
+            <div className="absolute bottom-16 left-2 right-2 z-10 hidden lg:block">
+              <div className="bg-theme-black/60 backdrop-blur-sm rounded-lg px-2 py-1.5">
+                <div className="flex flex-row gap-1 sm:gap-1.5 overflow-x-auto scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent">
+                  {avatar.images.map((image, index) => {
+                    const isPrimary = image.id === avatar.primaryImageId;
+                    return (
+                      <button
+                        key={image.id}
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openAvatarFullSizeView(image.id);
+                        }}
+                        className={`flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden border transition-colors duration-200 cursor-pointer ${
+                          isPrimary 
+                            ? 'border-2 border-theme-text' 
+                            : 'border border-theme-mid hover:border-theme-text'
+                        }`}
+                        title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`${avatar.name} version ${index + 1}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
             <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
               <div className="flex h-[32px] items-center gap-2">
@@ -1464,7 +1532,7 @@ export default function Avatars() {
                     onClick={event => event.stopPropagation()}
                   >
                     <input
-                      className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                      className="flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:outline-none"
                       placeholder="Enter name..."
                       value={editingName}
                       onChange={event => setEditingName(event.target.value)}
@@ -1521,7 +1589,7 @@ export default function Avatars() {
               onClick={(event) => event.stopPropagation()}
             >
               <input
-                className="flex h-full flex-1 rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                className="flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:outline-none"
                 placeholder="Enter name..."
                 value={editingName}
                 onChange={event => setEditingName(event.target.value)}
@@ -1934,11 +2002,11 @@ export default function Avatars() {
             <div className="flex flex-wrap items-center gap-3">
               {editingAvatarId === creationsModalAvatar.id ? (
                 <form
-                  className="flex h-12 items-center gap-2 rounded-3xl border border-theme-mid bg-theme-black/60 px-4"
+                  className="flex items-center gap-2"
                   onSubmit={submitRename}
                 >
                   <input
-                    className="bg-transparent text-3xl font-raleway text-theme-text focus:outline-none"
+                    className="bg-transparent text-[2rem] sm:text-[2.5rem] font-light font-raleway text-theme-text focus:outline-none"
                     value={editingName}
                     onChange={event => setEditingName(event.target.value)}
                     autoFocus
@@ -2114,7 +2182,7 @@ export default function Avatars() {
                     key={`placeholder-${index}`}
                     className={`flex aspect-square w-60 h-60 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
                       draggingOverSlot === index
-                        ? "border-brand drag-active"
+                        ? "border-theme-text drag-active"
                         : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
                     }`}
                     onClick={openAvatarImageUploader}
@@ -2153,29 +2221,88 @@ export default function Avatars() {
               return (
                 <div key={image.id} className="flex flex-col items-center gap-2">
                   <div
-                    className="relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
+                    className={`relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border transition-colors duration-200 ${
+                      dragOverSlotIndex === index && draggedImageId !== image.id
+                        ? "border-theme-text bg-theme-text/10"
+                        : "border-theme-dark bg-theme-black/60"
+                    }`}
+                    draggable={true}
+                    onDragStart={(event) => {
+                      event.stopPropagation();
+                      setDraggedImageId(image.id);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", image.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedImageId(null);
+                      setDragOverSlotIndex(null);
+                    }}
                     onDragEnter={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      focusFirstEmptySlot();
+                      if (draggedImageId !== image.id) {
+                        setDragOverSlotIndex(index);
+                      }
+                    }}
+                    onDragLeave={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      // Only clear if we're leaving the container entirely
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      const x = event.clientX;
+                      const y = event.clientY;
+                      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+                        setDragOverSlotIndex(null);
+                      }
                     }}
                     onDragOver={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
+                      event.dataTransfer.dropEffect = "move";
                     }}
-                    onDragLeave={maybeClearDraggingState}
-                    onDrop={handleSlotDrop}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      
+                      // Check if files are being dropped (new upload)
+                      const droppedFiles = event.dataTransfer?.files;
+                      if (droppedFiles && droppedFiles.length > 0) {
+                        // Handle new file upload
+                        const files = Array.from(droppedFiles);
+                        void handleAddAvatarImages(creationsModalAvatar.id, files);
+                        setDraggedImageId(null);
+                        setDragOverSlotIndex(null);
+                        return;
+                      }
+                      
+                      // Otherwise, check if reordering existing image
+                      const droppedImageId = event.dataTransfer.getData("text/plain");
+                      if (droppedImageId && droppedImageId !== image.id) {
+                        handleReorderAvatarImages(creationsModalAvatar.id, droppedImageId, index);
+                      }
+                      
+                      setDraggedImageId(null);
+                      setDragOverSlotIndex(null);
+                    }}
                   >
                     <img
                       src={image.url}
                       alt={`${creationsModalAvatar.name} variation ${index + 1}`}
                       className="h-full w-full object-cover cursor-pointer"
                       onClick={() => openAvatarFullSizeView(image.id)}
+                      draggable={false}
                     />
                     {isPrimary && (
                       <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-1 text-[10px] font-raleway text-theme-text`}>
                         Primary
                       </span>
+                    )}
+                    {draggedImageId === image.id && (
+                      <div className="absolute inset-0 bg-theme-black/50 flex items-center justify-center">
+                        <div className="bg-theme-text/20 rounded-lg px-3 py-1 text-xs font-raleway text-theme-white">
+                          Moving...
+                        </div>
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
@@ -2307,19 +2434,19 @@ export default function Avatars() {
               <>
                 <button
                   onClick={() => navigateAvatarImage("prev")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                   title="Previous image"
                   aria-label="Previous image"
                 >
-                  <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                 </button>
                 <button
                   onClick={() => navigateAvatarImage("next")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                   title="Next image"
                   aria-label="Next image"
                 >
-                  <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
                 </button>
               </>
             )}
@@ -2407,19 +2534,19 @@ export default function Avatars() {
                 <>
                   <button
                     onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Previous image (←)"
                     aria-label="Previous image"
                   >
-                    <ChevronLeft className="w-6 h-6 text-current transition-colors duration-100" />
+                    <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                   <button
                     onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-3 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Next image (→)"
                     aria-label="Next image"
                   >
-                    <ChevronRight className="w-6 h-6 text-current transition-colors duration-100" />
+                    <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                 </>
               );

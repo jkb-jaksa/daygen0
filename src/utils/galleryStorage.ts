@@ -50,6 +50,7 @@ export const serializeGallery = (
     avatarId: item.avatarId,
     productId: item.productId,
     avatarImageId: item.avatarImageId,
+    styleId: item.styleId,
     ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
   }));
 };
@@ -69,6 +70,7 @@ export const hydrateStoredGallery = (
       avatarId: item.avatarId,
       productId: item.productId,
       avatarImageId: item.avatarImageId,
+      styleId: item.styleId,
     };
 
     if (item.model?.startsWith("flux") || item.model?.startsWith("reve")) {
