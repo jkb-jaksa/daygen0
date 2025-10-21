@@ -38,6 +38,31 @@ export function SubscriptionManager() {
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+  // Map stripePriceId to plan details
+  const getPlanDetails = (stripePriceId: string) => {
+    const planMapping = {
+      'price_pro': { id: 'pro', name: 'Pro' },
+      'price_enterprise': { id: 'enterprise', name: 'Enterprise' },
+      'price_pro-yearly': { id: 'pro-yearly', name: 'Pro' },
+      'price_enterprise-yearly': { id: 'enterprise-yearly', name: 'Enterprise' },
+    };
+    
+    const plan = planMapping[stripePriceId as keyof typeof planMapping];
+    if (plan) {
+      return {
+        planId: plan.id,
+        planName: plan.name,
+        billingPeriod: plan.id.includes('yearly') ? 'yearly' as const : 'monthly' as const
+      };
+    }
+    
+    return {
+      planId: null,
+      planName: null,
+      billingPeriod: 'monthly' as const
+    };
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,7 +71,20 @@ export function SubscriptionManager() {
           getPaymentHistory(),
         ]);
         
-        setSubscription(subData);
+        // Enhance subscription data with plan details if not already present
+        if (subData && subData.stripePriceId && (!subData.planName || !subData.planId)) {
+          const planDetails = getPlanDetails(subData.stripePriceId);
+          console.log('Mapping plan details:', { stripePriceId: subData.stripePriceId, planDetails });
+          setSubscription({
+            ...subData,
+            planId: subData.planId || planDetails.planId,
+            planName: subData.planName || planDetails.planName,
+            billingPeriod: subData.billingPeriod || planDetails.billingPeriod
+          });
+        } else {
+          console.log('Using existing subscription data:', subData);
+          setSubscription(subData);
+        }
         setPaymentHistory(historyData);
       } catch (err) {
         console.error('Error fetching subscription data:', err);
@@ -172,9 +210,9 @@ export function SubscriptionManager() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
-            {subscription.planName && (
+            {(subscription.planName || subscription.stripePriceId) && (
               <span className="px-3 py-1 bg-theme-mid/20 border border-theme-mid rounded-full text-sm font-raleway text-theme-white">
-                {subscription.planName} {subscription.billingPeriod === 'yearly' ? 'Yearly' : 'Monthly'}
+                {subscription.planName || getPlanDetails(subscription.stripePriceId).planName} {subscription.billingPeriod === 'yearly' ? 'Yearly' : 'Monthly'}
               </span>
             )}
           </div>
