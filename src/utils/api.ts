@@ -7,7 +7,7 @@ const env = import.meta.env as ApiEnv;
 
 const rawBase = env?.VITE_API_BASE_URL
   ?? env?.VITE_BASE_URL
-  ?? '';
+  ?? 'http://localhost:3000';
 
 const normalizedBase = typeof rawBase === 'string' && rawBase.length > 0
   ? rawBase.replace(/\/$/, '')

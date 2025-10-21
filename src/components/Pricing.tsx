@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Check, Zap, Crown, Sparkles, Star, ArrowUp, ArrowDown } from "lucide-react";
+import { Check, Zap, Crown, Sparkles, Star, ArrowUp, AlertCircle, CheckCircle } from "lucide-react";
 import { layout, cards, glass } from "../styles/designSystem";
 import useParallaxHover from "../hooks/useParallaxHover";
 import CreditPackages from "./payments/CreditPackages";
@@ -7,6 +7,7 @@ import { usePayments } from "../hooks/usePayments";
 import { useAuth } from "../auth/useAuth";
 import { resolveSubscriptionErrorMessage } from "../utils/errorMessages";
 import { getApiUrl } from "../utils/api";
+import MessageModal from "./modals/MessageModal";
 
 type PricingTier = {
   id: string;
@@ -153,20 +154,20 @@ function PricingCard({
   onSelect, 
   onPurchase, 
   isCurrentPlan, 
-  isUpgrade, 
-  isDowngrade,
+  isUpgrade,
   onUpgrade,
-  onDowngrade 
+  hasSubscription,
+  onShowModal
 }: { 
   tier: PricingTier; 
   isSelected: boolean; 
-  onSelect: () => void; 
+  onSelect?: () => void; 
   onPurchase?: () => void;
   isCurrentPlan?: boolean;
   isUpgrade?: boolean;
-  isDowngrade?: boolean;
   onUpgrade?: () => void;
-  onDowngrade?: () => void;
+  hasSubscription?: boolean;
+  onShowModal?: (title: string, message: string, icon: React.ComponentType<{ className?: string }>, iconColor: string) => void;
 }) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
@@ -178,7 +179,7 @@ function PricingCard({
       onPointerLeave={isCurrentPlan ? undefined : onPointerLeave}
       className={`${cards.shell} ${
         isCurrentPlan 
-          ? 'border-green-400 bg-green-400/5 pricing-current' 
+          ? 'border-green-400 bg-green-400/5 pricing-current opacity-90' 
           : isSelected 
             ? 'border-theme-light pricing-selected' 
             : ''
@@ -222,22 +223,28 @@ function PricingCard({
         {/* Header */}
         <div className="mb-3">
           <h3 className={`text-3xl font-raleway font-light mb-1 ${
+            isCurrentPlan ? 'text-green-400' :
             tier.id === 'free' ? 'text-theme-text' : 
             tier.id === 'pro' ? 'text-cyan-lighter' : 
             'text-red-lighter'
           }`}>{tier.name}</h3>
-          <p className="text-sm text-theme-text font-raleway">{tier.description}</p>
+          <p className={`text-sm font-raleway ${
+            isCurrentPlan ? 'text-green-400/80' : 'text-theme-text'
+          }`}>{tier.description}</p>
         </div>
 
         {/* Pricing */}
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
             <span className={`text-4xl font-raleway font-light ${
+              isCurrentPlan ? 'text-green-400' :
               tier.id === 'free' ? 'text-theme-text' : 
               tier.id === 'pro' ? 'text-cyan-lighter' : 
               'text-red-lighter'
             }`}>{tier.price}</span>
-            <span className="text-theme-text font-raleway">
+            <span className={`font-raleway ${
+              isCurrentPlan ? 'text-green-400/70' : 'text-theme-text'
+            }`}>
               /{tier.period.includes('month') || tier.period.includes('year') ? (
                 <>
                   {tier.period.split(' ')[0]} <span className="font-bold">{tier.period.split(' ')[1]}</span>
@@ -287,21 +294,22 @@ function PricingCard({
               <ArrowUp className="w-4 h-4" />
               Upgrade Now
             </button>
-          ) : isDowngrade ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDowngrade?.();
-              }}
-              className="w-full btn btn-yellow font-raleway text-base transition-colors duration-200 parallax-large flex items-center justify-center gap-2"
-            >
-              <ArrowDown className="w-4 h-4" />
-              Downgrade
-            </button>
           ) : (
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                
+                // Safety check: if user has subscription, don't allow new purchases
+                if (hasSubscription) {
+                  onShowModal?.(
+                    'Already Subscribed',
+                    'You already have an active subscription. Use the upgrade option instead.',
+                    AlertCircle,
+                    'text-orange-400'
+                  );
+                  return;
+                }
+                
                 if (tier.id === 'free') {
                   window.location.href = '/';
                 } else if (onPurchase) {
@@ -331,36 +339,71 @@ export default function Pricing() {
   const [activeTab, setActiveTab] = useState<'credits' | 'subscriptions'>('credits');
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    icon: React.ComponentType<{ className?: string }>;
+    iconColor: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    icon: AlertCircle as React.ComponentType<{ className?: string }>,
+    iconColor: 'text-theme-text'
+  });
   const { createCheckoutSession, getSubscription } = usePayments();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const currentTiers = billingPeriod === 'yearly' ? YEARLY_PRICING_TIERS : PRICING_TIERS;
 
+  // Safe plan selection that prevents selecting current plan
+  const handlePlanSelection = (planId: string) => {
+    if (currentSubscription) {
+      const currentPlan = getCurrentPlanFromSubscription();
+      if (currentPlan && planId === currentPlan.id) {
+        return; // Don't allow selection of current plan
+      }
+    }
+    setSelectedPlan(planId);
+  };
+
   // Map stripePriceId to plan tier
   const getCurrentPlanFromSubscription = () => {
-    if (!currentSubscription?.stripePriceId) {
+    if (!currentSubscription?.planId) {
+      // Try to map from stripePriceId if planId is not available
+      if (currentSubscription?.stripePriceId) {
+        // Map stripePriceId to plan tier
+        const planMapping = {
+          'price_pro': 'pro',
+          'price_enterprise': 'enterprise',
+          'price_pro-yearly': 'pro-yearly',
+          'price_enterprise-yearly': 'enterprise-yearly',
+        };
+        
+        const mappedPlanId = planMapping[currentSubscription.stripePriceId as keyof typeof planMapping];
+        if (mappedPlanId) {
+          return {
+            id: mappedPlanId,
+            name: mappedPlanId.includes('pro') ? 'Pro' : 'Enterprise',
+            billingPeriod: mappedPlanId.includes('yearly') ? 'yearly' : 'monthly'
+          };
+        }
+      }
+      
       return null;
     }
 
-    const stripePriceId = currentSubscription.stripePriceId;
+    // Use the plan information directly from the subscription
+    const planId = currentSubscription.planId;
+    const planName = currentSubscription.planName || 'Unknown';
+    const billingPeriod = currentSubscription.billingPeriod || 'monthly';
     
-    // Check for yearly plans first
-    if (stripePriceId.includes('yearly') || stripePriceId.includes('year')) {
-      if (stripePriceId.includes('pro')) {
-        return { id: 'pro-yearly', name: 'Pro', billingPeriod: 'yearly' };
-      } else if (stripePriceId.includes('enterprise')) {
-        return { id: 'enterprise-yearly', name: 'Enterprise', billingPeriod: 'yearly' };
-      }
-    }
-    
-    // Check for monthly plans
-    if (stripePriceId.includes('pro')) {
-      return { id: 'pro', name: 'Pro', billingPeriod: 'monthly' };
-    } else if (stripePriceId.includes('enterprise')) {
-      return { id: 'enterprise', name: 'Enterprise', billingPeriod: 'monthly' };
-    }
-    
-    return null;
+    return { 
+      id: planId, 
+      name: planName, 
+      billingPeriod: billingPeriod as 'monthly' | 'yearly'
+    };
   };
 
   // Filter tiers based on current subscription
@@ -387,7 +430,7 @@ export default function Pricing() {
 
     const currentTierLevel = tierHierarchy[currentPlan.id as keyof typeof tierHierarchy] || 0;
 
-    // Filter to show only current tier and higher tiers
+    // Filter to show only current tier and higher tiers (exclude lower tiers)
     return currentTiers.filter(tier => {
       const tierLevel = tierHierarchy[tier.id as keyof typeof tierHierarchy] || 0;
       return tierLevel >= currentTierLevel;
@@ -395,6 +438,21 @@ export default function Pricing() {
   };
 
   const filteredTiers = getFilteredTiers();
+
+  // Helper function to show modal
+  const showModal = (title: string, message: string, icon: React.ComponentType<{ className?: string }> = AlertCircle, iconColor: string = 'text-theme-text') => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      icon,
+      iconColor
+    });
+  };
+
+  const closeModal = () => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   // Fetch current subscription on mount
   useEffect(() => {
@@ -427,13 +485,28 @@ export default function Pricing() {
     } catch (error) {
       console.error('Subscription purchase failed:', error);
       const errorMessage = resolveSubscriptionErrorMessage(error);
-      alert(errorMessage);
+      showModal(
+        'Subscription Failed',
+        errorMessage,
+        AlertCircle,
+        'text-red-400'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpgrade = async (planId: string) => {
+    if (!user || !token) {
+      showModal(
+        'Login Required',
+        'You must be logged in to upgrade your subscription',
+        AlertCircle,
+        'text-orange-400'
+      );
+      return;
+    }
+
     try {
       setLoading(true);
       // Call the upgrade endpoint
@@ -441,7 +514,7 @@ export default function Pricing() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('daygen:authToken')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ planId }),
       });
@@ -474,87 +547,44 @@ export default function Pricing() {
       const subscription = await getSubscription();
       setCurrentSubscription(subscription);
       
-      alert('Subscription upgraded successfully!');
+      showModal(
+        'Upgrade Successful',
+        'Subscription upgraded successfully!',
+        CheckCircle,
+        'text-green-400'
+      );
     } catch (error) {
       console.error('Upgrade failed:', error);
       const errorMessage = resolveSubscriptionErrorMessage(error);
-      alert(`Upgrade failed: ${errorMessage}`);
+      showModal(
+        'Upgrade Failed',
+        `Upgrade failed: ${errorMessage}`,
+        AlertCircle,
+        'text-red-400'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDowngrade = async (planId: string) => {
-    const confirmed = window.confirm(
-      'Downgrades take effect at the end of your current billing period. Continue?'
-    );
-    
-    if (!confirmed) return;
-
-    try {
-      setLoading(true);
-      // Call the upgrade endpoint (same endpoint handles downgrades)
-      const response = await fetch(getApiUrl('/api/payments/subscription/upgrade'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('daygen:authToken')}`,
-        },
-        body: JSON.stringify({ planId }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = 'Downgrade failed';
-        
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      // Parse response to ensure it's valid JSON
-      const responseText = await response.text();
-      if (responseText) {
-        try {
-          JSON.parse(responseText);
-        } catch {
-          // Response is not JSON, but that's okay for downgrade endpoint
-        }
-      }
-
-      // Refresh subscription data
-      const subscription = await getSubscription();
-      setCurrentSubscription(subscription);
-      
-      alert('Subscription will be downgraded at the end of your current billing period.');
-    } catch (error) {
-      console.error('Downgrade failed:', error);
-      const errorMessage = resolveSubscriptionErrorMessage(error);
-      alert(`Downgrade failed: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Determine plan states
   const getPlanState = (tierId: string) => {
+    // TEST MODE: Uncomment the line below to test current plan styling
+    // if (tierId === 'pro') return { isCurrentPlan: true, isUpgrade: false };
+    
     if (!currentSubscription) {
-      return { isCurrentPlan: false, isUpgrade: false, isDowngrade: false };
+      return { isCurrentPlan: false, isUpgrade: false };
     }
 
     const currentPlan = getCurrentPlanFromSubscription();
     if (!currentPlan) {
-      return { isCurrentPlan: false, isUpgrade: false, isDowngrade: false };
+      return { isCurrentPlan: false, isUpgrade: false };
     }
 
     // Check if this is the current plan (exact match)
     if (tierId === currentPlan.id) {
-      return { isCurrentPlan: true, isUpgrade: false, isDowngrade: false };
+      return { isCurrentPlan: true, isUpgrade: false };
     }
 
     // Define tier hierarchy for comparison
@@ -570,12 +600,10 @@ export default function Pricing() {
     const targetTierLevel = tierHierarchy[tierId as keyof typeof tierHierarchy] || 0;
 
     if (targetTierLevel > currentTierLevel) {
-      return { isCurrentPlan: false, isUpgrade: true, isDowngrade: false };
-    } else if (targetTierLevel < currentTierLevel) {
-      return { isCurrentPlan: false, isUpgrade: false, isDowngrade: true };
+      return { isCurrentPlan: false, isUpgrade: true };
     }
 
-    return { isCurrentPlan: false, isUpgrade: false, isDowngrade: false };
+    return { isCurrentPlan: false, isUpgrade: false };
   };
 
   return (
@@ -660,13 +688,13 @@ export default function Pricing() {
                       key={`${tier.id}-${billingPeriod}`} 
                       tier={tier} 
                       isSelected={selectedPlan === tier.id}
-                      onSelect={() => setSelectedPlan(tier.id)}
+                      onSelect={planState.isCurrentPlan ? undefined : () => handlePlanSelection(tier.id)}
                       onPurchase={() => handleSubscriptionPurchase(tier.id)}
                       isCurrentPlan={planState.isCurrentPlan}
                       isUpgrade={planState.isUpgrade}
-                      isDowngrade={planState.isDowngrade}
                       onUpgrade={() => handleUpgrade(tier.id)}
-                      onDowngrade={() => handleDowngrade(tier.id)}
+                      hasSubscription={!!currentSubscription}
+                      onShowModal={showModal}
                     />
                   );
                 })
@@ -704,6 +732,16 @@ export default function Pricing() {
           </div>
         </section>
       </div>
+
+      {/* Message Modal */}
+      <MessageModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        icon={modalState.icon}
+        iconColor={modalState.iconColor}
+      />
     </div>
   );
 }

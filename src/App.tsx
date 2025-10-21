@@ -3,13 +3,11 @@ import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
 import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
-import { useWelcomeModal } from "./hooks/useWelcomeModal";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, User, Volume2 } from "lucide-react";
 import { CreditWarningBanner } from "./components/CreditWarningBanner";
-import { WelcomeModal } from "./components/onboarding/WelcomeModal";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -353,11 +351,6 @@ function AppContent() {
     handleSubscribe,
     handleDismiss
   } = useCreditWarningBanner();
-  const { 
-    showWelcomeModal, 
-    handleCloseWelcomeModal, 
-    handleStartCreating 
-  } = useWelcomeModal();
 
   return (
     <div>
@@ -426,12 +419,6 @@ function AppContent() {
         onDismiss={handleDismiss}
       />
       
-      {/* Welcome Modal */}
-      <WelcomeModal
-        isOpen={showWelcomeModal}
-        onClose={handleCloseWelcomeModal}
-        onStartCreating={handleStartCreating}
-      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
 import { glass } from '../../styles/designSystem';
+import ConfirmationModal from '../modals/ConfirmationModal';
 
 interface SubscriptionInfo {
   id: string;
@@ -11,15 +12,31 @@ interface SubscriptionInfo {
   cancelAtPeriodEnd: boolean;
   credits: number;
   createdAt: string;
+  stripePriceId: string;
+  planId: string | null;
+  planName: string | null;
+  billingPeriod: 'monthly' | 'yearly';
+}
+
+interface PaymentHistoryItem {
+  id: string;
+  amount: number;
+  credits: number;
+  status: string;
+  type: string;
+  createdAt: string;
+  metadata?: unknown;
 }
 
 export function SubscriptionManager() {
-  const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
+  const { getSubscription, cancelSubscription, removeCancellation, getPaymentHistory } = usePayments();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [paymentHistory, setPaymentHistory] = useState<unknown[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [removingCancellation, setRemovingCancellation] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,15 +59,17 @@ export function SubscriptionManager() {
     fetchData();
   }, [getSubscription, getPaymentHistory]);
 
-  const handleCancelSubscription = async () => {
+  const handleCancelSubscription = () => {
     if (!subscription) return;
+    setShowCancelModal(true);
+  };
 
-    if (!confirm('Are you sure you want to cancel your subscription? You will lose access to your monthly credits at the end of the current billing period.')) {
-      return;
-    }
+  const confirmCancelSubscription = async () => {
+    if (!subscription) return;
 
     setCancelling(true);
     setError(null);
+    setShowCancelModal(false);
 
     try {
       await cancelSubscription();
@@ -62,6 +81,25 @@ export function SubscriptionManager() {
       setError('Failed to cancel subscription');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleRemoveCancellation = async () => {
+    if (!subscription) return;
+
+    setRemovingCancellation(true);
+    setError(null);
+
+    try {
+      await removeCancellation();
+      // Refresh subscription data
+      const subData = await getSubscription();
+      setSubscription(subData);
+    } catch (err) {
+      console.error('Error removing cancellation:', err);
+      setError('Failed to remove cancellation');
+    } finally {
+      setRemovingCancellation(false);
     }
   };
 
@@ -132,7 +170,14 @@ export function SubscriptionManager() {
       {/* Current Subscription */}
       <div className={`${glass.surface} p-6`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
+            {subscription.planName && (
+              <span className="px-3 py-1 bg-theme-mid/20 border border-theme-mid rounded-full text-sm font-raleway text-theme-white">
+                {subscription.planName} {subscription.billingPeriod === 'yearly' ? 'Yearly' : 'Monthly'}
+              </span>
+            )}
+          </div>
           <span className={`text-sm font-raleway ${getStatusColor(subscription.status)}`}>
             {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
           </span>
@@ -179,7 +224,31 @@ export function SubscriptionManager() {
             {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
           </button>
         )}
+
+        {subscription.cancelAtPeriodEnd && (
+          <button
+            onClick={handleRemoveCancellation}
+            disabled={removingCancellation}
+            className="btn btn-cyan text-sm"
+          >
+            {removingCancellation ? 'Removing Cancellation...' : 'Remove Cancellation'}
+          </button>
+        )}
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={confirmCancelSubscription}
+        title="Cancel Subscription"
+        message="Are you sure you want to cancel your subscription? You will lose access to your monthly credits at the end of the current billing period."
+        confirmText="Cancel Subscription"
+        cancelText="Keep Subscription"
+        icon={AlertCircle}
+        iconColor="text-orange-400"
+        isLoading={cancelling}
+      />
 
       {/* Payment History */}
       <div className={`${glass.surface} p-6`}>
@@ -189,7 +258,7 @@ export function SubscriptionManager() {
           <p className="text-theme-white">No payment history found.</p>
         ) : (
           <div className="space-y-3">
-            {paymentHistory.slice(0, 10).map((payment) => (
+            {paymentHistory.slice(0, 10).map((payment: PaymentHistoryItem) => (
               <div
                 key={payment.id}
                 className="flex items-center justify-between py-2 border-b border-theme-dark/50 last:border-b-0"

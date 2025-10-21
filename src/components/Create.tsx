@@ -2,7 +2,7 @@
 // Note: Video generation functions are kept for future backend integration
 import React, { useRef, useState, useEffect, useMemo, useCallback, useLayoutEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid } from "lucide-react";
+import { Wand2, X, Sparkles, Film, Package, Loader2, Plus, Settings, Download, Image as ImageIcon, Video as VideoIcon, User, Volume2, Edit, Copy, Heart, Upload, Trash2, Folder as FolderIcon, FolderPlus, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Camera, Check, Square, Minus, MoreHorizontal, Share2, RefreshCw, Globe, Lock, Palette, Shapes, Bookmark, BookmarkIcon, BookmarkPlus, Info, MessageCircle, Scan, LayoutGrid, AlertCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import type {
@@ -28,6 +28,7 @@ import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
+import MessageModal from "./modals/MessageModal";
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
@@ -678,6 +679,36 @@ const Create: React.FC = () => {
   const [productUploadError, setProductUploadError] = useState<string | null>(null);
   const [isDraggingProduct, setIsDraggingProduct] = useState(false);
   const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+
+  // Message modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    icon: React.ComponentType<{ className?: string }>;
+    iconColor: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    icon: AlertCircle as React.ComponentType<{ className?: string }>,
+    iconColor: 'text-theme-text'
+  });
+
+  // Helper function to show modal
+  const showModal = (title: string, message: string, icon: React.ComponentType<{ className?: string }> = AlertCircle, iconColor: string = 'text-theme-text') => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      icon,
+      iconColor
+    });
+  };
+
+  const closeModal = () => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     if (!isStyleModalOpen || typeof document === 'undefined') {
@@ -2907,7 +2938,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      showModal(
+        'Invalid File Type',
+        'Please select an image file',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
     
@@ -2956,7 +2992,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       handleSetFolderThumbnail(folderThumbnailDialog.folderId, fileUrl);
     } catch (error) {
       debugError('Error processing thumbnail:', error);
-      alert('Error processing thumbnail');
+      showModal(
+        'Processing Error',
+        'Error processing thumbnail',
+        AlertCircle,
+        'text-red-400'
+      );
     }
   };
 
@@ -3148,7 +3189,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       focusPromptBar();
     } catch (error) {
       debugError('Error setting image as reference:', error);
-      alert('Failed to set image as reference. Please try again.');
+      showModal(
+        'Reference Error',
+        'Failed to set image as reference. Please try again.',
+        AlertCircle,
+        'text-red-400'
+      );
     }
   };
 
@@ -3913,7 +3959,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
       
       debugLog('Selected file:', file.name);
     } else {
-      alert('Please select a valid image file.');
+      showModal(
+        'Invalid File',
+        'Please select a valid image file.',
+        AlertCircle,
+        'text-orange-400'
+      );
     }
   };
 
@@ -4573,7 +4624,12 @@ const handleGenerate = async () => {
   const handleGenerateHailuoVideo = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt && !hailuoFirstFrame && !hailuoLastFrame) {
-      alert('Provide a prompt or start/end frame for Hailuo 02 video generation.');
+      showModal(
+        'Missing Input',
+        'Provide a prompt or start/end frame for Hailuo 02 video generation.',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -4767,7 +4823,12 @@ const handleGenerate = async () => {
   const handleGenerateImage = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
-      alert('Please enter a prompt for image generation.');
+      showModal(
+        'Missing Prompt',
+        'Please enter a prompt for image generation.',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -4775,7 +4836,12 @@ const handleGenerate = async () => {
 
     // Check if model is supported
     if (isComingSoon) {
-      alert('This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Reve, Recraft, Veo, and Seedance models are available.');
+      showModal(
+        'Coming Soon',
+        'This model is coming soon! Currently only Gemini, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Runway Video, Wan 2.2 Video, Kling Video, Hailuo 02, Reve, Recraft, Veo, and Seedance models are available.',
+        Info,
+        'text-cyan-400'
+      );
       return;
     }
 
@@ -8719,7 +8785,12 @@ const handleGenerate = async () => {
                           key={model.name}
                           onClick={() => {
                             if (isComingSoon) {
-                              alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
+                              showModal(
+                                'Coming Soon',
+                                'This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.',
+                                Info,
+                                'text-cyan-400'
+                              );
                               return;
                             }
                             handleModelSelect(model.name);
@@ -10063,6 +10134,16 @@ const handleGenerate = async () => {
         
 
       </header>
+
+      {/* Message Modal */}
+      <MessageModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        icon={modalState.icon}
+        iconColor={modalState.iconColor}
+      />
     </div>
   );
 };

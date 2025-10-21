@@ -3,6 +3,8 @@ import { useIdeogramImageGeneration } from '../hooks/useIdeogramImageGeneration'
 import CircularProgressRing from './CircularProgressRing';
 import { debugError } from '../utils/debug';
 import { buttons, inputs, glass } from '../styles/designSystem';
+import { AlertCircle } from 'lucide-react';
+import MessageModal from './modals/MessageModal';
 
 interface IdeogramToolsProps {
   onImageGenerated?: (images: unknown[]) => void;
@@ -28,6 +30,36 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
   const [activeTab, setActiveTab] = useState<'generate' | 'edit' | 'reframe' | 'replace' | 'upscale' | 'describe'>('generate');
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
+
+  // Message modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    icon: React.ComponentType<{ className?: string }>;
+    iconColor: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    icon: AlertCircle as React.ComponentType<{ className?: string }>,
+    iconColor: 'text-theme-text'
+  });
+
+  // Helper function to show modal
+  const showModal = (title: string, message: string, icon: React.ComponentType<{ className?: string }> = AlertCircle, iconColor: string = 'text-theme-text') => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      icon,
+      iconColor
+    });
+  };
+
+  const closeModal = () => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
   const [resolution, setResolution] = useState('1024x1024');
   const [renderingSpeed, setRenderingSpeed] = useState<'TURBO' | 'DEFAULT' | 'QUALITY'>('DEFAULT');
   const [numImages, setNumImages] = useState(1);
@@ -80,7 +112,12 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
   const handleEdit = async () => {
     if (!selectedImage || !selectedMask) {
-      alert('Please select both image and mask files');
+      showModal(
+        'Missing Files',
+        'Please select both image and mask files',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -102,7 +139,12 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
   const handleReframe = async () => {
     if (!selectedImage) {
-      alert('Please select an image file');
+      showModal(
+        'Missing File',
+        'Please select an image file',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -122,7 +164,12 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
   const handleReplaceBackground = async () => {
     if (!selectedImage) {
-      alert('Please select an image file');
+      showModal(
+        'Missing File',
+        'Please select an image file',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -142,7 +189,12 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
   const handleUpscale = async () => {
     if (!selectedImage) {
-      alert('Please select an image file');
+      showModal(
+        'Missing File',
+        'Please select an image file',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -161,7 +213,12 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
   const handleDescribe = async () => {
     if (!selectedImage) {
-      alert('Please select an image file');
+      showModal(
+        'Missing File',
+        'Please select an image file',
+        AlertCircle,
+        'text-orange-400'
+      );
       return;
     }
 
@@ -681,6 +738,16 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
           </div>
         </div>
       )}
+
+      {/* Message Modal */}
+      <MessageModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        icon={modalState.icon}
+        iconColor={modalState.iconColor}
+      />
     </div>
   );
 };

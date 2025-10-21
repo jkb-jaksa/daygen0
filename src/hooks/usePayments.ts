@@ -21,6 +21,9 @@ interface SubscriptionInfo {
   credits: number;
   createdAt: string;
   stripePriceId: string;
+  planId: string | null;
+  planName: string | null;
+  billingPeriod: 'monthly' | 'yearly';
 }
 
 export function usePayments() {
@@ -171,6 +174,55 @@ export function usePayments() {
     }
   };
 
+  const removeCancellation = async (): Promise<void> => {
+    if (!user || !token) {
+      throw new Error('User not authenticated');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(getApiUrl('/api/payments/subscription/remove-cancellation'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Failed to remove cancellation';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Parse response to ensure it's valid JSON
+      const responseText = await response.text();
+      if (responseText) {
+        try {
+          JSON.parse(responseText);
+        } catch {
+          // Response is not JSON, but that's okay for remove cancellation endpoint
+        }
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getSessionStatus = async (sessionId: string) => {
     try {
       // Use public endpoint that doesn't require authentication
@@ -194,6 +246,7 @@ export function usePayments() {
     getPaymentHistory,
     getSubscription,
     cancelSubscription,
+    removeCancellation,
     getSessionStatus,
     loading,
     error,
