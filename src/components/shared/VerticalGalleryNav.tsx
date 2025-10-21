@@ -60,14 +60,15 @@ export function VerticalGalleryNav({
 
   return (
     <div
-      className={`fixed right-4 top-1/2 -translate-y-1/2 z-20 max-h-[80vh] flex flex-col pointer-events-auto ${className}`}
+      className={`fixed right-4 z-20 flex flex-col pointer-events-auto ${className}`}
+      style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
       onClick={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
     >
       <div
         ref={scrollContainerRef}
         className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
-        style={{ maxHeight: "80vh", overscrollBehavior: "contain" }}
+        style={{ overscrollBehavior: "contain" }}
         onWheel={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-2">
@@ -75,7 +76,7 @@ export function VerticalGalleryNav({
             const isActive = index === currentIndex;
             return (
               <button
-                key={image.id || image.url}
+                key={image.id || `${image.url}-${index}`}
                 ref={isActive ? activeThumbnailRef : null}
                 onClick={() => onNavigate(index)}
                 className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${

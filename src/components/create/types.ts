@@ -103,12 +103,6 @@ export type CreateNavigationState = {
   avatarId?: string;
   productId?: string;
   styleId?: string;
-  reopenFullSize?: boolean;
-  fullSizeImage?: GalleryImageLike;
-  fullSizeContext?: 'gallery' | 'inspirations';
-  fullSizeGalleryIndex?: number;
-  fullSizeInspirationIndex?: number;
-  preserveActiveCategory?: string;
 };
 
 export type GalleryFilters = {
