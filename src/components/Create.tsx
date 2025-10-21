@@ -1696,6 +1696,51 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
   }, [activeCategory, selectedModel]);
 
+  // Navigation functions (defined early to avoid temporal dead zone in keyboard nav useEffect)
+  const navigateGallery = useCallback((direction: 'prev' | 'next') => {
+    const totalImages = gallery.length;
+    if (totalImages === 0) return;
+    
+    setCurrentGalleryIndex(prev => {
+      if (direction === 'prev') {
+        return prev > 0 ? prev - 1 : totalImages - 1;
+      } else {
+        return prev < totalImages - 1 ? prev + 1 : 0;
+      }
+    });
+  }, [gallery.length]);
+
+  const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
+    const collection = fullSizeContext === 'inspirations' ? inspirations : gallery;
+    const totalImages = collection.length;
+    if (totalImages === 0) return;
+
+    const currentIndex = fullSizeContext === 'inspirations' ? currentInspirationIndex : currentGalleryIndex;
+    const newIndex = direction === 'prev'
+      ? (currentIndex > 0 ? currentIndex - 1 : totalImages - 1)
+      : (currentIndex < totalImages - 1 ? currentIndex + 1 : 0);
+
+    if (fullSizeContext === 'inspirations') {
+      setCurrentInspirationIndex(newIndex);
+    } else {
+      setCurrentGalleryIndex(newIndex);
+    }
+    
+    const newImage = collection[newIndex];
+    setSelectedFullImage(newImage);
+    
+    // Update URL if the new image has a jobId
+    if (newImage && newImage.jobId) {
+      programmaticImageOpenRef.current = true;
+      navigate(`/job/${newImage.jobId}`, { replace: false });
+    } else if (jobId) {
+      // Clear jobId from URL if navigating to an image without one
+      // Navigate back to the appropriate context
+      const isGalleryContext = location.pathname.startsWith('/gallery');
+      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
+    }
+  }, [fullSizeContext, inspirations, gallery, currentInspirationIndex, currentGalleryIndex, jobId, location.pathname, navigate]);
+
   // Keyboard navigation for gallery
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -3121,19 +3166,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   };
 
   // Gallery navigation functions
-  const navigateGallery = (direction: 'prev' | 'next') => {
-    const totalImages = gallery.length;
-    if (totalImages === 0) return;
-    
-    setCurrentGalleryIndex(prev => {
-      if (direction === 'prev') {
-        return prev > 0 ? prev - 1 : totalImages - 1;
-      } else {
-        return prev < totalImages - 1 ? prev + 1 : 0;
-      }
-    });
-  };
-
   const openImageAtIndex = (index: number) => {
     // Only open if the index is valid and within gallery bounds
     if (index >= 0 && index < gallery.length && gallery[index]) {
@@ -3150,38 +3182,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
     }
   };
-
-  const navigateFullSizeImage = (direction: 'prev' | 'next') => {
-    const collection = fullSizeContext === 'inspirations' ? inspirations : gallery;
-    const totalImages = collection.length;
-    if (totalImages === 0) return;
-
-    const currentIndex = fullSizeContext === 'inspirations' ? currentInspirationIndex : currentGalleryIndex;
-    const newIndex = direction === 'prev'
-      ? (currentIndex > 0 ? currentIndex - 1 : totalImages - 1)
-      : (currentIndex < totalImages - 1 ? currentIndex + 1 : 0);
-
-    if (fullSizeContext === 'inspirations') {
-      setCurrentInspirationIndex(newIndex);
-    } else {
-      setCurrentGalleryIndex(newIndex);
-    }
-    
-    const newImage = collection[newIndex];
-    setSelectedFullImage(newImage);
-    
-    // Update URL if the new image has a jobId
-    if (newImage && newImage.jobId) {
-      programmaticImageOpenRef.current = true;
-      navigate(`/job/${newImage.jobId}`, { replace: false });
-    } else if (jobId) {
-      // Clear jobId from URL if navigating to an image without one
-      // Navigate back to the appropriate context
-      const isGalleryContext = location.pathname.startsWith('/gallery');
-      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
-    }
-  };
-
 
   // Helper function to convert image URL to File object
   const urlToFile = async (url: string, filename: string): Promise<File> => {

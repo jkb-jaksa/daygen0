@@ -380,6 +380,7 @@ function AppContent() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
             <Route path="/digital-copy" element={<DigitalCopy />} />
+            <Route path="/job/:jobId" element={<CreateRoutes />} />
             <Route path="/create/*" element={<CreateRoutes />} />
             <Route path="/gallery/*" element={<GalleryRoutes />} />
             <Route path="/upgrade" element={<Upgrade />} />
