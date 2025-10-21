@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { X, ArrowLeft, CreditCard, RefreshCw } from 'lucide-react';
+import { X, ArrowLeft, RefreshCw } from 'lucide-react';
 import { layout, glass } from '../styles/designSystem';
 import { PAYMENT_CANCELLED_MESSAGE } from '../utils/errorMessages';
 

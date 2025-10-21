@@ -235,7 +235,7 @@ export const useRunwayImageGeneration = () => {
 
       throw new Error(errorMessage);
     }
-  }, [token, user?.id, pollForJobCompletion]);
+  }, [token, user?.id, pollForJobCompletion, checkCredits]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

@@ -692,6 +692,7 @@ export const useGeminiImageGeneration = () => {
     startProgressController,
     updateControllerWithBackend,
     stopProgressController,
+    checkCredits,
   ]);
 
   const clearError = useCallback(() => {

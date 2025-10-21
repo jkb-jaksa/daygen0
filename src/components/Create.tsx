@@ -1279,12 +1279,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
     });
   };
   
-  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, galleryFilters, favorites, folders, storedAvatars, filterGalleryItems]);
+  const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, filterGalleryItems]);
   const filteredVideoGallery = useMemo(() => {
     const filtered = filterVideoGalleryItems(videoGallery);
     // Removed debug log that was running on every render
     return filtered;
-  }, [videoGallery, galleryFilters, favorites, folders, storedAvatars, filterVideoGalleryItems]);
+  }, [videoGallery, filterVideoGalleryItems]);
   const inspirationsGallery = useMemo(() => {
     return inspirations
       .slice()
@@ -1724,7 +1724,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, selectedReferenceImage, gallery.length, currentGalleryIndex]);
+  }, [isFullSizeOpen, selectedReferenceImage, gallery.length, currentGalleryIndex, navigateFullSizeImage, navigateGallery]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -5694,7 +5694,7 @@ const handleGenerate = async () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show]);
+  }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show, confirmBulkDownload, confirmBulkPublish, confirmBulkUnpublish, handleDeleteConfirmed]);
 
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (

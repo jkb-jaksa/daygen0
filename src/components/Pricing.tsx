@@ -488,7 +488,7 @@ export default function Pricing() {
     };
 
     fetchSubscription();
-  }, [user, getSubscription]);
+  }, [user, getSubscription, getCurrentPlanFromSubscription]);
 
   const handleSubscriptionPurchase = async (planId: string) => {
     try {
