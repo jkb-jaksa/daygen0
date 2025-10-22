@@ -78,7 +78,7 @@ export const PromptHistoryChips: React.FC<Props> = ({
                   onClick={() => onRun(e.text)}
                 >
                   <RefreshCw className="w-3 h-3" />
-                  <span className="text-xs font-raleway">Use the same prompt</span>
+                  <span className="text-xs font-raleway">Reuse prompt</span>
                 </button>
               )}
             </div>

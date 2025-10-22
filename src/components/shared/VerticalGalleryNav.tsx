@@ -60,14 +60,14 @@ export function VerticalGalleryNav({
 
   return (
     <div
-      className={`fixed right-4 z-20 flex flex-col pointer-events-auto ${className}`}
+      className={`fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-20 flex flex-col pointer-events-auto ${className}`}
       style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
       onClick={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
     >
       <div
         ref={scrollContainerRef}
-        className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50`}
+        className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50 h-full`}
         style={{ overscrollBehavior: "contain" }}
         onWheel={(e) => e.stopPropagation()}
       >

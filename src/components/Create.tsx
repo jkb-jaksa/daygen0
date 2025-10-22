@@ -3624,7 +3624,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
             }}
           >
             <RefreshCw className="h-4 w-4" />
-            Use the same prompt
+            Reuse prompt
           </button>
           <button
             type="button"
@@ -9663,7 +9663,7 @@ const handleGenerate = async () => {
             >
               <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                 {/* Image container */}
-                <div className="relative group flex items-start justify-center mt-14">
+                <div className="relative group flex items-start justify-center mt-14" style={{ marginLeft: '-60px' }}>
                 {/* Navigation arrows for full-size modal */}
                 {(fullSizeContext === 'inspirations' ? inspirations.length : gallery.length) > 1 &&
                   (selectedFullImage || generatedImage) && (
@@ -9808,7 +9808,7 @@ const handleGenerate = async () => {
 
               {/* Right sidebar with actions */}
               {activeFullSizeImage && (
-                <aside className={`${glass.promptDark} w-[240px] rounded-2xl p-4 flex flex-col gap-2 overflow-y-auto fixed right-24 z-30`} style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+                <aside className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-30`} style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
                   {/* Icon-only action bar at top */}
                   <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
                     <a
@@ -9821,37 +9821,6 @@ const handleGenerate = async () => {
                     >
                       <Download className="w-4 h-4" />
                     </a>
-                    <button
-                      type="button"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        try {
-                          const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-                          let urlToShare: string;
-                          
-                          if (activeFullSizeImage.jobId) {
-                            urlToShare = `${baseUrl}/create/image/${activeFullSizeImage.jobId}`;
-                          } else {
-                            const { makeRemixUrl, withUtm } = await import("../lib/shareUtils");
-                            const remixUrl = makeRemixUrl(baseUrl, activeFullSizeImage.prompt || "");
-                            urlToShare = withUtm(remixUrl, "copy");
-                          }
-                          
-                          await navigator.clipboard.writeText(urlToShare);
-                          setCopyNotification('Link copied!');
-                          setTimeout(() => setCopyNotification(null), 2000);
-                        } catch (error) {
-                          debugError('Failed to copy link:', error);
-                          setCopyNotification('Failed to copy link');
-                          setTimeout(() => setCopyNotification(null), 2000);
-                        }
-                      }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
-                      title="Copy link"
-                      aria-label="Copy link"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -9915,7 +9884,7 @@ const handleGenerate = async () => {
                   </div>
 
                   {/* Edit actions */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-0 mt-2">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -9958,7 +9927,7 @@ const handleGenerate = async () => {
                       className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
                     >
                       <RefreshCw className="w-4 h-4 flex-shrink-0" />
-                      Use the same prompt
+                      Reuse prompt
                     </button>
                     <button
                       type="button"
@@ -9978,9 +9947,9 @@ const handleGenerate = async () => {
 
               {/* Sidebar for reference images (Avatar/Product) */}
               {selectedReferenceImage && !activeFullSizeImage && (selectedAvatar || selectedProduct) && (
-                <aside className={`${glass.promptDark} w-[240px] rounded-2xl p-4 flex flex-col gap-2 overflow-y-auto fixed right-24 z-30`} style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+                <aside className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-30`} style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
                   {/* Avatar/Product info */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-0">
                     <button
                       type="button"
                       onClick={(e) => {
