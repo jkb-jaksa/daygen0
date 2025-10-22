@@ -42,7 +42,7 @@ const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"
 const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
+// import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
 import type { ProductImage, ProductSelection, StoredProduct } from "./products/types";
 import { debugError } from "../utils/debug";
@@ -373,7 +373,7 @@ export default function Products() {
     const load = async () => {
       try {
         if (storagePrefix) {
-          const [storedProducts, storedGallery, storedFolders] = await Promise.all([
+          const [storedProducts, , storedFolders] = await Promise.all([
             getPersistedValue<StoredProduct[]>(storagePrefix, "products"),
             getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
             getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),

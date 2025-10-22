@@ -42,7 +42,7 @@ const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
+// import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
 import type { AvatarImage, AvatarSelection, StoredAvatar } from "./avatars/types";
 import { debugError } from "../utils/debug";
@@ -375,7 +375,7 @@ export default function Avatars() {
     const load = async () => {
       try {
         if (storagePrefix) {
-          const [storedAvatars, storedGallery, storedFolders] = await Promise.all([
+          const [storedAvatars, , storedFolders] = await Promise.all([
             getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
             getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
             getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),
