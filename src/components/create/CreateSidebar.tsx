@@ -8,6 +8,7 @@ export interface CreateSidebarProps {
   onSelectCategory: (category: string) => void;
   onOpenMyFolders: () => void;
   reservedBottomSpace?: number;
+  isFullSizeOpen?: boolean;
 }
 
 function CreateSidebarComponent({
@@ -15,19 +16,26 @@ function CreateSidebarComponent({
   onSelectCategory,
   onOpenMyFolders,
   reservedBottomSpace = 0,
+  isFullSizeOpen = false,
 }: CreateSidebarProps) {
   const topOffset = SIDEBAR_TOP_PADDING;
   const minimumReservedSpace = SIDEBAR_PROMPT_GAP + 12; // Preserve previous breathing room when no prompt bar
   const effectiveReservedSpace = Math.max(reservedBottomSpace, minimumReservedSpace);
 
-  const sidebarHeight = `calc(100vh - var(--nav-h) - ${topOffset}px - ${effectiveReservedSpace}px)`;
-  const sidebarTop = `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
+  // When full-size view is open, match the right sidebar's height calculation
+  const sidebarHeight = isFullSizeOpen 
+    ? `calc(100vh - var(--nav-h) - 32px)` 
+    : `calc(100vh - var(--nav-h) - ${topOffset}px - ${effectiveReservedSpace}px)`;
+  const sidebarTop = isFullSizeOpen
+    ? `calc(var(--nav-h) + 16px)`
+    : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
+  const zIndex = isFullSizeOpen ? 'lg:z-[70]' : 'lg:z-30';
 
   return (
     <div className="hidden lg:block" style={{ width: SIDEBAR_WIDTH }}>
       <nav
         aria-label="Create navigation"
-        className={`${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] lg:z-30 px-3 py-4`}
+        className={`${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
         <aside className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">

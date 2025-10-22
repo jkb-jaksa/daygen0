@@ -22,7 +22,7 @@ describe('PromptHistoryPanel', () => {
     await user.click(promptButton);
     expect(onSelect).toHaveBeenCalledWith('Generate a sunrise over mountains');
 
-    const usePromptButton = await screen.findByRole('button', { name: /use the same prompt/i });
+    const usePromptButton = await screen.findByRole('button', { name: /reuse prompt/i });
     await user.click(usePromptButton);
     expect(onRun).toHaveBeenCalledWith('Generate a sunrise over mountains');
 
