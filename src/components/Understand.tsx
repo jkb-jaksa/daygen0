@@ -202,9 +202,11 @@ export default function Understand() {
           </div>
 
           {/* Two columns below */}
-          <div className="flex flex-col gap-6 lg:flex-row">
-            <nav className={`${glass.promptDark} lg:w-36 lg:flex-none rounded-3xl border-theme-dark p-4`}
-              aria-label="Use cases categories">
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
+            <nav
+              className="rounded-3xl p-4 lg:h-full"
+              aria-label="Use cases categories"
+            >
               <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
                 {CATEGORIES.map((category) => {
                   const isActive = category.id === activeCategory;
@@ -216,11 +218,13 @@ export default function Understand() {
                         onClick={() => setActiveCategory(category.id)}
                         className={`parallax-small relative overflow-hidden flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                           isActive
-                            ? "border border-theme-mid bg-theme-white/10 text-theme-text"
-                            : "border border-theme-dark text-theme-white hover:border-theme-mid hover:text-theme-text"
+                            ? "border border-theme-dark text-theme-text"
+                            : "border border-transparent text-theme-white hover:text-theme-text"
                         }`}
                       >
-                        <div className={`pointer-events-none absolute -top-10 -right-6 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
+                        {isActive && (
+                          <div className={`pointer-events-none absolute -top-10 -right-6 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
+                        )}
                         <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-white group-hover:text-theme-text"}`} aria-hidden="true" />
                         <span className="relative z-10">{category.label}</span>
                       </button>
@@ -229,7 +233,7 @@ export default function Understand() {
                 })}
               </ul>
             </nav>
-            <div className="flex-1">
+            <div className="flex-1 lg:h-full">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
                 {hasContent ? (
