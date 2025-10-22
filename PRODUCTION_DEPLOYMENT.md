@@ -303,6 +303,48 @@ gcloud logs read --service=daygen-backend --limit=50
 gcloud run services describe daygen-backend --region=europe-central2
 ```
 
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **CORS Errors**:
+   - Check CORS configuration in backend
+   - Verify frontend URL is allowed in backend settings
+   - Ensure VITE_API_BASE_URL is correct
+
+2. **Authentication Issues**:
+   - Verify Supabase configuration is correct
+   - Check that Google OAuth is properly configured
+   - Ensure JWT secret is set in backend
+
+3. **File Upload Issues**:
+   - Verify R2 configuration in backend
+   - Check bucket permissions and CORS settings
+   - Ensure R2_PUBLIC_URL is accessible
+
+4. **Payment Failures**:
+   - Verify Stripe webhook configuration
+   - Check API key validity and environment
+   - Ensure webhook endpoint is accessible
+
+5. **Build Failures**:
+   - Check environment variables are set correctly
+   - Verify all dependencies are installed
+   - Check for TypeScript errors
+
+### Debug Commands
+
+```bash
+# Test backend connection
+curl https://your-backend-domain.run.app/health
+
+# Check frontend build locally
+npm run build
+
+# Test environment variables
+npm run dev
+```
+
 ## 📚 Additional Resources
 
 - [Cloudflare Pages Documentation](https://developers.cloudflare.com/pages/)

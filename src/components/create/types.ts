@@ -32,6 +32,7 @@ export type GalleryImageLike = {
   timestamp: string;
   ownerId?: string;
   jobId?: string;
+  r2FileId?: string;
   references?: string[];
   isPublic?: boolean;
   savedFrom?: SavedCreator;
@@ -48,6 +49,7 @@ export type GalleryVideoLike = {
   timestamp: string;
   ownerId?: string;
   jobId?: string;
+  r2FileId?: string;
   references?: string[];
   isPublic?: boolean;
   type: "video";
@@ -65,6 +67,7 @@ export type StoredGalleryImage = {
   timestamp: string;
   ownerId?: string;
   jobId?: string;
+  r2FileId?: string;
   isPublic?: boolean;
   savedFrom?: SavedCreator;
   avatarId?: string;

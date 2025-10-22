@@ -41,6 +41,8 @@ Open http://localhost:5173 in your browser.
 
 - **Image generation**: 1 credit per image
 - **Video generation**: 5-10 credits per video (varies by model)
+- **Image upscale**: 2 credits per image
+- **Batch generation**: 1 credit per image in batch
 - **New users**: 20 free credits
 - **Credit packages**: Buy more credits as needed
 - **Subscriptions**: Monthly plans for heavy users
@@ -49,26 +51,26 @@ Open http://localhost:5173 in your browser.
 ## 🔧 Available AI Models
 
 ### Image Generation
-- **Gemini 2.5 Flash** - Google's latest, fast and versatile
-- **FLUX Pro 1.1** - Black Forest Labs, highest quality
+- **Gemini 2.5 Flash** - Google's latest, fast and versatile with experimental preview support
+- **FLUX Pro 1.1** - Black Forest Labs, highest quality image generation
 - **FLUX Ultra** - Premium quality with advanced features
-- **FLUX Kontext** - Context-aware generation
-- **ChatGPT Image (DALL-E 3)** - OpenAI's popular model
-- **Runway Gen-4** - Professional cinematic quality
-- **Ideogram V3** - Excellent for text in images
-- **Qwen Image** - Alibaba's high-quality model
-- **Reve** - Artistic and creative styles
-- **Recraft V3** - Perfect for brand and layout control
-- **Luma Photon** - Latest and fastest generation
+- **FLUX Kontext Pro/Max** - Context-aware generation with multiple variants
+- **DALL·E 3** - OpenAI's popular model with multiple variants
+- **Runway Gen-4** - Professional image generation with cinematic quality
+- **Ideogram V3** - Advanced text-to-image with turbo mode and style presets
+- **Qwen Image** - Alibaba's high-quality model via DashScope API
+- **Reve** - Fast image generation, editing, and remixing with advanced controls
+- **Recraft V3** - Professional image generation with multiple styles and editing capabilities
+- **Luma AI** - Dream Shaper, Realistic Vision, and Photon models for various styles
 
 ### Video Generation
-- **Veo 3** - Google's cinematic video generation
-- **Runway Gen-4 Video** - Professional video with consistency
-- **Wan 2.2** - Alibaba's high-quality video generation
-- **Hailuo 02** - MiniMax video with frame control
-- **Kling** - ByteDance's hyper-realistic video
-- **Luma Ray 2** - High-quality video with advanced features
-- **Seedance 1.0 Pro** - Smooth motion video generation
+- **Veo 3** - Google's latest cinematic video generation with advanced prompting
+- **Runway Gen-4 Video** - Professional video generation with style consistency
+- **Wan 2.2** - Alibaba's text-to-video generation with high quality output
+- **Hailuo 02** - MiniMax video generation with frame control and editing
+- **Kling** - Advanced video generation with multiple models and camera controls
+- **Luma Ray 2** - Professional video generation with advanced features
+- **Seedance 1.0 Pro** - High-quality video generation with smooth motion
 
 ## 🧪 Test Backend Connection
 

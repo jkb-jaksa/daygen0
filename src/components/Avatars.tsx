@@ -42,7 +42,7 @@ const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
+// import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
 import type { AvatarImage, AvatarSelection, StoredAvatar } from "./avatars/types";
 import { debugError } from "../utils/debug";
@@ -242,7 +242,6 @@ export default function Avatars() {
 
 
   const [avatars, setAvatars] = useState<StoredAvatar[]>([]);
-  const [galleryImages, setGalleryImages] = useState<GalleryImageLike[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [avatarName, setAvatarName] = useState("");
   const [selection, setSelection] = useState<AvatarSelection | null>(null);
@@ -296,7 +295,7 @@ export default function Avatars() {
   const hasAvatars = avatars.length > 0;
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
-  const { images: remoteGalleryImages } = useGalleryImages();
+  const { images: galleryImages } = useGalleryImages();
 
   useEffect(() => {
     avatarsRef.current = avatars;
@@ -370,24 +369,13 @@ export default function Avatars() {
     [storagePrefix],
   );
 
-  const persistGalleryImages = useCallback(
-    async (records: GalleryImageLike[]) => {
-      if (!storagePrefix) return;
-      try {
-        await setPersistedValue(storagePrefix, "gallery", serializeGallery(records));
-      } catch (error) {
-        debugError("Failed to persist gallery", error);
-      }
-    },
-    [storagePrefix],
-  );
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
         if (storagePrefix) {
-          const [storedAvatars, storedGallery, storedFolders] = await Promise.all([
+          const [storedAvatars, , storedFolders] = await Promise.all([
             getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
             getPersistedValue<StoredGalleryImage[]>(storagePrefix, "gallery"),
             getPersistedValue<SerializedFolder[]>(storagePrefix, "folders"),
@@ -410,9 +398,6 @@ export default function Avatars() {
             }
           }
 
-          if (storedGallery) {
-            setGalleryImages(hydrateStoredGallery(storedGallery));
-          }
 
           if (storedFolders) {
             setFolders(storedFolders.map(folder => ({
@@ -447,31 +432,6 @@ export default function Avatars() {
     };
   }, [storagePrefix, user?.id, persistAvatars]);
 
-  useEffect(() => {
-    if (!remoteGalleryImages.length) return;
-    setGalleryImages(prev => {
-      const existingMap = new Map(prev.map(image => [image.url, image]));
-      const remoteUrlSet = new Set(remoteGalleryImages.map(image => image.url));
-      const merged = remoteGalleryImages.map(image => {
-        const existing = existingMap.get(image.url);
-        if (!existing) {
-          return image;
-        }
-        return {
-          ...image,
-          avatarId: existing.avatarId ?? image.avatarId,
-          productId: existing.productId ?? image.productId,
-        };
-      });
-      const extras = prev.filter(image => !remoteUrlSet.has(image.url));
-      return [...merged, ...extras];
-    });
-  }, [remoteGalleryImages]);
-
-  useEffect(() => {
-    if (galleryImages.length === 0) return;
-    void persistGalleryImages(galleryImages);
-  }, [galleryImages, persistGalleryImages]);
 
   const commitAvatarUpdate = useCallback(
     (
@@ -882,21 +842,7 @@ export default function Avatars() {
       return updated;
     });
 
-    setGalleryImages(prev => {
-      let mutated = false;
-      const updated = prev.map(image => {
-        if (image.avatarId === avatarToDelete.id) {
-          mutated = true;
-          return { ...image, avatarId: undefined };
-        }
-        return image;
-      });
-      if (mutated) {
-        void persistGalleryImages(updated);
-        return updated;
-      }
-      return prev;
-    });
+    // Gallery images are now managed by the centralized useGalleryImages hook
 
     if (creationsModalAvatar?.id === avatarToDelete.id) {
       setCreationsModalAvatar(null);
@@ -910,21 +856,13 @@ export default function Avatars() {
       setEditingName("");
     }
     setAvatarToDelete(null);
-  }, [avatarSlug, avatarToDelete, creationsModalAvatar, editingAvatarId, navigate, persistAvatars, persistGalleryImages]);
+  }, [avatarSlug, avatarToDelete, creationsModalAvatar, editingAvatarId, navigate, persistAvatars]);
 
   const confirmPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
       const imageUrl = publishConfirmation.imageUrl;
 
-      setGalleryImages(prev => {
-        const next = prev.map(image =>
-          image.url === imageUrl
-            ? { ...image, isPublic: true }
-            : image,
-        );
-        void persistGalleryImages(next);
-        return next;
-      });
+      // Gallery images are now managed by the centralized useGalleryImages hook
 
       setSelectedFullImage(prev => (prev && prev.url === imageUrl ? { ...prev, isPublic: true } : prev));
       setCopyNotification("Image published!");
@@ -946,7 +884,7 @@ export default function Avatars() {
     });
 
     setAvatarToPublish(null);
-  }, [avatarToPublish, persistAvatars, publishConfirmation.imageUrl, persistGalleryImages]);
+  }, [avatarToPublish, persistAvatars, publishConfirmation.imageUrl]);
 
   const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
@@ -1045,14 +983,10 @@ export default function Avatars() {
   const handleDeleteImageConfirmed = useCallback(() => {
     if (!imageToDelete) return;
     
-    setGalleryImages(prev => {
-      const updated = prev.filter(img => img.url !== imageToDelete.url);
-      void persistGalleryImages(updated);
-      return updated;
-    });
+    // Gallery images are now managed by the centralized useGalleryImages hook
     
     setImageToDelete(null);
-  }, [imageToDelete, persistGalleryImages]);
+  }, [imageToDelete]);
 
   const handleDeleteImageCancelled = useCallback(() => {
     setImageToDelete(null);
@@ -1207,15 +1141,7 @@ export default function Avatars() {
 
   const confirmUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
-      setGalleryImages(prev => {
-        const next = prev.map(image =>
-          image.url === unpublishConfirmation.imageUrl
-            ? { ...image, isPublic: false }
-            : image,
-        );
-        void persistGalleryImages(next);
-        return next;
-      });
+      // Gallery images are now managed by the centralized useGalleryImages hook
       setSelectedFullImage(prev => (
         prev && prev.url === unpublishConfirmation.imageUrl
           ? { ...prev, isPublic: false }
@@ -1225,7 +1151,7 @@ export default function Avatars() {
       setTimeout(() => setCopyNotification(null), 2000);
     }
     setUnpublishConfirmation({show: false, count: 0});
-  }, [unpublishConfirmation.imageUrl, persistGalleryImages]);
+  }, [unpublishConfirmation.imageUrl]);
 
   const cancelPublish = useCallback(() => {
     setPublishConfirmation({show: false, count: 0});

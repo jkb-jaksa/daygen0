@@ -7,9 +7,7 @@ import {
   type AuthContextValue,
   type User as AppUser,
 } from './context';
-import { useSessionMonitor } from '../hooks/useSessionMonitor';
 import { useCrossTabSync } from '../hooks/useCrossTabSync';
-import { SessionTimeoutModal } from '../components/modals/SessionTimeoutModal';
 
 type SessionTokens = {
   accessToken?: string | null;
@@ -404,20 +402,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void getInitialSession();
   }, [fetchUserProfile]);
 
-  // Session monitoring for timeout warnings
-  const { 
-    showTimeoutModal, 
-    timeRemaining, 
-    handleStayLoggedIn, 
-    handleLogout 
-  } = useSessionMonitor({
-    token: session?.access_token ?? null,
-    logOut,
-    config: {
-      warningTimeMinutes: 5,
-      checkIntervalMs: 30000
-    }
-  });
 
   const value: AuthContextValue = {
     user,
@@ -439,12 +423,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      <SessionTimeoutModal
-        isOpen={showTimeoutModal}
-        timeRemaining={timeRemaining}
-        onStayLoggedIn={handleStayLoggedIn}
-        onLogout={handleLogout}
-      />
     </AuthContext.Provider>
   );
 }

@@ -12,7 +12,7 @@ A modern AI-powered content generation platform featuring comprehensive image an
 - **Reve**: Fast image generation, editing, and remixing with advanced controls
 - **Qwen Image**: Alibaba's text-to-image generation via DashScope API
 - **Runway Gen-4**: Professional image generation with cinematic quality
-- **DALL·E**: OpenAI's image generation API with multiple model variants
+- **DALL·E 3**: OpenAI's image generation API with multiple model variants
 - **Luma AI**: Dream Shaper, Realistic Vision, and Photon models for various styles
 
 ### Video Generation
