@@ -34,6 +34,7 @@ function CreateSidebarComponent({
   return (
     <div className="hidden lg:block" style={{ width: SIDEBAR_WIDTH }}>
       <nav
+        data-create-sidebar="true"
         aria-label="Create navigation"
         className={`${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
@@ -43,7 +44,7 @@ function CreateSidebarComponent({
             create
           </div>
 
-          {CREATE_CATEGORIES.map(({ key, label, Icon }) => {
+          {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
             const isActive = activeCategory === key;
             return (
               <button
@@ -51,14 +52,17 @@ function CreateSidebarComponent({
                 type="button"
                 onClick={() => onSelectCategory(key)}
                 className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                  isActive ? "text-theme-light hover:text-theme-text" : "text-theme-white hover:text-theme-text"
+                  isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"
                 }`}
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 ${glass.sidebarIcon} hover:border-theme-mid`}
+                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 relative overflow-hidden ${glass.sidebarIcon} hover:border-theme-mid`}
                 >
-                  <Icon className="size-3" />
+                  {isActive && gradient && (
+                    <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-50 blur-xl bg-gradient-to-br ${gradient}`} />
+                  )}
+                  <Icon className={`size-3 relative z-10 transition-colors ${isActive && iconColor ? iconColor : ''}`} />
                 </div>
                 <span>{label}</span>
               </button>
@@ -79,7 +83,7 @@ function CreateSidebarComponent({
                 type="button"
                 onClick={() => onSelectCategory(key)}
                 className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                  isActive ? "text-theme-light hover:text-theme-text" : "text-theme-white hover:text-theme-text"
+                  isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"
                 }`}
                 aria-pressed={isActive}
               >

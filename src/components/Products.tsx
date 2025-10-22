@@ -2324,7 +2324,7 @@ export default function Products() {
           className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
           onClick={closeFullSizeView}
         >
-          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
             {/* Navigation arrows */}
             {(() => {
               const productImages = galleryImages.filter(img => img.productId === creationsModalProduct.id);

@@ -9663,7 +9663,7 @@ const handleGenerate = async () => {
             >
               <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                 {/* Image container */}
-                <div className="relative group flex items-start justify-center mt-14" style={{ marginLeft: '-60px' }}>
+                <div className="relative group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }}>
                 {/* Navigation arrows for full-size modal */}
                 {(fullSizeContext === 'inspirations' ? inspirations.length : gallery.length) > 1 &&
                   (selectedFullImage || generatedImage) && (

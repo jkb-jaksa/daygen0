@@ -6,6 +6,7 @@ interface VerticalGalleryNavProps {
   currentIndex: number;
   onNavigate: (index: number) => void;
   className?: string;
+  onWidthChange?: (width: number) => void;
 }
 
 export function VerticalGalleryNav({
@@ -13,9 +14,12 @@ export function VerticalGalleryNav({
   currentIndex,
   onNavigate,
   className = "",
+  onWidthChange,
 }: VerticalGalleryNavProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeThumbnailRef = useRef<HTMLButtonElement>(null);
+  const lastReportedWidthRef = useRef<number | null>(null);
 
   // Auto-scroll to active thumbnail when it changes
   useEffect(() => {
@@ -53,6 +57,41 @@ export function VerticalGalleryNav({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentIndex, images.length, onNavigate]);
 
+  // Report width changes to parent so layout can adapt around sidebars
+  useEffect(() => {
+    if (!onWidthChange) {
+      return undefined;
+    }
+
+    const reportWidth = () => {
+      if (!rootRef.current) {
+        return;
+      }
+      const width = rootRef.current.offsetWidth;
+      if (width !== lastReportedWidthRef.current) {
+        lastReportedWidthRef.current = width;
+        onWidthChange(width);
+      }
+    };
+
+    reportWidth();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(reportWidth);
+      if (rootRef.current) {
+        observer.observe(rootRef.current);
+      }
+      return () => observer.disconnect();
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", reportWidth);
+      return () => window.removeEventListener("resize", reportWidth);
+    }
+
+    return undefined;
+  }, [onWidthChange]);
+
   // Don't render if there's only one image or no images
   if (images.length <= 1) {
     return null;
@@ -60,6 +99,8 @@ export function VerticalGalleryNav({
 
   return (
     <div
+      ref={rootRef}
+      data-vertical-gallery-nav="true"
       className={`fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-20 flex flex-col pointer-events-auto ${className}`}
       style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
       onClick={(e) => e.stopPropagation()}
@@ -103,4 +144,3 @@ export function VerticalGalleryNav({
 }
 
 export default VerticalGalleryNav;
-

@@ -1312,6 +1312,65 @@ const Explore: React.FC = () => {
   const [isFullSizeOpen, setIsFullSizeOpen] = useState(false);
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryItem | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [galleryNavWidth, setGalleryNavWidth] = useState(0);
+  const [fullSizePadding, setFullSizePadding] = useState<{ left: number; right: number }>(() => ({
+    left: 24,
+    right: 24,
+  }));
+
+  const updateFullSizePadding = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const computedStyles = getComputedStyle(document.documentElement);
+    const rawPadding = computedStyles.getPropertyValue("--container-inline-padding").trim();
+    const parsedPadding = Number.parseFloat(rawPadding);
+    const basePadding = Number.isFinite(parsedPadding) ? parsedPadding : 24;
+    const sideGap = 24;
+    const baseGap = basePadding + sideGap;
+    const leftSidebarElement =
+      document.querySelector<HTMLElement>('[data-create-sidebar="true"]') ??
+      document.querySelector<HTMLElement>('[aria-label="Create navigation"]');
+    const leftSidebarRect = leftSidebarElement?.getBoundingClientRect();
+    const hasVisibleLeftSidebar = Boolean(leftSidebarRect && leftSidebarRect.width > 0);
+    const navWidth = galleryNavWidth > 0 ? galleryNavWidth : 0;
+
+    const nextLeft = hasVisibleLeftSidebar && leftSidebarRect
+      ? Math.max(baseGap, leftSidebarRect.right + sideGap)
+      : baseGap;
+    const nextRight = baseGap + navWidth;
+
+    setFullSizePadding(prev =>
+      prev.left !== nextLeft || prev.right !== nextRight ? { left: nextLeft, right: nextRight } : prev,
+    );
+  }, [galleryNavWidth]);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!isFullSizeOpen) {
+      return;
+    }
+
+    updateFullSizePadding();
+
+    const handleResize = () => {
+      updateFullSizePadding();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isFullSizeOpen, updateFullSizePadding]);
+
+  const handleGalleryNavWidthChange = useCallback((width: number) => {
+    const normalizedWidth = Math.round(width);
+    setGalleryNavWidth(prev => (prev !== normalizedWidth ? normalizedWidth : prev));
+  }, []);
 
   // Copy prompt function
   const copyPromptToClipboard = async (prompt: string) => {
@@ -2527,10 +2586,14 @@ const Explore: React.FC = () => {
         {/* Full-size image modal */}
         {isFullSizeOpen && selectedFullImage && (
           <div
-            className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
+            className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center py-4"
+            style={{
+              paddingLeft: `${fullSizePadding.left}px`,
+              paddingRight: `${fullSizePadding.right}px`,
+            }}
             onClick={closeFullSizeView}
           >
-            <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
+            <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
               {/* Navigation arrows for full-size modal */}
               {filteredGallery.length > 1 && (
                 <>
@@ -2751,6 +2814,7 @@ const Explore: React.FC = () => {
                   setCurrentImageIndex(index);
                 }
               }}
+              onWidthChange={handleGalleryNavWidthChange}
             />
           </div>
         )}
