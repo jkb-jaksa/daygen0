@@ -103,7 +103,7 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
     accent: "cyan"
   },
   {
-    id: "pro",
+    id: "pro-yearly",
     name: "Pro",
     description: "For creators and professionals",
     price: "$290",
@@ -124,7 +124,7 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
     accent: "orange"
   },
   {
-    id: "enterprise",
+    id: "enterprise-yearly",
     name: "Enterprise",
     description: "For teams and businesses",
     price: "$990",

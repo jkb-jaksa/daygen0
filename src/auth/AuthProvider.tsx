@@ -347,8 +347,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      console.log('Auth state changed:', _event, nextSession?.user?.email);
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      console.log('Auth state changed:', event, nextSession?.user?.email);
 
       if (nextSession?.user) {
         try {
@@ -360,12 +360,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(nextSession);
         } catch (error) {
           console.error('Error fetching user profile on auth change:', error);
+          // Don't immediately clear user on transient errors during navigation
+          // Only clear if it's a sign out event or persistent error
+          if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setSession(null);
+          }
+        }
+      } else {
+        // Only clear user/session if it's an explicit sign out
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setSession(null);
+        } else if (event === 'TOKEN_REFRESHED' && !nextSession) {
+          // If token refresh failed, try to get session once more before giving up
+          console.log('Token refresh failed, attempting to recover session...');
+          try {
+            const { data, error } = await supabase.auth.getSession();
+            if (error) {
+              console.error('Failed to recover session after refresh error:', error);
+              setUser(null);
+              setSession(null);
+            } else if (data.session?.user) {
+              const profile = await fetchUserProfile(data.session.user, {
+                accessToken: data.session.access_token ?? null,
+                refreshToken: data.session.refresh_token ?? null,
+              });
+              setUser(profile);
+              setSession(data.session);
+            } else {
+              setUser(null);
+              setSession(null);
+            }
+          } catch (recoveryError) {
+            console.error('Session recovery failed:', recoveryError);
+            setUser(null);
+            setSession(null);
+          }
+        } else {
           setUser(null);
           setSession(null);
         }
-      } else {
-        setUser(null);
-        setSession(null);
       }
 
       setIsLoading(false);
@@ -375,7 +410,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUserProfile]);
 
   useEffect(() => {
-    const getInitialSession = async () => {
+    const getInitialSession = async (retryCount = 0) => {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
@@ -391,11 +426,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           setUser(profile);
           setSession(initialSession);
+        } else if (retryCount === 0) {
+          // If no session found on first attempt, wait briefly and retry once
+          // This accounts for race conditions with autoRefresh during page load
+          console.log('No initial session found, retrying in 1.5s...');
+          setTimeout(() => getInitialSession(1), 1500);
+          return;
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
+        if (retryCount === 0) {
+          // Retry once on error
+          setTimeout(() => getInitialSession(1), 1500);
+          return;
+        }
       } finally {
-        setIsLoading(false);
+        if (retryCount > 0) {
+          setIsLoading(false);
+        }
       }
     };
 

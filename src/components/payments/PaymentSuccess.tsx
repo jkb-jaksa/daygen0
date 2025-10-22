@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/useAuth';
 import { usePayments } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
 import { getApiUrl } from '../../utils/api';
+import { supabase } from '../../lib/supabase';
 
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -15,48 +16,81 @@ export function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [manuallyCompleting, setManuallyCompleting] = useState(false);
+  const [sessionMode, setSessionMode] = useState<'payment' | 'subscription' | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<{ planName?: string; billingPeriod?: string } | null>(null);
+  const [manualCompleteSuccess, setManualCompleteSuccess] = useState(false);
 
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     const checkSessionStatus = async (retryCount = 0, maxRetries = 8) => {
+      console.log('PaymentSuccess: Starting session check', { sessionId, retryCount });
+      
       if (!sessionId) {
+        console.error('PaymentSuccess: No session ID provided');
         setError('No session ID provided');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('PaymentSuccess: Calling getSessionStatus with sessionId:', sessionId);
         const status = await getSessionStatus(sessionId);
+        console.log('PaymentSuccess: Received session status:', status);
         setSessionStatus(status);
         
-        // If payment is still pending, continue polling with longer intervals
-        if (status.paymentStatus === 'PENDING' && retryCount < maxRetries) {
-          const delay = Math.min(3000 * Math.pow(1.5, retryCount), 10000); // Max 10 seconds
-          setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
+        // Set session mode and subscription info from the enhanced status
+        setSessionMode(status.mode || 'payment');
+        
+        if (status.mode === 'subscription' && status.metadata) {
+          setSubscriptionInfo({
+            planName: status.metadata.planName,
+            billingPeriod: status.metadata.billingPeriod || 'monthly'
+          });
+        }
+        
+        // If payment is still pending, show the manual completion button instead of retrying
+        if (status.paymentStatus === 'PENDING') {
+          console.log('PaymentSuccess: Payment is pending, showing manual completion option');
+          setLoading(false);
           return;
         }
         
-        // Refresh user data to get updated credits (only if user is authenticated)
-        if (user && (status.paymentStatus === 'COMPLETED' || status.status === 'complete')) {
+        // Refresh user data to get updated credits after successful payment
+        if (status.paymentStatus === 'COMPLETED' || status.status === 'complete') {
           try {
+            // First ensure we have a valid session, even if user object is missing
+            if (!user) {
+              console.log('No user object found, attempting to rehydrate session...');
+              const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+              if (sessionError) {
+                console.warn('Failed to get session for rehydration:', sessionError);
+              } else if (sessionData.session?.user) {
+                console.log('Session rehydrated successfully');
+              }
+            }
+            
             await refreshUser();
             console.log('User credits refreshed after payment');
           } catch (refreshError) {
             console.warn('Failed to refresh user after payment:', refreshError);
+            // If refresh fails, show a message but don't crash the success page
+            setError('Payment successful, but failed to update your account. Please refresh the page or check your account.');
           }
         }
         setLoading(false);
       } catch (err) {
-        console.error('Error checking session status:', err);
+        console.error('PaymentSuccess: Error checking session status:', err);
         
         // Retry if we haven't exceeded max retries
         if (retryCount < maxRetries) {
+          console.log(`PaymentSuccess: Retrying in ${Math.min(3000 * Math.pow(1.5, retryCount), 10000)}ms (attempt ${retryCount + 1}/${maxRetries})`);
           const delay = Math.min(3000 * Math.pow(1.5, retryCount), 10000);
           setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
           return;
         }
         
+        console.error('PaymentSuccess: Max retries exceeded, setting error');
         setError('Failed to verify payment');
         setLoading(false);
       }
@@ -90,7 +124,11 @@ export function PaymentSuccess() {
         await refreshUser();
         const status = await getSessionStatus(sessionId);
         setSessionStatus(status);
+        setManualCompleteSuccess(true);
         setLoading(false);
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => setManualCompleteSuccess(false), 5000);
       } else {
         console.error('Failed to complete payment manually');
       }
@@ -164,10 +202,13 @@ export function PaymentSuccess() {
 
             {/* Success Message */}
             <h1 className="text-3xl font-raleway font-light text-theme-text mb-4">
-              Payment Successful!
+              {sessionMode === 'subscription' ? 'Subscription Successful!' : 'Payment Successful!'}
             </h1>
             <p className="text-theme-white mb-6">
-              Your credits have been added to your account. You can now start generating amazing content.
+              {sessionMode === 'subscription' 
+                ? 'Your subscription has been activated and credits have been added to your account. You can now start generating amazing content.'
+                : 'Your credits have been added to your account. You can now start generating amazing content.'
+              }
             </p>
 
             {/* User Info */}
@@ -180,12 +221,44 @@ export function PaymentSuccess() {
               </div>
             )}
 
+            {/* Subscription Info */}
+            {sessionMode === 'subscription' && subscriptionInfo && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+                <div className="text-sm text-blue-400 mb-2">Subscription Details</div>
+                <div className="text-lg font-raleway font-medium text-theme-white">
+                  {subscriptionInfo.planName}
+                </div>
+                <div className="text-sm text-theme-text">
+                  Billing: {subscriptionInfo.billingPeriod}
+                </div>
+              </div>
+            )}
+
             {/* Session Info */}
             {sessionStatus && (
               <div className="text-sm text-theme-text mb-6">
                 Payment Status: <span className="text-green-400 capitalize">
                   {sessionStatus.status}
                 </span>
+              </div>
+            )}
+
+            {/* Manual Complete Success Message */}
+            {manualCompleteSuccess && (
+              <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <div>
+                    <div className="text-green-400 font-medium">
+                      {sessionMode === 'subscription' ? 'Subscription Activated!' : 'Payment Completed!'}
+                    </div>
+                    {sessionMode === 'subscription' && subscriptionInfo && (
+                      <div className="text-theme-text text-sm">
+                        {subscriptionInfo.planName} subscription is now active
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -208,16 +281,26 @@ export function PaymentSuccess() {
 
             {/* Development: Manual Complete Button */}
             {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && (
-              <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <div className="mt-6 p-6 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-lg hover:bg-yellow-500/15 transition-colors">
                 <p className="text-yellow-400 text-sm mb-3">
-                  Development Mode: Payment is still pending. This usually means the webhook didn't fire.
+                  Development Mode: {sessionMode === 'subscription' ? 'Subscription' : 'Payment'} is still pending. This usually means the webhook didn't fire.
                 </p>
+                {sessionMode === 'subscription' && subscriptionInfo && (
+                  <div className="text-theme-text text-sm mb-4">
+                    <strong>Subscription:</strong> {subscriptionInfo.planName} ({subscriptionInfo.billingPeriod})
+                  </div>
+                )}
                 <button
                   onClick={handleManualComplete}
                   disabled={manuallyCompleting}
-                  className="btn btn-yellow text-sm"
+                  className="w-full py-3 px-6 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  {manuallyCompleting ? 'Completing...' : 'Complete Payment Manually (Dev Only)'}
+                  {manuallyCompleting 
+                    ? 'Processing...' 
+                    : sessionMode === 'subscription' 
+                      ? 'Activate Subscription Manually (Dev Only)' 
+                      : 'Complete Payment Manually (Dev Only)'
+                  }
                 </button>
               </div>
             )}

@@ -38,6 +38,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      // Ensure session persists reliably across external redirects (e.g., Stripe)
+      storage: window.localStorage,
+      storageKey: 'daygen-auth',
+      // PKCE flow is recommended for SPAs and helps with robust session handling
+      flowType: 'pkce',
     },
   });
 }

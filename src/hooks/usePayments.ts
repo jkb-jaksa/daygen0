@@ -225,18 +225,25 @@ export function usePayments() {
 
   const getSessionStatus = async (sessionId: string) => {
     try {
+      const url = getApiUrl(`/api/public-payments/session/${sessionId}`);
+      console.log('usePayments: Fetching session status from:', url);
+      
       // Use public endpoint that doesn't require authentication
-      const response = await fetch(getApiUrl(`/api/public-payments/session/${sessionId}`));
+      const response = await fetch(url);
+
+      console.log('usePayments: Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Session status API error:', response.status, errorText);
+        console.error('usePayments: Session status API error:', response.status, errorText);
         throw new Error(`Failed to fetch session status: ${response.status} ${errorText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('usePayments: Session status data:', data);
+      return data;
     } catch (err) {
-      console.error('Error fetching session status:', err);
+      console.error('usePayments: Error fetching session status:', err);
       throw err;
     }
   };
