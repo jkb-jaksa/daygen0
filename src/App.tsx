@@ -222,14 +222,14 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small relative overflow-hidden flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
+                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                               isActive
                                 ? "border border-theme-mid text-theme-text"
                                 : "border border-transparent text-theme-white hover:text-theme-text"
                             }`}
                           >
                             {isActive && (
-                              <div className={`pointer-events-none absolute -top-10 -right-6 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
+                              <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
                             )}
                             <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-white group-hover:text-theme-text"}`} aria-hidden="true" />
                             <span className="relative z-10">{category.label}</span>
