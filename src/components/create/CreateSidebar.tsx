@@ -62,7 +62,7 @@ function CreateSidebarComponent({
                   {isActive && gradient && (
                     <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-50 blur-xl bg-gradient-to-br ${gradient}`} />
                   )}
-                  <Icon className={`size-3 relative z-10 transition-colors duration-100 ${isActive && iconColor ? iconColor : 'text-theme-white'}`} />
+                  <Icon className={`size-3 relative z-10 transition-colors duration-100 ${isActive && iconColor ? iconColor : 'text-theme-white group-hover:text-theme-text'}`} />
                 </div>
                 <span>{label}</span>
               </button>
@@ -90,7 +90,7 @@ function CreateSidebarComponent({
                 <div
                   className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 bg-theme-black ${glass.sidebarIcon}`}
                 >
-                  <Icon className="size-3 text-theme-white" />
+                  <Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                 </div>
                 <span>{label}</span>
               </button>
@@ -108,7 +108,7 @@ function CreateSidebarComponent({
             aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
           >
             <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 bg-theme-black ${glass.sidebarIcon}`}>
-              <FOLDERS_ENTRY.Icon className="size-3 text-theme-white" />
+              <FOLDERS_ENTRY.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
             </div>
             <span>{FOLDERS_ENTRY.label}</span>
           </button>

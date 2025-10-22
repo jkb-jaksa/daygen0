@@ -519,8 +519,8 @@ export default function Navbar() {
                         onClick={() => handleCategoryClick(category.key)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 relative overflow-hidden ${glass.sidebarIcon} hover:border-theme-mid`}>
-                          <category.Icon className="size-3" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                          <category.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span>{category.label}</span>
                       </button>
@@ -537,8 +537,8 @@ export default function Navbar() {
                         onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 relative overflow-hidden ${glass.sidebarIcon} hover:border-theme-mid`}>
-                          <item.Icon className="size-3" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                          <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span>{item.label}</span>
                       </Link>
@@ -553,8 +553,8 @@ export default function Navbar() {
                         onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-200 relative overflow-hidden ${glass.sidebarIcon} hover:border-theme-mid`}>
-                          <item.Icon className="size-3" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                          <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span>{item.label}</span>
                       </Link>
