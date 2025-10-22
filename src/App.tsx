@@ -6,7 +6,7 @@ import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
-import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, User, Volume2 } from "lucide-react";
+import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
 import { CreditWarningBanner } from "./components/CreditWarningBanner";
 
 const Understand = lazy(() => import("./components/Understand"));
@@ -96,11 +96,10 @@ function UseCaseCard({
 }
 
 const HOME_CATEGORIES = [
-  { id: "text", label: "text", Icon: EditIcon },
-  { id: "image", label: "image", Icon: ImageIcon },
-  { id: "video", label: "video", Icon: VideoIcon },
-  { id: "avatars", label: "avatars", Icon: User },
-  { id: "audio", label: "audio", Icon: Volume2 },
+  { id: "text", label: "text", Icon: EditIcon, gradient: "from-amber-300 via-amber-400 to-orange-500", iconColor: "text-amber-400" },
+  { id: "image", label: "image", Icon: ImageIcon, gradient: "from-red-400 via-red-500 to-red-600", iconColor: "text-red-500" },
+  { id: "video", label: "video", Icon: VideoIcon, gradient: "from-blue-400 via-blue-500 to-blue-600", iconColor: "text-blue-500" },
+  { id: "audio", label: "audio", Icon: Volume2, gradient: "from-cyan-300 via-cyan-400 to-cyan-500", iconColor: "text-cyan-400" },
 ] as const;
 
 type HomeCategoryId = (typeof HOME_CATEGORIES)[number]["id"];
@@ -223,14 +222,15 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none ${
+                            className={`parallax-small relative overflow-hidden flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                               isActive
                                 ? "border border-theme-mid bg-theme-white/10 text-theme-text"
-                                : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
+                                : "border border-theme-dark text-theme-white hover:border-theme-mid hover:text-theme-text"
                             }`}
                           >
-                            <Icon className="h-4 w-4 flex-shrink-0 text-current" aria-hidden="true" />
-                            {category.label}
+                            <div className={`pointer-events-none absolute -top-10 -right-6 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
+                            <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-white group-hover:text-theme-text"}`} aria-hidden="true" />
+                            <span className="relative z-10">{category.label}</span>
                           </button>
                         </li>
                       );
