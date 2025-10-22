@@ -634,7 +634,7 @@ const Create: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { jobId } = useParams<{ jobId?: string }>();
-  const galleryModelOptions = useMemo(() => AI_MODELS.map(({ id, name }) => ({ id, name })), []);
+  const galleryModelOptions = useMemo(() => (AI_MODELS || []).map(({ id, name }) => ({ id, name })), []);
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
@@ -995,7 +995,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   }, [aspectRatioConfig]);
 
   const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
-  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+  const libraryNavItems = useMemo(() => [...(LIBRARY_CATEGORIES || []), FOLDERS_ENTRY].filter(Boolean), []);
 
   // Video generation state
   const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
@@ -2735,6 +2735,36 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setDownloadConfirmation({show: true, count});
   };
 
+  // Helper function for applying public status - must be defined before confirmBulkPublish
+  const applyPublicStatusToImages = useCallback((imageUrls: string[], isPublic: boolean) => {
+    if (imageUrls.length === 0) return;
+
+    updateGalleryImages(imageUrls, { isPublic });
+    const urlSet = new Set(imageUrls);
+
+    setSelectedFullImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+    setImageActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+    setMoreActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+  }, [updateGalleryImages]);
+
+  const confirmIndividualPublish = useCallback(() => {
+    if (publishConfirmation.imageUrl) {
+      applyPublicStatusToImages([publishConfirmation.imageUrl], true);
+      setCopyNotification('Image published!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+    setPublishConfirmation({show: false, count: 0});
+  }, [publishConfirmation.imageUrl, applyPublicStatusToImages]);
+
+  const confirmIndividualUnpublish = useCallback(() => {
+    if (unpublishConfirmation.imageUrl) {
+      applyPublicStatusToImages([unpublishConfirmation.imageUrl], false);
+      setCopyNotification('Image unpublished!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+    setUnpublishConfirmation({show: false, count: 0});
+  }, [unpublishConfirmation.imageUrl, applyPublicStatusToImages]);
+
   const confirmBulkPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
       // Individual image publish
@@ -2814,6 +2844,25 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const confirmDeleteFolder = (folderId: string) => {
     setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId, source: null});
   };
+
+  // Helper function for persisting folders - must be defined before handleDeleteConfirmed
+  const persistFolders = useCallback(async (nextFolders: Folder[]) => {
+    setFolders(nextFolders);
+    try {
+      const serialised: SerializedFolder[] = nextFolders.map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        createdAt: folder.createdAt.toISOString(),
+        imageIds: folder.imageIds,
+        videoIds: folder.videoIds || [],
+        customThumbnail: folder.customThumbnail,
+      }));
+      await setPersistedValue(storagePrefix, 'folders', serialised);
+      await refreshStorageEstimate();
+    } catch (error) {
+      debugError('Failed to persist folders', error);
+    }
+  }, [storagePrefix, refreshStorageEstimate]);
 
   const handleDeleteConfirmed = useCallback(async () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
@@ -2913,24 +2962,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const handleDeleteCancelled = () => {
     setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
   };
-
-  const persistFolders = useCallback(async (nextFolders: Folder[]) => {
-    setFolders(nextFolders);
-    try {
-      const serialised: SerializedFolder[] = nextFolders.map(folder => ({
-        id: folder.id,
-        name: folder.name,
-        createdAt: folder.createdAt.toISOString(),
-        imageIds: folder.imageIds,
-        videoIds: folder.videoIds || [],
-        customThumbnail: folder.customThumbnail,
-      }));
-      await setPersistedValue(storagePrefix, 'folders', serialised);
-      await refreshStorageEstimate();
-    } catch (error) {
-      debugError('Failed to persist folders', error);
-    }
-  }, [storagePrefix, refreshStorageEstimate]);
 
   const addImageToFolder = (imageUrls: string | string[], folderId: string) => {
     const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
@@ -3431,35 +3462,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setPublishConfirmation({show: true, count: 1, imageUrl});
     }
   };
-
-  const applyPublicStatusToImages = useCallback((imageUrls: string[], isPublic: boolean) => {
-    if (imageUrls.length === 0) return;
-
-    updateGalleryImages(imageUrls, { isPublic });
-    const urlSet = new Set(imageUrls);
-
-    setSelectedFullImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
-    setImageActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
-    setMoreActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
-  }, [updateGalleryImages]);
-
-  const confirmIndividualPublish = useCallback(() => {
-    if (publishConfirmation.imageUrl) {
-      applyPublicStatusToImages([publishConfirmation.imageUrl], true);
-      setCopyNotification('Image published!');
-      setTimeout(() => setCopyNotification(null), 2000);
-    }
-    setPublishConfirmation({show: false, count: 0});
-  }, [publishConfirmation.imageUrl, applyPublicStatusToImages, setCopyNotification, setPublishConfirmation]);
-
-  const confirmIndividualUnpublish = useCallback(() => {
-    if (unpublishConfirmation.imageUrl) {
-      applyPublicStatusToImages([unpublishConfirmation.imageUrl], false);
-      setCopyNotification('Image unpublished!');
-      setTimeout(() => setCopyNotification(null), 2000);
-    }
-    setUnpublishConfirmation({show: false, count: 0});
-  }, [unpublishConfirmation.imageUrl, applyPublicStatusToImages, setCopyNotification, setUnpublishConfirmation]);
 
   const handleEditMenuSelect = () => {
     closeImageActionMenu();
