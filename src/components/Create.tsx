@@ -9691,7 +9691,7 @@ const handleGenerate = async () => {
                   src={(selectedFullImage?.url || generatedImage?.url || selectedReferenceImage) as string}
                   alt="Full size"
                   loading="lazy"
-                    className="max-w-[calc(100vw-20rem)] max-h-[85vh] object-contain rounded-lg"
+                    className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
                   style={{ objectPosition: 'top' }}
                 />
                 
