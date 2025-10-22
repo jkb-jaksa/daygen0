@@ -218,7 +218,7 @@ export default function Understand() {
                         onClick={() => setActiveCategory(category.id)}
                         className={`parallax-small relative overflow-hidden flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                           isActive
-                            ? "border border-theme-dark text-theme-text"
+                            ? "border border-theme-mid text-theme-text"
                             : "border border-transparent text-theme-white hover:text-theme-text"
                         }`}
                       >
