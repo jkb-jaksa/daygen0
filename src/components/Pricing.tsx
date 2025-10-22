@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Check, Zap, Crown, Sparkles, Star, ArrowUp, AlertCircle, CheckCircle } from "lucide-react";
 import { layout, cards, glass } from "../styles/designSystem";
 import useParallaxHover from "../hooks/useParallaxHover";
@@ -381,7 +381,7 @@ export default function Pricing() {
   };
 
   // Map stripePriceId to plan tier
-  const getCurrentPlanFromSubscription = () => {
+  const getCurrentPlanFromSubscription = useCallback(() => {
     if (!currentSubscription?.planId) {
       // Try to map from stripePriceId if planId is not available
       if (currentSubscription?.stripePriceId) {
@@ -416,7 +416,7 @@ export default function Pricing() {
       name: planName, 
       billingPeriod: billingPeriod as 'monthly' | 'yearly'
     };
-  };
+  }, [currentSubscription]);
 
   // Filter tiers based on current subscription
   const getFilteredTiers = () => {

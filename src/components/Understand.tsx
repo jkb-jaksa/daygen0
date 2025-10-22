@@ -94,12 +94,6 @@ const VIDEO_CASES: readonly UseCaseItem[] = [
   createUseCase("video-style-tuning", "style tuning", "personalize outputs to your brand/style", "personalize"),
 ];
 
-// AVATARS use cases
-const AVATARS_CASES: readonly UseCaseItem[] = [
-  createUseCase("avatars-dubbing-lipsync", "dubbing/lip-sync", "match voices to avatar lip movement", "create"),
-  createUseCase("avatars-captions", "captions", "auto-generate and style subtitles for avatars", "create"),
-  createUseCase("avatars-upscaling", "upscaling", "enhance avatar video/image resolution", "create"),
-];
 
 // VOICE use cases
 const VOICE_CASES: readonly UseCaseItem[] = [

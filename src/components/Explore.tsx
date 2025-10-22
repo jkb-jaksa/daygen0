@@ -1484,7 +1484,7 @@ const Explore: React.FC = () => {
   };
 
   // Navigation functions for full-size view
-  const navigateFullSizeImage = (direction: 'prev' | 'next') => {
+  const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
     const totalImages = filteredGallery.length;
     if (totalImages === 0) return;
     
@@ -1494,7 +1494,7 @@ const Explore: React.FC = () => {
     
     setCurrentImageIndex(newIndex);
     setSelectedFullImage(filteredGallery[newIndex]);
-  };
+  }, [filteredGallery, currentImageIndex, setCurrentImageIndex, setSelectedFullImage]);
 
   // Open full-size view
   const openFullSizeView = (item: GalleryItem) => {
@@ -1623,7 +1623,7 @@ const Explore: React.FC = () => {
   };
 
   // Filter function for gallery
-  const filterGalleryItems = (items: typeof galleryItems) => {
+  const filterGalleryItems = useCallback((items: typeof galleryItems) => {
     return items.filter(item => {
       // Model filter
       if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.modelId)) {
@@ -1660,9 +1660,9 @@ const Explore: React.FC = () => {
       
       return true;
     });
-  };
+  }, [galleryFilters]);
 
-  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [galleryItems, filterGalleryItems]);
+  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems]);
 
   const initialBatchSize = useMemo(() => 9, []);
   const [visibleCount, setVisibleCount] = useState(initialBatchSize);

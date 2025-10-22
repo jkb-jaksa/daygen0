@@ -1186,7 +1186,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const galleryRef = useRef<HTMLDivElement | null>(null);
 
   // Filter function for gallery
-  const filterGalleryItems = (items: typeof gallery) => {
+  const filterGalleryItems = useCallback((items: typeof gallery) => {
     return items.filter(item => {
       // Liked filter
       if (galleryFilters.liked && !favorites.has(item.url)) {
@@ -1231,9 +1231,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       return true;
     });
-  };
+  }, [galleryFilters, favorites, folders]);
 
-  const filterVideoGalleryItems = (items: typeof videoGallery) => {
+  const filterVideoGalleryItems = useCallback((items: typeof videoGallery) => {
     return items.filter(item => {
       // Liked filter
       if (galleryFilters.liked && !favorites.has(item.url)) {
@@ -1278,7 +1278,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       
       return true;
     });
-  };
+  }, [galleryFilters, favorites, folders]);
   
   const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, filterGalleryItems]);
   const filteredVideoGallery = useMemo(() => {
@@ -2512,7 +2512,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   // Backup gallery state when component unmounts
   // Gallery persistence is now handled by the backend API
 
-  const persistFavorites = async (next: Set<string>) => {
+  const persistFavorites = useCallback(async (next: Set<string>) => {
     setFavorites(next);
     try {
       await setPersistedValue(storagePrefix, 'favorites', Array.from(next));
@@ -2520,7 +2520,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     } catch (error) {
       debugError('Failed to persist liked images', error);
     }
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   const persistUploadedImages = useCallback(async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
     setUploadedImages(uploads);
@@ -2541,7 +2541,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   // Gallery persistence is now handled by the backend API
 
-  const persistInspirations = async (items: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+  const persistInspirations = useCallback(async (items: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
     try {
       await setPersistedValue(storagePrefix, 'inspirations', serializeGallery(items));
       await refreshStorageEstimate();
@@ -2549,7 +2549,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       debugError('Failed to persist inspirations', error);
     }
     return items;
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   const toggleFavorite = (imageUrl: string) => {
     const newFavorites = new Set(favorites);
@@ -2735,7 +2735,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setDownloadConfirmation({show: true, count});
   };
 
-  const confirmBulkPublish = () => {
+  const confirmBulkPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
       // Individual image publish
       confirmIndividualPublish();
@@ -2747,9 +2747,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setTimeout(() => setCopyNotification(null), 2000);
       setPublishConfirmation({show: false, count: 0});
     }
-  };
+  }, [publishConfirmation.imageUrl, selectedImages, applyPublicStatusToImages, setCopyNotification, setPublishConfirmation, confirmIndividualPublish]);
 
-  const confirmBulkUnpublish = () => {
+  const confirmBulkUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
       // Individual image unpublish
       confirmIndividualUnpublish();
@@ -2761,7 +2761,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setTimeout(() => setCopyNotification(null), 2000);
       setUnpublishConfirmation({show: false, count: 0});
     }
-  };
+  }, [unpublishConfirmation.imageUrl, selectedImages, applyPublicStatusToImages, setCopyNotification, setUnpublishConfirmation, confirmIndividualUnpublish]);
 
   const cancelBulkPublish = () => {
     setPublishConfirmation({show: false, count: 0});
@@ -2771,7 +2771,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setUnpublishConfirmation({show: false, count: 0});
   };
 
-  const confirmBulkDownload = () => {
+  const confirmBulkDownload = useCallback(() => {
     const count = selectedImages.size;
     const selectedImageObjects = combinedLibraryImages.filter(img => selectedImages.has(img.url));
     
@@ -2793,7 +2793,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setCopyNotification(`${count} image${count === 1 ? '' : 's'} downloading!`);
     setTimeout(() => setCopyNotification(null), 2000);
     setDownloadConfirmation({show: false, count: 0});
-  };
+  }, [selectedImages, combinedLibraryImages, setCopyNotification, setDownloadConfirmation]);
 
   const cancelBulkDownload = () => {
     setDownloadConfirmation({show: false, count: 0});
@@ -2815,7 +2815,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId, source: null});
   };
 
-  const handleDeleteConfirmed = async () => {
+  const handleDeleteConfirmed = useCallback(async () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
       if (deleteConfirmation.source === 'inspirations') {
@@ -2908,13 +2908,13 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
     }
     setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
-  };
+  }, [deleteConfirmation, setInspirations, persistInspirations, removeGalleryImages, deleteGalleryImage, gallery, favorites, persistFavorites, setSelectedImages, folders, persistFolders, uploadedImages, persistUploadedImages, selectedFolder, setSelectedFolder, setDeleteConfirmation]);
 
   const handleDeleteCancelled = () => {
     setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
   };
 
-  const persistFolders = async (nextFolders: Folder[]) => {
+  const persistFolders = useCallback(async (nextFolders: Folder[]) => {
     setFolders(nextFolders);
     try {
       const serialised: SerializedFolder[] = nextFolders.map(folder => ({
@@ -2930,7 +2930,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     } catch (error) {
       debugError('Failed to persist folders', error);
     }
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   const addImageToFolder = (imageUrls: string | string[], folderId: string) => {
     const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
@@ -3443,23 +3443,23 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setMoreActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
   }, [updateGalleryImages]);
 
-  const confirmIndividualPublish = () => {
+  const confirmIndividualPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
       applyPublicStatusToImages([publishConfirmation.imageUrl], true);
       setCopyNotification('Image published!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
     setPublishConfirmation({show: false, count: 0});
-  };
+  }, [publishConfirmation.imageUrl, applyPublicStatusToImages, setCopyNotification, setPublishConfirmation]);
 
-  const confirmIndividualUnpublish = () => {
+  const confirmIndividualUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
       applyPublicStatusToImages([unpublishConfirmation.imageUrl], false);
       setCopyNotification('Image unpublished!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
     setUnpublishConfirmation({show: false, count: 0});
-  };
+  }, [unpublishConfirmation.imageUrl, applyPublicStatusToImages, setCopyNotification, setUnpublishConfirmation]);
 
   const handleEditMenuSelect = () => {
     closeImageActionMenu();

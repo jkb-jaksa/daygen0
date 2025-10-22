@@ -739,7 +739,7 @@ export default function Edit() {
     setRedoStack([]);
   };
 
-  const undoStroke = () => {
+  const undoStroke = useCallback(() => {
     if (allPaths.length === 0) return;
     
     // Save current state to redo stack
@@ -791,9 +791,9 @@ export default function Edit() {
         setMaskData(maskDataUrl);
       }
     }
-  };
+  }, [allPaths, setRedoStack, setAllPaths, brushSize, setMaskData]);
 
-  const redoStroke = () => {
+  const redoStroke = useCallback(() => {
     if (redoStack.length === 0) return;
     
     // Get the last state from redo stack
@@ -847,7 +847,7 @@ export default function Edit() {
         setMaskData(maskDataUrl);
       }
     }
-  };
+  }, [redoStack, setAllPaths, setRedoStack, brushSize, setMaskData]);
 
   const toggleEraseMode = () => {
     setIsEraseMode(!isEraseMode);
@@ -884,20 +884,20 @@ export default function Edit() {
     setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
   };
 
-  const handleImageMouseMove = (e: MouseEvent) => {
+  const handleImageMouseMove = useCallback((e: MouseEvent) => {
     if (!isImageDragging || !isMoveMode) return;
     e.preventDefault();
     setImagePosition({
       x: e.clientX - dragStart.x,
       y: e.clientY - dragStart.y
     });
-  };
+  }, [isImageDragging, isMoveMode, dragStart, setImagePosition]);
 
-  const handleMouseUp = (e: MouseEvent) => {
+  const handleMouseUp = useCallback((e: MouseEvent) => {
     if (!isImageDragging) return;
     e.preventDefault();
     setIsImageDragging(false);
-  };
+  }, [isImageDragging, setIsImageDragging]);
 
   // Add document event listeners for dragging
   useEffect(() => {
