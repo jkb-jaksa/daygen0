@@ -219,6 +219,11 @@ export function useLumaImageGeneration() {
               ? payload.mimeType
               : null;
 
+        const jobId =
+          typeof payload.jobId === 'string'
+            ? payload.jobId
+            : null;
+
         const generatedImage: LumaGeneratedImage = {
           url: dataUrl,
           prompt: options.prompt,
@@ -229,6 +234,7 @@ export function useLumaImageGeneration() {
           state: status,
           contentType,
           avatarId: options.avatarId,
+          jobId,
         };
 
         setState({

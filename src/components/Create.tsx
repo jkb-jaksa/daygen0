@@ -656,6 +656,57 @@ const Create: React.FC = () => {
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
   const programmaticImageOpenRef = useRef(false);
+  const previousNonJobPathRef = useRef<string | null>(null);
+  const rememberNonJobPath = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      previousNonJobPathRef.current = `${location.pathname}${location.search}`;
+    }
+  }, [location.pathname, location.search]);
+  const navigateToJobUrl = useCallback(
+    (targetJobId: string, options: { replace?: boolean } = {}) => {
+      const targetPath = `/job/${targetJobId}`;
+      const currentFullPath = `${location.pathname}${location.search}`;
+      if (currentFullPath === targetPath) {
+        return;
+      }
+      rememberNonJobPath();
+      programmaticImageOpenRef.current = true;
+      navigate(targetPath, { replace: options.replace ?? false });
+    },
+    [rememberNonJobPath, navigate, location.pathname, location.search],
+  );
+  const clearJobUrl = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      return;
+    }
+    const fallbackPath = previousNonJobPathRef.current ?? "/create/image";
+    const currentFullPath = `${location.pathname}${location.search}`;
+    if (currentFullPath !== fallbackPath) {
+      navigate(fallbackPath, { replace: false });
+    }
+  }, [location.pathname, location.search, navigate]);
+  const restorePreviousPath = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      previousNonJobPathRef.current = null;
+      return;
+    }
+    const fallbackPath = previousNonJobPathRef.current ?? "/create/image";
+    previousNonJobPathRef.current = null;
+    const currentFullPath = `${location.pathname}${location.search}`;
+    if (currentFullPath !== fallbackPath) {
+      navigate(fallbackPath, { replace: false });
+    }
+  }, [location.pathname, location.search, navigate]);
+  const syncJobUrlForImage = useCallback(
+    (image: GalleryImageLike | null | undefined) => {
+      if (image?.jobId) {
+        navigateToJobUrl(image.jobId);
+      } else {
+        clearJobUrl();
+      }
+    },
+    [clearJobUrl, navigateToJobUrl],
+  );
   
   // Parallax hover effect for buttons
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
@@ -1728,18 +1779,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     
     const newImage = collection[newIndex];
     setSelectedFullImage(newImage);
-    
-    // Update URL if the new image has a jobId
-    if (newImage && newImage.jobId) {
-      programmaticImageOpenRef.current = true;
-      navigate(`/job/${newImage.jobId}`, { replace: false });
-    } else if (jobId) {
-      // Clear jobId from URL if navigating to an image without one
-      // Navigate back to the appropriate context
-      const isGalleryContext = location.pathname.startsWith('/gallery');
-      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
-    }
-  }, [fullSizeContext, inspirations, gallery, currentInspirationIndex, currentGalleryIndex, jobId, location.pathname, navigate]);
+    syncJobUrlForImage(newImage);
+  }, [fullSizeContext, inspirations, gallery, currentInspirationIndex, currentGalleryIndex, syncJobUrlForImage]);
 
   // Keyboard navigation for gallery
   useEffect(() => {
@@ -3197,7 +3238,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   };
 
   // Gallery navigation functions
-  const openImageAtIndex = (index: number) => {
+  const openImageAtIndex = useCallback((index: number) => {
     // Only open if the index is valid and within gallery bounds
     if (index >= 0 && index < gallery.length && gallery[index]) {
       const image = gallery[index];
@@ -3205,14 +3246,33 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setCurrentGalleryIndex(index);
       setFullSizeContext('gallery');
       setIsFullSizeOpen(true);
-      
-      // Update URL if image has a jobId (always navigate, even if we're already on a job URL)
-      if (image.jobId) {
-        programmaticImageOpenRef.current = true;
-        navigate(`/job/${image.jobId}`, { replace: false });
-      }
+      syncJobUrlForImage(image);
     }
-  };
+  }, [gallery, syncJobUrlForImage]);
+  const openImageByUrl = useCallback((imageUrl: string) => {
+    const galleryIndex = gallery.findIndex(item => item.url === imageUrl);
+    if (galleryIndex !== -1) {
+      openImageAtIndex(galleryIndex);
+      return;
+    }
+    const inspirationIndex = inspirations.findIndex(item => item.url === imageUrl);
+    if (inspirationIndex !== -1) {
+      const image = inspirations[inspirationIndex];
+      setFullSizeContext('inspirations');
+      setCurrentInspirationIndex(inspirationIndex);
+      setSelectedFullImage(image);
+      setIsFullSizeOpen(true);
+      syncJobUrlForImage(image);
+      return;
+    }
+    const fallbackImage = combinedLibraryImages.find(item => item.url === imageUrl);
+    if (fallbackImage) {
+      setFullSizeContext('gallery');
+      setSelectedFullImage(fallbackImage);
+      setIsFullSizeOpen(true);
+      syncJobUrlForImage(fallbackImage);
+    }
+  }, [gallery, openImageAtIndex, inspirations, combinedLibraryImages, syncJobUrlForImage]);
 
   // Helper function to convert image URL to File object
   const urlToFile = async (url: string, filename: string): Promise<File> => {
@@ -3332,8 +3392,24 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     // If image exists locally, just open it without fetching
     if (existingImage) {
+      if (imageInGallery) {
+        const galleryIndex = gallery.findIndex(img => img.jobId === jobId);
+        if (galleryIndex !== -1) {
+          setFullSizeContext('gallery');
+          setCurrentGalleryIndex(galleryIndex);
+        }
+      } else if (imageInInspirations) {
+        const inspirationIndex = inspirations.findIndex(img => img.jobId === jobId);
+        if (inspirationIndex !== -1) {
+          setFullSizeContext('inspirations');
+          setCurrentInspirationIndex(inspirationIndex);
+        }
+      } else {
+        setFullSizeContext('gallery');
+      }
       setSelectedFullImage(existingImage);
       setIsFullSizeOpen(true);
+      syncJobUrlForImage(existingImage);
       return;
     }
 
@@ -3372,8 +3448,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
         };
 
         // Open in existing full-size viewer
+        setFullSizeContext('gallery');
         setSelectedFullImage(imageData);
         setIsFullSizeOpen(true);
+        syncJobUrlForImage(imageData);
       } catch (error) {
         debugError('Error fetching job:', error);
         showToast('Job not found or has expired');
@@ -3382,50 +3460,50 @@ const [batchSize, setBatchSize] = useState<number>(1);
     };
 
     void fetchJobById();
-  }, [jobId, token, navigate, showToast, isFullSizeOpen, selectedFullImage, gallery, inspirations]);
+  }, [jobId, token, navigate, showToast, isFullSizeOpen, selectedFullImage, gallery, inspirations, syncJobUrlForImage]);
 
   // Navigate to job URL after successful generation
   useEffect(() => {
     if (geminiImage?.jobId && !jobId) {
-      navigate(`/job/${geminiImage.jobId}`, { replace: false });
+      navigateToJobUrl(geminiImage.jobId);
     }
-  }, [geminiImage, jobId, navigate]);
+  }, [geminiImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (fluxImage?.jobId && !jobId) {
-      navigate(`/job/${fluxImage.jobId}`, { replace: false });
+      navigateToJobUrl(fluxImage.jobId);
     }
-  }, [fluxImage, jobId, navigate]);
+  }, [fluxImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (chatgptImage?.jobId && !jobId) {
-      navigate(`/job/${chatgptImage.jobId}`, { replace: false });
+      navigateToJobUrl(chatgptImage.jobId);
     }
-  }, [chatgptImage, jobId, navigate]);
+  }, [chatgptImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (reveImage?.jobId && !jobId) {
-      navigate(`/job/${reveImage.jobId}`, { replace: false });
+      navigateToJobUrl(reveImage.jobId);
     }
-  }, [reveImage, jobId, navigate]);
+  }, [reveImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (lumaImage?.jobId && !jobId) {
-      navigate(`/job/${lumaImage.jobId}`, { replace: false });
+      navigateToJobUrl(lumaImage.jobId);
     }
-  }, [lumaImage, jobId, navigate]);
+  }, [lumaImage, jobId, navigateToJobUrl]);
 
   const closeFullSizeViewer = useCallback(() => {
     setIsFullSizeOpen(false);
     setSelectedFullImage(null);
     setSelectedReferenceImage(null);
-    
-    // Clear job URL if we're on one and navigate back to appropriate context
-    if (jobId) {
-      const isGalleryContext = location.pathname.startsWith('/gallery') || location.pathname.startsWith('/job');
-      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
+
+    if (location.pathname.startsWith('/job/')) {
+      restorePreviousPath();
+    } else {
+      previousNonJobPathRef.current = null;
     }
-  }, [jobId, navigate, location.pathname]);
+  }, [location.pathname, restorePreviousPath]);
 
   const closeImageActionMenu = () => {
     setImageActionMenu(null);
@@ -3816,12 +3894,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               }
               setSelectedFullImage(img);
               setIsFullSizeOpen(true);
-              
-              // Navigate to job URL if image has a jobId
-              if (img.jobId) {
-                programmaticImageOpenRef.current = true;
-                navigate(`/job/${img.jobId}`, { replace: false });
-              }
+              syncJobUrlForImage(img);
             }
           }}
         />
@@ -5383,6 +5456,7 @@ const handleGenerate = async () => {
               avatarId: selectedAvatar?.id,
               avatarImageId: activeAvatarImageId ?? undefined,
               productId: selectedProduct?.id,
+              jobId: jobId,
             };
           } else {
             const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
@@ -6609,8 +6683,7 @@ const handleGenerate = async () => {
                               if (isSelectMode) {
                                 toggleImageSelection(img.url, event);
                               } else {
-                                setSelectedFullImage(img);
-                                setIsFullSizeOpen(true); 
+                                openImageByUrl(img.url);
                               }
                             }}>
                               <img src={img.url} alt={img.prompt || 'Generated image'} loading="lazy" className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
@@ -7107,8 +7180,7 @@ const handleGenerate = async () => {
                             if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
                               return;
                             }
-                            setSelectedFullImage(img);
-                            setIsFullSizeOpen(true);
+                            openImageByUrl(img.url);
                           }} />
 
                           {/* Hover prompt overlay */}
@@ -9992,20 +10064,17 @@ const handleGenerate = async () => {
                     images={currentImages}
                     currentIndex={currentIdx}
                     onNavigate={(index) => {
-                      if (index >= 0 && index < currentImages.length) {
-                        const newImage = currentImages[index];
-                        setSelectedFullImage(newImage);
-                        setCurrentGalleryIndex(index);
-                        
-                        // Update URL if the new image has a jobId
-                        if (newImage && newImage.jobId) {
-                          programmaticImageOpenRef.current = true;
-                          navigate(`/job/${newImage.jobId}`, { replace: false });
-                        } else if (jobId) {
-                          // Clear jobId from URL if navigating to an image without one
-                          const isGalleryContext = location.pathname.startsWith('/gallery');
-                          navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
+                      if (fullSizeContext === 'inspirations') {
+                        if (index >= 0 && index < inspirations.length) {
+                          const newImage = inspirations[index];
+                          setFullSizeContext('inspirations');
+                          setCurrentInspirationIndex(index);
+                          setSelectedFullImage(newImage);
+                          setIsFullSizeOpen(true);
+                          syncJobUrlForImage(newImage);
                         }
+                      } else {
+                        openImageAtIndex(index);
                       }
                     }}
                   />
@@ -10229,9 +10298,8 @@ const handleGenerate = async () => {
                             alt={image.prompt || 'Generated image'}
                             loading="lazy"
                             className="h-full w-full object-cover cursor-pointer"
-                            onClick={() => {
-                              setSelectedFullImage(image);
-                              setIsFullSizeOpen(true);
+                          onClick={() => {
+                              openImageByUrl(image.url);
                             }}
                           />
                           {image.avatarImageId && (
@@ -10314,8 +10382,7 @@ const handleGenerate = async () => {
                           loading="lazy"
                           className="w-full h-full object-cover cursor-pointer"
                           onClick={() => {
-                            setSelectedFullImage(img);
-                            setIsFullSizeOpen(true);
+                            openImageByUrl(img.url);
                           }}
                         />
                         <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
