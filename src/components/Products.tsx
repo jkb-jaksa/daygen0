@@ -239,16 +239,33 @@ export default function Products() {
   const navigate = useNavigate();
   const location = useLocation();
   const { productSlug } = useParams<{ productSlug?: string }>();
+  const previousNonJobPathRef = useRef<string | null>(null);
+  const rememberNonJobPath = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      previousNonJobPathRef.current = `${location.pathname}${location.search}`;
+    }
+  }, [location.pathname, location.search]);
 
   // URL navigation functions for job IDs
   const navigateToJobUrl = useCallback(
     (targetJobId: string) => {
       const targetPath = `/job/${targetJobId}`;
-      if (location.pathname !== targetPath) {
-        navigate(targetPath, { replace: false });
+      const currentFullPath = `${location.pathname}${location.search}`;
+      if (currentFullPath === targetPath) {
+        return;
       }
+      rememberNonJobPath();
+      const origin = previousNonJobPathRef.current ?? currentFullPath;
+      const priorState =
+        typeof location.state === "object" && location.state !== null
+          ? (location.state as Record<string, unknown>)
+          : {};
+      navigate(targetPath, {
+        replace: false,
+        state: { ...priorState, jobOrigin: origin },
+      });
     },
-    [navigate, location.pathname],
+    [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
   );
 
   const syncJobUrlForImage = useCallback(
@@ -2586,7 +2603,10 @@ export default function Products() {
                 currentIndex={currentIdx}
                 onNavigate={(index) => {
                   if (index >= 0 && index < productImages.length) {
-                    setSelectedFullImage(productImages[index]);
+                    const nextImage = productImages[index];
+                    setCurrentImageIndex(index);
+                    setSelectedFullImage(nextImage);
+                    syncJobUrlForImage(nextImage);
                   }
                 }}
               />

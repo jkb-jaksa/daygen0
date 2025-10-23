@@ -662,6 +662,19 @@ const Create: React.FC = () => {
       previousNonJobPathRef.current = `${location.pathname}${location.search}`;
     }
   }, [location.pathname, location.search]);
+  useEffect(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      return;
+    }
+    const state = location.state as { jobOrigin?: string } | null;
+    if (state?.jobOrigin && !previousNonJobPathRef.current) {
+      previousNonJobPathRef.current = state.jobOrigin;
+    }
+  }, [location.pathname, location.state]);
+  const getJobOriginPath = useCallback(() => {
+    const state = location.state as { jobOrigin?: string } | null;
+    return previousNonJobPathRef.current ?? state?.jobOrigin ?? "/create/image";
+  }, [location.state]);
   const navigateToJobUrl = useCallback(
     (targetJobId: string, options: { replace?: boolean } = {}) => {
       const targetPath = `/job/${targetJobId}`;
@@ -670,33 +683,41 @@ const Create: React.FC = () => {
         return;
       }
       rememberNonJobPath();
+      const origin = previousNonJobPathRef.current ?? currentFullPath;
       programmaticImageOpenRef.current = true;
-      navigate(targetPath, { replace: options.replace ?? false });
+      const priorState =
+        typeof location.state === "object" && location.state !== null
+          ? (location.state as Record<string, unknown>)
+          : {};
+      navigate(targetPath, {
+        replace: options.replace ?? false,
+        state: { ...priorState, jobOrigin: origin },
+      });
     },
-    [rememberNonJobPath, navigate, location.pathname, location.search],
+    [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
   );
   const clearJobUrl = useCallback(() => {
     if (!location.pathname.startsWith("/job/")) {
       return;
     }
-    const fallbackPath = previousNonJobPathRef.current ?? "/create/image";
+    const fallbackPath = getJobOriginPath();
     const currentFullPath = `${location.pathname}${location.search}`;
     if (currentFullPath !== fallbackPath) {
       navigate(fallbackPath, { replace: false });
     }
-  }, [location.pathname, location.search, navigate]);
+  }, [getJobOriginPath, location.pathname, location.search, navigate]);
   const restorePreviousPath = useCallback(() => {
     if (!location.pathname.startsWith("/job/")) {
       previousNonJobPathRef.current = null;
       return;
     }
-    const fallbackPath = previousNonJobPathRef.current ?? "/create/image";
+    const fallbackPath = getJobOriginPath();
     previousNonJobPathRef.current = null;
     const currentFullPath = `${location.pathname}${location.search}`;
     if (currentFullPath !== fallbackPath) {
       navigate(fallbackPath, { replace: false });
     }
-  }, [location.pathname, location.search, navigate]);
+  }, [getJobOriginPath, location.pathname, location.search, navigate]);
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
       if (image?.jobId) {
