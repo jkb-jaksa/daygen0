@@ -226,7 +226,13 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
               <div className="flex items-start gap-3">
                 {logo ? (
                   <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-theme-dark/60 bg-theme-black/60">
-                    <img src={logo} alt="" className="h-full w-full object-contain" />
+                    <img
+                      src={logo}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-contain"
+                    />
                   </div>
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-theme-dark/60 bg-theme-black/60 text-sm font-semibold text-theme-white/80">

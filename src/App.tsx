@@ -7,7 +7,11 @@ import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
-import { CreditWarningBanner } from "./components/CreditWarningBanner";
+const CreditWarningBanner = lazy(() =>
+  import("./components/CreditWarningBanner").then(({ CreditWarningBanner }) => ({
+    default: CreditWarningBanner,
+  })),
+);
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -412,15 +416,17 @@ function AppContent() {
       )}
       
       {/* Credit Warning Banner */}
-      <CreditWarningBanner
-        isOpen={showLowWarning || showUrgentWarning}
-        isUrgent={showUrgentWarning}
-        currentCredits={currentCredits}
-        threshold={showUrgentWarning ? urgentThreshold : lowThreshold}
-        onBuyCredits={handleBuyCredits}
-        onSubscribe={handleSubscribe}
-        onDismiss={handleDismiss}
-      />
+      <Suspense fallback={null}>
+        <CreditWarningBanner
+          isOpen={showLowWarning || showUrgentWarning}
+          isUrgent={showUrgentWarning}
+          currentCredits={currentCredits}
+          threshold={showUrgentWarning ? urgentThreshold : lowThreshold}
+          onBuyCredits={handleBuyCredits}
+          onSubscribe={handleSubscribe}
+          onDismiss={handleDismiss}
+        />
+      </Suspense>
       
     </div>
   );

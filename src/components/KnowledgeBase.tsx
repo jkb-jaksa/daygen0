@@ -95,7 +95,13 @@ function ToolCard({ tool }: { tool: ToolResource }) {
     >
       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-theme-dark/40 bg-theme-black/60">
         {logo ? (
-          <img src={logo} alt={`${tool.name} logo`} className="h-full w-full object-cover" />
+          <img
+            src={logo}
+            alt={`${tool.name} logo`}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
         ) : (
           <span className="text-lg font-light uppercase text-theme-white/70">
             {tool.name.charAt(0)}

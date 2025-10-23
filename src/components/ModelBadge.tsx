@@ -261,9 +261,11 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
       <div className="flex items-center gap-1">
         {showIcon && (
           hasToolLogo(config.name) ? (
-            <img 
-              src={getToolLogo(config.name)!} 
+            <img
+              src={getToolLogo(config.name)!}
               alt={`${config.name} logo`}
+              loading="lazy"
+              decoding="async"
               className="w-3 h-3 object-contain rounded flex-shrink-0"
             />
           ) : (

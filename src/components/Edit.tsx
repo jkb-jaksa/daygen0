@@ -1621,9 +1621,11 @@ export default function Edit() {
                   const currentModel = getCurrentModel();
                   if (hasToolLogo(currentModel.name)) {
                     return (
-                      <img 
-                        src={getToolLogo(currentModel.name)!} 
+                      <img
+                        src={getToolLogo(currentModel.name)!}
                         alt={`${currentModel.name} logo`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-4 h-4 object-contain rounded flex-shrink-0"
                       />
                     );
@@ -1659,9 +1661,11 @@ export default function Edit() {
                       }`}
                     >
                       {hasToolLogo(model.name) ? (
-                        <img 
-                          src={getToolLogo(model.name)!} 
+                        <img
+                          src={getToolLogo(model.name)!}
                           alt={`${model.name} logo`}
+                          loading="lazy"
+                          decoding="async"
                           className="w-5 h-5 flex-shrink-0 object-contain rounded"
                         />
                       ) : (
