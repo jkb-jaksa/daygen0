@@ -23,9 +23,10 @@ export function PaymentSuccess() {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    const checkSessionStatus = async (retryCount = 0, maxRetries = 8) => {
-      console.log('PaymentSuccess: Starting session check', { sessionId, retryCount });
-      
+    let isMounted = true; // Flag to prevent state updates after unmount
+    
+    const checkSessionStatus = async (retryCount = 0, maxRetries = 3) => {
+      if (!isMounted) return; // Don't run if component unmounted
       if (!sessionId) {
         console.error('PaymentSuccess: No session ID provided');
         setError('No session ID provided');
@@ -34,9 +35,10 @@ export function PaymentSuccess() {
       }
 
       try {
-        console.log('PaymentSuccess: Calling getSessionStatus with sessionId:', sessionId);
         const status = await getSessionStatus(sessionId);
-        console.log('PaymentSuccess: Received session status:', status);
+        
+        if (!isMounted) return; // Check again after async operation
+        
         setSessionStatus(status);
         
         // Set session mode and subscription info from the enhanced status
@@ -51,7 +53,6 @@ export function PaymentSuccess() {
         
         // If payment is still pending, show the manual completion button instead of retrying
         if (status.paymentStatus === 'PENDING') {
-          console.log('PaymentSuccess: Payment is pending, showing manual completion option');
           setLoading(false);
           return;
         }
@@ -82,10 +83,9 @@ export function PaymentSuccess() {
       } catch (err) {
         console.error('PaymentSuccess: Error checking session status:', err);
         
-        // Retry if we haven't exceeded max retries
-        if (retryCount < maxRetries) {
-          console.log(`PaymentSuccess: Retrying in ${Math.min(3000 * Math.pow(1.5, retryCount), 10000)}ms (attempt ${retryCount + 1}/${maxRetries})`);
-          const delay = Math.min(3000 * Math.pow(1.5, retryCount), 10000);
+        // Retry if we haven't exceeded max retries and component is still mounted
+        if (retryCount < maxRetries && isMounted) {
+          const delay = Math.min(2000 * Math.pow(1.5, retryCount), 5000);
           setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
           return;
         }
@@ -97,7 +97,12 @@ export function PaymentSuccess() {
     };
 
     checkSessionStatus();
-  }, [sessionId, getSessionStatus, refreshUser, user]);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [sessionId]); // Only depend on sessionId to prevent repeated calls
 
   const handleContinue = () => {
     navigate('/create');
@@ -110,16 +115,21 @@ export function PaymentSuccess() {
   const handleManualComplete = async () => {
     if (!sessionId) return;
     
+    console.log('🔄 Manual completion button clicked for session:', sessionId);
     setManuallyCompleting(true);
     try {
-      const response = await fetch(getApiUrl(`/api/payments/test/complete-payment/${sessionId}`), {
+      console.log('📡 Calling simple credit addition API...');
+      const response = await fetch('http://localhost:3001/api/test/add-credits', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
       
+      console.log('📡 API Response status:', response.status);
+      
       if (response.ok) {
+        console.log('✅ Manual completion successful, refreshing user data...');
         // Refresh user data and session status
         await refreshUser();
         const status = await getSessionStatus(sessionId);
@@ -130,10 +140,11 @@ export function PaymentSuccess() {
         // Hide success message after 5 seconds
         setTimeout(() => setManualCompleteSuccess(false), 5000);
       } else {
-        console.error('Failed to complete payment manually');
+        const errorText = await response.text();
+        console.error('❌ Failed to complete payment manually:', response.status, errorText);
       }
     } catch (err) {
-      console.error('Error completing payment manually:', err);
+      console.error('💥 Error completing payment manually:', err);
     } finally {
       setManuallyCompleting(false);
     }
