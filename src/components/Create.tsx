@@ -9888,7 +9888,7 @@ const handleGenerate = async () => {
                     <a
                       href={activeFullSizeImage.url}
                       download
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       onClick={(e) => e.stopPropagation()}
                       title="Download"
                       aria-label="Download"
@@ -9901,7 +9901,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleAddToFolder(activeFullSizeImage.url);
                       }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       title="Manage folders"
                       aria-label="Manage folders"
                     >
@@ -9914,7 +9914,7 @@ const handleGenerate = async () => {
                           e.stopPropagation();
                           toggleImagePublicStatus(activeFullSizeImage.url);
                         }}
-                        className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                        className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                         title={activeFullSizeImage.isPublic ? "Unpublish" : "Publish"}
                         aria-label={activeFullSizeImage.isPublic ? "Unpublish" : "Publish"}
                       >
@@ -9931,7 +9931,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         toggleFavorite(activeFullSizeImage.url);
                       }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       title={favorites.has(activeFullSizeImage.url) ? "Unlike" : "Like"}
                       aria-label={favorites.has(activeFullSizeImage.url) ? "Unlike" : "Like"}
                     >
@@ -9949,7 +9949,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext);
                       }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       title="Delete"
                       aria-label="Delete"
                     >
@@ -9965,7 +9965,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleEditMenuSelect();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <Edit className="w-4 h-4 flex-shrink-0" />
                       Edit image
@@ -9976,7 +9976,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleCreateAvatarFromMenu(activeFullSizeImage);
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <User className="w-4 h-4 flex-shrink-0" />
                       Create Avatar
@@ -9987,7 +9987,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleUseAsReferenceFromMenu();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <Copy className="w-4 h-4 flex-shrink-0" />
                       Use as reference
@@ -9998,7 +9998,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleUsePromptAgain();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <RefreshCw className="w-4 h-4 flex-shrink-0" />
                       Reuse prompt
@@ -10010,7 +10010,7 @@ const handleGenerate = async () => {
                         setActiveCategory("video");
                         closeFullSizeViewer();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <Camera className="w-4 h-4 flex-shrink-0" />
                       Make video
@@ -10035,7 +10035,7 @@ const handleGenerate = async () => {
                         }
                         closeFullSizeViewer();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway text-theme-white hover:text-theme-text transition-colors duration-200"
                     >
                         {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
                           <>

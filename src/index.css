@@ -1520,7 +1520,6 @@ html[data-theme="day"] .card-media-frame::before {
   width: 1rem;
 }
 .image-action-btn:hover {
-  background: var(--glass-dark-bg);
   border-color: var(--theme-mid);
   color: var(--theme-text);
   transform: scale(1.01);
@@ -1558,7 +1557,6 @@ html[data-theme="day"] .card-media-frame::before {
 }
 
 .nav-arrow-btn:hover {
-  background: var(--glass-dark-bg);
   border-color: var(--theme-mid);
   color: var(--theme-text);
   /* Scale effect is handled by Tailwind's hover:scale-105 class */
