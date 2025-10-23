@@ -34,12 +34,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Heart,
+  RefreshCw,
 } from "lucide-react";
 import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
+const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
@@ -1587,6 +1590,16 @@ export default function Avatars() {
     return creationsModalAvatar.images.find(image => image.id === candidateId) ?? creationsModalAvatar.images[0] ?? null;
   }, [activeAvatarImageId, creationsModalAvatar]);
 
+  const isActiveAvatarPrimary = useMemo(() => {
+    if (!creationsModalAvatar || !activeAvatarImage) return false;
+    return creationsModalAvatar.primaryImageId === activeAvatarImage.id;
+  }, [activeAvatarImage, creationsModalAvatar]);
+
+  const canRemoveActiveAvatarImage = useMemo(() => {
+    if (!creationsModalAvatar) return false;
+    return creationsModalAvatar.images.length > 1;
+  }, [creationsModalAvatar]);
+
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
@@ -2347,195 +2360,288 @@ export default function Avatars() {
         </Suspense>
       )}
       {/* Full-size avatar modal */}
-      {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-        <div
-          className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
-          onClick={closeAvatarFullSizeView}
-        >
-          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
-            {/* Navigation arrows */}
-            {creationsModalAvatar.images.length > 1 && (
-              <>
-                <button
-                  onClick={() => navigateAvatarImage("prev")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                  title="Previous image (←)"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
-                </button>
-                <button
-                  onClick={() => navigateAvatarImage("next")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                  title="Next image (→)"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
-                </button>
-              </>
-            )}
-
-            <img
-              src={activeAvatarImage.url}
-              alt={`${creationsModalAvatar.name} avatar view`}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-              style={{ objectPosition: 'top' }}
-            />
-
-            {/* Action buttons - only show on hover */}
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-              <div className={`pointer-events-auto ${
-                modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
-                  }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
-                  title="Edit avatar"
-                  aria-label="Edit avatar"
-                >
-                  <Edit className="w-3 h-3" />
-                </button>
-                <ImageActionMenuPortal
-                  anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
-                  open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
-                  onClose={closeModalAvatarEditMenu}
-                  zIndex={10700}
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleSetPrimaryAvatarImage(creationsModalAvatar.id, activeAvatarImage.id);
-                      closeModalAvatarEditMenu();
-                    }}
-                  >
-                    <Check className="h-4 w-4" />
-                    Set primary
-                  </button>
-                  {creationsModalAvatar.images.length > 1 && (
+      <>
+        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+          <div
+            className="fixed inset-0 z-[10600] glass-liquid willchange-backdrop isolate backdrop-blur-[40px] bg-[color:var(--glass-dark-bg)] flex items-center justify-center p-4"
+            onClick={closeAvatarFullSizeView}
+          >
+            <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              {/* Image container */}
+              <div className="relative group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }}>
+                {/* Navigation arrows */}
+                {creationsModalAvatar.images.length > 1 && (
+                  <>
                     <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-200 transition-colors duration-200 hover:text-rose-100"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleRemoveAvatarImage(creationsModalAvatar.id, activeAvatarImage.id);
-                        closeAvatarFullSizeView();
-                        closeModalAvatarEditMenu();
-                      }}
+                      onClick={() => navigateAvatarImage("prev")}
+                      className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                      title="Previous image (←)"
+                      aria-label="Previous image"
                     >
-                      <Trash2 className="h-4 w-4" />
-                      Remove
+                      <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                     </button>
-                  )}
-                </ImageActionMenuPortal>
-              </div>
-              <div className={`flex items-center gap-0.5 pointer-events-auto ${
-                modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
-                <button 
-                  type="button" 
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
-                  }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
-                  title="More options" 
-                  aria-label="More options"
-                >
-                  <MoreHorizontal className="w-3 h-3" />
-                </button>
-                <ImageActionMenuPortal
-                  anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
-                  open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
-                  onClose={closeModalAvatarEditMenu}
-                  zIndex={10700}
-                  isRecreateMenu={true}
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleDownloadImage(activeAvatarImage.url);
-                      closeModalAvatarEditMenu();
-                    }}
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleCopyLink(activeAvatarImage.url);
-                      closeModalAvatarEditMenu();
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy link
-                  </button>
-                </ImageActionMenuPortal>
-                <button
-                  type="button"
-                  onClick={closeAvatarFullSizeView}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
-                  aria-label="Close avatar image"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+                    <button
+                      onClick={() => navigateAvatarImage("next")}
+                      className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                      title="Next image (→)"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
+                    </button>
+                  </>
+                )}
 
-            {/* Metadata info bar - only on hover */}
-            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
-              modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-            }`}>
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-sm font-raleway leading-relaxed">
-                    {creationsModalAvatar.name}
-                    {creationsModalAvatar.primaryImageId === activeAvatarImage.id && (
-                      <span className="ml-2 inline text-theme-white/70 text-xs">
-                        (Primary)
-                      </span>
-                    )}
+                <img
+                  src={activeAvatarImage.url}
+                  alt={`${creationsModalAvatar.name} avatar view`}
+                  loading="lazy"
+                  className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                  style={{ objectPosition: 'top' }}
+                />
+
+                {/* Close button - positioned on right side of image */}
+                <button
+                  onClick={closeAvatarFullSizeView}
+                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Metadata info bar - only on hover, positioned at bottom of image */}
+                <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
+                  <div className="flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-sm font-raleway leading-relaxed">
+                        {creationsModalAvatar.name}
+                        {creationsModalAvatar.primaryImageId === activeAvatarImage.id && (
+                          <span className="ml-2 inline text-theme-white/70 text-xs">
+                            (Primary)
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            
-            <button
-              onClick={closeAvatarFullSizeView}
-              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
-              aria-label="Close full size view"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
-          
-          {/* Vertical Gallery Navigation */}
-          {creationsModalAvatar.images.length > 1 && (
-            <VerticalGalleryNav
-              images={creationsModalAvatar.images.map(img => ({
-                url: img.url,
-                id: img.id,
-              }))}
-              currentIndex={creationsModalAvatar.images.findIndex(img => img.id === activeAvatarImage.id)}
-              onNavigate={(index) => {
-                if (index >= 0 && index < creationsModalAvatar.images.length) {
-                  setActiveAvatarImageId(creationsModalAvatar.images[index]?.id ?? null);
-                }
+        )}
+
+        {/* Right Sidebar - Sibling of modal */}
+        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+          <aside
+            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[10650]`}
+            style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon-only action bar at top */}
+            <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
+              <a
+                href={activeAvatarImage.url}
+                download
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                onClick={(e) => e.stopPropagation()}
+                title="Download"
+                aria-label="Download"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleManageFolders(activeAvatarImage.url);
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title="Manage folders"
+                aria-label="Manage folders"
+              >
+                <FolderPlus className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAvatarToPublish(creationsModalAvatar);
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
+                aria-label={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
+              >
+                {creationsModalAvatar.published ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <Globe className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // TODO: Add favorite/like functionality for avatar images
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title="Like"
+                aria-label="Like"
+              >
+                <Heart className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAvatarToDelete(creationsModalAvatar);
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Edit actions */}
+            <div className="flex flex-col gap-0 mt-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to edit page with avatar image
+                  navigate("/create/image", {
+                    state: {
+                      avatarId: creationsModalAvatar.id,
+                      referenceImageUrl: activeAvatarImage.url,
+                      focusPromptBar: true,
+                    },
+                  });
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              >
+                <Edit className="w-4 h-4 flex-shrink-0" />
+                Edit image
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Create new avatar from this image
+                  navigate("/avatars", {
+                    state: {
+                      openAvatarCreator: true,
+                      selectedImageUrl: activeAvatarImage.url,
+                    },
+                  });
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              >
+                <User className="w-4 h-4 flex-shrink-0" />
+                Create Avatar
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Use as reference in create page
+                  navigate("/create/image", {
+                    state: {
+                      referenceImageUrl: activeAvatarImage.url,
+                      focusPromptBar: true,
+                    },
+                  });
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              >
+                <Copy className="w-4 h-4 flex-shrink-0" />
+                Use as reference
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to create with avatar selected
+                  handleNavigateToImage(creationsModalAvatar);
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              >
+                <RefreshCw className="w-4 h-4 flex-shrink-0" />
+                Reuse prompt
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigateToVideo(creationsModalAvatar);
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              >
+                <Camera className="w-4 h-4 flex-shrink-0" />
+                Make video
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {/* Thumbnail Navigation - Right Sidebar (far edge) */}
+        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+          <div className="fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-[10700] flex flex-col pointer-events-auto" style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+            <div className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden h-full`}>
+              <div className="flex flex-col gap-2">
+                {creationsModalAvatar.images.map((img, index) => {
+                  const isActive = img.id === activeAvatarImage.id;
+                  return (
+                    <button
+                      key={img.id}
+                      onClick={() => {
+                        if (index >= 0 && index < creationsModalAvatar.images.length) {
+                          setActiveAvatarImageId(creationsModalAvatar.images[index]?.id ?? null);
+                        }
+                      }}
+                      className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${
+                        isActive
+                          ? "ring-1 ring-theme-text scale-110"
+                          : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
+                      }`}
+                      style={{ width: "48px", height: "48px", flexShrink: 0 }}
+                      aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Thumbnail ${index + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Left Navigation Sidebar */}
+        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+          <Suspense fallback={null}>
+            <CreateSidebar
+              activeCategory="avatars"
+              onSelectCategory={(category) => {
+                navigate(`/create/${category}`);
+                closeAvatarFullSizeView();
               }}
+              onOpenMyFolders={() => {
+                navigate('/gallery');
+                closeAvatarFullSizeView();
+              }}
+              isFullSizeOpen={true}
             />
-          )}
-        </div>
-      )}
+          </Suspense>
+        )}
+      </>
 
       {/* Full-size image modal */}
       {isFullSizeOpen && selectedFullImage && creationsModalAvatar && (

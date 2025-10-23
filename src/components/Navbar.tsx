@@ -267,7 +267,7 @@ export default function Navbar() {
   const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || currentUser);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
+    <div className="fixed top-0 left-0 right-0 z-[11000]" onMouseLeave={closeMenu}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[10000] focus:rounded focus:bg-theme-white focus:px-4 focus:py-2 focus:text-theme-black"

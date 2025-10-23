@@ -29,7 +29,7 @@ function CreateSidebarComponent({
   const sidebarTop = isFullSizeOpen
     ? `calc(var(--nav-h) + 16px)`
     : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
-  const zIndex = isFullSizeOpen ? 'lg:z-[70]' : 'lg:z-30';
+  const zIndex = isFullSizeOpen ? 'lg:z-[10650]' : 'lg:z-30';
 
   return (
     <div className="hidden lg:block" style={{ width: SIDEBAR_WIDTH }}>
