@@ -71,8 +71,10 @@ export const hydrateStoredGallery = (
       productId: item.productId,
       avatarImageId: item.avatarImageId,
       styleId: item.styleId,
+      jobId: item.jobId, // Restore jobId for all images that have one
     };
 
+    // Special handling for Flux/Reve: generate fallback jobId if missing
     if (item.model?.startsWith("flux") || item.model?.startsWith("reve")) {
       const fallbackJobId = item.jobId ?? `restored-${index}-${Date.now()}`;
       return {
