@@ -3,6 +3,19 @@ import { normalizeModelId } from './modelUtils';
 import { debugWarn } from './debug';
 
 /**
+ * Simple hash function for generating URL-based IDs
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/**
  * Check if a URL is a base64 data URL
  */
 export const isBase64Url = (url: string): boolean => {
@@ -73,6 +86,14 @@ export const hydrateStoredGallery = (
       return {
         ...base,
         jobId: fallbackJobId,
+      } as GalleryImageLike;
+    }
+
+    // For images without jobId, use URL hash as fallback
+    if (!base.jobId && base.url) {
+      return {
+        ...base,
+        jobId: `url-${simpleHash(base.url)}`,
       } as GalleryImageLike;
     }
 

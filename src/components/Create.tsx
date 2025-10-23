@@ -3388,6 +3388,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
       return;
     }
 
+    // Check if this is a URL-based ID (local-only image)
+    const isUrlBased = jobId.startsWith('url-');
+
     // Check if this image already exists in our gallery or inspirations
     const imageInGallery = gallery.find(img => img.jobId === jobId);
     const imageInInspirations = inspirations.find(img => img.jobId === jobId);
@@ -3413,6 +3416,18 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setSelectedFullImage(existingImage);
       setIsFullSizeOpen(true);
       syncJobUrlForImage(existingImage);
+      
+      // Show info toast for URL-based IDs
+      if (isUrlBased) {
+        showToast('This image is stored locally. Upload to gallery to share across devices.');
+      }
+      return;
+    }
+
+    // If it's a URL-based ID but not found locally, show error
+    if (isUrlBased) {
+      showToast('Image not found in local gallery');
+      navigate('/create/image', { replace: true });
       return;
     }
 
