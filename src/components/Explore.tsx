@@ -894,6 +894,48 @@ const Explore: React.FC = () => {
     tags: [],
   });
 
+  // Filter function for gallery
+  const filterGalleryItems = useCallback((items: typeof galleryItems) => {
+    return items.filter(item => {
+      // Model filter
+      if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.modelId)) {
+        return false;
+      }
+      
+      // Type filter
+      if (galleryFilters.types.length > 0) {
+        const inferredVideo = item.modelId.includes('video') ||
+          item.modelId === 'veo-3' ||
+          item.modelId === 'runway-video-gen4' ||
+          item.modelId === 'wan-video-2.2' ||
+          item.modelId === 'hailuo-02' ||
+          item.modelId === 'kling-video' ||
+          item.modelId === 'seedance-1.0-pro' ||
+          item.modelId === 'luma-ray-2';
+
+        const itemType = item.mediaType ?? (inferredVideo ? 'video' : 'image');
+
+        if (!galleryFilters.types.includes(itemType)) {
+          return false;
+        }
+      }
+      
+      // Tag filter
+      if (galleryFilters.tags.length > 0) {
+        const hasMatchingTag = galleryFilters.tags.some(selectedTag => 
+          item.tags.includes(selectedTag)
+        );
+        if (!hasMatchingTag) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [galleryFilters]);
+
+  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems]);
+
   const navigate = useNavigate();
   const { storagePrefix } = useAuth();
   const [savedInspirations, setSavedInspirations] = useState<GalleryImageLike[]>([]);
@@ -1622,47 +1664,6 @@ const Explore: React.FC = () => {
     return AI_MODELS.map(model => model.id).sort();
   };
 
-  // Filter function for gallery
-  const filterGalleryItems = useCallback((items: typeof galleryItems) => {
-    return items.filter(item => {
-      // Model filter
-      if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.modelId)) {
-        return false;
-      }
-      
-      // Type filter
-      if (galleryFilters.types.length > 0) {
-        const inferredVideo = item.modelId.includes('video') ||
-          item.modelId === 'veo-3' ||
-          item.modelId === 'runway-video-gen4' ||
-          item.modelId === 'wan-video-2.2' ||
-          item.modelId === 'hailuo-02' ||
-          item.modelId === 'kling-video' ||
-          item.modelId === 'seedance-1.0-pro' ||
-          item.modelId === 'luma-ray-2';
-
-        const itemType = item.mediaType ?? (inferredVideo ? 'video' : 'image');
-
-        if (!galleryFilters.types.includes(itemType)) {
-          return false;
-        }
-      }
-      
-      // Tag filter
-      if (galleryFilters.tags.length > 0) {
-        const hasMatchingTag = galleryFilters.tags.some(selectedTag => 
-          item.tags.includes(selectedTag)
-        );
-        if (!hasMatchingTag) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  }, [galleryFilters]);
-
-  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems]);
 
   const initialBatchSize = useMemo(() => 9, []);
   const [visibleCount, setVisibleCount] = useState(initialBatchSize);
