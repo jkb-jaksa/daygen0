@@ -81,6 +81,7 @@ import type { StoredStyle } from "./styles/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import ProductBadge from "./products/ProductBadge";
 import StyleBadge from "./styles/StyleBadge";
+import AspectRatioBadge from "./shared/AspectRatioBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { createProductRecord, normalizeStoredProducts } from "../utils/products";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
@@ -4106,6 +4107,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                       />
                     );
                   })()}
+                  <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -5596,6 +5598,19 @@ const handleGenerate = async () => {
               prompt: img.prompt?.substring(0, 50) + '...'
             });
 
+            // Compute aspect ratio before creating gallery image object
+            // Use aspectRatioConfig if available (Gemini, Veo, Qwen, Wan, Hailuo, Kling, Seedance)
+            // Otherwise default to "1:1" for models without aspect ratio selectors (Flux, Ideogram, Recraft, Runway, Reve, Luma Photon, ChatGPT)
+            const computedAspectRatio = aspectRatioConfig?.selectedValue || "1:1";
+            
+            // Debug: Log aspect ratio computation
+            console.log('[AspectRatio Debug]', {
+              model: modelForGeneration,
+              aspectRatioConfig: aspectRatioConfig,
+              selectedValue: aspectRatioConfig?.selectedValue,
+              computedAspectRatio,
+            });
+
             const galleryImage: GalleryImageLike = {
               url: img.url,
               prompt: img.prompt ?? finalPrompt ?? trimmedPrompt,
@@ -5635,6 +5650,7 @@ const handleGenerate = async () => {
                 'jobId' in img
                   ? (img as { jobId?: string | null }).jobId ?? undefined
                   : undefined,
+              aspectRatio: computedAspectRatio,
             };
 
             updateGalleryImages([], {}, { upsert: [galleryImage] });
@@ -6866,6 +6882,7 @@ const handleGenerate = async () => {
                                               />
                                             );
                                           })()}
+                                          <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
                                         </div>
                                         {img.isPublic && (
                                           <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -7343,6 +7360,15 @@ const handleGenerate = async () => {
                                     </button>
                                   </div>
                                 )}
+                                {/* Model Badge and Aspect Ratio */}
+                                <div className="flex justify-between items-center mt-2">
+                                  <div className="flex items-center gap-1 md:gap-2">
+                                    <Suspense fallback={null}>
+                                      <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                    </Suspense>
+                                    <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -9921,6 +9947,10 @@ const handleGenerate = async () => {
                                 size="md" 
                               />
                             </Suspense>
+                            <AspectRatioBadge 
+                              aspectRatio={(selectedFullImage || generatedImage)?.aspectRatio} 
+                              size="md" 
+                            />
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>

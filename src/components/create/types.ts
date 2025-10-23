@@ -40,6 +40,7 @@ export type GalleryImageLike = {
   productId?: string;
   avatarImageId?: string;
   styleId?: string;
+  aspectRatio?: string;
 };
 
 export type GalleryVideoLike = {
@@ -58,6 +59,7 @@ export type GalleryVideoLike = {
   productId?: string; // Product ID for filtering
   avatarImageId?: string;
   styleId?: string;
+  aspectRatio?: string;
 };
 
 export type StoredGalleryImage = {
@@ -74,6 +76,7 @@ export type StoredGalleryImage = {
   productId?: string;
   avatarImageId?: string;
   styleId?: string;
+  aspectRatio?: string;
 };
 
 export type PendingGalleryItem = {
