@@ -1939,18 +1939,21 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const {
     error: ideogramError,
+    generatedImages: ideogramImages,
     generateImage: generateIdeogramImage,
     clearError: clearIdeogramError,
   } = useIdeogramImageGeneration();
 
   const {
     error: qwenError,
+    generatedImages: qwenImages,
     generateImage: generateQwenImage,
     clearError: clearQwenError,
   } = useQwenImageGeneration();
 
   const {
     error: runwayError,
+    generatedImage: runwayImage,
     generateImage: generateRunwayImage,
     clearError: clearRunwayError,
   } = useRunwayImageGeneration();
@@ -3492,6 +3495,26 @@ const [batchSize, setBatchSize] = useState<number>(1);
       navigateToJobUrl(lumaImage.jobId);
     }
   }, [lumaImage, jobId, navigateToJobUrl]);
+
+  useEffect(() => {
+    const ideogramImage = ideogramImages?.[0];
+    if (ideogramImage?.jobId && !jobId) {
+      navigateToJobUrl(ideogramImage.jobId);
+    }
+  }, [ideogramImages, jobId, navigateToJobUrl]);
+
+  useEffect(() => {
+    const qwenImage = qwenImages?.[0];
+    if (qwenImage?.jobId && !jobId) {
+      navigateToJobUrl(qwenImage.jobId);
+    }
+  }, [qwenImages, jobId, navigateToJobUrl]);
+
+  useEffect(() => {
+    if (runwayImage?.jobId && !jobId) {
+      navigateToJobUrl(runwayImage.jobId);
+    }
+  }, [runwayImage, jobId, navigateToJobUrl]);
 
   const closeFullSizeViewer = useCallback(() => {
     setIsFullSizeOpen(false);

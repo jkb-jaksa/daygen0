@@ -243,6 +243,25 @@ export default function Avatars() {
   const location = useLocation();
   const { avatarSlug } = useParams<{ avatarSlug?: string }>();
 
+  // URL navigation functions for job IDs
+  const navigateToJobUrl = useCallback(
+    (targetJobId: string) => {
+      const targetPath = `/job/${targetJobId}`;
+      if (location.pathname !== targetPath) {
+        navigate(targetPath, { replace: false });
+      }
+    },
+    [navigate, location.pathname],
+  );
+
+  const syncJobUrlForImage = useCallback(
+    (image: GalleryImageLike | null | undefined) => {
+      if (image?.jobId) {
+        navigateToJobUrl(image.jobId);
+      }
+    },
+    [navigateToJobUrl],
+  );
 
   const [avatars, setAvatars] = useState<StoredAvatar[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -1093,9 +1112,11 @@ export default function Avatars() {
       ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
       : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
 
+    const newImage = avatarImages[newIndex];
     setCurrentImageIndex(newIndex);
-    setSelectedFullImage(avatarImages[newIndex]);
-  }, [creationsModalAvatar, galleryImages, currentImageIndex]);
+    setSelectedFullImage(newImage);
+    syncJobUrlForImage(newImage);
+  }, [creationsModalAvatar, galleryImages, currentImageIndex, syncJobUrlForImage]);
 
   const openFullSizeView = useCallback((image: GalleryImageLike) => {
     if (!creationsModalAvatar) return;
@@ -1105,8 +1126,9 @@ export default function Avatars() {
       setCurrentImageIndex(index);
       setSelectedFullImage(image);
       setIsFullSizeOpen(true);
+      syncJobUrlForImage(image);
     }
-  }, [creationsModalAvatar, galleryImages]);
+  }, [creationsModalAvatar, galleryImages, syncJobUrlForImage]);
 
   const closeFullSizeView = useCallback(() => {
     setIsFullSizeOpen(false);
@@ -1589,16 +1611,6 @@ export default function Avatars() {
     const candidateId = activeAvatarImageId ?? creationsModalAvatar.primaryImageId;
     return creationsModalAvatar.images.find(image => image.id === candidateId) ?? creationsModalAvatar.images[0] ?? null;
   }, [activeAvatarImageId, creationsModalAvatar]);
-
-  const isActiveAvatarPrimary = useMemo(() => {
-    if (!creationsModalAvatar || !activeAvatarImage) return false;
-    return creationsModalAvatar.primaryImageId === activeAvatarImage.id;
-  }, [activeAvatarImage, creationsModalAvatar]);
-
-  const canRemoveActiveAvatarImage = useMemo(() => {
-    if (!creationsModalAvatar) return false;
-    return creationsModalAvatar.images.length > 1;
-  }, [creationsModalAvatar]);
 
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div

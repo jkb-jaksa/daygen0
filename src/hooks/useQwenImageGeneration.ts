@@ -17,6 +17,7 @@ export interface QwenGeneratedImage {
   avatarId?: string;
   avatarImageId?: string;
   styleId?: string;
+  jobId?: string;
 }
 
 export interface QwenImageGenerationState {
@@ -84,6 +85,7 @@ export const useQwenImageGeneration = () => {
             ownerId: user?.id,
             avatarId: options.avatarId,
             avatarImageId: options.avatarImageId,
+            jobId,
           };
 
           return [image];

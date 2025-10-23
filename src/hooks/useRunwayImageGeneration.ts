@@ -15,6 +15,7 @@ export interface GeneratedImage {
   avatarId?: string;
   avatarImageId?: string;
   styleId?: string;
+  jobId?: string;
 }
 
 export interface ImageGenerationState {
@@ -81,6 +82,7 @@ export const useRunwayImageGeneration = () => {
             prompt,
             model,
             timestamp: new Date().toISOString(),
+            jobId,
             references: references.length ? references : undefined,
             ownerId,
             avatarId,

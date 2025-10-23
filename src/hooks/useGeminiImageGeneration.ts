@@ -421,12 +421,12 @@ export const useGeminiImageGeneration = () => {
             prompt,
             model,
             timestamp: new Date().toISOString(),
+            jobId,
             references: references || undefined,
             ownerId,
             avatarId,
             avatarImageId,
             r2FileId,
-            jobId,
           };
         }
 

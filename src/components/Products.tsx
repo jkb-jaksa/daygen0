@@ -240,6 +240,25 @@ export default function Products() {
   const location = useLocation();
   const { productSlug } = useParams<{ productSlug?: string }>();
 
+  // URL navigation functions for job IDs
+  const navigateToJobUrl = useCallback(
+    (targetJobId: string) => {
+      const targetPath = `/job/${targetJobId}`;
+      if (location.pathname !== targetPath) {
+        navigate(targetPath, { replace: false });
+      }
+    },
+    [navigate, location.pathname],
+  );
+
+  const syncJobUrlForImage = useCallback(
+    (image: GalleryImageLike | null | undefined) => {
+      if (image?.jobId) {
+        navigateToJobUrl(image.jobId);
+      }
+    },
+    [navigateToJobUrl],
+  );
 
   const [products, setProducts] = useState<StoredProduct[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -1056,9 +1075,11 @@ export default function Products() {
       ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
       : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
 
+    const newImage = productImages[newIndex];
     setCurrentImageIndex(newIndex);
-    setSelectedFullImage(productImages[newIndex]);
-  }, [creationsModalProduct, galleryImages, currentImageIndex]);
+    setSelectedFullImage(newImage);
+    syncJobUrlForImage(newImage);
+  }, [creationsModalProduct, galleryImages, currentImageIndex, syncJobUrlForImage]);
 
   const openFullSizeView = useCallback((image: GalleryImageLike) => {
     if (!creationsModalProduct) return;
@@ -1068,8 +1089,9 @@ export default function Products() {
       setCurrentImageIndex(index);
       setSelectedFullImage(image);
       setIsFullSizeOpen(true);
+      syncJobUrlForImage(image);
     }
-  }, [creationsModalProduct, galleryImages]);
+  }, [creationsModalProduct, galleryImages, syncJobUrlForImage]);
 
   const closeFullSizeView = useCallback(() => {
     setIsFullSizeOpen(false);
