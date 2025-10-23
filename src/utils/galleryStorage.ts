@@ -1,13 +1,6 @@
 import type { GalleryImageLike, StoredGalleryImage } from "../components/create/types";
-import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
-import type { ReveGeneratedImage } from "../hooks/useReveImageGeneration";
 import { normalizeModelId } from './modelUtils';
 import { debugWarn } from './debug';
-
-const isJobBackedImage = (
-  item: GalleryImageLike,
-): item is FluxGeneratedImage | ReveGeneratedImage =>
-  "jobId" in item && typeof item.jobId === "string";
 
 /**
  * Check if a URL is a base64 data URL
@@ -51,7 +44,7 @@ export const serializeGallery = (
     productId: item.productId,
     avatarImageId: item.avatarImageId,
     styleId: item.styleId,
-    ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
+    jobId: item.jobId, // Save jobId for all images that have one
   }));
 };
 
