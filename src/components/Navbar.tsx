@@ -10,7 +10,7 @@ import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
-import { safeNext } from "../utils/navigation";
+import { safeResolveNext } from "../utils/navigation";
 import { useTheme } from "../hooks/useTheme";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
@@ -631,7 +631,7 @@ export default function Navbar() {
 
                         if (shouldPreserveFlow) {
                           const params = new URLSearchParams();
-                          params.set('next', safeNext(`${location.pathname}${location.search}`));
+                          params.set('next', safeResolveNext(location));
                           navigate(`/account?${params.toString()}`);
                         } else {
                           navigate('/account');
@@ -757,7 +757,7 @@ export default function Navbar() {
 
                 if (shouldPreserveFlow) {
                   const params = new URLSearchParams();
-                  params.set("next", safeNext(`${location.pathname}${location.search}`));
+                  params.set("next", safeResolveNext(location));
                   navigate(`/account?${params.toString()}`);
                 } else {
                   navigate("/account");

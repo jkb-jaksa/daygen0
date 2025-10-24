@@ -9,7 +9,7 @@ import { buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
 import GoogleLogin from "./GoogleLogin";
 import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
-import { getDestinationLabel, safeNext } from "../utils/navigation";
+import { getDestinationLabel, safeResolveNext } from "../utils/navigation";
 import { ProfileCard } from "./account/ProfileCard";
 import { AtAGlance } from "./account/AtAGlance";
 import { useToast } from "../hooks/useToast";
@@ -263,24 +263,14 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next");
-  const normalizedRawNext = useMemo(() => rawNext?.trim() ?? null, [rawNext]);
-  
-  const decodedNextPath = useMemo(() => {
-    if (!normalizedRawNext) return null;
-    try {
-      return decodeURIComponent(normalizedRawNext);
-    } catch {
-      return null;
-    }
-  }, [normalizedRawNext]);
   const sanitizedNextPath = useMemo(
-    () => (normalizedRawNext ? safeNext(decodedNextPath ?? undefined) : null),
-    [decodedNextPath, normalizedRawNext],
+    () => safeResolveNext(rawNext ?? ""),
+    [rawNext],
   );
 
   const destinationLabel = useMemo(
-    () => getDestinationLabel(decodedNextPath ?? sanitizedNextPath ?? normalizedRawNext),
-    [decodedNextPath, normalizedRawNext, sanitizedNextPath],
+    () => getDestinationLabel(sanitizedNextPath),
+    [sanitizedNextPath],
   );
 
   // Keep the input in sync if user loads after first render, but don't override user input
@@ -451,15 +441,9 @@ export default function Account() {
       await updateProfile({ displayName: trimmedName });
       setSaveError(null);
 
-      if (normalizedRawNext) {
-        if (decodedNextPath) {
-          const target = safeNext(decodedNextPath);
-          debugLog("Account - redirecting after profile save to:", target);
-          navigate(target, { replace: true });
-        } else {
-          debugError("Failed to decode next path after saving profile:", normalizedRawNext);
-          navigate("/create", { replace: true });
-        }
+      if (sanitizedNextPath && sanitizedNextPath !== "/create") {
+        debugLog("Account - redirecting after profile save to:", sanitizedNextPath);
+        navigate(sanitizedNextPath, { replace: true });
       } else {
         showToast("Profile saved");
       }
@@ -474,12 +458,11 @@ export default function Account() {
       setIsSavingProfile(false);
     }
   }, [
-    decodedNextPath,
     isNameChanged,
     isNameValid,
     nameErrorMessage,
     navigate,
-    normalizedRawNext,
+    sanitizedNextPath,
     showToast,
     trimmedName,
     updateProfile,
@@ -513,7 +496,7 @@ export default function Account() {
   }
 
   // Show return button when there's a next parameter
-  const showReturnButton = user && normalizedRawNext && decodedNextPath;
+  const showReturnButton = user && sanitizedNextPath && sanitizedNextPath !== "/create";
 
   return (
     <main className="min-h-screen text-theme-text px-6 lg:px-8 pt-[calc(var(--nav-h,4rem)+16px)] pb-8">
@@ -523,8 +506,7 @@ export default function Account() {
             {showReturnButton && (
               <button
                 onClick={() => {
-                  const target = safeNext(decodedNextPath);
-                  navigate(target, { replace: true });
+                  navigate(sanitizedNextPath, { replace: true });
                 }}
                 className="px-4 py-2 bg-theme-primary text-theme-black rounded-lg hover:bg-theme-primary/90 transition-colors font-raleway text-sm"
               >

@@ -5,6 +5,8 @@ import { useFooter } from "./contexts/useFooter";
 import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
+import { safeResolveNext } from "./utils/navigation";
+import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
 const CreditWarningBanner = lazy(() =>
@@ -22,6 +24,7 @@ const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
+const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
 const Upgrade = lazy(() => import("./components/Upgrade"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Courses = lazy(() => import("./components/Courses"));
@@ -317,8 +320,10 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     const params = new URLSearchParams();
-    const isEditRoute = location.pathname.startsWith("/edit");
-    const nextPath = isEditRoute ? "/create/image" : location.pathname + location.search;
+    const nextPath = safeResolveNext(location, { isEditProtected: true });
+
+    // Track guard redirects for monitoring
+    authMetrics.increment('guard_redirect', location.pathname);
 
     params.set("next", nextPath);
 
@@ -386,20 +391,60 @@ function AppContent() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
             <Route path="/digital-copy" element={<DigitalCopy />} />
-            <Route path="/job/:jobId" element={<CreateRoutes />} />
-            <Route path="/create/*" element={<CreateRoutes />} />
-            <Route path="/gallery/*" element={<GalleryRoutes />} />
+            <Route 
+              path="/job/:jobId" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                    <CreateRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="/create/*" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                    <CreateRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="/gallery/*" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
+                    <GalleryRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
             <Route path="/upgrade" element={<Upgrade />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route
               path="/edit"
               element={(
                 <RequireAuth>
-                  <Edit />
+                  <Suspense fallback={<RouteFallback />}>
+                    <AuthErrorBoundary fallbackRoute="/create" context="editing">
+                      <Edit />
+                    </AuthErrorBoundary>
+                  </Suspense>
                 </RequireAuth>
               )}
             />
-            <Route path="/account" element={<Account />} />
+            <Route 
+              path="/account" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/" context="authentication">
+                    <Account />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
