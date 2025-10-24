@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
-import { lazy, Suspense, useEffect, useState, useRef } from "react";
+import { lazy, Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
 import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
@@ -126,6 +126,14 @@ function Home() {
   const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const prefetchedRef = useRef(false);
+
+  const handlePrefetch = useCallback(() => {
+    if (!prefetchedRef.current) {
+      prefetchedRef.current = true;
+      import("./routes/CreateRoutes");
+    }
+  }, []);
 
   useEffect(() => {
     if (location.hash === "#faq" && typeof window !== "undefined") {
@@ -204,7 +212,11 @@ function Home() {
                       <Link to="/learn/use-cases" className={buttons.ghost}>
                         Learn
                       </Link>
-                      <Link to="/create/image" className={buttons.primary}>
+                      <Link 
+                        to="/create/image" 
+                        className={buttons.primary}
+                        onMouseEnter={handlePrefetch}
+                      >
                         Create
                       </Link>
                     </div>
