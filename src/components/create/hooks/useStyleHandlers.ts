@@ -11,12 +11,6 @@ type StyleOption = {
 type StyleSectionId = "lifestyle" | "formal" | "artistic";
 type StyleGender = "male" | "female" | "unisex";
 
-type StyleSection = {
-  id: StyleSectionId;
-  name: string;
-  options: StyleOption[];
-};
-
 type SelectedStylesMap = Record<StyleGender, Record<StyleSectionId, StyleOption[]>>;
 
 const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string; image: string }> = [

@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
-import { Wand2, Settings, User, Package, Palette, Upload, X } from 'lucide-react';
+import { Wand2, Settings, User, Package, Palette } from 'lucide-react';
 import { useGeneration } from './contexts/GenerationContext';
 import { usePromptHandlers } from './hooks/usePromptHandlers';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
@@ -8,7 +8,7 @@ import { useAvatarHandlers } from './hooks/useAvatarHandlers';
 import { useProductHandlers } from './hooks/useProductHandlers';
 import { useStyleHandlers } from './hooks/useStyleHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
-import { buttons, glass, inputs } from '../../styles/designSystem';
+import { buttons, inputs } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 
 // Lazy load components
@@ -26,7 +26,7 @@ interface PromptFormProps {
 
 const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSpinning }) => {
   const { state: generationState } = useGeneration();
-  const { selectedModel, batchSize } = generationState;
+  const { selectedModel } = generationState;
   
   // Initialize hooks
   const promptHandlers = usePromptHandlers({}, () => '');
@@ -59,7 +59,7 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
   }, []);
   
   // Get final prompt with styles
-  const finalPrompt = useMemo(() => promptHandlers.getFinalPrompt(), [promptHandlers.getFinalPrompt]);
+  const finalPrompt = useMemo(() => promptHandlers.getFinalPrompt(), [promptHandlers]);
   
   // Check if we can generate
   const canGenerate = useMemo(() => 

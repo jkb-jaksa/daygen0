@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import { usePromptHistory } from '../../../hooks/usePromptHistory';
 import { useSavedPrompts } from '../../../hooks/useSavedPrompts';
 import { useAuth } from '../../../auth/useAuth';
-import { debugLog } from '../../../utils/debug';
 
 type StyleOption = {
   id: string;

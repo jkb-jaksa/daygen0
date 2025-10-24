@@ -4,7 +4,6 @@ import { X, Download, Share2, Trash2, Heart, HeartOff, ChevronLeft, ChevronRight
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons, glass } from '../../styles/designSystem';
-import { debugLog } from '../../utils/debug';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -15,7 +14,7 @@ interface FullImageModalProps {
 }
 
 const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
-  const { state, setFullSizeOpen, setFullSizeImage } = useGallery();
+  const { state, setFullSizeImage } = useGallery();
   const { handleDownloadImage, handleDeleteImage, handleTogglePublic, handleToggleLike, handleShareImage } = useGalleryActions();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +22,7 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
-  const { isFullSizeOpen, fullSizeImage, fullSizeIndex, filteredItems } = state;
+  const { fullSizeImage, fullSizeIndex, filteredItems } = state;
   
   // Handle escape key
   useEffect(() => {
@@ -84,7 +83,7 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, fullSizeImage]);
+  }, [open, fullSizeImage, handlePrevious, handleNext, onClose]);
   
   // Handle previous image
   const handlePrevious = useCallback(() => {

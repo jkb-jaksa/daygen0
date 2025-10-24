@@ -4,8 +4,8 @@ import { debugError, debugLog } from '../../../utils/debug';
 const DEFAULT_REFERENCE_LIMIT = 3;
 
 export function useReferenceHandlers(
-  selectedAvatar: any,
-  selectedProduct: any,
+  selectedAvatar: { id: string } | null,
+  selectedProduct: { id: string } | null,
   onAddReferenceFiles: (files: File[]) => void
 ) {
   // Reference files state
@@ -34,7 +34,7 @@ export function useReferenceHandlers(
     if (event.currentTarget) {
       event.currentTarget.value = '';
     }
-  }, []);
+  }, [handleAddReferenceFiles]);
   
   // Handle reference files selection
   const handleRefsSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +46,7 @@ export function useReferenceHandlers(
     if (event.currentTarget) {
       event.currentTarget.value = '';
     }
-  }, []);
+  }, [handleAddReferenceFiles]);
   
   // Handle adding reference files
   const handleAddReferenceFiles = useCallback((files: File[]) => {

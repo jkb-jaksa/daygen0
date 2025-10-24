@@ -7,7 +7,7 @@ import type { GalleryImageLike, GalleryVideoLike } from '../types';
 export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state, setImageActionMenu, setBulkActionsMenu, removeImage, removeVideo, updateImage, updateVideo } = useGallery();
+  const { setImageActionMenu, setBulkActionsMenu, removeImage, removeVideo, updateImage } = useGallery();
   
   // Navigate to job URL
   const navigateToJobUrl = useCallback(
@@ -49,7 +49,7 @@ export function useGalleryActions() {
   );
   
   // Handle image click
-  const handleImageClick = useCallback((image: GalleryImageLike | GalleryVideoLike, index: number) => {
+  const handleImageClick = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
     // This would need to be implemented with the actual gallery context methods
     syncJobUrlForImage(image);
   }, [syncJobUrlForImage]);

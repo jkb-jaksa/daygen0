@@ -104,7 +104,7 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
       return { ...state, filters: initialFilters };
     case 'SET_SELECTED_ITEMS':
       return { ...state, selectedItems: action.payload };
-    case 'TOGGLE_ITEM_SELECTION':
+    case 'TOGGLE_ITEM_SELECTION': {
       const newSelection = new Set(state.selectedItems);
       if (newSelection.has(action.payload)) {
         newSelection.delete(action.payload);
@@ -112,6 +112,7 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
         newSelection.add(action.payload);
       }
       return { ...state, selectedItems: newSelection };
+    }
     case 'CLEAR_SELECTION':
       return { ...state, selectedItems: new Set() };
     case 'SET_FULL_SIZE_OPEN':
@@ -392,6 +393,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useGallery() {
   const context = useContext(GalleryContext);
   if (!context) {

@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import { X, Upload, User, Package } from 'lucide-react';
-import { buttons, glass } from '../../styles/designSystem';
+import { buttons } from '../../styles/designSystem';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 
@@ -13,8 +13,8 @@ interface ReferenceImagesProps {
   onClearAllReferences: () => void;
   onOpenFileInput: () => void;
   onOpenRefsInput: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  refsInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef?: React.RefObject<HTMLInputElement>;
+  refsInputRef?: React.RefObject<HTMLInputElement>;
 }
 
 const ReferenceImages = memo<ReferenceImagesProps>(({
@@ -26,8 +26,6 @@ const ReferenceImages = memo<ReferenceImagesProps>(({
   onClearAllReferences,
   onOpenFileInput,
   onOpenRefsInput,
-  fileInputRef,
-  refsInputRef,
 }) => {
   // Calculate reference limit
   const referenceLimit = 3;

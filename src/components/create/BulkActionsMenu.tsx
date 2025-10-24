@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Globe, Lock, FolderPlus, Download } from 'lucide-react';
+import { Trash2, Globe, FolderPlus, Download } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons, glass } from '../../styles/designSystem';
@@ -12,8 +12,8 @@ interface BulkActionsMenuProps {
 }
 
 const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
-  const { state, setBulkActionsMenu, clearSelection } = useGallery();
-  const { handleBulkDelete, handleBulkTogglePublic, handleBulkMoveToFolder } = useGalleryActions();
+  const { state, clearSelection } = useGallery();
+  const { handleBulkDelete, handleBulkTogglePublic } = useGalleryActions();
   
   const menuRef = useRef<HTMLDivElement>(null);
   const { bulkActionsMenu, selectedItems } = state;

@@ -25,7 +25,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
   
   // AI Models list
-  const AI_MODELS = [
+  const AI_MODELS = useMemo(() => [
     { id: "gemini-2.5-flash-image", name: "Gemini 2.5 Flash", category: "image" },
     { id: "flux-1.1", name: "Flux 1.1", category: "image" },
     { id: "chatgpt-image", name: "ChatGPT Image", category: "image" },
@@ -43,12 +43,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     { id: "luma-photon-1", name: "Luma Photon 1", category: "video" },
     { id: "luma-photon-flash-1", name: "Luma Photon Flash 1", category: "video" },
     { id: "luma-ray-2", name: "Luma Ray 2", category: "video" },
-  ];
+  ], []);
   
   // Get current model info
   const currentModel = useMemo(() => 
     AI_MODELS.find(model => model.id === selectedModel), 
-    [selectedModel]
+    [selectedModel, AI_MODELS]
   );
   const isComingSoon = useMemo(() => !currentModel, [currentModel]);
   

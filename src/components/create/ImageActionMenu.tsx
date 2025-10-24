@@ -12,7 +12,7 @@ interface ImageActionMenuProps {
 }
 
 const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
-  const { state, setImageActionMenu } = useGallery();
+  const { state } = useGallery();
   const { handleDownloadImage, handleDeleteImage, handleTogglePublic, handleToggleLike, handleShareImage } = useGalleryActions();
   
   const menuRef = useRef<HTMLDivElement>(null);

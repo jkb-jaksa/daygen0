@@ -10,16 +10,12 @@ interface StyleSelectionModalProps {
 
 const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose }) => {
   const {
-    selectedStyles,
     tempSelectedStyles,
     activeStyleGender,
     activeStyleSection,
-    selectedStylesList,
     totalSelectedStyles,
     totalTempSelectedStyles,
-    activeStyleSectionData,
     selectedStylesLabel,
-    firstSelectedStyle,
     handleToggleTempStyle,
     handleApplyStyles,
     handleClearStyles,

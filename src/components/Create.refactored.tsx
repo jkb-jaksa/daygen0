@@ -1,15 +1,10 @@
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { useFooter } from '../contexts/useFooter';
-import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
-import { useGalleryImages } from '../hooks/useGalleryImages';
-import { useGalleryMigration } from '../hooks/useGalleryMigration';
-import { useStorageEstimate } from '../hooks/useStorageEstimate';
-import { useToast } from '../hooks/useToast';
+import useToast from '../hooks/useToast';
 import { debugLog, debugError } from '../utils/debug';
-import { getApiUrl } from '../utils/api';
 
 // Context providers
 import { GenerationProvider } from './create/contexts/GenerationContext';
@@ -32,11 +27,10 @@ const Loading = () => (
 );
 
 const Create: React.FC = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const { setFooterVisible } = useFooter();
   const navigate = useNavigate();
-  const location = useLocation();
   const { jobId } = useParams<{ jobId?: string }>();
   
   // State
@@ -51,57 +45,10 @@ const Create: React.FC = () => {
   
   // Refs
   const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const programmaticImageOpenRef = useRef(false);
-  const previousNonJobPathRef = useRef<string | null>(null);
   
   // Hooks
-  const { history, addPrompt } = useGenerateShortcuts();
   const { prefillData } = usePrefillFromShare();
-  const { images: galleryImages, videos: galleryVideos, loading: galleryLoading } = useGalleryImages();
-  const { isMigrating } = useGalleryMigration();
-  const { storageEstimate } = useStorageEstimate();
   
-  // Remember non-job path for navigation
-  const rememberNonJobPath = useCallback(() => {
-    if (!location.pathname.startsWith("/job/")) {
-      previousNonJobPathRef.current = `${location.pathname}${location.search}`;
-    }
-  }, [location.pathname, location.search]);
-  
-  // Handle job URL navigation
-  const navigateToJobUrl = useCallback(
-    (targetJobId: string, options: { replace?: boolean } = {}) => {
-      const targetPath = `/job/${targetJobId}`;
-      const currentFullPath = `${location.pathname}${location.search}`;
-      if (currentFullPath === targetPath) {
-        return;
-      }
-      rememberNonJobPath();
-      const origin = previousNonJobPathRef.current ?? currentFullPath;
-      programmaticImageOpenRef.current = true;
-      const priorState =
-        typeof location.state === "object" && location.state !== null
-          ? (location.state as Record<string, unknown>)
-          : {};
-      navigate(targetPath, {
-        replace: options.replace ?? false,
-        state: { ...priorState, jobOrigin: origin },
-      });
-    },
-    [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
-  );
-  
-  // Clear job URL
-  const clearJobUrl = useCallback(() => {
-    if (!location.pathname.startsWith("/job/")) {
-      return;
-    }
-    const fallbackPath = previousNonJobPathRef.current ?? "/create/image";
-    const currentFullPath = `${location.pathname}${location.search}`;
-    if (currentFullPath !== fallbackPath) {
-      navigate(fallbackPath, { replace: false });
-    }
-  }, [location.pathname, location.search, navigate]);
   
   // Handle generation
   const handleGenerate = useCallback(async () => {
@@ -139,54 +86,24 @@ const Create: React.FC = () => {
     }
   }, [showToast]);
   
-  // Handle style modal
-  const handleStyleModalOpen = useCallback(() => {
-    setIsStyleModalOpen(true);
-  }, []);
-  
   const handleStyleModalClose = useCallback(() => {
     setIsStyleModalOpen(false);
-  }, []);
-  
-  // Handle full size modal
-  const handleFullSizeOpen = useCallback(() => {
-    setIsFullSizeOpen(true);
   }, []);
   
   const handleFullSizeClose = useCallback(() => {
     setIsFullSizeOpen(false);
   }, []);
   
-  // Handle image action menu
-  const handleImageActionMenuOpen = useCallback(() => {
-    setIsImageActionMenuOpen(true);
-  }, []);
-  
   const handleImageActionMenuClose = useCallback(() => {
     setIsImageActionMenuOpen(false);
-  }, []);
-  
-  // Handle bulk actions menu
-  const handleBulkActionsMenuOpen = useCallback(() => {
-    setIsBulkActionsMenuOpen(true);
   }, []);
   
   const handleBulkActionsMenuClose = useCallback(() => {
     setIsBulkActionsMenuOpen(false);
   }, []);
   
-  // Handle avatar creation modal
-  const handleAvatarCreationModalOpen = useCallback(() => {
-    setIsAvatarCreationModalOpen(true);
-  }, []);
-  
   const handleAvatarCreationModalClose = useCallback(() => {
     setIsAvatarCreationModalOpen(false);
-  }, []);
-  
-  // Handle product creation modal
-  const handleProductCreationModalOpen = useCallback(() => {
-    setIsProductCreationModalOpen(true);
   }, []);
   
   const handleProductCreationModalClose = useCallback(() => {

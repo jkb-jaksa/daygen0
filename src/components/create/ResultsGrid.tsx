@@ -1,9 +1,9 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { lazy, Suspense } from 'react';
 import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Square } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { buttons, glass } from '../../styles/designSystem';
+import { buttons } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 
@@ -15,10 +15,10 @@ interface ResultsGridProps {
 }
 
 const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
-  const { state, setBulkMode, toggleItemSelection, setImageActionMenu, setBulkActionsMenu } = useGallery();
+  const { state, setBulkMode, toggleItemSelection } = useGallery();
   const { handleImageClick, handleImageActionMenu, handleBulkActionsMenu } = useGalleryActions();
   
-  const { filteredItems, selectedItems, isBulkMode, hasSelection } = state;
+  const { filteredItems, selectedItems, isBulkMode } = state;
   
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
@@ -80,9 +80,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   const isVideo = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
     return 'type' in item && item.type === 'video';
   }, []);
-  
-  // Memoize filtered items count
-  const filteredItemsCount = useMemo(() => filteredItems.length, [filteredItems.length]);
   
   if (filteredItems.length === 0) {
     return (
