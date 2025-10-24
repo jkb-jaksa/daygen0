@@ -62,7 +62,7 @@ class AuthErrorBoundary extends Component<Props, State> {
 
   handleGoHome = () => {
     // Use navigate hook through a wrapper component
-    const navigate = (window as any).__navigate;
+    const navigate = (window as Window & { __navigate?: (path: string) => void }).__navigate;
     if (navigate) {
       navigate(this.props.fallbackRoute || '/');
     } else {
@@ -176,9 +176,9 @@ export function AuthErrorBoundaryWrapper(props: Props) {
   
   // Store navigate function globally so the class component can access it
   React.useEffect(() => {
-    (window as any).__navigate = navigate;
+    (window as Window & { __navigate?: (path: string) => void }).__navigate = navigate;
     return () => {
-      delete (window as any).__navigate;
+      delete (window as Window & { __navigate?: (path: string) => void }).__navigate;
     };
   }, [navigate]);
 

@@ -33,7 +33,7 @@ class AuthMetricsTracker {
     
     // Make available in development
     if (process.env.NODE_ENV === 'development') {
-      (window as any).__authMetrics = this;
+      (window as Window & { __authMetrics?: AuthMetricsCollector }).__authMetrics = this;
     }
   }
 
@@ -83,7 +83,7 @@ class AuthMetricsTracker {
     }
 
     const summary = Object.entries(this.metrics)
-      .filter(([_, metric]) => metric.count > 0)
+      .filter(([, metric]) => metric.count > 0)
       .map(([type, metric]) => {
         const percentage = ((metric.count / total) * 100).toFixed(1);
         const lastOccurrence = new Date(metric.lastTimestamp).toLocaleString();
