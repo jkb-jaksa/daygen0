@@ -701,7 +701,9 @@ const Create: React.FC = () => {
     if (!location.pathname.startsWith("/job/")) {
       return;
     }
-    const fallbackPath = getJobOriginPath();
+    const originPath = getJobOriginPath();
+    // Guard: if the origin path is another job URL or empty, default to /create/image
+    const fallbackPath = (!originPath || originPath.startsWith("/job/")) ? "/create/image" : originPath;
     const currentFullPath = `${location.pathname}${location.search}`;
     if (currentFullPath !== fallbackPath) {
       navigate(fallbackPath, { replace: false });
@@ -3446,10 +3448,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
       return;
     }
 
-    // If it's a URL-based ID but not found locally, show error
+    // If it's a URL-based ID but not found locally, show warning but don't navigate away
     if (isUrlBased) {
-      showToast('Image not found in local gallery');
-      navigate('/create/image', { replace: true });
+      showToast('Image not found in local gallery - it may still be migrating');
+      // Don't navigate away - let the user stay on the current page
       return;
     }
 
