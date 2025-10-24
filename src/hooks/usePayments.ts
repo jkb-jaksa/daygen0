@@ -12,7 +12,7 @@ interface PaymentHistoryItem {
   metadata?: unknown;
 }
 
-interface SubscriptionInfo {
+export interface SubscriptionInfo {
   id: string;
   status: string;
   currentPeriodStart: string;
@@ -244,6 +244,27 @@ export function usePayments() {
     }
   };
 
+  const getSessionStatusQuick = async (sessionId: string) => {
+    try {
+      const url = getApiUrl(`/api/public-payments/session/${sessionId}/quick-status`);
+      
+      // Use fast database-only endpoint
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('usePayments: Quick session status API error:', response.status, errorText);
+        throw new Error(`Failed to fetch quick session status: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('usePayments: Error fetching quick session status:', err);
+      throw err;
+    }
+  };
+
   return {
     createCheckoutSession,
     getPaymentHistory,
@@ -251,6 +272,7 @@ export function usePayments() {
     cancelSubscription,
     removeCancellation,
     getSessionStatus,
+    getSessionStatusQuick,
     loading,
     error,
   };

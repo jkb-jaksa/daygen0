@@ -4,14 +4,12 @@ import { CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
 import { usePayments } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
-import { getApiUrl } from '../../utils/api';
-import { supabase } from '../../lib/supabase';
 
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, refreshUser, token } = useAuth();
-  const { getSessionStatus } = usePayments();
+  const { user, refreshUser } = useAuth();
+  const { getSessionStatus, getSessionStatusQuick } = usePayments();
   const [sessionStatus, setSessionStatus] = useState<{ status: string; paymentStatus?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +23,7 @@ export function PaymentSuccess() {
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates after unmount
     
-    const checkSessionStatus = async (retryCount = 0, maxRetries = 3) => {
+    const checkSessionStatus = async (retryCount = 0, maxRetries = 5) => {
       if (!isMounted) return; // Don't run if component unmounted
       if (!sessionId) {
         console.error('PaymentSuccess: No session ID provided');
@@ -35,7 +33,11 @@ export function PaymentSuccess() {
       }
 
       try {
-        const status = await getSessionStatus(sessionId);
+        // Use quick status for first few attempts, then fall back to full status
+        const useQuickStatus = retryCount < 3;
+        const status = useQuickStatus 
+          ? await getSessionStatusQuick(sessionId)
+          : await getSessionStatus(sessionId);
         
         if (!isMounted) return; // Check again after async operation
         
@@ -58,20 +60,13 @@ export function PaymentSuccess() {
         }
         
         // Refresh user data to get updated credits after successful payment
-        if (status.paymentStatus === 'COMPLETED' || status.status === 'complete') {
+        if (status.paymentStatus === 'COMPLETED' || status.status === 'complete' || status.status === 'paid') {
           try {
-            // First ensure we have a valid session, even if user object is missing
-            if (!user) {
-              console.log('No user object found, attempting to rehydrate session...');
-              const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-              if (sessionError) {
-                console.warn('Failed to get session for rehydration:', sessionError);
-              } else if (sessionData.session?.user) {
-                console.log('Session rehydrated successfully');
-              }
-            }
-            
-            await refreshUser();
+            // Parallelize user refresh and final status check
+            await Promise.all([
+              refreshUser(),
+              useQuickStatus ? getSessionStatus(sessionId) : Promise.resolve(status)
+            ]);
             console.log('User credits refreshed after payment');
           } catch (refreshError) {
             console.warn('Failed to refresh user after payment:', refreshError);
@@ -85,7 +80,8 @@ export function PaymentSuccess() {
         
         // Retry if we haven't exceeded max retries and component is still mounted
         if (retryCount < maxRetries && isMounted) {
-          const delay = Math.min(2000 * Math.pow(1.5, retryCount), 5000);
+          // Reduced delay: 500ms, 750ms, 1000ms, 1500ms, 2000ms
+          const delay = Math.min(500 * Math.pow(1.5, retryCount), 2000);
           setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
           return;
         }
@@ -102,7 +98,7 @@ export function PaymentSuccess() {
     return () => {
       isMounted = false;
     };
-  }, [sessionId]); // Only depend on sessionId to prevent repeated calls
+  }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser]); // Include all dependencies
 
   const handleContinue = () => {
     navigate('/create');
@@ -117,6 +113,11 @@ export function PaymentSuccess() {
     
     console.log('🔄 Manual completion button clicked for session:', sessionId);
     setManuallyCompleting(true);
+    
+    // Show optimistic UI immediately
+    setManualCompleteSuccess(true);
+    setLoading(false);
+    
     try {
       console.log('📡 Calling systematic payment completion API...');
       const response = await fetch('http://localhost:3000/api/payments-test/complete-payment-for-user', {
@@ -135,21 +136,28 @@ export function PaymentSuccess() {
       
       if (response.ok) {
         console.log('✅ Manual completion successful, refreshing user data...');
-        // Refresh user data and session status
-        await refreshUser();
-        const status = await getSessionStatus(sessionId);
-        setSessionStatus(status);
-        setManualCompleteSuccess(true);
-        setLoading(false);
+        
+        // Parallelize user refresh and session status check
+        await Promise.all([
+          refreshUser(),
+          getSessionStatus(sessionId).then(status => {
+            setSessionStatus(status);
+            return status;
+          })
+        ]);
         
         // Hide success message after 5 seconds
         setTimeout(() => setManualCompleteSuccess(false), 5000);
       } else {
         const errorText = await response.text();
         console.error('❌ Failed to complete payment manually:', response.status, errorText);
+        setManualCompleteSuccess(false);
+        setError(`Failed to complete payment: ${response.status} ${errorText}`);
       }
     } catch (err) {
       console.error('💥 Error completing payment manually:', err);
+      setManualCompleteSuccess(false);
+      setError('Error completing payment manually');
     } finally {
       setManuallyCompleting(false);
     }

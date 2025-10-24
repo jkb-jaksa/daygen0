@@ -246,7 +246,7 @@ export const useGalleryImages = () => {
     } finally {
       isFetchingRef.current = false;
     }
-  }, [token, storagePrefix, loadLocalImages]);
+  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryImage, mergeImages]);
 
   // Delete an image (soft delete)
   const deleteImage = useCallback(async (imageId: string) => {

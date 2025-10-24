@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
-import { usePayments } from '../../hooks/usePayments';
+import { usePayments, SubscriptionInfo } from '../../hooks/usePayments';
 import { glass, buttons } from '../../styles/designSystem';
-
-interface SubscriptionInfo {
-  id: string;
-  status: string;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
-  credits: number;
-  createdAt: string;
-}
 
 export function SubscriptionManager() {
   const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
@@ -132,7 +122,14 @@ export function SubscriptionManager() {
       {/* Current Subscription */}
       <div className={`${glass.surface} p-6`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
+          <div>
+            <h3 className="text-lg font-raleway text-theme-text">Current Subscription</h3>
+            {subscription.planName && (
+              <p className="text-sm text-theme-white font-raleway">
+                {subscription.planName} ({subscription.billingPeriod})
+              </p>
+            )}
+          </div>
           <span className={`text-sm font-raleway ${getStatusColor(subscription.status)}`}>
             {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
           </span>
