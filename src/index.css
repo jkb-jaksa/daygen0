@@ -182,8 +182,8 @@ html[data-theme="day"] .animate-gradient-colors {
 
 :root {
   --nav-h: clamp(3.5rem, 2vw + 3.25rem, 4.5rem); /* Navbar height used for hero offset */
-  --container-inline-padding: clamp(1rem, 4vw, 6rem);
-  --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(1rem, 4vw, 6rem)));
+  --container-inline-padding: clamp(0.75rem, 2.5vw, 3.5rem);
+  --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(0.75rem, 2.5vw, 3.5rem)));
 
   /* Breakpoints */
   --bp-xs: 22.5rem; /* 360px */
@@ -334,7 +334,7 @@ html[data-theme="day"] .animate-gradient-colors {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.7);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.8);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -377,7 +377,7 @@ html[data-theme="day"] {
   --glass-base-bg: rgb(var(--d-dark-rgb) / 0.65);
   --glass-surface-bg: rgb(var(--d-black-rgb) / 0.85);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.7);
+  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.8);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -397,7 +397,7 @@ body {
   width: 100%;
   max-width: 100%;
   margin-inline: auto;
-  padding-inline: var(--container-inline-padding, clamp(1rem, 4vw, 6rem));
+  padding-inline: var(--container-inline-padding, clamp(0.75rem, 2.5vw, 3.5rem));
 }
 
 .promptbar {
@@ -733,20 +733,20 @@ html[data-theme="day"] .footer-gradient-bg {
 /* Ghost button extends base btn class */
 .btn-ghost {
   background-color: color-mix(in srgb, var(--theme-black) 65%, var(--theme-dark) 35%);
-  border-color: color-mix(in srgb, var(--theme-mid) 80%, var(--theme-dark) 20%);
+  border-color: var(--theme-mid);
   color: var(--theme-text);
   font-family: 'Raleway', sans-serif;
 }
 
 .btn-ghost:hover {
   background-color: color-mix(in srgb, var(--theme-black) 55%, var(--theme-dark) 45%);
-  border-color: var(--theme-mid);
+  border-color: var(--theme-light);
 }
 
 .btn-ghost:focus,
 .btn-ghost:active {
   background-color: color-mix(in srgb, var(--theme-black) 50%, var(--theme-dark) 50%);
-  border-color: var(--theme-mid);
+  border-color: var(--theme-light);
   color: var(--theme-text);
 }
 
@@ -760,7 +760,7 @@ html[data-theme="day"] .footer-gradient-bg {
 .btn-ghost-compact:focus,
 .btn-ghost-compact:active {
   background-color: var(--theme-dark);
-  border-color: var(--theme-mid);
+  border-color: var(--theme-light);
   color: var(--theme-text);
 }
 
@@ -775,7 +775,7 @@ html[data-theme="day"] .footer-gradient-bg {
   --glass-base-bg: rgb(var(--theme-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--theme-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.7);
+  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.8);
   --glass-prompt-bg: rgb(var(--theme-mid-rgb) / 0.85);
   --glass-prompt-text: var(--theme-text);
   --glass-prompt-text-rgb: var(--theme-text-rgb);
@@ -804,7 +804,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.7);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.8);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -832,7 +832,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.7);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.8);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -1520,7 +1520,6 @@ html[data-theme="day"] .card-media-frame::before {
   width: 1rem;
 }
 .image-action-btn:hover {
-  background: var(--glass-dark-bg);
   border-color: var(--theme-mid);
   color: var(--theme-text);
   transform: scale(1.01);
@@ -1558,7 +1557,6 @@ html[data-theme="day"] .card-media-frame::before {
 }
 
 .nav-arrow-btn:hover {
-  background: var(--glass-dark-bg);
   border-color: var(--theme-mid);
   color: var(--theme-text);
   /* Scale effect is handled by Tailwind's hover:scale-105 class */

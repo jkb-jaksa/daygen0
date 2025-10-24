@@ -1,0 +1,92 @@
+[
+  {
+    "module": "src/utils/api.ts",
+    "functions": [
+      {
+        "name": "getApiUrl",
+        "signature": "(path: string) -> string",
+        "purpose": "Builds full API URLs based on current environment variables."
+      },
+      {
+        "name": "getBaseUrl",
+        "signature": "() -> string",
+        "purpose": "Normalizes frontend origin for local/production."
+      }
+    ]
+  },
+  {
+    "module": "src/auth/useAuth",
+    "functions": [
+      {
+        "name": "useAuth",
+        "signature": "() -> { user, token, logOut, signIn, signUp }",
+        "purpose": "Provides authenticated user context and helpers."
+      },
+      {
+        "name": "logOut",
+        "signature": "() -> void",
+        "purpose": "Clears token and logs out user globally."
+      },
+      {
+        "name": "getToken",
+        "signature": "() -> string",
+        "purpose": "Returns bearer token from context or localStorage."
+      }
+    ]
+  },
+  {
+    "module": "src/utils/errorMessages.ts",
+    "functions": [
+      {
+        "name": "resolveApiErrorMessage",
+        "signature": "(error, context?) -> string",
+        "purpose": "Converts backend errors into user-friendly messages."
+      },
+      {
+        "name": "resolveAuthErrorMessage",
+        "signature": "(error) -> string",
+        "purpose": "Converts auth-related errors into readable text."
+      },
+      {
+        "name": "resolveGenerationCatchError",
+        "signature": "(error) -> string",
+        "purpose": "Maps image generation errors to UI-safe messages."
+      }
+    ]
+  },
+  {
+    "module": "src/lib/clientStorage.ts",
+    "functions": [
+      {
+        "name": "getPersistedValue",
+        "signature": "(prefix, key) -> Promise<any>",
+        "purpose": "Reads JSON value from local/IndexedDB storage."
+      },
+      {
+        "name": "setPersistedValue",
+        "signature": "(prefix, key, value) -> Promise<void>",
+        "purpose": "Writes JSON value to local/IndexedDB storage."
+      },
+      {
+        "name": "removePersistedValue",
+        "signature": "(prefix, key) -> Promise<void>",
+        "purpose": "Removes stored value."
+      },
+      {
+        "name": "estimateStorage",
+        "signature": "() -> Promise<StorageEstimate>",
+        "purpose": "Estimates current storage usage/quota."
+      }
+    ]
+  },
+  {
+    "module": "src/hooks/useFluxImageGeneration.ts",
+    "functions": [
+      {
+        "name": "useFluxImageGeneration",
+        "signature": "() -> { generate, loading, polling, lastError }",
+        "purpose": "Hook for Flux image generation, including polling."
+      }
+    ]
+  }
+]

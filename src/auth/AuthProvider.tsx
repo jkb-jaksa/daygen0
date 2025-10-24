@@ -8,6 +8,7 @@ import {
   type User as AppUser,
 } from './context';
 import { useCrossTabSync } from '../hooks/useCrossTabSync';
+import { authMetrics } from '../utils/authMetrics';
 
 type SessionTokens = {
   accessToken?: string | null;
@@ -140,7 +141,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return normalizeBackendUser(payload);
           }
 
-          if (response.status !== 401) {
+          if (response.status === 401) {
+            authMetrics.increment('auth_401_response');
+          } else {
             console.warn(
               'Unexpected response fetching backend profile:',
               response.status,
@@ -256,23 +259,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!activeSession) {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
+        authMetrics.increment('auth_refresh_failure');
         throw new Error(error.message);
       }
       activeSession = data.session ?? null;
     }
 
     if (!activeSession?.user) {
+      authMetrics.increment('auth_refresh_failure');
       throw new Error('No session available');
     }
 
-    const profile = await fetchUserProfile(activeSession.user, {
-      accessToken: activeSession.access_token ?? null,
-      refreshToken: activeSession.refresh_token ?? null,
-    });
+    try {
+      const profile = await fetchUserProfile(activeSession.user, {
+        accessToken: activeSession.access_token ?? null,
+        refreshToken: activeSession.refresh_token ?? null,
+      });
 
-    setUser(profile);
-    setSession(activeSession);
-    return profile;
+      setUser(profile);
+      setSession(activeSession);
+      authMetrics.increment('auth_refresh_success');
+      return profile;
+    } catch (error) {
+      authMetrics.increment('auth_refresh_failure');
+      throw error;
+    }
   }, [session, fetchUserProfile]);
 
   // Cross-tab synchronization

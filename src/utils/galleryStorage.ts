@@ -1,13 +1,19 @@
 import type { GalleryImageLike, StoredGalleryImage } from "../components/create/types";
-import type { FluxGeneratedImage } from "../hooks/useFluxImageGeneration";
-import type { ReveGeneratedImage } from "../hooks/useReveImageGeneration";
 import { normalizeModelId } from './modelUtils';
 import { debugWarn } from './debug';
 
-const isJobBackedImage = (
-  item: GalleryImageLike,
-): item is FluxGeneratedImage | ReveGeneratedImage =>
-  "jobId" in item && typeof item.jobId === "string";
+/**
+ * Simple hash function for generating URL-based IDs
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
 
 /**
  * Check if a URL is a base64 data URL
@@ -51,7 +57,7 @@ export const serializeGallery = (
     productId: item.productId,
     avatarImageId: item.avatarImageId,
     styleId: item.styleId,
-    ...(isJobBackedImage(item) ? { jobId: item.jobId } : {}),
+    jobId: item.jobId, // Save jobId for all images that have one
   }));
 };
 
@@ -71,13 +77,23 @@ export const hydrateStoredGallery = (
       productId: item.productId,
       avatarImageId: item.avatarImageId,
       styleId: item.styleId,
+      jobId: item.jobId, // Restore jobId for all images that have one
     };
 
+    // Special handling for Flux/Reve: generate fallback jobId if missing
     if (item.model?.startsWith("flux") || item.model?.startsWith("reve")) {
       const fallbackJobId = item.jobId ?? `restored-${index}-${Date.now()}`;
       return {
         ...base,
         jobId: fallbackJobId,
+      } as GalleryImageLike;
+    }
+
+    // For images without jobId, use URL hash as fallback
+    if (!base.jobId && base.url) {
+      return {
+        ...base,
+        jobId: `url-${simpleHash(base.url)}`,
       } as GalleryImageLike;
     }
 

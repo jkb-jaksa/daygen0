@@ -1,13 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
-import { lazy, Suspense, useEffect, useState, useRef } from "react";
+import { lazy, Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
 import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
+import { safeResolveNext } from "./utils/navigation";
+import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
-import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, User, Volume2 } from "lucide-react";
-import { CreditWarningBanner } from "./components/CreditWarningBanner";
+import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
+const CreditWarningBanner = lazy(() =>
+  import("./components/CreditWarningBanner").then(({ CreditWarningBanner }) => ({
+    default: CreditWarningBanner,
+  })),
+);
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -18,6 +24,7 @@ const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
+const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
 const Upgrade = lazy(() => import("./components/Upgrade"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Courses = lazy(() => import("./components/Courses"));
@@ -96,11 +103,10 @@ function UseCaseCard({
 }
 
 const HOME_CATEGORIES = [
-  { id: "text", label: "text", Icon: EditIcon },
-  { id: "image", label: "image", Icon: ImageIcon },
-  { id: "video", label: "video", Icon: VideoIcon },
-  { id: "avatars", label: "avatars", Icon: User },
-  { id: "audio", label: "audio", Icon: Volume2 },
+  { id: "text", label: "text", Icon: EditIcon, gradient: "from-amber-300 via-amber-400 to-orange-500", iconColor: "text-amber-400" },
+  { id: "image", label: "image", Icon: ImageIcon, gradient: "from-red-400 via-red-500 to-red-600", iconColor: "text-red-500" },
+  { id: "video", label: "video", Icon: VideoIcon, gradient: "from-blue-400 via-blue-500 to-blue-600", iconColor: "text-blue-500" },
+  { id: "audio", label: "audio", Icon: Volume2, gradient: "from-cyan-300 via-cyan-400 to-cyan-500", iconColor: "text-cyan-400" },
 ] as const;
 
 type HomeCategoryId = (typeof HOME_CATEGORIES)[number]["id"];
@@ -120,6 +126,14 @@ function Home() {
   const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const prefetchedRef = useRef(false);
+
+  const handlePrefetch = useCallback(() => {
+    if (!prefetchedRef.current) {
+      prefetchedRef.current = true;
+      import("./routes/CreateRoutes");
+    }
+  }, []);
 
   useEffect(() => {
     if (location.hash === "#faq" && typeof window !== "undefined") {
@@ -198,7 +212,11 @@ function Home() {
                       <Link to="/learn/use-cases" className={buttons.ghost}>
                         Learn
                       </Link>
-                      <Link to="/create/image" className={buttons.primary}>
+                      <Link 
+                        to="/create/image" 
+                        className={buttons.primary}
+                        onMouseEnter={handlePrefetch}
+                      >
                         Create
                       </Link>
                     </div>
@@ -210,7 +228,7 @@ function Home() {
               </div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
-                  className={`${glass.promptDark} rounded-3xl border-theme-dark p-4 lg:h-full`}
+                  className="rounded-3xl p-4 lg:h-full"
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >
@@ -223,14 +241,17 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small flex items-center gap-2 min-w-[6rem] rounded-2xl px-4 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none ${
+                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                               isActive
-                                ? "border border-theme-mid bg-theme-white/10 text-theme-text"
-                                : "border border-transparent text-theme-white hover:border-theme-mid hover:text-theme-text"
+                                ? "border border-theme-dark text-theme-text"
+                                : "border border-transparent text-theme-white hover:text-theme-text"
                             }`}
                           >
-                            <Icon className="h-4 w-4 flex-shrink-0 text-current" aria-hidden="true" />
-                            {category.label}
+                            {isActive && (
+                              <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
+                            )}
+                            <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-white group-hover:text-theme-text"}`} aria-hidden="true" />
+                            <span className="relative z-10">{category.label}</span>
                           </button>
                         </li>
                       );
@@ -311,8 +332,10 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     const params = new URLSearchParams();
-    const isEditRoute = location.pathname.startsWith("/edit");
-    const nextPath = isEditRoute ? "/create/image" : location.pathname + location.search;
+    const nextPath = safeResolveNext(location, { isEditProtected: true });
+
+    // Track guard redirects for monitoring
+    authMetrics.increment('guard_redirect', location.pathname);
 
     params.set("next", nextPath);
 
@@ -380,20 +403,60 @@ function AppContent() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
             <Route path="/digital-copy" element={<DigitalCopy />} />
-            <Route path="/job/:jobId" element={<CreateRoutes />} />
-            <Route path="/create/*" element={<CreateRoutes />} />
-            <Route path="/gallery/*" element={<GalleryRoutes />} />
+            <Route 
+              path="/job/:jobId" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                    <CreateRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="/create/*" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                    <CreateRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="/gallery/*" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
+                    <GalleryRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
             <Route path="/upgrade" element={<Upgrade />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route
               path="/edit"
               element={(
                 <RequireAuth>
-                  <Edit />
+                  <Suspense fallback={<RouteFallback />}>
+                    <AuthErrorBoundary fallbackRoute="/create" context="editing">
+                      <Edit />
+                    </AuthErrorBoundary>
+                  </Suspense>
                 </RequireAuth>
               )}
             />
-            <Route path="/account" element={<Account />} />
+            <Route 
+              path="/account" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/" context="authentication">
+                    <Account />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
@@ -410,15 +473,17 @@ function AppContent() {
       )}
       
       {/* Credit Warning Banner */}
-      <CreditWarningBanner
-        isOpen={showLowWarning || showUrgentWarning}
-        isUrgent={showUrgentWarning}
-        currentCredits={currentCredits}
-        threshold={showUrgentWarning ? urgentThreshold : lowThreshold}
-        onBuyCredits={handleBuyCredits}
-        onSubscribe={handleSubscribe}
-        onDismiss={handleDismiss}
-      />
+      <Suspense fallback={null}>
+        <CreditWarningBanner
+          isOpen={showLowWarning || showUrgentWarning}
+          isUrgent={showUrgentWarning}
+          currentCredits={currentCredits}
+          threshold={showUrgentWarning ? urgentThreshold : lowThreshold}
+          onBuyCredits={handleBuyCredits}
+          onSubscribe={handleSubscribe}
+          onDismiss={handleDismiss}
+        />
+      </Suspense>
       
     </div>
   );

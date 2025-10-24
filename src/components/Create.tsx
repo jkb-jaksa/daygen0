@@ -81,6 +81,7 @@ import type { StoredStyle } from "./styles/types";
 import AvatarBadge from "./avatars/AvatarBadge";
 import ProductBadge from "./products/ProductBadge";
 import StyleBadge from "./styles/StyleBadge";
+import AspectRatioBadge from "./shared/AspectRatioBadge";
 import { createAvatarRecord, normalizeStoredAvatars } from "../utils/avatars";
 import { createProductRecord, normalizeStoredProducts } from "../utils/products";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./create/sidebarData";
@@ -634,7 +635,7 @@ const Create: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { jobId } = useParams<{ jobId?: string }>();
-  const galleryModelOptions = useMemo(() => AI_MODELS.map(({ id, name }) => ({ id, name })), []);
+  const galleryModelOptions = useMemo(() => (AI_MODELS || []).map(({ id, name }) => ({ id, name })), []);
   
   // Prompt history
   const userKey = user?.id || user?.email || "anon";
@@ -656,6 +657,78 @@ const Create: React.FC = () => {
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
   const persistentStorageRequested = useRef(false);
   const programmaticImageOpenRef = useRef(false);
+  const previousNonJobPathRef = useRef<string | null>(null);
+  const rememberNonJobPath = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      previousNonJobPathRef.current = `${location.pathname}${location.search}`;
+    }
+  }, [location.pathname, location.search]);
+  useEffect(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      return;
+    }
+    const state = location.state as { jobOrigin?: string } | null;
+    if (state?.jobOrigin && !previousNonJobPathRef.current) {
+      previousNonJobPathRef.current = state.jobOrigin;
+    }
+  }, [location.pathname, location.state]);
+  const getJobOriginPath = useCallback(() => {
+    const state = location.state as { jobOrigin?: string } | null;
+    return previousNonJobPathRef.current ?? state?.jobOrigin ?? "/create/image";
+  }, [location.state]);
+  const navigateToJobUrl = useCallback(
+    (targetJobId: string, options: { replace?: boolean } = {}) => {
+      const targetPath = `/job/${targetJobId}`;
+      const currentFullPath = `${location.pathname}${location.search}`;
+      if (currentFullPath === targetPath) {
+        return;
+      }
+      rememberNonJobPath();
+      const origin = previousNonJobPathRef.current ?? currentFullPath;
+      programmaticImageOpenRef.current = true;
+      const priorState =
+        typeof location.state === "object" && location.state !== null
+          ? (location.state as Record<string, unknown>)
+          : {};
+      navigate(targetPath, {
+        replace: options.replace ?? false,
+        state: { ...priorState, jobOrigin: origin },
+      });
+    },
+    [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
+  );
+  const clearJobUrl = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      return;
+    }
+    const fallbackPath = getJobOriginPath();
+    const currentFullPath = `${location.pathname}${location.search}`;
+    if (currentFullPath !== fallbackPath) {
+      navigate(fallbackPath, { replace: false });
+    }
+  }, [getJobOriginPath, location.pathname, location.search, navigate]);
+  const restorePreviousPath = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      previousNonJobPathRef.current = null;
+      return;
+    }
+    const fallbackPath = getJobOriginPath();
+    previousNonJobPathRef.current = null;
+    const currentFullPath = `${location.pathname}${location.search}`;
+    if (currentFullPath !== fallbackPath) {
+      navigate(fallbackPath, { replace: false });
+    }
+  }, [getJobOriginPath, location.pathname, location.search, navigate]);
+  const syncJobUrlForImage = useCallback(
+    (image: GalleryImageLike | null | undefined) => {
+      if (image?.jobId) {
+        navigateToJobUrl(image.jobId);
+      } else {
+        clearJobUrl();
+      }
+    },
+    [clearJobUrl, navigateToJobUrl],
+  );
   
   // Parallax hover effect for buttons
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
@@ -995,7 +1068,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   }, [aspectRatioConfig]);
 
   const [activeCategory, setActiveCategoryState] = useState<string>(() => deriveCategoryFromPath(location.pathname));
-  const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+  const libraryNavItems = useMemo(() => [...(LIBRARY_CATEGORIES || []), FOLDERS_ENTRY].filter(Boolean), []);
 
   // Video generation state
   const [videoModel, setVideoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
@@ -1186,7 +1259,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const galleryRef = useRef<HTMLDivElement | null>(null);
 
   // Filter function for gallery
-  const filterGalleryItems = (items: typeof gallery) => {
+  const filterGalleryItems = useCallback((items: typeof gallery) => {
     return items.filter(item => {
       // Liked filter
       if (galleryFilters.liked && !favorites.has(item.url)) {
@@ -1231,9 +1304,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       return true;
     });
-  };
+  }, [galleryFilters, favorites, folders]);
 
-  const filterVideoGalleryItems = (items: typeof videoGallery) => {
+  const filterVideoGalleryItems = useCallback((items: typeof videoGallery) => {
     return items.filter(item => {
       // Liked filter
       if (galleryFilters.liked && !favorites.has(item.url)) {
@@ -1278,7 +1351,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       
       return true;
     });
-  };
+  }, [galleryFilters, favorites, folders]);
   
   const filteredGallery = useMemo(() => filterGalleryItems(gallery), [gallery, filterGalleryItems]);
   const filteredVideoGallery = useMemo(() => {
@@ -1728,18 +1801,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     
     const newImage = collection[newIndex];
     setSelectedFullImage(newImage);
-    
-    // Update URL if the new image has a jobId
-    if (newImage && newImage.jobId) {
-      programmaticImageOpenRef.current = true;
-      navigate(`/job/${newImage.jobId}`, { replace: false });
-    } else if (jobId) {
-      // Clear jobId from URL if navigating to an image without one
-      // Navigate back to the appropriate context
-      const isGalleryContext = location.pathname.startsWith('/gallery');
-      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
-    }
-  }, [fullSizeContext, inspirations, gallery, currentInspirationIndex, currentGalleryIndex, jobId, location.pathname, navigate]);
+    syncJobUrlForImage(newImage);
+  }, [fullSizeContext, inspirations, gallery, currentInspirationIndex, currentGalleryIndex, syncJobUrlForImage]);
 
   // Keyboard navigation for gallery
   useEffect(() => {
@@ -1898,18 +1961,21 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   const {
     error: ideogramError,
+    generatedImages: ideogramImages,
     generateImage: generateIdeogramImage,
     clearError: clearIdeogramError,
   } = useIdeogramImageGeneration();
 
   const {
     error: qwenError,
+    generatedImages: qwenImages,
     generateImage: generateQwenImage,
     clearError: clearQwenError,
   } = useQwenImageGeneration();
 
   const {
     error: runwayError,
+    generatedImage: runwayImage,
     generateImage: generateRunwayImage,
     clearError: clearRunwayError,
   } = useRunwayImageGeneration();
@@ -2512,7 +2578,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   // Backup gallery state when component unmounts
   // Gallery persistence is now handled by the backend API
 
-  const persistFavorites = async (next: Set<string>) => {
+  const persistFavorites = useCallback(async (next: Set<string>) => {
     setFavorites(next);
     try {
       await setPersistedValue(storagePrefix, 'favorites', Array.from(next));
@@ -2520,7 +2586,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     } catch (error) {
       debugError('Failed to persist liked images', error);
     }
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   const persistUploadedImages = useCallback(async (uploads: Array<{id: string, file: File, previewUrl: string, uploadDate: Date}>) => {
     setUploadedImages(uploads);
@@ -2541,7 +2607,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   // Gallery persistence is now handled by the backend API
 
-  const persistInspirations = async (items: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
+  const persistInspirations = useCallback(async (items: GalleryImageLike[]): Promise<GalleryImageLike[]> => {
     try {
       await setPersistedValue(storagePrefix, 'inspirations', serializeGallery(items));
       await refreshStorageEstimate();
@@ -2549,7 +2615,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       debugError('Failed to persist inspirations', error);
     }
     return items;
-  };
+  }, [storagePrefix, refreshStorageEstimate]);
 
   const toggleFavorite = (imageUrl: string) => {
     const newFavorites = new Set(favorites);
@@ -2735,7 +2801,37 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setDownloadConfirmation({show: true, count});
   };
 
-  const confirmBulkPublish = () => {
+  // Helper function for applying public status - must be defined before confirmBulkPublish
+  const applyPublicStatusToImages = useCallback((imageUrls: string[], isPublic: boolean) => {
+    if (imageUrls.length === 0) return;
+
+    updateGalleryImages(imageUrls, { isPublic });
+    const urlSet = new Set(imageUrls);
+
+    setSelectedFullImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+    setImageActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+    setMoreActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
+  }, [updateGalleryImages]);
+
+  const confirmIndividualPublish = useCallback(() => {
+    if (publishConfirmation.imageUrl) {
+      applyPublicStatusToImages([publishConfirmation.imageUrl], true);
+      setCopyNotification('Image published!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+    setPublishConfirmation({show: false, count: 0});
+  }, [publishConfirmation.imageUrl, applyPublicStatusToImages]);
+
+  const confirmIndividualUnpublish = useCallback(() => {
+    if (unpublishConfirmation.imageUrl) {
+      applyPublicStatusToImages([unpublishConfirmation.imageUrl], false);
+      setCopyNotification('Image unpublished!');
+      setTimeout(() => setCopyNotification(null), 2000);
+    }
+    setUnpublishConfirmation({show: false, count: 0});
+  }, [unpublishConfirmation.imageUrl, applyPublicStatusToImages]);
+
+  const confirmBulkPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
       // Individual image publish
       confirmIndividualPublish();
@@ -2747,9 +2843,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setTimeout(() => setCopyNotification(null), 2000);
       setPublishConfirmation({show: false, count: 0});
     }
-  };
+  }, [publishConfirmation.imageUrl, selectedImages, applyPublicStatusToImages, setCopyNotification, setPublishConfirmation, confirmIndividualPublish]);
 
-  const confirmBulkUnpublish = () => {
+  const confirmBulkUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
       // Individual image unpublish
       confirmIndividualUnpublish();
@@ -2761,7 +2857,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setTimeout(() => setCopyNotification(null), 2000);
       setUnpublishConfirmation({show: false, count: 0});
     }
-  };
+  }, [unpublishConfirmation.imageUrl, selectedImages, applyPublicStatusToImages, setCopyNotification, setUnpublishConfirmation, confirmIndividualUnpublish]);
 
   const cancelBulkPublish = () => {
     setPublishConfirmation({show: false, count: 0});
@@ -2771,7 +2867,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setUnpublishConfirmation({show: false, count: 0});
   };
 
-  const confirmBulkDownload = () => {
+  const confirmBulkDownload = useCallback(() => {
     const count = selectedImages.size;
     const selectedImageObjects = combinedLibraryImages.filter(img => selectedImages.has(img.url));
     
@@ -2793,7 +2889,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setCopyNotification(`${count} image${count === 1 ? '' : 's'} downloading!`);
     setTimeout(() => setCopyNotification(null), 2000);
     setDownloadConfirmation({show: false, count: 0});
-  };
+  }, [selectedImages, combinedLibraryImages, setCopyNotification, setDownloadConfirmation]);
 
   const cancelBulkDownload = () => {
     setDownloadConfirmation({show: false, count: 0});
@@ -2815,7 +2911,26 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setDeleteConfirmation({show: true, imageUrl: null, imageUrls: null, uploadId: null, folderId, source: null});
   };
 
-  const handleDeleteConfirmed = async () => {
+  // Helper function for persisting folders - must be defined before handleDeleteConfirmed
+  const persistFolders = useCallback(async (nextFolders: Folder[]) => {
+    setFolders(nextFolders);
+    try {
+      const serialised: SerializedFolder[] = nextFolders.map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        createdAt: folder.createdAt.toISOString(),
+        imageIds: folder.imageIds,
+        videoIds: folder.videoIds || [],
+        customThumbnail: folder.customThumbnail,
+      }));
+      await setPersistedValue(storagePrefix, 'folders', serialised);
+      await refreshStorageEstimate();
+    } catch (error) {
+      debugError('Failed to persist folders', error);
+    }
+  }, [storagePrefix, refreshStorageEstimate]);
+
+  const handleDeleteConfirmed = useCallback(async () => {
     if (deleteConfirmation.imageUrls && deleteConfirmation.imageUrls.length > 0) {
       const urlsToDelete = new Set(deleteConfirmation.imageUrls);
       if (deleteConfirmation.source === 'inspirations') {
@@ -2908,28 +3023,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
     }
     setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
-  };
+  }, [deleteConfirmation, setInspirations, persistInspirations, removeGalleryImages, deleteGalleryImage, gallery, favorites, persistFavorites, setSelectedImages, folders, persistFolders, uploadedImages, persistUploadedImages, selectedFolder, setSelectedFolder, setDeleteConfirmation]);
 
   const handleDeleteCancelled = () => {
     setDeleteConfirmation({show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null});
-  };
-
-  const persistFolders = async (nextFolders: Folder[]) => {
-    setFolders(nextFolders);
-    try {
-      const serialised: SerializedFolder[] = nextFolders.map(folder => ({
-        id: folder.id,
-        name: folder.name,
-        createdAt: folder.createdAt.toISOString(),
-        imageIds: folder.imageIds,
-        videoIds: folder.videoIds || [],
-        customThumbnail: folder.customThumbnail,
-      }));
-      await setPersistedValue(storagePrefix, 'folders', serialised);
-      await refreshStorageEstimate();
-    } catch (error) {
-      debugError('Failed to persist folders', error);
-    }
   };
 
   const addImageToFolder = (imageUrls: string | string[], folderId: string) => {
@@ -3166,7 +3263,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   };
 
   // Gallery navigation functions
-  const openImageAtIndex = (index: number) => {
+  const openImageAtIndex = useCallback((index: number) => {
     // Only open if the index is valid and within gallery bounds
     if (index >= 0 && index < gallery.length && gallery[index]) {
       const image = gallery[index];
@@ -3174,14 +3271,33 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setCurrentGalleryIndex(index);
       setFullSizeContext('gallery');
       setIsFullSizeOpen(true);
-      
-      // Update URL if image has a jobId (always navigate, even if we're already on a job URL)
-      if (image.jobId) {
-        programmaticImageOpenRef.current = true;
-        navigate(`/job/${image.jobId}`, { replace: false });
-      }
+      syncJobUrlForImage(image);
     }
-  };
+  }, [gallery, syncJobUrlForImage]);
+  const openImageByUrl = useCallback((imageUrl: string) => {
+    const galleryIndex = gallery.findIndex(item => item.url === imageUrl);
+    if (galleryIndex !== -1) {
+      openImageAtIndex(galleryIndex);
+      return;
+    }
+    const inspirationIndex = inspirations.findIndex(item => item.url === imageUrl);
+    if (inspirationIndex !== -1) {
+      const image = inspirations[inspirationIndex];
+      setFullSizeContext('inspirations');
+      setCurrentInspirationIndex(inspirationIndex);
+      setSelectedFullImage(image);
+      setIsFullSizeOpen(true);
+      syncJobUrlForImage(image);
+      return;
+    }
+    const fallbackImage = combinedLibraryImages.find(item => item.url === imageUrl);
+    if (fallbackImage) {
+      setFullSizeContext('gallery');
+      setSelectedFullImage(fallbackImage);
+      setIsFullSizeOpen(true);
+      syncJobUrlForImage(fallbackImage);
+    }
+  }, [gallery, openImageAtIndex, inspirations, combinedLibraryImages, syncJobUrlForImage]);
 
   // Helper function to convert image URL to File object
   const urlToFile = async (url: string, filename: string): Promise<File> => {
@@ -3294,6 +3410,9 @@ const [batchSize, setBatchSize] = useState<number>(1);
       return;
     }
 
+    // Check if this is a URL-based ID (local-only image)
+    const isUrlBased = jobId.startsWith('url-');
+
     // Check if this image already exists in our gallery or inspirations
     const imageInGallery = gallery.find(img => img.jobId === jobId);
     const imageInInspirations = inspirations.find(img => img.jobId === jobId);
@@ -3301,8 +3420,36 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
     // If image exists locally, just open it without fetching
     if (existingImage) {
+      if (imageInGallery) {
+        const galleryIndex = gallery.findIndex(img => img.jobId === jobId);
+        if (galleryIndex !== -1) {
+          setFullSizeContext('gallery');
+          setCurrentGalleryIndex(galleryIndex);
+        }
+      } else if (imageInInspirations) {
+        const inspirationIndex = inspirations.findIndex(img => img.jobId === jobId);
+        if (inspirationIndex !== -1) {
+          setFullSizeContext('inspirations');
+          setCurrentInspirationIndex(inspirationIndex);
+        }
+      } else {
+        setFullSizeContext('gallery');
+      }
       setSelectedFullImage(existingImage);
       setIsFullSizeOpen(true);
+      syncJobUrlForImage(existingImage);
+      
+      // Show info toast for URL-based IDs
+      if (isUrlBased) {
+        showToast('This image is stored locally. Upload to gallery to share across devices.');
+      }
+      return;
+    }
+
+    // If it's a URL-based ID but not found locally, show error
+    if (isUrlBased) {
+      showToast('Image not found in local gallery');
+      navigate('/create/image', { replace: true });
       return;
     }
 
@@ -3341,8 +3488,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
         };
 
         // Open in existing full-size viewer
+        setFullSizeContext('gallery');
         setSelectedFullImage(imageData);
         setIsFullSizeOpen(true);
+        syncJobUrlForImage(imageData);
       } catch (error) {
         debugError('Error fetching job:', error);
         showToast('Job not found or has expired');
@@ -3351,50 +3500,70 @@ const [batchSize, setBatchSize] = useState<number>(1);
     };
 
     void fetchJobById();
-  }, [jobId, token, navigate, showToast, isFullSizeOpen, selectedFullImage, gallery, inspirations]);
+  }, [jobId, token, navigate, showToast, isFullSizeOpen, selectedFullImage, gallery, inspirations, syncJobUrlForImage]);
 
   // Navigate to job URL after successful generation
   useEffect(() => {
     if (geminiImage?.jobId && !jobId) {
-      navigate(`/job/${geminiImage.jobId}`, { replace: false });
+      navigateToJobUrl(geminiImage.jobId);
     }
-  }, [geminiImage, jobId, navigate]);
+  }, [geminiImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (fluxImage?.jobId && !jobId) {
-      navigate(`/job/${fluxImage.jobId}`, { replace: false });
+      navigateToJobUrl(fluxImage.jobId);
     }
-  }, [fluxImage, jobId, navigate]);
+  }, [fluxImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (chatgptImage?.jobId && !jobId) {
-      navigate(`/job/${chatgptImage.jobId}`, { replace: false });
+      navigateToJobUrl(chatgptImage.jobId);
     }
-  }, [chatgptImage, jobId, navigate]);
+  }, [chatgptImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (reveImage?.jobId && !jobId) {
-      navigate(`/job/${reveImage.jobId}`, { replace: false });
+      navigateToJobUrl(reveImage.jobId);
     }
-  }, [reveImage, jobId, navigate]);
+  }, [reveImage, jobId, navigateToJobUrl]);
 
   useEffect(() => {
     if (lumaImage?.jobId && !jobId) {
-      navigate(`/job/${lumaImage.jobId}`, { replace: false });
+      navigateToJobUrl(lumaImage.jobId);
     }
-  }, [lumaImage, jobId, navigate]);
+  }, [lumaImage, jobId, navigateToJobUrl]);
+
+  useEffect(() => {
+    const ideogramImage = ideogramImages?.[0];
+    if (ideogramImage?.jobId && !jobId) {
+      navigateToJobUrl(ideogramImage.jobId);
+    }
+  }, [ideogramImages, jobId, navigateToJobUrl]);
+
+  useEffect(() => {
+    const qwenImage = qwenImages?.[0];
+    if (qwenImage?.jobId && !jobId) {
+      navigateToJobUrl(qwenImage.jobId);
+    }
+  }, [qwenImages, jobId, navigateToJobUrl]);
+
+  useEffect(() => {
+    if (runwayImage?.jobId && !jobId) {
+      navigateToJobUrl(runwayImage.jobId);
+    }
+  }, [runwayImage, jobId, navigateToJobUrl]);
 
   const closeFullSizeViewer = useCallback(() => {
     setIsFullSizeOpen(false);
     setSelectedFullImage(null);
     setSelectedReferenceImage(null);
-    
-    // Clear job URL if we're on one and navigate back to appropriate context
-    if (jobId) {
-      const isGalleryContext = location.pathname.startsWith('/gallery') || location.pathname.startsWith('/job');
-      navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
+
+    if (location.pathname.startsWith('/job/')) {
+      restorePreviousPath();
+    } else {
+      previousNonJobPathRef.current = null;
     }
-  }, [jobId, navigate, location.pathname]);
+  }, [location.pathname, restorePreviousPath]);
 
   const closeImageActionMenu = () => {
     setImageActionMenu(null);
@@ -3430,35 +3599,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       // Show publish confirmation
       setPublishConfirmation({show: true, count: 1, imageUrl});
     }
-  };
-
-  const applyPublicStatusToImages = useCallback((imageUrls: string[], isPublic: boolean) => {
-    if (imageUrls.length === 0) return;
-
-    updateGalleryImages(imageUrls, { isPublic });
-    const urlSet = new Set(imageUrls);
-
-    setSelectedFullImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
-    setImageActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
-    setMoreActionMenuImage(prev => (prev && urlSet.has(prev.url) ? { ...prev, isPublic } : prev));
-  }, [updateGalleryImages]);
-
-  const confirmIndividualPublish = () => {
-    if (publishConfirmation.imageUrl) {
-      applyPublicStatusToImages([publishConfirmation.imageUrl], true);
-      setCopyNotification('Image published!');
-      setTimeout(() => setCopyNotification(null), 2000);
-    }
-    setPublishConfirmation({show: false, count: 0});
-  };
-
-  const confirmIndividualUnpublish = () => {
-    if (unpublishConfirmation.imageUrl) {
-      applyPublicStatusToImages([unpublishConfirmation.imageUrl], false);
-      setCopyNotification('Image unpublished!');
-      setTimeout(() => setCopyNotification(null), 2000);
-    }
-    setUnpublishConfirmation({show: false, count: 0});
   };
 
   const handleEditMenuSelect = () => {
@@ -3814,12 +3954,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
               }
               setSelectedFullImage(img);
               setIsFullSizeOpen(true);
-              
-              // Navigate to job URL if image has a jobId
-              if (img.jobId) {
-                programmaticImageOpenRef.current = true;
-                navigate(`/job/${img.jobId}`, { replace: false });
-              }
+              syncJobUrlForImage(img);
             }
           }}
         />
@@ -3972,6 +4107,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
                       />
                     );
                   })()}
+                  <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
                 </div>
                 {img.isPublic && context !== 'inspirations' && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -5381,6 +5517,7 @@ const handleGenerate = async () => {
               avatarId: selectedAvatar?.id,
               avatarImageId: activeAvatarImageId ?? undefined,
               productId: selectedProduct?.id,
+              jobId: jobId,
             };
           } else {
             const dataUrl = Array.isArray(result.dataUrls) ? result.dataUrls[0] : null;
@@ -5461,6 +5598,19 @@ const handleGenerate = async () => {
               prompt: img.prompt?.substring(0, 50) + '...'
             });
 
+            // Compute aspect ratio before creating gallery image object
+            // Use aspectRatioConfig if available (Gemini, Veo, Qwen, Wan, Hailuo, Kling, Seedance)
+            // Otherwise default to "1:1" for models without aspect ratio selectors (Flux, Ideogram, Recraft, Runway, Reve, Luma Photon, ChatGPT)
+            const computedAspectRatio = aspectRatioConfig?.selectedValue || "1:1";
+            
+            // Debug: Log aspect ratio computation
+            console.log('[AspectRatio Debug]', {
+              model: modelForGeneration,
+              aspectRatioConfig: aspectRatioConfig,
+              selectedValue: aspectRatioConfig?.selectedValue,
+              computedAspectRatio,
+            });
+
             const galleryImage: GalleryImageLike = {
               url: img.url,
               prompt: img.prompt ?? finalPrompt ?? trimmedPrompt,
@@ -5500,6 +5650,7 @@ const handleGenerate = async () => {
                 'jobId' in img
                   ? (img as { jobId?: string | null }).jobId ?? undefined
                   : undefined,
+              aspectRatio: computedAspectRatio,
             };
 
             updateGalleryImages([], {}, { upsert: [galleryImage] });
@@ -6606,8 +6757,7 @@ const handleGenerate = async () => {
                               if (isSelectMode) {
                                 toggleImageSelection(img.url, event);
                               } else {
-                                setSelectedFullImage(img);
-                                setIsFullSizeOpen(true); 
+                                openImageByUrl(img.url);
                               }
                             }}>
                               <img src={img.url} alt={img.prompt || 'Generated image'} loading="lazy" className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`} />
@@ -6731,6 +6881,7 @@ const handleGenerate = async () => {
                                               />
                                             );
                                           })()}
+                                          <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
                                         </div>
                                         {img.isPublic && (
                                           <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -7104,8 +7255,7 @@ const handleGenerate = async () => {
                             if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
                               return;
                             }
-                            setSelectedFullImage(img);
-                            setIsFullSizeOpen(true);
+                            openImageByUrl(img.url);
                           }} />
 
                           {/* Hover prompt overlay */}
@@ -7209,6 +7359,15 @@ const handleGenerate = async () => {
                                     </button>
                                   </div>
                                 )}
+                                {/* Model Badge and Aspect Ratio */}
+                                <div className="flex justify-between items-center mt-2">
+                                  <div className="flex items-center gap-1 md:gap-2">
+                                    <Suspense fallback={null}>
+                                      <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                                    </Suspense>
+                                    <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -9662,7 +9821,7 @@ const handleGenerate = async () => {
             >
               <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                 {/* Image container */}
-                <div className="relative group flex items-start justify-center mt-14" style={{ marginLeft: '-60px' }}>
+                <div className="relative group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }}>
                 {/* Navigation arrows for full-size modal */}
                 {(fullSizeContext === 'inspirations' ? inspirations.length : gallery.length) > 1 &&
                   (selectedFullImage || generatedImage) && (
@@ -9787,6 +9946,10 @@ const handleGenerate = async () => {
                                 size="md" 
                               />
                             </Suspense>
+                            <AspectRatioBadge 
+                              aspectRatio={(selectedFullImage || generatedImage)?.aspectRatio} 
+                              size="md" 
+                            />
                           </div>
                           {((selectedFullImage || generatedImage) as GalleryImageLike)?.isPublic && activeFullSizeContext !== 'inspirations' && (
                             <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -9813,7 +9976,7 @@ const handleGenerate = async () => {
                     <a
                       href={activeFullSizeImage.url}
                       download
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       onClick={(e) => e.stopPropagation()}
                       title="Download"
                       aria-label="Download"
@@ -9826,7 +9989,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleAddToFolder(activeFullSizeImage.url);
                       }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       title="Manage folders"
                       aria-label="Manage folders"
                     >
@@ -9839,7 +10002,7 @@ const handleGenerate = async () => {
                           e.stopPropagation();
                           toggleImagePublicStatus(activeFullSizeImage.url);
                         }}
-                        className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                        className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                         title={activeFullSizeImage.isPublic ? "Unpublish" : "Publish"}
                         aria-label={activeFullSizeImage.isPublic ? "Unpublish" : "Publish"}
                       >
@@ -9856,7 +10019,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         toggleFavorite(activeFullSizeImage.url);
                       }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       title={favorites.has(activeFullSizeImage.url) ? "Unlike" : "Like"}
                       aria-label={favorites.has(activeFullSizeImage.url) ? "Unlike" : "Like"}
                     >
@@ -9874,7 +10037,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         confirmDeleteImage(activeFullSizeImage.url, activeFullSizeContext);
                       }}
-                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
                       title="Delete"
                       aria-label="Delete"
                     >
@@ -9890,7 +10053,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleEditMenuSelect();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <Edit className="w-4 h-4 flex-shrink-0" />
                       Edit image
@@ -9901,7 +10064,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleCreateAvatarFromMenu(activeFullSizeImage);
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <User className="w-4 h-4 flex-shrink-0" />
                       Create Avatar
@@ -9912,7 +10075,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleUseAsReferenceFromMenu();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <Copy className="w-4 h-4 flex-shrink-0" />
                       Use as reference
@@ -9923,7 +10086,7 @@ const handleGenerate = async () => {
                         e.stopPropagation();
                         handleUsePromptAgain();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <RefreshCw className="w-4 h-4 flex-shrink-0" />
                       Reuse prompt
@@ -9935,7 +10098,7 @@ const handleGenerate = async () => {
                         setActiveCategory("video");
                         closeFullSizeViewer();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5 whitespace-nowrap"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                     >
                       <Camera className="w-4 h-4 flex-shrink-0" />
                       Make video
@@ -9960,7 +10123,7 @@ const handleGenerate = async () => {
                         }
                         closeFullSizeViewer();
                       }}
-                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway text-theme-white hover:text-theme-text transition-colors duration-200 hover:bg-theme-white/5"
+                      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway text-theme-white hover:text-theme-text transition-colors duration-200"
                     >
                         {selectedProduct && selectedReferenceImage === selectedProduct.imageUrl ? (
                           <>
@@ -9989,20 +10152,17 @@ const handleGenerate = async () => {
                     images={currentImages}
                     currentIndex={currentIdx}
                     onNavigate={(index) => {
-                      if (index >= 0 && index < currentImages.length) {
-                        const newImage = currentImages[index];
-                        setSelectedFullImage(newImage);
-                        setCurrentGalleryIndex(index);
-                        
-                        // Update URL if the new image has a jobId
-                        if (newImage && newImage.jobId) {
-                          programmaticImageOpenRef.current = true;
-                          navigate(`/job/${newImage.jobId}`, { replace: false });
-                        } else if (jobId) {
-                          // Clear jobId from URL if navigating to an image without one
-                          const isGalleryContext = location.pathname.startsWith('/gallery');
-                          navigate(isGalleryContext ? '/gallery' : '/create/image', { replace: false });
+                      if (fullSizeContext === 'inspirations') {
+                        if (index >= 0 && index < inspirations.length) {
+                          const newImage = inspirations[index];
+                          setFullSizeContext('inspirations');
+                          setCurrentInspirationIndex(index);
+                          setSelectedFullImage(newImage);
+                          setIsFullSizeOpen(true);
+                          syncJobUrlForImage(newImage);
                         }
+                      } else {
+                        openImageAtIndex(index);
                       }
                     }}
                   />
@@ -10226,9 +10386,8 @@ const handleGenerate = async () => {
                             alt={image.prompt || 'Generated image'}
                             loading="lazy"
                             className="h-full w-full object-cover cursor-pointer"
-                            onClick={() => {
-                              setSelectedFullImage(image);
-                              setIsFullSizeOpen(true);
+                          onClick={() => {
+                              openImageByUrl(image.url);
                             }}
                           />
                           {image.avatarImageId && (
@@ -10311,8 +10470,7 @@ const handleGenerate = async () => {
                           loading="lazy"
                           className="w-full h-full object-cover cursor-pointer"
                           onClick={() => {
-                            setSelectedFullImage(img);
-                            setIsFullSizeOpen(true);
+                            openImageByUrl(img.url);
                           }}
                         />
                         <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">

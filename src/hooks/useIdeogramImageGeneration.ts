@@ -18,6 +18,7 @@ export interface IdeogramGeneratedImage {
   avatarId?: string;
   avatarImageId?: string;
   styleId?: string;
+  jobId?: string;
 }
 
 export interface IdeogramImageGenerationState {
@@ -144,6 +145,7 @@ export const useIdeogramImageGeneration = () => {
                 negativePrompt,
                 ownerId,
                 avatarId,
+                jobId,
               },
             ];
           } else if (job.status === 'FAILED') {

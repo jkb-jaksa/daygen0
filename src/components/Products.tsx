@@ -239,7 +239,43 @@ export default function Products() {
   const navigate = useNavigate();
   const location = useLocation();
   const { productSlug } = useParams<{ productSlug?: string }>();
+  const previousNonJobPathRef = useRef<string | null>(null);
+  const rememberNonJobPath = useCallback(() => {
+    if (!location.pathname.startsWith("/job/")) {
+      previousNonJobPathRef.current = `${location.pathname}${location.search}`;
+    }
+  }, [location.pathname, location.search]);
 
+  // URL navigation functions for job IDs
+  const navigateToJobUrl = useCallback(
+    (targetJobId: string) => {
+      const targetPath = `/job/${targetJobId}`;
+      const currentFullPath = `${location.pathname}${location.search}`;
+      if (currentFullPath === targetPath) {
+        return;
+      }
+      rememberNonJobPath();
+      const origin = previousNonJobPathRef.current ?? currentFullPath;
+      const priorState =
+        typeof location.state === "object" && location.state !== null
+          ? (location.state as Record<string, unknown>)
+          : {};
+      navigate(targetPath, {
+        replace: false,
+        state: { ...priorState, jobOrigin: origin },
+      });
+    },
+    [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
+  );
+
+  const syncJobUrlForImage = useCallback(
+    (image: GalleryImageLike | null | undefined) => {
+      if (image?.jobId) {
+        navigateToJobUrl(image.jobId);
+      }
+    },
+    [navigateToJobUrl],
+  );
 
   const [products, setProducts] = useState<StoredProduct[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -1056,9 +1092,11 @@ export default function Products() {
       ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
       : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
 
+    const newImage = productImages[newIndex];
     setCurrentImageIndex(newIndex);
-    setSelectedFullImage(productImages[newIndex]);
-  }, [creationsModalProduct, galleryImages, currentImageIndex]);
+    setSelectedFullImage(newImage);
+    syncJobUrlForImage(newImage);
+  }, [creationsModalProduct, galleryImages, currentImageIndex, syncJobUrlForImage]);
 
   const openFullSizeView = useCallback((image: GalleryImageLike) => {
     if (!creationsModalProduct) return;
@@ -1068,8 +1106,9 @@ export default function Products() {
       setCurrentImageIndex(index);
       setSelectedFullImage(image);
       setIsFullSizeOpen(true);
+      syncJobUrlForImage(image);
     }
-  }, [creationsModalProduct, galleryImages]);
+  }, [creationsModalProduct, galleryImages, syncJobUrlForImage]);
 
   const closeFullSizeView = useCallback(() => {
     setIsFullSizeOpen(false);
@@ -2324,7 +2363,7 @@ export default function Products() {
           className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
           onClick={closeFullSizeView}
         >
-          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
             {/* Navigation arrows */}
             {(() => {
               const productImages = galleryImages.filter(img => img.productId === creationsModalProduct.id);
@@ -2564,7 +2603,10 @@ export default function Products() {
                 currentIndex={currentIdx}
                 onNavigate={(index) => {
                   if (index >= 0 && index < productImages.length) {
-                    setSelectedFullImage(productImages[index]);
+                    const nextImage = productImages[index];
+                    setCurrentImageIndex(index);
+                    setSelectedFullImage(nextImage);
+                    syncJobUrlForImage(nextImage);
                   }
                 }}
               />

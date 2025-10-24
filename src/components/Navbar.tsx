@@ -10,11 +10,11 @@ import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
-import { safeNext } from "../utils/navigation";
+import { safeResolveNext } from "../utils/navigation";
 import { useTheme } from "../hooks/useTheme";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
-type MenuEntry = { key: string; label: string; Icon: LucideIcon };
+type MenuEntry = { key: string; label: string; Icon: LucideIcon; gradient?: string; iconColor?: string };
 
 type NavItem = {
   label: MenuId;
@@ -39,10 +39,10 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
 ];
 
 const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
-  { key: "text", label: "text", Icon: Edit },
-  { key: "image", label: "image", Icon: ImageIcon },
-  { key: "video", label: "video", Icon: VideoIcon },
-  { key: "audio", label: "audio", Icon: Volume2 },
+  { key: "text", label: "text", Icon: Edit, gradient: "from-amber-300 via-amber-400 to-orange-500", iconColor: "text-amber-400" },
+  { key: "image", label: "image", Icon: ImageIcon, gradient: "from-red-400 via-red-500 to-red-600", iconColor: "text-red-500" },
+  { key: "video", label: "video", Icon: VideoIcon, gradient: "from-blue-400 via-blue-500 to-blue-600", iconColor: "text-blue-500" },
+  { key: "audio", label: "audio", Icon: Volume2, gradient: "from-cyan-300 via-cyan-400 to-cyan-500", iconColor: "text-cyan-400" },
 ];
 
 
@@ -267,7 +267,7 @@ export default function Navbar() {
   const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || currentUser);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999]" onMouseLeave={closeMenu}>
+    <div className="fixed top-0 left-0 right-0 z-[11000]" onMouseLeave={closeMenu}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[10000] focus:rounded focus:bg-theme-white focus:px-4 focus:py-2 focus:text-theme-black"
@@ -519,8 +519,8 @@ export default function Navbar() {
                         onClick={() => handleCategoryClick(category.key)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
-                          <category.Icon className="w-4 h-4" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                          <category.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span>{category.label}</span>
                       </button>
@@ -537,8 +537,8 @@ export default function Navbar() {
                         onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
-                          <item.Icon className="w-4 h-4" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                          <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span>{item.label}</span>
                       </Link>
@@ -553,8 +553,8 @@ export default function Navbar() {
                         onClick={() => setActiveMenu(null)}
                         className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
                       >
-                        <div className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${glass.prompt} hover:border-theme-mid`}>
-                          <item.Icon className="w-4 h-4" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                          <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span>{item.label}</span>
                       </Link>
@@ -631,7 +631,7 @@ export default function Navbar() {
 
                         if (shouldPreserveFlow) {
                           const params = new URLSearchParams();
-                          params.set('next', safeNext(`${location.pathname}${location.search}`));
+                          params.set('next', safeResolveNext(location));
                           navigate(`/account?${params.toString()}`);
                         } else {
                           navigate('/account');
@@ -757,7 +757,7 @@ export default function Navbar() {
 
                 if (shouldPreserveFlow) {
                   const params = new URLSearchParams();
-                  params.set("next", safeNext(`${location.pathname}${location.search}`));
+                  params.set("next", safeResolveNext(location));
                   navigate(`/account?${params.toString()}`);
                 } else {
                   navigate("/account");

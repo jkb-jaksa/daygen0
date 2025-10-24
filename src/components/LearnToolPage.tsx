@@ -47,7 +47,13 @@ export default function LearnToolPage() {
               <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-center">
                 <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-theme-dark/50 bg-theme-black/60">
                   {logo ? (
-                    <img src={logo} alt={`${toolContent.name} logo`} className="h-full w-full object-cover" />
+                    <img
+                      src={logo}
+                      alt={`${toolContent.name} logo`}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <span className="text-2xl font-semibold uppercase text-theme-white/80">
                       {toolContent.name.charAt(0)}
