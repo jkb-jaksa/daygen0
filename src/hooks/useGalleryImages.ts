@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugLog, debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
@@ -60,6 +60,7 @@ const mergeImageDetails = (
 
 export const useGalleryImages = () => {
   const { token, storagePrefix } = useAuth();
+  const isFetchingRef = useRef(false);
   const [state, setState] = useState<GalleryImagesState>({
     images: [],
     isLoading: false,
@@ -107,17 +108,17 @@ export const useGalleryImages = () => {
     const r2ImageMap = new Map<string, GalleryImageLike>();
     const localImageMap = new Map<string, GalleryImageLike>();
 
-    // Index R2 images by jobId or URL
+    // Index R2 images by getImageKey
     r2Images.forEach(image => {
-      const key = image.jobId || image.url;
+      const key = getImageKey(image);
       if (key) {
         r2ImageMap.set(key, image);
       }
     });
 
-    // Index local images by jobId or URL
+    // Index local images by getImageKey
     localImages.forEach(image => {
-      const key = image.jobId || image.url;
+      const key = getImageKey(image);
       if (key) {
         localImageMap.set(key, image);
       }
@@ -128,7 +129,7 @@ export const useGalleryImages = () => {
 
     // Add all R2 images first (these take priority)
     r2Images.forEach(image => {
-      const key = image.jobId || image.url;
+      const key = getImageKey(image);
       if (key && !processedKeys.has(key)) {
         mergedImages.push(image);
         processedKeys.add(key);
@@ -137,7 +138,7 @@ export const useGalleryImages = () => {
 
     // Add local images that don't have R2 equivalents
     localImages.forEach(image => {
-      const key = image.jobId || image.url;
+      const key = getImageKey(image);
       if (key && !processedKeys.has(key)) {
         // Only add non-base64 local images, or base64 images that don't have R2 equivalents
         if (!isBase64Url(image.url) || !r2ImageMap.has(key)) {
@@ -157,6 +158,13 @@ export const useGalleryImages = () => {
       return;
     }
 
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      debugLog('[gallery] Fetch already in progress, skipping');
+      return;
+    }
+
+    isFetchingRef.current = true;
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -187,7 +195,7 @@ export const useGalleryImages = () => {
       // Remove duplicates
       const seen = new Set<string>();
       const dedupedImages = mergedImages.filter((image: GalleryImageLike) => {
-        const key = image.jobId || image.url;
+        const key = getImageKey(image);
         if (!key) {
           return true;
         }
@@ -235,8 +243,10 @@ export const useGalleryImages = () => {
         hasBase64Images,
         needsMigration: hasBase64Images,
       });
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryImage, mergeImages]);
+  }, [token, storagePrefix, loadLocalImages]);
 
   // Delete an image (soft delete)
   const deleteImage = useCallback(async (imageId: string) => {

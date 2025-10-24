@@ -5523,8 +5523,7 @@ const handleGenerate = async () => {
               stopProgressAnimation(genId);
             }
 
-            debugLog('New image generated, refreshing gallery...');
-            await fetchGalleryImages();
+            debugLog('New image generated and added to gallery');
 
             return { success: true, genId, img };
           }

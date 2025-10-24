@@ -118,12 +118,17 @@ export function PaymentSuccess() {
     console.log('🔄 Manual completion button clicked for session:', sessionId);
     setManuallyCompleting(true);
     try {
-      console.log('📡 Calling simple credit addition API...');
-      const response = await fetch('http://localhost:3001/api/test/add-credits', {
+      console.log('📡 Calling systematic payment completion API...');
+      const response = await fetch('http://localhost:3000/api/payments-test/complete-payment-for-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          userId: user?.authUserId || 'ca915994-e791-4894-800d-671dd9d1d398', // Fallback to test user
+          sessionId: sessionId,
+          credits: 12000 // Pro plan credits
+        })
       });
       
       console.log('📡 API Response status:', response.status);

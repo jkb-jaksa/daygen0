@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Systematic Solution</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        #response { margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Systematic Solution</h1>
+    <p>This page tests the systematic payment completion solution that works for any account.</p>
+    
+    <button id="testJaksaButton">Test with Jaksa User (jaksa)</button>
+    <button id="testDominButton">Test with Domin User (ca915994-e791-4894-800d-671dd9d1d398)</button>
+    <button id="testNewUserButton">Test with New User (test-user-123)</button>
+    
+    <div id="response">🚀 Test page loaded. Click a button to test the systematic solution.</div>
+
+    <script>
+        const testJaksaButton = document.getElementById('testJaksaButton');
+        const testDominButton = document.getElementById('testDominButton');
+        const testNewUserButton = document.getElementById('testNewUserButton');
+        const responseDiv = document.getElementById('response');
+
+        async function testSystematicSolution(userId, userName) {
+            responseDiv.innerHTML = `⏳ Testing systematic solution for ${userName}...`;
+            try {
+                const response = await fetch('http://localhost:3000/api/payments-test/complete-payment-for-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        sessionId: `cs_test_${userName}_${Date.now()}`,
+                        credits: 5000
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    responseDiv.innerHTML = `
+                        <div class="success">
+                            ✅ SUCCESS! Systematic solution working for ${userName}<br>
+                            Message: ${data.message}<br>
+                            Credits Added: ${data.creditsAdded}<br>
+                            Payment ID: ${data.paymentId}<br>
+                            Subscription ID: ${data.subscriptionId}
+                        </div>
+                    `;
+                } else {
+                    responseDiv.innerHTML = `
+                        <div class="error">
+                            ❌ ERROR: ${data.message || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `
+                    <div class="error">
+                        💥 FETCH ERROR: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        testJaksaButton.addEventListener('click', () => testSystematicSolution('jaksa', 'Jaksa'));
+        testDominButton.addEventListener('click', () => testSystematicSolution('ca915994-e791-4894-800d-671dd9d1d398', 'Domin'));
+        testNewUserButton.addEventListener('click', () => testSystematicSolution('test-user-123', 'New User'));
+    </script>
+</body>
+</html>
