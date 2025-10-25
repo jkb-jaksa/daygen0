@@ -9,15 +9,18 @@ type ErrorWithStatus = Error & { status?: number };
 
 const env = import.meta.env as ApiEnv;
 
-const rawBase = env?.VITE_API_BASE_URL
-  ?? env?.VITE_BASE_URL
-  ?? 'http://localhost:3000';
+const rawBase = env?.VITE_API_BASE_URL ?? env?.VITE_BASE_URL ?? '';
 
 const normalizedBase = typeof rawBase === 'string' && rawBase.length > 0
   ? rawBase.replace(/\/$/, '')
   : '';
 
 export const API_BASE_URL = normalizedBase;
+
+if (!normalizedBase && import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.info('[api] Using relative API base (dev proxy mode)');
+}
 
 export const getApiUrl = (path: string): string => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -318,7 +321,7 @@ export interface ApiFetchOptions {
  * 
  * @example
  * // POST with custom context for error handling
- * const image = await apiFetch('/api/image/generate', {
+ * const image = await apiFetch('/api/image/gemini', {
  *   method: 'POST',
  *   body: { prompt: 'test' },
  *   context: 'generation'
@@ -326,7 +329,7 @@ export interface ApiFetchOptions {
  * 
  * @example
  * // With timeout for long operations
- * const result = await apiFetch('/api/unified-generate', {
+ * const result = await apiFetch('/api/image/flux', {
  *   method: 'POST',
  *   body: { prompt: 'test', model: 'flux-pro' },
  *   signal: withTimeout(undefined, 180000) // 3 minutes

@@ -1,6 +1,6 @@
 # daygen.ai — Frontend Architecture Map (agent.md)
 
-> **Purpose**: Give you (and any AI agent) a compact, deterministic map of the DayGen frontend so you can trace how things work, extend features safely, and avoid spaghetti.
+> **Purpose**: Give you (and any AI agent) a compact, deterministic map of the DayGen frontend so you can trace how things work, extend features safely, and avoid spaghetti code.
 
 ---
 
@@ -9,7 +9,7 @@
 - **Framework & build**: React + TypeScript + Vite. Routing via React Router with heavy **lazy loading** + `Suspense` to keep initial loads snappy.
 - **Auth**: JWT. Token stored in `localStorage` and injected as `Authorization: Bearer <token>` on API calls.
 - **API base URL**: Resolved at runtime by `src/utils/api.ts` using environment variables. In dev (without env), Vite **proxies** `/api` and `/health` to the local backend.
-- **Create flow**: The **Create** experience is driven by a big component (`src/components/Create.tsx`) and a set of **provider-specific hooks** (e.g., `useGeminiImageGeneration`, `useFluxImageGeneration`, etc.). All actual generation hits **one backend endpoint**: `POST /api/unified-generate`.
+- **Create flow**: The **Create** experience is driven by a big component (`src/components/Create.tsx`) and a set of **provider-specific hooks** (e.g., `useGeminiImageGeneration`, `useFluxImageGeneration`, etc.). Each provider calls its own backend route (for example, `POST /api/image/gemini`).
 - **Protected areas**: `/create/*` is gated behind `RequireAuth` (JWT required).
 - **Storage**: Final assets live in Cloudflare R2 (served via public URLs), references saved in the backend DB; the frontend displays and manages them.
 
@@ -97,7 +97,6 @@ await fetch(`${getApiUrl()}/api/auth/me`, {
 > **Local backend directory (dev):** `desktop/daygen-backend`
 
 
-
 ### API base URL resolution
 
 - The helper `src/utils/api.ts` provides `getApiUrl()` which resolves base in this order:
@@ -117,7 +116,7 @@ await fetch(`${getApiUrl()}/api/auth/me`, {
 - `POST /api/auth/login` → `{ accessToken, user }`  
 - `GET /api/auth/me` → current user (requires `Authorization: Bearer ...`)  
 - `PATCH /api/users/me` → profile updates (requires Bearer)  
-- `POST /api/unified-generate` → **one endpoint for all models** (requires Bearer)  
+- `POST /api/image/gemini` → Gemini 2.5 Flash image generation (requires Bearer)  
 - `GET /health` → quick backend status
 
 > **Security posture**: No provider API keys in the frontend. Credits and enforcement happen on the backend.
@@ -128,7 +127,7 @@ await fetch(`${getApiUrl()}/api/auth/me`, {
 
 1) User enters prompt & selects a **model** in Create.  
 2) The relevant **hook** (e.g., `useFluxImageGeneration`) formats a request payload.  
-3) Client calls `POST /api/unified-generate` with JWT in `Authorization` header.  
+3) Client calls the provider route (e.g., `POST /api/image/gemini`) with JWT in `Authorization` header.  
 4) Backend validates token and **credits**, deducts one credit, calls the provider, stores the result in R2 + DB.  
 5) Response returns either base64/dataUrl or public URLs; UI updates gallery and selection.  
 6) Deep links (`/job/:jobId`) navigate directly to a specific result when available.
@@ -136,7 +135,7 @@ await fetch(`${getApiUrl()}/api/auth/me`, {
 **Payload sketch**
 
 ```jsonc
-POST /api/unified-generate
+POST /api/image/gemini
 {
   "prompt": "A surreal rainy city at night",
   "model": "flux-pro", // or gemini-flash-2.5, runway-gen4, ideogram, qwen-image, seedream-3.0, chatgpt-image, reve-image, ...
@@ -180,7 +179,7 @@ VITE_SITE_PASSWORD=<optional-password>          # if enabled by backend
 ## 8) Add a new AI provider (frontend checklist)
 
 1) Pick or create a **hook** in `src/hooks/` (mirror the pattern of existing hooks).  
-2) The hook should call the **same** `POST /api/unified-generate` endpoint, passing a distinct `model` value and any `providerOptions`.  
+2) The hook should call the provider-specific endpoint (e.g., `POST /api/image/gemini`), passing a distinct `model` value and any `providerOptions`.  
 3) Add UI controls in **Create** (model selector, options form).  
 4) (Optional) Expose it in `/learn/tools` and `/ai-tools` if it’s a headline feature.  
 5) Validate: can sign in, can generate, credit decrements, item shows in gallery, deep-link works.
@@ -212,7 +211,7 @@ const me = await res.json();
 
 **Generate an image (Flux)**
 ```ts
-await fetch(`${getApiUrl()}/api/unified-generate`, {
+await fetch(`${getApiUrl()}/api/image/gemini`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -235,7 +234,7 @@ await fetch(`${getApiUrl()}/api/unified-generate`, {
 ## 11) Where frontend meets backend (single-page summary)
 
 - **Auth**: `/api/auth/signup`, `/api/auth/login`, `/api/auth/me`
-- **Generation**: `/api/unified-generate`
+- **Generation**: `/api/image/<provider>` (e.g., `/api/image/gemini`)
 - **Users**: `/api/users/me`
 - **Health**: `/health`
 - **JWT**: always `Authorization: Bearer <token>`

@@ -9,7 +9,7 @@
 - **Framework**: NestJS 11 + TypeScript; Prisma + PostgreSQL.
 - **Auth**: Supabase Auth JWT; `JwtAuthGuard` via `JwtStrategy` using `SUPABASE_JWT_SECRET`.
 - **API prefix**: `/api` global prefix; exceptions: `/health`, `/` root, `/webhooks/stripe`.
-- **Generation**: `POST /api/unified-generate` (primary), plus provider routes under `/api/image/*` that enqueue jobs.
+- **Generation**: Provider routes under `/api/image/*` (e.g., `POST /api/image/gemini`, `POST /api/image/flux`) that enqueue jobs.
 - **Storage**: Cloudflare R2 (presigned uploads, base64 uploads); metadata in DB.
 - **Queue**: Google Cloud Tasks (optional) or inline processor; internal `/api/jobs/process` secured via `INTERNAL_API_KEY`.
 - **Payments**: Stripe checkout + webhooks; subscription support; credit packs; webhook at `/webhooks/stripe`.
@@ -73,16 +73,16 @@ await fetch(`${getApiUrl()}/api/auth/me`, {
 
 ## 4) Generation flow
 
-- **Primary endpoint**: `POST /api/unified-generate` (JWT). DTO validates and dispatches to `GenerationService`.
+- **Primary endpoints**: Provider-specific routes (`POST /api/image/gemini`, `POST /api/image/flux`, etc.). DTO validates and dispatches to `GenerationService`.
 - **Provider routes**: Under `/api/image/*` (e.g., `flux`, `gemini`, `ideogram`, `qwen`, `runway`, `seedream`, `reve`, `recraft`, `luma`) enqueue jobs via `CloudTasksService` (with model allow-lists and defaults). Gemini supports inline vs queued based on flags.
 
 **Payload sketch**
 
 ```jsonc
-POST /api/unified-generate
+POST /api/image/gemini
 {
   "prompt": "A surreal rainy city at night",
-  "model": "flux-pro-1.1", // or gemini-2.5-flash-image-preview, runway-gen4, ideogram, qwen-image, seedream-3.0, chatgpt-image, reve-image, ...
+  "model": "gemini-2.5-flash-image",
   "imageBase64": "data:image/png;base64,...",      // optional
   "references": ["data:image/png;base64,..."],     // optional
   "providerOptions": { /* per-model advanced options */ }
@@ -138,7 +138,7 @@ POST /api/unified-generate
 | `/api/users/me/profile-picture` | POST | Upload profile picture |
 | `/api/users/me/remove-profile-picture` | POST | Remove profile picture |
 | `/api/users/balances` | GET | Admin: list user balances |
-| `/api/unified-generate` | POST | **Primary generation endpoint** |
+| `/api/image/gemini` | POST | Gemini 2.5 Flash generation |
 | `/api/image/flux` | POST | FLUX model generation |
 | `/api/image/gemini` | POST | Gemini generation |
 | `/api/image/ideogram` | POST | Ideogram generation |
@@ -241,7 +241,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/auth/me
 ```bash
 curl -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"prompt":"cat","model":"flux-pro-1.1"}' \
-  http://localhost:3000/api/unified-generate
+  http://localhost:3000/api/image/gemini
 ```
 
 **Create checkout session**
@@ -268,7 +268,7 @@ curl -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKE
 ## 12) Conventions that keep code clean
 
 - **Only one place decides API base URL** → environment variables
-- **Only one endpoint for generation** → `/api/unified-generate` simplifies UI
+- **Provider-specific endpoints for generation** → `/api/image/<provider>` keeps logic isolated
 - **Auth token is always read from context** → avoid prop-drilling tokens
 - **All protected endpoints use `JwtAuthGuard`** → consistent auth
 - **Admin endpoints add `AdminGuard`** → role-based access

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
+import { apiFetch, getApiUrl } from '../utils/api';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -499,9 +499,23 @@ export const useGeminiImageGeneration = () => {
       const { prompt, model, imageData, references, temperature, outputLength, topP, aspectRatio } = options;
 
       const resolvedModel = model || 'gemini-2.5-flash-image';
-      const apiUrl = getApiUrl('/api/image/gemini');
 
-      debugLog('[image] POST', apiUrl);
+      debugLog('[image] POST /api/image/gemini');
+
+      const providerOptions: Record<string, unknown> = {};
+      if (aspectRatio) {
+        providerOptions.aspectRatio = aspectRatio;
+      }
+
+      const config = aspectRatio
+        ? {
+            imageConfig: { aspectRatio },
+          }
+        : undefined;
+
+      const generationConfig = {
+        responseModalities: ['Image'],
+      } as Record<string, unknown>;
 
       const baseBody: Record<string, unknown> = {
         prompt,
@@ -511,6 +525,7 @@ export const useGeminiImageGeneration = () => {
         temperature,
         outputLength,
         topP,
+        generationConfig,
       };
 
       if (options.avatarId) {
@@ -520,57 +535,53 @@ export const useGeminiImageGeneration = () => {
         baseBody.avatarImageId = options.avatarImageId;
       }
 
-      if (aspectRatio) {
-        baseBody.providerOptions = { aspectRatio };
-        baseBody.config = {
-          imageConfig: { aspectRatio },
-        };
+      if (Object.keys(providerOptions).length > 0) {
+        baseBody.providerOptions = providerOptions;
       }
+      if (config) {
+        baseBody.config = config;
+      }
+
+      type ApiFetchError = Error & { status?: number };
 
       const performRequest = async (
         modelToUse: string,
         allowFallback: boolean,
       ): Promise<{ payload: unknown; modelUsed: string }> => {
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            ...baseBody,
-            model: modelToUse,
-          }),
-        });
-
-        if (res.ok) {
-          return { payload: await parseJsonSafe(res), modelUsed: modelToUse };
-        }
-
-        const errBody = await parseJsonSafe(res);
-        const rawMessage =
-          (errBody && typeof errBody.error === 'string' && errBody.error) ||
-          (errBody && typeof errBody.message === 'string' && errBody.message) ||
-          null;
-
-        if (allowFallback && res.status === 400) {
-          debugWarn(
-            '[image] Gemini 2.5 Flash returned 400, attempting preview fallback.',
-            { rawMessage },
-          );
-          return performRequest('gemini-2.5-flash-image-preview', false);
-        }
-
-        const errorMessage =
-          res.status === 429
-            ? PLAN_LIMIT_MESSAGE
-            : resolveApiErrorMessage({
-                status: res.status,
-                message: rawMessage,
-                fallback: `Request failed with ${res.status}`,
+        try {
+          const payload =
+            (await apiFetch<Record<string, unknown> | null>(
+              '/api/image/gemini',
+              {
+                method: 'POST',
+                body: {
+                  ...baseBody,
+                  model: modelToUse,
+                },
                 context: 'generation',
-              });
-        throw new Error(errorMessage);
+              },
+            )) ?? {};
+
+          return { payload, modelUsed: modelToUse };
+        } catch (error) {
+          const status = (error as ApiFetchError)?.status;
+
+          if (allowFallback && status === 400) {
+            debugWarn(
+              '[image] Gemini 2.5 Flash returned 400, attempting preview fallback.',
+              { error },
+            );
+            return performRequest('gemini-2.5-flash-image-preview', false);
+          }
+
+          if (status === 429) {
+            throw new Error(PLAN_LIMIT_MESSAGE);
+          }
+
+          throw error instanceof Error
+            ? error
+            : new Error('Gemini image generation failed');
+        }
       };
 
       const { payload, modelUsed } = await performRequest(
