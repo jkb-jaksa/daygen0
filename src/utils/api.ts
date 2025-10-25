@@ -18,7 +18,6 @@ const normalizedBase = typeof rawBase === 'string' && rawBase.length > 0
 export const API_BASE_URL = normalizedBase;
 
 if (!normalizedBase && import.meta.env.DEV) {
-  // eslint-disable-next-line no-console
   console.info('[api] Using relative API base (dev proxy mode)');
 }
 

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { apiFetch, getApiUrl } from '../utils/api';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
-import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
+import { PLAN_LIMIT_MESSAGE, resolveGenerationCatchError } from '../utils/errorMessages';
 import { useCreditCheck } from './useCreditCheck';
 
 export interface GeneratedImage {
@@ -697,7 +697,6 @@ export const useGeminiImageGeneration = () => {
       }
     }
   }, [
-    token,
     user?.id,
     pollForJobCompletion,
     startProgressController,
