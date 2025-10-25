@@ -993,6 +993,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
+  const [triggeringThumbnailRef, setTriggeringThumbnailRef] = useState<HTMLElement | null>(null);
 
   const aspectRatioConfig = useMemo<{
     options: ReadonlyArray<AspectRatioOption>;
@@ -1816,18 +1817,10 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (isFullSizeOpen && !selectedReferenceImage) {
-          navigateFullSizeImage('prev');
-        } else if (!isFullSizeOpen) {
-          navigateGallery('prev');
-        }
+        navigateGallery('prev');
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        if (isFullSizeOpen && !selectedReferenceImage) {
-          navigateFullSizeImage('next');
-        } else if (!isFullSizeOpen) {
-          navigateGallery('next');
-        }
+        navigateGallery('next');
       }
     };
 
@@ -1835,7 +1828,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullSizeOpen, selectedReferenceImage, gallery.length, currentGalleryIndex, navigateFullSizeImage, navigateGallery]);
+  }, [gallery.length, currentGalleryIndex, navigateGallery]);
 
   useEffect(() => {
     const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
@@ -3269,6 +3262,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     // Only open if the index is valid and within gallery bounds
     if (index >= 0 && index < gallery.length && gallery[index]) {
       const image = gallery[index];
+      // Capture the currently focused element before opening modal
+      setTriggeringThumbnailRef(document.activeElement as HTMLElement);
       setSelectedFullImage(image);
       setCurrentGalleryIndex(index);
       setFullSizeContext('gallery');
@@ -3285,6 +3280,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     const inspirationIndex = inspirations.findIndex(item => item.url === imageUrl);
     if (inspirationIndex !== -1) {
       const image = inspirations[inspirationIndex];
+      // Capture the currently focused element before opening modal
+      setTriggeringThumbnailRef(document.activeElement as HTMLElement);
       setFullSizeContext('inspirations');
       setCurrentInspirationIndex(inspirationIndex);
       setSelectedFullImage(image);
@@ -3294,6 +3291,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     }
     const fallbackImage = combinedLibraryImages.find(item => item.url === imageUrl);
     if (fallbackImage) {
+      // Capture the currently focused element before opening modal
+      setTriggeringThumbnailRef(document.activeElement as HTMLElement);
       setFullSizeContext('gallery');
       setSelectedFullImage(fallbackImage);
       setIsFullSizeOpen(true);
@@ -3560,12 +3559,53 @@ const [batchSize, setBatchSize] = useState<number>(1);
     setSelectedFullImage(null);
     setSelectedReferenceImage(null);
 
+    // Restore focus to the thumbnail that opened the modal
+    if (triggeringThumbnailRef && document.contains(triggeringThumbnailRef)) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        triggeringThumbnailRef?.focus();
+      }, 0);
+    }
+    setTriggeringThumbnailRef(null);
+
     if (location.pathname.startsWith('/job/')) {
       restorePreviousPath();
     } else {
       previousNonJobPathRef.current = null;
     }
-  }, [location.pathname, restorePreviousPath]);
+  }, [location.pathname, restorePreviousPath, triggeringThumbnailRef]);
+
+  // Keyboard navigation for full-size modal
+  useEffect(() => {
+    if (!isFullSizeOpen) return;
+
+    const handleModalKeyDown = (event: KeyboardEvent) => {
+      // Only handle navigation when not in a form input
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (!selectedReferenceImage) {
+          navigateFullSizeImage('prev');
+        }
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        if (!selectedReferenceImage) {
+          navigateFullSizeImage('next');
+        }
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeFullSizeViewer();
+      }
+    };
+
+    document.addEventListener('keydown', handleModalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleModalKeyDown);
+    };
+  }, [isFullSizeOpen, selectedReferenceImage, navigateFullSizeImage, closeFullSizeViewer]);
 
   const closeImageActionMenu = () => {
     setImageActionMenu(null);
@@ -3931,7 +3971,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
           src={img.url}
           alt={img.prompt || `Generated ${idx + 1}`}
           loading="lazy"
-          className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : ''}`}
+          className={`w-full aspect-square object-cover ${isSelectMode ? 'cursor-pointer' : 'cursor-pointer'} focus:outline-none focus:ring-2 focus:ring-theme-text focus:ring-offset-2 focus:ring-offset-theme-black`}
+          tabIndex={0}
           onClick={(event) => {
             // Check if the click came from a copy button
             const target = event.target;
@@ -3941,6 +3982,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
             if (isSelectMode) {
               toggleImageSelection(img.url, event);
             } else {
+              // Capture the currently focused element before opening modal
+              setTriggeringThumbnailRef(document.activeElement as HTMLElement);
               if (context === 'inspirations') {
                 const inspirationIndex = inspirations.findIndex(item => item.url === img.url);
                 if (inspirationIndex !== -1) {
@@ -3957,6 +4000,33 @@ const [batchSize, setBatchSize] = useState<number>(1);
               setSelectedFullImage(img);
               setIsFullSizeOpen(true);
               syncJobUrlForImage(img);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              if (isSelectMode) {
+                toggleImageSelection(img.url, event as unknown as React.MouseEvent);
+              } else {
+                // Capture the currently focused element before opening modal
+                setTriggeringThumbnailRef(document.activeElement as HTMLElement);
+                if (context === 'inspirations') {
+                  const inspirationIndex = inspirations.findIndex(item => item.url === img.url);
+                  if (inspirationIndex !== -1) {
+                    setCurrentInspirationIndex(inspirationIndex);
+                  }
+                  setFullSizeContext('inspirations');
+                } else {
+                  const galleryIndex = gallery.findIndex(item => item.url === img.url);
+                  if (galleryIndex !== -1) {
+                    setCurrentGalleryIndex(galleryIndex);
+                  }
+                  setFullSizeContext('gallery');
+                }
+                setSelectedFullImage(img);
+                setIsFullSizeOpen(true);
+                syncJobUrlForImage(img);
+              }
             }
           }}
         />
@@ -7750,13 +7820,26 @@ const handleGenerate = async () => {
                         <div key={`${img.url}-${idx}`} className={`relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large group ${
                           imageActionMenu?.id === `gallery-actions-${idx}-${img.url}` || moreActionMenu?.id === `gallery-actions-${idx}-${img.url}` ? 'parallax-active' : ''
                         }`} style={{ willChange: 'opacity' }}>
-                          <img src={img.url} alt={img.prompt || `Generated ${idx+1}`} loading="lazy" className="w-full aspect-square object-cover" onClick={(event) => {
-                            // Check if the click came from a copy button
-                            if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
-                              return;
-                            }
-                            openImageAtIndex(galleryIndex);
-                          }} />
+                          <img 
+                            src={img.url} 
+                            alt={img.prompt || `Generated ${idx+1}`} 
+                            loading="lazy" 
+                            className="w-full aspect-square object-cover cursor-pointer focus:outline-none focus:ring-2 focus:ring-theme-text focus:ring-offset-2 focus:ring-offset-theme-black" 
+                            tabIndex={0}
+                            onClick={(event) => {
+                              // Check if the click came from a copy button
+                              if (event.target instanceof HTMLElement && event.target.closest('[data-copy-button="true"]')) {
+                                return;
+                              }
+                              openImageAtIndex(galleryIndex);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                openImageAtIndex(galleryIndex);
+                              }
+                            }}
+                          />
                           
                           {/* Hover prompt overlay */}
                           {img.prompt && (
