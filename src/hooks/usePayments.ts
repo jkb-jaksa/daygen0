@@ -32,6 +32,7 @@ export function usePayments() {
   const { user, token } = useAuth();
 
   const createCheckoutSession = async (type: 'one_time' | 'subscription', packageId: string) => {
+    if (loading) return; // prevent duplicate submission while in-flight
     if (!user || !token) {
       throw new Error('User not authenticated');
     }

@@ -304,7 +304,7 @@ export function PaymentSuccess() {
             </div>
 
             {/* Development: Manual Complete Button */}
-            {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && (
+            {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && import.meta.env.MODE !== 'production' && (
               <div className="mt-6 p-6 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-lg hover:bg-yellow-500/15 transition-colors">
                 <p className="text-yellow-400 text-sm mb-3">
                   Development Mode: {sessionMode === 'subscription' ? 'Subscription' : 'Payment'} is still pending. This usually means the webhook didn't fire.
