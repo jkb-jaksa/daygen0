@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -544,10 +544,10 @@ export const useGeminiImageGeneration = () => {
         });
 
         if (res.ok) {
-          return { payload: await res.json(), modelUsed: modelToUse };
+          return { payload: await parseJsonSafe(res), modelUsed: modelToUse };
         }
 
-        const errBody = await res.json().catch(() => null);
+        const errBody = await parseJsonSafe(res);
         const rawMessage =
           (errBody && typeof errBody.error === 'string' && errBody.error) ||
           (errBody && typeof errBody.message === 'string' && errBody.message) ||

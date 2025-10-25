@@ -1007,7 +1007,7 @@ export default function Products() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download image:', error);
+      debugError('Failed to download image:', error);
     }
   }, []);
 
@@ -1017,7 +1017,7 @@ export default function Products() {
       setCopyNotification('Link copied!');
       setTimeout(() => setCopyNotification(null), 2000);
     } catch (error) {
-      console.error('Failed to copy link:', error);
+      debugError('Failed to copy link:', error);
       setCopyNotification('Failed to copy link');
       setTimeout(() => setCopyNotification(null), 2000);
     }
@@ -2552,7 +2552,7 @@ export default function Products() {
                             setCopyNotification('Prompt copied!');
                             setTimeout(() => setCopyNotification(null), 2000);
                           } catch (error) {
-                            console.error('Failed to copy prompt:', error);
+                            debugError('Failed to copy prompt:', error);
                           }
                         }}
                         className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"

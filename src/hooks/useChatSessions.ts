@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { debugWarn } from "../utils/debug";
 
 export type ChatMessage = {
   id: string;
@@ -69,7 +70,7 @@ export function useChatSessions(storagePrefix: string): UseChatSessionsResult {
         parsed = JSON.parse(raw) as ChatSession[];
       }
     } catch (error) {
-      console.warn("Failed to parse stored chat sessions", error);
+      debugWarn("Failed to parse stored chat sessions", error);
     }
 
     if (!parsed.length) {
@@ -88,7 +89,7 @@ export function useChatSessions(storagePrefix: string): UseChatSessionsResult {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(sessions));
     } catch (error) {
-      console.warn("Failed to persist chat sessions", error);
+      debugWarn("Failed to persist chat sessions", error);
     }
   }, [sessions, storageKey, hasHydrated]);
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -154,7 +154,7 @@ export const useRunwayImageGeneration = () => {
       });
 
       if (!res.ok) {
-        const errBody = await res.json().catch(() => null);
+        const errBody = await parseJsonSafe(res);
 
         if (res.status === 422) {
           const details = errBody?.details;

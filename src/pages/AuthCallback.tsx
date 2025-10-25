@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
 import { getApiUrl } from '../utils/api';
+import { debugError, debugWarn } from '../utils/debug';
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
@@ -30,7 +31,7 @@ export default function AuthCallback() {
             await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            console.error('Exchange code error:', exchangeError);
+            debugError('Exchange code error:', exchangeError);
             setError(exchangeError.message ?? 'Google authentication failed');
             return;
           }
@@ -39,7 +40,7 @@ export default function AuthCallback() {
         } else {
           const { data, error: sessionError } = await supabase.auth.getSession();
           if (sessionError) {
-            console.error('Session lookup error:', sessionError);
+            debugError('Session lookup error:', sessionError);
             setError(sessionError.message);
             return;
           }
@@ -57,7 +58,7 @@ export default function AuthCallback() {
               }),
             });
           } catch (syncError) {
-            console.warn('Failed to synchronize backend session:', syncError);
+            debugWarn('Failed to synchronize backend session:', syncError);
           }
         }
 
@@ -68,7 +69,7 @@ export default function AuthCallback() {
           navigate('/login');
         }
       } catch (err) {
-        console.error('Auth callback error:', err);
+        debugError('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
       } finally {
         setIsLoading(false);

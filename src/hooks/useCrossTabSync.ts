@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import type { User } from '../auth/context';
+import { debugLog, debugWarn } from '../utils/debug';
 
 interface CrossTabMessage {
   type: 'auth_update' | 'credits_update' | 'session_expired' | 'user_logout';
@@ -20,7 +21,7 @@ export function useCrossTabSync({ user, refreshUser, logOut }: UseCrossTabSyncPa
   // Initialize BroadcastChannel
   useEffect(() => {
     if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
-      console.warn('BroadcastChannel not supported in this environment');
+      debugWarn('BroadcastChannel not supported in this environment');
       return;
     }
 
@@ -48,7 +49,7 @@ export function useCrossTabSync({ user, refreshUser, logOut }: UseCrossTabSyncPa
     try {
       channelRef.current.postMessage(fullMessage);
     } catch (error) {
-      console.warn('Failed to send cross-tab message:', error);
+      debugWarn('Failed to send cross-tab message:', error);
     }
   }, []);
 
@@ -83,21 +84,21 @@ export function useCrossTabSync({ user, refreshUser, logOut }: UseCrossTabSyncPa
 
           case 'session_expired':
             // Handle session expiry from another tab
-            console.log('Session expired in another tab');
+            debugLog('Session expired in another tab');
             await logOut();
             break;
 
           case 'user_logout':
             // Handle logout from another tab
-            console.log('User logged out in another tab');
+            debugLog('User logged out in another tab');
             await logOut();
             break;
 
           default:
-            console.warn('Unknown cross-tab message type:', type);
+            debugWarn('Unknown cross-tab message type:', type);
         }
       } catch (error) {
-        console.warn('Error handling cross-tab message:', error);
+        debugWarn('Error handling cross-tab message:', error);
       }
     };
 

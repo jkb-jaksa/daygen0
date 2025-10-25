@@ -9,6 +9,8 @@ export function getLuma() {
   return new LumaAI({ authToken: key });
 }
 
+import { debugError } from '../utils/debug';
+
 // Helper function to download image from URL and convert to base64
 export async function downloadImageToBase64(url: string) {
   try {
@@ -27,7 +29,7 @@ export async function downloadImageToBase64(url: string) {
       contentType
     };
   } catch (error) {
-    console.error('Error downloading image:', error);
+    debugError('Error downloading image:', error);
     throw error;
   }
 }
@@ -50,7 +52,7 @@ export async function downloadVideoToBase64(url: string) {
       contentType
     };
   } catch (error) {
-    console.error('Error downloading video:', error);
+    debugError('Error downloading video:', error);
     throw error;
   }
 }

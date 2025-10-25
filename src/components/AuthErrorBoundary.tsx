@@ -2,6 +2,7 @@ import React, { Component, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Home, RotateCcw, Bug } from 'lucide-react';
 import { buttons, glass } from '../styles/designSystem';
+import { debugError } from '../utils/debug';
 
 type Props = {
   children: ReactNode;
@@ -37,7 +38,7 @@ class AuthErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('AuthErrorBoundary caught an error:', error, errorInfo);
+      debugError('AuthErrorBoundary caught an error:', error, errorInfo);
     }
 
     // Increment error count
@@ -47,7 +48,7 @@ class AuthErrorBoundary extends Component<Props, State> {
 
     // If too many errors, prevent infinite loops
     if (this.state.errorCount >= this.maxErrorCount) {
-      console.error('Too many errors in AuthErrorBoundary, preventing infinite loop');
+      debugError('Too many errors in AuthErrorBoundary, preventing infinite loop');
     }
   }
 
@@ -80,7 +81,7 @@ class AuthErrorBoundary extends Component<Props, State> {
     };
 
     // In a real app, you'd send this to your error reporting service
-    console.log('Error report:', errorDetails);
+    debugError('Error report:', errorDetails);
     
     // For now, copy to clipboard
     navigator.clipboard?.writeText(JSON.stringify(errorDetails, null, 2))

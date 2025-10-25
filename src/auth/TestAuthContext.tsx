@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { TestAuthContext, type TestUser } from './contexts/TestAuthContext';
+import { debugLog } from '../utils/debug';
 
 // Context moved to ./contexts/TestAuthContext to satisfy react-refresh/only-export-components
 
@@ -81,7 +82,7 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // For testing, just show a success message
-    console.log('Password reset email sent to:', email);
+    debugLog('Password reset email sent to:', email);
   }, []);
 
   const updatePassword = useCallback(async () => {
@@ -89,7 +90,7 @@ export function TestAuthProvider({ children }: { children: React.ReactNode }) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // For testing, just show a success message
-    console.log('Password updated successfully');
+    debugLog('Password updated successfully');
   }, []);
 
   const refreshUser = useCallback(async () => {

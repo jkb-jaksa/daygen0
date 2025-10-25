@@ -6,6 +6,8 @@ export type PromptEntry = {
   ts: number; // epoch ms
 };
 
+import { debugWarn } from '../utils/debug';
+
 const KEY_PREFIX = "dg:promptHistory:";
 
 function keyFor(userKey: string) {
@@ -55,6 +57,6 @@ export function clearPromptHistory(userKey: string) {
   try {
     localStorage.removeItem(keyFor(userKey));
   } catch (error) {
-    console.warn("Failed to clear prompt history", error);
+    debugWarn("Failed to clear prompt history", error);
   }
 }

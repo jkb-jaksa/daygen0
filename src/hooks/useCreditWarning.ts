@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { debugWarn } from '../utils/debug';
 
 interface CreditWarningConfig {
   lowThreshold?: number; // Show warning when credits are below this (default: 10)
@@ -77,7 +78,7 @@ export function useCreditWarning(config: CreditWarningConfig = {}) {
       try {
         await refreshUser();
       } catch (error) {
-        console.warn('Failed to refresh user credits:', error);
+        debugWarn('Failed to refresh user credits:', error);
       }
     }, checkIntervalMs);
 

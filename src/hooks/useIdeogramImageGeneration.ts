@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
 import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
@@ -236,7 +236,7 @@ export const useIdeogramImageGeneration = () => {
         });
 
         if (!response.ok) {
-          const payload = await response.json().catch(() => null);
+          const payload = await parseJsonSafe(response);
           const rawMessage =
             (payload && typeof payload.error === 'string' && payload.error) ||
             (payload && typeof payload.message === 'string' && payload.message) ||

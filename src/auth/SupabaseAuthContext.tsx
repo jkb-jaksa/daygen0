@@ -3,6 +3,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl } from '../utils/api';
 import { SupabaseAuthContext, type SupabaseUser } from './contexts/SupabaseAuthContext';
+import { debugError, debugWarn } from '../utils/debug';
 
 // Context moved to ./contexts/SupabaseAuthContext to satisfy react-refresh/only-export-components
 
@@ -28,7 +29,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         return profile;
       }
     } catch (error) {
-      console.error('Error fetching user profile from backend:', error);
+      debugError('Error fetching user profile from backend:', error);
     }
 
     // Fallback to basic user info if backend is not available
@@ -78,10 +79,10 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           });
 
           if (!response.ok) {
-            console.warn('Failed to create user profile in database, but Supabase user was created');
+            debugWarn('Failed to create user profile in database, but Supabase user was created');
           }
         } catch (profileError) {
-          console.warn('Error creating user profile:', profileError);
+          debugWarn('Error creating user profile:', profileError);
         }
       }
 
@@ -89,7 +90,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         needsEmailConfirmation: !data.user?.email_confirmed_at,
       };
     } catch (error) {
-      console.error('Sign up error:', error);
+      debugError('Sign up error:', error);
       throw error;
     }
   }, []);
@@ -139,7 +140,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       // Supabase automatically redirects to Google OAuth consent screen
       // No need to manually redirect - the signInWithOAuth method handles it
     } catch (error) {
-      console.error('Google OAuth error:', error);
+      debugError('Google OAuth error:', error);
       throw error;
     }
   }, []);
@@ -164,7 +165,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         throw new Error(error.message);
       }
     } catch (error) {
-      console.error('Password reset error:', error);
+      debugError('Password reset error:', error);
       throw error;
     }
   }, []);

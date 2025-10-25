@@ -4,6 +4,7 @@ import { usePayments } from '../../hooks/usePayments';
 import { useStripeConfig } from '../../hooks/useStripeConfig';
 import { cards } from '../../styles/designSystem';
 import useParallaxHover from '../../hooks/useParallaxHover';
+import { debugError } from '../../utils/debug';
 
 interface CreditPackagesProps {
   onPurchase?: () => void;
@@ -20,7 +21,7 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
       await createCheckoutSession('one_time', packageId);
       onPurchase?.();
     } catch (err) {
-      console.error('Purchase failed:', err);
+      debugError('Purchase failed:', err);
     } finally {
       setSelectedPackage(null);
     }
@@ -54,7 +55,7 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
       </div>
 
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-200 text-center">
+        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-200 text-center" role="status" aria-live="assertive">
           {error}
         </div>
       )}

@@ -130,6 +130,16 @@ npm run dev
 - `GEMINI_INTEGRATION.md` - Gemini model details
 - Individual integration docs for other providers
 
+## ⚙️ Environment Variables
+
+Optional configuration overrides:
+
+```bash
+# Generation limits and timeouts
+VITE_MAX_PARALLEL_GENERATIONS=5    # Max concurrent generations (default: 5)
+VITE_LONG_POLL_THRESHOLD_MS=90000  # Long poll timeout in ms (default: 90000)
+```
+
 ## 🆘 Need Help?
 
 1. Check the browser console for errors (F12)

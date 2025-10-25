@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import SupabasePasswordUpdate from '../components/SupabasePasswordUpdate';
+import { debugError } from '../utils/debug';
 
 export default function ResetPassword() {
   useSearchParams();
@@ -17,7 +18,7 @@ export default function ResetPassword() {
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Password reset error:', error);
+          debugError('Password reset error:', error);
           setError('Invalid or expired reset link. Please request a new one.');
           return;
         }
@@ -28,7 +29,7 @@ export default function ResetPassword() {
           setError('No valid session found. Please request a new password reset link.');
         }
       } catch (err) {
-        console.error('Password reset error:', err);
+        debugError('Password reset error:', err);
         setError('An error occurred while processing your request.');
       } finally {
         setIsLoading(false);

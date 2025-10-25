@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
+import { debugError } from '../utils/debug';
 
 interface PaymentHistoryItem {
   id: string;
@@ -50,11 +51,11 @@ export function usePayments() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create checkout session');
+        const errorData = await parseJsonSafe(response);
+        throw new Error(errorData?.message || 'Failed to create checkout session');
       }
 
-      const data = await response.json();
+      const data = await parseJsonSafe(response);
       
       // Redirect to Stripe Checkout
       window.location.href = data.url;
@@ -83,9 +84,9 @@ export function usePayments() {
         throw new Error('Failed to fetch payment history');
       }
 
-      return await response.json();
+      return await parseJsonSafe(response);
     } catch (err) {
-      console.error('Error fetching payment history:', err);
+      debugError('Error fetching payment history:', err);
       throw err;
     }
   };
@@ -116,11 +117,11 @@ export function usePayments() {
         const data = JSON.parse(text);
         return data;
       } catch (parseError) {
-        console.error('Error parsing subscription response:', parseError);
+        debugError('Error parsing subscription response:', parseError);
         return null;
       }
     } catch (err) {
-      console.error('Error fetching subscription:', err);
+      debugError('Error fetching subscription:', err);
       throw err;
     }
   };
@@ -232,14 +233,14 @@ export function usePayments() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('usePayments: Session status API error:', response.status, errorText);
+        debugError('usePayments: Session status API error:', response.status, errorText);
         throw new Error(`Failed to fetch session status: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await parseJsonSafe(response);
       return data;
     } catch (err) {
-      console.error('usePayments: Error fetching session status:', err);
+      debugError('usePayments: Error fetching session status:', err);
       throw err;
     }
   };
@@ -253,14 +254,14 @@ export function usePayments() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('usePayments: Quick session status API error:', response.status, errorText);
+        debugError('usePayments: Quick session status API error:', response.status, errorText);
         throw new Error(`Failed to fetch quick session status: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await parseJsonSafe(response);
       return data;
     } catch (err) {
-      console.error('usePayments: Error fetching quick session status:', err);
+      debugError('usePayments: Error fetching quick session status:', err);
       throw err;
     }
   };

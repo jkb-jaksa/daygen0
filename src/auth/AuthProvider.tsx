@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import {
   AuthContext,
   type AuthContextValue,
@@ -9,6 +9,7 @@ import {
 } from './context';
 import { useCrossTabSync } from '../hooks/useCrossTabSync';
 import { authMetrics } from '../utils/authMetrics';
+import { debugError, debugLog, debugWarn } from '../utils/debug';
 
 type SessionTokens = {
   accessToken?: string | null;
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (response.ok) {
-          const payload = (await response.json()) as {
+          const payload = (await parseJsonSafe(response)) as {
             user?: AppUser;
           };
           if (payload?.user) {
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        console.warn('Failed to sync Supabase session with backend:', error);
+        debugWarn('Failed to sync Supabase session with backend:', error);
       }
 
       return null;
@@ -113,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!accessToken) {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          console.warn('Failed to fetch active Supabase session:', error);
+          debugWarn('Failed to fetch active Supabase session:', error);
         }
         accessToken = data.session?.access_token ?? null;
         refreshToken = refreshToken ?? data.session?.refresh_token ?? null;
@@ -137,20 +138,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
           if (response.ok) {
-            const payload = await response.json();
+            const payload = await parseJsonSafe(response);
             return normalizeBackendUser(payload);
           }
 
           if (response.status === 401) {
             authMetrics.increment('auth_401_response');
           } else {
-            console.warn(
+            debugWarn(
               'Unexpected response fetching backend profile:',
               response.status,
             );
           }
         } catch (error) {
-          console.warn('Error fetching backend profile:', error);
+          debugWarn('Error fetching backend profile:', error);
         }
       }
 
@@ -240,13 +241,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         });
       } catch (error) {
-        console.warn('Failed to sign out backend session:', error);
+        debugWarn('Failed to sign out backend session:', error);
       }
     }
 
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('Error signing out:', error);
+      debugError('Error signing out:', error);
     }
 
     setUser(null);
@@ -325,7 +326,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Failed to update profile');
     }
 
-    const payload = await response.json();
+    const payload = await parseJsonSafe(response);
     const updatedProfile = normalizeBackendUser(payload);
     setUser(updatedProfile);
     return updatedProfile;
@@ -359,7 +360,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
-      console.log('Auth state changed:', event, nextSession?.user?.email);
+      debugLog('Auth state changed:', event, nextSession?.user?.email);
 
       if (nextSession?.user) {
         try {
@@ -370,7 +371,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(profile);
           setSession(nextSession);
         } catch (error) {
-          console.error('Error fetching user profile on auth change:', error);
+          debugError('Error fetching user profile on auth change:', error);
           // Don't immediately clear user on transient errors during navigation
           // Only clear if it's a sign out event or persistent error
           if (event === 'SIGNED_OUT') {
@@ -385,11 +386,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(null);
         } else if (event === 'TOKEN_REFRESHED' && !nextSession) {
           // If token refresh failed, try to get session once more before giving up
-          console.log('Token refresh failed, attempting to recover session...');
+          debugLog('Token refresh failed, attempting to recover session...');
           try {
             const { data, error } = await supabase.auth.getSession();
             if (error) {
-              console.error('Failed to recover session after refresh error:', error);
+              debugError('Failed to recover session after refresh error:', error);
               setUser(null);
               setSession(null);
             } else if (data.session?.user) {
@@ -404,7 +405,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setSession(null);
             }
           } catch (recoveryError) {
-            console.error('Session recovery failed:', recoveryError);
+            debugError('Session recovery failed:', recoveryError);
             setUser(null);
             setSession(null);
           }
@@ -425,7 +426,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          console.error('Error getting initial session:', error);
+          debugError('Error getting initial session:', error);
           return;
         }
 
@@ -440,12 +441,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (retryCount === 0) {
           // If no session found on first attempt, wait briefly and retry once
           // This accounts for race conditions with autoRefresh during page load
-          console.log('No initial session found, retrying in 1.5s...');
+          debugLog('No initial session found, retrying in 1.5s...');
           setTimeout(() => getInitialSession(1), 1500);
           return;
         }
       } catch (error) {
-        console.error('Error getting initial session:', error);
+        debugError('Error getting initial session:', error);
         if (retryCount === 0) {
           // Retry once on error
           setTimeout(() => getInitialSession(1), 1500);

@@ -102,7 +102,9 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
               autoFocus
               className={inputs.base}
             />
-            {error && <p className="text-sm text-red-400 font-raleway">{error}</p>}
+            <div aria-live="polite" role="status" className="min-h-[1rem]">
+              {error && <p className="text-sm text-red-400 font-raleway">{error}</p>}
+            </div>
             <div className="flex gap-4 justify-center">
               <button
                 type="submit"

@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { debugError } from '../utils/debug';
 
 interface GoogleSignInProps {
   onSuccess: (user: unknown) => void;
@@ -26,7 +27,7 @@ export default function GoogleSignIn({ onError, disabled = false, className = ""
       // The OAuth flow will redirect, so we don't need to call onSuccess here
       // The auth state change will be handled by the AuthProvider
     } catch (error) {
-      console.error('Google Sign-In error:', error);
+      debugError('Google Sign-In error:', error);
       onError(error instanceof Error ? error.message : 'Google sign-in failed');
     }
   }, [onError]);

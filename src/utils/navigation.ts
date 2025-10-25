@@ -1,4 +1,5 @@
 import { authMetrics } from './authMetrics';
+import { debugLog } from './debug';
 
 const ALLOWED_DESTINATIONS = [
   "/create",
@@ -148,7 +149,7 @@ export function safeResolveNext(
       // Track sanitization events
       if (decoded !== sanitized) {
         authMetrics.increment('next_sanitized');
-        console.debug("safeResolveNext - Redirect path sanitized:", { original: decoded, sanitized });
+        debugLog("safeResolveNext - Redirect path sanitized:", { original: decoded, sanitized });
       }
       
       return sanitized;
@@ -168,4 +169,62 @@ export function safeResolveNext(
   
   const fullPath = location.pathname + location.search;
   return safeNext(fullPath);
+}
+
+// Category to path mapping for navigation
+const CATEGORY_TO_PATH: Record<string, string> = {
+  text: "/create/text",
+  image: "/create/image",
+  video: "/create/video",
+  avatars: "/create/avatars",
+  products: "/create/products",
+  audio: "/create/audio",
+  gallery: "/gallery",
+  uploads: "/gallery/uploads",
+  "my-folders": "/gallery/folders",
+  inspirations: "/gallery/inspirations",
+};
+
+// Valid create category segments
+const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio", "avatars", "products"]);
+
+// Gallery segment to category mapping
+const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
+  public: "gallery",
+  uploads: "uploads",
+  folders: "my-folders",
+  inspirations: "inspirations",
+};
+
+/**
+ * Derives the category from a given pathname
+ */
+export function deriveCategoryFromPath(pathname: string): string {
+  const normalized = pathname.toLowerCase();
+  if (normalized.startsWith("/gallery")) {
+    const parts = normalized.split("/").filter(Boolean);
+    const segment = parts[1];
+    if (segment) {
+      return GALLERY_SEGMENT_TO_CATEGORY[segment] ?? "gallery";
+    }
+    return "gallery";
+  }
+
+  if (normalized.startsWith("/create")) {
+    const parts = normalized.split("/").filter(Boolean);
+    const segment = parts[1];
+    if (segment && CREATE_CATEGORY_SEGMENTS.has(segment)) {
+      return segment;
+    }
+    return "image";
+  }
+
+  return "image";
+}
+
+/**
+ * Gets the path for a given category
+ */
+export function pathForCategory(category: string): string | null {
+  return CATEGORY_TO_PATH[category] ?? null;
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { usePayments, SubscriptionInfo } from '../../hooks/usePayments';
 import { glass, buttons } from '../../styles/designSystem';
+import { debugError } from '../../utils/debug';
 
 export function SubscriptionManager() {
   const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
@@ -22,7 +23,7 @@ export function SubscriptionManager() {
         setSubscription(subData);
         setPaymentHistory(historyData);
       } catch (err) {
-        console.error('Error fetching subscription data:', err);
+        debugError('Error fetching subscription data:', err);
         setError('Failed to load subscription data');
       } finally {
         setLoading(false);
@@ -48,7 +49,7 @@ export function SubscriptionManager() {
       const subData = await getSubscription();
       setSubscription(subData);
     } catch (err) {
-      console.error('Error cancelling subscription:', err);
+      debugError('Error cancelling subscription:', err);
       setError('Failed to cancel subscription');
     } finally {
       setCancelling(false);

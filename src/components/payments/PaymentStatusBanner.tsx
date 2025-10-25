@@ -26,7 +26,7 @@ export function PaymentStatusBanner({
 
 
   return (
-    <div className="fixed top-4 left-4 right-4 z-40 bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+    <div className="fixed top-4 left-4 right-4 z-40 bg-red-500/10 border border-red-500/50 rounded-lg p-4" role="alert" aria-live="assertive">
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 bg-red-500/20 border border-red-500/50 rounded-full flex items-center justify-center flex-shrink-0">
           <AlertTriangle className="w-4 h-4 text-red-400" />

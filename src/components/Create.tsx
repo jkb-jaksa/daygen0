@@ -26,6 +26,7 @@ import { useRunwayVideoGeneration } from "../hooks/useRunwayVideoGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import type { FluxModel } from "../lib/bfl";
 import { useAuth } from "../auth/useAuth";
+import { deriveCategoryFromPath, pathForCategory } from "../utils/navigation";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
@@ -48,12 +49,13 @@ import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useParallaxHover } from "../hooks/useParallaxHover";
 import { useVeoVideoGeneration } from "../hooks/useVeoVideoGeneration";
 import { useSeedanceVideoGeneration } from "../hooks/useSeedanceVideoGeneration";
+import { MAX_PARALLEL_GENERATIONS, LONG_POLL_THRESHOLD_MS } from "../utils/config";
 import { useLumaImageGeneration } from "../hooks/useLumaImageGeneration";
 import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
 import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
-import { getApiUrl } from "../utils/api";
+import { getApiUrl, buildUrl, parseJsonSafe } from "../utils/api";
 import { useFooter } from "../contexts/useFooter";
 import useToast from "../hooks/useToast";
 import { DOWNLOAD_FAILURE_MESSAGE } from "../utils/errorMessages";
@@ -300,18 +302,6 @@ const styleIdToStoredStyle = (styleId: string): StoredStyle | null => {
   return null;
 };
 
-const CATEGORY_TO_PATH: Record<string, string> = {
-  text: "/create/text",
-  image: "/create/image",
-  video: "/create/video",
-  avatars: "/create/avatars",
-  products: "/create/products",
-  audio: "/create/audio",
-  gallery: "/gallery",
-  uploads: "/gallery/uploads",
-  "my-folders": "/gallery/folders",
-  inspirations: "/gallery/inspirations",
-};
 
 type ActiveGenerationStatus = Exclude<ImageGenerationStatus, 'idle'>;
 
@@ -327,40 +317,6 @@ type ActiveGenerationJob = {
   jobId?: string | null;
 };
 
-const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio", "avatars", "products"]);
-
-const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
-  public: "gallery",
-  uploads: "uploads",
-  folders: "my-folders",
-  inspirations: "inspirations",
-};
-
-
-const deriveCategoryFromPath = (pathname: string): string => {
-  const normalized = pathname.toLowerCase();
-  if (normalized.startsWith("/gallery")) {
-    const parts = normalized.split("/").filter(Boolean);
-    const segment = parts[1];
-    if (segment) {
-      return GALLERY_SEGMENT_TO_CATEGORY[segment] ?? "gallery";
-    }
-    return "gallery";
-  }
-
-  if (normalized.startsWith("/create")) {
-    const parts = normalized.split("/").filter(Boolean);
-    const segment = parts[1];
-    if (segment && CREATE_CATEGORY_SEGMENTS.has(segment)) {
-      return segment;
-    }
-    return "image";
-  }
-
-  return "image";
-};
-
-const pathForCategory = (category: string): string | null => CATEGORY_TO_PATH[category] ?? null;
 
 const getInitials = (name: string) =>
   name
@@ -1209,8 +1165,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
     };
   }, [activeCategory, location.pathname, setFooterVisible]);
 
-  const MAX_PARALLEL_GENERATIONS = 5;
-  const LONG_POLL_THRESHOLD_MS = 90000;
   const LONG_POLL_NOTICE_MINUTES = 2;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [activeGenerationQueue, setActiveGenerationQueue] = useState<ActiveGenerationJob[]>([]);
@@ -1676,7 +1630,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         longPollTimerRef.current = null;
       }
     };
-  }, [activeGenerationQueue, LONG_POLL_THRESHOLD_MS]);
+  }, [activeGenerationQueue]);
 
   const handleCancelLongPoll = useCallback(() => {
     if (!longPollNotice) {
@@ -3467,9 +3421,18 @@ const [batchSize, setBatchSize] = useState<number>(1);
           throw new Error('Job not found');
         }
 
-        const job = await response.json();
+        const job = await parseJsonSafe(response) as {
+          status?: string;
+          resultUrl?: string;
+          createdAt?: string;
+          userId?: string;
+          metadata?: {
+            prompt?: string;
+            model?: string;
+          };
+        };
 
-        if (job.status !== 'COMPLETED' || !job.resultUrl) {
+        if (job?.status !== 'COMPLETED' || !job?.resultUrl) {
           throw new Error('Job is not completed or has no result');
         }
 
@@ -4903,7 +4866,7 @@ const handleGenerate = async () => {
         // await handleGenerateRunwayVideo();
         
         // Temporary: Runway video generation not yet implemented
-        console.log('Runway video generation not yet implemented');
+        debugLog('Runway video generation not yet implemented');
         setIsButtonSpinning(false);
       } else if (selectedModel === "wan-video-2.2") {
         await handleGenerateWanVideo();
@@ -4920,7 +4883,7 @@ const handleGenerate = async () => {
         await handleGenerateImage();
       }
     } catch (error) {
-      console.error('Video generation error:', error);
+      debugError('Video generation error:', error);
       // Clear spinner on error
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -4974,7 +4937,7 @@ const handleGenerate = async () => {
       // Temporary: Wan video generation not yet implemented in backend
       throw new Error('Wan video generation is not yet supported in this backend integration.');
     } catch (error) {
-      console.error('Wan 2.2 video generation error:', error);
+      debugError('Wan 2.2 video generation error:', error);
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
         spinnerTimeoutRef.current = null;
@@ -5019,7 +4982,7 @@ const handleGenerate = async () => {
       // Temporary: Hailuo video generation not yet implemented in backend
       throw new Error('Hailuo video generation is not yet supported in this backend integration.');
     } catch (error) {
-      console.error('Hailuo 02 video generation error:', error);
+      debugError('Hailuo 02 video generation error:', error);
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
         spinnerTimeoutRef.current = null;
@@ -5064,7 +5027,7 @@ const handleGenerate = async () => {
       // Temporary: Kling video generation not yet implemented in backend
       throw new Error('Kling video generation is not yet supported in this backend integration.');
     } catch (error) {
-      console.error('Kling video generation error:', error);
+      debugError('Kling video generation error:', error);
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
         spinnerTimeoutRef.current = null;
@@ -5107,7 +5070,7 @@ const handleGenerate = async () => {
       // Temporary: Seedance video generation not yet implemented in backend
       throw new Error('Seedance video generation is not yet supported in this backend integration.');
     } catch (error) {
-      console.error('Seedance video generation error:', error);
+      debugError('Seedance video generation error:', error);
       // Clear spinner on error
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -5147,7 +5110,7 @@ const handleGenerate = async () => {
       // Temporary: Luma video generation not yet implemented in backend
       throw new Error('Luma video generation is not yet supported in this backend integration.');
     } catch (error) {
-      console.error('Luma video generation error:', error);
+      debugError('Luma video generation error:', error);
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
         spinnerTimeoutRef.current = null;
@@ -5158,12 +5121,11 @@ const handleGenerate = async () => {
 
   const handleDownloadVideo = async (operationName: string) => {
     try {
-      const search = new URLSearchParams({
+      const apiUrl = buildUrl('/api/unified-video', {
         provider: 'veo',
         action: 'download',
         operationName,
       });
-      const apiUrl = getApiUrl(`/api/unified-video?${search.toString()}`);
       
       // Trigger download by creating a temporary anchor tag
       const a = document.createElement('a');
@@ -5173,7 +5135,7 @@ const handleGenerate = async () => {
       a.click();
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Video download error:', error);
+      debugError('Video download error:', error);
       showToast(DOWNLOAD_FAILURE_MESSAGE);
     }
   };
@@ -5401,7 +5363,7 @@ const handleGenerate = async () => {
 
         if (isGeminiModel) {
           // Debug: Log avatar state before generation
-          console.log('[DEBUG] Avatar state before generation:', {
+          debugLog('[DEBUG] Avatar state before generation:', {
             selectedAvatar: selectedAvatar,
             selectedAvatarId: selectedAvatar?.id,
             activeAvatarImageId: activeAvatarImageId,
@@ -5542,11 +5504,14 @@ const handleGenerate = async () => {
           });
 
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Recraft API error: ${errorData.error || response.statusText}`);
+            const errorData = await parseJsonSafe(response) as { error?: string };
+            throw new Error(`Recraft API error: ${errorData?.error || response.statusText}`);
           }
 
-          const result = await response.json();
+          const result = await parseJsonSafe(response) as { 
+            jobId?: string;
+            dataUrls?: string[];
+          };
 
           if (result?.jobId) {
             const jobId: string = result.jobId;
@@ -5563,14 +5528,17 @@ const handleGenerate = async () => {
                 throw new Error(`Failed to check Recraft job status (${statusResponse.status})`);
               }
 
-              const job = await statusResponse.json();
-              if (job.status === 'COMPLETED' && job.resultUrl) {
-                jobResultUrl = job.resultUrl as string;
+              const job = await parseJsonSafe(statusResponse) as {
+                status?: string;
+                resultUrl?: string;
+              };
+              if (job?.status === 'COMPLETED' && job?.resultUrl) {
+                jobResultUrl = job.resultUrl;
                 break;
               }
 
-              if (job.status === 'FAILED') {
-                throw new Error(job.error || 'Recraft job failed');
+              if (job?.status === 'FAILED') {
+                throw new Error('Recraft job failed');
               }
 
               await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -5661,7 +5629,7 @@ const handleGenerate = async () => {
           
           if (img?.url) {
             // Debug: Log what's being sent to backend
-            console.log('Generated image data being sent to backend:', {
+            debugLog('Generated image data being sent to backend:', {
               imageUrl: img.url,
               avatarId: img.avatarId,
               avatarImageId: img.avatarImageId,
@@ -5676,7 +5644,7 @@ const handleGenerate = async () => {
             const computedAspectRatio = aspectRatioConfig?.selectedValue || "1:1";
             
             // Debug: Log aspect ratio computation
-            console.log('[AspectRatio Debug]', {
+            debugLog('[AspectRatio Debug]', {
               model: modelForGeneration,
               aspectRatioConfig: aspectRatioConfig,
               selectedValue: aspectRatioConfig?.selectedValue,
@@ -8454,11 +8422,13 @@ const handleGenerate = async () => {
                                 <Upload className="w-3 h-3" />
                                 Upload
                               </button>
-                            {avatarUploadError && (
-                              <p className="mt-3 text-sm font-raleway text-red-400 text-center">
-                                {avatarUploadError}
-                              </p>
-                            )}
+                            <div aria-live="polite" role="status" className="min-h-[1rem]">
+                              {avatarUploadError && (
+                                <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                  {avatarUploadError}
+                                </p>
+                              )}
+                            </div>
                           </div>
                           <button
                             type="button"
@@ -8642,11 +8612,13 @@ const handleGenerate = async () => {
                                 <Upload className="w-3 h-3" />
                                 Upload
                               </button>
-                              {productUploadError && (
-                                <p className="mt-3 text-sm font-raleway text-red-400 text-center">
-                                  {productUploadError}
-                                </p>
-                              )}
+                              <div aria-live="polite" role="status" className="min-h-[1rem]">
+                                {productUploadError && (
+                                  <p className="mt-3 text-sm font-raleway text-red-400 text-center">
+                                    {productUploadError}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           <button
                             type="button"

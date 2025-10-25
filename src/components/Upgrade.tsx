@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Pricing from "./Pricing";
 import { layout } from "../styles/designSystem";
+import { debugLog } from "../utils/debug";
 
 export default function Upgrade() {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ export default function Upgrade() {
   const handleClose = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Close button clicked'); // Debug log
+    debugLog('Close button clicked'); // Debug log
     // Go back to previous page, or default to home if no history
     if (window.history.length > 1) {
       navigate(-1);

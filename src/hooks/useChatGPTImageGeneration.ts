@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugError, debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -137,7 +137,7 @@ export const useChatGPTImageGeneration = () => {
       debugLog('[chatgpt-image] Response status:', res.status);
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+        const errorData = await parseJsonSafe(res);
         const rawMessage =
           (typeof errorData.error === 'string' && errorData.error) ||
           (typeof errorData.message === 'string' && errorData.message) ||

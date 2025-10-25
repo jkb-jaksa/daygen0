@@ -25,6 +25,13 @@ export const INSUFFICIENT_CREDITS_MESSAGE = "You don't have enough credits. Purc
 export const SUBSCRIPTION_EXISTS_MESSAGE = "You already have an active subscription. Use the upgrade option instead.";
 export const WEBHOOK_DELAY_MESSAGE = "Payment confirmation is taking longer than expected. Don't worry, we're processing it.";
 
+// Retry configuration
+export const RETRYABLE_STATUS_CODES = [429, 503];
+export const DEFAULT_MAX_RETRIES = 3;
+export const DEFAULT_INITIAL_DELAY_MS = 1000;
+export const DEFAULT_MAX_DELAY_MS = 10000;
+export const RETRY_BACKOFF_MULTIPLIER = 2;
+
 export type AuthErrorContext = "login" | "signup" | "forgot-password" | "reset-password";
 
 const AUTH_FALLBACK_MESSAGES: Record<AuthErrorContext, string> = {

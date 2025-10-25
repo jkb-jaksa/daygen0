@@ -1,3 +1,5 @@
+import { debugLog, debugWarn } from './debug';
+
 type AuthMetricType =
   | 'guard_redirect'           // RequireAuth redirects to /account
   | 'next_decode_failure'      // decodeURIComponent fails
@@ -62,7 +64,7 @@ class AuthMetricsTracker {
 
     // Log in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[AUTH_METRICS] ${type}${context ? ` (${context})` : ''} - Count: ${this.metrics[type].count}`);
+      debugLog(`[AUTH_METRICS] ${type}${context ? ` (${context})` : ''} - Count: ${this.metrics[type].count}`);
     }
 
     this.persist();
@@ -95,7 +97,7 @@ class AuthMetricsTracker {
   }
 
   logMetrics(): void {
-    console.log(this.getMetricsSummary());
+    debugLog(this.getMetricsSummary());
     console.table(this.metrics);
   }
 
@@ -104,7 +106,7 @@ class AuthMetricsTracker {
     this.persist();
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('[AUTH_METRICS] Metrics reset');
+      debugLog('[AUTH_METRICS] Metrics reset');
     }
   }
 
@@ -114,7 +116,7 @@ class AuthMetricsTracker {
     } catch (error) {
       // Silently fail if localStorage is not available
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[AUTH_METRICS] Failed to persist metrics:', error);
+        debugWarn('[AUTH_METRICS] Failed to persist metrics:', error);
       }
     }
   }
@@ -130,7 +132,7 @@ class AuthMetricsTracker {
     } catch (error) {
       // Silently fail if localStorage is corrupted
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[AUTH_METRICS] Failed to restore metrics:', error);
+        debugWarn('[AUTH_METRICS] Failed to restore metrics:', error);
       }
     }
   }
@@ -173,7 +175,7 @@ if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     if (event.ctrlKey && event.shiftKey && event.key === 'R') {
       event.preventDefault();
       authMetrics.reset();
-      console.log('[AUTH_METRICS] Metrics reset via keyboard shortcut');
+      debugLog('[AUTH_METRICS] Metrics reset via keyboard shortcut');
     }
   });
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import { debugError } from '../utils/debug';
 import { BackendAuthContext, type BackendUser } from './contexts/BackendAuthContext';
 
 // Context moved to ./contexts/BackendAuthContext to satisfy react-refresh/only-export-components
@@ -116,7 +117,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
           },
         });
       } catch (error) {
-        console.error('Error signing out:', error);
+        debugError('Error signing out:', error);
       }
     }
     
@@ -167,7 +168,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
       const userProfile = await fetchUserProfile(token);
       setUser(userProfile);
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      debugError('Error refreshing user:', error);
       localStorage.removeItem('daygen:authToken');
       setUser(null);
     }
@@ -182,7 +183,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
           const userProfile = await fetchUserProfile(token);
           setUser(userProfile);
         } catch (error) {
-          console.error('Error checking session:', error);
+          debugError('Error checking session:', error);
           localStorage.removeItem('daygen:authToken');
         }
       }

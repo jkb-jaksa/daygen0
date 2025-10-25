@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { debugError } from "../utils/debug";
 import type { SavedPrompt } from "../lib/savedPrompts";
 import {
   loadSavedPrompts,
@@ -48,7 +49,7 @@ export function useSavedPrompts(userKey: string) {
       updatePromptRaw(userKey, id, newText);
       setSavedPrompts(loadSavedPrompts(userKey));
     } catch (error) {
-      console.error("Failed to update prompt:", error);
+      debugError("Failed to update prompt:", error);
     }
   }, [userKey]);
 

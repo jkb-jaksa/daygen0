@@ -97,7 +97,9 @@ export function ProfileCard({
             )}
           </div>
         </div>
-        {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
+        <div aria-live="polite" role="status" className="min-h-[1rem]">
+          {uploadError && <p className="mt-2 text-xs font-raleway text-red-400">{uploadError}</p>}
+        </div>
       </div>
 
       <form
@@ -119,9 +121,11 @@ export function ProfileCard({
             onBlur={onNameBlur}
             placeholder="Enter your display name"
           />
-          {(saveError || (nameTouched && !isNameValid)) && (
-            <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
-          )}
+          <div aria-live="polite" role="status" className="min-h-[1rem]">
+            {(saveError || (nameTouched && !isNameValid)) && (
+              <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
+            )}
+          </div>
         </div>
         <div className="flex gap-2 items-center">
           <button type="button" className={buttons.ghost} onClick={onLogOut}>

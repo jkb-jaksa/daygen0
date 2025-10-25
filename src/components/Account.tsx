@@ -44,12 +44,13 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
     initialMode: nextPath ? "login" : "signup",
   });
 
-  const destinationCopy = destinationLabel === "DayGen" ? "your DayGen workspace" : destinationLabel;
+  const destinationCopy = destinationLabel;
   const heading = useMemo(() => {
-    if (nextPath?.startsWith("/edit")) return "Log in to continue editing";
-    if (nextPath?.startsWith("/create")) return "Log in to start creating";
+    // Use the destination label to derive appropriate heading
+    if (destinationLabel.includes("Edit")) return "Log in to continue editing";
+    if (destinationLabel.includes("Create")) return "Log in to start creating";
     return "Welcome back to DayGen";
-  }, [nextPath]);
+  }, [destinationLabel]);
 
   const subheading = useMemo(() => {
     if (nextPath) {

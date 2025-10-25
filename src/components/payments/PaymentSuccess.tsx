@@ -4,6 +4,7 @@ import { CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
 import { usePayments } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
+import { debugError, debugLog, debugWarn } from '../../utils/debug';
 
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ export function PaymentSuccess() {
     const checkSessionStatus = async (retryCount = 0, maxRetries = 5) => {
       if (!isMounted) return; // Don't run if component unmounted
       if (!sessionId) {
-        console.error('PaymentSuccess: No session ID provided');
+        debugError('PaymentSuccess: No session ID provided');
         setError('No session ID provided');
         setLoading(false);
         return;
@@ -67,16 +68,16 @@ export function PaymentSuccess() {
               refreshUser(),
               useQuickStatus ? getSessionStatus(sessionId) : Promise.resolve(status)
             ]);
-            console.log('User credits refreshed after payment');
+            debugLog('User credits refreshed after payment');
           } catch (refreshError) {
-            console.warn('Failed to refresh user after payment:', refreshError);
+            debugWarn('Failed to refresh user after payment:', refreshError);
             // If refresh fails, show a message but don't crash the success page
             setError('Payment successful, but failed to update your account. Please refresh the page or check your account.');
           }
         }
         setLoading(false);
       } catch (err) {
-        console.error('PaymentSuccess: Error checking session status:', err);
+        debugError('PaymentSuccess: Error checking session status:', err);
         
         // Retry if we haven't exceeded max retries and component is still mounted
         if (retryCount < maxRetries && isMounted) {
@@ -86,7 +87,7 @@ export function PaymentSuccess() {
           return;
         }
         
-        console.error('PaymentSuccess: Max retries exceeded, setting error');
+        debugError('PaymentSuccess: Max retries exceeded, setting error');
         setError('Failed to verify payment');
         setLoading(false);
       }
@@ -111,7 +112,7 @@ export function PaymentSuccess() {
   const handleManualComplete = async () => {
     if (!sessionId) return;
     
-    console.log('🔄 Manual completion button clicked for session:', sessionId);
+    debugLog('🔄 Manual completion button clicked for session:', sessionId);
     setManuallyCompleting(true);
     
     // Show optimistic UI immediately
@@ -119,7 +120,7 @@ export function PaymentSuccess() {
     setLoading(false);
     
     try {
-      console.log('📡 Calling systematic payment completion API...');
+      debugLog('📡 Calling systematic payment completion API...');
       const response = await fetch('http://localhost:3000/api/payments-test/complete-payment-for-user', {
         method: 'POST',
         headers: {
@@ -132,10 +133,10 @@ export function PaymentSuccess() {
         })
       });
       
-      console.log('📡 API Response status:', response.status);
+      debugLog('📡 API Response status:', response.status);
       
       if (response.ok) {
-        console.log('✅ Manual completion successful, refreshing user data...');
+        debugLog('✅ Manual completion successful, refreshing user data...');
         
         // Parallelize user refresh and session status check
         await Promise.all([
@@ -150,12 +151,12 @@ export function PaymentSuccess() {
         setTimeout(() => setManualCompleteSuccess(false), 5000);
       } else {
         const errorText = await response.text();
-        console.error('❌ Failed to complete payment manually:', response.status, errorText);
+        debugError('❌ Failed to complete payment manually:', response.status, errorText);
         setManualCompleteSuccess(false);
         setError(`Failed to complete payment: ${response.status} ${errorText}`);
       }
     } catch (err) {
-      console.error('💥 Error completing payment manually:', err);
+      debugError('💥 Error completing payment manually:', err);
       setManualCompleteSuccess(false);
       setError('Error completing payment manually');
     } finally {

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -241,7 +241,7 @@ export const useFluxImageGeneration = () => {
         });
 
         if (!response.ok) {
-          const payload = await response.json().catch(() => null);
+          const payload = await parseJsonSafe(response);
           const rawMessage =
             (payload && typeof payload.error === 'string' && payload.error) ||
             (payload && typeof payload.message === 'string' && payload.message) ||
@@ -255,7 +255,7 @@ export const useFluxImageGeneration = () => {
           throw new Error(message);
         }
 
-        const payload = (await response.json()) as {
+        const payload = (await parseJsonSafe(response)) as {
           jobId?: string;
           status?: string;
         };

@@ -43,7 +43,7 @@ import {
   Crown,
 } from "lucide-react";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { debugError } from "../utils/debug";
+import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
@@ -1421,7 +1421,7 @@ const Explore: React.FC = () => {
       setCopyNotification('Link copied!');
       setTimeout(() => setCopyNotification(null), 2000);
     } catch (err) {
-      console.error('Failed to copy prompt:', err);
+      debugError('Failed to copy prompt:', err);
     }
   };
 
@@ -1435,7 +1435,7 @@ const Explore: React.FC = () => {
       existingTooltip.remove();
     }
     
-    console.log('Creating tooltip for ID:', tooltipId);
+    debugLog('Creating tooltip for ID:', tooltipId);
     
     // Create tooltip element dynamically
     const tooltip = document.createElement('div');
@@ -1452,7 +1452,7 @@ const Explore: React.FC = () => {
     // Append to body
     document.body.appendChild(tooltip);
     
-    console.log('Tooltip created and positioned at:', {
+    debugLog('Tooltip created and positioned at:', {
       top: tooltip.style.top,
       left: tooltip.style.left,
       transform: tooltip.style.transform
@@ -1564,7 +1564,7 @@ const Explore: React.FC = () => {
       setTimeout(() => setCopyNotification(null), 2000);
       closeMoreActionMenu();
     } catch (error) {
-      console.error('Failed to copy link:', error);
+      debugError('Failed to copy link:', error);
       setCopyNotification('Failed to copy link');
       setTimeout(() => setCopyNotification(null), 2000);
     }
@@ -1581,7 +1581,7 @@ const Explore: React.FC = () => {
         }
         blob = await response.blob();
       } catch (fetchError) {
-        console.warn('Fetch failed, trying direct download:', fetchError);
+        debugWarn('Fetch failed, trying direct download:', fetchError);
         // Fallback: create a direct download link
         const a = document.createElement('a');
         a.href = item.imageUrl;
@@ -1611,7 +1611,7 @@ const Explore: React.FC = () => {
       
       closeMoreActionMenu();
     } catch (error) {
-      console.error('Failed to download image:', error);
+      debugError('Failed to download image:', error);
       setCopyNotification('Failed to download image');
       setTimeout(() => setCopyNotification(null), 2000);
     }

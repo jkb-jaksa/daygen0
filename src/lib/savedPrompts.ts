@@ -6,6 +6,8 @@ export type SavedPrompt = {
   savedAt: number; // epoch ms
 };
 
+import { debugWarn } from '../utils/debug';
+
 const KEY_PREFIX = "dg:savedPrompts:";
 
 function keyFor(userKey: string) {
@@ -75,7 +77,7 @@ export function clearSavedPrompts(userKey: string) {
   try {
     localStorage.removeItem(keyFor(userKey));
   } catch (error) {
-    console.warn("Failed to clear saved prompts", error);
+    debugWarn("Failed to clear saved prompts", error);
   }
 }
 

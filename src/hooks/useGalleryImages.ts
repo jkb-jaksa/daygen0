@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugLog, debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../lib/clientStorage';
@@ -186,7 +186,7 @@ export const useGalleryImages = () => {
         throw new Error(`Failed to fetch gallery images: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await parseJsonSafe(response);
       const r2Images = data.items?.map(convertR2FileToGalleryImage) || [];
 
       // Merge R2 images with local cache, prioritizing R2 URLs

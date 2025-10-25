@@ -8,6 +8,7 @@ import { useAuth } from "../auth/useAuth";
 import { resolveSubscriptionErrorMessage } from "../utils/errorMessages";
 import { getApiUrl } from "../utils/api";
 import MessageModal from "./modals/MessageModal";
+import { debugError } from "../utils/debug";
 
 type PricingTier = {
   id: string;
@@ -482,7 +483,7 @@ export default function Pricing() {
             }
           }
         } catch (error) {
-          console.error('Failed to fetch subscription:', error);
+          debugError('Failed to fetch subscription:', error);
         }
       }
     };
@@ -495,7 +496,7 @@ export default function Pricing() {
       setLoading(true);
       await createCheckoutSession('subscription', planId);
     } catch (error) {
-      console.error('Subscription purchase failed:', error);
+      debugError('Subscription purchase failed:', error);
       const errorMessage = resolveSubscriptionErrorMessage(error);
       showModal(
         'Subscription Failed',
@@ -566,7 +567,7 @@ export default function Pricing() {
         'text-green-400'
       );
     } catch (error) {
-      console.error('Upgrade failed:', error);
+      debugError('Upgrade failed:', error);
       const errorMessage = resolveSubscriptionErrorMessage(error);
       showModal(
         'Upgrade Failed',

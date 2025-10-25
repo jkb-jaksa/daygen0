@@ -35,6 +35,7 @@ import type { AvatarSelection, StoredAvatar } from "../avatars/types";
 import { createAvatarRecord, normalizeStoredAvatars } from "../../utils/avatars";
 import { getPersistedValue, setPersistedValue } from "../../lib/clientStorage";
 import { getToolLogo, hasToolLogo } from "../../utils/toolLogos";
+import { debugWarn } from "../../utils/debug";
 import { AspectRatioDropdown } from "../AspectRatioDropdown";
 import type { AspectRatioOption, GeminiAspectRatio } from "../../types/aspectRatio";
 import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../../data/aspectRatios";
@@ -470,7 +471,7 @@ const ChatMode: React.FC = () => {
       const previews = await Promise.all(nextFiles.map(readFileAsDataUrl));
       setReferencePreviews(prev => [...prev, ...previews].slice(0, REFERENCE_LIMIT));
     } catch (error) {
-      console.warn("Failed to load reference", error);
+      debugWarn("Failed to load reference", error);
     } finally {
       event.target.value = "";
     }
