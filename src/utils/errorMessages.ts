@@ -14,6 +14,8 @@ export const UPLOAD_FAILURE_MESSAGE = "We couldn't read that image. Re-upload or
 export const DOWNLOAD_FAILURE_MESSAGE = "We couldn't download the file. Save image locally instead.";
 export const GOOGLE_EMAIL_MESSAGE = "We couldn't read your Google email—try email login instead.";
 export const INVALID_CREDENTIALS_MESSAGE = "Check your email & password, then try again.";
+export const TIMEOUT_MESSAGE = "That took too long. Check your connection and try again.";
+export const ABORTED_MESSAGE = "Request cancelled. Try again when ready.";
 
 // Payment-related error messages
 export const PAYMENT_FAILED_MESSAGE = "Your payment failed. Please check your payment method and try again.";
@@ -85,6 +87,19 @@ export function getOfflineOrNetworkMessage(error?: unknown): string | null {
 
   if (error instanceof Error) {
     const normalized = error.message.toLowerCase();
+    
+    // Check for AbortError (DOMException)
+    if (error.name === 'AbortError') {
+      const isTimeout = normalized.includes('timeout') || normalized.includes('request timeout');
+      return isTimeout ? TIMEOUT_MESSAGE : ABORTED_MESSAGE;
+    }
+    
+    // Check for timeout patterns
+    if (normalized.includes('timeout') || normalized.includes('request timeout')) {
+      return TIMEOUT_MESSAGE;
+    }
+    
+    // Check for network error patterns
     if (NETWORK_ERROR_PATTERNS.some((pattern) => normalized.includes(pattern))) {
       return NETWORK_RETRY_MESSAGE;
     }
@@ -115,6 +130,15 @@ export function resolveApiErrorMessage({
   const normalizedMessage = normalizeMessage(message);
   const lower = normalizedMessage.toLowerCase();
 
+  // Check for timeout/abort patterns first
+  if (lower.includes('timeout') || lower.includes('request timeout')) {
+    return TIMEOUT_MESSAGE;
+  }
+  
+  if (lower.includes('cancelled') || lower.includes('aborted')) {
+    return ABORTED_MESSAGE;
+  }
+
   if (status === 401 || SESSION_EXPIRED_PATTERNS.some((pattern) => lower.includes(pattern))) {
     return SESSION_EXPIRED_MESSAGE;
   }
@@ -135,7 +159,7 @@ export function resolveApiErrorMessage({
     return normalizedMessage;
   }
 
-  return fallback ?? "We couldn’t complete that request. Try again in a moment.";
+  return fallback ?? "We couldn't complete that request. Try again in a moment.";
 }
 
 export function resolveAuthErrorMessage(error: unknown, context: AuthErrorContext, options?: { rawMessage?: string | null }): string {
