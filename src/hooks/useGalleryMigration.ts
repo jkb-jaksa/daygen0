@@ -164,9 +164,22 @@ export const useGalleryMigration = () => {
           }));
 
         } catch (error) {
-          const errorMessage = `Batch ${batchIndex + 1} failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const message = error instanceof Error ? error.message : String(error);
+          const errorMessage = `Batch ${batchIndex + 1} failed: ${message}`;
           allErrors.push(errorMessage);
           debugError('Migration batch failed:', error);
+
+          // If we hit a likely CORS/network failure, stop further attempts for now
+          const lower = message.toLowerCase();
+          if (lower.includes('failed to fetch') || lower.includes('cors')) {
+            setStatus(prev => ({
+              ...prev,
+              isRunning: false,
+              completed: true,
+              errors: [...prev.errors, 'Migration skipped due to network/CORS; will not retry automatically.'],
+            }));
+            break;
+          }
         }
       }
 
