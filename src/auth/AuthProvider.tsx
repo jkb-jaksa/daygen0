@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useContext } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl, parseJsonSafe } from '../utils/api';
@@ -542,13 +542,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-// Export the hook for use in api.ts
-export const useEnsureValidToken = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useEnsureValidToken must be used within an AuthProvider');
-  }
-  return context.useEnsureValidToken();
-};
 
