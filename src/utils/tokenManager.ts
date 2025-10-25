@@ -1,6 +1,10 @@
 import { supabase } from '../lib/supabase';
 import { debugError, debugLog, debugWarn } from './debug';
 
+// Add refresh lock and token caching
+let refreshPromise: Promise<string> | null = null;
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
 /**
  * Wraps a promise with a timeout
  */
@@ -19,72 +23,80 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: st
  */
 export async function ensureValidToken(): Promise<string> {
   try {
-    debugLog('[TokenManager] Getting current session...');
+    const now = Date.now();
     
-    // Get current session with 5 second timeout
-    const { data: { session }, error: sessionError } = await withTimeout(
-      supabase.auth.getSession(),
-      5000,
-      'Session fetch timeout'
-    );
-    
-    if (sessionError) {
-      debugError('[TokenManager] Error getting current session:', sessionError);
-      throw new Error('Failed to get current session');
+    // Return cached token if still valid (30 second buffer)
+    if (cachedToken && cachedToken.expiresAt > now + 30000) {
+      debugLog('[TokenManager] Using cached token');
+      return cachedToken.token;
     }
 
-    if (!session) {
-      debugError('[TokenManager] No active session found');
-      throw new Error('No active session');
+    // If refresh already in progress, wait for it
+    if (refreshPromise) {
+      debugLog('[TokenManager] Refresh in progress, waiting...');
+      return refreshPromise;
     }
 
-    debugLog('[TokenManager] Session found, checking expiry...');
-
-    // Check if token is expired or will expire soon (5 minute buffer)
-    const now = Math.floor(Date.now() / 1000);
-    const expiresAt = session.expires_at || 0;
-    const bufferTime = 5 * 60; // 5 minutes in seconds
-    const timeUntilExpiry = expiresAt - now;
-
-    debugLog(`[TokenManager] Token expires in ${timeUntilExpiry} seconds`);
-
-    if (timeUntilExpiry < bufferTime) {
-      debugLog('[TokenManager] Token expires soon, refreshing session...');
-      
+    // Create new refresh promise
+    refreshPromise = (async () => {
       try {
-        // Refresh with 5 second timeout
-        const { data: refreshData, error: refreshError } = await withTimeout(
-          supabase.auth.refreshSession(),
-          5000,
-          'Session refresh timeout'
+        debugLog('[TokenManager] Getting current session...');
+        
+        const { data: { session }, error: sessionError } = await withTimeout(
+          supabase.auth.getSession(),
+          10000, // Increased from 5s to 10s
+          'Session fetch timeout'
         );
         
-        if (refreshError) {
-          debugError('[TokenManager] Error refreshing session:', refreshError);
-          debugWarn('[TokenManager] Using current token despite refresh failure');
-          // Return current token as fallback
-          return session.access_token;
+        if (sessionError || !session) {
+          throw new Error('No active session');
         }
 
-        if (!refreshData.session) {
-          debugWarn('[TokenManager] No session returned from refresh, using current token');
-          return session.access_token;
+        // Check if token needs refresh (2 minute buffer instead of 5)
+        const nowSeconds = Math.floor(now / 1000);
+        const expiresAt = session.expires_at || 0;
+        const bufferTime = 2 * 60; // 2 minutes
+        const timeUntilExpiry = expiresAt - nowSeconds;
+
+        debugLog(`[TokenManager] Token expires in ${timeUntilExpiry} seconds`);
+
+        if (timeUntilExpiry < bufferTime) {
+          debugLog('[TokenManager] Token expires soon, refreshing...');
+          
+          const { data: refreshData, error: refreshError } = await withTimeout(
+            supabase.auth.refreshSession(),
+            10000,
+            'Session refresh timeout'
+          );
+          
+          if (refreshError || !refreshData.session) {
+            debugWarn('[TokenManager] Refresh failed, using current token');
+            const token = session.access_token;
+            cachedToken = { token, expiresAt: expiresAt * 1000 };
+            return token;
+          }
+          
+          debugLog('[TokenManager] Session refreshed successfully');
+          const token = refreshData.session.access_token;
+          const newExpiresAt = refreshData.session.expires_at || 0;
+          cachedToken = { token, expiresAt: newExpiresAt * 1000 };
+          return token;
         }
-        
-        debugLog('[TokenManager] Session refreshed successfully');
-        return refreshData.session.access_token;
-      } catch (error) {
-        debugError('[TokenManager] Session refresh failed:', error);
-        debugWarn('[TokenManager] Using current token despite refresh failure');
-        // Return current token as fallback instead of throwing
-        return session.access_token;
+
+        // Token is still valid
+        const token = session.access_token;
+        cachedToken = { token, expiresAt: expiresAt * 1000 };
+        return token;
+      } finally {
+        // Clear the refresh promise when done
+        refreshPromise = null;
       }
-    }
+    })();
 
-    debugLog('[TokenManager] Token is valid, using current token');
-    return session.access_token;
+    return refreshPromise;
   } catch (error) {
-    debugError('[TokenManager] Fatal error in token validation:', error);
+    refreshPromise = null;
+    debugError('[TokenManager] Fatal error:', error);
     throw error;
   }
 }
