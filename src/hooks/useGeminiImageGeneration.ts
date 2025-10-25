@@ -338,6 +338,8 @@ export const useGeminiImageGeneration = () => {
         ? (value as Record<string, unknown>)
         : null;
 
+    debugLog(`[Gemini] Polling job ${jobId}, attempt ${attempts + 1}/${maxAttempts}`);
+    
     while (attempts < maxAttempts) {
       try {
         const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
@@ -346,11 +348,17 @@ export const useGeminiImageGeneration = () => {
           },
         });
 
+        debugLog(`[Gemini] Job status check response: ${response.status}`);
+
         if (!response.ok) {
+          debugError(`[Gemini] Job status check failed: ${response.status}`);
           throw new Error(`Failed to check job status: ${response.status}`);
         }
 
         const job = await response.json();
+        debugLog(`[Gemini] Job status: ${job.status}, progress: ${job.progress}`);
+        debugLog(`[Gemini] Job error:`, job.error);
+        debugLog(`[Gemini] Job metadata:`, job.metadata);
         const metadata = asRecord(job.metadata);
         const progressValueRaw =
           typeof job.progress === 'number'
@@ -588,6 +596,9 @@ export const useGeminiImageGeneration = () => {
         resolvedModel,
         resolvedModel === 'gemini-2.5-flash-image',
       );
+      
+      debugLog('[Gemini] Received payload:', payload);
+      
       const payloadRecord =
         payload && typeof payload === 'object'
           ? (payload as Record<string, unknown>)
@@ -601,8 +612,11 @@ export const useGeminiImageGeneration = () => {
           extractJobId(payloadRecord['job_id'])
         : undefined;
 
+      debugLog('[Gemini] Extracted jobId:', jobIdFromPayload);
+
       // Check if this is a job-based response
       if (jobIdFromPayload) {
+        debugLog('[Gemini] Starting job polling for jobId:', jobIdFromPayload);
         // Poll for job completion
         const payloadProgress =
           payloadRecord && typeof payloadRecord['progress'] === 'number'

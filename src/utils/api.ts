@@ -1,4 +1,6 @@
 import { resolveApiErrorMessage, RETRYABLE_STATUS_CODES, DEFAULT_MAX_RETRIES, DEFAULT_INITIAL_DELAY_MS, DEFAULT_MAX_DELAY_MS, RETRY_BACKOFF_MULTIPLIER } from './errorMessages';
+import { ensureValidToken } from './tokenManager';
+import { debugLog, debugError } from './debug';
 
 type ApiEnv = ImportMetaEnv & {
   readonly VITE_API_BASE_URL?: string;
@@ -113,13 +115,6 @@ export function buildUrl(
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('daygen:authToken');
-}
 
 /**
  * Safely parse JSON from response, checking Content-Type first
@@ -356,9 +351,16 @@ export async function apiFetch<T = unknown>(
 
   // Add auth header if needed
   if (auth) {
-    const token = getAuthToken();
-    if (token) {
+    try {
+      debugLog('[API] Getting valid token...');
+      const token = await ensureValidToken();
       headers.Authorization = `Bearer ${token}`;
+      debugLog('[API] Token obtained, proceeding with request');
+    } catch (error) {
+      // If token validation fails, throw a clear error
+      const message = error instanceof Error ? error.message : 'Authentication failed';
+      debugError('[API] Token validation failed:', error);
+      throw new Error(`Authentication error: ${message}`);
     }
   }
 
@@ -377,7 +379,9 @@ export async function apiFetch<T = unknown>(
   return withRetry(
     async () => {
       // Make the request
+      debugLog(`[API] Making ${method} request to ${url}`);
       const response = await fetch(url, fetchOptions);
+      debugLog(`[API] Response received: ${response.status} ${response.statusText}`);
 
       // Parse response safely
       const payload = await parseJsonSafe(response);

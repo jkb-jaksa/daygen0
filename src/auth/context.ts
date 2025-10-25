@@ -31,6 +31,8 @@ type AuthContextValue = {
   updateProfile: (patch: UpdateProfilePayload) => Promise<User>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
+  ensureValidToken: () => Promise<string>;
+  useEnsureValidToken: () => () => Promise<string>;
   mockSignIn?: () => void;
 };
 

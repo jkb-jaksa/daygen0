@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useContext } from 'react';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl, parseJsonSafe } from '../utils/api';
@@ -356,6 +356,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const ensureValidToken = useCallback(async (): Promise<string> => {
+    // Get current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      debugError('Error getting current session:', sessionError);
+      throw new Error('Failed to get current session');
+    }
+
+    if (!session) {
+      throw new Error('No active session');
+    }
+
+    // Check if token is expired or will expire soon (5 minute buffer)
+    const now = Math.floor(Date.now() / 1000);
+    const expiresAt = session.expires_at || 0;
+    const bufferTime = 5 * 60; // 5 minutes in seconds
+
+    if (expiresAt - now < bufferTime) {
+      debugLog('Token expires soon, refreshing session...');
+      
+      try {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          debugError('Error refreshing session:', refreshError);
+          throw new Error('Failed to refresh session');
+        }
+
+        if (!refreshData.session) {
+          throw new Error('No session returned from refresh');
+        }
+
+        // Update our local session state
+        setSession(refreshData.session);
+        
+        debugLog('Session refreshed successfully');
+        return refreshData.session.access_token;
+      } catch (error) {
+        debugError('Session refresh failed:', error);
+        // Clear invalid session
+        setUser(null);
+        setSession(null);
+        throw new Error('Session expired and could not be refreshed. Please sign in again.');
+      }
+    }
+
+    return session.access_token;
+  }, []);
+
+  const useEnsureValidToken = useCallback(() => {
+    return ensureValidToken;
+  }, [ensureValidToken]);
+
   useEffect(() => {
     const {
       data: { subscription },
@@ -477,6 +531,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateProfile,
     requestPasswordReset,
     resetPassword,
+    ensureValidToken,
+    useEnsureValidToken,
   };
 
 
@@ -486,4 +542,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+// Export the hook for use in api.ts
+export const useEnsureValidToken = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useEnsureValidToken must be used within an AuthProvider');
+  }
+  return context.useEnsureValidToken();
+};
 
