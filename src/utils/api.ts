@@ -5,6 +5,8 @@ type ApiEnv = ImportMetaEnv & {
   readonly VITE_BASE_URL?: string;
 };
 
+type ErrorWithStatus = Error & { status?: number };
+
 const env = import.meta.env as ApiEnv;
 
 const rawBase = env?.VITE_API_BASE_URL
@@ -235,8 +237,8 @@ async function withRetry<T>(
  */
 function isRetryableError(error: Error, retryableStatuses: number[]): boolean {
   // Check if error has a status property (set by apiFetch)
-  if ((error as any).status && typeof (error as any).status === 'number') {
-    return retryableStatuses.includes((error as any).status);
+  if ((error as ErrorWithStatus).status && typeof (error as ErrorWithStatus).status === 'number') {
+    return retryableStatuses.includes((error as ErrorWithStatus).status);
   }
   
   // Check if error message contains a status code
@@ -389,7 +391,7 @@ export async function apiFetch<T = unknown>(
         
         // Create error with status code for retry logic
         const error = new Error(message);
-        (error as any).status = response.status;
+        (error as ErrorWithStatus).status = response.status;
         throw error;
       }
 
