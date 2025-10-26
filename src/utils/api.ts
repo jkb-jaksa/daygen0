@@ -1,6 +1,7 @@
 import { resolveApiErrorMessage, RETRYABLE_STATUS_CODES, DEFAULT_MAX_RETRIES, DEFAULT_INITIAL_DELAY_MS, DEFAULT_MAX_DELAY_MS, RETRY_BACKOFF_MULTIPLIER } from './errorMessages';
 import { ensureValidToken } from './tokenManager';
 import { debugLog, debugError } from './debug';
+import { authMetrics } from './authMetrics';
 
 type ApiEnv = ImportMetaEnv & {
   readonly VITE_API_BASE_URL?: string;
@@ -360,6 +361,7 @@ export async function apiFetch<T = unknown>(
       // If token validation fails, throw a clear error
       const message = error instanceof Error ? error.message : 'Authentication failed';
       debugError('[API] Token validation failed:', error);
+      try { authMetrics.increment('api_auth_error'); } catch {}
       throw new Error(`Authentication error: ${message}`);
     }
   }

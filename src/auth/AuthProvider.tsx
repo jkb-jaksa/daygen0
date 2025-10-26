@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl, parseJsonSafe } from '../utils/api';
@@ -10,6 +10,8 @@ import {
 import { useCrossTabSync } from '../hooks/useCrossTabSync';
 import { authMetrics } from '../utils/authMetrics';
 import { debugError, debugLog, debugWarn } from '../utils/debug';
+import { ensureValidToken as ensureValidTokenGlobal, resetTokenCache } from '../utils/tokenManager';
+import { migrateKeyToIndexedDb, removePersistedValue, getPersistedValue, setPersistedValue } from '../lib/clientStorage';
 
 type SessionTokens = {
   accessToken?: string | null;
@@ -67,6 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Derive a per-user storage prefix to avoid cross-account bleed
+  const storagePrefix = useMemo(() => {
+    const uid = user?.authUserId || user?.id;
+    return uid ? `daygen:${uid}:` : 'daygen:anon:';
+  }, [user?.authUserId, user?.id]);
 
   const syncWithBackend = useCallback(
     async (tokens: SessionTokens) => {
@@ -183,6 +191,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(profile);
     setSession(data.session ?? null);
+    // Migrate legacy unscoped keys once on sign-in
+    try {
+      void migrateKeyToIndexedDb('daygen:', 'gallery');
+      void migrateKeyToIndexedDb('daygen:', 'favorites');
+      void migrateKeyToIndexedDb('daygen:', 'folders');
+      void migrateKeyToIndexedDb('daygen:', 'editGallery');
+      void migrateKeyToIndexedDb('daygen:', 'inspirations');
+      void migrateKeyToIndexedDb('daygen:', 'avatars');
+      void migrateKeyToIndexedDb('daygen:', 'avatar-favorites');
+      // Copy legacy unscoped values into scoped prefix if missing
+      const newPrefix = `daygen:${profile.authUserId || profile.id}:`;
+      const keys: Array<Parameters<typeof setPersistedValue>[1]> = [
+        'gallery','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
+      ];
+      for (const key of keys) {
+        const [legacy, scoped] = await Promise.all([
+          getPersistedValue<any>('daygen:', key),
+          getPersistedValue<any>(newPrefix, key),
+        ]);
+        if (legacy != null && scoped == null) {
+          await setPersistedValue(newPrefix, key, legacy);
+        }
+      }
+    } catch {}
     return profile;
   }, [fetchUserProfile]);
 
@@ -215,6 +247,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(profile);
     setSession(data.session ?? null);
+    try {
+      void migrateKeyToIndexedDb('daygen:', 'gallery');
+      void migrateKeyToIndexedDb('daygen:', 'favorites');
+      void migrateKeyToIndexedDb('daygen:', 'folders');
+      void migrateKeyToIndexedDb('daygen:', 'editGallery');
+      void migrateKeyToIndexedDb('daygen:', 'inspirations');
+      void migrateKeyToIndexedDb('daygen:', 'avatars');
+      void migrateKeyToIndexedDb('daygen:', 'avatar-favorites');
+      const newPrefix = `daygen:${profile.authUserId || profile.id}:`;
+      const keys: Array<Parameters<typeof setPersistedValue>[1]> = [
+        'gallery','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
+      ];
+      for (const key of keys) {
+        const [legacy, scoped] = await Promise.all([
+          getPersistedValue<any>('daygen:', key),
+          getPersistedValue<any>(newPrefix, key),
+        ]);
+        if (legacy != null && scoped == null) {
+          await setPersistedValue(newPrefix, key, legacy);
+        }
+      }
+    } catch {}
     return profile;
   }, [fetchUserProfile]);
 
@@ -251,6 +305,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       debugError('Error signing out:', error);
     }
 
+    // Reset token caches and clear per-user persisted values
+    try {
+      resetTokenCache();
+      try { authMetrics.increment('token_cache_reset'); } catch {}
+    } catch {}
+    try {
+      if (storagePrefix) {
+        await removePersistedValue(storagePrefix, 'gallery');
+        await removePersistedValue(storagePrefix, 'favorites');
+        await removePersistedValue(storagePrefix, 'folders');
+        await removePersistedValue(storagePrefix, 'editGallery');
+        await removePersistedValue(storagePrefix, 'inspirations');
+        await removePersistedValue(storagePrefix, 'avatars');
+        await removePersistedValue(storagePrefix, 'avatar-favorites');
+      }
+    } catch {}
     setUser(null);
     setSession(null);
   }, [session?.access_token]);
@@ -296,8 +366,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const logOut = useCallback(async () => {
+    try { authMetrics.increment('logout_clicked'); } catch {}
     await logOutInternal();
     notifyUserLogout();
+    try { authMetrics.increment('logout_done'); } catch {}
   }, [logOutInternal, notifyUserLogout]);
 
   // Notify other tabs when credits change
@@ -358,53 +430,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const ensureValidToken = useCallback(async (): Promise<string> => {
-    // Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      debugError('Error getting current session:', sessionError);
-      throw new Error('Failed to get current session');
-    }
-
-    if (!session) {
-      throw new Error('No active session');
-    }
-
-    // Check if token is expired or will expire soon (5 minute buffer)
-    const now = Math.floor(Date.now() / 1000);
-    const expiresAt = session.expires_at || 0;
-    const bufferTime = 5 * 60; // 5 minutes in seconds
-
-    if (expiresAt - now < bufferTime) {
-      debugLog('Token expires soon, refreshing session...');
-      
-      try {
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (refreshError) {
-          debugError('Error refreshing session:', refreshError);
-          throw new Error('Failed to refresh session');
-        }
-
-        if (!refreshData.session) {
-          throw new Error('No session returned from refresh');
-        }
-
-        // Update our local session state
-        setSession(refreshData.session);
-        
-        debugLog('Session refreshed successfully');
-        return refreshData.session.access_token;
-      } catch (error) {
-        debugError('Session refresh failed:', error);
-        // Clear invalid session
-        setUser(null);
-        setSession(null);
-        throw new Error('Session expired and could not be refreshed. Please sign in again.');
-      }
-    }
-
-    return session.access_token;
+    return ensureValidTokenGlobal();
   }, []);
 
   const useEnsureValidToken = useCallback(() => {
@@ -430,6 +456,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Don't immediately clear user on transient errors during navigation
           // Only clear if it's a sign out event or persistent error
           if (event === 'SIGNED_OUT') {
+            try { resetTokenCache(); } catch {}
+            try { authMetrics.increment('token_cache_reset'); } catch {}
             setUser(null);
             setSession(null);
           }
@@ -437,6 +465,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // Only clear user/session if it's an explicit sign out
         if (event === 'SIGNED_OUT') {
+          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
           setUser(null);
           setSession(null);
         } else if (event === 'TOKEN_REFRESHED' && !nextSession) {
@@ -446,6 +475,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data, error } = await supabase.auth.getSession();
             if (error) {
               debugError('Failed to recover session after refresh error:', error);
+              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
               setUser(null);
               setSession(null);
             } else if (data.session?.user) {
@@ -456,15 +486,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(profile);
               setSession(data.session);
             } else {
+              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
               setUser(null);
               setSession(null);
             }
           } catch (recoveryError) {
             debugError('Session recovery failed:', recoveryError);
+            try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
             setUser(null);
             setSession(null);
           }
         } else {
+          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
           setUser(null);
           setSession(null);
         }
@@ -523,7 +556,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token: session?.access_token ?? null,
     isLoading,
     isAuthenticated: Boolean(user),
-    storagePrefix: 'daygen',
+    storagePrefix,
     signIn,
     signUp,
     signInWithGoogle,

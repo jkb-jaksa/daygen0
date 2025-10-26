@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
+import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
 import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 import type { GeneratedImage } from './useGeminiImageGeneration';
@@ -55,17 +55,7 @@ export function useLumaImageGeneration() {
       const maxAttempts = 60;
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
+        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           return {
             url: job.resultUrl,
@@ -139,35 +129,15 @@ export function useLumaImageGeneration() {
           providerOptions.callback_url = options.callbackUrl;
         }
 
-        const response = await fetch(getApiUrl('/api/image/luma'), {
+        const payload = await apiFetch<Record<string, unknown>>('/api/image/luma', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
+          body: {
             prompt: options.prompt,
             model: options.model,
             providerOptions,
-          }),
+          },
+          context: 'generation',
         });
-
-        if (!response.ok) {
-          const payload = await parseJsonSafe(response);
-          const rawMessage =
-            (payload && typeof payload.error === 'string' && payload.error) ||
-            (payload && typeof payload.message === 'string' && payload.message) ||
-            null;
-          const message = resolveApiErrorMessage({
-            status: response.status,
-            message: rawMessage,
-            fallback: 'Luma generation failed',
-            context: 'generation',
-          });
-          throw new Error(message);
-        }
-
-        const payload = (await response.json()) as Record<string, unknown>;
 
         if (typeof payload.jobId === 'string') {
           const generatedImage = await pollForJobCompletion(payload.jobId, options);

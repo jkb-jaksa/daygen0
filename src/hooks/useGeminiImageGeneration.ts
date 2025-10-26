@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { apiFetch, getApiUrl } from '../utils/api';
-import { debugLog, debugWarn, debugError } from '../utils/debug';
+import { apiFetch } from '../utils/api';
+import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveGenerationCatchError } from '../utils/errorMessages';
 import { useCreditCheck } from './useCreditCheck';
@@ -342,20 +342,8 @@ export const useGeminiImageGeneration = () => {
     
     while (attempts < maxAttempts) {
       try {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        debugLog(`[Gemini] Job status check response: ${response.status}`);
-
-        if (!response.ok) {
-          debugError(`[Gemini] Job status check failed: ${response.status}`);
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
+        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+        debugLog(`[Gemini] Job status check response: ok`);
         debugLog(`[Gemini] Job status: ${job.status}, progress: ${job.progress}`);
         debugLog(`[Gemini] Job error:`, job.error);
         debugLog(`[Gemini] Job metadata:`, job.metadata);
@@ -747,13 +735,15 @@ export const useGeminiImageGeneration = () => {
       }
 
       // Handle immediate response (legacy)
-      if (!payload?.imageBase64) {
+      const imgBase64 = (payload as any)?.imageBase64 as string | undefined;
+      const imgMime = (payload as any)?.mimeType as string | undefined;
+      if (!imgBase64) {
         throw new Error('No image data returned from API');
       }
 
       // Convert the new API response format to our expected format
       const generatedImage: GeneratedImage = {
-        url: `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`,
+        url: `data:${imgMime || 'image/png'};base64,${imgBase64}`,
         prompt,
         model: modelUsed,
         timestamp: new Date().toISOString(),

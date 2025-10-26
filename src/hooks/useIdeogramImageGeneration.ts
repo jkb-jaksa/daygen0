@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
+import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
 import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
@@ -118,17 +118,7 @@ export const useIdeogramImageGeneration = () => {
 
       while (attempts < maxAttempts) {
         try {
-          const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to check job status: ${response.status}`);
-          }
-
-          const job = await response.json();
+          const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
 
           if (job.status === 'COMPLETED' && job.resultUrl) {
             return [
@@ -222,38 +212,18 @@ export const useIdeogramImageGeneration = () => {
         if (options.style_type) providerOptions.style_type = options.style_type;
         if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
 
-        const response = await fetch(getApiUrl('/api/image/ideogram'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            prompt: options.prompt,
-            model: 'ideogram',
-            providerOptions,
-          }),
-        });
-
-        if (!response.ok) {
-          const payload = await parseJsonSafe(response);
-          const rawMessage =
-            (payload && typeof payload.error === 'string' && payload.error) ||
-            (payload && typeof payload.message === 'string' && payload.message) ||
-            null;
-          const message = resolveApiErrorMessage({
-            status: response.status,
-            message: rawMessage,
-            fallback: 'Ideogram generation failed',
+        const payload = await apiFetch<{ jobId?: string; dataUrls?: string[] }>(
+          '/api/image/ideogram',
+          {
+            method: 'POST',
+            body: {
+              prompt: options.prompt,
+              model: 'ideogram',
+              providerOptions,
+            },
             context: 'generation',
-          });
-          throw new Error(message);
-        }
-
-        const payload = (await response.json()) as {
-          jobId?: string;
-          dataUrls?: string[];
-        };
+          }
+        );
 
         if (payload.jobId) {
           const generatedImages = await pollForJobCompletion(

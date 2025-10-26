@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
+import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -65,17 +65,7 @@ export const useRunwayImageGeneration = () => {
       const maxAttempts = 60;
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
+        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           return {
             url: job.resultUrl,
@@ -134,52 +124,18 @@ export const useRunwayImageGeneration = () => {
 
       debugLog('[runway] POST', apiUrl);
       
-      const res = await fetch(apiUrl, {
+      const payload = await apiFetch<Record<string, any>>('/api/image/runway', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ 
-          prompt, 
+        body: {
+          prompt,
           model: uiModel,
-          references, 
+          references,
           avatarId: options.avatarId,
           avatarImageId: options.avatarImageId,
-          providerOptions: {
-            ratio,
-            seed,
-          },
-        }),
+          providerOptions: { ratio, seed },
+        },
+        context: 'generation',
       });
-
-      if (!res.ok) {
-        const errBody = await parseJsonSafe(res);
-
-        if (res.status === 422) {
-          const details = errBody?.details;
-          if (details) {
-            throw new Error(`Runway generation failed: ${details.error || 'Task failed'}`);
-          }
-        }
-
-        const rawMessage =
-          (errBody && typeof errBody.error === 'string' && errBody.error) ||
-          (errBody && typeof errBody.message === 'string' && errBody.message) ||
-          null;
-        const errorMessage =
-          res.status === 429
-            ? PLAN_LIMIT_MESSAGE
-            : resolveApiErrorMessage({
-                status: res.status,
-                message: rawMessage,
-                fallback: `Request failed with ${res.status}`,
-                context: 'generation',
-              });
-        throw new Error(errorMessage);
-      }
-
-      const payload = await res.json();
 
       if (payload?.jobId) {
         const generatedImage = await pollForJobCompletion(

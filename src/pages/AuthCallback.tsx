@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
 import { getApiUrl } from '../utils/api';
 import { debugError, debugWarn } from '../utils/debug';
+import { authMetrics } from '../utils/authMetrics';
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,10 @@ export default function AuthCallback() {
       }
       hasHandledRef.current = true;
       sessionStorage.setItem(handledKey, '1');
+      // Guard timeout to avoid infinite authenticating state
+      const guard = setTimeout(() => {
+        authMetrics.increment('auth_callback_timeout');
+      }, 10000);
       try {
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
@@ -144,6 +149,7 @@ export default function AuthCallback() {
         debugError('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
       } finally {
+        clearTimeout(guard);
         setIsLoading(false);
       }
     };

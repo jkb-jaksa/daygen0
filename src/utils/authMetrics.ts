@@ -8,7 +8,12 @@ type AuthMetricType =
   | 'next_credential_rejected' // @ character detected
   | 'auth_401_response'        // Received 401 from backend
   | 'auth_refresh_success'     // Successfully refreshed user
-  | 'auth_refresh_failure';    // Failed to refresh user
+  | 'auth_refresh_failure'     // Failed to refresh user
+  | 'logout_clicked'           // User initiated logout
+  | 'logout_done'              // Logout completed client-side
+  | 'token_cache_reset'        // Token cache was reset
+  | 'auth_callback_timeout'    // Auth callback exceeded guard timeout
+  | 'api_auth_error';          // API request failed due to auth
 
 type AuthMetric = {
   count: number;
@@ -48,7 +53,12 @@ class AuthMetricsTracker {
       'next_credential_rejected',
       'auth_401_response',
       'auth_refresh_success',
-      'auth_refresh_failure'
+      'auth_refresh_failure',
+      'logout_clicked',
+      'logout_done',
+      'token_cache_reset',
+      'auth_callback_timeout',
+      'api_auth_error'
     ];
 
     return metricTypes.reduce((acc, type) => {

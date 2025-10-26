@@ -100,3 +100,11 @@ export async function ensureValidToken(): Promise<string> {
     throw error;
   }
 }
+
+/**
+ * Resets any cached token state so the next caller will re-resolve from Supabase
+ */
+export function resetTokenCache(): void {
+  refreshPromise = null;
+  cachedToken = null;
+}
