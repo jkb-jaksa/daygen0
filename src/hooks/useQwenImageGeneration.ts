@@ -42,7 +42,7 @@ export interface QwenGenerateOptions {
 const UNSUPPORTED_MESSAGE = 'Qwen image editing is not yet available in the backend integration.';
 
 export const useQwenImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<QwenImageGenerationState>({
     isLoading: false,
     error: null,
@@ -88,7 +88,7 @@ export const useQwenImageGeneration = () => {
 
       throw new Error('Job polling timeout');
     },
-    [token, user?.id],
+    [user?.id],
   );
 
   const generateImage = useCallback(
@@ -185,7 +185,7 @@ export const useQwenImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id, pollForJobCompletion],
+    [user?.id, pollForJobCompletion],
   );
 
   const editImage = useCallback(async () => {

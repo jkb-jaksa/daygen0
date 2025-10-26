@@ -53,7 +53,7 @@ export interface FluxImageGenerationOptions {
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
 
 export const useFluxImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<FluxImageGenerationState>({
     isLoading: false,
     error: null,
@@ -160,7 +160,7 @@ export const useFluxImageGeneration = () => {
 
       throw new Error('Job polling timeout');
     },
-    [token],
+    [],
   );
 
   const generateImage = useCallback(
@@ -265,7 +265,7 @@ export const useFluxImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id, pollForJobCompletion],
+    [user?.id, pollForJobCompletion],
   );
 
   const clearError = useCallback(() => {

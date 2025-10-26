@@ -43,7 +43,7 @@ export interface ReveImageGenerationOptions {
 const UNSUPPORTED_MESSAGE = 'Reve image editing is not yet available in the backend integration.';
 
 export const useReveImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<ReveImageGenerationState>({
     isLoading: false,
     error: null,
@@ -86,7 +86,7 @@ export const useReveImageGeneration = () => {
 
       throw new Error('Job polling timeout');
     },
-    [token, user?.id],
+    [user?.id],
   );
 
   const generateImage = useCallback(
@@ -202,7 +202,7 @@ export const useReveImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id, pollForJobCompletion],
+    [user?.id, pollForJobCompletion],
   );
 
   const editImage = useCallback(async () => {

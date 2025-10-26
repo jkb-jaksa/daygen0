@@ -20,6 +20,14 @@ export interface GeneratedImage {
   jobId?: string;
 }
 
+interface JobResponse {
+  status: string;
+  progress?: number | string;
+  error?: string | null;
+  metadata?: Record<string, unknown> | null;
+  resultUrl?: string | null;
+}
+
 export type ImageGenerationStatus =
   | 'idle'
   | 'queued'
@@ -107,7 +115,7 @@ export interface ImageGenerationOptions {
 }
 
 export const useGeminiImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const { 
     checkCredits, 
     showInsufficientCreditsModal, 
@@ -342,7 +350,7 @@ export const useGeminiImageGeneration = () => {
     
     while (attempts < maxAttempts) {
       try {
-        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+        const job = await apiFetch<JobResponse>(`/api/jobs/${jobId}`);
         debugLog(`[Gemini] Job status check response: ok`);
         debugLog(`[Gemini] Job status: ${job.status}, progress: ${job.progress}`);
         debugLog(`[Gemini] Job error:`, job.error);
@@ -445,7 +453,7 @@ export const useGeminiImageGeneration = () => {
     }
 
     throw new Error('Job polling timeout');
-  }, [token, updateControllerWithBackend, stopProgressController]);
+  }, [updateControllerWithBackend, stopProgressController]);
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     // Check credits before starting generation

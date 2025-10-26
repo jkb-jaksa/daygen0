@@ -35,7 +35,7 @@ export interface LumaImageGenerationOptions {
 const DEFAULT_ASPECT_RATIO = '16:9';
 
 export function useLumaImageGeneration() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<LumaImageGenerationState>({
     isLoading: false,
     error: null,
@@ -78,7 +78,7 @@ export function useLumaImageGeneration() {
 
       throw new Error('Job polling timeout');
     },
-    [token, user?.id],
+    [user?.id],
   );
 
   const generateImage = useCallback(
@@ -228,7 +228,7 @@ export function useLumaImageGeneration() {
         throw new Error(message);
       }
     },
-    [token, user?.id, pollForJobCompletion],
+    [user?.id, pollForJobCompletion],
   );
 
   const clearError = useCallback(() => {

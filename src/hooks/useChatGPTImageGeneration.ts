@@ -36,7 +36,7 @@ export interface ChatGPTImageGenerationOptions {
 }
 
 export const useChatGPTImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<ChatGPTImageGenerationState>({
     isLoading: false,
     error: null,
@@ -77,7 +77,7 @@ export const useChatGPTImageGeneration = () => {
 
       throw new Error('Job polling timeout');
     },
-    [token, user?.id],
+    [user?.id],
   );
 
   const generateImage = useCallback(async (options: ChatGPTImageGenerationOptions) => {
@@ -175,7 +175,7 @@ export const useChatGPTImageGeneration = () => {
 
       throw new Error(errorMessage);
     }
-  }, [token, user?.id, pollForJobCompletion]);
+  }, [user?.id, pollForJobCompletion]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

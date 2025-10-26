@@ -36,7 +36,7 @@ export interface ImageGenerationOptions {
 }
 
 export const useRunwayImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const { 
     checkCredits, 
     showInsufficientCreditsModal, 
@@ -87,7 +87,7 @@ export const useRunwayImageGeneration = () => {
 
       throw new Error('Job polling timeout');
     },
-    [token],
+    [],
   );
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
@@ -191,7 +191,7 @@ export const useRunwayImageGeneration = () => {
 
       throw new Error(errorMessage);
     }
-  }, [token, user?.id, pollForJobCompletion, checkCredits]);
+  }, [user?.id, pollForJobCompletion, checkCredits]);
 
   const clearError = useCallback(() => {
     setState(prev => ({

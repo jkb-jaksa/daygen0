@@ -87,7 +87,7 @@ export interface IdeogramDescribeOptions {
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Ideogram images.';
 
 export const useIdeogramImageGeneration = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<IdeogramImageGenerationState>({
     isLoading: false,
     error: null,
@@ -174,7 +174,7 @@ export const useIdeogramImageGeneration = () => {
 
       throw new Error('Job polling timeout');
     },
-    [token],
+    [],
   );
 
   const generateImage = useCallback(
@@ -293,7 +293,7 @@ export const useIdeogramImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [token, user?.id, pollForJobCompletion],
+    [user?.id, pollForJobCompletion],
   );
 
   const reportUnsupported = useCallback(async (feature: string) => {
