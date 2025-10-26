@@ -81,7 +81,9 @@ export default function AuthCallback() {
           try {
             const cleanUrl = `${window.location.origin}${window.location.pathname}`;
             window.history.replaceState({}, '', cleanUrl);
-          } catch {}
+          } catch {
+            // Intentionally ignore replaceState errors (e.g., in sandboxed iframes)
+          }
 
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
@@ -128,7 +130,9 @@ export default function AuthCallback() {
         try {
           const cleanUrl = `${window.location.origin}${window.location.pathname}`;
           window.history.replaceState({}, '', cleanUrl);
-        } catch {}
+        } catch {
+          // Intentionally ignore replaceState errors (e.g., in sandboxed iframes)
+        }
 
         if (activeSession?.user) {
           await refreshUser();
