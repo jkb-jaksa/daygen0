@@ -15,15 +15,20 @@ export function SubscriptionManager() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // getPaymentHistory now returns [] on error, getSubscription returns null on no subscription
         const [subData, historyData] = await Promise.all([
-          getSubscription(),
-          getPaymentHistory(),
+          getSubscription().catch((err) => {
+            // Log but don't throw - this is expected for users without subscriptions
+            debugError('Subscription fetch returned error (user may not have subscription):', err);
+            return null;
+          }),
+          getPaymentHistory(), // This now never throws, always returns array
         ]);
         
         setSubscription(subData);
         setPaymentHistory(historyData);
       } catch (err) {
-        debugError('Error fetching subscription data:', err);
+        debugError('Unexpected error in fetchData:', err);
         setError('Failed to load subscription data');
       } finally {
         setLoading(false);

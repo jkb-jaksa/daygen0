@@ -18,26 +18,73 @@ export default function AuthCallback() {
       try {
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
+        const typeParam = searchParams.get('type'); // e.g. signup, recovery
 
-        if (errorParam) {
+        // Helper: parse URL fragment for access_token/refresh_token
+        const parseHashTokens = () => {
+          const hash = window.location.hash.startsWith('#')
+            ? window.location.hash.substring(1)
+            : '';
+          const params = new URLSearchParams(hash);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          return { accessToken, refreshToken } as const;
+        };
+
+        // If no PKCE code and we only have an error, surface it
+        if (!code && errorParam) {
           setError(`Authentication error: ${errorParam}`);
           return;
         }
 
         let activeSession: Session | null = null;
 
-        if (code) {
-          const { data, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-
+        // For email confirmation/magic links, Supabase often places tokens in the URL fragment.
+        // Avoid PKCE exchange for email flows (type present) and prefer auto-detection or manual setSession.
+        if (typeParam) {
+          // First, try to pick up any session established by detectSessionInUrl
+          const { data, error: sessionError } = await supabase.auth.getSession();
+          if (!sessionError && data.session) {
+            activeSession = data.session;
+          } else {
+            // Try to parse tokens from hash and set the session manually
+            const { accessToken, refreshToken } = parseHashTokens();
+            if (accessToken && refreshToken) {
+              const { data: setData, error: setErr } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+              if (setErr) {
+                debugError('Set session error:', setErr);
+                setError(setErr.message ?? 'Authentication failed');
+                return;
+              }
+              activeSession = setData.session;
+            } else {
+              // Final fallback: attempt to read session again after a short delay
+              await new Promise((r) => setTimeout(r, 300));
+              const { data: retry } = await supabase.auth.getSession();
+              activeSession = retry.session;
+            }
+          }
+        } else if (code) {
+          // Likely an OAuth PKCE flow (Google, etc.) → exchange the code
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             debugError('Exchange code error:', exchangeError);
-            setError(exchangeError.message ?? 'Google authentication failed');
-            return;
+            // Fallback: see if session is already established automatically
+            const { data: retry, error: sessionError } = await supabase.auth.getSession();
+            if (retry.session && !sessionError) {
+              activeSession = retry.session;
+            } else {
+              setError(exchangeError.message ?? 'Authentication failed');
+              return;
+            }
+          } else {
+            activeSession = data.session;
           }
-
-          activeSession = data.session;
         } else {
+          // No code in query → rely on existing session
           const { data, error: sessionError } = await supabase.auth.getSession();
           if (sessionError) {
             debugError('Session lookup error:', sessionError);
