@@ -95,7 +95,8 @@ See `.env.example` for required environment variables. You'll need API keys for 
 
 ## 🔗 Backend
 
-The backend is in a separate repository: [daygen-backend](https://github.com/skrrrt-and-boom/daygen-backend)
+The backend is deployed to Google Cloud Run and lives in a separate repo: `daygen-backend`.
+If running locally, start the backend from its repository and set `VITE_BACKEND_URL` accordingly.
 
 ## 📚 Documentation
 
@@ -109,9 +110,10 @@ The backend is in a separate repository: [daygen-backend](https://github.com/skr
 - [Quick Start Guide](./QUICK_START.md)
 - [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 
-## 🌐 Live Demo
+## CI/CD
 
-Visit the live application at your deployed Cloudflare Pages URL
+- Frontend deploys automatically to Cloudflare Pages on pushes to `main` via GitHub Actions.
+- Ensure `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are configured as repository secrets.
 
 ## 📄 License
 
