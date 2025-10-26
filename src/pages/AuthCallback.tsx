@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
 import { getApiUrl } from '../utils/api';
 import { debugError, debugWarn } from '../utils/debug';
+import { authMetrics } from '../utils/authMetrics';
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
@@ -12,9 +13,21 @@ export default function AuthCallback() {
   const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasHandledRef = useRef(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      // Persistent guard to avoid duplicate exchanges in dev/StrictMode
+      const handledKey = 'daygen:authCallbackHandled';
+      if (hasHandledRef.current || sessionStorage.getItem(handledKey) === '1') {
+        return; // Prevent duplicate handling in StrictMode/dev
+      }
+      hasHandledRef.current = true;
+      sessionStorage.setItem(handledKey, '1');
+      // Guard timeout to avoid infinite authenticating state
+      const guard = setTimeout(() => {
+        authMetrics.increment('auth_callback_timeout');
+      }, 10000);
       try {
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
@@ -69,9 +82,18 @@ export default function AuthCallback() {
           }
         } else if (code) {
           // Likely an OAuth PKCE flow (Google, etc.) → exchange the code
+          // Clean URL early to avoid duplicate exchanges from StrictMode re-runs
+          try {
+            const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+            window.history.replaceState({}, '', cleanUrl);
+          } catch {
+            // Intentionally ignore replaceState errors (e.g., in sandboxed iframes)
+          }
+
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
-            debugError('Exchange code error:', exchangeError);
+            // In dev/StrictMode this can run twice; if the session already exists, continue silently
+            debugWarn('Exchange code warning:', exchangeError);
             // Fallback: see if session is already established automatically
             const { data: retry, error: sessionError } = await supabase.auth.getSession();
             if (retry.session && !sessionError) {
@@ -109,6 +131,14 @@ export default function AuthCallback() {
           }
         }
 
+        // Ensure URL is clean after handling auth
+        try {
+          const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+          window.history.replaceState({}, '', cleanUrl);
+        } catch {
+          // Intentionally ignore replaceState errors (e.g., in sandboxed iframes)
+        }
+
         if (activeSession?.user) {
           await refreshUser();
           navigate('/');
@@ -119,6 +149,7 @@ export default function AuthCallback() {
         debugError('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
       } finally {
+        clearTimeout(guard);
         setIsLoading(false);
       }
     };

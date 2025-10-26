@@ -55,7 +55,7 @@ import { useLumaVideoGeneration } from "../hooks/useLumaVideoGeneration";
 import { useWanVideoGeneration } from "../hooks/useWanVideoGeneration";
 import { useHailuoVideoGeneration } from "../hooks/useHailuoVideoGeneration";
 import { useKlingVideoGeneration } from "../hooks/useKlingVideoGeneration";
-import { getApiUrl, buildUrl, parseJsonSafe } from "../utils/api";
+import { apiFetch, getApiUrl, buildUrl, parseJsonSafe } from "../utils/api";
 import { useFooter } from "../contexts/useFooter";
 import useToast from "../hooks/useToast";
 import { DOWNLOAD_FAILURE_MESSAGE } from "../utils/errorMessages";
@@ -572,7 +572,6 @@ const ImageActionMenuPortal: React.FC<{
     document.body,
   );
 };
-
 const Create: React.FC = () => {
   const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
     <div className="relative inline-flex items-center group">
@@ -1643,7 +1642,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       spinnerTimeoutRef.current = null;
     }
     setIsButtonSpinning(false);
-    showToast('Generation cancelled. Try another prompt when you’re ready.');
+    showToast("Generation cancelled. Try another prompt when you're ready.");
   }, [longPollNotice, showToast]);
   
   // Video generation hook
@@ -1725,7 +1724,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       setSelectedModel("gemini-2.5-flash-image");
     }
   }, [activeCategory, selectedModel]);
-
   // Navigation functions (defined early to avoid temporal dead zone in keyboard nav useEffect)
   const navigateGallery = useCallback((direction: 'prev' | 'next') => {
     const totalImages = gallery.length;
@@ -2067,9 +2065,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     clearFluxError();
     clearChatGPTError();
     clearIdeogramError();
-    clearQwenError();
-    clearRunwayError();
     clearLumaImageError();
+    clearQwenError();
     clearReveError();
     resetSeedanceVideo();
     resetWanVideo();
@@ -2085,7 +2082,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
     clearLumaImageError,
     clearQwenError,
     clearReveError,
-    clearRunwayError,
     resetHailuoVideo,
     resetKlingVideo,
     resetLumaVideo,
@@ -3293,7 +3289,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       alert('Failed to set image as reference. Please try again.');
     }
   };
-
   useEffect(() => {
     const locationState = location.state as CreateNavigationState | null;
     if (!locationState) {
@@ -3417,44 +3412,37 @@ const [batchSize, setBatchSize] = useState<number>(1);
     // Only fetch from backend if image doesn't exist locally (e.g. shared link)
     const fetchJobById = async () => {
       try {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
+        if (!job) {
           throw new Error('Job not found');
         }
 
-        const job = await parseJsonSafe(response) as {
-          status?: string;
-          resultUrl?: string;
-          createdAt?: string;
-          userId?: string;
-          metadata?: {
-            prompt?: string;
-            model?: string;
-          };
-        };
+        const status = job.status as string | undefined;
+        const resultUrl = job.resultUrl as string | undefined;
+        const createdAt = job.createdAt as string | undefined;
+        const userId = job.userId as string | undefined;
+        const jobMetadata = job.metadata as Record<string, unknown> | undefined;
+        const jobMeta = jobMetadata ? { 
+          prompt: jobMetadata.prompt as string | undefined, 
+          model: jobMetadata.model as string | undefined 
+        } : undefined;
 
-        if (job?.status !== 'COMPLETED' || !job?.resultUrl) {
+        if (status !== 'COMPLETED' || !resultUrl) {
           throw new Error('Job is not completed or has no result');
         }
 
         // Extract metadata
-        const metadata = job.metadata || {};
-        const prompt = typeof metadata.prompt === 'string' ? metadata.prompt : '';
-        const model = typeof metadata.model === 'string' ? metadata.model : '';
+        const prompt = jobMeta?.prompt || '';
+        const model = jobMeta?.model || '';
         
         // Create a GalleryImageLike object
         const imageData: GalleryImageLike = {
-          url: job.resultUrl,
+          url: resultUrl,
           prompt,
           model,
-          timestamp: job.createdAt || new Date().toISOString(),
+          timestamp: createdAt || new Date().toISOString(),
           jobId,
-          ownerId: job.userId,
+          ownerId: userId,
         };
 
         // Open in existing full-size viewer
@@ -3913,8 +3901,6 @@ const [batchSize, setBatchSize] = useState<number>(1);
       </div>
     );
   };
-
-
   const renderLibraryGalleryItem = (
     img: GalleryImageLike,
     idx: number,
@@ -4520,7 +4506,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         return;
       }
     } catch {
-      setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
+      setAvatarUploadError("We couldn't read that image. Re-upload or use a different format.");
       return;
     }
 
@@ -4543,7 +4529,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
       }
     };
     reader.onerror = () => {
-    setAvatarUploadError("We couldn’t read that image. Re-upload or use a different format.");
+    setAvatarUploadError("We couldn't read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
   }, [validateImageFile, getImageDimensions, openAvatarCreationModal, setAvatarSelection, setAvatarUploadError]);
@@ -4645,7 +4631,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
           return;
         }
       } catch {
-        setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+        setProductUploadError("We couldn't read that image. Re-upload or use a different format.");
         return;
       }
 
@@ -4666,7 +4652,7 @@ const [batchSize, setBatchSize] = useState<number>(1);
         }
       };
       reader.onerror = () => {
-        setProductUploadError("We couldn’t read that image. Re-upload or use a different format.");
+        setProductUploadError("We couldn't read that image. Re-upload or use a different format.");
       };
       reader.readAsDataURL(file);
     },
@@ -5363,7 +5349,6 @@ const handleGenerate = async () => {
         isFluxModel, 
         isChatGPTModel 
       });
-
   const runSingleGeneration = async (specificGenerationId: string) => {
         let img: GeneratedImage | FluxGeneratedImage | ChatGPTGeneratedImage | IdeogramGeneratedImage | QwenGeneratedImage | RunwayGeneratedImage | import("../hooks/useReveImageGeneration").ReveGeneratedImage | undefined;
 
@@ -5486,18 +5471,9 @@ const handleGenerate = async () => {
           });
           img = reveResult;
         } else if (isRecraftModel) {
-          // TEMPORARILY DISABLED: Authentication check
-          // if (!token) {
-          //   throw new Error('Please sign in to generate images.');
-          // }
-
-          const response = await fetch(getApiUrl('/api/image/recraft'), {
+          const response = await apiFetch<Record<string, unknown>>('/api/image/recraft', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({
+            body: {
               prompt: finalPrompt,
               model: recraftModel,
               providerOptions: {
@@ -5506,44 +5482,31 @@ const handleGenerate = async () => {
                 n: 1,
                 response_format: 'url',
               },
-            }),
+            },
+            context: 'generation',
           });
 
-          if (!response.ok) {
-            const errorData = await parseJsonSafe(response) as { error?: string };
-            throw new Error(`Recraft API error: ${errorData?.error || response.statusText}`);
-          }
-
-          const result = await parseJsonSafe(response) as { 
-            jobId?: string;
-            dataUrls?: string[];
-          };
+          const result = (response || {}) as { jobId?: string; dataUrls?: string[] };
 
           if (result?.jobId) {
             const jobId: string = result.jobId;
             let jobResultUrl: string | null = null;
 
             for (let attempt = 0; attempt < 60; attempt += 1) {
-              const statusResponse = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-                headers: {
-                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-              });
-
-              if (!statusResponse.ok) {
-                throw new Error(`Failed to check Recraft job status (${statusResponse.status})`);
+              const statusData = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
+              if (!statusData) {
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+                continue;
               }
 
-              const job = await parseJsonSafe(statusResponse) as {
-                status?: string;
-                resultUrl?: string;
-              };
-              if (job?.status === 'COMPLETED' && job?.resultUrl) {
-                jobResultUrl = job.resultUrl;
+              const jobStatus = statusData.status as string | undefined;
+              const jobResult = statusData.resultUrl as string | undefined;
+              if (jobStatus === 'COMPLETED' && jobResult) {
+                jobResultUrl = jobResult;
                 break;
               }
 
-              if (job?.status === 'FAILED') {
+              if (jobStatus === 'FAILED') {
                 throw new Error('Recraft job failed');
               }
 
@@ -5922,7 +5885,6 @@ const handleGenerate = async () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [deleteConfirmation.show, publishConfirmation.show, unpublishConfirmation.show, downloadConfirmation.show, confirmBulkDownload, confirmBulkPublish, confirmBulkUnpublish, handleDeleteConfirmed]);
-
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
     <div className={`${layout.page} create-page`}>
@@ -7237,7 +7199,6 @@ const handleGenerate = async () => {
                     )}
                   </div>
                 )}
-                
                 {/* Folder Contents View - Moved to separate section */}
                 {selectedFolder && (
                   <div className="w-full">
@@ -7712,7 +7673,6 @@ const handleGenerate = async () => {
                     </div>
                   </div>
                 )}
-
                 {/* Default Gallery View - Only for Image Category */}
                 {activeCategory === "image" && !selectedFolder && (
                   <div className="relative" data-category="image">
@@ -8075,12 +8035,6 @@ const handleGenerate = async () => {
               </div>
             </div>
           </div>
-
-
-          
-
-          
-          
           {/* Prompt input with + for references and drag & drop (fixed at bottom) */}
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && activeCategory !== "inspirations" && (
             <div
@@ -8875,7 +8829,6 @@ const handleGenerate = async () => {
                       )}
                   </>
                 )}
-
                 {/* Model Selector */}
                 <div className="relative model-selector flex-shrink-0">
                   <button
@@ -9550,7 +9503,6 @@ const handleGenerate = async () => {
                   </div>
                 </div>
               </div>
-              
             {/* Right section: Avatar, Product, Style, Generate */}
             <div className="flex flex-row gap-2 flex-shrink-0 items-end">
               {activeCategory === "image" && (
@@ -9844,7 +9796,7 @@ const handleGenerate = async () => {
             <div className="w-full max-w-xl mx-auto mb-4" role="status" aria-live="polite">
               <div className="bg-theme-black/60 border border-theme-mid/40 rounded-[32px] p-4 text-center text-theme-white">
                 <p className="font-raleway text-sm text-theme-text">
-                  Still working… this can take up to ~{LONG_POLL_NOTICE_MINUTES} min. We’ll notify you when it’s ready.
+                  Still working… this can take up to ~{LONG_POLL_NOTICE_MINUTES} min. We'll notify you when it's ready.
                 </p>
                 <button
                   onClick={handleCancelLongPoll}
@@ -10323,7 +10275,6 @@ const handleGenerate = async () => {
             </div>
           </div>
         )}
-
         {/* Avatar Creations Modal */}
         {creationsModalAvatar && (
           <div

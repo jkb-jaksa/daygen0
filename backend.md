@@ -22,7 +22,7 @@
 src/
 ├─ auth/                 # Supabase auth, JwtStrategy, guards, DTOs, auth.controller.ts
 ├─ users/                # Profiles (create/update), credits exposure, admin balance listing
-├─ generation/           # Unified endpoint, provider-specific controller, generation.service.ts
+├─ generation/           # Provider-specific routes, controller, generation.service.ts
 ├─ jobs/                 # Cloud Tasks client, job processor controller, WebSocket gateway, job CRUD/status
 ├─ payments/             # Stripe service, payments.controller.ts, public-payments.controller.ts, stripe-webhook.controller.ts
 ├─ r2files/              # File metadata CRUD for R2 assets
@@ -39,7 +39,7 @@ src/
 - **App bootstrap**: `src/main.ts`
 - **Module wiring**: `src/app.module.ts`
 - **Auth controller**: `src/auth/auth.controller.ts` (signup/login/me/oauth)
-- **Generation service**: `src/generation/generation.service.ts` (unified generation logic)
+- **Generation service**: `src/generation/generation.service.ts` (provider-specific generation logic)
 - **Cloud Tasks**: `src/jobs/cloud-tasks.service.ts` (job queue management)
 - **Stripe webhook**: `src/payments/stripe-webhook.controller.ts` (payment processing)
 - **R2 upload**: `src/upload/upload.controller.ts` (file uploads)
@@ -73,8 +73,10 @@ await fetch(`${getApiUrl()}/api/auth/me`, {
 
 ## 4) Generation flow
 
-- **Primary endpoints**: Provider-specific routes (`POST /api/image/gemini`, `POST /api/image/flux`, etc.). DTO validates and dispatches to `GenerationService`.
-- **Provider routes**: Under `/api/image/*` (e.g., `flux`, `gemini`, `ideogram`, `qwen`, `runway`, `seedream`, `reve`, `recraft`, `luma`) enqueue jobs via `CloudTasksService` (with model allow-lists and defaults). Gemini supports inline vs queued based on flags.
+- **Provider-specific routes**: Each AI provider has its own endpoint under `/api/image/*` (e.g., `POST /api/image/gemini`, `POST /api/image/flux`, etc.)
+- **Job enqueueing**: Most providers enqueue jobs via `CloudTasksService` with model allow-lists and defaults (flux, ideogram, qwen, runway, seedream, reve, recraft, luma)
+- **Gemini special handling**: Supports both inline and queued processing based on `providerOptions` flags (`useQueue`, `useInline`)
+- **Deprecated endpoint**: `POST /api/unified-generate` returns `410 Gone` - use provider-specific routes instead
 
 **Payload sketch**
 
@@ -85,7 +87,10 @@ POST /api/image/gemini
   "model": "gemini-2.5-flash-image",
   "imageBase64": "data:image/png;base64,...",      // optional
   "references": ["data:image/png;base64,..."],     // optional
-  "providerOptions": { /* per-model advanced options */ }
+  "providerOptions": { 
+    "useQueue": false,  // Gemini inline vs queued flag
+    /* other per-model advanced options */ 
+  }
 }
 ```
 
@@ -132,15 +137,15 @@ POST /api/image/gemini
 | `/api/auth/magic-link` | POST | Send magic link |
 | `/api/auth/google/verify` | POST | Google OAuth verification |
 | `/api/auth/oauth-callback` | POST | Handle OAuth callbacks |
+| `/api/auth/callback` | GET | Auth callback (magic links, email confirmations) |
 | `/api/auth/me` | GET | Get current user profile |
 | `/api/auth/signout` | POST | Sign out |
 | `/api/users/me` | GET/POST/PATCH | User profile CRUD |
 | `/api/users/me/profile-picture` | POST | Upload profile picture |
 | `/api/users/me/remove-profile-picture` | POST | Remove profile picture |
 | `/api/users/balances` | GET | Admin: list user balances |
-| `/api/image/gemini` | POST | Gemini 2.5 Flash generation |
-| `/api/image/flux` | POST | FLUX model generation |
 | `/api/image/gemini` | POST | Gemini generation |
+| `/api/image/flux` | POST | FLUX model generation |
 | `/api/image/ideogram` | POST | Ideogram generation |
 | `/api/image/runway` | POST | Runway generation |
 | `/api/image/recraft` | POST | Recraft generation |
@@ -169,9 +174,14 @@ POST /api/image/gemini
 | `/api/payments/history` | GET | Get payment history |
 | `/api/payments/subscription` | GET | Get user subscription |
 | `/api/payments/subscription/cancel` | POST | Cancel subscription |
+| `/api/payments/subscription/remove-cancellation` | POST | Remove subscription cancellation |
 | `/api/payments/subscription/upgrade` | POST | Upgrade subscription |
+| `/api/payments/subscription-plans` | GET | List subscription plans |
+| `/api/payments/session/:sessionId/status` | GET | Get session status |
+| `/api/payments/find-by-intent/:paymentIntentId` | GET | Find payment by intent ID |
 | `/api/public-payments/config` | GET | Public payment configs |
 | `/api/public-payments/session/:sessionId` | GET | Public session status |
+| `/api/health/queues` | GET | Queue health check |
 | `/webhooks/stripe` | POST | **Stripe webhook** (no /api prefix) |
 
 ---
@@ -215,6 +225,11 @@ POST /api/image/gemini
 - `CLOUDFLARE_R2_BUCKET_NAME` - R2 bucket name
 - `CLOUDFLARE_R2_PUBLIC_URL` - R2 public URL
 
+### Server Configuration
+- `PORT` - Server port (default: 3000)
+- `NODE_ENV` - Environment (development/production)
+- `SKIP_DATABASE_HEALTHCHECK` - Skip DB check in health endpoint (true/false)
+
 ### Queue (Google Cloud Tasks)
 - `ENABLE_CLOUD_TASKS` - Enable/disable Cloud Tasks (true/false)
 - `GOOGLE_CLOUD_PROJECT` - GCP project ID
@@ -237,11 +252,12 @@ curl -s http://localhost:3000/health
 curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/auth/me
 ```
 
-**Generate an image (unified)**
+**Generate an image (provider-specific)**
 ```bash
+# Note: model must match provider (e.g., flux-pro-1.1 for /api/image/flux)
 curl -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"prompt":"cat","model":"flux-pro-1.1"}' \
-  http://localhost:3000/api/image/gemini
+  http://localhost:3000/api/image/flux
 ```
 
 **Create checkout session**
@@ -285,6 +301,21 @@ curl -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKE
 - Optionally enable Cloud Tasks in staging/production.
 - Test auth flow: sign up → credits (20) → generate → see in gallery.
 - Try local backend (set `VITE_API_BASE_URL=http://localhost:3000`) to iterate on APIs quickly.
+
+---
+
+## 14) Internal & Test Endpoints
+
+### Internal (secured by INTERNAL_API_KEY)
+- `POST /api/jobs/process` - Process queued jobs (called by Cloud Tasks or local processor)
+
+### Test/Debug (development only)
+- `POST /api/payments/test/complete-payment/:sessionId` - Manually complete test payment
+- `POST /api/payments/test/create-manual-subscription` - Create manual subscription for testing
+- `POST /api/payments/test/complete-by-intent/:paymentIntentId` - Complete payment by intent ID
+- `GET /api/public-payments/test/url-config` - View URL configuration
+- `GET /api/health/queues/job/:jobId/debug` - Debug info for specific job
+- `GET /api/health/queues/metrics` - Queue processing metrics
 
 ---
 

@@ -1,10 +1,8 @@
 import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -89,17 +87,7 @@ export const useFluxImageGeneration = () => {
 
       while (attempts < maxAttempts) {
         try {
-          const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to check job status: ${response.status}`);
-          }
-
-          const job = await response.json();
+          const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
           const metadata = asRecord(job.metadata);
           const metadataFileUrl = metadata
             ? pickString(metadata['fileUrl'])
@@ -224,41 +212,21 @@ export const useFluxImageGeneration = () => {
         if (params.prompt_upsampling !== undefined) providerOptions.prompt_upsampling = params.prompt_upsampling;
         if (params.safety_tolerance !== undefined) providerOptions.safety_tolerance = params.safety_tolerance;
 
-        const response = await fetch(getApiUrl('/api/image/flux'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            prompt,
-            model: resolvedModel,
-            references,
-            providerOptions,
-            avatarId: options.avatarId,
-            avatarImageId: options.avatarImageId,
-          }),
-        });
-
-        if (!response.ok) {
-          const payload = await parseJsonSafe(response);
-          const rawMessage =
-            (payload && typeof payload.error === 'string' && payload.error) ||
-            (payload && typeof payload.message === 'string' && payload.message) ||
-            null;
-          const message = resolveApiErrorMessage({
-            status: response.status,
-            message: rawMessage,
-            fallback: 'Flux generation failed',
+        const payload = await apiFetch<{ jobId?: string; status?: string }>(
+          '/api/image/flux',
+          {
+            method: 'POST',
+            body: {
+              prompt,
+              model: resolvedModel,
+              references,
+              providerOptions,
+              avatarId: options.avatarId,
+              avatarImageId: options.avatarImageId,
+            },
             context: 'generation',
-          });
-          throw new Error(message);
-        }
-
-        const payload = (await parseJsonSafe(response)) as {
-          jobId?: string;
-          status?: string;
-        };
+          }
+        );
 
         if (!payload.jobId) {
           throw new Error('Flux generation did not return a job ID.');

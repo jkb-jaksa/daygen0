@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugError, debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -53,17 +51,7 @@ export const useChatGPTImageGeneration = () => {
     ): Promise<ChatGPTGeneratedImage> => {
       const maxAttempts = 60;
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           return {
             url: job.resultUrl,
@@ -118,40 +106,18 @@ export const useChatGPTImageGeneration = () => {
 
       debugLog('[chatgpt-image] POST', apiUrl);
       
-      const res = await fetch(apiUrl, {
+      const data = await apiFetch<Record<string, unknown>>('/api/image/chatgpt', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
+        body: {
           prompt,
           n,
           size,
           quality,
           background,
           model: 'chatgpt-image',
-        }),
+        },
+        context: 'generation',
       });
-
-      debugLog('[chatgpt-image] Response status:', res.status);
-
-      if (!res.ok) {
-        const errorData = await parseJsonSafe(res);
-        const rawMessage =
-          (typeof errorData.error === 'string' && errorData.error) ||
-          (typeof errorData.message === 'string' && errorData.message) ||
-          null;
-        const friendlyMessage = resolveApiErrorMessage({
-          status: res.status,
-          message: rawMessage,
-          fallback: `HTTP ${res.status}: ${res.statusText}`,
-          context: 'generation',
-        });
-        throw new Error(friendlyMessage);
-      }
-
-      const data = await res.json();
       debugLog('[chatgpt-image] Response data:', data);
 
       if (data?.jobId) {

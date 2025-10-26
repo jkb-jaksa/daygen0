@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { apiFetch, getApiUrl } from '../utils/api';
+import { apiFetch } from '../utils/api';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveGenerationCatchError } from '../utils/errorMessages';
@@ -342,20 +342,8 @@ export const useGeminiImageGeneration = () => {
     
     while (attempts < maxAttempts) {
       try {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        debugLog(`[Gemini] Job status check response: ${response.status}`);
-
-        if (!response.ok) {
-          debugError(`[Gemini] Job status check failed: ${response.status}`);
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
+        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+        debugLog(`[Gemini] Job status check response: ok`);
         debugLog(`[Gemini] Job status: ${job.status}, progress: ${job.progress}`);
         debugLog(`[Gemini] Job error:`, job.error);
         debugLog(`[Gemini] Job metadata:`, job.metadata);
@@ -596,6 +584,8 @@ export const useGeminiImageGeneration = () => {
         resolvedModel,
         resolvedModel === 'gemini-2.5-flash-image',
       );
+      let currentModelUsed = modelUsed;
+      let didAttemptPreviewFallback = false;
       
       debugLog('[Gemini] Received payload:', payload);
       
@@ -627,41 +617,133 @@ export const useGeminiImageGeneration = () => {
           status: 'PROCESSING',
           progress: payloadProgress,
         });
-        const generatedImage = await pollForJobCompletion(
-          jobIdFromPayload,
-          prompt,
-          modelUsed,
-          references,
-          options.avatarId,
-          options.avatarImageId,
-          user?.id
-        );
 
-        stopProgressController({
-          status: 'completed',
-          progress: 100,
-        });
+        try {
+          const generatedImage = await pollForJobCompletion(
+            jobIdFromPayload,
+            prompt,
+            currentModelUsed,
+            references,
+            options.avatarId,
+            options.avatarImageId,
+            user?.id
+          );
 
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          generatedImage,
-          error: null,
-          progress: 100,
-          status: 'completed',
-        }));
+          stopProgressController({
+            status: 'completed',
+            progress: 100,
+          });
 
-        return generatedImage;
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            generatedImage,
+            error: null,
+            progress: 100,
+            status: 'completed',
+          }));
+
+          return generatedImage;
+        } catch (pollError) {
+          const message = (pollError instanceof Error ? pollError.message : String(pollError)).toLowerCase();
+          const canFallbackToPreview =
+            !didAttemptPreviewFallback &&
+            currentModelUsed === 'gemini-2.5-flash-image' &&
+            (message.includes('service unavailable') || message.includes('unavailable'));
+
+          if (canFallbackToPreview) {
+            didAttemptPreviewFallback = true;
+            debugWarn('[image] Gemini job failed (service unavailable). Retrying with preview model.');
+
+            // Restart progress controller for fallback attempt
+            startProgressController({
+              clientJobId: options.clientJobId,
+              onProgress: options.onProgress,
+              initialStatus: 'queued',
+              initialProgress: 0,
+            });
+
+            const { payload: fbPayload, modelUsed: fbModel } = await performRequest(
+              'gemini-2.5-flash-image-preview',
+              false,
+            );
+            currentModelUsed = fbModel;
+
+            const fbRecord = fbPayload && typeof fbPayload === 'object' ? (fbPayload as Record<string, unknown>) : null;
+            const fbJobId = fbRecord
+              ? (typeof fbRecord['jobId'] === 'string' && fbRecord['jobId']) ||
+                (typeof fbRecord['job_id'] === 'string' && (fbRecord['job_id'] as string)) ||
+                undefined
+              : undefined;
+
+            if (fbJobId) {
+              updateControllerWithBackend({ jobId: fbJobId, status: 'PROCESSING', progress: 0 });
+              const generatedImage = await pollForJobCompletion(
+                fbJobId,
+                prompt,
+                currentModelUsed,
+                references,
+                options.avatarId,
+                options.avatarImageId,
+                user?.id
+              );
+
+              stopProgressController({ status: 'completed', progress: 100 });
+              setState(prev => ({
+                ...prev,
+                isLoading: false,
+                generatedImage,
+                error: null,
+                progress: 100,
+                status: 'completed',
+              }));
+              return generatedImage;
+            }
+
+            // Immediate response path for fallback
+            if (fbRecord?.imageBase64) {
+              const generatedImage: GeneratedImage = {
+                url: `data:${(fbRecord['mimeType'] as string) || 'image/png'};base64,${fbRecord['imageBase64'] as string}`,
+                prompt,
+                model: currentModelUsed,
+                timestamp: new Date().toISOString(),
+                references: references || undefined,
+                ownerId: user?.id,
+                avatarId: options.avatarId,
+                avatarImageId: options.avatarImageId,
+                productId: options.productId,
+                styleId: options.styleId,
+              };
+
+              stopProgressController({ status: 'completed', progress: 100 });
+              setState(prev => ({
+                ...prev,
+                isLoading: false,
+                generatedImage,
+                error: null,
+                progress: 100,
+                status: 'completed',
+              }));
+              return generatedImage;
+            }
+
+            // If fallback also didn't return data, rethrow original error
+          }
+
+          throw pollError;
+        }
       }
 
       // Handle immediate response (legacy)
-      if (!payload?.imageBase64) {
+      const imgBase64 = (payload as Record<string, unknown>)?.imageBase64 as string | undefined;
+      const imgMime = (payload as Record<string, unknown>)?.mimeType as string | undefined;
+      if (!imgBase64) {
         throw new Error('No image data returned from API');
       }
 
       // Convert the new API response format to our expected format
       const generatedImage: GeneratedImage = {
-        url: `data:${payload.mimeType || 'image/png'};base64,${payload.imageBase64}`,
+        url: `data:${imgMime || 'image/png'};base64,${imgBase64}`,
         prompt,
         model: modelUsed,
         timestamp: new Date().toISOString(),

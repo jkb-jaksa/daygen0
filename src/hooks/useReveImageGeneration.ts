@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface ReveGeneratedImage {
   url: string;
@@ -62,21 +60,11 @@ export const useReveImageGeneration = () => {
       const maxAttempts = 60;
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
 
-        if (!response.ok) {
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
-
-        if (job.status === 'COMPLETED' && job.resultUrl) {
+        if ((job as Record<string, unknown>).status === 'COMPLETED' && (job as Record<string, unknown>).resultUrl) {
           return {
-            url: job.resultUrl,
+            url: (job as Record<string, unknown>).resultUrl as string,
             prompt: options.prompt,
             model: options.model ?? 'reve-image-1.0',
             timestamp: new Date().toISOString(),
@@ -89,8 +77,8 @@ export const useReveImageGeneration = () => {
           };
         }
 
-        if (job.status === 'FAILED') {
-          throw new Error(job.error || 'Job failed');
+        if ((job as Record<string, unknown>).status === 'FAILED') {
+          throw new Error(((job as Record<string, unknown>).error as string) || 'Job failed');
         }
 
         await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -133,36 +121,16 @@ export const useReveImageGeneration = () => {
         if (options.steps !== undefined) providerOptions.steps = options.steps;
         if (options.seed !== undefined) providerOptions.seed = options.seed;
 
-        const response = await fetch(getApiUrl('/api/image/reve'), {
+        const payload = (await apiFetch<Record<string, unknown>>('/api/image/reve', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
+          body: {
             prompt: options.prompt,
             model: options.model ?? 'reve-image-1.0',
             references: options.references,
             providerOptions,
-          }),
-        });
-
-        if (!response.ok) {
-          const payload = await parseJsonSafe(response);
-          const rawMessage =
-            (payload && typeof payload.error === 'string' && payload.error) ||
-            (payload && typeof payload.message === 'string' && payload.message) ||
-            null;
-          const message = resolveApiErrorMessage({
-            status: response.status,
-            message: rawMessage,
-            fallback: 'Reve generation failed',
-            context: 'generation',
-          });
-          throw new Error(message);
-        }
-
-        const payload = (await response.json()) as {
+          },
+          context: 'generation',
+        })) as unknown as {
           images?: string[];
           dataUrl?: string;
           jobId?: string | null;

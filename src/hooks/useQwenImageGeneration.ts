@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface QwenGeneratedImage {
   url: string;
@@ -60,17 +58,7 @@ export const useQwenImageGeneration = () => {
       const maxAttempts = 60;
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const response = await fetch(getApiUrl(`/api/jobs/${jobId}`), {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to check job status: ${response.status}`);
-        }
-
-        const job = await response.json();
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           const image: QwenGeneratedImage = {
             url: job.resultUrl,
@@ -131,35 +119,18 @@ export const useQwenImageGeneration = () => {
         if (options.prompt_extend !== undefined) providerOptions.prompt_extend = options.prompt_extend;
         if (options.watermark !== undefined) providerOptions.watermark = options.watermark;
 
-        const response = await fetch(getApiUrl('/api/image/qwen'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            prompt: options.prompt,
-            model: 'qwen-image',
-            providerOptions,
-          }),
-        });
-
-        if (!response.ok) {
-          const payload = await parseJsonSafe(response);
-          const rawMessage =
-            (payload && typeof payload.error === 'string' && payload.error) ||
-            (payload && typeof payload.message === 'string' && payload.message) ||
-            null;
-          const message = resolveApiErrorMessage({
-            status: response.status,
-            message: rawMessage,
-            fallback: 'Qwen generation failed',
+        const payload = await apiFetch<{ jobId?: string; dataUrl?: string }>(
+          '/api/image/qwen',
+          {
+            method: 'POST',
+            body: {
+              prompt: options.prompt,
+              model: 'qwen-image',
+              providerOptions,
+            },
             context: 'generation',
-          });
-          throw new Error(message);
-        }
-
-        const payload = (await response.json()) as { jobId?: string; dataUrl?: string };
+          }
+        );
 
         if (payload.jobId) {
           const generatedImages = await pollForJobCompletion(payload.jobId, options);
