@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -12,9 +12,17 @@ export default function AuthCallback() {
   const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasHandledRef = useRef(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      // Persistent guard to avoid duplicate exchanges in dev/StrictMode
+      const handledKey = 'daygen:authCallbackHandled';
+      if (hasHandledRef.current || sessionStorage.getItem(handledKey) === '1') {
+        return; // Prevent duplicate handling in StrictMode/dev
+      }
+      hasHandledRef.current = true;
+      sessionStorage.setItem(handledKey, '1');
       try {
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
@@ -69,9 +77,16 @@ export default function AuthCallback() {
           }
         } else if (code) {
           // Likely an OAuth PKCE flow (Google, etc.) → exchange the code
+          // Clean URL early to avoid duplicate exchanges from StrictMode re-runs
+          try {
+            const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+            window.history.replaceState({}, '', cleanUrl);
+          } catch {}
+
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
-            debugError('Exchange code error:', exchangeError);
+            // In dev/StrictMode this can run twice; if the session already exists, continue silently
+            debugWarn('Exchange code warning:', exchangeError);
             // Fallback: see if session is already established automatically
             const { data: retry, error: sessionError } = await supabase.auth.getSession();
             if (retry.session && !sessionError) {
@@ -108,6 +123,12 @@ export default function AuthCallback() {
             debugWarn('Failed to synchronize backend session:', syncError);
           }
         }
+
+        // Ensure URL is clean after handling auth
+        try {
+          const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+          window.history.replaceState({}, '', cleanUrl);
+        } catch {}
 
         if (activeSession?.user) {
           await refreshUser();

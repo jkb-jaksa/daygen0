@@ -19,7 +19,7 @@ const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
     // Ensure session persists reliably across external redirects (e.g., Stripe)
     storage: window.localStorage,
     storageKey: 'daygen-auth',

@@ -40,7 +40,6 @@ echo "📝 Updating configuration..."
 cat > wrangler.jsonc << EOF
 {
   "name": "daygen",
-  "account_id": "205ebd867bad50a18d438fa71fcfcb09",
   "compatibility_date": "2025-10-06",
   "pages_build_output_dir": "./dist",
   "vars": {

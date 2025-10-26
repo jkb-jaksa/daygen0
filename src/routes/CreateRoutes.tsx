@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 const Create = lazy(() => import("../components/Create"));
 const Avatars = lazy(() => import("../components/Avatars"));
@@ -20,6 +20,16 @@ function IndexRoute() {
 }
 
 export default function CreateRoutes() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Defensive cleanup: strip stray auth query params that can trigger PKCE noise
+  // e.g., ?code=...&state=... accidentally carried over to /create routes
+  if (location.search && (location.search.includes('code=') || location.search.includes('state='))) {
+    // Replace URL without query string; do not push history entry
+    navigate(location.pathname, { replace: true });
+  }
+
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
