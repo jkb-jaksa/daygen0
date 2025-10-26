@@ -2298,6 +2298,12 @@ const [batchSize, setBatchSize] = useState<number>(1);
 
   // Auto-migrate base64 images to R2 when needed
   useEffect(() => {
+    console.log('[Create] Migration check:', {
+      needsMigration,
+      isRunning: migrationStatus.isRunning,
+      completed: migrationStatus.completed
+    });
+    
     if (needsMigration && !migrationStatus.isRunning && !migrationStatus.completed) {
       debugLog('Starting automatic migration of base64 images to R2');
       migrateImages().then(success => {

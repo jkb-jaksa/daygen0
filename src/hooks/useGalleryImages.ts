@@ -224,6 +224,14 @@ export const useGalleryImages = () => {
         }
       }
 
+      console.log('[Gallery] Migration check:', {
+        hasBase64Images,
+        r2ImagesLength: r2Images.length,
+        needsMigration: hasBase64Images && r2Images.length > 0,
+        localImagesCount: localImages.length,
+        base64Count: localImages.filter(img => isBase64Url(img.url)).length
+      });
+      
       setState({
         images: dedupedImages,
         isLoading: false,
@@ -235,6 +243,13 @@ export const useGalleryImages = () => {
       // Fallback to local images if R2 fetch fails
       const localImages = await loadLocalImages();
       const hasBase64Images = localImages.some(image => isBase64Url(image.url));
+
+      console.log('[Gallery] Fallback migration check:', {
+        hasBase64Images,
+        needsMigration: hasBase64Images,
+        localImagesCount: localImages.length,
+        base64Count: localImages.filter(img => isBase64Url(img.url)).length
+      });
 
       setState({
         images: localImages,

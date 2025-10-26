@@ -67,7 +67,10 @@ export const useGalleryMigration = () => {
   }, [storagePrefix, isBase64Url]);
 
   const migrateImages = useCallback(async (): Promise<boolean> => {
+    console.log('[Migration] Starting migration process...');
+    
     if (!token || !storagePrefix) {
+      console.log('[Migration] No token or storage prefix available');
       setStatus(prev => ({
         ...prev,
         errors: [...prev.errors, 'No authentication token or storage prefix available'],
@@ -88,8 +91,10 @@ export const useGalleryMigration = () => {
     try {
       // Find base64 images
       const base64Images = await findBase64Images();
+      console.log('[Migration] Found base64 images:', base64Images.length);
       
       if (base64Images.length === 0) {
+        console.log('[Migration] No base64 images to migrate');
         setStatus(prev => ({
           ...prev,
           isRunning: false,
