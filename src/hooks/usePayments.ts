@@ -81,14 +81,20 @@ export function usePayments() {
         },
       });
 
+      // Handle non-OK responses gracefully - return empty array
       if (!response.ok) {
-        throw new Error('Failed to fetch payment history');
+        // For 404 or 500, return empty array instead of throwing
+        debugError('Failed to fetch payment history, returning empty array');
+        return [];
       }
 
-      return await parseJsonSafe(response);
+      const data = await parseJsonSafe(response);
+      // Ensure we return an array even if response is null/undefined
+      return Array.isArray(data) ? data : [];
     } catch (err) {
-      debugError('Error fetching payment history:', err);
-      throw err;
+      // On any error, return empty array instead of throwing
+      debugError('Error fetching payment history, returning empty array:', err);
+      return [];
     }
   };
 
@@ -103,6 +109,12 @@ export function usePayments() {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      // Handle 404 as "no subscription" case
+      if (response.status === 404) {
+        debugError('No subscription found (404)');
+        return null;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch subscription');
