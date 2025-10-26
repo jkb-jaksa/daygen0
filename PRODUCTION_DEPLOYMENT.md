@@ -1,4 +1,6 @@
-# Production Deployment Guide
+# [Archived] Production Deployment Guide
+
+For the concise frontend guide, see `./FRONTEND_GUIDE.md`. Keep this file for detailed Cloudflare Pages and Cloud Run notes.
 
 ## 🚀 Frontend Deployment (Cloudflare Pages)
 

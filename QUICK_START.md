@@ -1,4 +1,6 @@
-# Quick Start Guide
+# [Archived] Quick Start Guide
+
+This content is preserved. For the concise getting-started, see `./FRONTEND_GUIDE.md`.
 
 ## ✅ Status: Ready to Use!
 

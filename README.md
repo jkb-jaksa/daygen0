@@ -107,8 +107,8 @@ If running locally, start the backend from its repository and set `VITE_BACKEND_
 - [Recraft Integration](./RECRAFT_INTEGRATION.md)
 - [Reve Integration](./REVE_INTEGRATION.md)
 - [Runway Integration](./RUNWAY_INTEGRATION.md)
-- [Quick Start Guide](./QUICK_START.md)
-- [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
+- [Frontend Guide](./FRONTEND_GUIDE.md)
+- [Frontend Architecture Map](./agents.md)
 
 ## CI/CD
 

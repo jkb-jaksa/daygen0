@@ -208,6 +208,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('No user returned from sign up');
     }
 
+    // Check if email already exists (Supabase returns user without session)
+    if (data.user && !data.session) {
+      throw new Error('Email is already registered');
+    }
+
     const profile = await fetchUserProfile(data.user, {
       accessToken: data.session?.access_token ?? null,
       refreshToken: data.session?.refresh_token ?? null,
