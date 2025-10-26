@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface IdeogramGeneratedImage {
   url: string;
@@ -118,7 +116,7 @@ export const useIdeogramImageGeneration = () => {
 
       while (attempts < maxAttempts) {
         try {
-          const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+          const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
 
           if (job.status === 'COMPLETED' && job.resultUrl) {
             return [

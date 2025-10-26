@@ -1,7 +1,28 @@
-# Create Component Refactoring Summary
+# Create Component Refactoring Plan (INCOMPLETE)
+
+## ⚠️ STATUS: INCOMPLETE / FUTURE PLAN
+
+**Current State**: This refactoring is NOT complete and NOT in use.
+- **Production file**: `src/components/Create.tsx` (10,657 lines) ✅ ACTIVE
+- **Refactor skeleton**: `src/components/Create.refactor-plan.tsx` (265 lines) ⚠️ INCOMPLETE
+- **Status**: On hold - keeping monolith for now
+
+**Why incomplete?**
+The `Create.refactor-plan.tsx` file has placeholder logic with TODO comments. Critical functionality is missing:
+- Actual generation API calls (currently simulated with setTimeout)
+- Prompt management and application
+- Reference image handling
+- Deep-linking for `/job/:jobId` routes
+- All provider-specific options
+
+**Estimated effort to complete**: 50-100 hours of development + testing
+
+**Decision**: Keep the monolith for now. This document serves as future architectural guidance.
+
+---
 
 ## Overview
-Successfully refactored the massive 10,596-line Create.tsx component into a modular, maintainable architecture with 15+ smaller, focused components.
+This document outlines an aspired refactoring of the massive 10,596-line Create.tsx component into a modular, maintainable architecture with 15+ smaller, focused components. The refactoring is INCOMPLETE and should NOT be used in production.
 
 ## What Was Accomplished
 
@@ -92,18 +113,20 @@ src/components/create/
 - **Type Safety**: Proper TypeScript interfaces for all components
 
 ## Migration Safety
-- Original Create.tsx preserved as Create.backup.tsx
-- New refactored version as Create.refactored.tsx
-- All existing functionality maintained
-- Deep-linking (/job/:jobId) still works
-- Avatar/product creation flows preserved
-- Keyboard navigation maintained
+- Original Create.tsx is the active production file
+- Refactor skeleton exists as Create.refactor-plan.tsx (INCOMPLETE)
+- None of the refactored functionality has been implemented
+- This section describes planned future safety measures
 
-## Next Steps
-1. Test the refactored components thoroughly
-2. Gradually migrate to the new architecture
-3. Remove old Create.tsx once verified
-4. Add additional optimizations as needed
+## Next Steps (If Refactoring Resumed)
+1. Implement actual generation API calls in all provider hooks
+2. Wire up prompt management and application
+3. Implement reference image handling
+4. Add deep-linking support for `/job/:jobId` routes
+5. Test refactored components thoroughly
+6. Gradually migrate to the new architecture
+7. Remove old Create.tsx once verified
+8. Add additional optimizations as needed
 
 ## Expected Outcomes
 - **Create.tsx**: 10,596 lines → ~500 lines (95% reduction)

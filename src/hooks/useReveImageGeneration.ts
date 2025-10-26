@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface ReveGeneratedImage {
   url: string;
@@ -64,9 +62,9 @@ export const useReveImageGeneration = () => {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
 
-        if ((job as any).status === 'COMPLETED' && (job as any).resultUrl) {
+        if ((job as Record<string, unknown>).status === 'COMPLETED' && (job as Record<string, unknown>).resultUrl) {
           return {
-            url: (job as any).resultUrl as string,
+            url: (job as Record<string, unknown>).resultUrl as string,
             prompt: options.prompt,
             model: options.model ?? 'reve-image-1.0',
             timestamp: new Date().toISOString(),
@@ -79,8 +77,8 @@ export const useReveImageGeneration = () => {
           };
         }
 
-        if ((job as any).status === 'FAILED') {
-          throw new Error(((job as any).error as string) || 'Job failed');
+        if ((job as Record<string, unknown>).status === 'FAILED') {
+          throw new Error(((job as Record<string, unknown>).error as string) || 'Job failed');
         }
 
         await new Promise((resolve) => setTimeout(resolve, 5000));

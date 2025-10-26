@@ -207,14 +207,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ];
       for (const key of keys) {
         const [legacy, scoped] = await Promise.all([
-          getPersistedValue<any>('daygen:', key),
-          getPersistedValue<any>(newPrefix, key),
+          getPersistedValue<Record<string, unknown>>('daygen:', key),
+          getPersistedValue<Record<string, unknown>>(newPrefix, key),
         ]);
         if (legacy != null && scoped == null) {
           await setPersistedValue(newPrefix, key, legacy);
         }
       }
-    } catch {}
+    } catch (e) { void e; }
     return profile;
   }, [fetchUserProfile]);
 
@@ -261,14 +261,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ];
       for (const key of keys) {
         const [legacy, scoped] = await Promise.all([
-          getPersistedValue<any>('daygen:', key),
-          getPersistedValue<any>(newPrefix, key),
+          getPersistedValue<Record<string, unknown>>('daygen:', key),
+          getPersistedValue<Record<string, unknown>>(newPrefix, key),
         ]);
         if (legacy != null && scoped == null) {
           await setPersistedValue(newPrefix, key, legacy);
         }
       }
-    } catch {}
+    } catch (e) { void e; }
     return profile;
   }, [fetchUserProfile]);
 
@@ -308,8 +308,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Reset token caches and clear per-user persisted values
     try {
       resetTokenCache();
-      try { authMetrics.increment('token_cache_reset'); } catch {}
-    } catch {}
+      try { authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
+    } catch (e) { void e; }
     try {
       if (storagePrefix) {
         await removePersistedValue(storagePrefix, 'gallery');
@@ -320,10 +320,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await removePersistedValue(storagePrefix, 'avatars');
         await removePersistedValue(storagePrefix, 'avatar-favorites');
       }
-    } catch {}
+    } catch (e) { void e; }
     setUser(null);
     setSession(null);
-  }, [session?.access_token]);
+  }, [session?.access_token, storagePrefix]);
 
   const refreshUser = useCallback(async (): Promise<AppUser> => {
     let activeSession = session;
@@ -366,10 +366,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const logOut = useCallback(async () => {
-    try { authMetrics.increment('logout_clicked'); } catch {}
+    try { authMetrics.increment('logout_clicked'); } catch (e) { void e; }
     await logOutInternal();
     notifyUserLogout();
-    try { authMetrics.increment('logout_done'); } catch {}
+    try { authMetrics.increment('logout_done'); } catch (e) { void e; }
   }, [logOutInternal, notifyUserLogout]);
 
   // Notify other tabs when credits change
@@ -456,8 +456,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Don't immediately clear user on transient errors during navigation
           // Only clear if it's a sign out event or persistent error
           if (event === 'SIGNED_OUT') {
-            try { resetTokenCache(); } catch {}
-            try { authMetrics.increment('token_cache_reset'); } catch {}
+            try { resetTokenCache(); } catch (e) { void e; }
+            try { authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
             setUser(null);
             setSession(null);
           }
@@ -465,7 +465,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // Only clear user/session if it's an explicit sign out
         if (event === 'SIGNED_OUT') {
-          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
+          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
           setUser(null);
           setSession(null);
         } else if (event === 'TOKEN_REFRESHED' && !nextSession) {
@@ -475,7 +475,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data, error } = await supabase.auth.getSession();
             if (error) {
               debugError('Failed to recover session after refresh error:', error);
-              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
+              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
               setUser(null);
               setSession(null);
             } else if (data.session?.user) {
@@ -486,18 +486,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(profile);
               setSession(data.session);
             } else {
-              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
+              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
               setUser(null);
               setSession(null);
             }
           } catch (recoveryError) {
             debugError('Session recovery failed:', recoveryError);
-            try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
+            try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
             setUser(null);
             setSession(null);
           }
         } else {
-          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch {}
+          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
           setUser(null);
           setSession(null);
         }

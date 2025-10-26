@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
-import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
-import { PLAN_LIMIT_MESSAGE, resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 import { useCreditCheck } from './useCreditCheck';
 
 export interface GeneratedImage {
@@ -65,7 +63,7 @@ export const useRunwayImageGeneration = () => {
       const maxAttempts = 60;
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           return {
             url: job.resultUrl,
@@ -124,7 +122,7 @@ export const useRunwayImageGeneration = () => {
 
       debugLog('[runway] POST', apiUrl);
       
-      const payload = await apiFetch<Record<string, any>>('/api/image/runway', {
+      const payload = await apiFetch<Record<string, unknown>>('/api/image/runway', {
         method: 'POST',
         body: {
           prompt,

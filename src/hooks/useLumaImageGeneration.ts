@@ -1,7 +1,5 @@
 import { useCallback, useState } from 'react';
-import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 import type { GeneratedImage } from './useGeminiImageGeneration';
 
 export interface LumaGeneratedImage extends GeneratedImage {
@@ -55,7 +53,7 @@ export function useLumaImageGeneration() {
       const maxAttempts = 60;
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           return {
             url: job.resultUrl,

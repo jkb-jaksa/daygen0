@@ -1,10 +1,8 @@
 import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
-import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface FluxGeneratedImage {
   url: string;

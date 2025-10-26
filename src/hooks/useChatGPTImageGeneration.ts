@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
-import { apiFetch, getApiUrl, parseJsonSafe } from '../utils/api';
 import { debugError, debugLog } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
-import { resolveApiErrorMessage, resolveGenerationCatchError } from '../utils/errorMessages';
 
 export interface ChatGPTGeneratedImage {
   url: string;
@@ -53,7 +51,7 @@ export const useChatGPTImageGeneration = () => {
     ): Promise<ChatGPTGeneratedImage> => {
       const maxAttempts = 60;
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, any>>(`/api/jobs/${jobId}`);
+        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
         if (job.status === 'COMPLETED' && job.resultUrl) {
           return {
             url: job.resultUrl,
@@ -108,7 +106,7 @@ export const useChatGPTImageGeneration = () => {
 
       debugLog('[chatgpt-image] POST', apiUrl);
       
-      const data = await apiFetch<Record<string, any>>('/api/image/chatgpt', {
+      const data = await apiFetch<Record<string, unknown>>('/api/image/chatgpt', {
         method: 'POST',
         body: {
           prompt,

@@ -361,7 +361,7 @@ export async function apiFetch<T = unknown>(
       // If token validation fails, throw a clear error
       const message = error instanceof Error ? error.message : 'Authentication failed';
       debugError('[API] Token validation failed:', error);
-      try { authMetrics.increment('api_auth_error'); } catch {}
+      try { authMetrics.increment('api_auth_error'); } catch (e) { void e; }
       throw new Error(`Authentication error: ${message}`);
     }
   }

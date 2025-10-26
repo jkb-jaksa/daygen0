@@ -735,8 +735,8 @@ export const useGeminiImageGeneration = () => {
       }
 
       // Handle immediate response (legacy)
-      const imgBase64 = (payload as any)?.imageBase64 as string | undefined;
-      const imgMime = (payload as any)?.mimeType as string | undefined;
+      const imgBase64 = (payload as Record<string, unknown>)?.imageBase64 as string | undefined;
+      const imgMime = (payload as Record<string, unknown>)?.mimeType as string | undefined;
       if (!imgBase64) {
         throw new Error('No image data returned from API');
       }

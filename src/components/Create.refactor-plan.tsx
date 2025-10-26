@@ -1,3 +1,21 @@
+/**
+ * ⚠️ INCOMPLETE REFACTOR - DO NOT USE IN PRODUCTION ⚠️
+ * 
+ * This file is a SKELETON/PLAN for a future refactoring of Create.tsx.
+ * It demonstrates the intended architecture but lacks critical functionality:
+ * - No actual API calls to generation hooks
+ * - Missing prompt/reference/avatar/product management
+ * - No model-specific options wiring
+ * - No deep-linking implementation
+ * - Placeholder generation logic only
+ * 
+ * See REFACTORING_SUMMARY.md for details.
+ * Current production file: Create.tsx (10,657 lines)
+ * 
+ * Estimated work to complete: 50-100 hours
+ * Status: On hold - monolith works, refactor is deprioritized
+ */
+
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
@@ -263,3 +281,4 @@ const Create: React.FC = () => {
 };
 
 export default Create;
+

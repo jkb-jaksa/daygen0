@@ -3417,17 +3417,23 @@ const [batchSize, setBatchSize] = useState<number>(1);
           throw new Error('Job not found');
         }
 
-        const { status, resultUrl, createdAt, userId } = job as any;
-        const jobMeta = (job as any).metadata as { prompt?: string; model?: string } | undefined;
+        const status = job.status as string | undefined;
+        const resultUrl = job.resultUrl as string | undefined;
+        const createdAt = job.createdAt as string | undefined;
+        const userId = job.userId as string | undefined;
+        const jobMetadata = job.metadata as Record<string, unknown> | undefined;
+        const jobMeta = jobMetadata ? { 
+          prompt: jobMetadata.prompt as string | undefined, 
+          model: jobMetadata.model as string | undefined 
+        } : undefined;
 
         if (status !== 'COMPLETED' || !resultUrl) {
           throw new Error('Job is not completed or has no result');
         }
 
         // Extract metadata
-        const metadata = jobMeta || {};
-        const prompt = typeof metadata.prompt === 'string' ? metadata.prompt : '';
-        const model = typeof metadata.model === 'string' ? metadata.model : '';
+        const prompt = jobMeta?.prompt || '';
+        const model = jobMeta?.model || '';
         
         // Create a GalleryImageLike object
         const imageData: GalleryImageLike = {
@@ -5493,13 +5499,14 @@ const handleGenerate = async () => {
                 continue;
               }
 
-              const job = statusData as Record<string, unknown>;
-              if (job?.status === 'COMPLETED' && job?.resultUrl) {
-                jobResultUrl = (job as any).resultUrl as string;
+              const jobStatus = statusData.status as string | undefined;
+              const jobResult = statusData.resultUrl as string | undefined;
+              if (jobStatus === 'COMPLETED' && jobResult) {
+                jobResultUrl = jobResult;
                 break;
               }
 
-              if ((job as any)?.status === 'FAILED') {
+              if (jobStatus === 'FAILED') {
                 throw new Error('Recraft job failed');
               }
 
