@@ -2,7 +2,27 @@
 
 ## Scope
 - Reviewed `src/components/create/*.tsx`, `src/components/create/contexts/*`, and `src/components/create/hooks/*`.
-- Goal: catalog extracted responsibilities, highlight implementation gaps relative to the target modular create surface, and refresh Phase 1 action items with concrete guidance.
+- Goal: catalog extracted responsibilities, highlight implementation gaps relative to the target modular create surface, and refresh Phase 1 action items with concrete guidance.
+
+## Benefits of Modularization
+
+### Performance Improvements
+- **Faster Hot Reload**: Changes to individual components don't re-render the entire Create component
+- **Reduced Re-render Scope**: Changing prompt doesn't re-render gallery grid
+- **Lazy Loading**: Components load only when needed
+- **Memoization**: Prevents unnecessary re-renders
+
+### Developer Experience
+- **Easier to Add Features**: Clear file to edit for each feature
+- **Better Code Organization**: Logical separation of concerns
+- **Improved Discoverability**: Easy to find specific functionality
+- **Maintainable**: Smaller, focused components are easier to understand and modify
+
+### Code Quality
+- **Separation of Concerns**: Each component has a single responsibility
+- **Reusability**: Components can be reused in other parts of the app
+- **Testability**: Smaller components are easier to test
+- **Type Safety**: Proper TypeScript interfaces for all components
 
 ## Extracted module inventory
 
@@ -56,12 +76,78 @@
 - **Advanced settings contract unused:** `SettingsMenu` defines exhaustive per-provider props but nothing instantiates it, so provider-specific controls remain theoretical.【F:src/components/create/SettingsMenu.tsx†L1-L115】【F:src/components/create/PromptForm.tsx†L137-L174】
 - **Modal/state duplication:** Components such as `StyleSelectionModal` and `PromptForm` each create their own handler instances, preventing shared state and deviating from the target plan of context-driven coordination.【F:src/components/create/StyleSelectionModal.tsx†L10-L46】【F:src/components/create/PromptForm.tsx†L24-L48】
 
-## Phase 1 action items
+## Migration Safety & Current State
+
+### Current Implementation Status
+- **Production file**: `src/components/Create.tsx` (10,657 lines) ✅ ACTIVE
+- **Refactor skeleton**: Was `Create.refactor-plan.tsx` (now removed) ⚠️ INCOMPLETE
+- **Status**: Audit complete; refactoring on hold
+
+### What Exists
+- Modular contexts and hooks have been extracted but are NOT wired together
+- Components are skeletons/placeholders without real data flows
+- No actual generation API calls implemented
+- Missing prompt management, reference handling, and deep-linking
+
+### Estimated Effort to Complete
+- **50-100 hours** of development + testing to fully implement the modular architecture
+
+## Next Steps (If Refactoring Resumed)
+1. Implement actual generation API calls in all provider hooks
+2. Wire up prompt management and application
+3. Implement reference image handling
+4. Add deep-linking support for `/job/:jobId` routes
+5. Test refactored components thoroughly
+6. Gradually migrate to the new architecture
+7. Remove old Create.tsx once verified
+8. Add additional optimizations as needed
+
+## Phase 1 action items
 | Module(s) | Recommendation | Rationale |
 | --- | --- | --- |
 | `AvatarPickerPortal`, `CreateSidebar`, `layoutConstants.ts`, `sidebarData.ts`, `ReferenceImages` | **Reuse** | Pure presentation/portal utilities already production-quality; simply import into the new shell. | 
 | `GenerationContext`, `GalleryContext`, `usePromptHandlers`, `useReferenceHandlers`, `useAvatarHandlers`, `useProductHandlers`, `useStyleHandlers`, `SettingsMenu`, `StyleSelectionModal`, `ImageActionMenu`, `BulkActionsMenu`, `GalleryPanel`, `GenerationProgress`, `ResultsGrid`, `FullImageModal` | **Expand** | Logic exists but needs real data sources, shared state, and bug fixes (e.g., handler wiring, missing imports, folder/API integrations) before shipping. | 
 | `PromptForm`, `ModelSelector`, orchestration glue for generation requests | **Replace/Rewrite** | Current stubs prevent any end-to-end flow; reimplement around real contexts and hooks, importing only the reusable leaf components. | 
 | `ChatMode`, `PromptHistoryPanel` | **Evaluate separately** | Parallel experiments not aligned with planned modular surface; decide whether to fold in or postpone. | 
+
+## Phased Execution Guardrails & Validation (When Work Resumes)
+
+### Phase 0 – Baseline Guardrails
+- Capture current Create monolith behavior with parity logs or screenshots covering credit consumption, deep-link routing, and gallery refresh states before any refactor branches diverge.
+- Establish the smoke test checklist (see below) and record baseline results.
+- Run `pnpm typecheck`, `pnpm lint`, and the Create smoke tests to confirm the baseline passes before beginning implementation work.
+
+### Phase 1 – Context & Data Layer Extraction
+- As contexts and hooks are extracted, re-run `pnpm typecheck`, `pnpm lint`, and the Create smoke tests to ensure no regressions in credit flow, deep-link hydration, or gallery refresh triggers.
+- Update parity evidence (logs or screenshots) if the refactor introduces new instrumentation or UI affordances touching those flows.
+
+### Phase 2 – UI Component Modularization
+- After restructuring UI components, re-run `pnpm typecheck`, `pnpm lint`, and the Create smoke tests.
+- Capture updated screenshots/logs for any views whose layout or messaging changes to streamline QA review.
+
+### Phase 3 – Integration & Feature Flag Readiness
+- Once the modular stack is wired behind a feature flag, execute `pnpm typecheck`, `pnpm lint`, and the Create smoke tests in both monolith and modular modes.
+- Collect side-by-side parity evidence (logs or annotated screenshots) for the credit flow, deep-link handling, and gallery refresh behavior while the flag is off vs. on.
+
+### Phase 4 – Parity Validation & Launch Checklist
+- Prior to enabling the feature flag for users, run `pnpm typecheck`, `pnpm lint`, and the Create smoke tests as part of the final sign-off.
+- Review the smoke test outputs against the captured parity logs/screenshots to confirm functional equivalence and attach them to the rollout ticket for QA.
+- Only enable the feature flag after QA validates the documented parity artifacts.
+
+### Create Smoke Test Checklist
+- **Credit flow**: Start a generation, confirm credit decrement, observe completion, and verify credits reconcile in the account header and billing logs.
+- **Deep links**: Navigate directly to `/job/:jobId` for a recent generation, verify the modal or selection state hydrates correctly, and ensure back navigation returns to Create without state loss.
+- **Gallery refresh**: From Create, trigger a new generation and confirm the gallery auto-refreshes with the new asset; validate manual refresh also preserves filters and selection.
+
+Include any supplemental automation or scripted checks that cover these scenarios in CI so the smoke tests can be invoked alongside `pnpm typecheck` and `pnpm lint`.
+
+## Expected Outcomes
+- **Create.tsx**: 10,596 lines → ~500 lines (95% reduction)
+- **Faster Development**: Hot reload improvements
+- **Better Performance**: Reduced re-render scope
+- **Easier Maintenance**: Clear component boundaries
+- **Enhanced UX**: Smoother interactions with optimized components
+
+The refactoring would transform a monolithic component into a well-architected, performant, and maintainable system while preserving all existing functionality.
 
 *Last updated: automated audit generated during repository review.*
