@@ -6,6 +6,8 @@ import { useReferenceHandlers } from './useReferenceHandlers';
 import { useAvatarHandlers } from './useAvatarHandlers';
 import { useProductHandlers } from './useProductHandlers';
 import { useStyleHandlers } from './useStyleHandlers';
+import { useGallery } from '../contexts/GalleryContext';
+import type { GalleryImageLike, GalleryVideoLike } from '../types';
 import { useGeminiImageGeneration } from '../../../hooks/useGeminiImageGeneration';
 import { useFluxImageGeneration } from '../../../hooks/useFluxImageGeneration';
 import { useChatGPTImageGeneration } from '../../../hooks/useChatGPTImageGeneration';
@@ -30,6 +32,27 @@ const fileToDataUrl = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
+const ensureJobId = (candidate?: string | null) => {
+  if (candidate && candidate.trim().length > 0) {
+    return candidate;
+  }
+
+  const crypto = globalThis.crypto;
+  if (crypto && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const toArray = <T>(value: T | T[] | null | undefined): T[] => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is T => item != null);
+  }
+
+  return value != null ? [value] : [];
+};
+
 export interface CreateGenerationController {
   promptHandlers: ReturnType<typeof usePromptHandlers>;
   referenceHandlers: ReturnType<typeof useReferenceHandlers>;
@@ -52,6 +75,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     setSelectedModel,
     setButtonSpinning,
   } = generation;
+
+  const { addImage, addVideo } = useGallery();
 
   const {
     selectedModel,
@@ -192,6 +217,114 @@ export function useCreateGenerationController(): CreateGenerationController {
     const references = referencesBase64.length ? referencesBase64 : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
 
+    const persistImageResults = (
+      result: unknown,
+      overrides: Partial<GalleryImageLike> = {},
+    ) => {
+      const images = toArray<Partial<GalleryImageLike> & { jobId?: string | null }>(
+        result as
+          | (Partial<GalleryImageLike> & { jobId?: string | null })
+          | Array<Partial<GalleryImageLike> & { jobId?: string | null }>
+          | null
+          | undefined,
+      );
+
+      images.forEach((image) => {
+        if (!image?.url || typeof image.url !== 'string') {
+          return;
+        }
+
+        const galleryImage: GalleryImageLike = {
+          url: image.url,
+          prompt: overrides.prompt ?? image.prompt ?? finalPrompt,
+          model: overrides.model ?? image.model ?? selectedModel,
+          timestamp: overrides.timestamp ?? image.timestamp ?? new Date().toISOString(),
+          ownerId: overrides.ownerId ?? image.ownerId,
+          jobId: ensureJobId(overrides.jobId ?? image.jobId),
+          r2FileId: overrides.r2FileId ?? image.r2FileId,
+          references:
+            overrides.references ??
+            (Array.isArray(image.references) && image.references.length > 0
+              ? image.references
+              : undefined),
+          isPublic: overrides.isPublic ?? image.isPublic,
+          savedFrom: overrides.savedFrom ?? image.savedFrom,
+          avatarId: overrides.avatarId ?? image.avatarId ?? selectedAvatarId,
+          productId: overrides.productId ?? image.productId ?? selectedProductId,
+          avatarImageId:
+            overrides.avatarImageId ?? image.avatarImageId ?? activeAvatarImageId,
+          styleId: overrides.styleId ?? image.styleId ?? selectedStyleId,
+          aspectRatio: overrides.aspectRatio ?? image.aspectRatio,
+        };
+
+        try {
+          addImage(galleryImage);
+        } catch (galleryError) {
+          debugError('[create] Failed to add image to gallery', galleryError);
+        }
+      });
+    };
+
+    const persistVideoResults = (
+      result: unknown,
+      overrides: Partial<GalleryVideoLike> = {},
+    ) => {
+      const videos = toArray<Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null }>(
+        result as
+          | (Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null })
+          | Array<
+              Partial<GalleryVideoLike> & {
+                jobId?: string | null;
+                taskId?: string | null;
+              }
+            >
+          | null
+          | undefined,
+      );
+
+      videos.forEach((video) => {
+        if (!video?.url || typeof video.url !== 'string') {
+          return;
+        }
+
+        const resolvedJobId =
+          overrides.jobId ?? video.jobId ?? video.taskId ?? undefined;
+
+        const galleryVideo: GalleryVideoLike = {
+          url: video.url,
+          prompt: overrides.prompt ?? video.prompt ?? finalPrompt,
+          model: overrides.model ?? video.model ?? selectedModel,
+          timestamp: overrides.timestamp ?? video.timestamp ?? new Date().toISOString(),
+          ownerId: overrides.ownerId ?? video.ownerId,
+          jobId: ensureJobId(resolvedJobId),
+          r2FileId: overrides.r2FileId ?? video.r2FileId,
+          references:
+            overrides.references ??
+            (Array.isArray(video.references) && video.references.length > 0
+              ? video.references
+              : undefined),
+          isPublic: overrides.isPublic ?? video.isPublic,
+          type: 'video',
+          operationName: overrides.operationName ?? video.operationName,
+          avatarId: overrides.avatarId ?? video.avatarId ?? selectedAvatarId,
+          productId: overrides.productId ?? video.productId ?? selectedProductId,
+          avatarImageId:
+            overrides.avatarImageId ?? video.avatarImageId ?? activeAvatarImageId,
+          styleId: overrides.styleId ?? video.styleId ?? selectedStyleId,
+          aspectRatio:
+            overrides.aspectRatio ??
+            video.aspectRatio ??
+            (video as { ratio?: string }).ratio,
+        };
+
+        try {
+          addVideo(galleryVideo);
+        } catch (galleryError) {
+          debugError('[create] Failed to add video to gallery', galleryError);
+        }
+      });
+    };
+
     const parsedWanSeed = (() => {
       if (!wanSeed?.trim()) {
         return undefined;
@@ -225,8 +358,8 @@ export function useCreateGenerationController(): CreateGenerationController {
 
     try {
       switch (selectedModel) {
-        case 'gemini-2.5-flash-image':
-          await generateGeminiImage({
+        case 'gemini-2.5-flash-image': {
+          const geminiImage = await generateGeminiImage({
             prompt: finalPrompt,
             model: selectedModel,
             references,
@@ -239,9 +372,14 @@ export function useCreateGenerationController(): CreateGenerationController {
             productId: selectedProductId,
             styleId: selectedStyleId,
           });
+
+          persistImageResults(geminiImage, {
+            aspectRatio: geminiAspectRatio,
+          });
           break;
-        case 'flux-1.1':
-          await generateFluxImage({
+        }
+        case 'flux-1.1': {
+          const fluxImage = await generateFluxImage({
             prompt: finalPrompt,
             model: selectedModel,
             references,
@@ -249,9 +387,12 @@ export function useCreateGenerationController(): CreateGenerationController {
             avatarImageId: activeAvatarImageId,
             productId: selectedProductId,
           });
+
+          persistImageResults(fluxImage);
           break;
-        case 'chatgpt-image':
-          await generateChatGPTImage({
+        }
+        case 'chatgpt-image': {
+          const chatgptImage = await generateChatGPTImage({
             prompt: finalPrompt,
             size: '1024x1024',
             quality: 'high',
@@ -261,7 +402,10 @@ export function useCreateGenerationController(): CreateGenerationController {
             productId: selectedProductId,
             styleId: selectedStyleId,
           });
+
+          persistImageResults(chatgptImage, { aspectRatio: '1:1' });
           break;
+        }
         case 'ideogram': {
           const ideogramResult = await generateIdeogramImage({
             prompt: finalPrompt,
@@ -277,6 +421,8 @@ export function useCreateGenerationController(): CreateGenerationController {
           if (!ideogramResult || ideogramResult.length === 0) {
             throw new Error('Ideogram did not return any images.');
           }
+
+          persistImageResults(ideogramResult, { aspectRatio: '1:1' });
           break;
         }
         case 'qwen-image': {
@@ -294,10 +440,12 @@ export function useCreateGenerationController(): CreateGenerationController {
           if (!qwenResult || qwenResult.length === 0) {
             throw new Error('Qwen did not return any images.');
           }
+
+          persistImageResults(qwenResult, { aspectRatio: qwenSize });
           break;
         }
-        case 'runway-gen4':
-          await generateRunwayImage({
+        case 'runway-gen4': {
+          const runwayImage = await generateRunwayImage({
             prompt: finalPrompt,
             model: 'gen4_image',
             uiModel: 'runway-gen4',
@@ -308,9 +456,14 @@ export function useCreateGenerationController(): CreateGenerationController {
             productId: selectedProductId,
             styleId: selectedStyleId,
           });
+
+          persistImageResults(runwayImage, {
+            aspectRatio: '1920:1080',
+          });
           break;
-        case 'reve-image':
-          await generateReveImage({
+        }
+        case 'reve-image': {
+          const reveImage = await generateReveImage({
             prompt: finalPrompt,
             model: 'reve-image-1.0',
             width: 1024,
@@ -321,33 +474,48 @@ export function useCreateGenerationController(): CreateGenerationController {
             productId: selectedProductId,
             styleId: selectedStyleId,
           });
+
+          persistImageResults(reveImage, { aspectRatio: '1:1' });
           break;
+        }
         case 'luma-photon-1':
-        case 'luma-photon-flash-1':
-          await generateLumaImage({
+        case 'luma-photon-flash-1': {
+          const lumaImage = await generateLumaImage({
             prompt: finalPrompt,
             model: selectedModel,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatarId,
           });
+
+          persistImageResults(lumaImage, { aspectRatio: geminiAspectRatio });
           break;
-        case 'veo-3':
-          await startVeoGeneration({
+        }
+        case 'veo-3': {
+          const veoVideo = await startVeoGeneration({
             prompt: finalPrompt,
             model: 'veo-3.0-generate-001',
             aspectRatio: normalizedVeoAspectRatio,
           });
+
+          persistVideoResults(veoVideo, {
+            aspectRatio: normalizedVeoAspectRatio,
+            operationName: 'veo_video_generate',
+          });
           break;
-        case 'runway-video-gen4':
-          await generateRunwayVideo({
+        }
+        case 'runway-video-gen4': {
+          const runwayVideo = await generateRunwayVideo({
             prompt: finalPrompt,
             model: 'gen4_turbo',
             ratio: normalizedRunwayVideoRatio,
             duration: 5,
           });
+
+          persistVideoResults(runwayVideo, { aspectRatio: normalizedRunwayVideoRatio });
           break;
-        case 'wan-video-2.2':
-          await generateWanVideo({
+        }
+        case 'wan-video-2.2': {
+          const wanVideo = await generateWanVideo({
             prompt: finalPrompt,
             model: 'wan2.2-t2v-plus',
             size: wanSize,
@@ -356,9 +524,12 @@ export function useCreateGenerationController(): CreateGenerationController {
             seed: parsedWanSeed,
             watermark: wanWatermark,
           });
+
+          persistVideoResults(wanVideo, { aspectRatio: wanSize });
           break;
-        case 'hailuo-02':
-          await generateHailuoVideo({
+        }
+        case 'hailuo-02': {
+          const hailuoVideo = await generateHailuoVideo({
             prompt: finalPrompt,
             model: 'hailuo-02',
             duration: 10,
@@ -366,18 +537,26 @@ export function useCreateGenerationController(): CreateGenerationController {
             promptOptimizer: true,
             watermark: wanWatermark,
           });
+
+          persistVideoResults(hailuoVideo);
           break;
-        case 'kling-video':
-          await generateKlingVideo({
+        }
+        case 'kling-video': {
+          const klingVideo = await generateKlingVideo({
             prompt: finalPrompt,
             model: 'kling-v2.1-master',
             aspectRatio: (klingAspectRatio as '16:9' | '9:16' | '1:1') ?? '16:9',
             duration: 5,
             mode: 'standard',
           });
+
+          persistVideoResults(klingVideo, {
+            aspectRatio: (klingAspectRatio as string | undefined) ?? '16:9',
+          });
           break;
-        case 'seedance-1.0-pro':
-          await generateSeedanceVideo({
+        }
+        case 'seedance-1.0-pro': {
+          const seedanceVideo = await generateSeedanceVideo({
             prompt: finalPrompt,
             model: 'seedance-1.0-pro',
             ratio: seedanceRatio,
@@ -385,15 +564,21 @@ export function useCreateGenerationController(): CreateGenerationController {
             resolution: '720p',
             mode: 't2v',
           });
+
+          persistVideoResults(seedanceVideo, { aspectRatio: seedanceRatio });
           break;
-        case 'luma-ray-2':
-          await generateLumaVideo({
+        }
+        case 'luma-ray-2': {
+          const lumaVideo = await generateLumaVideo({
             prompt: finalPrompt,
             model: 'luma-ray-2',
             resolution: '1080p',
             durationSeconds: 6,
           });
+
+          persistVideoResults(lumaVideo);
           break;
+        }
         case 'recraft':
           throw new Error('Recraft support is not yet available in the modular Create surface.');
         default:
@@ -454,6 +639,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     generateKlingVideo,
     generateSeedanceVideo,
     generateLumaVideo,
+    addImage,
+    addVideo,
     setButtonSpinning,
   ]);
 
