@@ -177,7 +177,7 @@ export const useVeoVideoGeneration = () => {
       if (options.imageBase64) providerOptions.image_base64 = options.imageBase64;
       if (options.imageMimeType) providerOptions.image_mime_type = options.imageMimeType;
 
-      const { result, jobId } = await runGenerationJob<GeneratedVideo, Record<string, unknown>>({
+      const { result } = await runGenerationJob<GeneratedVideo, Record<string, unknown>>({
         provider: 'veo',
         mediaType: 'video',
         body: {

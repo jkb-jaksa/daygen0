@@ -362,7 +362,7 @@ export function useLumaImageGeneration() {
         throw new Error(message);
       }
     },
-    [tracker, user?.id],
+    [tracker, user?.id, extractContentType, extractGenerationId, parseImmediateLumaResult, parseLumaJobResult],
   );
 
   const clearError = useCallback(() => {

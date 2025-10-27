@@ -269,7 +269,7 @@ export function useWanVideoGeneration() {
       });
       throw new Error(message);
     }
-  }, [tracker, stopPolling, state.status]);
+  }, [tracker, stopPolling]);
 
   const reset = useCallback(() => {
     stopPolling();

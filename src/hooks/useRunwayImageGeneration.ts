@@ -309,7 +309,7 @@ export const useRunwayImageGeneration = () => {
 
       throw new Error(errorMessage);
     }
-  }, [checkCredits, tracker, user?.id]);
+  }, [checkCredits, tracker, user?.id, formatProgress, parseImmediateRunwayResult, parseRunwayJobResult]);
 
   const clearError = useCallback(() => {
     setState(prev => ({
