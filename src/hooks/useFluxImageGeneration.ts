@@ -2,7 +2,14 @@ import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
 import { debugError } from '../utils/debug';
+import { resolveGenerationCatchError } from '../utils/errorMessages';
 import { useAuth } from '../auth/useAuth';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 
 export interface FluxGeneratedImage {
   url: string;
@@ -48,12 +55,113 @@ export interface FluxImageGenerationOptions {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  /** Abort generation early */
+  signal?: AbortSignal;
+  /** Timeout (ms) for the initial POST request */
+  requestTimeoutMs?: number;
+  /** Timeout (ms) for the job polling lifecycle */
+  pollTimeoutMs?: number;
+  /** Interval (ms) between job polling requests */
+  pollIntervalMs?: number;
+  /** Timeout (ms) for each polling request */
+  pollRequestTimeoutMs?: number;
 }
 
-// const AUTH_ERROR_MESSAGE = 'Please sign in to generate Flux images.';
+const pickString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const formatProgress = (snapshot: JobStatusSnapshot, previous?: string): string | undefined => {
+  if (snapshot.progress !== undefined) {
+    return `${Math.round(snapshot.progress)}%`;
+  }
+
+  return snapshot.stage ?? previous;
+};
+
+const buildProviderOptions = (
+  options: Omit<FluxImageGenerationOptions, 'prompt' | 'model' | 'references' | 'avatarId' | 'avatarImageId'>,
+): Record<string, unknown> => {
+  const providerOptions: Record<string, unknown> = {};
+  if (options.width !== undefined) providerOptions.width = options.width;
+  if (options.height !== undefined) providerOptions.height = options.height;
+  if (options.aspect_ratio !== undefined) providerOptions.aspect_ratio = options.aspect_ratio;
+  if (options.raw !== undefined) providerOptions.raw = options.raw;
+  if (options.image_prompt !== undefined) providerOptions.image_prompt = options.image_prompt;
+  if (options.image_prompt_strength !== undefined) {
+    providerOptions.image_prompt_strength = options.image_prompt_strength;
+  }
+  if (options.input_image !== undefined) providerOptions.input_image = options.input_image;
+  if (options.input_image_2 !== undefined) providerOptions.input_image_2 = options.input_image_2;
+  if (options.input_image_3 !== undefined) providerOptions.input_image_3 = options.input_image_3;
+  if (options.input_image_4 !== undefined) providerOptions.input_image_4 = options.input_image_4;
+  if (options.seed !== undefined) providerOptions.seed = options.seed;
+  if (options.output_format !== undefined) providerOptions.output_format = options.output_format;
+  if (options.prompt_upsampling !== undefined) {
+    providerOptions.prompt_upsampling = options.prompt_upsampling;
+  }
+  if (options.safety_tolerance !== undefined) {
+    providerOptions.safety_tolerance = options.safety_tolerance;
+  }
+
+  return providerOptions;
+};
+
+const parseFluxJobResult = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+  prompt: string,
+  model: string,
+  references: string[] | undefined,
+  avatarId: string | undefined,
+  avatarImageId: string | undefined,
+  ownerId: string | undefined,
+): FluxGeneratedImage => {
+  const metadata = asRecord(snapshot.job.metadata);
+  const metadataFileUrl = metadata ? pickString(metadata.fileUrl) : undefined;
+  const metadataR2FileUrl = metadata ? pickString(metadata.r2FileUrl) : undefined;
+  const metadataUrl = metadata ? pickString(metadata.url) : undefined;
+  const metadataResults = metadata ? metadata.results : undefined;
+  const firstResultUrl = Array.isArray(metadataResults)
+    ? metadataResults
+        .map((item) => pickString(item))
+        .find((value): value is string => Boolean(value))
+    : undefined;
+
+  const resolvedUrl =
+    pickString(snapshot.job.resultUrl) ??
+    metadataFileUrl ??
+    metadataR2FileUrl ??
+    metadataUrl ??
+    firstResultUrl;
+
+  if (!resolvedUrl) {
+    throw new Error('Job completed but no result URL was provided.');
+  }
+
+  const r2FileId = metadata ? pickString(metadata.r2FileId) : undefined;
+
+  return {
+    url: resolvedUrl,
+    prompt,
+    model,
+    timestamp: new Date().toISOString(),
+    jobId: response.jobId ?? snapshot.job.id ?? '',
+    references: references && references.length ? references : undefined,
+    ownerId,
+    avatarId,
+    avatarImageId,
+    r2FileId,
+  };
+};
 
 export const useFluxImageGeneration = () => {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const [state, setState] = useState<FluxImageGenerationState>({
     isLoading: false,
     error: null,
@@ -62,210 +170,100 @@ export const useFluxImageGeneration = () => {
     progress: undefined,
   });
 
-  const pollForJobCompletion = useCallback(
-    async (
-      jobId: string,
-      prompt: string,
-      model: string,
-      references: string[] | undefined,
-      avatarId: string | undefined,
-      avatarImageId: string | undefined,
-      ownerId: string | undefined,
-    ): Promise<FluxGeneratedImage> => {
-      const pollIntervalMs = 3000;
-      const maxAttempts = Math.ceil((5 * 60 * 1000) / pollIntervalMs);
-      let attempts = 0;
-
-      const pickString = (value: unknown): string | undefined =>
-        typeof value === 'string' && value.trim().length > 0
-          ? value.trim()
-          : undefined;
-      const asRecord = (value: unknown): Record<string, unknown> | null =>
-        value && typeof value === 'object' && !Array.isArray(value)
-          ? (value as Record<string, unknown>)
-          : null;
-
-      while (attempts < maxAttempts) {
-        try {
-          const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
-          const metadata = asRecord(job.metadata);
-          const metadataFileUrl = metadata
-            ? pickString(metadata['fileUrl'])
-            : undefined;
-          const metadataR2FileUrl = metadata
-            ? pickString(metadata['r2FileUrl'])
-            : undefined;
-          const metadataUrl = metadata
-            ? pickString(metadata['url'])
-            : undefined;
-          const metadataResults = metadata ? metadata['results'] : undefined;
-          const firstResultUrl = Array.isArray(metadataResults)
-            ? metadataResults
-                .map((item) => pickString(item))
-                .find((value): value is string => Boolean(value))
-            : undefined;
-          const resolvedUrl =
-            pickString(job.resultUrl) ??
-            metadataFileUrl ??
-            metadataR2FileUrl ??
-            metadataUrl ??
-            firstResultUrl;
-          const r2FileId = metadata
-            ? pickString(metadata['r2FileId'])
-            : undefined;
-
-          if (job.status === 'COMPLETED') {
-            if (!resolvedUrl) {
-              throw new Error('Job completed but no result URL was provided.');
-            }
-
-            setState((prev) => ({
-              ...prev,
-              jobStatus: 'completed',
-              progress: '100%',
-            }));
-
-            return {
-              url: resolvedUrl,
-              prompt,
-              model,
-              timestamp: new Date().toISOString(),
-              jobId,
-              references: references || undefined,
-              ownerId,
-              avatarId,
-              avatarImageId,
-              r2FileId,
-            };
-          }
-
-          if (job.status === 'FAILED') {
-            throw new Error(job.error || 'Job failed');
-          }
-
-          setState((prev) => ({
-            ...prev,
-            jobStatus: job.status === 'PROCESSING' ? 'processing' : 'queued',
-            progress: job.progress ? `${job.progress}%` : 'Processing...',
-          }));
-        } catch (error) {
-          if (attempts === maxAttempts - 1) {
-            throw error instanceof Error ? error : new Error(String(error));
-          }
-        }
-
-        attempts += 1;
-        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-      }
-
-      throw new Error('Job polling timeout');
-    },
-    [],
-  );
-
   const generateImage = useCallback(
     async (options: FluxImageGenerationOptions) => {
       setState((prev) => ({
         ...prev,
         isLoading: true,
         error: null,
+        generatedImage: null,
         jobStatus: 'queued',
         progress: 'Submitting request…',
       }));
 
+      const { prompt, model, references, useWebhook = false, signal } = options;
+
+      if (useWebhook) {
+        debugError('Flux webhook delivery is not supported in the backend integration.');
+      }
+
+      const resolvedModel =
+        model in FLUX_MODEL_MAP
+          ? FLUX_MODEL_MAP[model as FluxModelType]
+          : (model as FluxModel);
+
+      const providerOptions = buildProviderOptions(options);
+
       try {
-        // TEMPORARILY DISABLED: Authentication check
-        // if (!token) {
-        //   setState((prev) => ({
-        //     ...prev,
-        //     isLoading: false,
-        //     error: AUTH_ERROR_MESSAGE,
-        //     jobStatus: null,
-        //     progress: undefined,
-        //   }));
-        //   throw new Error(AUTH_ERROR_MESSAGE);
-        // }
-
-        const { prompt, model, references, useWebhook = false, ...params } = options;
-        if (useWebhook) {
-          debugError('Flux webhook delivery is not supported in the backend integration.');
-        }
-
-        const resolvedModel =
-          model in FLUX_MODEL_MAP
-            ? FLUX_MODEL_MAP[model as FluxModelType]
-            : (model as FluxModel);
-
-        const providerOptions: Record<string, unknown> = {};
-        if (params.width !== undefined) providerOptions.width = params.width;
-        if (params.height !== undefined) providerOptions.height = params.height;
-        if (params.aspect_ratio !== undefined) providerOptions.aspect_ratio = params.aspect_ratio;
-        if (params.raw !== undefined) providerOptions.raw = params.raw;
-        if (params.image_prompt !== undefined) providerOptions.image_prompt = params.image_prompt;
-        if (params.image_prompt_strength !== undefined) providerOptions.image_prompt_strength = params.image_prompt_strength;
-        if (params.input_image !== undefined) providerOptions.input_image = params.input_image;
-        if (params.input_image_2 !== undefined) providerOptions.input_image_2 = params.input_image_2;
-        if (params.input_image_3 !== undefined) providerOptions.input_image_3 = params.input_image_3;
-        if (params.input_image_4 !== undefined) providerOptions.input_image_4 = params.input_image_4;
-        if (params.seed !== undefined) providerOptions.seed = params.seed;
-        if (params.output_format !== undefined) providerOptions.output_format = params.output_format;
-        if (params.prompt_upsampling !== undefined) providerOptions.prompt_upsampling = params.prompt_upsampling;
-        if (params.safety_tolerance !== undefined) providerOptions.safety_tolerance = params.safety_tolerance;
-
-        const payload = await apiFetch<{ jobId?: string; status?: string }>(
-          '/api/image/flux',
-          {
-            method: 'POST',
-            body: {
-              prompt,
-              model: resolvedModel,
-              references,
-              providerOptions,
-              avatarId: options.avatarId,
-              avatarImageId: options.avatarImageId,
-            },
-            context: 'generation',
-          }
-        );
-
-        if (!payload.jobId) {
-          throw new Error('Flux generation did not return a job ID.');
-        }
-
-        const generatedImage = await pollForJobCompletion(
-          payload.jobId,
+        const { result, jobId } = await runGenerationJob<FluxGeneratedImage, Record<string, unknown>>({
+          provider: 'flux',
+          mediaType: 'image',
+          body: {
+            prompt,
+            model: resolvedModel,
+            references,
+            providerOptions,
+            avatarId: options.avatarId,
+            avatarImageId: options.avatarImageId,
+          },
+          tracker,
           prompt,
-          resolvedModel,
-          references,
-          options.avatarId,
-          options.avatarImageId,
-          user?.id,
-        );
+          model: resolvedModel,
+          signal,
+          timeoutMs: options.requestTimeoutMs,
+          pollTimeoutMs: options.pollTimeoutMs,
+          pollIntervalMs: options.pollIntervalMs,
+          requestTimeoutMs: options.pollRequestTimeoutMs,
+          parseJobResult: (snapshot, response) =>
+            parseFluxJobResult(
+              snapshot,
+              response,
+              prompt,
+              resolvedModel,
+              references,
+              options.avatarId,
+              options.avatarImageId,
+              user?.id,
+            ),
+          onUpdate: (snapshot) => {
+            setState((prev) => ({
+              ...prev,
+              jobStatus: snapshot.status,
+              progress: formatProgress(snapshot, prev.progress),
+            }));
+          },
+        });
 
-        setState((prev) => ({
-          ...prev,
+        setState({
           isLoading: false,
           error: null,
-          generatedImage,
+          generatedImage: result,
           jobStatus: 'completed',
           progress: undefined,
-        }));
+        });
 
-        return generatedImage;
+        return {
+          ...result,
+          jobId: jobId ?? result.jobId,
+        };
       } catch (error) {
-        const message = resolveGenerationCatchError(error, 'Flux couldn’t generate that image. Try again in a moment.');
-        setState((prev) => ({
-          ...prev,
+        const message = resolveGenerationCatchError(
+          error,
+          'Flux couldn’t generate that image. Try again in a moment.',
+        );
+
+        setState({
           isLoading: false,
           error: message,
           generatedImage: null,
           jobStatus: 'failed',
           progress: undefined,
-        }));
+        });
+
         throw new Error(message);
       }
     },
-    [user?.id, pollForJobCompletion],
+    [tracker, user?.id],
   );
 
   const clearError = useCallback(() => {
