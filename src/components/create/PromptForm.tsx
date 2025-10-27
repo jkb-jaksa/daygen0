@@ -1,12 +1,7 @@
-import React, { memo, useCallback, useRef, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
 import { Wand2, Settings, User, Package, Palette } from 'lucide-react';
-import { useGeneration } from './contexts/GenerationContext';
-import { usePromptHandlers } from './hooks/usePromptHandlers';
-import { useReferenceHandlers } from './hooks/useReferenceHandlers';
-import { useAvatarHandlers } from './hooks/useAvatarHandlers';
-import { useProductHandlers } from './hooks/useProductHandlers';
-import { useStyleHandlers } from './hooks/useStyleHandlers';
+import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { buttons, inputs } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
@@ -19,21 +14,28 @@ const PromptsDropdown = lazy(() => import('../PromptsDropdown'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
 
 interface PromptFormProps {
-  onGenerate: () => void;
-  isGenerating: boolean;
-  isButtonSpinning: boolean;
+  onGenerate?: () => void;
+  isGenerating?: boolean;
+  isButtonSpinning?: boolean;
 }
 
-const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSpinning }) => {
-  const { state: generationState } = useGeneration();
-  const { selectedModel } = generationState;
-  
-  // Initialize hooks
-  const promptHandlers = usePromptHandlers({}, () => '');
-  const referenceHandlers = useReferenceHandlers(null, null, () => {});
-  const avatarHandlers = useAvatarHandlers();
-  const productHandlers = useProductHandlers();
-  const styleHandlers = useStyleHandlers();
+const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGeneratingProp, isButtonSpinning: isButtonSpinningProp }) => {
+  const {
+    promptHandlers,
+    referenceHandlers,
+    avatarHandlers,
+    productHandlers,
+    styleHandlers,
+    selectedModel,
+    handleModelChange,
+    handleGenerate,
+    isGenerating: controllerIsGenerating,
+    isButtonSpinning: controllerIsButtonSpinning,
+    error,
+    clearError,
+  } = useCreateGenerationController();
+  const effectiveIsGenerating = isGeneratingProp ?? controllerIsGenerating;
+  const effectiveIsButtonSpinning = isButtonSpinningProp ?? controllerIsButtonSpinning;
   
   // Parallax hover effect
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
@@ -43,10 +45,17 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
   const settingsRef = useRef<HTMLButtonElement | null>(null);
   
   // Handle generate
-  const handleGenerate = useCallback(() => {
+  const triggerGenerate = useCallback(() => {
+    if (error) {
+      clearError();
+    }
     debugLog('[PromptForm] Generate button clicked');
-    onGenerate();
-  }, [onGenerate]);
+    if (onGenerate) {
+      onGenerate();
+      return;
+    }
+    void handleGenerate();
+  }, [clearError, error, handleGenerate, onGenerate]);
   
   // Handle settings toggle
   const handleSettingsToggle = useCallback(() => {
@@ -59,12 +68,12 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
   }, []);
   
   // Get final prompt with styles
-  const finalPrompt = useMemo(() => promptHandlers.getFinalPrompt(), [promptHandlers]);
+  const finalPrompt = useMemo(() => promptHandlers.getFinalPrompt(), [promptHandlers.getFinalPrompt]);
   
   // Check if we can generate
   const canGenerate = useMemo(() => 
-    finalPrompt.trim().length > 0 && !isGenerating, 
-    [finalPrompt, isGenerating]
+    finalPrompt.trim().length > 0 && !effectiveIsGenerating, 
+    [finalPrompt, effectiveIsGenerating]
   );
   
   return (
@@ -73,7 +82,12 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
       <div className="relative">
         <textarea
           value={promptHandlers.prompt}
-          onChange={(e) => promptHandlers.handlePromptChange(e.target.value)}
+          onChange={(e) => {
+            if (error) {
+              clearError();
+            }
+            promptHandlers.handlePromptChange(e.target.value);
+          }}
           onPaste={referenceHandlers.handlePaste}
           placeholder="Describe what you want to create..."
           className={`${inputs.prompt} resize-none overflow-hidden`}
@@ -109,20 +123,20 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
       </div>
       
       {/* Reference images */}
-      <Suspense fallback={null}>
-        <ReferenceImages
-          referenceFiles={referenceHandlers.referenceFiles}
-          referencePreviews={referenceHandlers.referencePreviews}
-          selectedAvatar={avatarHandlers.selectedAvatar}
-          selectedProduct={productHandlers.selectedProduct}
-          onClearReference={referenceHandlers.clearReference}
-          onClearAllReferences={referenceHandlers.clearAllReferences}
-          onOpenFileInput={referenceHandlers.openFileInput}
-          onOpenRefsInput={referenceHandlers.openRefsInput}
-          fileInputRef={referenceHandlers.fileInputRef}
-          refsInputRef={referenceHandlers.refsInputRef}
-        />
-      </Suspense>
+        <Suspense fallback={null}>
+          <ReferenceImages
+            referenceFiles={referenceHandlers.referenceFiles}
+            referencePreviews={referenceHandlers.referencePreviews}
+            selectedAvatar={avatarHandlers.selectedAvatar}
+            selectedProduct={productHandlers.selectedProduct}
+            onClearReference={referenceHandlers.clearReference}
+            onClearAllReferences={referenceHandlers.clearAllReferences}
+            onOpenFileInput={referenceHandlers.openFileInput}
+            onOpenRefsInput={referenceHandlers.openRefsInput}
+            fileInputRef={referenceHandlers.fileInputRef}
+            refsInputRef={referenceHandlers.refsInputRef}
+          />
+        </Suspense>
       
       {/* Control buttons */}
       <div className="flex items-center gap-3">
@@ -130,8 +144,8 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
         <Suspense fallback={null}>
           <ModelSelector
             selectedModel={selectedModel}
-            onModelChange={() => {}}
-            isGenerating={isGenerating}
+            onModelChange={handleModelChange}
+            isGenerating={effectiveIsGenerating}
           />
         </Suspense>
         
@@ -185,7 +199,7 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
           <AspectRatioDropdown
             selectedModel={selectedModel}
             onAspectRatioChange={() => {}}
-            disabled={isGenerating}
+            disabled={effectiveIsGenerating}
           />
         </Suspense>
         
@@ -203,7 +217,7 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
         
         {/* Generate button */}
         <button
-          onClick={handleGenerate}
+          onClick={triggerGenerate}
           disabled={!canGenerate}
           onPointerEnter={onPointerEnter}
           onPointerLeave={onPointerLeave}
@@ -212,7 +226,7 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
             !canGenerate ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          {isButtonSpinning ? (
+          {effectiveIsButtonSpinning ? (
             <div className="w-4 h-4 border-2 border-theme-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <Wand2 className="w-4 h-4" />
@@ -220,6 +234,12 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating, isButtonSp
           Generate
         </button>
       </div>
+
+      {error && (
+        <div className="text-sm text-theme-accent">
+          {error}
+        </div>
+      )}
       
       {/* Settings menu */}
       {isSettingsOpen && (
