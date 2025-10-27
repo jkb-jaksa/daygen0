@@ -1,7 +1,14 @@
 import { useState, useCallback } from 'react';
 import { debugLog } from '../utils/debug';
+import { resolveGenerationCatchError } from '../utils/errorMessages';
 import { useAuth } from '../auth/useAuth';
 import { useCreditCheck } from './useCreditCheck';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 
 export interface GeneratedImage {
   url: string;
@@ -20,6 +27,8 @@ export interface ImageGenerationState {
   isLoading: boolean;
   error: string | null;
   generatedImage: GeneratedImage | null;
+  jobStatus: 'queued' | 'processing' | 'completed' | 'failed' | null;
+  progress?: string;
 }
 
 export interface ImageGenerationOptions {
@@ -33,10 +42,16 @@ export interface ImageGenerationOptions {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  signal?: AbortSignal;
+  requestTimeoutMs?: number;
+  pollTimeoutMs?: number;
+  pollIntervalMs?: number;
+  pollRequestTimeoutMs?: number;
 }
 
 export const useRunwayImageGeneration = () => {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const { 
     checkCredits, 
     showInsufficientCreditsModal, 
@@ -48,47 +63,170 @@ export const useRunwayImageGeneration = () => {
     isLoading: false,
     error: null,
     generatedImage: null,
+    jobStatus: null,
+    progress: undefined,
   });
 
-  const pollForJobCompletion = useCallback(
-    async (
-      jobId: string,
-      prompt: string,
-      model: string,
-      references: string[],
-      avatarId: string | undefined,
-      avatarImageId: string | undefined,
-      ownerId: string | undefined,
-    ): Promise<GeneratedImage> => {
-      const maxAttempts = 60;
+  const clampProgress = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));
 
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
-        if (job.status === 'COMPLETED' && job.resultUrl) {
-          return {
-            url: job.resultUrl,
-            prompt,
-            model,
-            timestamp: new Date().toISOString(),
-            jobId,
-            references: references.length ? references : undefined,
-            ownerId,
-            avatarId,
-            avatarImageId,
-          };
+  const formatProgress = (snapshot: JobStatusSnapshot, previous?: string): string | undefined => {
+    if (typeof snapshot.progress === 'number' && Number.isFinite(snapshot.progress)) {
+      return `${clampProgress(snapshot.progress)}%`;
+    }
+
+    if (snapshot.stage) {
+      return snapshot.stage;
+    }
+
+    return previous;
+  };
+
+  const buildProviderOptions = (options: ImageGenerationOptions): Record<string, unknown> => {
+    const providerOptions: Record<string, unknown> = {};
+    if (options.ratio) providerOptions.ratio = options.ratio;
+    if (options.seed !== undefined) providerOptions.seed = options.seed;
+    return providerOptions;
+  };
+
+  const pickString = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+  const asRecord = (value: unknown): Record<string, unknown> | null =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
+
+  const collectCandidateUrls = (
+    snapshot: JobStatusSnapshot,
+    response: ProviderJobResponse,
+  ): string[] => {
+    const urls = new Set<string>();
+
+    const push = (value?: string) => {
+      if (value) {
+        urls.add(value);
+      }
+    };
+
+    push(pickString(snapshot.job.resultUrl));
+
+    const metadata = asRecord(snapshot.job.metadata);
+    if (metadata) {
+      push(pickString(metadata.resultUrl));
+      push(pickString(metadata.result_url));
+      push(pickString(metadata.url));
+      push(pickString(metadata.imageUrl));
+      push(pickString(metadata.image_url));
+
+      const results = metadata.results;
+      if (Array.isArray(results)) {
+        for (const entry of results) {
+          if (typeof entry === 'string') {
+            push(pickString(entry));
+          } else {
+            const record = asRecord(entry);
+            if (record) {
+              push(pickString(record.url));
+              push(pickString(record.imageUrl));
+              push(pickString(record.resultUrl));
+            }
+          }
         }
-
-        if (job.status === 'FAILED') {
-          throw new Error(job.error || 'Job failed');
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
 
-      throw new Error('Job polling timeout');
-    },
-    [],
-  );
+      const images = metadata.images;
+      if (Array.isArray(images)) {
+        for (const entry of images) {
+          if (typeof entry === 'string') {
+            push(pickString(entry));
+          } else {
+            const record = asRecord(entry);
+            if (record) {
+              push(pickString(record.url));
+              push(pickString(record.imageUrl));
+            }
+          }
+        }
+      }
+    }
+
+    const payload = response.payload;
+    const payloadDataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
+    for (const entry of payloadDataUrls) {
+      push(pickString(entry));
+    }
+
+    push(pickString(payload.dataUrl));
+    push(pickString(payload.url));
+    push(pickString(payload.image));
+
+    return Array.from(urls);
+  };
+
+  const parseRunwayJobResult = (
+    snapshot: JobStatusSnapshot,
+    response: ProviderJobResponse,
+    options: ImageGenerationOptions,
+    ownerId: string | undefined,
+  ): GeneratedImage => {
+    const urls = collectCandidateUrls(snapshot, response);
+
+    const resolvedUrl = urls[0];
+    if (!resolvedUrl) {
+      throw new Error('Job completed but no result URL was provided.');
+    }
+
+    const resolvedModel = options.uiModel ?? options.model ?? 'runway-gen4';
+
+    return {
+      url: resolvedUrl,
+      prompt: options.prompt,
+      model: resolvedModel,
+      timestamp: new Date().toISOString(),
+      jobId: response.jobId ?? snapshot.job.id ?? undefined,
+      references: options.references && options.references.length ? options.references : undefined,
+      ownerId,
+      avatarId: options.avatarId,
+      avatarImageId: options.avatarImageId,
+      styleId: options.styleId,
+    };
+  };
+
+  const parseImmediateRunwayResult = (
+    response: ProviderJobResponse,
+    options: ImageGenerationOptions,
+    ownerId: string | undefined,
+  ): GeneratedImage | undefined => {
+    const payload = response.payload;
+
+    const url =
+      pickString(payload.dataUrl) ??
+      pickString(payload.url) ??
+      pickString(payload.image) ??
+      (Array.isArray(payload.dataUrls)
+        ? payload.dataUrls.map(pickString).find((value): value is string => Boolean(value))
+        : undefined);
+
+    if (!url) {
+      return undefined;
+    }
+
+    const resolvedModel = options.uiModel ?? options.model ?? 'runway-gen4';
+    const jobId = response.jobId ?? pickString(payload.jobId) ?? `runway-${Date.now()}`;
+
+    return {
+      url,
+      prompt: options.prompt,
+      model: resolvedModel,
+      timestamp: new Date().toISOString(),
+      references: options.references && options.references.length ? options.references : undefined,
+      ownerId,
+      avatarId: options.avatarId,
+      avatarImageId: options.avatarImageId,
+      styleId: options.styleId,
+      jobId,
+    };
+  };
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     // Check credits before starting generation
@@ -101,84 +239,62 @@ export const useRunwayImageGeneration = () => {
       ...prev,
       isLoading: true,
       error: null,
+      generatedImage: null,
+      jobStatus: 'queued',
+      progress: 'Submitting request…',
     }));
 
     try {
-      // TEMPORARILY DISABLED: Authentication check
-      // if (!token) {
-      //   const message = 'Please sign in to generate images.';
-      //   setState(prev => ({
-      //     ...prev,
-      //     isLoading: false,
-      //     error: message,
-      //   }));
-      //   throw new Error(message);
-      // }
+      const { prompt } = options;
+      const resolvedModel = options.uiModel ?? options.model ?? 'runway-gen4';
+      const providerModel = options.model ?? resolvedModel;
+      const references = options.references ?? [];
 
-      const { prompt, uiModel = 'runway-gen4', references = [], ratio = '1920:1080', seed } = options;
+      debugLog('[runway] Starting generation', { promptLength: prompt.length, resolvedModel });
 
-      // Use the Runway API endpoint
-      const apiUrl = getApiUrl('/api/image/runway');
-
-      debugLog('[runway] POST', apiUrl);
-      
-      const payload = await apiFetch<Record<string, unknown>>('/api/image/runway', {
-        method: 'POST',
+      const { result } = await runGenerationJob<GeneratedImage, Record<string, unknown>>({
+        provider: 'runway',
+        mediaType: 'image',
         body: {
           prompt,
-          model: uiModel,
+          model: providerModel,
           references,
           avatarId: options.avatarId,
           avatarImageId: options.avatarImageId,
-          providerOptions: { ratio, seed },
+          styleId: options.styleId,
+          providerOptions: buildProviderOptions(options),
         },
-        context: 'generation',
-      });
-
-      if (payload?.jobId) {
-        const generatedImage = await pollForJobCompletion(
-          payload.jobId,
-          prompt,
-          uiModel,
-          references,
-          options.avatarId,
-          options.avatarImageId,
-          user?.id,
-        );
-
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          generatedImage,
-          error: null,
-        }));
-
-        return generatedImage;
-      }
-
-      if (!payload?.dataUrl) {
-        throw new Error('No image data returned from Runway API');
-      }
-
-      const generatedImage: GeneratedImage = {
-        url: payload.dataUrl,
+        tracker,
         prompt,
-        model: uiModel,
-        timestamp: new Date().toISOString(),
-        references: references || undefined,
-        ownerId: user?.id,
-        avatarId: options.avatarId,
-        avatarImageId: options.avatarImageId,
-      };
+        model: providerModel,
+        signal: options.signal,
+        timeoutMs: options.requestTimeoutMs,
+        pollTimeoutMs: options.pollTimeoutMs,
+        pollIntervalMs: options.pollIntervalMs,
+        requestTimeoutMs: options.pollRequestTimeoutMs,
+        parseImmediateResult: (response) =>
+          parseImmediateRunwayResult(response, options, user?.id),
+        parseJobResult: (snapshot, response) =>
+          parseRunwayJobResult(snapshot, response, options, user?.id),
+        onUpdate: (snapshot) => {
+          setState(prev => ({
+            ...prev,
+            jobStatus: snapshot.status,
+            progress: formatProgress(snapshot, prev.progress),
+          }));
+        },
+      });
 
       setState(prev => ({
         ...prev,
         isLoading: false,
-        generatedImage,
+        generatedImage: result,
         error: null,
+        jobStatus: 'completed',
+        progress: 'Generation complete!',
       }));
 
-      return generatedImage;
+      return result;
     } catch (error) {
       const errorMessage = resolveGenerationCatchError(error, 'Runway couldn’t generate that image. Try again in a moment.');
 
@@ -187,11 +303,13 @@ export const useRunwayImageGeneration = () => {
         isLoading: false,
         error: errorMessage,
         generatedImage: null,
+        jobStatus: 'failed',
+        progress: undefined,
       }));
 
       throw new Error(errorMessage);
     }
-  }, [user?.id, pollForJobCompletion, checkCredits]);
+  }, [checkCredits, tracker, user?.id]);
 
   const clearError = useCallback(() => {
     setState(prev => ({
@@ -204,6 +322,8 @@ export const useRunwayImageGeneration = () => {
     setState(prev => ({
       ...prev,
       generatedImage: null,
+      jobStatus: null,
+      progress: undefined,
     }));
   }, []);
 

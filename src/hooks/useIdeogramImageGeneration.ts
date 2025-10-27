@@ -1,5 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { resolveGenerationCatchError } from '../utils/errorMessages';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 
 export interface IdeogramGeneratedImage {
   url: string;
@@ -41,6 +48,11 @@ export interface IdeogramGenerateOptions {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  signal?: AbortSignal;
+  requestTimeoutMs?: number;
+  pollTimeoutMs?: number;
+  pollIntervalMs?: number;
+  pollRequestTimeoutMs?: number;
 }
 
 export interface IdeogramEditOptions {
@@ -86,8 +98,195 @@ export interface IdeogramDescribeOptions {
 
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Ideogram images.';
 
+const pickString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const clampProgress = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));
+
+const formatProgressUpdate = (
+  snapshot: JobStatusSnapshot,
+  previous: { progress?: string; progressValue?: number },
+): { progress?: string; progressValue?: number } => {
+  if (typeof snapshot.progress === 'number' && Number.isFinite(snapshot.progress)) {
+    const value = clampProgress(snapshot.progress);
+    return {
+      progress: `${value}%`,
+      progressValue: value,
+    };
+  }
+
+  if (snapshot.stage) {
+    return {
+      progress: snapshot.stage,
+      progressValue: previous.progressValue,
+    };
+  }
+
+  return {
+    progress: previous.progress ?? 'Processing…',
+    progressValue: previous.progressValue,
+  };
+};
+
+const buildProviderOptions = (
+  options: IdeogramGenerateOptions,
+): Record<string, unknown> => {
+  const providerOptions: Record<string, unknown> = {};
+  if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
+  if (options.resolution) providerOptions.resolution = options.resolution;
+  if (options.rendering_speed) providerOptions.rendering_speed = options.rendering_speed;
+  if (options.num_images) providerOptions.num_images = options.num_images;
+  if (options.seed !== undefined) providerOptions.seed = options.seed;
+  if (options.style_preset) providerOptions.style_preset = options.style_preset;
+  if (options.style_type) providerOptions.style_type = options.style_type;
+  if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
+  return providerOptions;
+};
+
+const extractUrls = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+): string[] => {
+  const urls = new Set<string>();
+
+  const push = (value?: string) => {
+    if (value) {
+      urls.add(value);
+    }
+  };
+
+  push(pickString(snapshot.job.resultUrl));
+
+  const metadata = asRecord(snapshot.job.metadata);
+  if (metadata) {
+    push(pickString(metadata.resultUrl));
+    push(pickString(metadata.result_url));
+    push(pickString(metadata.url));
+    push(pickString(metadata.imageUrl));
+    push(pickString(metadata.image_url));
+
+    const results = metadata.results;
+    if (Array.isArray(results)) {
+      for (const entry of results) {
+        if (typeof entry === 'string') {
+          push(pickString(entry));
+        } else {
+          const record = asRecord(entry);
+          if (record) {
+            push(pickString(record.url));
+            push(pickString(record.imageUrl));
+            push(pickString(record.resultUrl));
+          }
+        }
+      }
+    }
+
+    const images = metadata.images;
+    if (Array.isArray(images)) {
+      for (const entry of images) {
+        if (typeof entry === 'string') {
+          push(pickString(entry));
+        } else {
+          const record = asRecord(entry);
+          if (record) {
+            push(pickString(record.url));
+            push(pickString(record.imageUrl));
+            push(pickString(record.resultUrl));
+          }
+        }
+      }
+    }
+  }
+
+  const payload = response.payload;
+  const payloadDataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
+  for (const entry of payloadDataUrls) {
+    push(pickString(entry));
+  }
+  push(pickString(payload.dataUrl));
+
+  return Array.from(urls);
+};
+
+const parseIdeogramJobResult = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+  options: IdeogramGenerateOptions,
+  ownerId: string | undefined,
+): IdeogramGeneratedImage[] => {
+  const urls = extractUrls(snapshot, response);
+
+  if (urls.length === 0) {
+    throw new Error('Job completed but no result URL was provided.');
+  }
+
+  const jobId = response.jobId ?? snapshot.job.id ?? undefined;
+
+  return urls.map((url) => ({
+    url,
+    prompt: options.prompt,
+    timestamp: new Date().toISOString(),
+    model: 'ideogram',
+    aspectRatio: options.aspect_ratio,
+    resolution: options.resolution,
+    renderingSpeed: options.rendering_speed,
+    stylePreset: options.style_preset,
+    styleType: options.style_type,
+    negativePrompt: options.negative_prompt,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    styleId: options.styleId,
+    jobId,
+  }));
+};
+
+const parseImmediateIdeogramResult = (
+  response: ProviderJobResponse,
+  options: IdeogramGenerateOptions,
+  ownerId: string | undefined,
+): IdeogramGeneratedImage[] | undefined => {
+  const payload = response.payload;
+  const dataUrls = Array.isArray(payload.dataUrls)
+    ? payload.dataUrls
+        .map(pickString)
+        .filter((value): value is string => Boolean(value))
+    : [];
+
+  const directUrl = pickString(payload.dataUrl);
+
+  const urls = dataUrls.length > 0 ? dataUrls : directUrl ? [directUrl] : [];
+
+  if (urls.length === 0) {
+    return undefined;
+  }
+
+  return urls.map((url) => ({
+    url,
+    prompt: options.prompt,
+    timestamp: new Date().toISOString(),
+    model: 'ideogram',
+    aspectRatio: options.aspect_ratio,
+    resolution: options.resolution,
+    renderingSpeed: options.rendering_speed,
+    stylePreset: options.style_preset,
+    styleType: options.style_type,
+    negativePrompt: options.negative_prompt,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    styleId: options.styleId,
+  }));
+};
+
 export const useIdeogramImageGeneration = () => {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const [state, setState] = useState<IdeogramImageGenerationState>({
     isLoading: false,
     error: null,
@@ -96,180 +295,49 @@ export const useIdeogramImageGeneration = () => {
     progressValue: undefined,
   });
 
-  const pollForJobCompletion = useCallback(
-    async (
-      jobId: string,
-      prompt: string,
-      model: string,
-      aspectRatio: string | undefined,
-      resolution: string | undefined,
-      renderingSpeed: string | undefined,
-      stylePreset: string | undefined,
-      styleType: string | undefined,
-      negativePrompt: string | undefined,
-      avatarId: string | undefined,
-      avatarImageId: string | undefined,
-      ownerId: string | undefined,
-    ): Promise<IdeogramGeneratedImage[]> => {
-      const maxAttempts = 60; // 5 minutes with 5-second intervals
-      let attempts = 0;
-
-      while (attempts < maxAttempts) {
-        try {
-          const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
-
-          if (job.status === 'COMPLETED' && job.resultUrl) {
-            return [
-              {
-                url: job.resultUrl,
-                prompt,
-                timestamp: new Date().toISOString(),
-                model,
-                aspectRatio,
-                resolution,
-                renderingSpeed,
-                stylePreset,
-                styleType,
-                negativePrompt,
-                ownerId,
-                avatarId,
-                jobId,
-              },
-            ];
-          } else if (job.status === 'FAILED') {
-            throw new Error(job.error || 'Job failed');
-          }
-
-          const rawProgress =
-            typeof job.progress === 'number'
-              ? job.progress
-              : typeof job.progress === 'string'
-                ? Number.parseFloat(job.progress)
-                : undefined;
-          const boundedProgress =
-            typeof rawProgress === 'number' && Number.isFinite(rawProgress)
-              ? Math.max(0, Math.min(100, rawProgress))
-              : undefined;
-
-          setState((prev) => ({
-            ...prev,
-            progress: boundedProgress !== undefined ? `${Math.round(boundedProgress)}%` : 'Processing...',
-            progressValue:
-              boundedProgress ??
-              (typeof prev.progressValue === 'number' ? prev.progressValue : 0),
-          }));
-
-          // Wait 5 seconds before next poll
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-          attempts++;
-        } catch (error) {
-          if (attempts === maxAttempts - 1) {
-            throw error;
-          }
-          // Wait before retry
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-          attempts++;
-        }
-      }
-
-      throw new Error('Job polling timeout');
-    },
-    [],
-  );
-
   const generateImage = useCallback(
     async (options: IdeogramGenerateOptions) => {
       setState((prev) => ({
         ...prev,
         isLoading: true,
         error: null,
-        progress: 'Generating image with Ideogram…',
+        progress: 'Submitting request…',
         progressValue: 0,
       }));
 
       try {
-        // TEMPORARILY DISABLED: Authentication check
-        // if (!token) {
-        //   setState((prev) => ({
-        //     ...prev,
-        //     isLoading: false,
-        //     error: AUTH_ERROR_MESSAGE,
-        //     progress: undefined,
-        //     progressValue: undefined,
-        //   }));
-        //   throw new Error(AUTH_ERROR_MESSAGE);
-        // }
+        const providerOptions = buildProviderOptions(options);
 
-        const providerOptions: Record<string, unknown> = {};
-        if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
-        if (options.resolution) providerOptions.resolution = options.resolution;
-        if (options.rendering_speed) providerOptions.rendering_speed = options.rendering_speed;
-        if (options.num_images) providerOptions.num_images = options.num_images;
-        if (options.seed !== undefined) providerOptions.seed = options.seed;
-        if (options.style_preset) providerOptions.style_preset = options.style_preset;
-        if (options.style_type) providerOptions.style_type = options.style_type;
-        if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
-
-        const payload = await apiFetch<{ jobId?: string; dataUrls?: string[] }>(
-          '/api/image/ideogram',
-          {
-            method: 'POST',
-            body: {
-              prompt: options.prompt,
-              model: 'ideogram',
-              providerOptions,
-            },
-            context: 'generation',
-          }
-        );
-
-        if (payload.jobId) {
-          const generatedImages = await pollForJobCompletion(
-            payload.jobId,
-            options.prompt,
-            'ideogram',
-            options.aspect_ratio,
-            options.resolution,
-            options.rendering_speed,
-            options.style_preset,
-            options.style_type,
-            options.negative_prompt,
-            options.avatarId,
-            options.avatarImageId,
-            user?.id,
-          );
-
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: null,
-            progress: 'Generation complete!',
-            progressValue: 100,
-            generatedImages: [...prev.generatedImages, ...generatedImages],
-          }));
-
-          return generatedImages;
-        }
-
-        const dataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
-        if (dataUrls.length === 0) {
-          throw new Error('Ideogram did not return any images.');
-        }
-
-        const generatedImages: IdeogramGeneratedImage[] = dataUrls.map((url) => ({
-          url,
+        const { result } = await runGenerationJob<IdeogramGeneratedImage[], Record<string, unknown>>({
+          provider: 'ideogram',
+          mediaType: 'image',
+          body: {
+            prompt: options.prompt,
+            model: 'ideogram',
+            providerOptions,
+          },
+          tracker,
           prompt: options.prompt,
-          timestamp: new Date().toISOString(),
           model: 'ideogram',
-          aspectRatio: options.aspect_ratio,
-          resolution: options.resolution,
-          renderingSpeed: options.rendering_speed,
-          stylePreset: options.style_preset,
-          styleType: options.style_type,
-          negativePrompt: options.negative_prompt,
-          ownerId: user?.id,
-          avatarId: options.avatarId,
-        }));
+          signal: options.signal,
+          timeoutMs: options.requestTimeoutMs,
+          pollTimeoutMs: options.pollTimeoutMs,
+          pollIntervalMs: options.pollIntervalMs,
+          requestTimeoutMs: options.pollRequestTimeoutMs,
+          parseImmediateResult: (response) =>
+            parseImmediateIdeogramResult(response, options, user?.id),
+          parseJobResult: (snapshot, response) =>
+            parseIdeogramJobResult(snapshot, response, options, user?.id),
+          onUpdate: (snapshot) => {
+            setState((prev) => ({
+              ...prev,
+              ...formatProgressUpdate(snapshot, {
+                progress: prev.progress,
+                progressValue: prev.progressValue,
+              }),
+            }));
+          },
+        });
 
         setState((prev) => ({
           ...prev,
@@ -277,12 +345,15 @@ export const useIdeogramImageGeneration = () => {
           error: null,
           progress: 'Generation complete!',
           progressValue: 100,
-          generatedImages: [...prev.generatedImages, ...generatedImages],
+          generatedImages: [...prev.generatedImages, ...result],
         }));
 
-        return generatedImages;
+        return result;
       } catch (error) {
-        const message = resolveGenerationCatchError(error, 'Ideogram couldn’t generate that image. Try again in a moment.');
+        const message = resolveGenerationCatchError(
+          error,
+          'Ideogram couldn’t generate that image. Try again in a moment.',
+        );
         setState((prev) => ({
           ...prev,
           isLoading: false,
@@ -293,7 +364,7 @@ export const useIdeogramImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [user?.id, pollForJobCompletion],
+    [tracker, user?.id],
   );
 
   const reportUnsupported = useCallback(async (feature: string) => {

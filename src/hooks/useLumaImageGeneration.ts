@@ -1,5 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { resolveGenerationCatchError } from '../utils/errorMessages';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 import type { GeneratedImage } from './useGeminiImageGeneration';
 
 export interface LumaGeneratedImage extends GeneratedImage {
@@ -16,6 +23,7 @@ interface LumaImageGenerationState {
   generationId: string | null;
   status: string | null;
   contentType: string | null;
+  progress?: string;
 }
 
 export interface LumaImageGenerationOptions {
@@ -29,6 +37,11 @@ export interface LumaImageGenerationOptions {
   format?: string;
   callbackUrl?: string;
   avatarId?: string;
+  signal?: AbortSignal;
+  requestTimeoutMs?: number;
+  pollTimeoutMs?: number;
+  pollIntervalMs?: number;
+  pollRequestTimeoutMs?: number;
 }
 
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Luma images.';
@@ -36,6 +49,7 @@ const DEFAULT_ASPECT_RATIO = '16:9';
 
 export function useLumaImageGeneration() {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const [state, setState] = useState<LumaImageGenerationState>({
     isLoading: false,
     error: null,
@@ -43,43 +57,226 @@ export function useLumaImageGeneration() {
     generationId: null,
     status: null,
     contentType: null,
+    progress: undefined,
   });
 
-  const pollForJobCompletion = useCallback(
-    async (
-      jobId: string,
-      options: LumaImageGenerationOptions,
-    ): Promise<LumaGeneratedImage> => {
-      const maxAttempts = 60;
+  const pickString = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
-        if (job.status === 'COMPLETED' && job.resultUrl) {
-          return {
-            url: job.resultUrl,
-            prompt: options.prompt,
-            model: options.model,
-            timestamp: new Date().toISOString(),
-            ownerId: user?.id,
-            avatarId: options.avatarId,
-            generationId: job.id ?? null,
-            state: job.status,
-            contentType: null,
-            jobId,
-          };
+  const asRecord = (value: unknown): Record<string, unknown> | null =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
+
+  const buildProviderOptions = (options: LumaImageGenerationOptions): Record<string, unknown> => {
+    const providerOptions: Record<string, unknown> = {
+      aspect_ratio: options.aspectRatio ?? DEFAULT_ASPECT_RATIO,
+    };
+
+    if (options.imageRef !== undefined) {
+      providerOptions.image_ref = options.imageRef;
+    }
+    if (options.styleRef !== undefined) {
+      providerOptions.style_ref = options.styleRef;
+    }
+    if (options.characterRef !== undefined) {
+      providerOptions.character_ref = options.characterRef;
+    }
+    if (options.modifyImageRef !== undefined) {
+      providerOptions.modify_image_ref = options.modifyImageRef;
+    }
+    if (options.format !== undefined) {
+      providerOptions.format = options.format;
+    }
+    if (options.callbackUrl !== undefined) {
+      providerOptions.callback_url = options.callbackUrl;
+    }
+
+    return providerOptions;
+  };
+
+  const collectResultUrl = (
+    snapshot: JobStatusSnapshot,
+    response: ProviderJobResponse,
+  ): string | undefined => {
+    const urls: (string | undefined)[] = [];
+
+    urls.push(pickString(snapshot.job.resultUrl));
+
+    const metadata = asRecord(snapshot.job.metadata);
+    if (metadata) {
+      urls.push(
+        pickString(metadata.resultUrl) ??
+          pickString(metadata.result_url) ??
+          pickString(metadata.url) ??
+          pickString(metadata.fileUrl) ??
+          pickString(metadata.imageUrl),
+      );
+
+      const results = metadata.results;
+      if (Array.isArray(results)) {
+        for (const entry of results) {
+          if (typeof entry === 'string') {
+            urls.push(pickString(entry));
+          } else {
+            const record = asRecord(entry);
+            if (record) {
+              urls.push(
+                pickString(record.url) ??
+                  pickString(record.resultUrl) ??
+                  pickString(record.imageUrl),
+              );
+            }
+          }
         }
-
-        if (job.status === 'FAILED') {
-          throw new Error(job.error || 'Job failed');
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
+    }
 
-      throw new Error('Job polling timeout');
-    },
-    [user?.id],
-  );
+    const payload = response.payload;
+    if (typeof payload.resultUrl === 'string') {
+      urls.push(pickString(payload.resultUrl));
+    }
+    if (typeof payload.dataUrl === 'string') {
+      urls.push(pickString(payload.dataUrl));
+    }
+    if (Array.isArray(payload.dataUrls)) {
+      for (const entry of payload.dataUrls) {
+        urls.push(pickString(entry));
+      }
+    }
+    if (typeof payload.image === 'string') {
+      urls.push(pickString(payload.image));
+    }
+
+    return urls.find((value): value is string => Boolean(value));
+  };
+
+  const extractGenerationId = (
+    snapshot: JobStatusSnapshot,
+    response?: ProviderJobResponse,
+  ): string | undefined => {
+    const metadata = asRecord(snapshot.job.metadata);
+    if (metadata) {
+      const candidate =
+        pickString(metadata.generationId) ??
+        pickString(metadata.generation_id) ??
+        pickString(metadata.id);
+      if (candidate) return candidate;
+    }
+
+    if (response) {
+      const payload = response.payload;
+      const candidate =
+        pickString(payload.generationId) ??
+        pickString(payload.generation_id) ??
+        pickString(payload.id);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return pickString(snapshot.job.id);
+  };
+
+  const extractContentType = (
+    snapshot: JobStatusSnapshot,
+    response?: ProviderJobResponse,
+  ): string | undefined => {
+    const metadata = asRecord(snapshot.job.metadata);
+    if (metadata) {
+      const candidate =
+        pickString(metadata.contentType) ??
+        pickString(metadata.mimeType) ??
+        pickString(metadata.mime_type);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    if (response) {
+      const payload = response.payload;
+      const candidate =
+        pickString(payload.contentType) ??
+        pickString(payload.mimeType) ??
+        pickString(payload.mime_type);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return undefined;
+  };
+
+  const parseLumaJobResult = (
+    snapshot: JobStatusSnapshot,
+    response: ProviderJobResponse,
+    options: LumaImageGenerationOptions,
+    ownerId: string | undefined,
+  ): LumaGeneratedImage => {
+    const url = collectResultUrl(snapshot, response);
+
+    if (!url) {
+      throw new Error('Job completed but no result URL was provided.');
+    }
+
+    return {
+      url,
+      prompt: options.prompt,
+      model: options.model,
+      timestamp: new Date().toISOString(),
+      ownerId,
+      avatarId: options.avatarId,
+      generationId: extractGenerationId(snapshot, response) ?? null,
+      state: snapshot.job.status ?? snapshot.status ?? null,
+      contentType: extractContentType(snapshot, response) ?? null,
+      jobId: response.jobId ?? snapshot.job.id ?? undefined,
+    };
+  };
+
+  const parseImmediateLumaResult = (
+    response: ProviderJobResponse,
+    options: LumaImageGenerationOptions,
+    ownerId: string | undefined,
+  ): LumaGeneratedImage | undefined => {
+    const payload = response.payload;
+
+    const directUrl =
+      (typeof payload.dataUrl === 'string' && payload.dataUrl) ||
+      (Array.isArray(payload.dataUrls)
+        ? payload.dataUrls.find((value): value is string => typeof value === 'string')
+        : undefined) ||
+      (typeof payload.image === 'string' ? payload.image : undefined) ||
+      (typeof payload.resultUrl === 'string' ? payload.resultUrl : undefined);
+
+    if (!directUrl) {
+      return undefined;
+    }
+
+    const generationId =
+      pickString(payload.generationId) ??
+      pickString(payload.generation_id) ??
+      pickString(payload.id);
+
+    const contentType =
+      pickString(payload.contentType) ??
+      pickString(payload.mimeType) ??
+      pickString(payload.mime_type);
+
+    const state = pickString(payload.state) ?? pickString(payload.status);
+
+    return {
+      url: directUrl,
+      prompt: options.prompt,
+      model: options.model,
+      timestamp: new Date().toISOString(),
+      ownerId,
+      avatarId: options.avatarId,
+      generationId: generationId ?? null,
+      state: state ?? null,
+      contentType: contentType ?? null,
+      jobId: pickString(payload.jobId) ?? undefined,
+    };
+  };
 
   const generateImage = useCallback(
     async (options: LumaImageGenerationOptions) => {
@@ -87,134 +284,70 @@ export function useLumaImageGeneration() {
         ...prev,
         isLoading: true,
         error: null,
+        progress: 'Submitting request…',
       }));
 
       try {
-        // TEMPORARILY DISABLED: Authentication check
-        // if (!token) {
-        //   setState((prev) => ({
-        //     ...prev,
-        //     isLoading: false,
-        //     error: AUTH_ERROR_MESSAGE,
-        //   }));
-        //   throw new Error(AUTH_ERROR_MESSAGE);
-        // }
+        const providerOptions = buildProviderOptions(options);
 
-        const providerOptions: Record<string, unknown> = {};
-
-        if (options.aspectRatio) {
-          providerOptions.aspect_ratio = options.aspectRatio;
-        } else {
-          providerOptions.aspect_ratio = DEFAULT_ASPECT_RATIO;
-        }
-
-        if (options.imageRef) {
-          providerOptions.image_ref = options.imageRef;
-        }
-        if (options.styleRef) {
-          providerOptions.style_ref = options.styleRef;
-        }
-        if (options.characterRef) {
-          providerOptions.character_ref = options.characterRef;
-        }
-        if (options.modifyImageRef) {
-          providerOptions.modify_image_ref = options.modifyImageRef;
-        }
-        if (options.format) {
-          providerOptions.format = options.format;
-        }
-        if (options.callbackUrl) {
-          providerOptions.callback_url = options.callbackUrl;
-        }
-
-        const payload = await apiFetch<Record<string, unknown>>('/api/image/luma', {
-          method: 'POST',
+        const { result } = await runGenerationJob<LumaGeneratedImage, Record<string, unknown>>({
+          provider: 'luma',
+          mediaType: 'image',
           body: {
             prompt: options.prompt,
             model: options.model,
             providerOptions,
+            avatarId: options.avatarId,
           },
-          context: 'generation',
-        });
-
-        if (typeof payload.jobId === 'string') {
-          const generatedImage = await pollForJobCompletion(payload.jobId, options);
-
-          setState({
-            isLoading: false,
-            error: null,
-            generatedImage,
-            generationId: generatedImage.generationId ?? null,
-            status: 'COMPLETED',
-            contentType: generatedImage.contentType ?? null,
-          });
-
-          return generatedImage;
-        }
-
-        const dataUrl = typeof payload.dataUrl === 'string'
-          ? payload.dataUrl
-          : Array.isArray(payload.dataUrls)
-            ? payload.dataUrls.find((url): url is string => typeof url === 'string')
-            : typeof payload.image === 'string'
-              ? payload.image
-              : null;
-
-        if (!dataUrl) {
-          throw new Error('Luma generation did not return an image.');
-        }
-
-        const generationId =
-          typeof payload.generationId === 'string'
-            ? payload.generationId
-            : typeof payload.generation_id === 'string'
-              ? payload.generation_id
-              : typeof payload.id === 'string'
-                ? payload.id
-                : null;
-
-        const status =
-          typeof payload.state === 'string'
-            ? payload.state
-            : typeof payload.status === 'string'
-              ? payload.status
-              : null;
-
-        const contentType =
-          typeof payload.contentType === 'string'
-            ? payload.contentType
-            : typeof payload.mimeType === 'string'
-              ? payload.mimeType
-              : null;
-
-        const jobId =
-          typeof payload.jobId === 'string'
-            ? payload.jobId
-            : null;
-
-        const generatedImage: LumaGeneratedImage = {
-          url: dataUrl,
+          tracker,
           prompt: options.prompt,
           model: options.model,
-          timestamp: new Date().toISOString(),
-          ownerId: user?.id,
-          generationId,
-          state: status,
-          contentType,
-          avatarId: options.avatarId,
-          jobId,
-        };
+          signal: options.signal,
+          timeoutMs: options.requestTimeoutMs,
+          pollTimeoutMs: options.pollTimeoutMs,
+          pollIntervalMs: options.pollIntervalMs,
+          requestTimeoutMs: options.pollRequestTimeoutMs,
+          parseImmediateResult: (response) =>
+            parseImmediateLumaResult(response, options, user?.id),
+          parseJobResult: (snapshot, response) =>
+            parseLumaJobResult(snapshot, response, options, user?.id),
+          onUpdate: (snapshot) => {
+        const metadata = asRecord(snapshot.job.metadata);
+        const status = snapshot.job.status ?? snapshot.status ?? null;
+        const generationId = extractGenerationId(snapshot) ?? undefined;
+        const contentType =
+          extractContentType(snapshot) ??
+          (metadata
+            ? pickString(metadata.contentType) ??
+              pickString(metadata.mimeType) ??
+              pickString(metadata.mime_type)
+            : undefined);
 
-        setState({
+        setState((prev) => ({
+          ...prev,
+          status,
+          generationId: generationId ?? prev.generationId,
+          contentType: contentType ?? prev.contentType,
+          progress:
+            snapshot.progress !== undefined
+              ? `${Math.round(snapshot.progress)}%`
+              : snapshot.stage ?? prev.progress,
+        }));
+      },
+    });
+
+        setState((prev) => ({
+          ...prev,
           isLoading: false,
           error: null,
-          generatedImage,
-          generationId,
-          status,
-          contentType,
-        });
+          generatedImage: result,
+          generationId: result.generationId ?? prev.generationId,
+          status: result.state ?? 'COMPLETED',
+          contentType: result.contentType ?? prev.contentType,
+          progress: 'Generation complete!',
+        }));
 
-        return generatedImage;
+        return result;
       } catch (error) {
         const message = resolveGenerationCatchError(error, 'Luma couldn’t generate that image. Try again in a moment.');
         setState({
@@ -224,11 +357,12 @@ export function useLumaImageGeneration() {
           generationId: null,
           status: null,
           contentType: null,
+          progress: undefined,
         });
         throw new Error(message);
       }
     },
-    [user?.id, pollForJobCompletion],
+    [tracker, user?.id],
   );
 
   const clearError = useCallback(() => {
@@ -245,6 +379,7 @@ export function useLumaImageGeneration() {
       generationId: null,
       status: null,
       contentType: null,
+      progress: undefined,
     }));
   }, []);
 
@@ -256,6 +391,7 @@ export function useLumaImageGeneration() {
       generationId: null,
       status: null,
       contentType: null,
+      progress: undefined,
     });
   }, []);
 

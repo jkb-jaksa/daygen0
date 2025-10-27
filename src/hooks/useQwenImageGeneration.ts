@@ -1,5 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { resolveGenerationCatchError } from '../utils/errorMessages';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 
 export interface QwenGeneratedImage {
   url: string;
@@ -36,13 +43,183 @@ export interface QwenGenerateOptions {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  signal?: AbortSignal;
+  requestTimeoutMs?: number;
+  pollTimeoutMs?: number;
+  pollIntervalMs?: number;
+  pollRequestTimeoutMs?: number;
 }
 
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Qwen images.';
 const UNSUPPORTED_MESSAGE = 'Qwen image editing is not yet available in the backend integration.';
 
+const DEFAULT_MODEL = 'qwen-image';
+
+const pickString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const formatProgress = (snapshot: JobStatusSnapshot, previous?: string): string | undefined => {
+  if (typeof snapshot.progress === 'number' && Number.isFinite(snapshot.progress)) {
+    return `${Math.max(0, Math.min(100, Math.round(snapshot.progress)))}%`;
+  }
+
+  if (snapshot.stage) {
+    return snapshot.stage;
+  }
+
+  return previous;
+};
+
+const buildProviderOptions = (options: QwenGenerateOptions): Record<string, unknown> => {
+  const providerOptions: Record<string, unknown> = {};
+  if (options.size) providerOptions.size = options.size;
+  if (options.seed !== undefined) providerOptions.seed = options.seed;
+  if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
+  if (options.prompt_extend !== undefined) providerOptions.prompt_extend = options.prompt_extend;
+  if (options.watermark !== undefined) providerOptions.watermark = options.watermark;
+  return providerOptions;
+};
+
+const extractUrls = (snapshot: JobStatusSnapshot, response: ProviderJobResponse): string[] => {
+  const urls = new Set<string>();
+
+  const push = (value?: string) => {
+    if (value) {
+      urls.add(value);
+    }
+  };
+
+  push(pickString(snapshot.job.resultUrl));
+
+  const metadata = asRecord(snapshot.job.metadata);
+  if (metadata) {
+    push(pickString(metadata.resultUrl));
+    push(pickString(metadata.result_url));
+    push(pickString(metadata.url));
+    push(pickString(metadata.imageUrl));
+    push(pickString(metadata.image_url));
+
+    const results = metadata.results;
+    if (Array.isArray(results)) {
+      for (const entry of results) {
+        if (typeof entry === 'string') {
+          push(pickString(entry));
+        } else {
+          const record = asRecord(entry);
+          if (record) {
+            push(pickString(record.url));
+            push(pickString(record.imageUrl));
+            push(pickString(record.resultUrl));
+          }
+        }
+      }
+    }
+
+    const images = metadata.images;
+    if (Array.isArray(images)) {
+      for (const entry of images) {
+        if (typeof entry === 'string') {
+          push(pickString(entry));
+        } else {
+          const record = asRecord(entry);
+          if (record) {
+            push(pickString(record.url));
+            push(pickString(record.imageUrl));
+          }
+        }
+      }
+    }
+  }
+
+  const payload = response.payload;
+  const payloadDataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
+  for (const entry of payloadDataUrls) {
+    push(pickString(entry));
+  }
+  push(pickString(payload.dataUrl));
+  push(pickString(payload.url));
+  push(pickString(payload.image));
+
+  return Array.from(urls);
+};
+
+const parseQwenJobResult = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+  options: QwenGenerateOptions,
+  ownerId: string | undefined,
+): QwenGeneratedImage[] => {
+  const urls = extractUrls(snapshot, response);
+
+  if (urls.length === 0) {
+    throw new Error('Job completed but no result URL was provided.');
+  }
+
+  const jobId = response.jobId ?? snapshot.job.id ?? undefined;
+
+  return urls.map((url) => ({
+    url,
+    prompt: options.prompt,
+    timestamp: new Date().toISOString(),
+    model: DEFAULT_MODEL,
+    size: options.size,
+    seed: options.seed,
+    negativePrompt: options.negative_prompt,
+    promptExtend: options.prompt_extend,
+    watermark: options.watermark,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    styleId: options.styleId,
+    jobId,
+  }));
+};
+
+const parseImmediateQwenResult = (
+  response: ProviderJobResponse,
+  options: QwenGenerateOptions,
+  ownerId: string | undefined,
+): QwenGeneratedImage[] | undefined => {
+  const payload = response.payload;
+  const dataUrls = Array.isArray(payload.dataUrls)
+    ? payload.dataUrls
+        .map(pickString)
+        .filter((value): value is string => Boolean(value))
+    : [];
+
+  const directUrl = pickString(payload.dataUrl) ?? pickString(payload.url) ?? pickString(payload.image);
+
+  const urls = dataUrls.length > 0 ? dataUrls : directUrl ? [directUrl] : [];
+
+  if (urls.length === 0) {
+    return undefined;
+  }
+
+  return urls.map((url) => ({
+    url,
+    prompt: options.prompt,
+    timestamp: new Date().toISOString(),
+    model: DEFAULT_MODEL,
+    size: options.size,
+    seed: options.seed,
+    negativePrompt: options.negative_prompt,
+    promptExtend: options.prompt_extend,
+    watermark: options.watermark,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    styleId: options.styleId,
+  }));
+};
+
 export const useQwenImageGeneration = () => {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const [state, setState] = useState<QwenImageGenerationState>({
     isLoading: false,
     error: null,
@@ -50,130 +227,55 @@ export const useQwenImageGeneration = () => {
     progress: undefined,
   });
 
-  const pollForJobCompletion = useCallback(
-    async (
-      jobId: string,
-      options: QwenGenerateOptions,
-    ): Promise<QwenGeneratedImage[]> => {
-      const maxAttempts = 60;
-
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
-        if (job.status === 'COMPLETED' && job.resultUrl) {
-          const image: QwenGeneratedImage = {
-            url: job.resultUrl,
-            prompt: options.prompt,
-            timestamp: new Date().toISOString(),
-            model: 'qwen-image',
-            size: options.size,
-            seed: options.seed,
-            negativePrompt: options.negative_prompt,
-            promptExtend: options.prompt_extend,
-            watermark: options.watermark,
-            ownerId: user?.id,
-            avatarId: options.avatarId,
-            avatarImageId: options.avatarImageId,
-            jobId,
-          };
-
-          return [image];
-        }
-
-        if (job.status === 'FAILED') {
-          throw new Error(job.error || 'Job failed');
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-      }
-
-      throw new Error('Job polling timeout');
-    },
-    [user?.id],
-  );
-
   const generateImage = useCallback(
     async (options: QwenGenerateOptions) => {
       setState((prev) => ({
         ...prev,
         isLoading: true,
         error: null,
-        progress: 'Generating image with Qwen…',
+        progress: 'Submitting request…',
       }));
 
       try {
-        // TEMPORARILY DISABLED: Authentication check
-        // if (!token) {
-        //   setState((prev) => ({
-        //     ...prev,
-        //     isLoading: false,
-        //     error: AUTH_ERROR_MESSAGE,
-        //     progress: undefined,
-        //   }));
-        //   throw new Error(AUTH_ERROR_MESSAGE);
-        // }
+        const providerOptions = buildProviderOptions(options);
 
-        const providerOptions: Record<string, unknown> = {};
-        if (options.size) providerOptions.size = options.size;
-        if (options.seed !== undefined) providerOptions.seed = options.seed;
-        if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
-        if (options.prompt_extend !== undefined) providerOptions.prompt_extend = options.prompt_extend;
-        if (options.watermark !== undefined) providerOptions.watermark = options.watermark;
-
-        const payload = await apiFetch<{ jobId?: string; dataUrl?: string }>(
-          '/api/image/qwen',
-          {
-            method: 'POST',
-            body: {
-              prompt: options.prompt,
-              model: 'qwen-image',
-              providerOptions,
-            },
-            context: 'generation',
-          }
-        );
-
-        if (payload.jobId) {
-          const generatedImages = await pollForJobCompletion(payload.jobId, options);
-
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            generatedImages: [...prev.generatedImages, ...generatedImages],
-            error: null,
-            progress: 'Generation complete!',
-          }));
-
-          return generatedImages;
-        }
-
-        if (!payload.dataUrl) {
-          throw new Error('Qwen did not return an image.');
-        }
-
-        const generatedImage: QwenGeneratedImage = {
-          url: payload.dataUrl,
+        const { result } = await runGenerationJob<QwenGeneratedImage[], Record<string, unknown>>({
+          provider: 'qwen',
+          mediaType: 'image',
+          body: {
+            prompt: options.prompt,
+            model: DEFAULT_MODEL,
+            providerOptions,
+          },
+          tracker,
           prompt: options.prompt,
-          timestamp: new Date().toISOString(),
-          model: 'qwen-image',
-          size: options.size,
-          seed: options.seed,
-          negativePrompt: options.negative_prompt,
-          promptExtend: options.prompt_extend,
-          watermark: options.watermark,
-          ownerId: user?.id,
-          avatarId: options.avatarId,
-          avatarImageId: options.avatarImageId,
-        };
+          model: DEFAULT_MODEL,
+          signal: options.signal,
+          timeoutMs: options.requestTimeoutMs,
+          pollTimeoutMs: options.pollTimeoutMs,
+          pollIntervalMs: options.pollIntervalMs,
+          requestTimeoutMs: options.pollRequestTimeoutMs,
+          parseImmediateResult: (response) =>
+            parseImmediateQwenResult(response, options, user?.id),
+          parseJobResult: (snapshot, response) =>
+            parseQwenJobResult(snapshot, response, options, user?.id),
+          onUpdate: (snapshot) => {
+            setState((prev) => ({
+              ...prev,
+              progress: formatProgress(snapshot, prev.progress) ?? prev.progress,
+            }));
+          },
+        });
 
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          generatedImages: [...prev.generatedImages, generatedImage],
+          generatedImages: [...prev.generatedImages, ...result],
           error: null,
           progress: 'Generation complete!',
         }));
 
-        return [generatedImage];
+        return result;
       } catch (error) {
         const message = resolveGenerationCatchError(error, 'Qwen couldn’t generate that image. Try again in a moment.');
         setState((prev) => ({
@@ -185,7 +287,7 @@ export const useQwenImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [user?.id, pollForJobCompletion],
+    [tracker, user?.id],
   );
 
   const editImage = useCallback(async () => {
