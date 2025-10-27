@@ -517,10 +517,6 @@ export const useGeminiImageGeneration = () => {
           }
         : undefined;
 
-      const generationConfig = {
-        responseModalities: ['Image'],
-      } as Record<string, unknown>;
-
       const baseBody: Record<string, unknown> = {
         prompt,
         imageBase64: imageData,
@@ -529,7 +525,6 @@ export const useGeminiImageGeneration = () => {
         temperature,
         outputLength,
         topP,
-        generationConfig,
       };
 
       if (options.avatarId) {
