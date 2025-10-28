@@ -1,10 +1,12 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { useGeneration } from './contexts/GenerationContext';
 import { debugLog } from '../../utils/debug';
+import { useGalleryActions } from './hooks/useGalleryActions';
 
 const GenerationProgress = memo(() => {
   const { state } = useGeneration();
   const { activeJobs } = state;
+  const { navigateToJobUrl } = useGalleryActions();
   
   // Get active jobs count
   const activeJobsCount = useMemo(() => activeJobs.length, [activeJobs.length]);
@@ -12,8 +14,11 @@ const GenerationProgress = memo(() => {
   // Handle job click
   const handleJobClick = useCallback((jobId: string) => {
     debugLog('Job clicked:', jobId);
-    // This would need to be implemented with job navigation
-  }, []);
+    // Navigate if this looks like a real server job id
+    if (jobId && !jobId.startsWith('local-')) {
+      navigateToJobUrl(jobId);
+    }
+  }, [navigateToJobUrl]);
   
   if (activeJobsCount === 0) {
     return null;

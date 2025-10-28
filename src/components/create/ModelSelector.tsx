@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, useState, useEffect } from 'react';
+import React, { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { lazy, Suspense } from 'react';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { useGeneration } from './contexts/GenerationContext';

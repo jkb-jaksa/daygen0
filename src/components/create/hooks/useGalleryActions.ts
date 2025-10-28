@@ -24,12 +24,13 @@ export function useGalleryActions() {
     (targetJobId: string, options: { replace?: boolean } = {}) => {
       const targetPath = `/job/${targetJobId}`;
       const currentFullPath = `${location.pathname}${location.search}`;
-      if (currentFullPath === targetPath) {
+      const targetFullPath = `${targetPath}${location.search || ''}`;
+      if (currentFullPath === targetFullPath) {
         return;
       }
       
       const origin = currentFullPath;
-      navigate(targetPath, {
+      navigate(targetFullPath, {
         replace: options.replace ?? false,
         state: { jobOrigin: origin },
       });

@@ -126,6 +126,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     state,
     setSelectedModel,
     setButtonSpinning,
+    addActiveJob,
+    updateJobProgress,
+    updateJobStatus,
+    removeActiveJob,
     setBatchSize,
     setTemperature,
     setOutputLength,
@@ -344,7 +348,7 @@ export function useCreateGenerationController(): CreateGenerationController {
       },
       veo: {
         enabled: false,
-        aspectRatio: videoAspectRatio,
+        aspectRatio: (videoAspectRatio as '16:9' | '9:16'),
         onAspectRatioChange: () => {},
         model: 'veo-3.0-generate-001',
         onModelChange: () => {},
@@ -526,6 +530,17 @@ export function useCreateGenerationController(): CreateGenerationController {
     const references = referencesBase64.length ? referencesBase64 : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
 
+    // Centralized job lifecycle tracking
+    const startedAt = Date.now();
+    let activeJobId = ensureJobId(null);
+    addActiveJob({
+      id: activeJobId,
+      prompt: finalPrompt,
+      model: selectedModel,
+      status: 'queued',
+      startedAt,
+    });
+
     const persistImageResults = (
       result: unknown,
       overrides: Partial<GalleryImageLike> = {},
@@ -680,6 +695,33 @@ export function useCreateGenerationController(): CreateGenerationController {
             avatarImageId: activeAvatarImageId,
             productId: selectedProductId,
             styleId: selectedStyleId,
+            clientJobId: activeJobId,
+            onProgress: (update) => {
+              const nextStatus = update.status ?? 'queued';
+              const nextProgress = typeof update.progress === 'number' ? update.progress : undefined;
+
+              // If backend issued a real jobId, promote this client job to the real id
+              if (update.jobId && update.jobId !== activeJobId) {
+                // Remove the client job and re-add with the real id to enable deep-linking
+                removeActiveJob(activeJobId);
+                activeJobId = update.jobId;
+                addActiveJob({
+                  id: activeJobId,
+                  prompt: finalPrompt,
+                  model: selectedModel,
+                  status: nextStatus,
+                  progress: nextProgress,
+                  startedAt,
+                });
+                return;
+              }
+
+              // Update current job status/progress
+              updateJobStatus(activeJobId, nextStatus, nextProgress);
+              if (typeof nextProgress === 'number') {
+                updateJobProgress(activeJobId, nextProgress);
+              }
+            },
           });
 
           persistImageResults(geminiImage, {
@@ -688,9 +730,10 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'flux-1.1': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const fluxImage = await generateFluxImage({
             prompt: finalPrompt,
-            model: selectedModel,
+            model: 'flux-pro-1.1',
             references,
             avatarId: selectedAvatarId,
             avatarImageId: activeAvatarImageId,
@@ -701,6 +744,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'chatgpt-image': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const chatgptImage = await generateChatGPTImage({
             prompt: finalPrompt,
             size: '1024x1024',
@@ -716,6 +760,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'ideogram': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const ideogramResult = await generateIdeogramImage({
             prompt: finalPrompt,
             aspect_ratio: '1:1',
@@ -735,6 +780,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'qwen-image': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const qwenResult = await generateQwenImage({
             prompt: finalPrompt,
             size: qwenSize,
@@ -754,6 +800,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'runway-gen4': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const runwayImage = await generateRunwayImage({
             prompt: finalPrompt,
             model: 'gen4_image',
@@ -772,6 +819,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'reve-image': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const reveImage = await generateReveImage({
             prompt: finalPrompt,
             model: 'reve-image-1.0',
@@ -789,6 +837,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         }
         case 'luma-photon-1':
         case 'luma-photon-flash-1': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const lumaImage = await generateLumaImage({
             prompt: finalPrompt,
             model: selectedModel,
@@ -800,6 +849,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'veo-3': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const veoVideo = await startVeoGeneration({
             prompt: finalPrompt,
             model: 'veo-3.0-generate-001',
@@ -813,6 +863,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'runway-video-gen4': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const runwayVideo = await generateRunwayVideo({
             prompt: finalPrompt,
             model: 'gen4_turbo',
@@ -824,6 +875,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'wan-video-2.2': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const wanVideo = await generateWanVideo({
             prompt: finalPrompt,
             model: 'wan2.2-t2v-plus',
@@ -838,6 +890,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'hailuo-02': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const hailuoVideo = await generateHailuoVideo({
             prompt: finalPrompt,
             model: 'hailuo-02',
@@ -851,6 +904,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'kling-video': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const klingVideo = await generateKlingVideo({
             prompt: finalPrompt,
             model: 'kling-v2.1-master',
@@ -865,6 +919,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'seedance-1.0-pro': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const seedanceVideo = await generateSeedanceVideo({
             prompt: finalPrompt,
             model: 'seedance-1.0-pro',
@@ -878,6 +933,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'luma-ray-2': {
+          updateJobStatus(activeJobId, 'processing', 5);
           const lumaVideo = await generateLumaVideo({
             prompt: finalPrompt,
             model: 'luma-ray-2',
@@ -905,6 +961,12 @@ export function useCreateGenerationController(): CreateGenerationController {
           : 'We could not start that generation. Try again in a moment.',
       );
     } finally {
+      // Ensure any active job is cleared from the progress list
+      try {
+        removeActiveJob(activeJobId);
+      } catch {
+        // ignore
+      }
       setIsSubmitting(false);
       setButtonSpinning(false);
     }
@@ -949,6 +1011,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     addImage,
     addVideo,
     setButtonSpinning,
+    addActiveJob,
+    updateJobProgress,
+    updateJobStatus,
+    removeActiveJob,
   ]);
 
   const clearError = useCallback(() => {
@@ -956,7 +1022,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   }, []);
 
   const isGenerating =
-    state.isGenerating ||
+    generation.isGenerating ||
     isSubmitting ||
     isGeminiLoading ||
     isFluxLoading ||
@@ -991,13 +1057,13 @@ export function useCreateGenerationController(): CreateGenerationController {
     setOutputLength,
     topP,
     setTopP,
-    geminiAspectRatio,
+    geminiAspectRatio: geminiAspectRatio as GeminiAspectRatio,
     setGeminiAspectRatio,
-    videoAspectRatio,
+    videoAspectRatio: videoAspectRatio as '16:9' | '9:16',
     setVideoAspectRatio,
-    seedanceRatio,
+    seedanceRatio: seedanceRatio as '16:9' | '9:16' | '1:1',
     setSeedanceRatio,
-    klingAspectRatio,
+    klingAspectRatio: klingAspectRatio as '16:9' | '9:16' | '1:1',
     setKlingAspectRatio,
     wanSize,
     setWanSize,

@@ -24,31 +24,7 @@ export function useReferenceHandlers(
     return Math.max(0, DEFAULT_REFERENCE_LIMIT - usedSlots);
   }, [selectedAvatar, selectedProduct]);
   
-  // Handle file selection
-  const handleFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.currentTarget.files || []);
-    if (files.length > 0) {
-      handleAddReferenceFiles(files);
-    }
-    // Clear the input
-    if (event.currentTarget) {
-      event.currentTarget.value = '';
-    }
-  }, [handleAddReferenceFiles]);
-  
-  // Handle reference files selection
-  const handleRefsSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.currentTarget.files || []);
-    if (files.length > 0) {
-      handleAddReferenceFiles(files);
-    }
-    // Clear the input
-    if (event.currentTarget) {
-      event.currentTarget.value = '';
-    }
-  }, [handleAddReferenceFiles]);
-  
-  // Handle adding reference files
+  // Handle adding reference files (declare before usages to avoid TDZ issues)
   const handleAddReferenceFiles = useCallback((files: File[]) => {
     debugLog('[useReferenceHandlers] Adding reference files:', files.length);
     
@@ -74,6 +50,32 @@ export function useReferenceHandlers(
     // Call parent handler
     onAddReferenceFiles(filesToAdd);
   }, [referenceFiles.length, referenceLimit, onAddReferenceFiles]);
+  
+  // Handle file selection
+  const handleFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.currentTarget.files || []);
+    if (files.length > 0) {
+      handleAddReferenceFiles(files);
+    }
+    // Clear the input
+    if (event.currentTarget) {
+      event.currentTarget.value = '';
+    }
+  }, [handleAddReferenceFiles]);
+  
+  // Handle reference files selection
+  const handleRefsSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.currentTarget.files || []);
+    if (files.length > 0) {
+      handleAddReferenceFiles(files);
+    }
+    // Clear the input
+    if (event.currentTarget) {
+      event.currentTarget.value = '';
+    }
+  }, [handleAddReferenceFiles]);
+  
+  
   
   // Handle paste for images
   const handlePaste = useCallback(async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
