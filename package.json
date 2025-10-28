@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "lint:css": "stylelint \"src/**/*.{css,scss}\"",
-    "test": "vitest run",
+    "test": "NODE_OPTIONS='--max-old-space-size=8192' vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
