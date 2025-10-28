@@ -4,7 +4,7 @@ import { debugLog, debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../lib/clientStorage';
 import { serializeGallery, hydrateStoredGallery, isBase64Url } from '../utils/galleryStorage';
-import type { GalleryImageLike } from '../components/create/types';
+import type { GalleryImageLike, GalleryVideoLike } from '../components/create/types';
 import type { StoredGalleryImage } from '../components/create/types';
 
 export interface R2FileResponse {
@@ -70,22 +70,44 @@ export const useGalleryImages = () => {
   });
 
   // Convert R2File response to GalleryImageLike format
-  const convertR2FileToGalleryImage = useCallback((r2File: R2FileResponse): GalleryImageLike => {
-    return {
-      url: r2File.fileUrl,
-      prompt: r2File.prompt || '',
-      model: r2File.model,
-      timestamp: r2File.createdAt,
-      ownerId: undefined, // Will be set by the backend
-      jobId: r2File.jobId || undefined, // Only set if we have a real job ID
-      r2FileId: r2File.id,
-      isPublic: r2File.isPublic ?? false,
-      avatarId: r2File.avatarId,
-      avatarImageId: r2File.avatarImageId,
-      productId: r2File.productId,
-      styleId: r2File.styleId,
-    };
-  }, []);
+  const convertR2FileToGalleryItem = useCallback(
+    (r2File: R2FileResponse): GalleryImageLike | GalleryVideoLike => {
+      const base: GalleryImageLike = {
+        url: r2File.fileUrl,
+        prompt: r2File.prompt || '',
+        model: r2File.model,
+        timestamp: r2File.createdAt,
+        ownerId: undefined, // Will be set by the backend
+        jobId: r2File.jobId || undefined, // Only set if we have a real job ID
+        r2FileId: r2File.id,
+        isPublic: r2File.isPublic ?? false,
+        avatarId: r2File.avatarId,
+        avatarImageId: r2File.avatarImageId,
+        productId: r2File.productId,
+        styleId: r2File.styleId,
+      };
+
+      const mimeType = r2File.mimeType?.toLowerCase() ?? '';
+      const fileName = r2File.fileName?.toLowerCase() ?? '';
+      const fileUrl = r2File.fileUrl?.toLowerCase() ?? '';
+      const looksLikeVideo =
+        mimeType.startsWith('video/') ||
+        /\.(mp4|mov|webm|m4v|mkv)$/i.test(fileName) ||
+        /\.(mp4|mov|webm|m4v|mkv)$/i.test(fileUrl);
+
+      if (looksLikeVideo) {
+        const videoItem: GalleryVideoLike = {
+          ...base,
+          type: 'video',
+        };
+
+        return videoItem;
+      }
+
+      return base;
+    },
+    [],
+  );
 
   // Load local cached images
   const loadLocalImages = useCallback(async (): Promise<GalleryImageLike[]> => {
@@ -187,7 +209,7 @@ export const useGalleryImages = () => {
       }
 
       const data = await parseJsonSafe(response);
-      const r2Images = data.items?.map(convertR2FileToGalleryImage) || [];
+      const r2Images = data.items?.map(convertR2FileToGalleryItem) || [];
 
       // Merge R2 images with local cache, prioritizing R2 URLs
       const mergedImages = mergeImages(r2Images, localImages);
@@ -261,7 +283,7 @@ export const useGalleryImages = () => {
     } finally {
       isFetchingRef.current = false;
     }
-  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryImage, mergeImages]);
+  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryItem, mergeImages]);
 
   // Delete an image (soft delete)
   const deleteImage = useCallback(async (imageId: string) => {

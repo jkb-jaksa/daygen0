@@ -1099,6 +1099,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     fetchGalleryImages,
     updateImages: updateGalleryImages,
     removeImages: removeGalleryImages,
+    isLoading: isGalleryLoading,
+    error: galleryError,
     hasBase64Images,
     needsMigration,
   } = useGalleryImages();
@@ -6581,6 +6583,9 @@ const handleGenerate = async () => {
                       handleBulkDownload={handleBulkDownload}
                       handleBulkDelete={handleBulkDelete}
                       renderGalleryItem={(img, idx) => renderLibraryGalleryItem(img, idx, 'gallery')}
+                      isLoading={isGalleryLoading}
+                      error={galleryError}
+                      onRefresh={fetchGalleryImages}
                     />
                   </Suspense>
                 )}

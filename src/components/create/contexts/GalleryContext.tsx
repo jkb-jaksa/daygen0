@@ -1,4 +1,14 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from 'react';
+import { useLocation } from 'react-router-dom';
+import { useGalleryImages } from '../../../hooks/useGalleryImages';
 import type { GalleryImageLike, GalleryVideoLike, GalleryFilters, Folder } from '../types';
 
 type GalleryState = {
@@ -68,6 +78,87 @@ const initialState: GalleryState = {
   bulkActionsMenu: null,
   folderThumbnailDialog: { show: false, folderId: null },
   folderThumbnailConfirm: { show: false, folderId: null, imageUrl: null },
+};
+
+const JOB_ROUTE_PREFIX = '/job/';
+
+const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | null => {
+  if (item.jobId && item.jobId.trim().length > 0) {
+    return item.jobId.trim();
+  }
+
+  if (item.r2FileId && item.r2FileId.trim().length > 0) {
+    return item.r2FileId.trim();
+  }
+
+  if (item.url && item.url.trim().length > 0) {
+    return item.url.trim();
+  }
+
+  return null;
+};
+
+const mergeGalleryCollections = <T extends GalleryImageLike | GalleryVideoLike>(
+  existing: T[],
+  incoming: T[],
+): T[] => {
+  if (incoming.length === 0 && existing.length === 0) {
+    return existing;
+  }
+
+  const mergedByKey = new Map<string, T>();
+  const itemsWithoutKey: T[] = [];
+
+  // Prioritize incoming items while preserving order
+  incoming.forEach((item) => {
+    const key = getGalleryItemKey(item);
+    if (key) {
+      mergedByKey.set(key, item);
+    } else {
+      itemsWithoutKey.push(item);
+    }
+  });
+
+  existing.forEach((item) => {
+    const key = getGalleryItemKey(item);
+    if (!key) {
+      itemsWithoutKey.push(item);
+      return;
+    }
+
+    if (mergedByKey.has(key)) {
+      const mergedItem = { ...item, ...mergedByKey.get(key)! };
+      mergedByKey.set(key, mergedItem);
+    } else {
+      mergedByKey.set(key, item);
+    }
+  });
+
+  return [...mergedByKey.values(), ...itemsWithoutKey];
+};
+
+const isVideoItem = (
+  item: GalleryImageLike | GalleryVideoLike,
+): item is GalleryVideoLike => {
+  return typeof (item as GalleryVideoLike).type === 'string' &&
+    (item as GalleryVideoLike).type === 'video';
+};
+
+const partitionGalleryItems = (
+  items: (GalleryImageLike | GalleryVideoLike)[],
+): { images: GalleryImageLike[]; videos: GalleryVideoLike[] } => {
+  const images: GalleryImageLike[] = [];
+  const videos: GalleryVideoLike[] = [];
+
+  items.forEach((item) => {
+    if (isVideoItem(item)) {
+      videos.push(item);
+    } else {
+      images.push(item);
+    }
+  });
+
+  return { images, videos };
 };
 
 function galleryReducer(state: GalleryState, action: GalleryAction): GalleryState {
@@ -180,12 +271,31 @@ type GalleryContextType = {
   filteredItems: (GalleryImageLike | GalleryVideoLike)[];
   selectedCount: number;
   hasSelection: boolean;
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  hasBase64Images: boolean;
+  needsMigration: boolean;
 };
 
 const GalleryContext = createContext<GalleryContextType | null>(null);
 
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(galleryReducer, initialState);
+  const location = useLocation();
+  const {
+    images: galleryItems,
+    isLoading: isGalleryLoading,
+    error: galleryError,
+    hasBase64Images,
+    needsMigration,
+    fetchGalleryImages,
+  } = useGalleryImages();
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const setImages = useCallback((images: GalleryImageLike[]) => {
     dispatch({ type: 'SET_IMAGES', payload: images });
@@ -246,6 +356,18 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const setFullSizeImage = useCallback((image: GalleryImageLike | GalleryVideoLike | null, index: number) => {
     dispatch({ type: 'SET_FULL_SIZE_IMAGE', payload: { image, index } });
   }, []);
+
+  useEffect(() => {
+    const sourceItems = galleryItems ?? [];
+    const currentState = stateRef.current;
+    const { images: incomingImages, videos: incomingVideos } = partitionGalleryItems(sourceItems);
+
+    const mergedImages = mergeGalleryCollections(currentState.images, incomingImages);
+    const mergedVideos = mergeGalleryCollections(currentState.videos, incomingVideos);
+
+    setImages(mergedImages);
+    setVideos(mergedVideos);
+  }, [galleryItems, setImages, setVideos]);
 
   const setFolders = useCallback((folders: Folder[]) => {
     dispatch({ type: 'SET_FOLDERS', payload: folders });
@@ -323,6 +445,40 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     });
   }, [state.images, state.videos, state.filters]);
 
+  useEffect(() => {
+    const path = location.pathname;
+    const current = stateRef.current;
+
+    if (!path.startsWith(JOB_ROUTE_PREFIX)) {
+      if (current.isFullSizeOpen || current.fullSizeImage !== null) {
+        setFullSizeOpen(false);
+        setFullSizeImage(null, 0);
+      }
+      return;
+    }
+
+    const jobId = decodeURIComponent(path.slice(JOB_ROUTE_PREFIX.length));
+    if (!jobId) {
+      return;
+    }
+
+    const targetIndex = filteredItems.findIndex(item => item.jobId === jobId);
+    if (targetIndex === -1) {
+      return;
+    }
+
+    const targetItem = filteredItems[targetIndex];
+    const alreadySelected =
+      current.fullSizeImage?.jobId === targetItem.jobId &&
+      current.fullSizeIndex === targetIndex &&
+      current.isFullSizeOpen;
+
+    if (!alreadySelected) {
+      setFullSizeImage(targetItem, targetIndex);
+      setFullSizeOpen(true);
+    }
+  }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen]);
+
   const selectedCount = useMemo(() => state.selectedItems.size, [state.selectedItems.size]);
   const hasSelection = useMemo(() => state.selectedItems.size > 0, [state.selectedItems.size]);
 
@@ -355,6 +511,11 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     filteredItems,
     selectedCount,
     hasSelection,
+    isLoading: isGalleryLoading,
+    error: galleryError,
+    refresh: fetchGalleryImages,
+    hasBase64Images,
+    needsMigration,
   }), [
     state,
     setImages,
@@ -384,6 +545,11 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     filteredItems,
     selectedCount,
     hasSelection,
+    isGalleryLoading,
+    galleryError,
+    fetchGalleryImages,
+    hasBase64Images,
+    needsMigration,
   ]);
 
   return (
