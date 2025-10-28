@@ -85,8 +85,7 @@ export async function uploadToR2(
  */
 export async function uploadProfilePictureToR2(
   file: File | Blob,
-  fileName: string,
-  contentType: string
+  fileName: string
 ): Promise<UploadToR2Result> {
   try {
     // Get auth token from Supabase session

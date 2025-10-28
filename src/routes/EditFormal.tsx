@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, X, MessageCircle, Sparkles, Settings, Wand2, Package, Shapes, Users, Palette } from 'lucide-react';
+import { Upload, X, MessageCircle, Sparkles, Package, Shapes } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { glass, buttons } from '../styles/designSystem';
 import { useFormalImageGeneration, type FormalModel } from '../hooks/useFormalImageGeneration';
@@ -8,15 +8,12 @@ import { PresetGrid, GroupedPresetGrid } from '../components/formal/PresetGrid';
 import { FormalEditTabs } from '../components/formal/FormalEditTabs';
 import { QuickAssetMenu } from '../components/shared/QuickAssetMenu';
 import { 
-  ALL_BACKGROUND_PRESETS, 
-  ALL_EFFECTS_PRESETS, 
-  ALL_ENHANCEMENT_PRESETS,
   BACKGROUND_PRESETS,
   getPresetsByCategory,
   type PresetCategory,
   type FormalPreset,
 } from '../data/formalPresets';
-import { debugError } from '../utils/debug';
+// debugError removed due to being unused by current component
 
 const AI_MODELS = [
   { id: 'gemini' as const, name: 'Gemini 2.5 Flash', desc: 'Best for editing', Icon: Sparkles, accent: 'yellow' },
@@ -46,9 +43,9 @@ export default function EditFormal() {
   const [isDragging, setIsDragging] = useState(false);
   
   // Asset modals state
-  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+  const [, setIsAvatarModalOpen] = useState(false);
+  const [, setIsProductModalOpen] = useState(false);
+  const [, setIsStyleModalOpen] = useState(false);
   
   // Use the formal image generation hook
   const {
@@ -57,7 +54,6 @@ export default function EditFormal() {
     isGenerating,
     error,
     generateImage,
-    upscaleImage,
     selectVersion,
     clearError,
     clearVersions,
@@ -142,11 +138,7 @@ export default function EditFormal() {
   }, []);
 
   // Handle upscale
-  const handleUpscale = useCallback(async () => {
-    if (selectedVersionId) {
-      await upscaleImage(selectedVersionId);
-    }
-  }, [selectedVersionId, upscaleImage]);
+  // Removed unused handleUpscale to satisfy linter
 
   // Handle chat mode generation
   const handleChatGenerate = useCallback(async () => {

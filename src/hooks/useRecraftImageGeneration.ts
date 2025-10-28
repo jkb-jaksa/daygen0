@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { generateImage as recraftGenerateImage, imageToImage as recraftImageToImage, inpaint as recraftInpaint } from '../lib/recraft-api';
-import type { RecraftGenerateResponse } from '../lib/recraft-api';
 import { debugError } from '../utils/debug';
 
 export interface RecraftGeneratedImage {
@@ -52,8 +51,9 @@ export function useRecraftImageGeneration() {
       });
 
       if (result && result.length > 0) {
-        const images: RecraftGeneratedImage[] = result.map((img, index) => ({
-          url: (img as any).url || (img as any).b64_json || '',
+        const typedResult = result as Array<{ url?: string; b64_json?: string }>;
+        const images: RecraftGeneratedImage[] = typedResult.map((img) => ({
+          url: img.url || img.b64_json || '',
           prompt: options.prompt,
           style: options.style,
         }));
@@ -111,8 +111,9 @@ export function useRecraftImageGeneration() {
       });
 
       if (result && result.length > 0) {
-        const images: RecraftGeneratedImage[] = result.map((img) => ({
-          url: (img as any).url || (img as any).b64_json || '',
+        const typedResult = result as Array<{ url?: string; b64_json?: string }>;
+        const images: RecraftGeneratedImage[] = typedResult.map((img) => ({
+          url: img.url || img.b64_json || '',
           prompt: options.prompt,
           style: options.style,
         }));
@@ -171,8 +172,9 @@ export function useRecraftImageGeneration() {
       });
 
       if (result && result.length > 0) {
-        const images: RecraftGeneratedImage[] = result.map((img) => ({
-          url: (img as any).url || (img as any).b64_json || '',
+        const typedResult = result as Array<{ url?: string; b64_json?: string }>;
+        const images: RecraftGeneratedImage[] = typedResult.map((img) => ({
+          url: img.url || img.b64_json || '',
           prompt: options.prompt,
           style: options.style,
         }));
