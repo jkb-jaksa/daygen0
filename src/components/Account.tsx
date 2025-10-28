@@ -249,7 +249,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
 }
 
 export default function Account() {
-  const { user, updateProfile, logOut, storagePrefix, isLoading } = useAuth();
+  const { user, updateProfile, uploadProfilePicture, removeProfilePicture, logOut, storagePrefix, isLoading } = useAuth();
   const { showToast } = useToast();
   const [name, setName] = useState(user?.displayName ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
@@ -369,25 +369,28 @@ export default function Account() {
           reader.readAsDataURL(croppedImageBlob);
         });
 
-      if (!dataUrl) {
-        throw new Error("Empty cropped image data");
-      }
+        if (!dataUrl) {
+          throw new Error("Empty cropped image data");
+        }
 
-        await updateProfile({ profileImage: dataUrl });
+        // Extract mime type from data URL
+        const mimeType = dataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
+        
+        await uploadProfilePicture(dataUrl, mimeType);
         showToast("Profile photo updated");
       } catch (error) {
         debugError("Account - Failed to process cropped image", error);
-        setUploadError("We couldn’t read that image. Re-upload or use a different format.");
+        setUploadError("We couldn't read that image. Re-upload or use a different format.");
       } finally {
         setIsUploadingPic(false);
       }
     },
-    [showToast, updateProfile],
+    [showToast, uploadProfilePicture],
   );
 
   const handleRemoveProfilePic = useCallback(async () => {
     try {
-      await updateProfile({ profileImage: null });
+      await removeProfilePicture();
       setUploadError(null);
       showToast("Profile photo removed");
     } catch (error) {
@@ -397,7 +400,7 @@ export default function Account() {
       releasePreview();
       resetFileInput();
     }
-  }, [releasePreview, resetFileInput, showToast, updateProfile]);
+  }, [releasePreview, resetFileInput, showToast, removeProfilePicture]);
 
   const trimmedName = useMemo(() => (name ?? "").trim(), [name]);
   const currentUserName = useMemo(() => (user?.displayName ?? "").trim(), [user?.displayName]);

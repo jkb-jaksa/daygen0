@@ -40,6 +40,7 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+const DebugPanel = lazy(() => import("./components/DebugPanel").then(({ DebugPanel }) => ({ default: DebugPanel })));
 
 function NavbarFallback() {
   return (
@@ -483,6 +484,11 @@ function AppContent() {
           onSubscribe={handleSubscribe}
           onDismiss={handleDismiss}
         />
+      </Suspense>
+      
+      {/* Debug Panel - Development Only */}
+      <Suspense fallback={null}>
+        <DebugPanel />
       </Suspense>
       
     </div>

@@ -185,7 +185,7 @@ if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     if (event.ctrlKey && event.shiftKey && event.key === 'R') {
       event.preventDefault();
       authMetrics.reset();
-      debugLog('[AUTH_METRICS] Metrics reset via keyboard shortcut');
+      console.log('Auth metrics reset');
     }
   });
 }

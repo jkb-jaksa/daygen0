@@ -1,5 +1,6 @@
 import { Upload, X } from "lucide-react";
 import type { ChangeEvent, RefObject } from "react";
+import { useEffect } from "react";
 import type { User } from "../../auth/context";
 import { buttons, glass, inputs } from "../../styles/designSystem";
 
@@ -42,6 +43,14 @@ export function ProfileCard({
   onSaveProfile,
   onLogOut,
 }: ProfileCardProps) {
+  // Debug log to track profile image changes
+  console.log('ProfileCard render - user.profileImage:', user.profileImage);
+  console.log('ProfileCard render - user object:', user);
+  
+  // Track profile image changes
+  useEffect(() => {
+    console.log('ProfileCard - Profile image changed to:', user.profileImage);
+  }, [user.profileImage]);
   return (
     <div className={`${glass.surface} p-5`}>
       <h3 className="text-lg font-raleway mb-3 text-theme-text">Profile</h3>
@@ -64,9 +73,10 @@ export function ProfileCard({
             >
               {user.profileImage ? (
                 <img
-                  src={user.profileImage}
+                  src={`${user.profileImage}?t=${Date.now()}`}
                   alt="Profile"
                   className="size-12 rounded-full object-cover border-2 border-theme-dark group-hover:opacity-80 transition-opacity"
+                  key={user.profileImage} // Force re-render when URL changes
                 />
               ) : (
                 <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-bold font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
