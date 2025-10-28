@@ -23,6 +23,24 @@ import { useHailuoVideoGeneration } from '../../../hooks/useHailuoVideoGeneratio
 import { useKlingVideoGeneration } from '../../../hooks/useKlingVideoGeneration';
 import { useSeedanceVideoGeneration } from '../../../hooks/useSeedanceVideoGeneration';
 import { useLumaVideoGeneration } from '../../../hooks/useLumaVideoGeneration';
+import {
+  BASIC_ASPECT_RATIO_OPTIONS,
+  GEMINI_ASPECT_RATIO_OPTIONS,
+  QWEN_ASPECT_RATIO_OPTIONS,
+  VIDEO_ASPECT_RATIO_OPTIONS,
+  WAN_ASPECT_RATIO_OPTIONS,
+} from '../../../data/aspectRatios';
+import type { AspectRatioOption, GeminiAspectRatio } from '../../../types/aspectRatio';
+import type { SettingsMenuProps } from '../SettingsMenu';
+
+type AspectRatioControl = {
+  options: ReadonlyArray<AspectRatioOption>;
+  selectedValue: string;
+  selectedLabel: string;
+  onSelect: (value: string) => void;
+};
+
+type SettingsSections = Omit<SettingsMenuProps, 'anchorRef' | 'open' | 'onClose'>;
 
 const fileToDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -62,6 +80,40 @@ export interface CreateGenerationController {
   selectedModel: string;
   handleModelChange: (model: string) => void;
   handleGenerate: () => Promise<void>;
+  batchSize: number;
+  setBatchSize: (value: number) => void;
+  temperature: number;
+  setTemperature: (value: number) => void;
+  outputLength: number;
+  setOutputLength: (value: number) => void;
+  topP: number;
+  setTopP: (value: number) => void;
+  geminiAspectRatio: GeminiAspectRatio;
+  setGeminiAspectRatio: (ratio: GeminiAspectRatio) => void;
+  videoAspectRatio: '16:9' | '9:16';
+  setVideoAspectRatio: (ratio: '16:9' | '9:16') => void;
+  seedanceRatio: '16:9' | '9:16' | '1:1';
+  setSeedanceRatio: (ratio: '16:9' | '9:16' | '1:1') => void;
+  klingAspectRatio: '16:9' | '9:16' | '1:1';
+  setKlingAspectRatio: (ratio: '16:9' | '9:16' | '1:1') => void;
+  wanSize: string;
+  setWanSize: (value: string) => void;
+  qwenSize: string;
+  setQwenSize: (value: string) => void;
+  qwenPromptExtend: boolean;
+  setQwenPromptExtend: (value: boolean) => void;
+  qwenWatermark: boolean;
+  setQwenWatermark: (value: boolean) => void;
+  wanSeed: string;
+  setWanSeed: (value: string) => void;
+  wanNegativePrompt: string;
+  setWanNegativePrompt: (value: string) => void;
+  wanPromptExtend: boolean;
+  setWanPromptExtend: (value: boolean) => void;
+  wanWatermark: boolean;
+  setWanWatermark: (value: boolean) => void;
+  aspectRatioControl: AspectRatioControl | null;
+  settingsSections: SettingsSections;
   isGenerating: boolean;
   isButtonSpinning: boolean;
   error: string | null;
@@ -74,12 +126,29 @@ export function useCreateGenerationController(): CreateGenerationController {
     state,
     setSelectedModel,
     setButtonSpinning,
+    setBatchSize,
+    setTemperature,
+    setOutputLength,
+    setTopP,
+    setGeminiAspectRatio,
+    setVideoAspectRatio,
+    setSeedanceRatio,
+    setKlingAspectRatio,
+    setWanSize,
+    setQwenSize,
+    setQwenPromptExtend,
+    setQwenWatermark,
+    setWanSeed,
+    setWanNegativePrompt,
+    setWanPromptExtend,
+    setWanWatermark,
   } = generation;
 
   const { addImage, addVideo } = useGallery();
 
   const {
     selectedModel,
+    batchSize,
     temperature,
     outputLength,
     topP,
@@ -193,6 +262,246 @@ export function useCreateGenerationController(): CreateGenerationController {
     [styleHandlers.selectedStylesList],
   );
 
+  const aspectRatioControl = useMemo<AspectRatioControl | null>(() => {
+    const makeControl = (
+      options: ReadonlyArray<AspectRatioOption>,
+      value: string,
+      onSelect: (next: string) => void,
+    ): AspectRatioControl => ({
+      options,
+      selectedValue: value,
+      selectedLabel: options.find(option => option.value === value)?.label ?? value,
+      onSelect,
+    });
+
+    switch (selectedModel) {
+      case 'gemini-2.5-flash-image':
+      case 'luma-photon-1':
+      case 'luma-photon-flash-1':
+        return makeControl(
+          GEMINI_ASPECT_RATIO_OPTIONS,
+          geminiAspectRatio,
+          next => setGeminiAspectRatio(next as GeminiAspectRatio),
+        );
+      case 'veo-3':
+      case 'runway-video-gen4':
+        return makeControl(
+          VIDEO_ASPECT_RATIO_OPTIONS,
+          videoAspectRatio,
+          next => setVideoAspectRatio(next as '16:9' | '9:16'),
+        );
+      case 'seedance-1.0-pro':
+        return makeControl(
+          BASIC_ASPECT_RATIO_OPTIONS,
+          seedanceRatio,
+          next => setSeedanceRatio(next as '16:9' | '9:16' | '1:1'),
+        );
+      case 'kling-video':
+        return makeControl(
+          BASIC_ASPECT_RATIO_OPTIONS,
+          klingAspectRatio,
+          next => setKlingAspectRatio(next as '16:9' | '9:16' | '1:1'),
+        );
+      case 'wan-video-2.2':
+        return makeControl(WAN_ASPECT_RATIO_OPTIONS, wanSize, setWanSize);
+      case 'qwen-image':
+        return makeControl(QWEN_ASPECT_RATIO_OPTIONS, qwenSize, setQwenSize);
+      default:
+        return null;
+    }
+  }, [
+    geminiAspectRatio,
+    klingAspectRatio,
+    qwenSize,
+    seedanceRatio,
+    selectedModel,
+    setGeminiAspectRatio,
+    setKlingAspectRatio,
+    setQwenSize,
+    setSeedanceRatio,
+    setVideoAspectRatio,
+    setWanSize,
+    videoAspectRatio,
+    wanSize,
+  ]);
+
+  const settingsSections = useMemo<SettingsSections>(() => {
+    const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
+    const isQwenModel = selectedModel === 'qwen-image';
+    const isWanVideo = selectedModel === 'wan-video-2.2';
+
+    return {
+      common: {
+        batchSize,
+        onBatchSizeChange: value => setBatchSize(value),
+        min: 1,
+        max: 4,
+      },
+      flux: {
+        enabled: false,
+        model: 'flux-pro-1.1',
+        onModelChange: (_model) => {},
+      },
+      veo: {
+        enabled: false,
+        aspectRatio: videoAspectRatio,
+        onAspectRatioChange: (_ratio) => {},
+        model: 'veo-3.0-generate-001',
+        onModelChange: (_model) => {},
+        negativePrompt: '',
+        onNegativePromptChange: (_prompt) => {},
+        seed: undefined,
+        onSeedChange: (_seed) => {},
+      },
+      hailuo: {
+        enabled: false,
+        duration: 6,
+        onDurationChange: (_duration) => {},
+        resolution: '1080P',
+        onResolutionChange: (_resolution) => {},
+        promptOptimizer: true,
+        onPromptOptimizerChange: (_value) => {},
+        fastPretreatment: false,
+        onFastPretreatmentChange: (_value) => {},
+        watermark: false,
+        onWatermarkChange: (_value) => {},
+        firstFrame: null,
+        onFirstFrameChange: (_file) => {},
+        lastFrame: null,
+        onLastFrameChange: (_file) => {},
+      },
+      wan: {
+        enabled: isWanVideo,
+        size: wanSize,
+        onSizeChange: value => setWanSize(value),
+        negativePrompt: wanNegativePrompt,
+        onNegativePromptChange: value => setWanNegativePrompt(value),
+        promptExtend: wanPromptExtend,
+        onPromptExtendChange: value => setWanPromptExtend(value),
+        watermark: wanWatermark,
+        onWatermarkChange: value => setWanWatermark(value),
+        seed: wanSeed,
+        onSeedChange: value => setWanSeed(value),
+      },
+      seedance: {
+        enabled: false,
+        mode: 't2v',
+        onModeChange: (_mode) => {},
+        ratio: '16:9',
+        onRatioChange: (_ratio) => {},
+        duration: 5,
+        onDurationChange: (_duration) => {},
+        resolution: '1080p',
+        onResolutionChange: (_resolution) => {},
+        fps: 24,
+        onFpsChange: (_fps) => {},
+        cameraFixed: true,
+        onCameraFixedChange: (_value) => {},
+        seed: '',
+        onSeedChange: (_seed) => {},
+        firstFrame: null,
+        onFirstFrameChange: (_file) => {},
+        lastFrame: null,
+        onLastFrameChange: (_file) => {},
+      },
+      recraft: {
+        enabled: false,
+        model: 'recraft-v3',
+        onModelChange: (_model) => {},
+      },
+      runway: {
+        enabled: false,
+        model: 'runway-gen4',
+        onModelChange: (_model) => {},
+      },
+      gemini: {
+        enabled: isGeminiModel,
+        temperature,
+        onTemperatureChange: value => setTemperature(value),
+        outputLength,
+        onOutputLengthChange: value => setOutputLength(value),
+        topP,
+        onTopPChange: value => setTopP(value),
+        aspectRatio: geminiAspectRatio as GeminiAspectRatio,
+        onAspectRatioChange: value => setGeminiAspectRatio(value),
+      },
+      qwen: {
+        enabled: isQwenModel,
+        size: qwenSize,
+        onSizeChange: value => setQwenSize(value),
+        promptExtend: qwenPromptExtend,
+        onPromptExtendChange: value => setQwenPromptExtend(value),
+        watermark: qwenWatermark,
+        onWatermarkChange: value => setQwenWatermark(value),
+      },
+      kling: {
+        enabled: false,
+        model: 'kling-v2.1-master',
+        onModelChange: (_model) => {},
+        aspectRatio: '16:9',
+        onAspectRatioChange: (_ratio) => {},
+        duration: 5,
+        onDurationChange: (_duration) => {},
+        mode: 'standard',
+        onModeChange: (_mode) => {},
+        cfgScale: 0.8,
+        onCfgScaleChange: (_value) => {},
+        negativePrompt: '',
+        onNegativePromptChange: (_prompt) => {},
+        cameraType: 'none',
+        onCameraTypeChange: (_type) => {},
+        cameraConfig: {
+          horizontal: 0,
+          vertical: 0,
+          pan: 0,
+          tilt: 0,
+          roll: 0,
+          zoom: 0,
+        },
+        onCameraConfigChange: (_updates) => {},
+        statusMessage: null,
+      },
+      lumaPhoton: {
+        enabled: false,
+        model: 'luma-photon-1',
+        onModelChange: (_model) => {},
+      },
+      lumaRay: {
+        enabled: false,
+        variant: 'luma-ray-2',
+        onVariantChange: (_variant) => {},
+      },
+    };
+  }, [
+    batchSize,
+    geminiAspectRatio,
+    outputLength,
+    qwenPromptExtend,
+    qwenSize,
+    qwenWatermark,
+    selectedModel,
+    setBatchSize,
+    setGeminiAspectRatio,
+    setOutputLength,
+    setQwenPromptExtend,
+    setQwenSize,
+    setQwenWatermark,
+    setTemperature,
+    setTopP,
+    setWanNegativePrompt,
+    setWanPromptExtend,
+    setWanSeed,
+    setWanSize,
+    setWanWatermark,
+    temperature,
+    topP,
+    videoAspectRatio,
+    wanNegativePrompt,
+    wanPromptExtend,
+    wanSeed,
+    wanSize,
+    wanWatermark,
+  ]);
   const handleModelChange = useCallback(
     (model: string) => {
       setSelectedModel(model);
@@ -676,6 +985,40 @@ export function useCreateGenerationController(): CreateGenerationController {
     selectedModel,
     handleModelChange,
     handleGenerate,
+    batchSize,
+    setBatchSize,
+    temperature,
+    setTemperature,
+    outputLength,
+    setOutputLength,
+    topP,
+    setTopP,
+    geminiAspectRatio,
+    setGeminiAspectRatio,
+    videoAspectRatio,
+    setVideoAspectRatio,
+    seedanceRatio,
+    setSeedanceRatio,
+    klingAspectRatio,
+    setKlingAspectRatio,
+    wanSize,
+    setWanSize,
+    qwenSize,
+    setQwenSize,
+    qwenPromptExtend,
+    setQwenPromptExtend,
+    qwenWatermark,
+    setQwenWatermark,
+    wanSeed,
+    setWanSeed,
+    wanNegativePrompt,
+    setWanNegativePrompt,
+    wanPromptExtend,
+    setWanPromptExtend,
+    wanWatermark,
+    setWanWatermark,
+    aspectRatioControl,
+    settingsSections,
     isGenerating,
     isButtonSpinning: contextSpinner || isSubmitting,
     error: localError,

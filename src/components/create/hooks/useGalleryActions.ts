@@ -7,7 +7,17 @@ import type { GalleryImageLike, GalleryVideoLike } from '../types';
 export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setImageActionMenu, setBulkActionsMenu, removeImage, removeVideo, updateImage } = useGallery();
+  const {
+    state,
+    setImageActionMenu,
+    setBulkActionsMenu,
+    removeVideo,
+    updateImage,
+    deleteImage: deleteGalleryImage,
+    setFullSizeOpen,
+    setFullSizeImage,
+  } = useGallery();
+  const { filteredItems } = state;
   
   // Navigate to job URL
   const navigateToJobUrl = useCallback(
@@ -29,12 +39,60 @@ export function useGalleryActions() {
   
   // Clear job URL
   const clearJobUrl = useCallback(() => {
-    if (!location.pathname.startsWith("/job/")) {
-      return;
-    }
     const fallbackPath = location.state?.jobOrigin ?? "/create/image";
-    navigate(fallbackPath, { replace: false });
-  }, [location.pathname, location.state, navigate]);
+    setFullSizeOpen(false);
+    setFullSizeImage(null, 0);
+
+    if (location.pathname.startsWith("/job/")) {
+      navigate(fallbackPath, { replace: false });
+    }
+  }, [location.pathname, location.state, navigate, setFullSizeImage, setFullSizeOpen]);
+
+  const resolveItemIndex = useCallback(
+    (image: GalleryImageLike | GalleryVideoLike): number => {
+      if (!filteredItems.length) {
+        return 0;
+      }
+
+      const keyCandidates = [
+        image.jobId?.trim(),
+        image.r2FileId?.trim(),
+        image.url?.trim(),
+      ].filter(Boolean) as string[];
+
+      if (!keyCandidates.length) {
+        return 0;
+      }
+
+      const foundIndex = filteredItems.findIndex(candidate => {
+        const candidateKeys = [
+          candidate.jobId?.trim(),
+          candidate.r2FileId?.trim(),
+          candidate.url?.trim(),
+        ].filter(Boolean) as string[];
+
+        return candidateKeys.some(candidateKey =>
+          keyCandidates.includes(candidateKey),
+        );
+      });
+
+      return foundIndex >= 0 ? foundIndex : 0;
+    },
+    [filteredItems],
+  );
+
+  const openImageInGallery = useCallback(
+    (image: GalleryImageLike | GalleryVideoLike, index?: number) => {
+      const resolvedIndex =
+        typeof index === 'number' && Number.isFinite(index)
+          ? index
+          : resolveItemIndex(image);
+
+      setFullSizeImage(image, resolvedIndex);
+      setFullSizeOpen(true);
+    },
+    [resolveItemIndex, setFullSizeImage, setFullSizeOpen],
+  );
   
   // Sync job URL for image
   const syncJobUrlForImage = useCallback(
@@ -49,10 +107,13 @@ export function useGalleryActions() {
   );
   
   // Handle image click
-  const handleImageClick = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
-    // This would need to be implemented with the actual gallery context methods
-    syncJobUrlForImage(image);
-  }, [syncJobUrlForImage]);
+  const handleImageClick = useCallback(
+    (image: GalleryImageLike | GalleryVideoLike, index?: number) => {
+      openImageInGallery(image, index);
+      syncJobUrlForImage(image);
+    },
+    [openImageInGallery, syncJobUrlForImage],
+  );
   
   // Handle image action menu
   const handleImageActionMenu = useCallback((event: React.MouseEvent, imageId: string) => {
@@ -89,13 +150,16 @@ export function useGalleryActions() {
   // Handle delete image
   const handleDeleteImage = useCallback(async (imageId: string) => {
     try {
-      // Remove from gallery
-      removeImage(imageId);
-      debugLog('Deleted image:', imageId);
+      const success = await deleteGalleryImage(imageId);
+      if (success) {
+        debugLog('Deleted image:', imageId);
+      } else {
+        debugError('Failed to delete image via API:', imageId);
+      }
     } catch (error) {
       debugError('Error deleting image:', error);
     }
-  }, [removeImage]);
+  }, [deleteGalleryImage]);
   
   // Handle delete video
   const handleDeleteVideo = useCallback(async (videoId: string) => {
@@ -111,41 +175,43 @@ export function useGalleryActions() {
   // Handle toggle public
   const handleTogglePublic = useCallback(async (imageId: string, isPublic: boolean) => {
     try {
-      updateImage(imageId, { isPublic: !isPublic });
+      await updateImage(imageId, { isPublic: !isPublic });
       debugLog('Toggled public status for image:', imageId);
     } catch (error) {
       debugError('Error toggling public status:', error);
     }
   }, [updateImage]);
-  
+
   // Handle toggle like
   const handleToggleLike = useCallback(async (imageId: string, isLiked: boolean) => {
     try {
-      updateImage(imageId, { isLiked: !isLiked });
+      await updateImage(imageId, { isLiked: !isLiked });
       debugLog('Toggled like status for image:', imageId);
     } catch (error) {
       debugError('Error toggling like status:', error);
     }
   }, [updateImage]);
-  
+
   // Handle bulk delete
   const handleBulkDelete = useCallback(async (imageIds: string[]) => {
     try {
-      for (const id of imageIds) {
-        removeImage(id);
+      const results = await Promise.all(imageIds.map(id => deleteGalleryImage(id)));
+      const failedIds = imageIds.filter((_, index) => !results[index]);
+
+      if (failedIds.length > 0) {
+        debugError('Some images failed to delete:', failedIds);
+      } else {
+        debugLog('Bulk deleted images:', imageIds);
       }
-      debugLog('Bulk deleted images:', imageIds);
     } catch (error) {
       debugError('Error bulk deleting images:', error);
     }
-  }, [removeImage]);
+  }, [deleteGalleryImage]);
   
   // Handle bulk toggle public
   const handleBulkTogglePublic = useCallback(async (imageIds: string[], isPublic: boolean) => {
     try {
-      for (const id of imageIds) {
-        updateImage(id, { isPublic: !isPublic });
-      }
+      await Promise.all(imageIds.map(id => updateImage(id, { isPublic: !isPublic })));
       debugLog('Bulk toggled public status for images:', imageIds);
     } catch (error) {
       debugError('Error bulk toggling public status:', error);

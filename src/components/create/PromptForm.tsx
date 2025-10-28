@@ -1,6 +1,6 @@
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
-import { Wand2, Settings, User, Package, Palette } from 'lucide-react';
+import { Wand2, Settings, User, Package, Palette, Scan } from 'lucide-react';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { buttons, inputs } from '../../styles/designSystem';
@@ -9,7 +9,9 @@ import { debugLog } from '../../utils/debug';
 // Lazy load components
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const ReferenceImages = lazy(() => import('./ReferenceImages'));
-const AspectRatioDropdown = lazy(() => import('../AspectRatioDropdown'));
+const AspectRatioDropdown = lazy(() =>
+  import('../AspectRatioDropdown').then(module => ({ default: module.AspectRatioDropdown })),
+);
 const PromptsDropdown = lazy(() => import('../PromptsDropdown'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
 
@@ -29,6 +31,8 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
     selectedModel,
     handleModelChange,
     handleGenerate,
+    aspectRatioControl,
+    settingsSections,
     isGenerating: controllerIsGenerating,
     isButtonSpinning: controllerIsButtonSpinning,
     error,
@@ -42,7 +46,26 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
   
   // Settings menu state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const settingsRef = useRef<HTMLButtonElement | null>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
+  const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!aspectRatioControl) {
+      setIsAspectRatioOpen(false);
+    }
+  }, [aspectRatioControl]);
+
+  const aspectRatioLabel =
+    aspectRatioControl?.selectedLabel ?? aspectRatioControl?.selectedValue ?? 'Aspect Ratio';
+  const showAspectRatioButton = Boolean(aspectRatioControl);
+
+  const handleAspectRatioToggle = useCallback(() => {
+    if (!aspectRatioControl) {
+      return;
+    }
+    setIsAspectRatioOpen(prev => !prev);
+  }, [aspectRatioControl]);
   
   // Handle generate
   const triggerGenerate = useCallback(() => {
@@ -123,20 +146,20 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
       </div>
       
       {/* Reference images */}
-        <Suspense fallback={null}>
-          <ReferenceImages
-            referenceFiles={referenceHandlers.referenceFiles}
-            referencePreviews={referenceHandlers.referencePreviews}
-            selectedAvatar={avatarHandlers.selectedAvatar}
-            selectedProduct={productHandlers.selectedProduct}
-            onClearReference={referenceHandlers.clearReference}
-            onClearAllReferences={referenceHandlers.clearAllReferences}
-            onOpenFileInput={referenceHandlers.openFileInput}
-            onOpenRefsInput={referenceHandlers.openRefsInput}
-            fileInputRef={referenceHandlers.fileInputRef}
-            refsInputRef={referenceHandlers.refsInputRef}
-          />
-        </Suspense>
+      <Suspense fallback={null}>
+        <ReferenceImages
+          referenceFiles={referenceHandlers.referenceFiles}
+          referencePreviews={referenceHandlers.referencePreviews}
+          selectedAvatar={avatarHandlers.selectedAvatar}
+          selectedProduct={productHandlers.selectedProduct}
+          onClearReference={referenceHandlers.clearReference}
+          onClearAllReferences={referenceHandlers.clearAllReferences}
+          onOpenFileInput={referenceHandlers.openFileInput}
+          onOpenRefsInput={referenceHandlers.openRefsInput}
+          fileInputRef={referenceHandlers.fileInputRef}
+          refsInputRef={referenceHandlers.refsInputRef}
+        />
+      </Suspense>
       
       {/* Control buttons */}
       <div className="flex items-center gap-3">
@@ -195,17 +218,41 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
         </button>
         
         {/* Aspect ratio selector */}
-        <Suspense fallback={null}>
-          <AspectRatioDropdown
-            selectedModel={selectedModel}
-            onAspectRatioChange={() => {}}
-            disabled={effectiveIsGenerating}
-          />
-        </Suspense>
+        {showAspectRatioButton && (
+          <div className="relative">
+            <button
+              ref={aspectRatioButtonRef}
+              onClick={handleAspectRatioToggle}
+              onPointerEnter={onPointerEnter}
+              onPointerLeave={onPointerLeave}
+              onPointerMove={onPointerMove}
+              disabled={effectiveIsGenerating}
+              className={`${buttons.ghost} flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
+                effectiveIsGenerating ? 'cursor-not-allowed opacity-70' : ''
+              }`}
+            >
+              <Scan className="w-4 h-4" />
+              {aspectRatioLabel}
+            </button>
+            <Suspense fallback={null}>
+              <AspectRatioDropdown
+                anchorRef={aspectRatioButtonRef}
+                open={isAspectRatioOpen}
+                onClose={() => setIsAspectRatioOpen(false)}
+                options={aspectRatioControl!.options}
+                selectedValue={aspectRatioControl!.selectedValue}
+                onSelect={(value) => {
+                  aspectRatioControl?.onSelect(value);
+                  setIsAspectRatioOpen(false);
+                }}
+              />
+            </Suspense>
+          </div>
+        )}
         
         {/* Settings button */}
         <button
-          ref={settingsRef}
+          ref={settingsButtonRef}
           onClick={handleSettingsToggle}
           onPointerEnter={onPointerEnter}
           onPointerLeave={onPointerLeave}
@@ -245,9 +292,10 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
       {isSettingsOpen && (
         <Suspense fallback={null}>
           <SettingsMenu
+            anchorRef={settingsButtonRef}
             open={isSettingsOpen}
             onClose={handleSettingsClose}
-            settingsRef={settingsRef}
+            {...settingsSections}
           />
         </Suspense>
       )}

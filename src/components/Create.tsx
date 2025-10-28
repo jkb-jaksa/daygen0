@@ -37,6 +37,8 @@ import { AspectRatioDropdown } from "./AspectRatioDropdown";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
+import { GalleryProvider } from "./create/contexts/GalleryContext";
+import { GenerationProvider } from "./create/contexts/GenerationContext";
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 // import { compressDataUrl } from "../lib/imageCompression";

@@ -98,6 +98,21 @@ const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | 
   return null;
 };
 
+const matchGalleryItemId = (
+  item: GalleryImageLike | GalleryVideoLike,
+  identifier: string,
+): boolean => {
+  if (!identifier) {
+    return false;
+  }
+
+  return (
+    (item.jobId && item.jobId === identifier) ||
+    (item.r2FileId && item.r2FileId === identifier) ||
+    item.url === identifier
+  );
+};
+
 const mergeGalleryCollections = <T extends GalleryImageLike | GalleryVideoLike>(
   existing: T[],
   incoming: T[],
@@ -175,20 +190,30 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
       return {
         ...state,
         images: state.images.map(img =>
-          img.jobId === action.payload.id ? { ...img, ...action.payload.updates } : img
+          matchGalleryItemId(img, action.payload.id)
+            ? { ...img, ...action.payload.updates }
+            : img
         ),
       };
     case 'UPDATE_VIDEO':
       return {
         ...state,
         videos: state.videos.map(vid =>
-          vid.jobId === action.payload.id ? { ...vid, ...action.payload.updates } : vid
+          matchGalleryItemId(vid, action.payload.id)
+            ? { ...vid, ...action.payload.updates }
+            : vid
         ),
       };
     case 'REMOVE_IMAGE':
-      return { ...state, images: state.images.filter(img => img.jobId !== action.payload) };
+      return {
+        ...state,
+        images: state.images.filter(img => !matchGalleryItemId(img, action.payload)),
+      };
     case 'REMOVE_VIDEO':
-      return { ...state, videos: state.videos.filter(vid => vid.jobId !== action.payload) };
+      return {
+        ...state,
+        videos: state.videos.filter(vid => !matchGalleryItemId(vid, action.payload)),
+      };
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.payload } };
     case 'CLEAR_FILTERS':
@@ -246,12 +271,13 @@ type GalleryContextType = {
   state: GalleryState;
   setImages: (images: GalleryImageLike[]) => void;
   setVideos: (videos: GalleryVideoLike[]) => void;
-  addImage: (image: GalleryImageLike) => void;
+  addImage: (image: GalleryImageLike) => Promise<void>;
   addVideo: (video: GalleryVideoLike) => void;
-  updateImage: (id: string, updates: Partial<GalleryImageLike>) => void;
+  updateImage: (id: string, updates: Partial<GalleryImageLike>) => Promise<void>;
   updateVideo: (id: string, updates: Partial<GalleryVideoLike>) => void;
-  removeImage: (id: string) => void;
+  removeImage: (id: string) => Promise<void>;
   removeVideo: (id: string) => void;
+  deleteImage: (id: string) => Promise<boolean>;
   setFilters: (filters: Partial<GalleryFilters>) => void;
   clearFilters: () => void;
   setSelectedItems: (items: Set<string>) => void;
@@ -290,12 +316,24 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     hasBase64Images,
     needsMigration,
     fetchGalleryImages,
+    updateImages: persistImageUpdates,
+    removeImages: persistRemoveImages,
+    deleteImage: deleteImageFromService,
   } = useGalleryImages();
   const stateRef = useRef(state);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  const findImageById = useCallback((identifier: string) => {
+    if (!identifier) {
+      return null;
+    }
+
+    const { images } = stateRef.current;
+    return images.find(image => matchGalleryItemId(image, identifier)) ?? null;
+  }, []);
 
   const setImages = useCallback((images: GalleryImageLike[]) => {
     dispatch({ type: 'SET_IMAGES', payload: images });
@@ -305,29 +343,61 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_VIDEOS', payload: videos });
   }, []);
 
-  const addImage = useCallback((image: GalleryImageLike) => {
+  const addImage = useCallback(async (image: GalleryImageLike) => {
+    persistImageUpdates([], {}, { upsert: [image] });
     dispatch({ type: 'ADD_IMAGE', payload: image });
-  }, []);
+  }, [persistImageUpdates]);
 
   const addVideo = useCallback((video: GalleryVideoLike) => {
     dispatch({ type: 'ADD_VIDEO', payload: video });
   }, []);
 
-  const updateImage = useCallback((id: string, updates: Partial<GalleryImageLike>) => {
+  const updateImage = useCallback(async (id: string, updates: Partial<GalleryImageLike>) => {
+    const targetImage = findImageById(id);
+    if (targetImage) {
+      persistImageUpdates([targetImage.url], updates);
+    }
+
     dispatch({ type: 'UPDATE_IMAGE', payload: { id, updates } });
-  }, []);
+  }, [findImageById, persistImageUpdates]);
 
   const updateVideo = useCallback((id: string, updates: Partial<GalleryVideoLike>) => {
     dispatch({ type: 'UPDATE_VIDEO', payload: { id, updates } });
   }, []);
 
-  const removeImage = useCallback((id: string) => {
+  const removeImage = useCallback(async (id: string) => {
+    const targetImage = findImageById(id);
+    if (targetImage) {
+      persistRemoveImages([targetImage.url]);
+    }
+
     dispatch({ type: 'REMOVE_IMAGE', payload: id });
-  }, []);
+  }, [findImageById, persistRemoveImages]);
 
   const removeVideo = useCallback((id: string) => {
     dispatch({ type: 'REMOVE_VIDEO', payload: id });
   }, []);
+
+  const deleteImage = useCallback(async (id: string) => {
+    const targetImage = findImageById(id);
+    const apiIdentifier = targetImage?.r2FileId ?? id;
+
+    if (!apiIdentifier) {
+      return false;
+    }
+
+    const didDelete = await deleteImageFromService(apiIdentifier);
+    if (!didDelete) {
+      return false;
+    }
+
+    if (targetImage) {
+      persistRemoveImages([targetImage.url]);
+    }
+
+    dispatch({ type: 'REMOVE_IMAGE', payload: id });
+    return true;
+  }, [deleteImageFromService, findImageById, persistRemoveImages]);
 
   const setFilters = useCallback((filters: Partial<GalleryFilters>) => {
     dispatch({ type: 'SET_FILTERS', payload: filters });
@@ -492,6 +562,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     updateVideo,
     removeImage,
     removeVideo,
+    deleteImage,
     setFilters,
     clearFilters,
     setSelectedItems,
@@ -526,6 +597,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     updateVideo,
     removeImage,
     removeVideo,
+    deleteImage,
     setFilters,
     clearFilters,
     setSelectedItems,

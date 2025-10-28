@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { GenerationProvider } from "../components/create/contexts/GenerationContext";
+import { GalleryProvider } from "../components/create/contexts/GalleryContext";
 
 const Create = lazy(() => import("../components/Create"));
 const Avatars = lazy(() => import("../components/Avatars"));
@@ -31,21 +33,25 @@ export default function CreateRoutes() {
   }
 
   return (
-    <Suspense fallback={<Loading />}>
-      <Routes>
-        <Route index element={<IndexRoute />} />
-        <Route path="avatars">
-          <Route index element={<Avatars />} />
-          <Route path=":avatarSlug" element={<Avatars />} />
-        </Route>
-        <Route path="products">
-          <Route index element={<Products />} />
-          <Route path=":productSlug" element={<Products />} />
-        </Route>
-        <Route path="chat" element={<ChatMode />} />
-        <Route path=":category" element={<Create />} />
-        <Route path="*" element={<Navigate to="image" replace />} />
-      </Routes>
-    </Suspense>
+    <GenerationProvider>
+      <GalleryProvider>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route index element={<IndexRoute />} />
+            <Route path="avatars">
+              <Route index element={<Avatars />} />
+              <Route path=":avatarSlug" element={<Avatars />} />
+            </Route>
+            <Route path="products">
+              <Route index element={<Products />} />
+              <Route path=":productSlug" element={<Products />} />
+            </Route>
+            <Route path="chat" element={<ChatMode />} />
+            <Route path=":category" element={<Create />} />
+            <Route path="*" element={<Navigate to="image" replace />} />
+          </Routes>
+        </Suspense>
+      </GalleryProvider>
+    </GenerationProvider>
   );
 }
