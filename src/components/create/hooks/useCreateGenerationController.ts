@@ -248,11 +248,11 @@ export function useCreateGenerationController(): CreateGenerationController {
 
   useEffect(() => {
     avatarHandlers.loadStoredAvatars();
-  }, [avatarHandlers.loadStoredAvatars]);
+  }, [avatarHandlers]);
 
   useEffect(() => {
     productHandlers.loadStoredProducts();
-  }, [productHandlers.loadStoredProducts]);
+  }, [productHandlers]);
 
   const selectedAvatarId = avatarHandlers.selectedAvatar?.id;
   const activeAvatarImageId = avatarHandlers.activeAvatarImageId ?? undefined;
@@ -340,35 +340,35 @@ export function useCreateGenerationController(): CreateGenerationController {
       flux: {
         enabled: false,
         model: 'flux-pro-1.1',
-        onModelChange: (_model) => {},
+        onModelChange: () => {},
       },
       veo: {
         enabled: false,
         aspectRatio: videoAspectRatio,
-        onAspectRatioChange: (_ratio) => {},
+        onAspectRatioChange: () => {},
         model: 'veo-3.0-generate-001',
-        onModelChange: (_model) => {},
+        onModelChange: () => {},
         negativePrompt: '',
-        onNegativePromptChange: (_prompt) => {},
+        onNegativePromptChange: () => {},
         seed: undefined,
-        onSeedChange: (_seed) => {},
+        onSeedChange: () => {},
       },
       hailuo: {
         enabled: false,
         duration: 6,
-        onDurationChange: (_duration) => {},
+        onDurationChange: () => {},
         resolution: '1080P',
-        onResolutionChange: (_resolution) => {},
+        onResolutionChange: () => {},
         promptOptimizer: true,
-        onPromptOptimizerChange: (_value) => {},
+        onPromptOptimizerChange: () => {},
         fastPretreatment: false,
-        onFastPretreatmentChange: (_value) => {},
+        onFastPretreatmentChange: () => {},
         watermark: false,
-        onWatermarkChange: (_value) => {},
+        onWatermarkChange: () => {},
         firstFrame: null,
-        onFirstFrameChange: (_file) => {},
+        onFirstFrameChange: () => {},
         lastFrame: null,
-        onLastFrameChange: (_file) => {},
+        onLastFrameChange: () => {},
       },
       wan: {
         enabled: isWanVideo,
@@ -386,33 +386,33 @@ export function useCreateGenerationController(): CreateGenerationController {
       seedance: {
         enabled: false,
         mode: 't2v',
-        onModeChange: (_mode) => {},
+        onModeChange: () => {},
         ratio: '16:9',
-        onRatioChange: (_ratio) => {},
+        onRatioChange: () => {},
         duration: 5,
-        onDurationChange: (_duration) => {},
+        onDurationChange: () => {},
         resolution: '1080p',
-        onResolutionChange: (_resolution) => {},
+        onResolutionChange: () => {},
         fps: 24,
-        onFpsChange: (_fps) => {},
+        onFpsChange: () => {},
         cameraFixed: true,
-        onCameraFixedChange: (_value) => {},
+        onCameraFixedChange: () => {},
         seed: '',
-        onSeedChange: (_seed) => {},
+        onSeedChange: () => {},
         firstFrame: null,
-        onFirstFrameChange: (_file) => {},
+        onFirstFrameChange: () => {},
         lastFrame: null,
-        onLastFrameChange: (_file) => {},
+        onLastFrameChange: () => {},
       },
       recraft: {
         enabled: false,
         model: 'recraft-v3',
-        onModelChange: (_model) => {},
+        onModelChange: () => {},
       },
       runway: {
         enabled: false,
         model: 'runway-gen4',
-        onModelChange: (_model) => {},
+        onModelChange: () => {},
       },
       gemini: {
         enabled: isGeminiModel,
@@ -437,19 +437,19 @@ export function useCreateGenerationController(): CreateGenerationController {
       kling: {
         enabled: false,
         model: 'kling-v2.1-master',
-        onModelChange: (_model) => {},
+        onModelChange: () => {},
         aspectRatio: '16:9',
-        onAspectRatioChange: (_ratio) => {},
+        onAspectRatioChange: () => {},
         duration: 5,
-        onDurationChange: (_duration) => {},
+        onDurationChange: () => {},
         mode: 'standard',
-        onModeChange: (_mode) => {},
+        onModeChange: () => {},
         cfgScale: 0.8,
-        onCfgScaleChange: (_value) => {},
+        onCfgScaleChange: () => {},
         negativePrompt: '',
-        onNegativePromptChange: (_prompt) => {},
+        onNegativePromptChange: () => {},
         cameraType: 'none',
-        onCameraTypeChange: (_type) => {},
+        onCameraTypeChange: () => {},
         cameraConfig: {
           horizontal: 0,
           vertical: 0,
@@ -458,18 +458,18 @@ export function useCreateGenerationController(): CreateGenerationController {
           roll: 0,
           zoom: 0,
         },
-        onCameraConfigChange: (_updates) => {},
+        onCameraConfigChange: () => {},
         statusMessage: null,
       },
       lumaPhoton: {
         enabled: false,
         model: 'luma-photon-1',
-        onModelChange: (_model) => {},
+        onModelChange: () => {},
       },
       lumaRay: {
         enabled: false,
         variant: 'luma-ray-2',
-        onVariantChange: (_variant) => {},
+        onVariantChange: () => {},
       },
     };
   }, [
@@ -910,9 +910,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     }
   }, [
     selectedModel,
-    promptHandlers.prompt,
-    promptHandlers.getFinalPrompt,
-    promptHandlers.handlePromptSubmit,
+    promptHandlers,
     referenceHandlers.referenceFiles,
     temperature,
     outputLength,

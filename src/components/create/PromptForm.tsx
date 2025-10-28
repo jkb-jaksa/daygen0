@@ -91,7 +91,7 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
   }, []);
   
   // Get final prompt with styles
-  const finalPrompt = useMemo(() => promptHandlers.getFinalPrompt(), [promptHandlers.getFinalPrompt]);
+  const finalPrompt = useMemo(() => promptHandlers.getFinalPrompt(), [promptHandlers]);
   
   // Check if we can generate
   const canGenerate = useMemo(() => 

@@ -95,7 +95,7 @@ export function useLumaImageGeneration() {
     return providerOptions;
   };
 
-  const collectResultUrl = (
+  const collectResultUrl = useCallback((
     snapshot: JobStatusSnapshot,
     response: ProviderJobResponse,
   ): string | undefined => {
@@ -149,9 +149,9 @@ export function useLumaImageGeneration() {
     }
 
     return urls.find((value): value is string => Boolean(value));
-  };
+  }, []);
 
-  const extractGenerationId = (
+  const extractGenerationId = useCallback((
     snapshot: JobStatusSnapshot,
     response?: ProviderJobResponse,
   ): string | undefined => {
@@ -176,9 +176,9 @@ export function useLumaImageGeneration() {
     }
 
     return pickString(snapshot.job.id);
-  };
+  }, []);
 
-  const extractContentType = (
+  const extractContentType = useCallback((
     snapshot: JobStatusSnapshot,
     response?: ProviderJobResponse,
   ): string | undefined => {
@@ -205,9 +205,9 @@ export function useLumaImageGeneration() {
     }
 
     return undefined;
-  };
+  }, []);
 
-  const parseLumaJobResult = (
+  const parseLumaJobResult = useCallback((
     snapshot: JobStatusSnapshot,
     response: ProviderJobResponse,
     options: LumaImageGenerationOptions,
@@ -231,9 +231,9 @@ export function useLumaImageGeneration() {
       contentType: extractContentType(snapshot, response) ?? null,
       jobId: response.jobId ?? snapshot.job.id ?? undefined,
     };
-  };
+  }, [extractGenerationId, extractContentType, collectResultUrl]);
 
-  const parseImmediateLumaResult = (
+  const parseImmediateLumaResult = useCallback((
     response: ProviderJobResponse,
     options: LumaImageGenerationOptions,
     ownerId: string | undefined,
@@ -276,7 +276,7 @@ export function useLumaImageGeneration() {
       contentType: contentType ?? null,
       jobId: pickString(payload.jobId) ?? undefined,
     };
-  };
+  }, []);
 
   const generateImage = useCallback(
     async (options: LumaImageGenerationOptions) => {

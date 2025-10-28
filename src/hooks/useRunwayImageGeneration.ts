@@ -69,7 +69,7 @@ export const useRunwayImageGeneration = () => {
 
   const clampProgress = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));
 
-  const formatProgress = (snapshot: JobStatusSnapshot, previous?: string): string | undefined => {
+  const formatProgress = useCallback((snapshot: JobStatusSnapshot, previous?: string): string | undefined => {
     if (typeof snapshot.progress === 'number' && Number.isFinite(snapshot.progress)) {
       return `${clampProgress(snapshot.progress)}%`;
     }
@@ -79,7 +79,7 @@ export const useRunwayImageGeneration = () => {
     }
 
     return previous;
-  };
+  }, []);
 
   const buildProviderOptions = (options: ImageGenerationOptions): Record<string, unknown> => {
     const providerOptions: Record<string, unknown> = {};
@@ -96,7 +96,7 @@ export const useRunwayImageGeneration = () => {
       ? (value as Record<string, unknown>)
       : null;
 
-  const collectCandidateUrls = (
+  const collectCandidateUrls = useCallback((
     snapshot: JobStatusSnapshot,
     response: ProviderJobResponse,
   ): string[] => {
@@ -161,9 +161,9 @@ export const useRunwayImageGeneration = () => {
     push(pickString(payload.image));
 
     return Array.from(urls);
-  };
+  }, []);
 
-  const parseRunwayJobResult = (
+  const parseRunwayJobResult = useCallback((
     snapshot: JobStatusSnapshot,
     response: ProviderJobResponse,
     options: ImageGenerationOptions,
@@ -190,9 +190,9 @@ export const useRunwayImageGeneration = () => {
       avatarImageId: options.avatarImageId,
       styleId: options.styleId,
     };
-  };
+  }, [collectCandidateUrls]);
 
-  const parseImmediateRunwayResult = (
+  const parseImmediateRunwayResult = useCallback((
     response: ProviderJobResponse,
     options: ImageGenerationOptions,
     ownerId: string | undefined,
@@ -226,7 +226,7 @@ export const useRunwayImageGeneration = () => {
       styleId: options.styleId,
       jobId,
     };
-  };
+  }, []);
 
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
     // Check credits before starting generation
