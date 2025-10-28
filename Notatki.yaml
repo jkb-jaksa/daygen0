@@ -1,0 +1,15 @@
+Notatki.Nd
+przechowywanie obrazków profilowych. linki do tych obrazków muszą być przechowywana na supabase
+a obrazki na cloudflare r2
+jak się zrobi - to w cloudflare wR2 object storage pod generated-images/ folderem powinno być folder profile-pictures/ i w nim powininny być pliki profile-image.png
+mam już ustawione cloudflare r2 i supabase. a klucze są w pliku .env
+
+dla tego zadania potrzebujemy:
+-
+
+
+create new feautre for our project, storing user profile picture. 
+we already have supabase database and cloudflare r2 bucket.
+in supabase user table i want you to store link to profile images and in cloudflare r2 bucket i want you to store folder with profile images in R2, this folder needs to be in daygen-assets on the same level as generated-images.
+make logic work for every user that wants to update his profile picture in his account page.
+after your work test everything and make it work until there are no errors.

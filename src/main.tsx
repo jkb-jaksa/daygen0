@@ -6,6 +6,7 @@ import { AuthProvider } from './auth/AuthProvider'
 import { FooterProvider } from './contexts/FooterContext.tsx'
 import { ToastProvider } from './contexts/ToastProvider.tsx'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
+import { handleExtensionErrors } from './utils/debug'
 
 
 const App = lazy(() => import('./App'))
@@ -22,6 +23,9 @@ export function RootFallback() {
     </div>
   )
 }
+
+// Initialize extension error handling
+handleExtensionErrors();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
