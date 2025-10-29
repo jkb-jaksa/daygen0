@@ -16,6 +16,7 @@ const PromptsDropdown = lazy(() =>
   import('../PromptsDropdown').then(module => ({ default: module.PromptsDropdown }))
 );
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
+const StyleSelectionModal = lazy(() => import('./StyleSelectionModal'));
 
 interface PromptFormProps {
   onGenerate?: () => void;
@@ -302,6 +303,17 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
             open={isSettingsOpen}
             onClose={handleSettingsClose}
             {...settingsSections}
+          />
+        </Suspense>
+      )}
+
+      {/* Style selection modal */}
+      {styleHandlers.isStyleModalOpen && (
+        <Suspense fallback={null}>
+          <StyleSelectionModal
+            open={styleHandlers.isStyleModalOpen}
+            onClose={styleHandlers.handleStyleModalClose}
+            styleHandlers={styleHandlers}
           />
         </Suspense>
       )}

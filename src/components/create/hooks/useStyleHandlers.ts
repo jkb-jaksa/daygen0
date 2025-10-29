@@ -292,3 +292,5 @@ export function useStyleHandlers() {
     STYLE_GENDER_OPTIONS,
   };
 }
+
+export type StyleHandlers = ReturnType<typeof useStyleHandlers>;
