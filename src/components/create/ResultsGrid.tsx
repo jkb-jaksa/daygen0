@@ -4,11 +4,28 @@ import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Square, AlertTrian
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons } from '../../styles/designSystem';
-import { debugLog, debugError } from '../../utils/debug';
+import { debugError } from '../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 
 // Lazy load components
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
+
+// Helper to get consistent item identifier (matches getGalleryItemKey logic)
+const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
+  if (item.jobId && item.jobId.trim().length > 0) {
+    return item.jobId.trim();
+  }
+
+  if (item.r2FileId && item.r2FileId.trim().length > 0) {
+    return item.r2FileId.trim();
+  }
+
+  if (item.url && item.url.trim().length > 0) {
+    return item.url.trim();
+  }
+
+  return null;
+};
 
 interface ResultsGridProps {
   className?: string;
@@ -16,7 +33,15 @@ interface ResultsGridProps {
 
 const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   const { state, setBulkMode, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
-  const { handleImageClick, handleImageActionMenu, handleBulkActionsMenu } = useGalleryActions();
+  const {
+    handleImageClick,
+    handleImageActionMenu,
+    handleBulkActionsMenu,
+    handleToggleLike,
+    handleTogglePublic,
+    handleSelectAll,
+    handleClearSelection,
+  } = useGalleryActions();
   const { selectedItems, isBulkMode } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
@@ -59,7 +84,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
     if (isBulkMode) {
-      toggleItemSelection(item.jobId || '');
+      const itemId = getItemIdentifier(item);
+      if (itemId) {
+        toggleItemSelection(itemId);
+      }
     } else {
       handleImageClick(item, index);
     }
@@ -71,45 +99,32 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
     if (isBulkMode) {
       handleBulkActionsMenu(event);
     } else {
-      handleImageActionMenu(event, item.jobId || '');
+      handleImageActionMenu(event, item);
     }
   }, [isBulkMode, handleBulkActionsMenu, handleImageActionMenu]);
   
   // Handle toggle like
-  const handleToggleLike = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+  const onToggleLike = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     event.stopPropagation();
-    // This would need to be implemented with the actual like functionality
-    debugLog('Toggle like for item:', item.jobId);
-  }, []);
+    void handleToggleLike(item);
+  }, [handleToggleLike]);
   
   // Handle toggle public
-  const handleTogglePublic = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+  const onTogglePublic = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     event.stopPropagation();
-    // This would need to be implemented with the actual public functionality
-    debugLog('Toggle public for item:', item.jobId);
-  }, []);
+    void handleTogglePublic(item);
+  }, [handleTogglePublic]);
   
   // Handle bulk mode toggle
   const handleBulkModeToggle = useCallback(() => {
     setBulkMode(!isBulkMode);
   }, [isBulkMode, setBulkMode]);
   
-  // Handle select all
-  const handleSelectAll = useCallback(() => {
-    const allIds = filteredItems.map(item => item.jobId || '').filter(Boolean);
-    // This would need to be implemented with the actual select all functionality
-    debugLog('Select all items:', allIds);
-  }, [filteredItems]);
-  
-  // Handle clear selection
-  const handleClearSelection = useCallback(() => {
-    // This would need to be implemented with the actual clear selection functionality
-    debugLog('Clear selection');
-  }, []);
   
   // Check if item is selected
   const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    return selectedItems.has(item.jobId || '');
+    const itemId = getItemIdentifier(item);
+    return itemId ? selectedItems.has(itemId) : false;
   }, [selectedItems]);
   
   // Check if item is video
@@ -237,7 +252,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
               <div className="flex items-center gap-2">
                 {/* Like button */}
                 <button
-                  onClick={(e) => handleToggleLike(e, item)}
+                  onClick={(e) => onToggleLike(e, item)}
                   className={`p-2 rounded-full transition-colors duration-200 ${
                     item.isLiked ? 'bg-theme-red text-theme-white' : 'bg-theme-white/20 text-theme-white hover:bg-theme-white/30'
                   }`}
@@ -247,7 +262,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
                 
                 {/* Public button */}
                 <button
-                  onClick={(e) => handleTogglePublic(e, item)}
+                  onClick={(e) => onTogglePublic(e, item)}
                   className={`p-2 rounded-full transition-colors duration-200 ${
                     item.isPublic ? 'bg-theme-accent text-theme-white' : 'bg-theme-white/20 text-theme-white hover:bg-theme-white/30'
                   }`}

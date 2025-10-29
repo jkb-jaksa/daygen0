@@ -463,6 +463,16 @@ function AppContent() {
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route 
+              path="/job/:jobId" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                    <CreateRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

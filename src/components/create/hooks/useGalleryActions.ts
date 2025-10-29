@@ -4,6 +4,23 @@ import { useGallery } from '../contexts/GalleryContext';
 import { debugLog, debugError } from '../../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from '../types';
 
+// Helper to get consistent item identifier (matches getGalleryItemKey logic)
+const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
+  if (item.jobId && item.jobId.trim().length > 0) {
+    return item.jobId.trim();
+  }
+
+  if (item.r2FileId && item.r2FileId.trim().length > 0) {
+    return item.r2FileId.trim();
+  }
+
+  if (item.url && item.url.trim().length > 0) {
+    return item.url.trim();
+  }
+
+  return null;
+};
+
 export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation<{ jobOrigin?: string } | null>();
@@ -17,6 +34,8 @@ export function useGalleryActions() {
     setFullSizeOpen,
     setFullSizeImage,
     filteredItems,
+    setSelectedItems,
+    clearSelection,
   } = useGallery();
   
   // Track the most recent non-job route for reliable unwinding
@@ -135,10 +154,13 @@ export function useGalleryActions() {
   );
   
   // Handle image action menu
-  const handleImageActionMenu = useCallback((event: React.MouseEvent, imageId: string) => {
+  const handleImageActionMenu = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     event.preventDefault();
     event.stopPropagation();
-    setImageActionMenu({ id: imageId, anchor: event.currentTarget as HTMLElement });
+    const itemId = getItemIdentifier(item);
+    if (itemId) {
+      setImageActionMenu({ id: itemId, anchor: event.currentTarget as HTMLElement });
+    }
   }, [setImageActionMenu]);
   
   // Handle bulk actions menu
@@ -192,20 +214,30 @@ export function useGalleryActions() {
   }, [removeVideo]);
   
   // Handle toggle public
-  const handleTogglePublic = useCallback(async (imageId: string, isPublic: boolean) => {
+  const handleTogglePublic = useCallback(async (item: GalleryImageLike | GalleryVideoLike) => {
     try {
-      await updateImage(imageId, { isPublic: !isPublic });
-      debugLog('Toggled public status for image:', imageId);
+      const itemId = getItemIdentifier(item);
+      if (!itemId) {
+        debugError('Cannot toggle public: item has no identifier');
+        return;
+      }
+      await updateImage(itemId, { isPublic: !item.isPublic });
+      debugLog('Toggled public status for item:', itemId);
     } catch (error) {
       debugError('Error toggling public status:', error);
     }
   }, [updateImage]);
 
   // Handle toggle like
-  const handleToggleLike = useCallback(async (imageId: string, isLiked: boolean) => {
+  const handleToggleLike = useCallback(async (item: GalleryImageLike | GalleryVideoLike) => {
     try {
-      await updateImage(imageId, { isLiked: !isLiked });
-      debugLog('Toggled like status for image:', imageId);
+      const itemId = getItemIdentifier(item);
+      if (!itemId) {
+        debugError('Cannot toggle like: item has no identifier');
+        return;
+      }
+      await updateImage(itemId, { isLiked: !item.isLiked });
+      debugLog('Toggled like status for item:', itemId);
     } catch (error) {
       debugError('Error toggling like status:', error);
     }
@@ -228,14 +260,32 @@ export function useGalleryActions() {
   }, [deleteGalleryImage]);
   
   // Handle bulk toggle public
-  const handleBulkTogglePublic = useCallback(async (imageIds: string[], isPublic: boolean) => {
+  const handleBulkTogglePublic = useCallback(async (imageIds: string[], targetPublic?: boolean) => {
     try {
-      await Promise.all(imageIds.map(id => updateImage(id, { isPublic: !isPublic })));
+      // If targetPublic is provided, set to that value; otherwise toggle each item individually
+      // Note: For proper toggle, we'd need access to current state, but for simplicity,
+      // we'll toggle them all to the opposite of the first item's state or use targetPublic
+      if (targetPublic !== undefined) {
+        await Promise.all(imageIds.map(id => updateImage(id, { isPublic: targetPublic })));
+      } else {
+        // Toggle each item individually (requires checking current state per item)
+        await Promise.all(imageIds.map(id => {
+          // Find the item to get its current state
+          const item = filteredItems.find(i => {
+            const itemId = getItemIdentifier(i);
+            return itemId === id;
+          });
+          if (item) {
+            return updateImage(id, { isPublic: !item.isPublic });
+          }
+          return Promise.resolve();
+        }));
+      }
       debugLog('Bulk toggled public status for images:', imageIds);
     } catch (error) {
       debugError('Error bulk toggling public status:', error);
     }
-  }, [updateImage]);
+  }, [updateImage, filteredItems]);
   
   // Handle bulk move to folder
   const handleBulkMoveToFolder = useCallback(async (imageIds: string[], folderId: string) => {
@@ -275,6 +325,23 @@ export function useGalleryActions() {
       debugError('Error copying image URL:', error);
     }
   }, []);
+
+  // Handle select all
+  const handleSelectAll = useCallback(() => {
+    const allIds = new Set(
+      filteredItems
+        .map(item => getItemIdentifier(item))
+        .filter((id): id is string => Boolean(id))
+    );
+    setSelectedItems(allIds);
+    debugLog('Selected all items:', allIds.size);
+  }, [filteredItems, setSelectedItems]);
+
+  // Handle clear selection
+  const handleClearSelection = useCallback(() => {
+    clearSelection();
+    debugLog('Cleared selection');
+  }, [clearSelection]);
   
   return {
     // Navigation
@@ -296,5 +363,7 @@ export function useGalleryActions() {
     handleBulkMoveToFolder,
     handleShareImage,
     handleCopyImageUrl,
+    handleSelectAll,
+    handleClearSelection,
   };
 }

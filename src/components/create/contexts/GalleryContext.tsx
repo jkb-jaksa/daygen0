@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useGalleryImages } from '../../../hooks/useGalleryImages';
+import { useGeneration } from './GenerationContext';
 import type { GalleryImageLike, GalleryVideoLike, GalleryFilters, Folder } from '../types';
 
 type GalleryState = {
@@ -320,7 +321,12 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     removeImages: persistRemoveImages,
     deleteImage: deleteImageFromService,
   } = useGalleryImages();
+  const generation = useGeneration();
   const stateRef = useRef(state);
+  const hasInitialLoadCompletedRef = useRef(false);
+  const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
+  const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
@@ -439,6 +445,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setVideos(mergedVideos);
   }, [galleryItems, setImages, setVideos]);
 
+  // Track when initial gallery load completes
+  useEffect(() => {
+    if (!isGalleryLoading && !hasInitialLoadCompletedRef.current && galleryItems.length >= 0) {
+      hasInitialLoadCompletedRef.current = true;
+    }
+  }, [isGalleryLoading, galleryItems.length]);
+
   const setFolders = useCallback((folders: Folder[]) => {
     dispatch({ type: 'SET_FOLDERS', payload: folders });
   }, []);
@@ -520,6 +533,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const current = stateRef.current;
 
     if (!path.startsWith(JOB_ROUTE_PREFIX)) {
+      // Clear retry ref when navigating away from job route
+      deepLinkRetryRef.current = null;
       if (current.isFullSizeOpen || current.fullSizeImage !== null) {
         setFullSizeOpen(false);
         setFullSizeImage(null, 0);
@@ -532,10 +547,36 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const targetIndex = filteredItems.findIndex(item => item.jobId === jobId);
-    if (targetIndex === -1) {
+    // Wait for initial gallery load to complete before attempting to find item
+    const hasInitialLoad = hasInitialLoadCompletedRef.current;
+    const isCurrentlyLoading = isGalleryLoading;
+    
+    // If still loading initial data and haven't completed load yet, wait
+    if (isCurrentlyLoading && !hasInitialLoad) {
       return;
     }
+
+    const targetIndex = filteredItems.findIndex(item => item.jobId === jobId);
+    
+    // If item not found, try refresh once (might be a newly completed job)
+    if (targetIndex === -1) {
+      const retryInfo = deepLinkRetryRef.current;
+      const shouldRetry = !retryInfo || retryInfo.jobId !== jobId || retryInfo.retryCount < 1;
+      
+      if (shouldRetry && hasInitialLoad) {
+        // Only retry if we've completed initial load (prevents infinite loops)
+        deepLinkRetryRef.current = {
+          jobId,
+          retryCount: retryInfo?.jobId === jobId ? retryInfo.retryCount + 1 : 1,
+        };
+        // Refresh gallery once to fetch newly completed job
+        void fetchGalleryImages();
+      }
+      return;
+    }
+
+    // Clear retry ref when item is found
+    deepLinkRetryRef.current = null;
 
     const targetItem = filteredItems[targetIndex];
     const alreadySelected =
@@ -547,7 +588,68 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       setFullSizeImage(targetItem, targetIndex);
       setFullSizeOpen(true);
     }
-  }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen]);
+  }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen, isGalleryLoading, fetchGalleryImages]);
+
+  // Initialize previousActiveJobsRef on mount
+  useEffect(() => {
+    previousActiveJobsRef.current = generation.state.activeJobs;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Watch for job completion transitions and auto-refresh gallery
+  useEffect(() => {
+    const currentJobs = generation.state.activeJobs;
+    const previousJobs = previousActiveJobsRef.current;
+
+    // Detect jobs that transitioned to completed or failed
+    const completedOrFailedJobs = currentJobs.filter(job => {
+      if (job.status === 'completed' || job.status === 'failed') {
+        const previousJob = previousJobs.find(prev => prev.id === job.id);
+        // Only trigger if this job was previously in a non-terminal state
+        return previousJob && previousJob.status !== 'completed' && previousJob.status !== 'failed';
+      }
+      return false;
+    });
+
+    // Update the previous jobs ref
+    previousActiveJobsRef.current = currentJobs;
+
+    // If no jobs completed/failed, or initial load hasn't completed, skip
+    if (completedOrFailedJobs.length === 0 || !hasInitialLoadCompletedRef.current) {
+      return;
+    }
+
+    // Don't refresh if gallery is already loading
+    if (isGalleryLoading) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+
+    // Debounce refresh with a small delay (400ms) to allow backend to process
+    // Capture current loading state to check in the timeout callback
+    const shouldRefresh = !isGalleryLoading;
+    refreshTimeoutRef.current = setTimeout(() => {
+      // Use a ref or callback to check current loading state, but since we clear
+      // the timeout when loading state changes, this should be safe
+      if (shouldRefresh) {
+        void fetchGalleryImages();
+      }
+      refreshTimeoutRef.current = null;
+    }, 400);
+
+    // Cleanup timeout on unmount or when dependencies change
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+    };
+  }, [generation.state.activeJobs, isGalleryLoading, fetchGalleryImages]);
 
   const selectedCount = useMemo(() => state.selectedItems.size, [state.selectedItems.size]);
   const hasSelection = useMemo(() => state.selectedItems.size > 0, [state.selectedItems.size]);

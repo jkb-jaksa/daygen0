@@ -68,7 +68,7 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
   // Handle bulk toggle public
   const handleBulkTogglePublicClick = useCallback(async () => {
     if (selectedCount > 0) {
-      await handleBulkTogglePublic(selectedItemsArray, false); // Assuming we want to make them public
+      await handleBulkTogglePublic(selectedItemsArray, true); // Make them public
       onClose();
     }
   }, [selectedCount, selectedItemsArray, handleBulkTogglePublic, onClose]);

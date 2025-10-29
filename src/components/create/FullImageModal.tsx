@@ -117,23 +117,26 @@ const FullImageModal = memo(() => {
   
   // Handle delete
   const handleDelete = useCallback(async () => {
-    if (fullSizeImage?.jobId) {
-      await handleDeleteImage(fullSizeImage.jobId);
-      clearJobUrl();
+    if (fullSizeImage) {
+      const itemId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
+      if (itemId) {
+        await handleDeleteImage(itemId);
+        clearJobUrl();
+      }
     }
   }, [fullSizeImage, handleDeleteImage, clearJobUrl]);
   
   // Handle toggle public
   const handleTogglePublicClick = useCallback(async () => {
-    if (fullSizeImage?.jobId) {
-      await handleTogglePublic(fullSizeImage.jobId, fullSizeImage.isPublic || false);
+    if (fullSizeImage) {
+      await handleTogglePublic(fullSizeImage);
     }
   }, [fullSizeImage, handleTogglePublic]);
   
   // Handle toggle like
   const handleToggleLikeClick = useCallback(async () => {
-    if (fullSizeImage?.jobId) {
-      await handleToggleLike(fullSizeImage.jobId, fullSizeImage.isLiked || false);
+    if (fullSizeImage) {
+      await handleToggleLike(fullSizeImage);
     }
   }, [fullSizeImage, handleToggleLike]);
   
