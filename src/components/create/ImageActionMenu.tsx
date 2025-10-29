@@ -13,7 +13,7 @@ interface ImageActionMenuProps {
 
 const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const { state } = useGallery();
-  const { handleDownloadImage, handleDeleteImage, handleTogglePublic, handleToggleLike, handleShareImage } = useGalleryActions();
+  const { handleDownloadImage, handleDeleteImage, handleTogglePublic: togglePublicAction, handleToggleLike: toggleLikeAction, handleShareImage } = useGalleryActions();
   
   const menuRef = useRef<HTMLDivElement>(null);
   const { imageActionMenu } = state;
@@ -52,9 +52,19 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
     };
   }, [open, onClose]);
   
-  // Get current image
-  const currentImage = state.images.find(img => img.jobId === imageActionMenu?.id) || 
-                      state.videos.find(vid => vid.jobId === imageActionMenu?.id);
+  // Get current image - find by jobId, r2FileId, or url
+  const currentImage = imageActionMenu?.id ? (
+    state.images.find(img => 
+      img.jobId === imageActionMenu.id || 
+      img.r2FileId === imageActionMenu.id || 
+      img.url === imageActionMenu.id
+    ) ||
+    state.videos.find(vid => 
+      vid.jobId === imageActionMenu.id || 
+      vid.r2FileId === imageActionMenu.id || 
+      vid.url === imageActionMenu.id
+    )
+  ) : null;
   
   // Handle download
   const handleDownload = useCallback(async () => {
@@ -74,27 +84,30 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   
   // Handle delete
   const handleDelete = useCallback(async () => {
-    if (currentImage?.jobId) {
-      await handleDeleteImage(currentImage.jobId);
+    if (currentImage?.jobId || currentImage?.r2FileId) {
+      const imageId = currentImage.jobId || currentImage.r2FileId || '';
+      await handleDeleteImage(imageId);
       onClose();
     }
   }, [currentImage, handleDeleteImage, onClose]);
   
   // Handle toggle public
   const handleTogglePublic = useCallback(async () => {
-    if (currentImage?.jobId) {
-      await handleTogglePublic(currentImage.jobId, currentImage.isPublic || false);
+    if (currentImage?.jobId || currentImage?.r2FileId) {
+      const imageId = currentImage.jobId || currentImage.r2FileId || '';
+      await togglePublicAction(imageId, currentImage.isPublic || false);
       onClose();
     }
-  }, [currentImage, handleTogglePublic, onClose]);
+  }, [currentImage, togglePublicAction, onClose]);
   
   // Handle toggle like
   const handleToggleLike = useCallback(async () => {
-    if (currentImage?.jobId) {
-      await handleToggleLike(currentImage.jobId, currentImage.isLiked || false);
+    if (currentImage?.jobId || currentImage?.r2FileId) {
+      const imageId = currentImage.jobId || currentImage.r2FileId || '';
+      await toggleLikeAction(imageId, currentImage.isLiked || false);
       onClose();
     }
-  }, [currentImage, handleToggleLike, onClose]);
+  }, [currentImage, toggleLikeAction, onClose]);
   
   // Handle add to folder
   const handleAddToFolder = useCallback(() => {

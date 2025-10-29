@@ -321,6 +321,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     deleteImage: deleteImageFromService,
   } = useGalleryImages();
   const stateRef = useRef(state);
+  const hasInitialLoadCompletedRef = useRef(false);
+  const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
@@ -439,6 +441,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setVideos(mergedVideos);
   }, [galleryItems, setImages, setVideos]);
 
+  // Track when initial gallery load completes
+  useEffect(() => {
+    if (!isGalleryLoading && !hasInitialLoadCompletedRef.current && galleryItems.length >= 0) {
+      hasInitialLoadCompletedRef.current = true;
+    }
+  }, [isGalleryLoading, galleryItems.length]);
+
   const setFolders = useCallback((folders: Folder[]) => {
     dispatch({ type: 'SET_FOLDERS', payload: folders });
   }, []);
@@ -520,6 +529,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const current = stateRef.current;
 
     if (!path.startsWith(JOB_ROUTE_PREFIX)) {
+      // Clear retry ref when navigating away from job route
+      deepLinkRetryRef.current = null;
       if (current.isFullSizeOpen || current.fullSizeImage !== null) {
         setFullSizeOpen(false);
         setFullSizeImage(null, 0);
@@ -532,10 +543,36 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const targetIndex = filteredItems.findIndex(item => item.jobId === jobId);
-    if (targetIndex === -1) {
+    // Wait for initial gallery load to complete before attempting to find item
+    const hasInitialLoad = hasInitialLoadCompletedRef.current;
+    const isCurrentlyLoading = isGalleryLoading;
+    
+    // If still loading initial data and haven't completed load yet, wait
+    if (isCurrentlyLoading && !hasInitialLoad) {
       return;
     }
+
+    const targetIndex = filteredItems.findIndex(item => item.jobId === jobId);
+    
+    // If item not found, try refresh once (might be a newly completed job)
+    if (targetIndex === -1) {
+      const retryInfo = deepLinkRetryRef.current;
+      const shouldRetry = !retryInfo || retryInfo.jobId !== jobId || retryInfo.retryCount < 1;
+      
+      if (shouldRetry && hasInitialLoad) {
+        // Only retry if we've completed initial load (prevents infinite loops)
+        deepLinkRetryRef.current = {
+          jobId,
+          retryCount: retryInfo?.jobId === jobId ? retryInfo.retryCount + 1 : 1,
+        };
+        // Refresh gallery once to fetch newly completed job
+        void fetchGalleryImages();
+      }
+      return;
+    }
+
+    // Clear retry ref when item is found
+    deepLinkRetryRef.current = null;
 
     const targetItem = filteredItems[targetIndex];
     const alreadySelected =
@@ -547,7 +584,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       setFullSizeImage(targetItem, targetIndex);
       setFullSizeOpen(true);
     }
-  }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen]);
+  }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen, isGalleryLoading, fetchGalleryImages]);
 
   const selectedCount = useMemo(() => state.selectedItems.size, [state.selectedItems.size]);
   const hasSelection = useMemo(() => state.selectedItems.size > 0, [state.selectedItems.size]);

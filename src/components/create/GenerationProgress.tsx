@@ -9,7 +9,7 @@ const GenerationProgress = memo(() => {
   const { navigateToJobUrl } = useGalleryActions();
   
   // Get active jobs count
-  const activeJobsCount = useMemo(() => activeJobs.length, [activeJobs.length]);
+  const activeJobsCount = useMemo(() => activeJobs.length, [activeJobs]);
   
   // Handle job click
   const handleJobClick = useCallback((jobId: string) => {

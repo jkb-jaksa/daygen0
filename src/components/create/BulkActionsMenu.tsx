@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, Globe, FolderPlus, Download } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
@@ -52,26 +52,39 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
     };
   }, [open, onClose]);
   
-  // Get selected items
-  const selectedItemsArray = Array.from(selectedItems);
-  const selectedCount = selectedItemsArray.length;
+  // Get selected items from gallery
+  const selectedItemsArray = useMemo(() => {
+    const allItems = [...state.images, ...state.videos];
+    return allItems.filter(item => {
+      const itemId = item.jobId || item.r2FileId || item.url;
+      return itemId && selectedItems.has(itemId);
+    });
+  }, [state.images, state.videos, selectedItems]);
+  
+  const selectedIds = useMemo(() => 
+    selectedItemsArray.map(item => item.jobId || item.r2FileId || item.url).filter(Boolean) as string[],
+    [selectedItemsArray]
+  );
+  const selectedCount = selectedIds.length;
   
   // Handle bulk delete
   const handleBulkDeleteClick = useCallback(async () => {
     if (selectedCount > 0) {
-      await handleBulkDelete(selectedItemsArray);
+      await handleBulkDelete(selectedIds);
       clearSelection();
       onClose();
     }
-  }, [selectedCount, selectedItemsArray, handleBulkDelete, clearSelection, onClose]);
+  }, [selectedCount, selectedIds, handleBulkDelete, clearSelection, onClose]);
   
   // Handle bulk toggle public
   const handleBulkTogglePublicClick = useCallback(async () => {
     if (selectedCount > 0) {
-      await handleBulkTogglePublic(selectedItemsArray, false); // Assuming we want to make them public
+      // Get current public state - if all are public, make private; otherwise make public
+      const allPublic = selectedItemsArray.every(item => item.isPublic);
+      await handleBulkTogglePublic(selectedIds, !allPublic);
       onClose();
     }
-  }, [selectedCount, selectedItemsArray, handleBulkTogglePublic, onClose]);
+  }, [selectedCount, selectedIds, selectedItemsArray, handleBulkTogglePublic, onClose]);
   
   // Handle bulk move to folder
   const handleBulkMoveToFolderClick = useCallback(async () => {

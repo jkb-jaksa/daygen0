@@ -15,8 +15,8 @@ interface ResultsGridProps {
 }
 
 const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
-  const { state, setBulkMode, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
-  const { handleImageClick, handleImageActionMenu, handleBulkActionsMenu } = useGalleryActions();
+  const { state, setBulkMode, toggleItemSelection, clearSelection, setSelectedItems, isLoading, error, refresh, filteredItems } = useGallery();
+  const { handleImageClick, handleImageActionMenu, handleBulkActionsMenu, handleTogglePublic: togglePublicAction, handleToggleLike: toggleLikeAction } = useGalleryActions();
   const { selectedItems, isBulkMode } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
@@ -59,7 +59,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
     if (isBulkMode) {
-      toggleItemSelection(item.jobId || '');
+      const itemId = item.jobId || item.r2FileId || item.url;
+      if (itemId) {
+        toggleItemSelection(itemId);
+      }
     } else {
       handleImageClick(item, index);
     }
@@ -76,18 +79,20 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   }, [isBulkMode, handleBulkActionsMenu, handleImageActionMenu]);
   
   // Handle toggle like
-  const handleToggleLike = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+  const handleToggleLike = useCallback(async (event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     event.stopPropagation();
-    // This would need to be implemented with the actual like functionality
-    debugLog('Toggle like for item:', item.jobId);
-  }, []);
+    if (item.jobId) {
+      await toggleLikeAction(item.jobId, item.isLiked || false);
+    }
+  }, [toggleLikeAction]);
   
   // Handle toggle public
-  const handleTogglePublic = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+  const handleTogglePublic = useCallback(async (event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     event.stopPropagation();
-    // This would need to be implemented with the actual public functionality
-    debugLog('Toggle public for item:', item.jobId);
-  }, []);
+    if (item.jobId) {
+      await togglePublicAction(item.jobId, item.isPublic || false);
+    }
+  }, [togglePublicAction]);
   
   // Handle bulk mode toggle
   const handleBulkModeToggle = useCallback(() => {
@@ -96,20 +101,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   
   // Handle select all
   const handleSelectAll = useCallback(() => {
-    const allIds = filteredItems.map(item => item.jobId || '').filter(Boolean);
-    // This would need to be implemented with the actual select all functionality
-    debugLog('Select all items:', allIds);
-  }, [filteredItems]);
+    const allIds = new Set(filteredItems.map(item => item.jobId || item.r2FileId || item.url).filter(Boolean));
+    setSelectedItems(allIds);
+  }, [filteredItems, setSelectedItems]);
   
   // Handle clear selection
   const handleClearSelection = useCallback(() => {
-    // This would need to be implemented with the actual clear selection functionality
-    debugLog('Clear selection');
-  }, []);
+    clearSelection();
+  }, [clearSelection]);
   
   // Check if item is selected
   const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    return selectedItems.has(item.jobId || '');
+    const itemId = item.jobId || item.r2FileId || item.url;
+    return itemId ? selectedItems.has(itemId) : false;
   }, [selectedItems]);
   
   // Check if item is video
