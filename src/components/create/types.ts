@@ -35,6 +35,7 @@ export type GalleryImageLike = {
   r2FileId?: string;
   references?: string[];
   isPublic?: boolean;
+  isLiked?: boolean;
   savedFrom?: SavedCreator;
   avatarId?: string;
   productId?: string;
@@ -53,6 +54,7 @@ export type GalleryVideoLike = {
   r2FileId?: string;
   references?: string[];
   isPublic?: boolean;
+  isLiked?: boolean;
   type: "video";
   operationName?: string;
   avatarId?: string; // Avatar ID for filtering

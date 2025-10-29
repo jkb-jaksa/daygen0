@@ -126,7 +126,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         }`}
       >
         <Suspense fallback={<div className="w-4 h-4 bg-theme-mid rounded" />}>
-          <ModelBadge modelId={selectedModel} size="sm" />
+          <ModelBadge model={selectedModel} size="sm" />
         </Suspense>
         <span className="text-sm font-medium">
           {currentModel?.name || 'Select Model'}
@@ -159,7 +159,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   }`}
                 >
                   <Suspense fallback={<div className="w-4 h-4 bg-theme-mid rounded" />}>
-                    <ModelBadge modelId={model.id} size="sm" />
+                    <ModelBadge model={model.id} size="sm" />
                   </Suspense>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium">{model.name}</div>

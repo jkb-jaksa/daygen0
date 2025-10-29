@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGallery } from '../contexts/GalleryContext';
 import { debugLog, debugError } from '../../../utils/debug';
@@ -6,7 +6,8 @@ import type { GalleryImageLike, GalleryVideoLike } from '../types';
 
 export function useGalleryActions() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation<{ jobOrigin?: string } | null>();
+  const fallbackRouteRef = useRef<string>('/create/image');
   const {
     state,
     setImageActionMenu,
@@ -16,9 +17,17 @@ export function useGalleryActions() {
     deleteImage: deleteGalleryImage,
     setFullSizeOpen,
     setFullSizeImage,
+    filteredItems,
   } = useGallery();
-  const { filteredItems } = state;
   
+  // Track the most recent non-job route for reliable unwinding
+  useEffect(() => {
+    if (!location.pathname.startsWith('/job/')) {
+      const currentPath = `${location.pathname}${location.search ?? ''}`;
+      fallbackRouteRef.current = currentPath || '/create/image';
+    }
+  }, [location.pathname, location.search]);
+
   // Navigate to job URL
   const navigateToJobUrl = useCallback(
     (targetJobId: string, options: { replace?: boolean } = {}) => {
@@ -40,14 +49,24 @@ export function useGalleryActions() {
   
   // Clear job URL
   const clearJobUrl = useCallback(() => {
-    const fallbackPath = location.state?.jobOrigin ?? "/create/image";
+    const jobOrigin =
+      location.state && typeof location.state === 'object'
+        ? location.state.jobOrigin
+        : undefined;
+    const fallbackPath = jobOrigin ?? fallbackRouteRef.current ?? '/create/image';
     setFullSizeOpen(false);
     setFullSizeImage(null, 0);
 
     if (location.pathname.startsWith("/job/")) {
-      navigate(fallbackPath, { replace: false });
+      const currentFullPath = `${location.pathname}${location.search ?? ''}`;
+      const destination = fallbackPath || '/create/image';
+      if (currentFullPath !== destination) {
+        navigate(destination, { replace: false });
+      } else {
+        navigate('/create/image', { replace: false });
+      }
     }
-  }, [location.pathname, location.state, navigate, setFullSizeImage, setFullSizeOpen]);
+  }, [location.pathname, location.search, location.state, navigate, setFullSizeImage, setFullSizeOpen]);
 
   const resolveItemIndex = useCallback(
     (image: GalleryImageLike | GalleryVideoLike): number => {

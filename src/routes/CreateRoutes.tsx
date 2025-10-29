@@ -26,7 +26,12 @@ function IndexRoute() {
   if (location.pathname.startsWith("/job/")) {
     return <Element />;
   }
-  return <Navigate to="image" replace />;
+  return (
+    <Navigate
+      to={{ pathname: "/create/image", search: location.search }}
+      replace
+    />
+  );
 }
 
 export default function CreateRoutes() {
@@ -58,7 +63,15 @@ export default function CreateRoutes() {
             </Route>
             <Route path="chat" element={<ChatMode />} />
             <Route path=":category" element={<Element />} />
-            <Route path="*" element={<Navigate to="image" replace />} />
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to={{ pathname: "/create/image", search: location.search }}
+                  replace
+                />
+              }
+            />
           </Routes>
         </Suspense>
       </GalleryProvider>

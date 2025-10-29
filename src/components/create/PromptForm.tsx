@@ -12,7 +12,9 @@ const ReferenceImages = lazy(() => import('./ReferenceImages'));
 const AspectRatioDropdown = lazy(() =>
   import('../AspectRatioDropdown').then(module => ({ default: module.AspectRatioDropdown })),
 );
-const PromptsDropdown = lazy(() => import('../PromptsDropdown'));
+const PromptsDropdown = lazy(() =>
+  import('../PromptsDropdown').then(module => ({ default: module.PromptsDropdown }))
+);
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
 
 interface PromptFormProps {
@@ -99,11 +101,15 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
     [finalPrompt, effectiveIsGenerating]
   );
   
+  // Anchor for prompts dropdown
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Main prompt area */}
       <div className="relative">
         <textarea
+          ref={textAreaRef}
           value={promptHandlers.prompt}
           onChange={(e) => {
             if (error) {
@@ -113,7 +119,7 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
           }}
           onPaste={referenceHandlers.handlePaste}
           placeholder="Describe what you want to create..."
-          className={`${inputs.prompt} resize-none overflow-hidden`}
+          className={`${inputs.textarea} resize-none overflow-hidden`}
           style={{ 
             minHeight: '60px',
             maxHeight: '160px',
@@ -129,18 +135,20 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
         {/* Prompt history dropdown */}
         <Suspense fallback={null}>
           <PromptsDropdown
-            open={promptHandlers.isPromptsDropdownOpen}
+            isOpen={promptHandlers.isPromptsDropdownOpen}
+            onClose={promptHandlers.handlePromptsDropdownClose}
+            anchorEl={textAreaRef.current}
             recentPrompts={promptHandlers.recentPrompts}
             savedPrompts={promptHandlers.savedPromptsList}
-            selectedPrompt={promptHandlers.prompt}
-            onClose={promptHandlers.handlePromptsDropdownClose}
-            onRecentSelect={promptHandlers.handleRecentPromptSelect}
-            onSavedSelect={promptHandlers.handleSavedPromptSelect}
-            onRemoveRecent={promptHandlers.handleRemoveRecentPrompt}
-            onUpdateSaved={promptHandlers.handleUpdateSavedPrompt}
-            onSave={promptHandlers.handleSavePrompt}
-            onUnsave={promptHandlers.handleUnsavePrompt}
-            isCurrentSaved={promptHandlers.isCurrentPromptSaved}
+            onSelectPrompt={(text) => promptHandlers.setPrompt(text)}
+            onRemoveSavedPrompt={(id) => promptHandlers.handleUpdateSavedPrompt(id, '')}
+            onRemoveRecentPrompt={(text) => promptHandlers.handleRemoveRecentPrompt(text)}
+            onUpdateSavedPrompt={(id, newText) => promptHandlers.handleUpdateSavedPrompt(id, newText)}
+            onAddSavedPrompt={(text) => {
+              promptHandlers.handleSavePrompt(text);
+              return null;
+            }}
+            onSaveRecentPrompt={(text) => promptHandlers.handleSavePrompt(text)}
           />
         </Suspense>
       </div>
@@ -156,8 +164,6 @@ const PromptForm = memo<PromptFormProps>(({ onGenerate, isGenerating: isGenerati
           onClearAllReferences={referenceHandlers.clearAllReferences}
           onOpenFileInput={referenceHandlers.openFileInput}
           onOpenRefsInput={referenceHandlers.openRefsInput}
-          fileInputRef={referenceHandlers.fileInputRef}
-          refsInputRef={referenceHandlers.refsInputRef}
         />
       </Suspense>
       

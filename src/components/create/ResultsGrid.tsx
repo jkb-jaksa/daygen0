@@ -15,9 +15,9 @@ interface ResultsGridProps {
 }
 
 const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
-  const { state, setBulkMode, toggleItemSelection, isLoading, error, refresh } = useGallery();
+  const { state, setBulkMode, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
   const { handleImageClick, handleImageActionMenu, handleBulkActionsMenu } = useGalleryActions();
-  const { filteredItems, selectedItems, isBulkMode } = state;
+  const { selectedItems, isBulkMode } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
   const showErrorState = useMemo(() => Boolean(error) && filteredItems.length === 0, [error, filteredItems.length]);
