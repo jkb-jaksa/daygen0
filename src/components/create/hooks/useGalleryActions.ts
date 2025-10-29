@@ -9,7 +9,6 @@ export function useGalleryActions() {
   const location = useLocation<{ jobOrigin?: string } | null>();
   const fallbackRouteRef = useRef<string>('/create/image');
   const {
-    state,
     setImageActionMenu,
     setBulkActionsMenu,
     removeVideo,
