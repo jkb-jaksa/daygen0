@@ -1,3 +1,4 @@
+/* @vitest-environment jsdom */
 import React, { useEffect } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';

@@ -14,7 +14,10 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "lint:css": "stylelint \"src/**/*.{css,scss}\"",
-    "test": "NODE_OPTIONS='--max-old-space-size=8192' vitest run",
+    "test": "NODE_OPTIONS=\"--max-old-space-size=3072\" vitest run --reporter=basic",
+    "test:frontend": "NODE_OPTIONS=\"--max-old-space-size=3072\" vitest run --reporter=basic",
+    "test:backend": "pnpm --dir api test",
+    "test:all": "pnpm run test:frontend && pnpm --dir api test",
     "preview": "vite preview"
   },
   "dependencies": {
