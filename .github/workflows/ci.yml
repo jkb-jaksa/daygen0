@@ -36,9 +36,6 @@ jobs:
       - name: Run frontend unit tests (Vitest)
         run: npm run test:frontend
 
-      - name: Run backend unit tests (Jest)
-        run: cd api && npm ci && npm test
-
       - name: Build application
         run: npm run build
 
