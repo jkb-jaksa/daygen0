@@ -52,14 +52,18 @@ export function usePayments() {
       });
 
       if (!response.ok) {
-        const errorData = await parseJsonSafe(response);
+        const errorData = (await parseJsonSafe(response)) as { message?: string } | null;
         throw new Error(errorData?.message || 'Failed to create checkout session');
       }
 
-      const data = await parseJsonSafe(response);
+      const data = (await parseJsonSafe(response)) as { url?: string } | null;
       
       // Redirect to Stripe Checkout
-      window.location.href = data.url;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Missing checkout URL');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
@@ -279,6 +283,34 @@ export function usePayments() {
     }
   };
 
+  const openCustomerPortal = async (): Promise<void> => {
+    if (!user || !token) {
+      throw new Error('User not authenticated');
+    }
+    try {
+      const res = await fetch(getApiUrl('/api/payments/portal'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to create customer portal session');
+      }
+      const data = (await parseJsonSafe(res)) as { url?: string } | null;
+      if (data?.url) {
+        window.location.href = data.url as string;
+      } else {
+        throw new Error('Missing portal session URL');
+      }
+    } catch (err) {
+      debugError('usePayments: Error opening customer portal:', err);
+      throw err;
+    }
+  };
+
   return {
     createCheckoutSession,
     getPaymentHistory,
@@ -287,6 +319,7 @@ export function usePayments() {
     removeCancellation,
     getSessionStatus,
     getSessionStatusQuick,
+    openCustomerPortal,
     loading,
     error,
   };

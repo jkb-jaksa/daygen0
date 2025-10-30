@@ -5,14 +5,16 @@ import { authMetrics } from './authMetrics';
 
 type ApiEnv = ImportMetaEnv & {
   readonly VITE_API_BASE_URL?: string;
-  readonly VITE_BASE_URL?: string;
 };
 
 type ErrorWithStatus = Error & { status?: number };
 
 const env = import.meta.env as ApiEnv;
 
-const rawBase = env?.VITE_API_BASE_URL ?? env?.VITE_BASE_URL ?? '';
+// IMPORTANT: Only use VITE_API_BASE_URL for API origin.
+// Do NOT fall back to VITE_BASE_URL (site origin) — that can misroute API calls
+// after unrelated changes (e.g., payments) and break auth flows.
+const rawBase = env?.VITE_API_BASE_URL ?? '';
 
 const normalizedBase = typeof rawBase === 'string' && rawBase.length > 0
   ? rawBase.replace(/\/$/, '')

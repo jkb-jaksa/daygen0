@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
-import { usePayments, SubscriptionInfo } from '../../hooks/usePayments';
+import { usePayments, type SubscriptionInfo } from '../../hooks/usePayments';
 import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
+
+type PaymentItem = {
+  id: string;
+  createdAt: string;
+  amount: number;
+  credits?: number;
+  type?: 'ONE_TIME' | 'SUBSCRIPTION' | string;
+};
 
 export function SubscriptionManager() {
   const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [paymentHistory, setPaymentHistory] = useState<unknown[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,18 +23,21 @@ export function SubscriptionManager() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // getPaymentHistory now returns [] on error, getSubscription returns null on no subscription
         const [subData, historyData] = await Promise.all([
           getSubscription().catch((err) => {
-            // Log but don't throw - this is expected for users without subscriptions
             debugError('Subscription fetch returned error (user may not have subscription):', err);
             return null;
           }),
-          getPaymentHistory(), // This now never throws, always returns array
+          getPaymentHistory(),
         ]);
-        
         setSubscription(subData);
-        setPaymentHistory(historyData);
+        setPaymentHistory((historyData as any[]).map((p) => ({
+          id: (p as any).id,
+          createdAt: (p as any).createdAt,
+          amount: Number((p as any).amount || 0),
+          credits: Number((p as any).credits || 0),
+          type: (p as any).type,
+        })));
       } catch (err) {
         debugError('Unexpected error in fetchData:', err);
         setError('Failed to load subscription data');
@@ -41,7 +52,7 @@ export function SubscriptionManager() {
   const handleCancelSubscription = async () => {
     if (!subscription) return;
 
-    if (!confirm('Are you sure you want to cancel your subscription? You will lose access to your monthly credits at the end of the current billing period.')) {
+    if (!confirm('Are you sure you want to cancel your subscription? Metered billing will stop at the end of the current billing period.')) {
       return;
     }
 
@@ -50,7 +61,6 @@ export function SubscriptionManager() {
 
     try {
       await cancelSubscription();
-      // Refresh subscription data
       const subData = await getSubscription();
       setSubscription(subData);
     } catch (err) {
@@ -111,7 +121,7 @@ export function SubscriptionManager() {
       <div className={`${glass.surface} p-6`}>
         <h3 className="text-lg font-raleway font-light text-theme-text">Free Plan</h3>
         <p className="text-theme-white font-raleway font-light mb-4">
-          You don't have an active subscription. Subscribe to get monthly credits and premium features.
+          You don't have an active subscription. Subscribe to enable metered usage and premium features.
         </p>
         <button
           onClick={() => window.location.href = '/upgrade'}
@@ -145,7 +155,7 @@ export function SubscriptionManager() {
           <div className="flex items-center gap-2">
             <CreditCard className="w-4 h-4 text-theme-text" />
             <span className="text-sm text-theme-white">
-              {subscription.credits.toLocaleString()} credits/month
+              Metered billing active
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -187,7 +197,6 @@ export function SubscriptionManager() {
       {/* Payment History */}
       <div className={`${glass.surface} p-6`}>
         <h3 className="text-lg font-raleway text-theme-text mb-4">Payment History</h3>
-        
         {paymentHistory.length === 0 ? (
           <p className="text-theme-white">No payment history found.</p>
         ) : (
@@ -209,9 +218,11 @@ export function SubscriptionManager() {
                   <div className="text-sm text-theme-white">
                     {formatPrice(payment.amount)}
                   </div>
-                  <div className="text-xs text-theme-text">
-                    {payment.credits} credits
-                  </div>
+                  {typeof payment.credits === 'number' && (
+                    <div className="text-xs text-theme-text">
+                      {payment.credits} credits
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

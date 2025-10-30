@@ -33,7 +33,7 @@ const PRICING_TIERS: PricingTier[] = [
     period: "forever",
     credits: 50,
     features: [
-      "50 credits per month",
+      "Light usage included (metered)",
       "Basic image generation",
       "Standard quality models",
       "Community support",
@@ -48,9 +48,9 @@ const PRICING_TIERS: PricingTier[] = [
     description: "For creators and professionals",
     price: "$29",
     period: "per month",
-    credits: 1000,
+  credits: 1000,
     features: [
-      "1,000 credits per month",
+      "Metered usage billed monthly",
       "All premium models",
       "High-quality generation",
       "Advanced editing tools",
@@ -68,9 +68,9 @@ const PRICING_TIERS: PricingTier[] = [
     description: "For teams and businesses",
     price: "$99",
     period: "per month",
-    credits: 5000,
+  credits: 5000,
     features: [
-      "5,000 credits per month",
+      "Metered usage billed monthly",
       "All models & features",
       "Ultra-high quality",
       "Team collaboration",
@@ -94,7 +94,7 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
     period: "forever",
     credits: 50,
     features: [
-      "50 credits per month",
+      "Light usage included (metered)",
       "Basic image generation",
       "Standard quality models",
       "Community support",
@@ -109,9 +109,9 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
     description: "For creators and professionals",
     price: "$290",
     period: "per year",
-    credits: 12000,
+  credits: 12000,
     features: [
-      "12,000 credits per year",
+      "Metered usage billed yearly",
       "All premium models",
       "High-quality generation",
       "Advanced editing tools",
@@ -130,9 +130,9 @@ const YEARLY_PRICING_TIERS: PricingTier[] = [
     description: "For teams and businesses",
     price: "$990",
     period: "per year",
-    credits: 60000,
+  credits: 60000,
     features: [
-      "60,000 credits per year",
+      "Metered usage billed yearly",
       "All models & features",
       "Ultra-high quality",
       "Team collaboration",
@@ -365,7 +365,7 @@ export default function Pricing() {
     icon: AlertCircle as React.ComponentType<{ className?: string }>,
     iconColor: 'text-theme-text'
   });
-  const { createCheckoutSession, getSubscription } = usePayments();
+  const { createCheckoutSession, getSubscription, openCustomerPortal } = usePayments();
   const { user, token } = useAuth();
 
   const currentTiers = billingPeriod === 'yearly' ? YEARLY_PRICING_TIERS : PRICING_TIERS;
@@ -467,29 +467,32 @@ export default function Pricing() {
     setModalState(prev => ({ ...prev, isOpen: false }));
   };
 
-  // Fetch current subscription on mount
+  // Fetch current subscription on mount (avoid re-render loop)
   useEffect(() => {
+    let active = true;
     const fetchSubscription = async () => {
-      if (user) {
-        try {
-          const subscription = await getSubscription();
-          setCurrentSubscription(subscription);
-          
-          // Set billing period based on current subscription
-          if (subscription?.stripePriceId) {
-            const currentPlan = getCurrentPlanFromSubscription();
-            if (currentPlan?.billingPeriod) {
-              setBillingPeriod(currentPlan.billingPeriod as 'monthly' | 'yearly');
-            }
-          }
-        } catch (error) {
-          debugError('Failed to fetch subscription:', error);
+      if (!user) return;
+      try {
+        const subscription = await getSubscription();
+        if (!active) return;
+        setCurrentSubscription(subscription);
+        // Infer billing period directly from the freshly fetched subscription
+        if (subscription?.stripePriceId) {
+          const idGuess =
+            subscription.planId ??
+            (subscription.stripePriceId.includes('year') ? 'pro-yearly' : 'pro');
+          const inferred = idGuess.includes('year') ? 'yearly' : 'monthly';
+          setBillingPeriod(inferred as 'monthly' | 'yearly');
         }
+      } catch (error) {
+        debugError('Failed to fetch subscription:', error);
       }
     };
-
     fetchSubscription();
-  }, [user, getSubscription, getCurrentPlanFromSubscription]);
+    return () => {
+      active = false;
+    };
+  }, [user, getSubscription]);
 
   const handleSubscriptionPurchase = async (planId: string) => {
     try {
@@ -717,6 +720,16 @@ export default function Pricing() {
 
           {/* Additional Info */}
           <div className="mt-16 text-center">
+            {currentSubscription && (
+              <div className="mb-6">
+                <button
+                  onClick={() => openCustomerPortal().catch(() => showModal('Portal Error','Unable to open billing portal. Please try again.', AlertCircle, 'text-red-400'))}
+                  className="btn btn-cyan font-raleway"
+                >
+                  Manage Billing
+                </button>
+              </div>
+            )}
             <div className={`${glass.surface} p-8 max-w-4xl mx-auto`}>
               <h3 className="text-2xl font-raleway font-light text-theme-text mb-4">
                 All plans include
@@ -726,7 +739,7 @@ export default function Pricing() {
                   <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-theme-white" />
                   </div>
-                  <span className="text-theme-white font-raleway">Unlimited generations</span>
+                  <span className="text-theme-white font-raleway">Unlimited generations (metered billing)</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">

@@ -19,15 +19,32 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       // Persistent guard to avoid duplicate exchanges in dev/StrictMode
       const handledKey = 'daygen:authCallbackHandled';
-      if (hasHandledRef.current || sessionStorage.getItem(handledKey) === '1') {
-        return; // Prevent duplicate handling in StrictMode/dev
+      const handledTimestamp = sessionStorage.getItem(handledKey);
+      // Allow retry if more than 30 seconds have passed (in case of a real failure)
+      if (hasHandledRef.current || (handledTimestamp && Date.now() - parseInt(handledTimestamp, 10) < 30000)) {
+        // If already handled recently, navigate away immediately
+        if (handledTimestamp) {
+          navigate('/', { replace: true });
+        }
+        return;
       }
       hasHandledRef.current = true;
-      sessionStorage.setItem(handledKey, '1');
+      sessionStorage.setItem(handledKey, Date.now().toString());
+      
       // Guard timeout to avoid infinite authenticating state
+      let timeoutFired = false;
       const guard = setTimeout(() => {
+        timeoutFired = true;
         authMetrics.increment('auth_callback_timeout');
-      }, 10000);
+        debugError('Auth callback timeout - forcing navigation');
+        setError('Authentication timed out. Please try signing in again.');
+        setIsLoading(false);
+        // Force navigation on timeout
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 2000);
+      }, 10000); // Reduced to 10 seconds
+      
       try {
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
@@ -47,6 +64,9 @@ export default function AuthCallback() {
         // If no PKCE code and we only have an error, surface it
         if (!code && errorParam) {
           setError(`Authentication error: ${errorParam}`);
+          clearTimeout(guard);
+          setIsLoading(false);
+          setTimeout(() => navigate('/login', { replace: true }), 3000);
           return;
         }
 
@@ -70,6 +90,9 @@ export default function AuthCallback() {
               if (setErr) {
                 debugError('Set session error:', setErr);
                 setError(setErr.message ?? 'Authentication failed');
+                clearTimeout(guard);
+                setIsLoading(false);
+                setTimeout(() => navigate('/login', { replace: true }), 3000);
                 return;
               }
               activeSession = setData.session;
@@ -100,6 +123,9 @@ export default function AuthCallback() {
               activeSession = retry.session;
             } else {
               setError(exchangeError.message ?? 'Authentication failed');
+              clearTimeout(guard);
+              setIsLoading(false);
+              setTimeout(() => navigate('/login', { replace: true }), 3000);
               return;
             }
           } else {
@@ -111,23 +137,46 @@ export default function AuthCallback() {
           if (sessionError) {
             debugError('Session lookup error:', sessionError);
             setError(sessionError.message);
+            clearTimeout(guard);
+            setIsLoading(false);
+            setTimeout(() => navigate('/login', { replace: true }), 3000);
             return;
           }
           activeSession = data.session;
         }
 
+        // If no session was obtained, navigate to login
+        if (!activeSession?.user) {
+          debugWarn('No active session after callback handling');
+          clearTimeout(guard);
+          setIsLoading(false);
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        // Sync with backend (but don't wait too long or fail completely if this fails)
         if (activeSession?.access_token) {
           try {
-            await fetch(getApiUrl('/api/auth/oauth-callback'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                access_token: activeSession.access_token,
-                refresh_token: activeSession.refresh_token ?? undefined,
+            const syncResponse = await Promise.race([
+              fetch(getApiUrl('/api/auth/oauth-callback'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  access_token: activeSession.access_token,
+                  refresh_token: activeSession.refresh_token ?? undefined,
+                }),
               }),
-            });
+              new Promise<Response>((_, reject) =>
+                setTimeout(() => reject(new Error('Backend sync timeout')), 5000)
+              ),
+            ]);
+            
+            if (!syncResponse.ok) {
+              debugWarn('Backend sync returned non-OK status:', syncResponse.status);
+            }
           } catch (syncError) {
-            debugWarn('Failed to synchronize backend session:', syncError);
+            // Don't fail the whole flow if backend sync fails - session is still valid in Supabase
+            debugWarn('Failed to synchronize backend session (continuing anyway):', syncError);
           }
         }
 
@@ -139,18 +188,50 @@ export default function AuthCallback() {
           // Intentionally ignore replaceState errors (e.g., in sandboxed iframes)
         }
 
-        if (activeSession?.user) {
-          await refreshUser();
-          navigate('/');
-        } else {
-          navigate('/login');
+        // Wait a moment for Supabase to propagate the session to localStorage
+        // This helps avoid race conditions with onAuthStateChange
+        await new Promise((r) => setTimeout(r, 200));
+
+        // Try to refresh user, but don't hang if it fails
+        try {
+          await Promise.race([
+            refreshUser(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Refresh user timeout')), 5000)
+            ),
+          ]);
+        } catch (refreshError) {
+          debugWarn('Failed to refresh user in callback (continuing anyway):', refreshError);
+          // Verify session is still available before navigating
+          const { data: verifySession } = await supabase.auth.getSession();
+          if (!verifySession.session?.user) {
+            debugError('Session lost during refresh - navigating to login');
+            clearTimeout(guard);
+            setIsLoading(false);
+            navigate('/login', { replace: true });
+            return;
+          }
+        }
+
+        // Clear the handled flag on success to allow future callbacks
+        sessionStorage.removeItem(handledKey);
+        
+        // Navigate to home
+        if (!timeoutFired) {
+          clearTimeout(guard);
+          setIsLoading(false);
+          navigate('/', { replace: true });
         }
       } catch (err) {
         debugError('Auth callback error:', err);
-        setError(err instanceof Error ? err.message : 'Authentication failed');
-      } finally {
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        setError(errorMessage);
         clearTimeout(guard);
         setIsLoading(false);
+        // Navigate to login on error after a short delay
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 3000);
       }
     };
 
