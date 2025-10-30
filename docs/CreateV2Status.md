@@ -1,10 +1,18 @@
 # CreateV2 Implementation Status
 
-**Last Updated:** 2025-10-29
+**Last Updated:** 2025-10-30
+
+## ⚠️ Current Status
+
+**Both V1 and V2 are accessible:**
+- **V1 (Stable)**: `/create/image` - Production version
+- **V2 (Preview)**: `/create/image?v2=1` - Experimental modular architecture
+
+**Note**: Recent commits (last 2 weeks) show significant progress. For detailed feature comparison, see [CreateV1vsV2FeatureComparison.md](./CreateV1vsV2FeatureComparison.md).
 
 ## Summary
 
-The CreateV2 modular architecture is **fully functional** and ready for smoke testing. All core features are implemented:
+The CreateV2 modular architecture is **feature-complete** and ready for hands-on testing. All core features are implemented:
 
 ✅ Gallery data loading from backend  
 ✅ Deep-link hydration for `/job/:jobId` routes  

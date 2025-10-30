@@ -1,8 +1,30 @@
+# ⚠️ OUTDATED DOCUMENTATION
+
+**This document is OUTDATED as of 2025-10-30.**
+
+Recent commits (last 2 weeks) have significantly advanced CreateV2 implementation. This document incorrectly describes CreateV2 as "skeleton only" when in fact it has:
+- Full `useCreateGenerationController` implementation (1,091 lines)
+- All provider hooks integrated
+- Gallery persistence and deep-link hydration
+- Comprehensive settings support
+
+**For accurate, up-to-date information, see:**
+- [CreateV1vsV2FeatureComparison.md](./docs/CreateV1vsV2FeatureComparison.md) - Feature-by-feature comparison
+- [CreateV2Status.md](./docs/CreateV2Status.md) - Current implementation status
+
+**Quick Access:**
+- V1 (Stable): `/create/image`
+- V2 (Preview): `/create/image?v2=1`
+
+---
+
 # Create Surface Modularization Audit
 
 ## Scope
 - Reviewed `src/components/create/*.tsx`, `src/components/create/contexts/*`, and `src/components/create/hooks/*`.
 - Goal: catalog extracted responsibilities, highlight implementation gaps relative to the target modular create surface, and refresh Phase 1 action items with concrete guidance.
+
+**NOTE**: This audit was conducted before recent implementation work. The status descriptions below are OUTDATED.
 
 ## Benefits of Modularization
 

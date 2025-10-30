@@ -5892,6 +5892,22 @@ const handleGenerate = async () => {
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
     <div className={`${layout.page} create-page`}>
+      {import.meta.env.DEV && (
+        <div className="fixed top-20 right-4 z-50 flex items-center gap-2">
+          <a
+            href={((): string => {
+              const params = new URLSearchParams(location.search);
+              params.set('v2', '1');
+              const search = params.toString();
+              return `${location.pathname}?${search}`;
+            })()}
+            className="px-3 py-1 bg-blue-500/90 text-white text-xs font-mono rounded shadow-lg hover:bg-blue-500"
+            aria-label="Switch to V2 (Preview)"
+          >
+            Switch to V2 (Preview)
+          </a>
+        </div>
+      )}
       {/* Copy notification */}
       {copyNotification && (
         <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-2xl`}>
@@ -6476,6 +6492,12 @@ const handleGenerate = async () => {
         className={`relative z-10 ${layout.container} pb-48`}
         style={{ paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)` }}
       >
+        {/* Version Badge - Development Only */}
+        {import.meta.env.DEV && (
+          <div className="fixed top-20 right-4 z-50 px-3 py-1 bg-green-500/90 text-white text-xs font-mono rounded shadow-lg">
+            V1 (Stable)
+          </div>
+        )}
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Removed "Create now" heading per request */}
