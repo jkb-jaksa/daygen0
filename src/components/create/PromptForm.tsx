@@ -249,7 +249,7 @@ const PromptForm = memo<PromptFormProps>(
     }, [prompt]);
 
     const aspectRatioLabel =
-      aspectRatioControl?.selectedLabel ?? aspectRatioControl?.selectedValue ?? 'Aspect Ratio';
+      aspectRatioControl?.selectedValue ?? aspectRatioControl?.selectedLabel ?? 'Aspect Ratio';
     const showAspectRatioButton = Boolean(aspectRatioControl);
 
     const handleAspectRatioToggle = useCallback(() => {
@@ -469,88 +469,9 @@ const PromptForm = memo<PromptFormProps>(
               </Suspense>
             </div>
             
-            <div className="flex items-center justify-between gap-2 px-3">
-              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/create/chat')}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                    aria-label="Chat mode"
-                    onMouseEnter={(e) => {
-                      showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
-                    }}
-                    onMouseLeave={() => {
-                      hideHoverTooltip('chat-mode-tooltip');
-                    }}
-                    onPointerMove={onPointerMove}
-                    onPointerEnter={onPointerEnter}
-                    onPointerLeave={onPointerLeave}
-                  >
-                    <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
-                  </button>
-                  <div
-                    data-tooltip-for="chat-mode-tooltip"
-                    className={tooltipBaseClasses}
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                  >
-                    Chat Mode
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!isGeminiModel) {
-                        return;
-                      }
-                      if (referenceFiles.length === 0) {
-                        openFileInput();
-                      } else {
-                        openRefsInput();
-                      }
-                    }}
-                    aria-label="Add reference image"
-                    disabled={!isGeminiModel || remainingReferenceSlots === 0}
-                    className={`${isGeminiModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                    onMouseEnter={() => {
-                      if (isGeminiModel && typeof document !== 'undefined') {
-                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
-                        if (tooltip) {
-                          tooltip.style.top = '0px';
-                          tooltip.style.left = '50%';
-                          tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-                          tooltip.classList.remove('opacity-0');
-                          tooltip.classList.add('opacity-100');
-                        }
-                      }
-                    }}
-                    onMouseLeave={() => {
-                      if (typeof document !== 'undefined') {
-                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
-                        if (tooltip) {
-                          tooltip.classList.remove('opacity-100');
-                          tooltip.classList.add('opacity-0');
-                        }
-                      }
-                    }}
-                    onPointerMove={onPointerMove}
-                    onPointerEnter={onPointerEnter}
-                    onPointerLeave={onPointerLeave}
-                  >
-                    <Plus className="w-4 h-4 flex-shrink-0" />
-                  </button>
-                  <div
-                    data-tooltip-for="reference-tooltip"
-                    className={tooltipBaseClasses}
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                  >
-                    Reference Image
-                  </div>
-                </div>
-
-                {totalReferenceCount > 0 && (
+            {totalReferenceCount > 0 && (
+              <div className="flex items-center justify-between gap-2 px-3">
+                <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS}):</div>
                     <div className="flex items-center gap-1.5">
@@ -588,12 +509,93 @@ const PromptForm = memo<PromptFormProps>(
                       ))}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Third row: Model + Settings + Aspect Ratio + Batch Size + Prompts */}
             <div className="flex items-center gap-2">
+              {/* Chat mode (moved to controls row to match V1) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => navigate('/create/chat')}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                  aria-label="Chat mode"
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip('chat-mode-tooltip');
+                  }}
+                  onPointerMove={onPointerMove}
+                  onPointerEnter={onPointerEnter}
+                  onPointerLeave={onPointerLeave}
+                >
+                  <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
+                </button>
+                <div
+                  data-tooltip-for="chat-mode-tooltip"
+                  className={tooltipBaseClasses}
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                >
+                  Chat Mode
+                </div>
+              </div>
+
+              {/* Add reference (moved to controls row to match V1) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isGeminiModel) {
+                      return;
+                    }
+                    if (referenceFiles.length === 0) {
+                      openFileInput();
+                    } else {
+                      openRefsInput();
+                    }
+                  }}
+                  aria-label="Add reference image"
+                  disabled={!isGeminiModel || remainingReferenceSlots === 0}
+                  className={`${isGeminiModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                  onMouseEnter={() => {
+                    if (isGeminiModel && typeof document !== 'undefined') {
+                      const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                      if (tooltip) {
+                        tooltip.style.top = '0px';
+                        tooltip.style.left = '50%';
+                        tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                        tooltip.classList.remove('opacity-0');
+                        tooltip.classList.add('opacity-100');
+                      }
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (typeof document !== 'undefined') {
+                      const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                      if (tooltip) {
+                        tooltip.classList.remove('opacity-100');
+                        tooltip.classList.add('opacity-0');
+                      }
+                    }
+                  }}
+                  onPointerMove={onPointerMove}
+                  onPointerEnter={onPointerEnter}
+                  onPointerLeave={onPointerLeave}
+                >
+                  <Plus className="w-4 h-4 flex-shrink-0" />
+                </button>
+                <div
+                  data-tooltip-for="reference-tooltip"
+                  className={tooltipBaseClasses}
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                >
+                  Reference Image
+                </div>
+              </div>
+
               <Suspense fallback={null}>
                 <ModelSelector
                   selectedModel={selectedModel}
