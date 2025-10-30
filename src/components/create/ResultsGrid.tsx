@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { lazy, Suspense } from 'react';
-import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Square, AlertTriangle } from 'lucide-react';
+import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Square, AlertTriangle, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons } from '../../styles/designSystem';
@@ -29,9 +29,13 @@ const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | 
 
 interface ResultsGridProps {
   className?: string;
+  activeCategory?: 'image' | 'video' | 'gallery' | 'my-folders';
+  onFocusPrompt?: () => void;
 }
 
-const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
+const MAX_GALLERY_TILES = 16;
+
+const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
   const { state, setBulkMode, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
   const {
     handleImageClick,
@@ -45,7 +49,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
   const { selectedItems, isBulkMode } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
-  const showErrorState = useMemo(() => Boolean(error) && filteredItems.length === 0, [error, filteredItems.length]);
   const handleRefresh = useCallback(async () => {
     try {
       setIsRefreshing(true);
@@ -141,37 +144,61 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '' }) => {
         <div className="text-center">
           <h3 className="text-sm font-medium text-theme-accent">Loading your creations…</h3>
           <p className="text-xs text-theme-white/70">
-            We’re syncing the latest images and videos from your account.
+            We're syncing the latest images and videos from your account.
           </p>
         </div>
       </div>
     );
   }
 
-  if (showErrorState) {
-    return (
-      <div className={`flex flex-col items-center justify-center gap-4 py-12 ${className}`}>
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-theme-red/30 bg-theme-red/10">
-          <AlertTriangle className="h-6 w-6 text-theme-red" />
-        </div>
-        <div className="text-center">
-          <h3 className="text-lg font-medium text-theme-red">Gallery is unavailable</h3>
-          <p className="text-sm text-theme-white/70">
-            We couldn’t reach the gallery service. Check your connection and try again.
-          </p>
-        </div>
-        <button
-          onClick={() => void handleRefresh()}
-          disabled={isRefreshing}
-          className={`${buttons.primary} px-5 py-2`}
-        >
-          {isRefreshing ? 'Retrying…' : 'Try again'}
-        </button>
-      </div>
-    );
-  }
-
+  // Empty state check - prioritize placeholder grid for generation categories
   if (filteredItems.length === 0) {
+    // Show placeholder grid for generation categories (image/video) even if error exists
+    if (activeCategory === 'image' || activeCategory === 'video') {
+      const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
+      return (
+        <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1 ${className}`}>
+          {Array.from({ length: MAX_GALLERY_TILES }).map((_, idx) => (
+            <div
+              key={`ph-${idx}`}
+              className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200"
+              onClick={() => onFocusPrompt?.()}
+            >
+              <div className="flex flex-col items-center gap-2 text-center px-2">
+                <PlaceholderIcon className="w-8 h-8 text-theme-light" />
+                <div className="text-theme-light font-raleway text-base font-light">Create something amazing.</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Show error state for gallery/my-folders categories when there's an error
+    if (error) {
+      return (
+        <div className={`flex flex-col items-center justify-center gap-4 py-12 ${className}`}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-theme-red/30 bg-theme-red/10">
+            <AlertTriangle className="h-6 w-6 text-theme-red" />
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-theme-red">Gallery is unavailable</h3>
+            <p className="text-sm text-theme-white/70">
+              We couldn't reach the gallery service. Check your connection and try again.
+            </p>
+          </div>
+          <button
+            onClick={() => void handleRefresh()}
+            disabled={isRefreshing}
+            className={`${buttons.primary} px-5 py-2`}
+          >
+            {isRefreshing ? 'Retrying…' : 'Try again'}
+          </button>
+        </div>
+      );
+    }
+
+    // Show simple empty state for gallery/my-folders categories when no error
     return (
       <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
         <div className="text-center">

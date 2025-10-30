@@ -22,6 +22,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
+import { useGallery } from './contexts/GalleryContext';
 import { buttons, glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 
@@ -41,16 +42,42 @@ interface PromptFormProps {
   isButtonSpinning?: boolean;
 }
 
-type TooltipId = 'chat' | 'reference' | 'prompts';
-
 const MAX_REFERENCE_SLOTS = 3;
 
+// Tooltip helper functions (matching V1 implementation)
+const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
+  if (typeof document === 'undefined') return;
+  const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+  if (!tooltip) return;
+  const ownerCard = target.closest('.group') as HTMLElement | null;
+  if (ownerCard) {
+    const triggerRect = target.getBoundingClientRect();
+    const cardRect = ownerCard.getBoundingClientRect();
+    const relativeTop = triggerRect.top - cardRect.top;
+    const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
+    tooltip.style.top = `${relativeTop - 8}px`;
+    tooltip.style.left = `${relativeLeft}px`;
+    tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+  }
+  tooltip.classList.remove('opacity-0');
+  tooltip.classList.add('opacity-100');
+};
+
+const hideHoverTooltip = (tooltipId: string) => {
+  if (typeof document === 'undefined') return;
+  const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+  if (!tooltip) return;
+  tooltip.classList.remove('opacity-100');
+  tooltip.classList.add('opacity-0');
+};
+
 const tooltipBaseClasses =
-  'absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white shadow-lg z-[70] pointer-events-none transition-opacity duration-200 hidden lg:block';
+  'absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block';
 
 const PromptForm = memo<PromptFormProps>(
   ({ onGenerate, isGenerating: isGeneratingProp, isButtonSpinning: isButtonSpinningProp }) => {
     const navigate = useNavigate();
+    const { setFullSizeImage, setFullSizeOpen } = useGallery();
     const {
       promptHandlers,
       referenceHandlers,
@@ -112,7 +139,6 @@ const PromptForm = memo<PromptFormProps>(
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const promptsButtonRef = useRef<HTMLButtonElement | null>(null);
 
-    const [activeTooltip, setActiveTooltip] = useState<TooltipId | null>(null);
     const [isDragActive, setIsDragActive] = useState(false);
 
     useEffect(() => {
@@ -247,23 +273,28 @@ const PromptForm = memo<PromptFormProps>(
 
     const promptSurfaceClasses = useMemo(() => {
       const base = `${glass.prompt} rounded-[16px] px-4 py-3 transition-colors duration-200`;
-      const dragState =
-        isGeminiModel && isDragActive ? 'border-brand' : 'border-[color:var(--glass-prompt-border)]';
-      return `promptbar relative ${base} ${dragState}`;
+      const dragState = isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid';
+      return `promptbar fixed z-40 ${base} ${dragState}`;
     }, [isDragActive, isGeminiModel]);
 
     return (
-      <div className="relative z-10">
-        <div
-          ref={promptBarRef}
-          className={promptSurfaceClasses}
-          onDragEnter={handleDragAreaEnter}
-          onDragLeave={handleDragAreaLeave}
-          onDragOver={handleDragAreaOver}
-          onDrop={handleDragAreaDrop}
-        >
-          <div className="flex flex-col gap-3">
-            <div className="relative">
+      <div
+        ref={promptBarRef}
+        className={promptSurfaceClasses}
+        style={{
+          bottom: '0.75rem',
+          transform: 'translateX(-50%) translateZ(0)',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+        }}
+        onDragEnter={handleDragAreaEnter}
+        onDragLeave={handleDragAreaLeave}
+        onDragOver={handleDragAreaOver}
+        onDrop={handleDragAreaDrop}
+      >
+        <div className="flex gap-3 items-stretch">
+          <div className="flex-1 flex flex-col">
+            <div className="mb-1">
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -272,7 +303,7 @@ const PromptForm = memo<PromptFormProps>(
                 onPaste={handlePaste}
                 placeholder="Describe what you want to create..."
                 rows={1}
-                className="w-full min-h-[36px] max-h-40 bg-transparent text-theme-white placeholder-theme-white/70 border-0 focus:outline-none focus:ring-0 px-3 py-2 font-raleway text-base leading-normal resize-none overflow-x-hidden overflow-y-auto rounded-lg transition-[height] duration-150"
+                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
               />
               <Suspense fallback={null}>
                 <PromptsDropdown
@@ -293,127 +324,156 @@ const PromptForm = memo<PromptFormProps>(
                 />
               </Suspense>
             </div>
-
-            <div className="flex flex-col gap-2 px-3 lg:px-0">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => navigate('/create/chat')}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-transparent text-theme-white transition-colors duration-200 hover:bg-theme-white/10 hover:text-theme-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black parallax-small"
-                      aria-label="Chat mode"
-                      onMouseEnter={() => setActiveTooltip('chat')}
-                      onMouseLeave={() => setActiveTooltip(null)}
-                      onPointerMove={onPointerMove}
-                      onPointerEnter={onPointerEnter}
-                      onPointerLeave={onPointerLeave}
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
-                    <div
-                      className={`${tooltipBaseClasses} ${
-                        activeTooltip === 'chat' ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
-                      Chat Mode
-                    </div>
+            
+            <div className="flex items-center justify-between gap-2 px-3">
+              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/create/chat')}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    aria-label="Chat mode"
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('chat-mode-tooltip');
+                    }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
+                  >
+                    <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
+                  </button>
+                  <div
+                    data-tooltip-for="chat-mode-tooltip"
+                    className={tooltipBaseClasses}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Chat Mode
                   </div>
-
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isGeminiModel) {
-                          return;
-                        }
-                        if (referenceFiles.length === 0) {
-                          openFileInput();
-                        } else {
-                          openRefsInput();
-                        }
-                        setActiveTooltip(null);
-                      }}
-                      aria-label="Add reference image"
-                      disabled={!isGeminiModel || remainingReferenceSlots === 0}
-                      className={`grid h-9 w-9 place-items-center rounded-full transition-colors duration-200 parallax-small ${
-                        isGeminiModel && remainingReferenceSlots > 0
-                          ? 'bg-transparent text-theme-white hover:bg-theme-white/10 hover:text-theme-text'
-                          : 'bg-theme-white/10 text-theme-white/50 cursor-not-allowed'
-                      }`}
-                      onMouseEnter={() => setActiveTooltip('reference')}
-                      onMouseLeave={() => setActiveTooltip(null)}
-                      onPointerMove={onPointerMove}
-                      onPointerEnter={onPointerEnter}
-                      onPointerLeave={onPointerLeave}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                    <div
-                      className={`${tooltipBaseClasses} ${
-                        activeTooltip === 'reference' ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
-                      Reference Image
-                    </div>
-                  </div>
-
-                  {totalReferenceCount > 0 && (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="hidden lg:block text-sm font-raleway text-theme-white whitespace-nowrap">
-                        Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS}):
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {referencePreviews.map((preview, index) => (
-                          <div key={`${preview}-${index}`} className="relative group">
-                            <img
-                              src={preview}
-                              alt={`Reference ${index + 1}`}
-                              className="w-10 h-10 rounded-lg object-cover border border-theme-mid/80"
-                            />
-                            <button
-                              type="button"
-                              onClick={event => {
-                                event.stopPropagation();
-                                clearReference(index);
-                              }}
-                              className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-theme-black text-theme-white transition-opacity duration-150 opacity-0 group-hover:opacity-100"
-                              aria-label="Remove reference"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      ref={promptsButtonRef}
-                      onClick={() => {
-                        handlePromptsDropdownToggle();
-                        setActiveTooltip(null);
-                      }}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-transparent text-theme-white transition-colors duration-200 hover:bg-theme-white/10 hover:text-theme-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black parallax-small"
-                      onMouseEnter={() => setActiveTooltip('prompts')}
-                      onMouseLeave={() => setActiveTooltip(null)}
-                      onPointerMove={onPointerMove}
-                      onPointerEnter={onPointerEnter}
-                      onPointerLeave={onPointerLeave}
-                    >
-                      <BookmarkIcon className="w-4 h-4" />
-                    </button>
-                    <div
-                      className={`${tooltipBaseClasses} ${
-                        activeTooltip === 'prompts' ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
-                      Your Prompts
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isGeminiModel) {
+                        return;
+                      }
+                      if (referenceFiles.length === 0) {
+                        openFileInput();
+                      } else {
+                        openRefsInput();
+                      }
+                    }}
+                    aria-label="Add reference image"
+                    disabled={!isGeminiModel || remainingReferenceSlots === 0}
+                    className={`${isGeminiModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    onMouseEnter={() => {
+                      if (isGeminiModel && typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          tooltip.style.top = '0px';
+                          tooltip.style.left = '50%';
+                          tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                          tooltip.classList.remove('opacity-0');
+                          tooltip.classList.add('opacity-100');
+                        }
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          tooltip.classList.remove('opacity-100');
+                          tooltip.classList.add('opacity-0');
+                        }
+                      }
+                    }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
+                  >
+                    <Plus className="w-4 h-4 flex-shrink-0" />
+                  </button>
+                  <div
+                    data-tooltip-for="reference-tooltip"
+                    className={tooltipBaseClasses}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Reference Image
+                  </div>
+                </div>
+
+                {totalReferenceCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS}):</div>
+                    <div className="flex items-center gap-1.5">
+                      {referencePreviews.map((preview, index) => (
+                        <div key={`${preview}-${index}`} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Reference ${index + 1}`}
+                            loading="lazy"
+                            className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                            onClick={() => {
+                              setFullSizeImage(
+                                {
+                                  url: preview,
+                                  prompt: '',
+                                  timestamp: new Date().toISOString(),
+                                },
+                                0
+                              );
+                              setFullSizeOpen(true);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={event => {
+                              event.stopPropagation();
+                              clearReference(index);
+                            }}
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                            title="Remove reference"
+                          >
+                            <X className="w-2.5 h-2.5 text-n-text" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <button
+                    type="button"
+                    ref={promptsButtonRef}
+                    onClick={() => {
+                      handlePromptsDropdownToggle();
+                    }}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(e.currentTarget, 'prompts-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('prompts-tooltip');
+                    }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
+                  >
+                    <BookmarkIcon className="w-4 h-4" />
+                  </button>
+                  <div
+                    data-tooltip-for="prompts-tooltip"
+                    className={tooltipBaseClasses}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Your Prompts
                   </div>
                 </div>
               </div>

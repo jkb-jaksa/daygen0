@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { debugError, debugLog } from '../../../utils/debug';
+import { resolveApiErrorMessage, resolveGenerationCatchError } from '../../../utils/errorMessages';
 import { useGeneration } from '../contexts/GenerationContext';
 import { usePromptHandlers } from './usePromptHandlers';
 import { useReferenceHandlers } from './useReferenceHandlers';
@@ -333,6 +334,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
     const isQwenModel = selectedModel === 'qwen-image';
     const isWanVideo = selectedModel === 'wan-video-2.2';
+    const isKlingVideo = selectedModel === 'kling-video';
 
     return {
       common: {
@@ -439,11 +441,11 @@ export function useCreateGenerationController(): CreateGenerationController {
         onWatermarkChange: value => setQwenWatermark(value),
       },
       kling: {
-        enabled: false,
+        enabled: isKlingVideo,
         model: 'kling-v2.1-master',
         onModelChange: () => {},
-        aspectRatio: '16:9',
-        onAspectRatioChange: () => {},
+        aspectRatio: (klingAspectRatio as '16:9' | '9:16' | '1:1'),
+        onAspectRatioChange: value => setKlingAspectRatio(value as '16:9' | '9:16' | '1:1'),
         duration: 5,
         onDurationChange: () => {},
         mode: 'standard',
@@ -497,6 +499,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     setWanSeed,
     setWanSize,
     setWanWatermark,
+    setKlingAspectRatio,
     temperature,
     topP,
     videoAspectRatio,
@@ -955,11 +958,26 @@ export function useCreateGenerationController(): CreateGenerationController {
       promptHandlers.handlePromptSubmit(finalPrompt);
     } catch (error) {
       debugError('[create] Failed to start modular generation', error);
-      setLocalError(
-        error instanceof Error
-          ? error.message
-          : 'We could not start that generation. Try again in a moment.',
-      );
+      
+      // Check if error has HTTP status code (from apiFetch)
+      type ErrorWithStatus = Error & { status?: number };
+      const errorWithStatus = error as ErrorWithStatus;
+      const status = errorWithStatus?.status;
+      const errorMessage = error instanceof Error ? error.message : undefined;
+      
+      // Use appropriate error resolution based on whether we have a status code
+      const resolvedMessage = status !== undefined && typeof status === 'number'
+        ? resolveApiErrorMessage({
+            status,
+            message: errorMessage,
+            context: 'generation',
+          })
+        : resolveGenerationCatchError(
+            error,
+            'We could not start that generation. Try again in a moment.',
+          );
+      
+      setLocalError(resolvedMessage);
     } finally {
       // Ensure any active job is cleared from the progress list
       try {

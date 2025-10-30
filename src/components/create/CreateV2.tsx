@@ -152,6 +152,16 @@ export default function CreateV2() {
   const handleBulkMenuClose = () => {
     setBulkActionsMenu(null);
   };
+
+  // Focus prompt form textarea
+  const focusPromptBar = useCallback(() => {
+    // Find the prompt textarea by querying for it within the prompt form
+    // The textarea has a placeholder "Describe what you want to create..."
+    const textarea = document.querySelector('textarea[placeholder="Describe what you want to create..."]') as HTMLTextAreaElement | null;
+    if (textarea) {
+      textarea.focus();
+    }
+  }, []);
   
   return (
     <header
@@ -250,7 +260,7 @@ export default function CreateV2() {
                 <>
                   <PromptForm />
                   <Suspense fallback={null}>
-                    <ResultsGrid />
+                    <ResultsGrid activeCategory={activeCategory} onFocusPrompt={focusPromptBar} />
                   </Suspense>
                   <Suspense fallback={null}>
                     <GenerationProgress />
@@ -259,7 +269,7 @@ export default function CreateV2() {
               )}
               {!isGenerationCategory && shouldShowResultsGrid && (
                 <Suspense fallback={null}>
-                  <ResultsGrid />
+                  <ResultsGrid activeCategory={activeCategory} />
                 </Suspense>
               )}
             </div>
