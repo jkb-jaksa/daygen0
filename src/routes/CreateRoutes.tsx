@@ -44,7 +44,6 @@ function IndexRoute() {
 }
 
 function CategoryRoute() {
-  const location = useLocation();
   const isV2 = useIsCreateV2();
   const Element = isV2 ? CreateV2 : Create;
   return <Element />;
