@@ -91,7 +91,9 @@ export default function CreateV2() {
   const { imageActionMenu, bulkActionsMenu } = state;
   const isGenerationCategory = GENERATION_CATEGORY_SET.has(activeCategory);
   const shouldShowResultsGrid = GENERATION_CATEGORY_SET.has(activeCategory) || GALLERY_CATEGORY_SET.has(activeCategory);
-  const effectivePromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
+  const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
+  const minimumPromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
+  const effectivePromptReservedSpace = Math.max(promptBarReservedSpace, minimumPromptReservedSpace);
 
   useEffect(() => {
     setActiveCategory(resolvedCategory);
@@ -144,6 +146,10 @@ export default function CreateV2() {
   const handleOpenMyFolders = useCallback(() => {
     handleSelectCategory('my-folders');
   }, [handleSelectCategory]);
+
+  const handlePromptBarResize = useCallback((reservedSpace: number) => {
+    setPromptBarReservedSpace(reservedSpace);
+  }, []);
 
   const handleImageMenuClose = () => {
     setImageActionMenu(null);
@@ -258,7 +264,7 @@ export default function CreateV2() {
             <div className="w-full mb-4">
               {isGenerationCategory && (
                 <>
-                  <PromptForm />
+                  <PromptForm onPromptBarHeightChange={handlePromptBarResize} />
                   <Suspense fallback={null}>
                     <ResultsGrid activeCategory={activeCategory} onFocusPrompt={focusPromptBar} />
                   </Suspense>

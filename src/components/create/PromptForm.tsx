@@ -25,6 +25,7 @@ import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useGallery } from './contexts/GalleryContext';
 import { buttons, glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
+import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -40,6 +41,7 @@ interface PromptFormProps {
   onGenerate?: () => void;
   isGenerating?: boolean;
   isButtonSpinning?: boolean;
+  onPromptBarHeightChange?: (reservedSpace: number) => void;
 }
 
 const MAX_REFERENCE_SLOTS = 3;
@@ -75,7 +77,12 @@ const tooltipBaseClasses =
   'absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block';
 
 const PromptForm = memo<PromptFormProps>(
-  ({ onGenerate, isGenerating: isGeneratingProp, isButtonSpinning: isButtonSpinningProp }) => {
+  ({
+    onGenerate,
+    isGenerating: isGeneratingProp,
+    isButtonSpinning: isButtonSpinningProp,
+    onPromptBarHeightChange,
+  }) => {
     const navigate = useNavigate();
     const { setFullSizeImage, setFullSizeOpen } = useGallery();
     const {
@@ -140,6 +147,64 @@ const PromptForm = memo<PromptFormProps>(
     const promptsButtonRef = useRef<HTMLButtonElement | null>(null);
 
     const [isDragActive, setIsDragActive] = useState(false);
+
+    useEffect(() => {
+      if (!onPromptBarHeightChange || typeof window === 'undefined') {
+        return;
+      }
+
+      let animationFrame: number | null = null;
+
+      const notifyReservedSpace = () => {
+        animationFrame = null;
+        const promptElement = promptBarRef.current;
+        if (!promptElement) {
+          onPromptBarHeightChange(0);
+          return;
+        }
+
+        const rect = promptElement.getBoundingClientRect();
+        const distanceFromBottom = window.innerHeight - rect.top;
+        const reservedSpace = Math.max(0, Math.round(distanceFromBottom + SIDEBAR_PROMPT_GAP));
+        onPromptBarHeightChange(reservedSpace);
+      };
+
+      const queueNotify = () => {
+        if (animationFrame !== null) {
+          window.cancelAnimationFrame(animationFrame);
+        }
+        animationFrame = window.requestAnimationFrame(notifyReservedSpace);
+      };
+
+      queueNotify();
+
+      const handleResize = () => {
+        queueNotify();
+      };
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleResize);
+
+      let resizeObserver: ResizeObserver | null = null;
+
+      const element = promptBarRef.current;
+      if (typeof ResizeObserver !== 'undefined' && element) {
+        resizeObserver = new ResizeObserver(() => {
+          queueNotify();
+        });
+        resizeObserver.observe(element);
+      }
+
+      return () => {
+        if (animationFrame !== null) {
+          window.cancelAnimationFrame(animationFrame);
+        }
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleResize);
+        resizeObserver?.disconnect();
+        onPromptBarHeightChange(0);
+      };
+    }, [onPromptBarHeightChange]);
 
     useEffect(() => {
       if (!aspectRatioControl) {
