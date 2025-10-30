@@ -453,7 +453,7 @@ const PromptForm = memo<PromptFormProps>(
                 <PromptsDropdown
                   isOpen={isPromptsDropdownOpen}
                   onClose={handlePromptsDropdownClose}
-                  anchorEl={promptsButtonRef.current ?? textareaRef.current}
+                  anchorEl={promptsButtonRef.current}
                   recentPrompts={recentPrompts}
                   savedPrompts={savedPromptsList}
                   onSelectPrompt={handlePromptSelect}
@@ -469,9 +469,93 @@ const PromptForm = memo<PromptFormProps>(
               </Suspense>
             </div>
             
-            {totalReferenceCount > 0 && (
-              <div className="flex items-center justify-between gap-2 px-3">
-                <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+            {/* Buttons - second row */}
+            <div className="flex items-center justify-between gap-2 px-3">
+              {/* Left icons and controls */}
+              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+                {/* Chat mode */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/create/chat')}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    aria-label="Chat mode"
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('chat-mode-tooltip');
+                    }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
+                  >
+                    <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
+                  </button>
+                  <div
+                    data-tooltip-for="chat-mode-tooltip"
+                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Chat Mode
+                  </div>
+                </div>
+
+                {/* Add reference */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isGeminiModel) {
+                        return;
+                      }
+                      if (referenceFiles.length === 0) {
+                        openFileInput();
+                      } else {
+                        openRefsInput();
+                      }
+                    }}
+                    aria-label="Add reference image"
+                    disabled={!isGeminiModel || remainingReferenceSlots === 0}
+                    className={`${isGeminiModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    onMouseEnter={() => {
+                      if (isGeminiModel && typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          tooltip.style.top = '0px';
+                          tooltip.style.left = '50%';
+                          tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                          tooltip.classList.remove('opacity-0');
+                          tooltip.classList.add('opacity-100');
+                        }
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (typeof document !== 'undefined') {
+                        const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
+                        if (tooltip) {
+                          tooltip.classList.remove('opacity-100');
+                          tooltip.classList.add('opacity-0');
+                        }
+                      }
+                    }}
+                    onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
+                    onPointerLeave={onPointerLeave}
+                  >
+                    <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                  </button>
+                  <div
+                    data-tooltip-for="reference-tooltip"
+                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Reference Image
+                  </div>
+                </div>
+
+                {/* Reference images display - right next to Add reference button */}
+                {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS}):</div>
                     <div className="flex items-center gap-1.5">
@@ -509,92 +593,7 @@ const PromptForm = memo<PromptFormProps>(
                       ))}
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Third row: Model + Settings + Aspect Ratio + Batch Size + Prompts */}
-            <div className="flex items-center gap-2">
-              {/* Chat mode (moved to controls row to match V1) */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => navigate('/create/chat')}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                  aria-label="Chat mode"
-                  onMouseEnter={(e) => {
-                    showHoverTooltip(e.currentTarget, 'chat-mode-tooltip');
-                  }}
-                  onMouseLeave={() => {
-                    hideHoverTooltip('chat-mode-tooltip');
-                  }}
-                  onPointerMove={onPointerMove}
-                  onPointerEnter={onPointerEnter}
-                  onPointerLeave={onPointerLeave}
-                >
-                  <MessageCircle className="w-3 h-3 flex-shrink-0 text-n-text" />
-                </button>
-                <div
-                  data-tooltip-for="chat-mode-tooltip"
-                  className={tooltipBaseClasses}
-                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                >
-                  Chat Mode
-                </div>
-              </div>
-
-              {/* Add reference (moved to controls row to match V1) */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isGeminiModel) {
-                      return;
-                    }
-                    if (referenceFiles.length === 0) {
-                      openFileInput();
-                    } else {
-                      openRefsInput();
-                    }
-                  }}
-                  aria-label="Add reference image"
-                  disabled={!isGeminiModel || remainingReferenceSlots === 0}
-                  className={`${isGeminiModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                  onMouseEnter={() => {
-                    if (isGeminiModel && typeof document !== 'undefined') {
-                      const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
-                      if (tooltip) {
-                        tooltip.style.top = '0px';
-                        tooltip.style.left = '50%';
-                        tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-                        tooltip.classList.remove('opacity-0');
-                        tooltip.classList.add('opacity-100');
-                      }
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (typeof document !== 'undefined') {
-                      const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
-                      if (tooltip) {
-                        tooltip.classList.remove('opacity-100');
-                        tooltip.classList.add('opacity-0');
-                      }
-                    }
-                  }}
-                  onPointerMove={onPointerMove}
-                  onPointerEnter={onPointerEnter}
-                  onPointerLeave={onPointerLeave}
-                >
-                  <Plus className="w-4 h-4 flex-shrink-0" />
-                </button>
-                <div
-                  data-tooltip-for="reference-tooltip"
-                  className={tooltipBaseClasses}
-                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                >
-                  Reference Image
-                </div>
-              </div>
+                )}
 
               <Suspense fallback={null}>
                 <ModelSelector
@@ -753,10 +752,9 @@ const PromptForm = memo<PromptFormProps>(
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right section: Avatar + Product + Style + Generate */}
-          <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+            {/* Right section: Avatar + Product + Style + Generate */}
+            <div className="flex flex-row gap-2 flex-shrink-0 items-end">
             <div className="relative">
               <button
                 type="button"
@@ -981,50 +979,52 @@ const PromptForm = memo<PromptFormProps>(
               </button>
             </Tooltip>
           </div>
+          </div>
+          </div>
         </div>
 
-        {error && <div className="text-sm text-theme-accent">{error}</div>}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={referenceHandlers.handleFileSelected}
+        className="hidden"
+      />
+      <input
+        ref={refsInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={referenceHandlers.handleRefsSelected}
+        className="hidden"
+      />
+      
+      {error && <div className="text-sm text-theme-accent">{error}</div>}
 
-        {isSettingsOpen && (
-          <Suspense fallback={null}>
-            <SettingsMenu
-              anchorRef={settingsButtonRef}
-              open={isSettingsOpen}
-              onClose={handleSettingsClose}
-              {...settingsSections}
-            />
-          </Suspense>
-        )}
+      {isSettingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsMenu
+            anchorRef={settingsButtonRef}
+            open={isSettingsOpen}
+            onClose={handleSettingsClose}
+            {...settingsSections}
+          />
+        </Suspense>
+      )}
 
-        {styleHandlers.isStyleModalOpen && (
-          <Suspense fallback={null}>
-            <StyleSelectionModal
-              open={styleHandlers.isStyleModalOpen}
-              onClose={styleHandlers.handleStyleModalClose}
-              styleHandlers={styleHandlers}
-            />
-          </Suspense>
-        )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={referenceHandlers.handleFileSelected}
-          className="hidden"
-        />
-        <input
-          ref={refsInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={referenceHandlers.handleRefsSelected}
-          className="hidden"
-        />
+      {styleHandlers.isStyleModalOpen && (
+        <Suspense fallback={null}>
+          <StyleSelectionModal
+            open={styleHandlers.isStyleModalOpen}
+            onClose={styleHandlers.handleStyleModalClose}
+            styleHandlers={styleHandlers}
+          />
+        </Suspense>
+      )}
       </div>
     );
-  },
+  }
 );
 
 PromptForm.displayName = 'PromptForm';
