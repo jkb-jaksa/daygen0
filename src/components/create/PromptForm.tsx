@@ -18,14 +18,20 @@ import {
   MessageCircle,
   BookmarkIcon,
   X,
+  Minus,
+  LayoutGrid,
+  Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useGallery } from './contexts/GalleryContext';
+import { useGeneration } from './contexts/GenerationContext';
 import { buttons, glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
+import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -75,6 +81,17 @@ const hideHoverTooltip = (tooltipId: string) => {
 
 const tooltipBaseClasses =
   'absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block';
+
+const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
+  <div className="relative inline-flex items-center group">
+    {children}
+    {text && (
+      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
+        {text}
+      </div>
+    )}
+  </div>
+);
 
 const PromptForm = memo<PromptFormProps>(
   ({
@@ -137,6 +154,10 @@ const PromptForm = memo<PromptFormProps>(
 
     const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
 
+    const generation = useGeneration();
+    const { state: generationState, setBatchSize } = generation;
+    const { batchSize, activeJobs } = generationState;
+
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
     const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
@@ -147,6 +168,11 @@ const PromptForm = memo<PromptFormProps>(
     const promptsButtonRef = useRef<HTMLButtonElement | null>(null);
 
     const [isDragActive, setIsDragActive] = useState(false);
+    const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
+    const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
+    const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+    const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
+    const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
 
     useEffect(() => {
       if (!onPromptBarHeightChange || typeof window === 'undefined') {
@@ -278,6 +304,44 @@ const PromptForm = memo<PromptFormProps>(
       [handleDrop, isGeminiModel],
     );
 
+    const handleAvatarButtonDragOver = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOverAvatarButton(true);
+    }, []);
+
+    const handleAvatarButtonDragLeave = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOverAvatarButton(false);
+    }, []);
+
+    const handleAvatarButtonDrop = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOverAvatarButton(false);
+      // TODO: Handle avatar drop
+    }, []);
+
+    const handleProductButtonDragOver = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOverProductButton(true);
+    }, []);
+
+    const handleProductButtonDragLeave = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOverProductButton(false);
+    }, []);
+
+    const handleProductButtonDrop = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOverProductButton(false);
+      // TODO: Handle product drop
+    }, []);
+
     const totalReferenceCount =
       referencePreviews.length +
       (avatarHandlers.selectedAvatar ? 1 : 0) +
@@ -311,6 +375,21 @@ const PromptForm = memo<PromptFormProps>(
       () => finalPrompt.trim().length > 0 && !effectiveIsGenerating,
       [finalPrompt, effectiveIsGenerating],
     );
+
+    const hasGenerationCapacity = useMemo(
+      () => activeJobs.length < MAX_PARALLEL_GENERATIONS,
+      [activeJobs.length],
+    );
+
+    const generateButtonTooltip = useMemo(() => {
+      if (!finalPrompt.trim()) {
+        return 'Enter your prompt to generate';
+      }
+      if (!hasGenerationCapacity) {
+        return `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`;
+      }
+      return '';
+    }, [finalPrompt, hasGenerationCapacity]);
 
     const handlePromptInput = useCallback((event: React.FormEvent<HTMLTextAreaElement>) => {
       const target = event.currentTarget;
@@ -511,40 +590,10 @@ const PromptForm = memo<PromptFormProps>(
                   </div>
                 )}
               </div>
-
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button
-                    type="button"
-                    ref={promptsButtonRef}
-                    onClick={() => {
-                      handlePromptsDropdownToggle();
-                    }}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                    onMouseEnter={(e) => {
-                      showHoverTooltip(e.currentTarget, 'prompts-tooltip');
-                    }}
-                    onMouseLeave={() => {
-                      hideHoverTooltip('prompts-tooltip');
-                    }}
-                    onPointerMove={onPointerMove}
-                    onPointerEnter={onPointerEnter}
-                    onPointerLeave={onPointerLeave}
-                  >
-                    <BookmarkIcon className="w-4 h-4" />
-                  </button>
-                  <div
-                    data-tooltip-for="prompts-tooltip"
-                    className={tooltipBaseClasses}
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
-                  >
-                    Your Prompts
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
+            {/* Third row: Model + Settings + Aspect Ratio + Batch Size + Prompts */}
+            <div className="flex items-center gap-2">
               <Suspense fallback={null}>
                 <ModelSelector
                   selectedModel={selectedModel}
@@ -553,64 +602,50 @@ const PromptForm = memo<PromptFormProps>(
                 />
               </Suspense>
 
-              <button
-                ref={avatarHandlers.avatarButtonRef}
-                onClick={avatarHandlers.handleAvatarPickerOpen}
-                className={`${buttons.ghost} flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                  avatarHandlers.selectedAvatar ? 'bg-theme-accent/20 text-theme-accent' : ''
-                }`}
-                onPointerEnter={onPointerEnter}
-                onPointerLeave={onPointerLeave}
-                onPointerMove={onPointerMove}
-              >
-                <User className="w-4 h-4" />
-                {avatarHandlers.selectedAvatar ? avatarHandlers.selectedAvatar.name : 'Avatar'}
-              </button>
-
-              <button
-                ref={productHandlers.productButtonRef}
-                onClick={productHandlers.handleProductPickerOpen}
-                className={`${buttons.ghost} flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                  productHandlers.selectedProduct ? 'bg-theme-accent/20 text-theme-accent' : ''
-                }`}
-                onPointerEnter={onPointerEnter}
-                onPointerLeave={onPointerLeave}
-                onPointerMove={onPointerMove}
-              >
-                <Package className="w-4 h-4" />
-                {productHandlers.selectedProduct ? productHandlers.selectedProduct.name : 'Product'}
-              </button>
-
-              <button
-                ref={styleHandlers.stylesButtonRef}
-                onClick={styleHandlers.handleStyleModalOpen}
-                className={`${buttons.ghost} flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                  styleHandlers.totalSelectedStyles > 0 ? 'bg-theme-accent/20 text-theme-accent' : ''
-                }`}
-                onPointerEnter={onPointerEnter}
-                onPointerLeave={onPointerLeave}
-                onPointerMove={onPointerMove}
-              >
-                <Palette className="w-4 h-4" />
-                {styleHandlers.selectedStylesLabel || 'Style'}
-              </button>
+              <div className="relative settings-dropdown">
+                <button
+                  ref={settingsButtonRef}
+                  type="button"
+                  onClick={handleSettingsToggle}
+                  title="Settings"
+                  aria-label="Settings"
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 parallax-small`}
+                  onPointerMove={onPointerMove}
+                  onPointerEnter={onPointerEnter}
+                  onPointerLeave={onPointerLeave}
+                >
+                  <Settings className="w-4 h-4 text-n-text" />
+                </button>
+              </div>
 
               {showAspectRatioButton && (
                 <div className="relative">
                   <button
                     ref={aspectRatioButtonRef}
+                    type="button"
                     onClick={handleAspectRatioToggle}
-                    disabled={effectiveIsGenerating}
-                    className={`${buttons.ghost} flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                      effectiveIsGenerating ? 'cursor-not-allowed opacity-70' : ''
-                    }`}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
+                    aria-label="Aspect ratio"
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(e.currentTarget, 'aspect-ratio-tooltip');
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip('aspect-ratio-tooltip');
+                    }}
+                    onPointerMove={onPointerMove}
                     onPointerEnter={onPointerEnter}
                     onPointerLeave={onPointerLeave}
-                    onPointerMove={onPointerMove}
                   >
-                    <Scan className="w-4 h-4" />
-                    {aspectRatioLabel}
+                    <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                    <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioLabel}</span>
                   </button>
+                  <div
+                    data-tooltip-for="aspect-ratio-tooltip"
+                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  >
+                    Aspect Ratio
+                  </div>
                   <Suspense fallback={null}>
                     <AspectRatioDropdown
                       anchorRef={aspectRatioButtonRef}
@@ -627,41 +662,326 @@ const PromptForm = memo<PromptFormProps>(
                 </div>
               )}
 
-              <div className="relative">
-                <button
-                  ref={settingsButtonRef}
-                  onClick={handleSettingsToggle}
-                  className={`${buttons.ghost} flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200`}
-                  onPointerEnter={onPointerEnter}
-                  onPointerLeave={onPointerLeave}
-                  onPointerMove={onPointerMove}
+              <div className="relative batch-size-selector hidden lg:flex flex-shrink-0">
+                <div
+                  role="group"
+                  aria-label="Batch size"
+                  className={`${glass.promptBorderless} flex items-center gap-0 h-8 px-2 rounded-full text-n-text`}
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(e.currentTarget, 'batch-size-tooltip');
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip('batch-size-tooltip');
+                  }}
                 >
-                  <Settings className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setBatchSize(Math.max(1, batchSize - 1))}
+                    disabled={batchSize === 1}
+                    aria-label="Decrease batch size"
+                    title="Decrease batch size"
+                    className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="min-w-[1.25rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
+                    {batchSize}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBatchSize(Math.min(4, batchSize + 1))}
+                    disabled={batchSize === 4}
+                    aria-label="Increase batch size"
+                    title="Increase batch size"
+                    className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div
+                  data-tooltip-for="batch-size-tooltip"
+                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                >
+                  Batch size
+                </div>
               </div>
 
+              <div className="relative">
+                <button
+                  type="button"
+                  ref={promptsButtonRef}
+                  onClick={() => {
+                    handlePromptsDropdownToggle();
+                  }}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 parallax-small`}
+                  onMouseEnter={() => {
+                    if (typeof document !== 'undefined') {
+                      const tooltip = document.querySelector(`[data-tooltip-for="prompts-tooltip"]`) as HTMLElement | null;
+                      if (tooltip) {
+                        tooltip.style.top = '0px';
+                        tooltip.style.left = '50%';
+                        tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+                        tooltip.classList.remove('opacity-0');
+                        tooltip.classList.add('opacity-100');
+                      }
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (typeof document !== 'undefined') {
+                      const tooltip = document.querySelector(`[data-tooltip-for="prompts-tooltip"]`) as HTMLElement | null;
+                      if (tooltip) {
+                        tooltip.classList.remove('opacity-100');
+                        tooltip.classList.add('opacity-0');
+                      }
+                    }
+                  }}
+                  onPointerMove={onPointerMove}
+                  onPointerEnter={onPointerEnter}
+                  onPointerLeave={onPointerLeave}
+                >
+                  <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
+                </button>
+                <div
+                  data-tooltip-for="prompts-tooltip"
+                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                >
+                  Your Prompts
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right section: Avatar + Product + Style + Generate */}
+          <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+            <div className="relative">
               <button
-                onClick={triggerGenerate}
-                disabled={!canGenerate}
-                className={`${buttons.primary} flex items-center gap-2 px-6 py-2 rounded-lg transition-colors duration-200 ${
-                  !canGenerate ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                type="button"
+                ref={avatarHandlers.avatarButtonRef}
+                onClick={avatarHandlers.handleAvatarPickerOpen}
+                onDragOver={handleAvatarButtonDragOver}
+                onDragLeave={handleAvatarButtonDragLeave}
+                onDrop={handleAvatarButtonDrop}
+                onMouseEnter={() => setIsAvatarButtonHovered(true)}
+                onMouseLeave={() => setIsAvatarButtonHovered(false)}
+                className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${avatarHandlers.selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                onPointerMove={onPointerMove}
                 onPointerEnter={onPointerEnter}
                 onPointerLeave={onPointerLeave}
-                onPointerMove={onPointerMove}
               >
-                {effectiveIsButtonSpinning ? (
-                  <div className="w-4 h-4 border-2 border-theme-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Wand2 className="w-4 h-4" />
+                {!avatarHandlers.selectedAvatar && (
+                  <>
+                    <div className="flex-1 flex items-center justify-center lg:mt-3">
+                      {isAvatarButtonHovered ? (
+                        <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                      ) : (
+                        <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                      )}
+                    </div>
+                    <div className="hidden lg:flex items-center gap-1">
+                      <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                        Avatar
+                      </span>
+                    </div>
+                  </>
                 )}
-                Generate
+                {avatarHandlers.selectedAvatar && (
+                  <>
+                    <img
+                      src={avatarHandlers.selectedAvatarImage?.url ?? avatarHandlers.selectedAvatar.imageUrl}
+                      alt={avatarHandlers.selectedAvatar.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                      title={avatarHandlers.selectedAvatar.name}
+                    />
+                    <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                      <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                        {avatarHandlers.selectedAvatar.name}
+                      </span>
+                    </div>
+                  </>
+                )}
               </button>
+              {avatarHandlers.selectedAvatar && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    avatarHandlers.handleAvatarSelect(null);
+                  }}
+                  className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                  title="Remove avatar"
+                  aria-label="Remove avatar"
+                >
+                  <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                </button>
+              )}
             </div>
 
-            {error && <div className="text-sm text-theme-accent">{error}</div>}
+            <div className="relative">
+              <button
+                type="button"
+                ref={productHandlers.productButtonRef}
+                onClick={productHandlers.handleProductPickerOpen}
+                onDragOver={handleProductButtonDragOver}
+                onDragLeave={handleProductButtonDragLeave}
+                onDrop={handleProductButtonDrop}
+                onMouseEnter={() => setIsProductButtonHovered(true)}
+                onMouseLeave={() => setIsProductButtonHovered(false)}
+                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${productHandlers.selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                onPointerMove={onPointerMove}
+                onPointerEnter={onPointerEnter}
+                onPointerLeave={onPointerLeave}
+              >
+                {!productHandlers.selectedProduct && (
+                  <>
+                    <div className="flex-1 flex items-center justify-center lg:mt-3">
+                      {isProductButtonHovered ? (
+                        <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                      ) : (
+                        <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                      )}
+                    </div>
+                    <div className="hidden lg:flex items-center gap-1">
+                      <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                        Product
+                      </span>
+                    </div>
+                  </>
+                )}
+                {productHandlers.selectedProduct && (
+                  <>
+                    <img
+                      src={productHandlers.selectedProduct.imageUrl}
+                      alt={productHandlers.selectedProduct.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                      title={productHandlers.selectedProduct.name}
+                    />
+                    <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                      <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                        {productHandlers.selectedProduct.name}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </button>
+              {productHandlers.selectedProduct && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    productHandlers.handleProductSelect(null);
+                  }}
+                  className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                  title="Remove product"
+                  aria-label="Remove product"
+                >
+                  <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                </button>
+              )}
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
+                ref={styleHandlers.stylesButtonRef}
+                onClick={styleHandlers.handleStyleModalOpen}
+                onMouseEnter={() => setIsStyleButtonHovered(true)}
+                onMouseLeave={() => setIsStyleButtonHovered(false)}
+                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 ${styleHandlers.firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
+                aria-label="Select style"
+                aria-expanded={styleHandlers.isStyleModalOpen}
+                onPointerMove={onPointerMove}
+                onPointerEnter={onPointerEnter}
+                onPointerLeave={onPointerLeave}
+              >
+                {!styleHandlers.firstSelectedStyle && (
+                  <>
+                    <div className="flex-1 flex items-center justify-center lg:mt-3">
+                      {isStyleButtonHovered ? (
+                        <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                      ) : (
+                        <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                      )}
+                    </div>
+                    <div className="hidden lg:flex items-center gap-1">
+                      <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                        Style
+                      </span>
+                    </div>
+                  </>
+                )}
+                {styleHandlers.firstSelectedStyle && (
+                  <>
+                    {styleHandlers.firstSelectedStyle.image ? (
+                      <img
+                        src={styleHandlers.firstSelectedStyle.image}
+                        alt={styleHandlers.firstSelectedStyle.name}
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                        title={styleHandlers.firstSelectedStyle.name}
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl"
+                        style={{
+                          backgroundImage: styleHandlers.firstSelectedStyle.previewGradient,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }}
+                      />
+                    )}
+                    <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                      <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                        {styleHandlers.firstSelectedStyle.name}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </button>
+              {styleHandlers.firstSelectedStyle && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    styleHandlers.handleClearStyles();
+                  }}
+                  className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                  title="Remove styles"
+                  aria-label="Remove styles"
+                >
+                  <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                </button>
+              )}
+            </div>
+
+            {/* Generate button */}
+            <Tooltip text={generateButtonTooltip}>
+              <button
+                onClick={triggerGenerate}
+                disabled={!canGenerate || !hasGenerationCapacity}
+                className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
+                aria-label={`Generate (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
+              >
+                <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
+                  Generate
+                </span>
+                <div className="flex items-center gap-0 sm:gap-1">
+                  {effectiveIsButtonSpinning ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-n-black" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-n-black" />
+                  )}
+                  <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-n-black">{batchSize}</span>
+                </div>
+              </button>
+            </Tooltip>
           </div>
         </div>
+
+        {error && <div className="text-sm text-theme-accent">{error}</div>}
 
         {isSettingsOpen && (
           <Suspense fallback={null}>

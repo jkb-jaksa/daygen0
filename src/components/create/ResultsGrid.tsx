@@ -247,32 +247,32 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       )}
       
       {/* Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
         {filteredItems.map((item, index) => (
           <div
             key={item.jobId || index}
-            className={`relative group cursor-pointer rounded-lg overflow-hidden transition-all duration-200 ${
+            className={`relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large group ${
               isItemSelected(item) ? 'ring-2 ring-theme-accent' : ''
             }`}
             onClick={() => handleItemClick(item, index)}
             onContextMenu={(e) => handleItemRightClick(e, item)}
           >
             {/* Image/Video */}
-            <div className="aspect-square bg-theme-mid/50 flex items-center justify-center">
-              {isVideo(item) ? (
-                <video
-                  src={item.url}
-                  className="w-full h-full object-cover"
-                  muted
-                />
-              ) : (
-                <img
-                  src={item.url}
-                  alt={item.prompt}
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </div>
+            {isVideo(item) ? (
+              <video
+                src={item.url}
+                className="w-full aspect-square object-cover"
+                controls
+              />
+            ) : (
+              <img
+                src={item.url}
+                alt={item.prompt || `Generated ${index + 1}`}
+                loading="lazy"
+                className="w-full aspect-square object-cover cursor-pointer focus:outline-none focus:ring-2 focus:ring-theme-text focus:ring-offset-2 focus:ring-offset-theme-black"
+                tabIndex={0}
+              />
+            )}
             
             {/* Overlay */}
             <div className="absolute inset-0 bg-theme-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">

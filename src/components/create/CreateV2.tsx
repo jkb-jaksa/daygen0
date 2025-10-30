@@ -92,8 +92,6 @@ export default function CreateV2() {
   const isGenerationCategory = GENERATION_CATEGORY_SET.has(activeCategory);
   const shouldShowResultsGrid = GENERATION_CATEGORY_SET.has(activeCategory) || GALLERY_CATEGORY_SET.has(activeCategory);
   const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
-  const minimumPromptReservedSpace = SIDEBAR_PROMPT_GAP + 12;
-  const effectivePromptReservedSpace = Math.max(promptBarReservedSpace, minimumPromptReservedSpace);
 
   useEffect(() => {
     setActiveCategory(resolvedCategory);
@@ -172,7 +170,9 @@ export default function CreateV2() {
   return (
     <header
       className={`relative z-10 ${layout.container} pb-48`}
-      style={{ paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)` }}
+      style={{
+        paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`,
+      }}
     >
       {/* Version Badge - Development Only */}
       {import.meta.env.DEV && (
@@ -257,7 +257,7 @@ export default function CreateV2() {
                 activeCategory={activeCategory}
                 onSelectCategory={handleSelectCategory}
                 onOpenMyFolders={handleOpenMyFolders}
-                reservedBottomSpace={effectivePromptReservedSpace}
+                reservedBottomSpace={promptBarReservedSpace}
                 isFullSizeOpen={state.isFullSizeOpen}
               />
             </Suspense>
