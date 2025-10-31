@@ -12,6 +12,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
 import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from './layoutConstants';
+import { useFooter } from '../../contexts/useFooter';
 
 const SUPPORTED_CATEGORIES = ['image', 'video', 'gallery', 'my-folders'] as const;
 type SupportedCategory = (typeof SUPPORTED_CATEGORIES)[number];
@@ -66,6 +67,7 @@ export default function CreateV2() {
   const location = useLocation();
   const params = useParams<{ category?: string }>();
   const navigate = useNavigate();
+  const { setFooterVisible } = useFooter();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
 
@@ -96,6 +98,21 @@ export default function CreateV2() {
   useEffect(() => {
     setActiveCategory(resolvedCategory);
   }, [resolvedCategory]);
+
+  useEffect(() => {
+    const isGalleryRoute = location.pathname.startsWith('/gallery');
+    const hideFooterSections = new Set(['text', 'image', 'video', 'audio']);
+
+    if (isGalleryRoute) {
+      setFooterVisible(false);
+    } else {
+      setFooterVisible(!hideFooterSections.has(activeCategory));
+    }
+
+    return () => {
+      setFooterVisible(true);
+    };
+  }, [activeCategory, location.pathname, setFooterVisible]);
 
   useEffect(() => {
     if (activeCategory === 'video' && !VIDEO_MODEL_SET.has(selectedModel)) {

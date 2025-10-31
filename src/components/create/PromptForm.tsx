@@ -2,6 +2,7 @@ import React, {
   memo,
   useCallback,
   useEffect,
+p  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -26,8 +27,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
+import { useGenerateShortcuts } from '../../hooks/useGenerateShortcuts';
+import { usePrefillFromShare } from '../../hooks/usePrefillFromShare';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
+import { AvatarPickerPortal } from './AvatarPickerPortal';
 import { buttons, glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
@@ -42,6 +46,8 @@ const AspectRatioDropdown = lazy(() =>
 const PromptsDropdown = lazy(() =>
   import('../PromptsDropdown').then(module => ({ default: module.PromptsDropdown })),
 );
+const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
+const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
 interface PromptFormProps {
   onGenerate?: () => void;
@@ -134,6 +140,8 @@ const PromptForm = memo<PromptFormProps>(
       getFinalPrompt,
     } = promptHandlers;
 
+    usePrefillFromShare(setPromptValue);
+
     const {
       referencePreviews,
       referenceFiles,
@@ -173,6 +181,160 @@ const PromptForm = memo<PromptFormProps>(
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+    const {
+      storedAvatars,
+      selectedAvatar,
+      isAvatarPickerOpen,
+      avatarButtonRef,
+      avatarQuickUploadInputRef,
+      handleAvatarSelect,
+      handleAvatarPickerClose,
+      setIsAvatarPickerOpen,
+      isAvatarCreationModalOpen,
+      setIsAvatarCreationModalOpen,
+      avatarSelection,
+      setAvatarSelection,
+      avatarUploadError,
+      setAvatarUploadError,
+      isDraggingAvatar,
+      setIsDraggingAvatar,
+      avatarName,
+      setAvatarName,
+      handleAvatarSave: persistAvatar,
+      resetAvatarCreationPanel,
+      processAvatarImageFile,
+    } = avatarHandlers;
+    const {
+      storedProducts,
+      selectedProduct,
+      isProductPickerOpen,
+      productButtonRef,
+      productQuickUploadInputRef,
+      handleProductSelect,
+      handleProductPickerClose,
+      setIsProductPickerOpen,
+      isProductCreationModalOpen,
+      setIsProductCreationModalOpen,
+      productSelection,
+      setProductSelection,
+      productUploadError,
+      setProductUploadError,
+      isDraggingProduct,
+      setIsDraggingProduct,
+      productName,
+      setProductName,
+      handleProductSave: persistProduct,
+      resetProductCreationPanel,
+      processProductImageFile,
+    } = productHandlers;
+
+    const handleAvatarButtonClick = useCallback(() => {
+      if (storedAvatars.length === 0) {
+        setAvatarUploadError(null);
+        avatarQuickUploadInputRef.current?.click();
+        return;
+      }
+
+      setIsProductPickerOpen(false);
+      setIsAvatarPickerOpen(prev => !prev);
+    }, [
+      storedAvatars.length,
+      setAvatarUploadError,
+      avatarQuickUploadInputRef,
+      setIsAvatarPickerOpen,
+      setIsProductPickerOpen,
+    ]);
+
+    const handleProductButtonClick = useCallback(() => {
+      if (storedProducts.length === 0) {
+        setProductUploadError(null);
+        productQuickUploadInputRef.current?.click();
+        return;
+      }
+
+      setIsAvatarPickerOpen(false);
+      setIsProductPickerOpen(prev => !prev);
+    }, [
+      storedProducts.length,
+      setProductUploadError,
+      productQuickUploadInputRef,
+      setIsProductPickerOpen,
+      setIsAvatarPickerOpen,
+    ]);
+
+    const handleAvatarQuickUpload = useCallback(
+      (file: File | null) => {
+        if (!file) {
+          return;
+        }
+        setIsAvatarPickerOpen(false);
+        setIsDraggingAvatar(false);
+        setAvatarUploadError(null);
+        processAvatarImageFile(file);
+        setIsAvatarCreationModalOpen(true);
+      },
+      [
+        setIsAvatarPickerOpen,
+        setIsDraggingAvatar,
+        setAvatarUploadError,
+        processAvatarImageFile,
+        setIsAvatarCreationModalOpen,
+      ],
+    );
+
+    const handleProductQuickUpload = useCallback(
+      (file: File | null) => {
+        if (!file) {
+          return;
+        }
+        setIsProductPickerOpen(false);
+        setIsDraggingProduct(false);
+        setProductUploadError(null);
+        processProductImageFile(file);
+        setIsProductCreationModalOpen(true);
+      },
+      [
+        setIsProductPickerOpen,
+        setIsDraggingProduct,
+        setProductUploadError,
+        processProductImageFile,
+        setIsProductCreationModalOpen,
+      ],
+    );
+
+    const handleAvatarQuickUploadInput = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.currentTarget.files?.[0] ?? null;
+        event.currentTarget.value = '';
+        handleAvatarQuickUpload(file);
+      },
+      [handleAvatarQuickUpload],
+    );
+
+    const handleProductQuickUploadInput = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.currentTarget.files?.[0] ?? null;
+        event.currentTarget.value = '';
+        handleProductQuickUpload(file);
+      },
+      [handleProductQuickUpload],
+    );
+
+    const handleSaveNewAvatar = useCallback(() => {
+      if (!avatarSelection || !avatarName.trim()) {
+        setAvatarUploadError(previous => previous ?? 'Name your avatar to save it.');
+        return;
+      }
+      void persistAvatar(avatarName.trim(), avatarSelection);
+    }, [avatarSelection, avatarName, persistAvatar, setAvatarUploadError]);
+
+    const handleSaveNewProduct = useCallback(() => {
+      if (!productSelection || !productName.trim()) {
+        setProductUploadError(previous => previous ?? 'Name your product to save it.');
+        return;
+      }
+      void persistProduct(productName.trim(), productSelection);
+    }, [productSelection, productName, persistProduct, setProductUploadError]);
 
     useEffect(() => {
       if (!onPromptBarHeightChange || typeof window === 'undefined') {
@@ -238,15 +400,50 @@ const PromptForm = memo<PromptFormProps>(
       }
     }, [aspectRatioControl]);
 
-    useEffect(() => {
-      if (!textareaRef.current) {
-        return;
-      }
+    const adjustPromptTextareaHeight = useCallback(() => {
       const textarea = textareaRef.current;
+      if (!textarea) return;
+
       textarea.style.height = 'auto';
-      const nextHeight = Math.min(textarea.scrollHeight, 160);
-      textarea.style.height = `${nextHeight}px`;
-    }, [prompt]);
+      textarea.style.overflowX = 'hidden';
+      const fullHeight = textarea.scrollHeight;
+      const clampedHeight = Math.min(fullHeight, 160);
+      textarea.style.height = `${clampedHeight}px`;
+      textarea.style.overflowY = fullHeight > 160 ? 'auto' : 'hidden';
+    }, []);
+
+    useEffect(() => {
+      if (typeof window === 'undefined') return;
+
+      adjustPromptTextareaHeight();
+
+      const handleResize = () => {
+        adjustPromptTextareaHeight();
+      };
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleResize);
+
+      const element = promptBarRef.current;
+      let resizeObserver: ResizeObserver | null = null;
+
+      if (element && typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => {
+          adjustPromptTextareaHeight();
+        });
+        resizeObserver.observe(element);
+      }
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleResize);
+        resizeObserver?.disconnect();
+      };
+    }, [adjustPromptTextareaHeight]);
+
+    useLayoutEffect(() => {
+      adjustPromptTextareaHeight();
+    }, [prompt, adjustPromptTextareaHeight]);
 
     const aspectRatioLabel =
       aspectRatioControl?.selectedValue ?? aspectRatioControl?.selectedLabel ?? 'Aspect Ratio';
@@ -304,48 +501,62 @@ const PromptForm = memo<PromptFormProps>(
       [handleDrop, isGeminiModel],
     );
 
-    const handleAvatarButtonDragOver = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
       setIsDraggingOverAvatarButton(true);
-    }, []);
+      avatarHandlers.handleAvatarDragOver(event);
+    }, [avatarHandlers]);
 
-    const handleAvatarButtonDragLeave = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleAvatarButtonDragLeave = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
       setIsDraggingOverAvatarButton(false);
-    }, []);
+      avatarHandlers.handleAvatarDragLeave(event);
+    }, [avatarHandlers]);
 
-    const handleAvatarButtonDrop = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDraggingOverAvatarButton(false);
-      // TODO: Handle avatar drop
-    }, []);
+    const handleAvatarButtonDrop = useCallback(
+      (event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverAvatarButton(false);
+        setIsAvatarPickerOpen(false);
+        setIsProductPickerOpen(false);
+        avatarHandlers.handleAvatarDrop(event);
+      },
+      [avatarHandlers, setIsAvatarPickerOpen, setIsProductPickerOpen],
+    );
 
-    const handleProductButtonDragOver = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
       setIsDraggingOverProductButton(true);
-    }, []);
+      productHandlers.handleProductDragOver(event);
+    }, [productHandlers]);
 
-    const handleProductButtonDragLeave = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleProductButtonDragLeave = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
       setIsDraggingOverProductButton(false);
-    }, []);
+      productHandlers.handleProductDragLeave(event);
+    }, [productHandlers]);
 
-    const handleProductButtonDrop = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDraggingOverProductButton(false);
-      // TODO: Handle product drop
-    }, []);
+    const handleProductButtonDrop = useCallback(
+      (event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverProductButton(false);
+        setIsProductPickerOpen(false);
+        setIsAvatarPickerOpen(false);
+        productHandlers.handleProductDrop(event);
+      },
+      [productHandlers, setIsProductPickerOpen, setIsAvatarPickerOpen],
+    );
 
     const totalReferenceCount =
       referencePreviews.length +
-      (avatarHandlers.selectedAvatar ? 1 : 0) +
-      (productHandlers.selectedProduct ? 1 : 0);
+      (selectedAvatar ? 1 : 0) +
+      (selectedProduct ? 1 : 0);
 
     const remainingReferenceSlots = Math.max(0, MAX_REFERENCE_SLOTS - totalReferenceCount);
 
@@ -356,9 +567,8 @@ const PromptForm = memo<PromptFormProps>(
       debugLog('[PromptForm] Generate button clicked');
       if (onGenerate) {
         onGenerate();
-        return;
       }
-      void handleGenerate();
+      return handleGenerate();
     }, [clearError, error, handleGenerate, onGenerate]);
 
     const handleSettingsToggle = useCallback(() => {
@@ -391,11 +601,10 @@ const PromptForm = memo<PromptFormProps>(
       return '';
     }, [finalPrompt, hasGenerationCapacity]);
 
-    const handlePromptInput = useCallback((event: React.FormEvent<HTMLTextAreaElement>) => {
-      const target = event.currentTarget;
-      target.style.height = 'auto';
-      target.style.height = `${Math.min(target.scrollHeight, 160)}px`;
-    }, []);
+    const { onKeyDown } = useGenerateShortcuts({
+      enabled: hasGenerationCapacity,
+      onGenerate: triggerGenerate,
+    });
 
     const handlePromptChangeInternal = useCallback(
       (value: string) => {
@@ -415,16 +624,10 @@ const PromptForm = memo<PromptFormProps>(
       [handlePromptsDropdownClose, setPromptValue],
     );
 
-    const promptSurfaceClasses = useMemo(() => {
-      const base = `${glass.prompt} rounded-[16px] px-4 py-3 transition-colors duration-200`;
-      const dragState = isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid';
-      return `promptbar fixed z-40 ${base} ${dragState}`;
-    }, [isDragActive, isGeminiModel]);
-
     return (
       <div
         ref={promptBarRef}
-        className={promptSurfaceClasses}
+        className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
         style={{
           bottom: '0.75rem',
           transform: 'translateX(-50%) translateZ(0)',
@@ -437,44 +640,28 @@ const PromptForm = memo<PromptFormProps>(
         onDrop={handleDragAreaDrop}
       >
         <div className="flex gap-3 items-stretch">
+          {/* Left section: Textarea + Controls */}
           <div className="flex-1 flex flex-col">
-            <div className="mb-1">
+            {/* Textarea - first row */}
+            <div className="-mb-3">
               <textarea
                 ref={textareaRef}
                 value={prompt}
                 onChange={event => handlePromptChangeInternal(event.target.value)}
-                onInput={handlePromptInput}
+                onKeyDown={onKeyDown}
                 onPaste={handlePaste}
                 placeholder="Describe what you want to create..."
                 rows={1}
-                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 pt-1 pb-0 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
               />
-              <Suspense fallback={null}>
-                <PromptsDropdown
-                  isOpen={isPromptsDropdownOpen}
-                  onClose={handlePromptsDropdownClose}
-                  anchorEl={promptsButtonRef.current}
-                  recentPrompts={recentPrompts}
-                  savedPrompts={savedPromptsList}
-                  onSelectPrompt={handlePromptSelect}
-                  onRemoveSavedPrompt={id => handleUpdateSavedPrompt(id, '')}
-                  onRemoveRecentPrompt={handleRemoveRecentPrompt}
-                  onUpdateSavedPrompt={handleUpdateSavedPrompt}
-                  onAddSavedPrompt={text => {
-                    handleSavePrompt(text);
-                    return null;
-                  }}
-                  onSaveRecentPrompt={handleSavePrompt}
-                />
-              </Suspense>
             </div>
             
             {/* Buttons - second row */}
-            <div className="flex items-center justify-between gap-2 px-3">
+            <div className="flex items-end justify-between gap-2 px-3">
               {/* Left icons and controls */}
-              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-                {/* Chat mode */}
-                <div className="relative">
+              <div className="flex items-center gap-1 flex-wrap lg:flex-nowrap flex-1 min-w-0">
+                  {/* Chat mode */}
+                  <div className="relative">
                   <button
                     type="button"
                     onClick={() => navigate('/create/chat')}
@@ -751,26 +938,26 @@ const PromptForm = memo<PromptFormProps>(
                   Your Prompts
                 </div>
               </div>
-            </div>
+              </div>
 
-            {/* Right section: Avatar + Product + Style + Generate */}
-            <div className="flex flex-row gap-2 flex-shrink-0 items-end">
-            <div className="relative">
-              <button
-                type="button"
-                ref={avatarHandlers.avatarButtonRef}
-                onClick={avatarHandlers.handleAvatarPickerOpen}
-                onDragOver={handleAvatarButtonDragOver}
-                onDragLeave={handleAvatarButtonDragLeave}
-                onDrop={handleAvatarButtonDrop}
-                onMouseEnter={() => setIsAvatarButtonHovered(true)}
-                onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${avatarHandlers.selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                onPointerMove={onPointerMove}
-                onPointerEnter={onPointerEnter}
-                onPointerLeave={onPointerLeave}
+              {/* Right section: Avatar + Product + Style + Generate */}
+              <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+                <div className="relative">
+                <button
+                  type="button"
+                  ref={avatarButtonRef}
+                  onClick={handleAvatarButtonClick}
+                  onDragOver={handleAvatarButtonDragOver}
+                  onDragLeave={handleAvatarButtonDragLeave}
+                  onDrop={handleAvatarButtonDrop}
+                  onMouseEnter={() => setIsAvatarButtonHovered(true)}
+                  onMouseLeave={() => setIsAvatarButtonHovered(false)}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  onPointerMove={onPointerMove}
+                  onPointerEnter={onPointerEnter}
+                  onPointerLeave={onPointerLeave}
               >
-                {!avatarHandlers.selectedAvatar && (
+                {!selectedAvatar && (
                   <>
                     <div className="flex-1 flex items-center justify-center lg:mt-3">
                       {isAvatarButtonHovered ? (
@@ -786,29 +973,29 @@ const PromptForm = memo<PromptFormProps>(
                     </div>
                   </>
                 )}
-                {avatarHandlers.selectedAvatar && (
+                {selectedAvatar && (
                   <>
                     <img
-                      src={avatarHandlers.selectedAvatarImage?.url ?? avatarHandlers.selectedAvatar.imageUrl}
-                      alt={avatarHandlers.selectedAvatar.name}
+                      src={avatarHandlers.selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
+                      alt={selectedAvatar.name}
                       loading="lazy"
                       className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                      title={avatarHandlers.selectedAvatar.name}
+                      title={selectedAvatar.name}
                     />
                     <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
                       <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                        {avatarHandlers.selectedAvatar.name}
+                        {selectedAvatar.name}
                       </span>
                     </div>
                   </>
                 )}
               </button>
-              {avatarHandlers.selectedAvatar && (
+              {selectedAvatar && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    avatarHandlers.handleAvatarSelect(null);
+                    handleAvatarSelect(null);
                   }}
                   className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
                   title="Remove avatar"
@@ -822,19 +1009,19 @@ const PromptForm = memo<PromptFormProps>(
             <div className="relative">
               <button
                 type="button"
-                ref={productHandlers.productButtonRef}
-                onClick={productHandlers.handleProductPickerOpen}
+                ref={productButtonRef}
+                onClick={handleProductButtonClick}
                 onDragOver={handleProductButtonDragOver}
                 onDragLeave={handleProductButtonDragLeave}
                 onDrop={handleProductButtonDrop}
                 onMouseEnter={() => setIsProductButtonHovered(true)}
                 onMouseLeave={() => setIsProductButtonHovered(false)}
-                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${productHandlers.selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                 onPointerMove={onPointerMove}
                 onPointerEnter={onPointerEnter}
                 onPointerLeave={onPointerLeave}
               >
-                {!productHandlers.selectedProduct && (
+                {!selectedProduct && (
                   <>
                     <div className="flex-1 flex items-center justify-center lg:mt-3">
                       {isProductButtonHovered ? (
@@ -850,29 +1037,29 @@ const PromptForm = memo<PromptFormProps>(
                     </div>
                   </>
                 )}
-                {productHandlers.selectedProduct && (
+                {selectedProduct && (
                   <>
                     <img
-                      src={productHandlers.selectedProduct.imageUrl}
-                      alt={productHandlers.selectedProduct.name}
+                      src={selectedProduct.imageUrl}
+                      alt={selectedProduct.name}
                       loading="lazy"
                       className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                      title={productHandlers.selectedProduct.name}
+                      title={selectedProduct.name}
                     />
                     <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
                       <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                        {productHandlers.selectedProduct.name}
+                        {selectedProduct.name}
                       </span>
                     </div>
                   </>
                 )}
               </button>
-              {productHandlers.selectedProduct && (
+              {selectedProduct && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    productHandlers.handleProductSelect(null);
+                    handleProductSelect(null);
                   }}
                   className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
                   title="Remove product"
@@ -983,6 +1170,227 @@ const PromptForm = memo<PromptFormProps>(
           </div>
         </div>
 
+      <AvatarPickerPortal
+        anchorRef={avatarButtonRef}
+        open={isAvatarPickerOpen}
+        onClose={handleAvatarPickerClose}
+      >
+        <div className="min-w-[260px] space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <button
+              type="button"
+              onClick={() => {
+                handleAvatarPickerClose();
+                navigate('/create/avatars');
+              }}
+              className="text-base font-raleway text-theme-text transition-colors duration-200 hover:text-theme-white"
+            >
+              Your Avatars
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAvatarUploadError(null);
+                avatarQuickUploadInputRef.current?.click();
+              }}
+              className="rounded-lg p-1 text-theme-text transition-colors duration-200 hover:bg-theme-text/10"
+              aria-label="Add new avatar"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          {storedAvatars.length > 0 ? (
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              {storedAvatars.map(avatar => {
+                const isActive = selectedAvatar?.id === avatar.id;
+                return (
+                  <button
+                    key={avatar.id}
+                    type="button"
+                    onClick={() => {
+                      handleAvatarSelect(avatar);
+                      setIsAvatarPickerOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 ${
+                      isActive
+                        ? 'border-theme-text bg-theme-text/10 text-theme-text'
+                        : 'border-theme-mid/40 text-theme-white hover:border-theme-mid hover:bg-theme-text/10'
+                    }`}
+                  >
+                    <img
+                      src={avatar.imageUrl}
+                      alt=""
+                      className="h-10 w-10 rounded-xl object-cover"
+                      loading="lazy"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-raleway">{avatar.name}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-theme-mid/50 bg-theme-black/70 px-4 py-6 text-center">
+              <p className="text-sm font-raleway text-theme-white">
+                Upload an avatar to get started.
+              </p>
+              <button
+                type="button"
+                className={`${buttons.primary} mt-3 inline-flex items-center gap-1 text-sm`}
+                onClick={() => {
+                  setAvatarUploadError(null);
+                  avatarQuickUploadInputRef.current?.click();
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                <span>Upload Avatar</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </AvatarPickerPortal>
+
+      <AvatarPickerPortal
+        anchorRef={productButtonRef}
+        open={isProductPickerOpen}
+        onClose={handleProductPickerClose}
+      >
+        <div className="min-w-[260px] space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <button
+              type="button"
+              onClick={() => {
+                handleProductPickerClose();
+                navigate('/create/products');
+              }}
+              className="text-base font-raleway text-theme-text transition-colors duration-200 hover:text-theme-white"
+            >
+              Your Products
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setProductUploadError(null);
+                productQuickUploadInputRef.current?.click();
+              }}
+              className="rounded-lg p-1 text-theme-text transition-colors duration-200 hover:bg-theme-text/10"
+              aria-label="Add new product"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          {storedProducts.length > 0 ? (
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              {storedProducts.map(product => {
+                const isActive = selectedProduct?.id === product.id;
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => {
+                      handleProductSelect(product);
+                      setIsProductPickerOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 ${
+                      isActive
+                        ? 'border-theme-text bg-theme-text/10 text-theme-text'
+                        : 'border-theme-mid/40 text-theme-white hover:border-theme-mid hover:bg-theme-text/10'
+                    }`}
+                  >
+                    <img
+                      src={product.imageUrl}
+                      alt=""
+                      className="h-10 w-10 rounded-xl object-cover"
+                      loading="lazy"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-raleway">{product.name}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-theme-mid/50 bg-theme-black/70 px-4 py-6 text-center">
+              <p className="text-sm font-raleway text-theme-white">
+                Upload a product reference to get started.
+              </p>
+              <button
+                type="button"
+                className={`${buttons.primary} mt-3 inline-flex items-center gap-1 text-sm`}
+                onClick={() => {
+                  setProductUploadError(null);
+                  productQuickUploadInputRef.current?.click();
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                <span>Upload Product</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </AvatarPickerPortal>
+
+      {isAvatarCreationModalOpen && (
+        <Suspense fallback={null}>
+          <AvatarCreationModal
+            open={isAvatarCreationModalOpen}
+            selection={avatarSelection}
+            uploadError={avatarUploadError}
+            isDragging={isDraggingAvatar}
+            avatarName={avatarName}
+            disableSave={!avatarSelection || !avatarName.trim()}
+            onClose={resetAvatarCreationPanel}
+            onAvatarNameChange={setAvatarName}
+            onSave={handleSaveNewAvatar}
+            onClearSelection={() => setAvatarSelection(null)}
+            onProcessFile={processAvatarImageFile}
+            onDragStateChange={setIsDraggingAvatar}
+            onUploadError={setAvatarUploadError}
+          />
+        </Suspense>
+      )}
+
+      {isProductCreationModalOpen && (
+        <Suspense fallback={null}>
+          <ProductCreationModal
+            open={isProductCreationModalOpen}
+            selection={productSelection}
+            uploadError={productUploadError}
+            isDragging={isDraggingProduct}
+            productName={productName}
+            disableSave={!productSelection || !productName.trim()}
+            onClose={resetProductCreationPanel}
+            onProductNameChange={setProductName}
+            onSave={handleSaveNewProduct}
+            onClearSelection={() => setProductSelection(null)}
+            onProcessFile={processProductImageFile}
+            onDragStateChange={setIsDraggingProduct}
+            onUploadError={setProductUploadError}
+          />
+        </Suspense>
+      )}
+
+      <Suspense fallback={null}>
+        <PromptsDropdown
+          isOpen={isPromptsDropdownOpen}
+          onClose={handlePromptsDropdownClose}
+          anchorEl={promptsButtonRef.current}
+          recentPrompts={recentPrompts}
+          savedPrompts={savedPromptsList}
+          onSelectPrompt={handlePromptSelect}
+          onRemoveSavedPrompt={id => handleUpdateSavedPrompt(id, '')}
+          onRemoveRecentPrompt={handleRemoveRecentPrompt}
+          onUpdateSavedPrompt={handleUpdateSavedPrompt}
+          onAddSavedPrompt={text => {
+            handleSavePrompt(text);
+            return null;
+          }}
+          onSaveRecentPrompt={handleSavePrompt}
+        />
+      </Suspense>
+
       <input
         ref={fileInputRef}
         type="file"
@@ -997,6 +1405,20 @@ const PromptForm = memo<PromptFormProps>(
         accept="image/*"
         multiple
         onChange={referenceHandlers.handleRefsSelected}
+        className="hidden"
+      />
+      <input
+        ref={avatarQuickUploadInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleAvatarQuickUploadInput}
+        className="hidden"
+      />
+      <input
+        ref={productQuickUploadInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleProductQuickUploadInput}
         className="hidden"
       />
       

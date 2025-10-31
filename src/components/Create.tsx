@@ -8068,7 +8068,7 @@ const handleGenerate = async () => {
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && activeCategory !== "inspirations" && (
             <div
               ref={promptBarRef}
-              className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
+              className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
               style={{
                 bottom: '0.75rem',
                 transform: 'translateX(-50%) translateZ(0)',
@@ -8083,7 +8083,7 @@ const handleGenerate = async () => {
                 {/* Left section: Textarea + Controls */}
                 <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
-              <div className="mb-1">
+              <div className="mb-0">
                 <textarea
                   ref={promptTextareaRef}
                   placeholder="Describe what you want to create..."
