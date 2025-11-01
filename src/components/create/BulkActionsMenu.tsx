@@ -105,7 +105,7 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
   return createPortal(
     <div
       ref={menuRef}
-      className={`${glass.promptDark} fixed rounded-lg border border-theme-mid shadow-lg z-[1200] min-w-[200px]`}
+      className={`${glass.promptDark} fixed rounded-lg shadow-lg z-[1200] min-w-[200px]`}
       style={{
         top: position.top,
         left: position.left,
@@ -114,7 +114,7 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
     >
       <div className="p-2">
         {/* Header */}
-        <div className="px-3 py-2 border-b border-theme-mid">
+        <div className="px-3 py-2 border-b border-theme-dark">
           <div className="text-sm font-medium text-theme-text">
             Bulk Actions ({selectedCount} selected)
           </div>

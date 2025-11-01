@@ -85,7 +85,7 @@ export const MenuPortal: React.FC<MenuPortalProps> = ({ anchorEl, open, onClose,
   return createPortal(
     <div
       ref={menuRef}
-      className={`${glass.promptDark} image-gallery-actions-menu fixed z-[9999] min-w-[200px] overflow-hidden rounded-lg border border-theme-mid shadow-lg`}
+      className={`${glass.promptDark} image-gallery-actions-menu fixed z-[9999] min-w-[200px] overflow-hidden rounded-lg shadow-lg`}
       style={{
         top: pos.top,
         left: pos.left,
@@ -97,7 +97,7 @@ export const MenuPortal: React.FC<MenuPortalProps> = ({ anchorEl, open, onClose,
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      <div className="py-1">{children}</div>
+      <div className="py-2">{children}</div>
     </div>,
     document.body
   );
