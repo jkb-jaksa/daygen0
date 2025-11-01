@@ -61,7 +61,7 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   return null;
 };
 
-export default function CreateV2() {
+export default function CreateRefactored() {
   const { state, setImageActionMenu, setBulkActionsMenu } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
@@ -139,33 +139,22 @@ export default function CreateV2() {
     }
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
-  // Note: v2=1 query param enforcement is handled in CreateRoutes to prevent loops
-  // CreateV2 can assume it's always rendered with v2=1 present
-
-  const ensureV2Search = useCallback(() => {
-    const paramsWithV2 = new URLSearchParams(location.search);
-    paramsWithV2.set('v2', '1');
-    return paramsWithV2;
-  }, [location.search]);
-
   const handleSelectCategory = useCallback((category: string) => {
-    // For unsupported categories, navigate without v2 flag (they use different components)
+    // For unsupported categories (they use different components)
     if (category === 'avatars' || category === 'products' || category === 'text' || category === 'audio') {
       navigate(`/create/${category}`);
       return;
     }
 
-    // For supported categories, preserve v2=1 parameter
+    // For supported categories, navigate to create path
     const normalized = normalizeCategory(category) ?? 'image';
-    const paramsWithV2 = ensureV2Search();
     const nextPath = `/create/${normalized}`;
-    const nextSearch = `?${paramsWithV2.toString()}`;
-    if (location.pathname === nextPath && location.search === nextSearch) {
+    if (location.pathname === nextPath && location.search === location.search) {
       return;
     }
 
-    navigate({ pathname: nextPath, search: nextSearch });
-  }, [ensureV2Search, location.pathname, location.search, navigate]);
+    navigate({ pathname: nextPath, search: location.search });
+  }, [location.pathname, location.search, navigate]);
 
   const handleOpenMyFolders = useCallback(() => {
     handleSelectCategory('my-folders');

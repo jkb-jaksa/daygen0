@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { lazy, Suspense } from 'react';
-import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Square, AlertTriangle, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons } from '../../styles/designSystem';
@@ -33,18 +33,44 @@ interface ResultsGridProps {
   onFocusPrompt?: () => void;
 }
 
-const MAX_GALLERY_TILES = 16;
+const MAX_GALLERY_TILES = 6;
+
+type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
+const renderPlaceholderGrid = (
+  Icon: IconComponent,
+  {
+    className = '',
+    onTileClick,
+    message = 'Create something amazing.',
+  }: { className?: string; onTileClick?: (() => void) | null; message?: string } = {},
+) => (
+  <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1 ${className}`}>
+    {Array.from({ length: MAX_GALLERY_TILES }).map((_, idx) => (
+      <div
+        key={`ph-${idx}`}
+        className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200"
+        onClick={onTileClick ? () => onTileClick() : undefined}
+        role={onTileClick ? 'button' : undefined}
+        tabIndex={onTileClick ? 0 : -1}
+      >
+        <div className="flex flex-col items-center gap-2 text-center px-2">
+          <Icon className="w-8 h-8 text-theme-light" />
+          <div className="text-theme-light font-raleway text-base font-light">{message}</div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
-  const { state, setBulkMode, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
+  const { state, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
   const {
     handleImageClick,
     handleImageActionMenu,
     handleBulkActionsMenu,
     handleToggleLike,
     handleTogglePublic,
-    handleSelectAll,
-    handleClearSelection,
   } = useGalleryActions();
   const { selectedItems, isBulkMode } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -118,12 +144,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     void handleTogglePublic(item);
   }, [handleTogglePublic]);
   
-  // Handle bulk mode toggle
-  const handleBulkModeToggle = useCallback(() => {
-    setBulkMode(!isBulkMode);
-  }, [isBulkMode, setBulkMode]);
-  
-  
   // Check if item is selected
   const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
     const itemId = getItemIdentifier(item);
@@ -151,63 +171,27 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     );
   }
 
-  // Empty state check - prioritize placeholder grid for generation categories
+  // Empty state check
   if (filteredItems.length === 0) {
-    // Show placeholder grid for generation categories (image/video) even if error exists
+    // Show placeholder grid ONLY for generation categories (image/video)
     if (activeCategory === 'image' || activeCategory === 'video') {
       const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
-      return (
-        <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1 ${className}`}>
-          {Array.from({ length: MAX_GALLERY_TILES }).map((_, idx) => (
-            <div
-              key={`ph-${idx}`}
-              className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200"
-              onClick={() => onFocusPrompt?.()}
-            >
-              <div className="flex flex-col items-center gap-2 text-center px-2">
-                <PlaceholderIcon className="w-8 h-8 text-theme-light" />
-                <div className="text-theme-light font-raleway text-base font-light">Create something amazing.</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
+      return renderPlaceholderGrid(PlaceholderIcon, {
+        className,
+        onTileClick: onFocusPrompt ? () => onFocusPrompt() : null,
+      });
     }
 
-    // Show error state for gallery/my-folders categories when there's an error
-    if (error) {
-      return (
-        <div className={`flex flex-col items-center justify-center gap-4 py-12 ${className}`}>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-theme-red/30 bg-theme-red/10">
-            <AlertTriangle className="h-6 w-6 text-theme-red" />
-          </div>
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-theme-red">Gallery is unavailable</h3>
-            <p className="text-sm text-theme-white/70">
-              We couldn't reach the gallery service. Check your connection and try again.
-            </p>
-          </div>
-          <button
-            onClick={() => void handleRefresh()}
-            disabled={isRefreshing}
-            className={`${buttons.primary} px-5 py-2`}
-          >
-            {isRefreshing ? 'Retrying…' : 'Try again'}
-          </button>
-        </div>
-      );
-    }
-
-    // Show simple empty state for gallery/my-folders categories when no error
+    // Show simple empty message for gallery/my-folders categories (no tiles)
     return (
-      <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
+      <div className={`flex flex-col items-center justify-center py-16 ${className}`}>
         <div className="text-center">
           <div className="w-16 h-16 bg-theme-mid/50 rounded-full flex items-center justify-center mb-4">
-            <Square className="w-8 h-8 text-theme-white/50" />
+            <ImageIcon className="w-8 h-8 text-theme-white/50" />
           </div>
-          <h3 className="text-lg font-medium text-theme-text mb-2">No items found</h3>
+          <h3 className="text-lg font-medium text-theme-text mb-2">No items in your gallery</h3>
           <p className="text-sm text-theme-white/70">
-            Try adjusting your filters or generate some new content.
+            Create something to see it here.
           </p>
         </div>
       </div>
@@ -217,37 +201,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   return (
     <div className={`space-y-4 ${className}`}>
       {statusBanner}
-      {/* Bulk mode controls */}
-      {isBulkMode && (
-        <div className="flex items-center justify-between p-4 rounded-lg bg-theme-accent/10 border border-theme-accent/20">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-theme-accent font-medium">
-              {selectedItems.size} selected
-            </span>
-            <button
-              onClick={handleSelectAll}
-              className={`${buttons.ghost} text-sm`}
-            >
-              Select All
-            </button>
-            <button
-              onClick={handleClearSelection}
-              className={`${buttons.ghost} text-sm`}
-            >
-              Clear Selection
-            </button>
-          </div>
-          <button
-            onClick={handleBulkModeToggle}
-            className={`${buttons.ghost} text-sm`}
-          >
-            Exit Bulk Mode
-          </button>
-        </div>
-      )}
-      
       {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1">
         {filteredItems.map((item, index) => (
           <div
             key={item.jobId || index}
