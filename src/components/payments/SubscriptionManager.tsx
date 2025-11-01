@@ -4,10 +4,20 @@ import { usePayments, type SubscriptionInfo } from '../../hooks/usePayments';
 import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 
+interface PaymentHistoryItem {
+  id: string;
+  amount: number;
+  credits: number;
+  status: string;
+  type: string;
+  createdAt: string;
+  metadata?: unknown;
+}
+
 type PaymentItem = {
   id: string;
   createdAt: string;
-  amount: number;
+  amount?: number;
   credits?: number;
   type?: 'ONE_TIME' | 'SUBSCRIPTION' | string;
 };
@@ -31,12 +41,12 @@ export function SubscriptionManager() {
           getPaymentHistory(),
         ]);
         setSubscription(subData);
-        setPaymentHistory((historyData as any[]).map((p) => ({
-          id: (p as any).id,
-          createdAt: (p as any).createdAt,
-          amount: Number((p as any).amount || 0),
-          credits: Number((p as any).credits || 0),
-          type: (p as any).type,
+        setPaymentHistory((historyData as PaymentHistoryItem[]).map((p) => ({
+          id: p.id,
+          createdAt: p.createdAt,
+          amount: Number(p.amount || 0),
+          credits: Number(p.credits || 0),
+          type: p.type,
         })));
       } catch (err) {
         debugError('Unexpected error in fetchData:', err);
