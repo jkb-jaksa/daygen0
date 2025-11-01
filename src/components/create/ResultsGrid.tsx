@@ -377,11 +377,17 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     );
   }
   
+  // Determine grid columns based on category
+  const isGalleryView = activeCategory === 'gallery' || activeCategory === 'my-folders';
+  const gridCols = isGalleryView 
+    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+    : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4';
+  
   return (
     <div className={`space-y-4 ${className}`}>
       {statusBanner}
       {/* Grid */}
-      <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1`}>
+      <div className={`grid ${gridCols} gap-1 w-full p-1`}>
         {filteredItems.map((item, index) => {
           const isSelected = isItemSelected(item);
           const isMenuActive = imageActionMenu?.id === `gallery-actions-${index}-${item.url}`;
