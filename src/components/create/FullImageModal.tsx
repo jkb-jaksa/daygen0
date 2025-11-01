@@ -258,14 +258,12 @@ const FullImageModal = memo(() => {
     <>
       {/* Left Navigation Sidebar */}
       {open && fullSizeImage && (
-        <Suspense fallback={null}>
-          <CreateSidebar
-            activeCategory={activeCategory}
-            onSelectCategory={handleSelectCategory}
-            onOpenMyFolders={handleOpenMyFolders}
-            isFullSizeOpen={true}
-          />
-        </Suspense>
+        <CreateSidebar
+          activeCategory={activeCategory}
+          onSelectCategory={handleSelectCategory}
+          onOpenMyFolders={handleOpenMyFolders}
+          isFullSizeOpen={true}
+        />
       )}
       
       <div
