@@ -62,23 +62,27 @@ const FullImageModal = memo(() => {
     clearJobUrl();
   }, [navigate, clearJobUrl]);
   
-  // Handle previous image
+  // Handle previous image (with wraparound)
   const handlePrevious = useCallback(() => {
-    if (fullSizeIndex > 0) {
-      const prevImage = filteredItems[fullSizeIndex - 1];
-      if (prevImage) {
-        setFullSizeImage(prevImage, fullSizeIndex - 1);
-      }
+    const totalItems = filteredItems.length;
+    if (totalItems === 0) return;
+    
+    const newIndex = fullSizeIndex > 0 ? fullSizeIndex - 1 : totalItems - 1;
+    const prevImage = filteredItems[newIndex];
+    if (prevImage) {
+      setFullSizeImage(prevImage, newIndex);
     }
   }, [fullSizeIndex, filteredItems, setFullSizeImage]);
 
-  // Handle next image
+  // Handle next image (with wraparound)
   const handleNext = useCallback(() => {
-    if (fullSizeIndex < filteredItems.length - 1) {
-      const nextImage = filteredItems[fullSizeIndex + 1];
-      if (nextImage) {
-        setFullSizeImage(nextImage, fullSizeIndex + 1);
-      }
+    const totalItems = filteredItems.length;
+    if (totalItems === 0) return;
+    
+    const newIndex = fullSizeIndex < totalItems - 1 ? fullSizeIndex + 1 : 0;
+    const nextImage = filteredItems[newIndex];
+    if (nextImage) {
+      setFullSizeImage(nextImage, newIndex);
     }
   }, [fullSizeIndex, filteredItems, setFullSizeImage]);
 
@@ -250,8 +254,6 @@ const FullImageModal = memo(() => {
   if (!open || !fullSizeImage) return null;
   
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
-  const canGoPrevious = fullSizeIndex > 0;
-  const canGoNext = fullSizeIndex < filteredItems.length - 1;
   const hasMultipleItems = filteredItems.length > 1;
   
   return (
@@ -281,26 +283,22 @@ const FullImageModal = memo(() => {
             {/* Navigation arrows */}
             {!isVideo && hasMultipleItems && (
               <>
-                {canGoPrevious && (
-                  <button
-                    onClick={handlePrevious}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                    title="Previous image (←)"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
-                  </button>
-                )}
-                {canGoNext && (
-                  <button
-                    onClick={handleNext}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                    title="Next image (→)"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
-                  </button>
-                )}
+                <button
+                  onClick={handlePrevious}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  title="Previous image (←)"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  title="Next image (→)"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
+                </button>
               </>
             )}
 
