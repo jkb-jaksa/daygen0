@@ -1,16 +1,29 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass } from '../../styles/designSystem';
 import ModelBadge from '../ModelBadge';
+import AspectRatioBadge from '../shared/AspectRatioBadge';
 import { debugError } from '../../utils/debug';
+import { useSavedPrompts } from '../../hooks/useSavedPrompts';
+import { useAuth } from '../../auth/useAuth';
 import CreateSidebar from './CreateSidebar';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
+
+// Helper function to get initials from name
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 const FullImageModal = memo(() => {
   const { state, setFullSizeImage, filteredItems } = useGallery();
@@ -34,6 +47,10 @@ const FullImageModal = memo(() => {
   const [imageError, setImageError] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  
+  // Save prompt functionality
+  const { user } = useAuth();
+  const { savePrompt, isPromptSaved } = useSavedPrompts(user?.id || 'guest');
   
   const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
   const open = isFullSizeOpen;
@@ -251,6 +268,14 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
+  // Handle save prompt
+  const handleSavePrompt = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (fullSizeImage?.prompt) {
+      savePrompt(fullSizeImage.prompt);
+    }
+  }, [fullSizeImage, savePrompt]);
+
   if (!open || !fullSizeImage) return null;
   
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
@@ -340,6 +365,46 @@ const FullImageModal = memo(() => {
               </>
             )}
 
+            {/* Saved inspiration badge - positioned at top-left of image */}
+            {fullSizeImage && 'savedFrom' in fullSizeImage && fullSizeImage.savedFrom && (
+              <div className="absolute top-4 left-4 pointer-events-auto">
+                <div className="flex items-center gap-2 rounded-lg border border-theme-dark/60 bg-theme-black/60 px-2 py-2 backdrop-blur-sm">
+                  {fullSizeImage.savedFrom.profileUrl ? (
+                    <a
+                      href={fullSizeImage.savedFrom.profileUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="relative h-7 w-7 overflow-hidden rounded-full border border-white/10 transition-transform duration-200 hover:scale-105"
+                      onClick={event => event.stopPropagation()}
+                      aria-label={`View ${fullSizeImage.savedFrom.name}'s profile`}
+                    >
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${fullSizeImage.savedFrom.avatarColor ?? 'from-theme-white/40 via-theme-white/10 to-theme-dark/40'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                        {getInitials(fullSizeImage.savedFrom.name)}
+                      </span>
+                    </a>
+                  ) : (
+                    <div className="relative h-7 w-7 overflow-hidden rounded-full border border-white/10">
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${fullSizeImage.savedFrom.avatarColor ?? 'from-theme-white/40 via-theme-white/10 to-theme-dark/40'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                        {getInitials(fullSizeImage.savedFrom.name)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-[10px] font-raleway uppercase tracking-[0.24em] text-theme-white">Inspiration</span>
+                    <span className="truncate text-xs font-raleway text-theme-text">{fullSizeImage.savedFrom.name}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Close button - positioned on right side of image */}
             <button
               onClick={clearJobUrl}
@@ -356,24 +421,44 @@ const FullImageModal = memo(() => {
               <div className="flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-sm font-raleway leading-relaxed">
-                    {fullSizeImage.prompt || 'Generated image'}
+                    {fullSizeImage.prompt || 'Generated Image'}
                     {fullSizeImage.prompt && (
-                      <button
-                        onClick={handleCopyPrompt}
-                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
-                        title="Copy prompt"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
+                      <>
+                        <button
+                          onClick={handleCopyPrompt}
+                          className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
+                          title="Copy prompt"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={handleSavePrompt}
+                          className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
+                          title={isPromptSaved(fullSizeImage.prompt) ? "Prompt saved" : "Save prompt"}
+                        >
+                          {isPromptSaved(fullSizeImage.prompt) ? (
+                            <Bookmark className="w-3 h-3 fill-current" />
+                          ) : (
+                            <BookmarkPlus className="w-3 h-3" />
+                          )}
+                        </button>
+                      </>
                     )}
                   </div>
-                  <div className="mt-2 flex justify-center items-center gap-2">
-                    {fullSizeImage.model && (
+                  <div className="mt-2 flex justify-center items-center gap-1 md:gap-2">
+                    <div className="flex items-center gap-1 md:gap-2">
                       <Suspense fallback={null}>
-                        <ModelBadge model={fullSizeImage.model} size="md" />
+                        <ModelBadge 
+                          model={fullSizeImage.model || 'unknown'} 
+                          size="md" 
+                        />
                       </Suspense>
-                    )}
-                    {fullSizeImage.isPublic && (
+                      <AspectRatioBadge 
+                        aspectRatio={fullSizeImage.aspectRatio} 
+                        size="md" 
+                      />
+                    </div>
+                    {fullSizeImage.isPublic && !fullSizeImage.savedFrom && (
                       <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                         <div className="flex items-center gap-1">
                           <Globe className="w-3 h-3 text-theme-text" />
