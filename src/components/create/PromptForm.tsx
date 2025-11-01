@@ -635,11 +635,11 @@ const PromptForm = memo<PromptFormProps>(
         onDragOver={handleDragAreaOver}
         onDrop={handleDragAreaDrop}
       >
-        <div className="flex gap-3 items-stretch">
+        <div className="flex gap-3 items-end">
           {/* Left section: Textarea + Controls */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col self-start">
             {/* Textarea - first row */}
-            <div className="-mb-3">
+            <div className="mb-0">
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -648,14 +648,14 @@ const PromptForm = memo<PromptFormProps>(
                 onPaste={handlePaste}
                 placeholder="Describe what you want to create..."
                 rows={1}
-                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 pt-1 pb-0 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
               />
             </div>
             
             {/* Buttons - second row */}
-            <div className="flex items-end justify-between gap-2 px-3">
+            <div className="flex items-end justify-between gap-2 px-3 mt-0">
               {/* Left icons and controls */}
-              <div className="flex items-center gap-1 flex-wrap lg:flex-nowrap flex-1 min-w-0">
+              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                   {/* Chat mode */}
                   <div className="relative">
                   <button

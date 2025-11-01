@@ -481,6 +481,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   }, [
     batchSize,
     geminiAspectRatio,
+    klingAspectRatio,
     outputLength,
     qwenPromptExtend,
     qwenSize,

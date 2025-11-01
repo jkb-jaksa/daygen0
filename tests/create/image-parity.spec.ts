@@ -60,7 +60,7 @@ test.describe('Create/Image visual parity (V1 vs V2)', () => {
     await ensureFontsReady(v2);
     const v2Png = await screenshotPNG(v2);
 
-    const { ratio } = comparePNGs(v1Png, v2Png, 0.005);
+    const { ratio } = comparePNGs(v1Png, v2Png);
     expect(ratio, `Pixels diff ratio ${ratio} should be <= 0.005`).toBeLessThanOrEqual(0.005);
   });
 });
