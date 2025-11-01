@@ -8,27 +8,43 @@ import { buttons, glass } from '../../styles/designSystem';
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 
-interface FullImageModalProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
-  const { state, setFullSizeImage } = useGallery();
-  const { handleDownloadImage, handleDeleteImage, handleTogglePublic, handleToggleLike, handleShareImage } = useGalleryActions();
+const FullImageModal = memo(() => {
+  const { state, setFullSizeImage, filteredItems } = useGallery();
+  const { handleDownloadImage, handleDeleteImage, handleTogglePublic, handleToggleLike, handleShareImage, clearJobUrl } = useGalleryActions();
   
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
-  const { fullSizeImage, fullSizeIndex, filteredItems } = state;
+  const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
+  const open = isFullSizeOpen;
   
+  // Handle previous image
+  const handlePrevious = useCallback(() => {
+    if (fullSizeIndex > 0) {
+      const prevImage = filteredItems[fullSizeIndex - 1];
+      if (prevImage) {
+        setFullSizeImage(prevImage, fullSizeIndex - 1);
+      }
+    }
+  }, [fullSizeIndex, filteredItems, setFullSizeImage]);
+
+  // Handle next image
+  const handleNext = useCallback(() => {
+    if (fullSizeIndex < filteredItems.length - 1) {
+      const nextImage = filteredItems[fullSizeIndex + 1];
+      if (nextImage) {
+        setFullSizeImage(nextImage, fullSizeIndex + 1);
+      }
+    }
+  }, [fullSizeIndex, filteredItems, setFullSizeImage]);
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && open) {
-        onClose();
+        clearJobUrl();
       }
     };
     
@@ -39,13 +55,13 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [open, onClose]);
+  }, [open, clearJobUrl]);
   
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
+        clearJobUrl();
       }
     };
     
@@ -56,7 +72,7 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [open, onClose]);
+  }, [open, clearJobUrl]);
   
   // Handle keyboard navigation
   useEffect(() => {
@@ -71,7 +87,7 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
           handleNext();
           break;
         case 'Escape':
-          onClose();
+          clearJobUrl();
           break;
       }
     };
@@ -83,27 +99,7 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, fullSizeImage, handlePrevious, handleNext, onClose]);
-  
-  // Handle previous image
-  const handlePrevious = useCallback(() => {
-    if (fullSizeIndex > 0) {
-      const prevImage = filteredItems[fullSizeIndex - 1];
-      if (prevImage) {
-        setFullSizeImage(prevImage, fullSizeIndex - 1);
-      }
-    }
-  }, [fullSizeIndex, filteredItems, setFullSizeImage]);
-  
-  // Handle next image
-  const handleNext = useCallback(() => {
-    if (fullSizeIndex < filteredItems.length - 1) {
-      const nextImage = filteredItems[fullSizeIndex + 1];
-      if (nextImage) {
-        setFullSizeImage(nextImage, fullSizeIndex + 1);
-      }
-    }
-  }, [fullSizeIndex, filteredItems, setFullSizeImage]);
+  }, [open, fullSizeImage, handlePrevious, handleNext, clearJobUrl]);
   
   // Handle download
   const handleDownload = useCallback(async () => {
@@ -121,23 +117,26 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
   
   // Handle delete
   const handleDelete = useCallback(async () => {
-    if (fullSizeImage?.jobId) {
-      await handleDeleteImage(fullSizeImage.jobId);
-      onClose();
+    if (fullSizeImage) {
+      const itemId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
+      if (itemId) {
+        await handleDeleteImage(itemId);
+        clearJobUrl();
+      }
     }
-  }, [fullSizeImage, handleDeleteImage, onClose]);
+  }, [fullSizeImage, handleDeleteImage, clearJobUrl]);
   
   // Handle toggle public
   const handleTogglePublicClick = useCallback(async () => {
-    if (fullSizeImage?.jobId) {
-      await handleTogglePublic(fullSizeImage.jobId, fullSizeImage.isPublic || false);
+    if (fullSizeImage) {
+      await handleTogglePublic(fullSizeImage);
     }
   }, [fullSizeImage, handleTogglePublic]);
   
   // Handle toggle like
   const handleToggleLikeClick = useCallback(async () => {
-    if (fullSizeImage?.jobId) {
-      await handleToggleLike(fullSizeImage.jobId, fullSizeImage.isLiked || false);
+    if (fullSizeImage) {
+      await handleToggleLike(fullSizeImage);
     }
   }, [fullSizeImage, handleToggleLike]);
   
@@ -178,7 +177,7 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={clearJobUrl}
             className={`${buttons.ghost} p-2 rounded-lg transition-colors duration-200`}
           >
             <X className="w-5 h-5" />
@@ -306,9 +305,14 @@ const FullImageModal = memo<FullImageModalProps>(({ open, onClose }) => {
               <h3 className="text-sm font-medium text-theme-text mb-3">Gallery</h3>
               <Suspense fallback={<div className="text-sm text-theme-white/70">Loading...</div>}>
                 <VerticalGalleryNav
-                  items={filteredItems}
+                  images={filteredItems.map((item) => ({ url: item.url, id: item.jobId || item.r2FileId }))}
                   currentIndex={fullSizeIndex}
-                  onItemSelect={(item, index) => setFullSizeImage(item, index)}
+                  onNavigate={(index) => {
+                    const next = filteredItems[index];
+                    if (next) {
+                      setFullSizeImage(next, index);
+                    }
+                  }}
                 />
               </Suspense>
             </div>

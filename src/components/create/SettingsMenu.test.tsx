@@ -1,4 +1,5 @@
-import type { ComponentProps, MutableRefObject } from 'react';
+/* @vitest-environment jsdom */
+import React, { type ComponentProps, type MutableRefObject } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

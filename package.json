@@ -14,8 +14,12 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "lint:css": "stylelint \"src/**/*.{css,scss}\"",
-    "test": "vitest run",
-    "preview": "vite preview"
+    "test": "NODE_OPTIONS=\"--max-old-space-size=3072\" vitest run --reporter=basic",
+    "test:frontend": "NODE_OPTIONS=\"--max-old-space-size=3072\" vitest run --reporter=basic",
+    "test:backend": "pnpm --dir api test",
+    "test:all": "pnpm run test:frontend && pnpm --dir api test",
+    "preview": "vite preview",
+    "test:visual": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.899.0",
@@ -45,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.49.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
@@ -59,6 +64,9 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "jsdom": "^26.0.0",
+    "pixelmatch": "^5.3.0",
+    "playwright": "^1.56.1",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.6",
     "stylelint": "^16.24.0",
     "stylelint-order": "^7.0.0",

@@ -1,5 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { resolveGenerationCatchError } from '../utils/errorMessages';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 
 export interface ReveGeneratedImage {
   url: string;
@@ -37,13 +44,189 @@ export interface ReveImageGenerationOptions {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  signal?: AbortSignal;
+  requestTimeoutMs?: number;
+  pollTimeoutMs?: number;
+  pollIntervalMs?: number;
+  pollRequestTimeoutMs?: number;
 }
 
 // const AUTH_ERROR_MESSAGE = 'Please sign in to generate Reve images.';
 const UNSUPPORTED_MESSAGE = 'Reve image editing is not yet available in the backend integration.';
 
+const DEFAULT_MODEL = 'reve-image-1.0';
+
+const pickString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const clampProgress = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));
+
+const formatProgress = (
+  snapshot: JobStatusSnapshot,
+  previous?: string,
+): string | undefined => {
+  if (typeof snapshot.progress === 'number' && Number.isFinite(snapshot.progress)) {
+    return `${clampProgress(snapshot.progress)}%`;
+  }
+
+  if (snapshot.stage) {
+    return snapshot.stage;
+  }
+
+  return previous;
+};
+
+const buildProviderOptions = (
+  options: ReveImageGenerationOptions,
+): Record<string, unknown> => {
+  const providerOptions: Record<string, unknown> = {};
+  if (options.width !== undefined) providerOptions.width = options.width;
+  if (options.height !== undefined) providerOptions.height = options.height;
+  if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
+  if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
+  if (options.guidance_scale !== undefined) providerOptions.guidance_scale = options.guidance_scale;
+  if (options.steps !== undefined) providerOptions.steps = options.steps;
+  if (options.seed !== undefined) providerOptions.seed = options.seed;
+  return providerOptions;
+};
+
+const collectCandidateUrls = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+): string[] => {
+  const urls: string[] = [];
+
+  const push = (value?: string) => {
+    if (value) {
+      urls.push(value);
+    }
+  };
+
+  push(pickString(snapshot.job.resultUrl));
+
+  const metadata = asRecord(snapshot.job.metadata);
+  if (metadata) {
+    push(pickString(metadata.resultUrl));
+    push(pickString(metadata.result_url));
+    push(pickString(metadata.url));
+    push(pickString(metadata.imageUrl));
+    push(pickString(metadata.image_url));
+
+    const results = metadata.results;
+    if (Array.isArray(results)) {
+      for (const entry of results) {
+        if (typeof entry === 'string') {
+          push(pickString(entry));
+        } else {
+          const record = asRecord(entry);
+          if (record) {
+            push(pickString(record.url));
+            push(pickString(record.imageUrl));
+            push(pickString(record.resultUrl));
+          }
+        }
+      }
+    }
+  }
+
+  const payload = response.payload;
+  const images = Array.isArray(payload.images) ? payload.images : [];
+  for (const entry of images) {
+    if (typeof entry === 'string') {
+      push(pickString(entry));
+    } else {
+      const record = asRecord(entry);
+      if (record) {
+        push(pickString(record.url));
+        push(pickString(record.imageUrl));
+      }
+    }
+  }
+
+  push(pickString(payload.dataUrl));
+  push(pickString(payload.image));
+  push(pickString(payload.url));
+
+  return urls.filter(Boolean);
+};
+
+const parseReveJobResult = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+  options: ReveImageGenerationOptions,
+  ownerId: string | undefined,
+): ReveGeneratedImage => {
+  const urls = collectCandidateUrls(snapshot, response);
+
+  const resolvedUrl = urls[0];
+
+  if (!resolvedUrl) {
+    throw new Error('Job completed but no result URL was provided.');
+  }
+
+  return {
+    url: resolvedUrl,
+    prompt: options.prompt,
+    model: options.model ?? DEFAULT_MODEL,
+    timestamp: new Date().toISOString(),
+    jobId: response.jobId ?? snapshot.job.id ?? `reve-${Date.now()}`,
+    references: options.references && options.references.length ? options.references : undefined,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    styleId: options.styleId,
+  };
+};
+
+const parseImmediateReveResult = (
+  response: ProviderJobResponse,
+  options: ReveImageGenerationOptions,
+  ownerId: string | undefined,
+): ReveGeneratedImage | undefined => {
+  const payload = response.payload;
+
+  const imageUrl =
+    (Array.isArray(payload.images)
+      ? payload.images
+          .map(pickString)
+          .find((value): value is string => Boolean(value))
+      : undefined) ??
+    pickString(payload.dataUrl) ??
+    pickString(payload.url) ??
+    pickString(payload.image);
+
+  if (!imageUrl) {
+    return undefined;
+  }
+
+  const jobId =
+    response.jobId ??
+    pickString(payload.jobId) ??
+    pickString(payload.id) ??
+    `reve-${Date.now()}`;
+
+  return {
+    url: imageUrl,
+    prompt: options.prompt,
+    model: options.model ?? DEFAULT_MODEL,
+    timestamp: new Date().toISOString(),
+    jobId,
+    references: options.references && options.references.length ? options.references : undefined,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    styleId: options.styleId,
+  };
+};
+
 export const useReveImageGeneration = () => {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const [state, setState] = useState<ReveImageGenerationState>({
     isLoading: false,
     error: null,
@@ -51,43 +234,6 @@ export const useReveImageGeneration = () => {
     jobStatus: null,
     progress: undefined,
   });
-
-  const pollForJobCompletion = useCallback(
-    async (
-      jobId: string,
-      options: ReveImageGenerationOptions,
-    ): Promise<ReveGeneratedImage> => {
-      const maxAttempts = 60;
-
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const job = await apiFetch<Record<string, unknown>>(`/api/jobs/${jobId}`);
-
-        if ((job as Record<string, unknown>).status === 'COMPLETED' && (job as Record<string, unknown>).resultUrl) {
-          return {
-            url: (job as Record<string, unknown>).resultUrl as string,
-            prompt: options.prompt,
-            model: options.model ?? 'reve-image-1.0',
-            timestamp: new Date().toISOString(),
-            jobId,
-            references: options.references || undefined,
-            ownerId: user?.id,
-            avatarId: options.avatarId,
-            avatarImageId: options.avatarImageId,
-            styleId: options.styleId,
-          };
-        }
-
-        if ((job as Record<string, unknown>).status === 'FAILED') {
-          throw new Error(((job as Record<string, unknown>).error as string) || 'Job failed');
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-      }
-
-      throw new Error('Job polling timeout');
-    },
-    [user?.id],
-  );
 
   const generateImage = useCallback(
     async (options: ReveImageGenerationOptions) => {
@@ -100,95 +246,48 @@ export const useReveImageGeneration = () => {
       }));
 
       try {
-        // TEMPORARILY DISABLED: Authentication check
-        // if (!token) {
-        //   setState((prev) => ({
-        //     ...prev,
-        //     isLoading: false,
-        //     error: AUTH_ERROR_MESSAGE,
-        //     jobStatus: null,
-        //     progress: undefined,
-        //   }));
-        //   throw new Error(AUTH_ERROR_MESSAGE);
-        // }
+        const providerOptions = buildProviderOptions(options);
 
-        const providerOptions: Record<string, unknown> = {};
-        if (options.width !== undefined) providerOptions.width = options.width;
-        if (options.height !== undefined) providerOptions.height = options.height;
-        if (options.aspect_ratio) providerOptions.aspect_ratio = options.aspect_ratio;
-        if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
-        if (options.guidance_scale !== undefined) providerOptions.guidance_scale = options.guidance_scale;
-        if (options.steps !== undefined) providerOptions.steps = options.steps;
-        if (options.seed !== undefined) providerOptions.seed = options.seed;
-
-        const payload = (await apiFetch<Record<string, unknown>>('/api/image/reve', {
-          method: 'POST',
+        const { result } = await runGenerationJob<ReveGeneratedImage, Record<string, unknown>>({
+          provider: 'reve',
+          mediaType: 'image',
           body: {
             prompt: options.prompt,
-            model: options.model ?? 'reve-image-1.0',
+            model: options.model ?? DEFAULT_MODEL,
             references: options.references,
             providerOptions,
           },
-          context: 'generation',
-        })) as unknown as {
-          images?: string[];
-          dataUrl?: string;
-          jobId?: string | null;
-          status?: string | null;
-        };
-
-        if (payload.jobId) {
-          setState((prev) => ({
-            ...prev,
-            jobStatus: 'processing',
-            progress: 'Generating image…',
-          }));
-
-          const generatedImage = await pollForJobCompletion(payload.jobId, options);
-
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: null,
-            generatedImage,
-            jobStatus: 'completed',
-            progress: 'Generation complete!',
-          }));
-
-          return generatedImage;
-        }
-
-        const imageUrl =
-          (Array.isArray(payload.images) && payload.images.find((url): url is string => typeof url === 'string')) ||
-          (typeof payload.dataUrl === 'string' ? payload.dataUrl : null);
-
-        if (!imageUrl) {
-          throw new Error('Reve did not return an image.');
-        }
-
-        const generatedImage: ReveGeneratedImage = {
-          url: imageUrl,
+          tracker,
           prompt: options.prompt,
-          model: options.model ?? 'reve-image-1.0',
-          timestamp: new Date().toISOString(),
-          jobId: payload.jobId ?? `reve-${Date.now()}`,
-          references: options.references || undefined,
-          ownerId: user?.id,
-          avatarId: options.avatarId,
-          avatarImageId: options.avatarImageId,
-          styleId: options.styleId,
-        };
+          model: options.model ?? DEFAULT_MODEL,
+          signal: options.signal,
+          timeoutMs: options.requestTimeoutMs,
+          pollTimeoutMs: options.pollTimeoutMs,
+          pollIntervalMs: options.pollIntervalMs,
+          requestTimeoutMs: options.pollRequestTimeoutMs,
+          parseImmediateResult: (response) =>
+            parseImmediateReveResult(response, options, user?.id),
+          parseJobResult: (snapshot, response) =>
+            parseReveJobResult(snapshot, response, options, user?.id),
+          onUpdate: (snapshot) => {
+            setState((prev) => ({
+              ...prev,
+              jobStatus: snapshot.status,
+              progress: formatProgress(snapshot, prev.progress),
+            }));
+          },
+        });
 
         setState((prev) => ({
           ...prev,
           isLoading: false,
           error: null,
-          generatedImage,
-          jobStatus: (payload.status as ReveImageGenerationState['jobStatus']) ?? 'completed',
+          generatedImage: result,
+          jobStatus: 'completed',
           progress: 'Generation complete!',
         }));
 
-        return generatedImage;
+        return result;
       } catch (error) {
         const message = resolveGenerationCatchError(error, 'Reve couldn’t generate that image. Try again in a moment.');
         setState((prev) => ({
@@ -202,7 +301,7 @@ export const useReveImageGeneration = () => {
         throw new Error(message);
       }
     },
-    [user?.id, pollForJobCompletion],
+    [tracker, user?.id],
   );
 
   const editImage = useCallback(async () => {

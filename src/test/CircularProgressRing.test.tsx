@@ -1,42 +1,8 @@
+/* @vitest-environment jsdom */
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CircularProgressRing } from '../components/CircularProgressRing';
-
-// Mock requestAnimationFrame
-const mockRequestAnimationFrame = (callback: FrameRequestCallback) => {
-  return setTimeout(callback, 16);
-};
-
-const mockCancelAnimationFrame = (id: number) => {
-  clearTimeout(id);
-};
-
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
-
-// Mock requestAnimationFrame
-Object.defineProperty(window, 'requestAnimationFrame', {
-  writable: true,
-  value: mockRequestAnimationFrame,
-});
-
-Object.defineProperty(window, 'cancelAnimationFrame', {
-  writable: true,
-  value: mockCancelAnimationFrame,
-});
 
 describe('CircularProgressRing', () => {
   beforeEach(() => {
@@ -113,18 +79,20 @@ describe('CircularProgressRing', () => {
 
   it('respects reduced motion preference', () => {
     // Mock reduced motion preference
+    const mockMatchMedia = vi.fn().mockImplementation(query => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: vi.fn().mockImplementation(query => ({
-        matches: query === '(prefers-reduced-motion: reduce)',
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
+      value: mockMatchMedia,
     });
 
     const { rerender } = render(<CircularProgressRing progress={0} />);

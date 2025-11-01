@@ -10,6 +10,7 @@ import {
   HeartOff,
   Lock,
   MoreHorizontal,
+  AlertTriangle,
   Settings,
   Trash2,
   X,
@@ -21,6 +22,7 @@ import type {
   GalleryImageLike,
 } from "./types";
 import { buttons, glass } from "../../styles/designSystem";
+import { debugError } from "../../utils/debug";
 import { useDropdownScrollLock } from "../../hooks/useDropdownScrollLock";
 
 interface CustomDropdownProps {
@@ -204,6 +206,10 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
   }, [isOpen]);
 
   const toggleValue = (value: string) => {
+    if (disabled) {
+      return;
+    }
+
     if (values.includes(value)) {
       onChange(values.filter(v => v !== value));
     } else {
@@ -397,6 +403,9 @@ export interface GalleryPanelProps {
   handleBulkDownload: () => void;
   handleBulkDelete: () => void;
   renderGalleryItem: (img: GalleryImageLike, idx: number) => React.ReactNode;
+  isLoading?: boolean;
+  error?: string | null;
+  onRefresh?: () => Promise<void>;
 }
 
 export function GalleryPanel({
@@ -429,7 +438,11 @@ export function GalleryPanel({
   handleBulkDownload,
   handleBulkDelete,
   renderGalleryItem,
+  isLoading = false,
+  error = null,
+  onRefresh,
 }: GalleryPanelProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const modelOptions = getAvailableModels().map(modelId => {
     const model = aiModels.find(m => m.id === modelId);
     return { value: modelId, label: model?.name || modelId };
@@ -450,8 +463,51 @@ export function GalleryPanel({
     return { value: folderId, label: folder?.name || folderId };
   });
 
+  const filtersDisabled = isLoading || isRefreshing;
+  const handleRefresh = async () => {
+    if (!onRefresh) {
+      return;
+    }
+
+    try {
+      setIsRefreshing(true);
+      await onRefresh();
+    } catch (refreshError) {
+      debugError('Failed to refresh gallery filters', refreshError);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="w-full">
+      {(isLoading || isRefreshing) && (
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-theme-accent/30 bg-theme-accent/10 px-3 py-2 text-sm text-theme-accent">
+          <span className="inline-flex h-4 w-4 items-center justify-center">
+            <span className="h-3 w-3 rounded-full border-2 border-theme-accent/30 border-t-theme-accent animate-spin" />
+          </span>
+          Syncing your gallery…
+        </div>
+      )}
+
+      {error && !isLoading && !isRefreshing && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-theme-red/30 bg-theme-red/10 px-3 py-2 text-sm text-theme-red">
+          <div className="inline-flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>Unable to load gallery filters right now.</span>
+          </div>
+          {onRefresh && (
+            <button
+              onClick={() => void handleRefresh()}
+              disabled={isRefreshing}
+              className={`${buttons.ghost} px-3 py-1 text-sm`}
+            >
+              {isRefreshing ? 'Retrying…' : 'Retry'}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className={`mb-4 p-3 ${glass.promptDark} rounded-2xl`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -460,7 +516,12 @@ export function GalleryPanel({
           </div>
           <button
             onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", avatar: "all", product: "all" })}
-            className="px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway"
+            disabled={filtersDisabled}
+            className={`px-2.5 py-1 text-xs transition-colors duration-200 font-raleway ${
+              filtersDisabled
+                ? "text-theme-white/50 cursor-not-allowed"
+                : "text-theme-white hover:text-theme-text"
+            }`}
           >
             Clear
           </button>
@@ -471,22 +532,28 @@ export function GalleryPanel({
           <label className="text-xs text-theme-white/70 font-raleway mb-1.5 block">Liked/Public</label>
           <div className="flex gap-1 flex-wrap">
             <button
+              disabled={filtersDisabled}
               onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                 galleryFilters.liked
                   ? "text-theme-text border-theme-mid bg-theme-white/10"
                   : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+              } ${
+                filtersDisabled ? "cursor-not-allowed opacity-50 hover:text-theme-white hover:border-theme-dark" : ""
               }`}
             >
               <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
               <span>Liked</span>
             </button>
             <button
+              disabled={filtersDisabled}
               onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                 galleryFilters.public
                   ? "text-theme-text border-theme-mid bg-theme-white/10"
                   : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+              } ${
+                filtersDisabled ? "cursor-not-allowed opacity-50 hover:text-theme-white hover:border-theme-dark" : ""
               }`}
             >
               <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-theme-text" : "text-current"}`} />
@@ -509,6 +576,7 @@ export function GalleryPanel({
                 { value: "video", label: "Video" },
               ]}
               placeholder="All modalities"
+              disabled={filtersDisabled}
             />
             {/* Selected Modality Tags */}
             {galleryFilters.types.length > 0 && (
@@ -521,8 +589,9 @@ export function GalleryPanel({
                     <span>{type === "image" ? "Image" : "Video"}</span>
                     <button
                       type="button"
+                      disabled={filtersDisabled}
                       onClick={() => setGalleryFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== type), models: [] }))}
-                      className="hover:text-theme-text transition-colors duration-200"
+                      className={`transition-colors duration-200 ${filtersDisabled ? "cursor-not-allowed opacity-50" : "hover:text-theme-text"}`}
                       aria-label={`Remove ${type === "image" ? "Image" : "Video"}`}
                     >
                       <X className="w-3 h-3" />
@@ -540,6 +609,7 @@ export function GalleryPanel({
               onChange={models => setGalleryFilters(prev => ({ ...prev, models }))}
               options={modelOptions}
               placeholder="All models"
+              disabled={filtersDisabled}
             />
             {/* Selected Model Tags */}
             {galleryFilters.models.length > 0 && (
@@ -554,8 +624,9 @@ export function GalleryPanel({
                       <span>{model?.name || modelId}</span>
                       <button
                         type="button"
+                        disabled={filtersDisabled}
                         onClick={() => setGalleryFilters(prev => ({ ...prev, models: prev.models.filter(m => m !== modelId) }))}
-                        className="hover:text-theme-text transition-colors duration-200"
+                        className={`transition-colors duration-200 ${filtersDisabled ? "cursor-not-allowed opacity-50" : "hover:text-theme-text"}`}
                         aria-label={`Remove ${model?.name || modelId}`}
                       >
                         <X className="w-3 h-3" />
@@ -573,7 +644,7 @@ export function GalleryPanel({
               value={galleryFilters.avatar}
               onChange={value => setGalleryFilters(prev => ({ ...prev, avatar: value }))}
               options={avatarOptions}
-              disabled={avatarOptions.length === 0}
+              disabled={filtersDisabled || avatarOptions.length === 0}
               placeholder={avatarOptions.length === 0 ? "No avatars available" : "All avatars"}
             />
             {/* Selected Avatar Tag */}
@@ -583,8 +654,9 @@ export function GalleryPanel({
                   <span>{getAvailableAvatars().find(a => a.id === galleryFilters.avatar)?.name || galleryFilters.avatar}</span>
                   <button
                     type="button"
+                    disabled={filtersDisabled}
                     onClick={() => setGalleryFilters(prev => ({ ...prev, avatar: "all" }))}
-                    className="hover:text-theme-text transition-colors duration-200"
+                    className={`transition-colors duration-200 ${filtersDisabled ? "cursor-not-allowed opacity-50" : "hover:text-theme-text"}`}
                     aria-label="Remove avatar filter"
                   >
                     <X className="w-3 h-3" />
@@ -600,7 +672,7 @@ export function GalleryPanel({
               value={galleryFilters.product}
               onChange={value => setGalleryFilters(prev => ({ ...prev, product: value }))}
               options={productOptions}
-              disabled={productOptions.length === 0}
+              disabled={filtersDisabled || productOptions.length === 0}
               placeholder={productOptions.length === 0 ? "No products available" : "All products"}
             />
             {galleryFilters.product !== "all" && (
@@ -609,8 +681,9 @@ export function GalleryPanel({
                   <span>{getAvailableProducts().find(p => p.id === galleryFilters.product)?.name || galleryFilters.product}</span>
                   <button
                     type="button"
+                    disabled={filtersDisabled}
                     onClick={() => setGalleryFilters(prev => ({ ...prev, product: "all" }))}
-                    className="hover:text-theme-text transition-colors duration-200"
+                    className={`transition-colors duration-200 ${filtersDisabled ? "cursor-not-allowed opacity-50" : "hover:text-theme-text"}`}
                     aria-label="Remove product filter"
                   >
                     <X className="w-3 h-3" />
@@ -626,7 +699,7 @@ export function GalleryPanel({
               value={galleryFilters.folder}
               onChange={value => setGalleryFilters(prev => ({ ...prev, folder: value }))}
               options={folderOptions}
-              disabled={folderOptions.length === 0}
+              disabled={filtersDisabled || folderOptions.length === 0}
               placeholder={folderOptions.length === 0 ? "No folders available" : undefined}
             />
             {/* Selected Folder Tag */}
@@ -636,8 +709,9 @@ export function GalleryPanel({
                   <span>{folders.find(f => f.id === galleryFilters.folder)?.name || galleryFilters.folder}</span>
                   <button
                     type="button"
+                    disabled={filtersDisabled}
                     onClick={() => setGalleryFilters(prev => ({ ...prev, folder: "all" }))}
-                    className="hover:text-theme-text transition-colors duration-200"
+                    className={`transition-colors duration-200 ${filtersDisabled ? "cursor-not-allowed opacity-50" : "hover:text-theme-text"}`}
                     aria-label="Remove folder filter"
                   >
                     <X className="w-3 h-3" />
@@ -655,8 +729,11 @@ export function GalleryPanel({
             <div className="flex flex-wrap items-center gap-2">
               {galleryFilters.liked && (
                 <button
+                  disabled={filtersDisabled}
                   onClick={() => setGalleryFilters(prev => ({ ...prev, liked: false }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-theme-white/10 hover:bg-theme-white/20 border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200"
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 ${
+                    filtersDisabled ? "bg-theme-white/5 cursor-not-allowed opacity-60" : "bg-theme-white/10 hover:bg-theme-white/20"
+                  }`}
                 >
                   <Heart className="w-3 h-3 fill-red-500 text-red-500" />
                   <span>Liked</span>
@@ -666,8 +743,11 @@ export function GalleryPanel({
 
               {galleryFilters.public && (
                 <button
+                  disabled={filtersDisabled}
                   onClick={() => setGalleryFilters(prev => ({ ...prev, public: false }))}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-theme-white/10 hover:bg-theme-white/20 border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200"
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 ${
+                    filtersDisabled ? "bg-theme-white/5 cursor-not-allowed opacity-60" : "bg-theme-white/10 hover:bg-theme-white/20"
+                  }`}
                 >
                   <Globe className="w-3 h-3" />
                   <span>Public</span>
@@ -683,6 +763,7 @@ export function GalleryPanel({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            disabled={filtersDisabled}
             onClick={toggleSelectMode}
             className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light ${
               isSelectMode ? "!bg-theme-mid/20 !text-theme-text !border-theme-mid/40" : ""
@@ -693,7 +774,7 @@ export function GalleryPanel({
           <button
             type="button"
             onClick={toggleSelectAllVisible}
-            disabled={filteredGallery.length === 0}
+            disabled={filtersDisabled || filteredGallery.length === 0}
             className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {allVisibleSelected ? "Unselect all" : "Select all"}
@@ -701,7 +782,7 @@ export function GalleryPanel({
           <button
             type="button"
             onClick={clearImageSelection}
-            disabled={!hasSelection}
+            disabled={filtersDisabled || !hasSelection}
             className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Clear selection

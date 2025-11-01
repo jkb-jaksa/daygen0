@@ -155,7 +155,7 @@ interface KlingSettingsProps {
   statusMessage?: string | null;
 }
 
-interface SettingsMenuProps {
+export interface SettingsMenuProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   open: boolean;
   onClose: () => void;

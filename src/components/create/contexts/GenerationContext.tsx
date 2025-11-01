@@ -53,6 +53,10 @@ type GenerationAction =
   | { type: 'SET_BUTTON_SPINNING'; payload: boolean }
   | { type: 'ADD_ACTIVE_JOB'; payload: ActiveGenerationJob }
   | { type: 'UPDATE_JOB_PROGRESS'; payload: { id: string; progress: number } }
+  | {
+      type: 'UPDATE_JOB_STATUS';
+      payload: { id: string; status: ActiveGenerationJob['status']; progress?: number };
+    }
   | { type: 'REMOVE_ACTIVE_JOB'; payload: string }
   | { type: 'CLEAR_ALL_JOBS' };
 
@@ -125,6 +129,22 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
           job.id === action.payload.id ? { ...job, progress: action.payload.progress } : job
         ),
       };
+    case 'UPDATE_JOB_STATUS':
+      return {
+        ...state,
+        activeJobs: state.activeJobs.map(job =>
+          job.id === action.payload.id
+            ? {
+                ...job,
+                status: action.payload.status,
+                progress:
+                  action.payload.progress !== undefined
+                    ? action.payload.progress
+                    : job.progress,
+              }
+            : job,
+        ),
+      };
     case 'REMOVE_ACTIVE_JOB':
       return { ...state, activeJobs: state.activeJobs.filter(job => job.id !== action.payload) };
     case 'CLEAR_ALL_JOBS':
@@ -156,6 +176,11 @@ type GenerationContextType = {
   setButtonSpinning: (spinning: boolean) => void;
   addActiveJob: (job: ActiveGenerationJob) => void;
   updateJobProgress: (id: string, progress: number) => void;
+  updateJobStatus: (
+    id: string,
+    status: ActiveGenerationJob['status'],
+    progress?: number,
+  ) => void;
   removeActiveJob: (id: string) => void;
   clearAllJobs: () => void;
   isGenerating: boolean;
@@ -247,6 +272,13 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     dispatch({ type: 'UPDATE_JOB_PROGRESS', payload: { id, progress } });
   }, []);
 
+  const updateJobStatus = useCallback(
+    (id: string, status: ActiveGenerationJob['status'], progress?: number) => {
+      dispatch({ type: 'UPDATE_JOB_STATUS', payload: { id, status, progress } });
+    },
+    [],
+  );
+
   const removeActiveJob = useCallback((id: string) => {
     dispatch({ type: 'REMOVE_ACTIVE_JOB', payload: id });
   }, []);
@@ -280,6 +312,7 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     setButtonSpinning,
     addActiveJob,
     updateJobProgress,
+    updateJobStatus,
     removeActiveJob,
     clearAllJobs,
     isGenerating,
@@ -306,6 +339,7 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     setButtonSpinning,
     addActiveJob,
     updateJobProgress,
+    updateJobStatus,
     removeActiveJob,
     clearAllJobs,
     isGenerating,

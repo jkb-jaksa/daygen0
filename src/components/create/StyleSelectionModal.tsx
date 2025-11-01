@@ -1,14 +1,15 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
 import { X, Check } from 'lucide-react';
-import { useStyleHandlers } from './hooks/useStyleHandlers';
 import { buttons, glass } from '../../styles/designSystem';
+import type { StyleHandlers } from './hooks/useStyleHandlers';
 
 interface StyleSelectionModalProps {
   open: boolean;
   onClose: () => void;
+  styleHandlers: StyleHandlers;
 }
 
-const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose }) => {
+const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, styleHandlers }) => {
   const {
     tempSelectedStyles,
     activeStyleGender,
@@ -23,7 +24,10 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose }) =
     handleActiveStyleSectionChange,
     STYLE_SECTION_DEFINITIONS,
     STYLE_GENDER_OPTIONS,
-  } = useStyleHandlers();
+  } = styleHandlers;
+
+  const activeTempStyles =
+    tempSelectedStyles?.[activeStyleGender]?.[activeStyleSection] ?? [];
   
   const modalRef = useRef<HTMLDivElement>(null);
   
@@ -64,14 +68,12 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose }) =
   // Handle apply
   const handleApply = useCallback(() => {
     handleApplyStyles();
-    onClose();
-  }, [handleApplyStyles, onClose]);
+  }, [handleApplyStyles]);
   
   // Handle clear
   const handleClear = useCallback(() => {
     handleClearStyles();
-    onClose();
-  }, [handleClearStyles, onClose]);
+  }, [handleClearStyles]);
   
   if (!open) return null;
   
@@ -147,7 +149,7 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose }) =
                   prompt: `${activeStyleGender} ${activeStyleSection} inspired style ${index + 1}`,
                 })}
                 className={`p-4 rounded-lg border-2 transition-colors duration-200 ${
-                  tempSelectedStyles[activeStyleGender][activeStyleSection].some(
+                  activeTempStyles.some(
                     style => style.id === `${activeStyleGender}-${activeStyleSection}-${index + 1}`
                   )
                     ? 'border-theme-accent bg-theme-accent/20'
@@ -175,7 +177,7 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose }) =
                 Selected Styles ({totalTempSelectedStyles})
               </div>
               <div className="text-xs text-theme-white/70">
-                {tempSelectedStyles[activeStyleGender][activeStyleSection].map(style => style.name).join(', ')}
+                {activeTempStyles.map(style => style.name).join(', ')}
               </div>
             </div>
           )}

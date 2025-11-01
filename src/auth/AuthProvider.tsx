@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl, parseJsonSafe } from '../utils/api';
@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastProfileUpdateRef = useRef<number>(0);
   
   // Derive a per-user storage prefix to avoid cross-account bleed
   const storagePrefix = useMemo(() => {
@@ -330,24 +331,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
   }, [session?.access_token, storagePrefix]);
 
+  // Add ref to track refresh state and prevent loops
+  const refreshInProgressRef = useRef(false);
+  const lastRefreshTimeRef = useRef(0);
+
   const refreshUser = useCallback(async (): Promise<AppUser> => {
-    let activeSession = session;
-
-    if (!activeSession) {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        authMetrics.increment('auth_refresh_failure');
-        throw new Error(error.message);
-      }
-      activeSession = data.session ?? null;
+    // Prevent concurrent refreshes
+    if (refreshInProgressRef.current) {
+      debugLog('Refresh already in progress, skipping...');
+      return user!;
     }
 
-    if (!activeSession?.user) {
-      authMetrics.increment('auth_refresh_failure');
-      throw new Error('No session available');
+    // Debounce refreshes - only allow one per 2 seconds
+    const now = Date.now();
+    if (now - lastRefreshTimeRef.current < 2000) {
+      debugLog('Refresh too soon, skipping...');
+      return user!;
     }
+
+    refreshInProgressRef.current = true;
+    lastRefreshTimeRef.current = now;
 
     try {
+      let activeSession = session;
+
+      if (!activeSession) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          authMetrics.increment('auth_refresh_failure');
+          throw new Error(error.message);
+        }
+        activeSession = data.session ?? null;
+      }
+
+      if (!activeSession?.user) {
+        authMetrics.increment('auth_refresh_failure');
+        throw new Error('No session available');
+      }
+
       const profile = await fetchUserProfile(activeSession.user, {
         accessToken: activeSession.access_token ?? null,
         refreshToken: activeSession.refresh_token ?? null,
@@ -360,8 +381,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       authMetrics.increment('auth_refresh_failure');
       throw error;
+    } finally {
+      refreshInProgressRef.current = false;
     }
-  }, [session, fetchUserProfile]);
+  }, [session, fetchUserProfile, user]);
 
   // Cross-tab synchronization
   const { notifyCreditsUpdate, notifyUserLogout } = useCrossTabSync({
@@ -410,6 +433,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return updatedProfile;
   }, [session?.access_token]);
 
+  const uploadProfilePicture = useCallback<
+    AuthContextValue['uploadProfilePicture']
+  >(async (base64Data: string, mimeType?: string) => {
+    if (!session?.access_token) {
+      throw new Error('No active session');
+    }
+
+    const response = await fetch(getApiUrl('/api/users/me/profile-picture'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        base64Data,
+        mimeType,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to upload profile picture');
+    }
+
+    const payload = await parseJsonSafe(response);
+    const updatedProfile = normalizeBackendUser(payload);
+    
+    debugLog('Profile picture upload successful, updated profile:', updatedProfile);
+    
+    // Set timestamp to prevent overwriting this update
+    lastProfileUpdateRef.current = Date.now();
+    
+    // Force a state update by creating a new object reference
+    setUser({ ...updatedProfile });
+    
+    // Don't call refreshUser here as it might overwrite our changes
+    // The backend should have the updated profile image now
+    
+    return updatedProfile;
+  }, [session?.access_token]);
+
+  const removeProfilePicture = useCallback<
+    AuthContextValue['removeProfilePicture']
+  >(async () => {
+    if (!session?.access_token) {
+      throw new Error('No active session');
+    }
+
+    const response = await fetch(getApiUrl('/api/users/me/remove-profile-picture'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to remove profile picture');
+    }
+
+    const payload = await parseJsonSafe(response);
+    const updatedProfile = normalizeBackendUser(payload);
+    
+    // Set timestamp to prevent overwriting this update
+    lastProfileUpdateRef.current = Date.now();
+    
+    setUser(updatedProfile);
+    return updatedProfile;
+  }, [session?.access_token]);
+
   const requestPasswordReset = useCallback<
     AuthContextValue['requestPasswordReset']
   >(async (email) => {
@@ -443,9 +537,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [ensureValidToken]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      if (!isMounted) return;
+      
       debugLog('Auth state changed:', event, nextSession?.user?.email);
 
       if (nextSession?.user) {
@@ -454,13 +552,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             accessToken: nextSession.access_token ?? null,
             refreshToken: nextSession.refresh_token ?? null,
           });
-          setUser(profile);
-          setSession(nextSession);
+          if (isMounted) {
+            // Check if we recently updated the profile (within last 5 seconds)
+            const timeSinceLastUpdate = Date.now() - lastProfileUpdateRef.current;
+            const isRecentUpdate = timeSinceLastUpdate < 5000;
+            
+            // Only update if this is a significant change (not just a token refresh)
+            // or if we don't have a user yet, or if it's not a recent profile update
+            if (!user || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || !isRecentUpdate) {
+              setUser(profile);
+              setSession(nextSession);
+              if (isRecentUpdate) {
+                debugLog('Recent profile update detected, but updating anyway due to event:', event);
+              }
+            } else {
+              // For token refresh events with recent profile updates, only update the session
+              debugLog('Token refresh detected with recent profile update, preserving current user state');
+              setSession(nextSession);
+            }
+          }
         } catch (error) {
           debugError('Error fetching user profile on auth change:', error);
           // Don't immediately clear user on transient errors during navigation
           // Only clear if it's a sign out event or persistent error
-          if (event === 'SIGNED_OUT') {
+          if (event === 'SIGNED_OUT' && isMounted) {
             try { resetTokenCache(); } catch (e) { void e; }
             try { authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
             setUser(null);
@@ -469,57 +584,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         // Only clear user/session if it's an explicit sign out
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' && isMounted) {
           try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
           setUser(null);
           setSession(null);
-        } else if (event === 'TOKEN_REFRESHED' && !nextSession) {
+        } else if (event === 'TOKEN_REFRESHED' && !nextSession && isMounted) {
           // If token refresh failed, try to get session once more before giving up
           debugLog('Token refresh failed, attempting to recover session...');
           try {
             const { data, error } = await supabase.auth.getSession();
             if (error) {
               debugError('Failed to recover session after refresh error:', error);
-              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
-              setUser(null);
-              setSession(null);
-            } else if (data.session?.user) {
+              if (isMounted) {
+                try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
+                setUser(null);
+                setSession(null);
+              }
+            } else if (data.session?.user && isMounted) {
               const profile = await fetchUserProfile(data.session.user, {
                 accessToken: data.session.access_token ?? null,
                 refreshToken: data.session.refresh_token ?? null,
               });
-              setUser(profile);
-              setSession(data.session);
-            } else {
+              if (isMounted) {
+                setUser(profile);
+                setSession(data.session);
+              }
+            } else if (isMounted) {
               try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
               setUser(null);
               setSession(null);
             }
           } catch (recoveryError) {
             debugError('Session recovery failed:', recoveryError);
+            if (isMounted) {
+              try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
+              setUser(null);
+              setSession(null);
+            }
+          }
+        } else if (event === 'INITIAL_SESSION' && !nextSession && isMounted) {
+          // Handle initial session state without clearing user/session unnecessarily
+          debugLog('No initial session found');
+        } else if (isMounted) {
+          // Only clear on explicit sign out events, not on every state change
+          if (event === 'SIGNED_OUT') {
             try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
             setUser(null);
             setSession(null);
           }
-        } else {
-          try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
-          setUser(null);
-          setSession(null);
         }
       }
 
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, [fetchUserProfile]);
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserProfile, user]);
 
   useEffect(() => {
+    let isMounted = true;
+    let retryTimeout: NodeJS.Timeout | null = null;
+
     const getInitialSession = async (retryCount = 0) => {
+      if (!isMounted) return;
+
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
           debugError('Error getting initial session:', error);
+          if (isMounted) {
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -529,30 +669,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             accessToken: initialSession.access_token ?? null,
             refreshToken: initialSession.refresh_token ?? null,
           });
-          setUser(profile);
-          setSession(initialSession);
+          if (isMounted) {
+            setUser(profile);
+            setSession(initialSession);
+            setIsLoading(false);
+          }
         } else if (retryCount === 0) {
           // If no session found on first attempt, wait briefly and retry once
           // This accounts for race conditions with autoRefresh during page load
           debugLog('No initial session found, retrying in 1.5s...');
-          setTimeout(() => getInitialSession(1), 1500);
+          retryTimeout = setTimeout(() => {
+            if (isMounted) {
+              void getInitialSession(1);
+            }
+          }, 1500);
           return;
+        } else {
+          // No session found on retry, stop loading
+          if (isMounted) {
+            setIsLoading(false);
+          }
         }
       } catch (error) {
         debugError('Error getting initial session:', error);
-        if (retryCount === 0) {
+        if (retryCount === 0 && isMounted) {
           // Retry once on error
-          setTimeout(() => getInitialSession(1), 1500);
+          retryTimeout = setTimeout(() => {
+            if (isMounted) {
+              void getInitialSession(1);
+            }
+          }, 1500);
           return;
-        }
-      } finally {
-        if (retryCount > 0) {
+        } else if (isMounted) {
           setIsLoading(false);
         }
       }
     };
 
     void getInitialSession();
+
+    return () => {
+      isMounted = false;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
+    };
   }, [fetchUserProfile]);
 
 
@@ -568,6 +729,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logOut,
     refreshUser,
     updateProfile,
+    uploadProfilePicture,
+    removeProfilePicture,
     requestPasswordReset,
     resetPassword,
     ensureValidToken,

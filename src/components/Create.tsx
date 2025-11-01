@@ -37,6 +37,8 @@ import { AspectRatioDropdown } from "./AspectRatioDropdown";
 const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
 const GalleryPanel = lazy(() => import("./create/GalleryPanel"));
+import { GalleryProvider } from "./create/contexts/GalleryContext";
+import { GenerationProvider } from "./create/contexts/GenerationContext";
 import { useGenerateShortcuts } from '../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../hooks/usePrefillFromShare';
 // import { compressDataUrl } from "../lib/imageCompression";
@@ -1099,6 +1101,8 @@ const [batchSize, setBatchSize] = useState<number>(1);
     fetchGalleryImages,
     updateImages: updateGalleryImages,
     removeImages: removeGalleryImages,
+    isLoading: isGalleryLoading,
+    error: galleryError,
     hasBase64Images,
     needsMigration,
   } = useGalleryImages();
@@ -5888,6 +5892,22 @@ const handleGenerate = async () => {
   // Removed hover parallax effects for tool cards; selection now drives the style
   return (
     <div className={`${layout.page} create-page`}>
+      {import.meta.env.DEV && (
+        <div className="fixed top-20 right-4 z-50 flex items-center gap-2">
+          <a
+            href={((): string => {
+              const params = new URLSearchParams(location.search);
+              params.set('v2', '1');
+              const search = params.toString();
+              return `${location.pathname}?${search}`;
+            })()}
+            className="px-3 py-1 bg-blue-500/90 text-white text-xs font-mono rounded shadow-lg hover:bg-blue-500"
+            aria-label="Switch to V2 (Preview)"
+          >
+            Switch to V2 (Preview)
+          </a>
+        </div>
+      )}
       {/* Copy notification */}
       {copyNotification && (
         <div className={`fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-2xl`}>
@@ -6472,6 +6492,12 @@ const handleGenerate = async () => {
         className={`relative z-10 ${layout.container} pb-48`}
         style={{ paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)` }}
       >
+        {/* Version Badge - Development Only */}
+        {import.meta.env.DEV && (
+          <div className="fixed top-20 right-4 z-50 px-3 py-1 bg-green-500/90 text-white text-xs font-mono rounded shadow-lg">
+            V1 (Stable)
+          </div>
+        )}
         {/* Centered content */}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Removed "Create now" heading per request */}
@@ -6581,6 +6607,9 @@ const handleGenerate = async () => {
                       handleBulkDownload={handleBulkDownload}
                       handleBulkDelete={handleBulkDelete}
                       renderGalleryItem={(img, idx) => renderLibraryGalleryItem(img, idx, 'gallery')}
+                      isLoading={isGalleryLoading}
+                      error={galleryError}
+                      onRefresh={fetchGalleryImages}
                     />
                   </Suspense>
                 )}
@@ -8039,7 +8068,7 @@ const handleGenerate = async () => {
           {activeCategory !== "gallery" && activeCategory !== "public" && activeCategory !== "text" && activeCategory !== "audio" && activeCategory !== "uploads" && activeCategory !== "folder-view" && activeCategory !== "my-folders" && activeCategory !== "inspirations" && (
             <div
               ref={promptBarRef}
-              className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
+              className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging && isGemini ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
               style={{
                 bottom: '0.75rem',
                 transform: 'translateX(-50%) translateZ(0)',
@@ -8054,7 +8083,7 @@ const handleGenerate = async () => {
                 {/* Left section: Textarea + Controls */}
                 <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
-              <div className="mb-1">
+              <div className="mb-0">
                 <textarea
                   ref={promptTextareaRef}
                   placeholder="Describe what you want to create..."

@@ -1,9 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { apiFetch } from '../utils/api';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { PLAN_LIMIT_MESSAGE, resolveGenerationCatchError } from '../utils/errorMessages';
 import { useCreditCheck } from './useCreditCheck';
+import {
+  runGenerationJob,
+  useGenerationJobTracker,
+  type JobStatusSnapshot,
+  type ProviderJobResponse,
+} from './generationJobHelpers';
 
 export interface GeneratedImage {
   url: string;
@@ -18,14 +23,6 @@ export interface GeneratedImage {
   styleId?: string;
   r2FileId?: string;
   jobId?: string;
-}
-
-interface JobResponse {
-  status: string;
-  progress?: number | string;
-  error?: string | null;
-  metadata?: Record<string, unknown> | null;
-  resultUrl?: string | null;
 }
 
 export type ImageGenerationStatus =
@@ -88,6 +85,170 @@ const normalizeJobStatus = (
   return undefined;
 };
 
+const pickString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const clampProgress = (value: number): number =>
+  Math.max(0, Math.min(100, Math.round(value)));
+
+const buildProviderOptions = (options: ImageGenerationOptions): Record<string, unknown> => {
+  const providerOptions: Record<string, unknown> = {};
+  if (options.aspectRatio) providerOptions.aspectRatio = options.aspectRatio;
+  return providerOptions;
+};
+
+const collectGeminiResultUrls = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+): string[] => {
+  const urls = new Set<string>();
+
+  const push = (value?: string) => {
+    if (value) {
+      urls.add(value);
+    }
+  };
+
+  push(pickString(snapshot.job.resultUrl));
+
+  const metadata = asRecord(snapshot.job.metadata);
+  if (metadata) {
+    push(pickString(metadata.resultUrl));
+    push(pickString(metadata.result_url));
+    push(pickString(metadata.url));
+    push(pickString(metadata.fileUrl));
+    push(pickString(metadata.r2FileUrl));
+    push(pickString(metadata.imageUrl));
+    push(pickString(metadata.image_url));
+
+    const results = metadata.results;
+    if (Array.isArray(results)) {
+      for (const entry of results) {
+        if (typeof entry === 'string') {
+          push(pickString(entry));
+        } else {
+          const record = asRecord(entry);
+          if (record) {
+            push(pickString(record.url));
+            push(pickString(record.imageUrl));
+            push(pickString(record.resultUrl));
+          }
+        }
+      }
+    }
+  }
+
+  const payload = response.payload;
+  const payloadDataUrls = Array.isArray(payload.dataUrls) ? payload.dataUrls : [];
+  for (const entry of payloadDataUrls) {
+    push(pickString(entry));
+  }
+
+  push(pickString(payload.dataUrl));
+  push(pickString(payload.resultUrl));
+
+  return Array.from(urls);
+};
+
+const extractR2FileId = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+): string | undefined => {
+  const metadata = asRecord(snapshot.job.metadata);
+  if (metadata) {
+    return (
+      pickString(metadata.r2FileId) ??
+      pickString(metadata.r2_file_id) ??
+      pickString(metadata.fileId)
+    );
+  }
+
+  const payload = response.payload;
+  return (
+    pickString(payload.r2FileId) ??
+    pickString(payload.r2_file_id) ??
+    pickString(payload.fileId)
+  );
+};
+
+const parseGeminiJobResult = (
+  snapshot: JobStatusSnapshot,
+  response: ProviderJobResponse,
+  options: ImageGenerationOptions,
+  ownerId: string | undefined,
+  modelUsed: string,
+): GeneratedImage => {
+  const urls = collectGeminiResultUrls(snapshot, response);
+  const resolvedUrl = urls[0];
+
+  if (!resolvedUrl) {
+    throw new Error('Job completed but no result URL was provided.');
+  }
+
+  return {
+    url: resolvedUrl,
+    prompt: options.prompt,
+    model: modelUsed,
+    timestamp: new Date().toISOString(),
+    jobId: response.jobId ?? snapshot.job.id ?? undefined,
+    references: options.references && options.references.length ? options.references : undefined,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    productId: options.productId,
+    styleId: options.styleId,
+    r2FileId: extractR2FileId(snapshot, response),
+  };
+};
+
+const parseImmediateGeminiResult = (
+  response: ProviderJobResponse,
+  options: ImageGenerationOptions,
+  ownerId: string | undefined,
+  modelUsed: string,
+): GeneratedImage | undefined => {
+  const payload = response.payload;
+  const imageBase64 = pickString(payload.imageBase64) ?? pickString(payload.image_base64);
+  const mimeType = pickString(payload.mimeType) ?? pickString(payload.mime_type) ?? 'image/png';
+  const dataUrl = pickString(payload.dataUrl) ?? pickString(payload.resultUrl);
+
+  let url: string | undefined;
+
+  if (imageBase64) {
+    url = `data:${mimeType};base64,${imageBase64}`;
+  } else if (dataUrl) {
+    url = dataUrl;
+  }
+
+  if (!url) {
+    return undefined;
+  }
+
+  const jobId =
+    pickString(payload.jobId) ??
+    pickString(payload.job_id) ??
+    undefined;
+
+  return {
+    url,
+    prompt: options.prompt,
+    model: modelUsed,
+    timestamp: new Date().toISOString(),
+    references: options.references && options.references.length ? options.references : undefined,
+    ownerId,
+    avatarId: options.avatarId,
+    avatarImageId: options.avatarImageId,
+    productId: options.productId,
+    styleId: options.styleId,
+    jobId,
+  };
+};
+
 export interface ImageGenerationState {
   isLoading: boolean;
   error: string | null;
@@ -112,10 +273,16 @@ export interface ImageGenerationOptions {
   styleId?: string;
   clientJobId?: string;
   onProgress?: (update: ImageGenerationProgressUpdate) => void;
+  signal?: AbortSignal;
+  requestTimeoutMs?: number;
+  pollTimeoutMs?: number;
+  pollIntervalMs?: number;
+  pollRequestTimeoutMs?: number;
 }
 
 export const useGeminiImageGeneration = () => {
   const { user } = useAuth();
+  const tracker = useGenerationJobTracker();
   const { 
     checkCredits, 
     showInsufficientCreditsModal, 
@@ -143,10 +310,7 @@ export const useGeminiImageGeneration = () => {
   }, []);
 
   const emitProgress = useCallback((controller: ProgressController) => {
-    const progressValue = Math.max(
-      0,
-      Math.min(100, Math.round(controller.display)),
-    );
+    const progressValue = clampProgress(controller.display);
     const shouldEmit =
       controller.lastEmitValue !== progressValue ||
       controller.lastEmitStatus !== controller.status ||
@@ -324,145 +488,12 @@ export const useGeminiImageGeneration = () => {
     progressControllerRef.current = null;
   }, [emitProgress]);
 
-  const pollForJobCompletion = useCallback(async (
-    jobId: string,
-    prompt: string,
-    model: string,
-    references: string[] | undefined,
-    avatarId: string | undefined,
-    avatarImageId: string | undefined,
-    ownerId: string | undefined,
-  ): Promise<GeneratedImage> => {
-    const pollIntervalMs = 3000;
-    const maxAttempts = Math.ceil((5 * 60 * 1000) / pollIntervalMs);
-    let attempts = 0;
-
-    const pickString = (value: unknown): string | undefined =>
-      typeof value === 'string' && value.trim().length > 0
-        ? value.trim()
-        : undefined;
-    const asRecord = (value: unknown): Record<string, unknown> | null =>
-      value && typeof value === 'object' && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-
-    debugLog(`[Gemini] Polling job ${jobId}, attempt ${attempts + 1}/${maxAttempts}`);
-    
-    while (attempts < maxAttempts) {
-      try {
-        const job = await apiFetch<JobResponse>(`/api/jobs/${jobId}`);
-        debugLog(`[Gemini] Job status check response: ok`);
-        debugLog(`[Gemini] Job status: ${job.status}, progress: ${job.progress}`);
-        debugLog(`[Gemini] Job error:`, job.error);
-        debugLog(`[Gemini] Job metadata:`, job.metadata);
-        const metadata = asRecord(job.metadata);
-        const progressValueRaw =
-          typeof job.progress === 'number'
-            ? job.progress
-            : typeof job.progress === 'string'
-              ? Number.parseFloat(job.progress)
-              : undefined;
-        const jobProgress =
-          typeof progressValueRaw === 'number' && Number.isFinite(progressValueRaw)
-            ? Math.max(0, Math.min(100, progressValueRaw))
-            : undefined;
-        const metadataStage = metadata
-          ? pickString(metadata['stage']) ??
-            pickString(metadata['status']) ??
-            pickString(metadata['state'])
-          : undefined;
-
-        updateControllerWithBackend({
-          progress: jobProgress,
-          status: job.status,
-          stage: metadataStage,
-          jobId,
-        });
-
-        const metadataFileUrl = metadata
-          ? pickString(metadata['fileUrl'])
-          : undefined;
-        const metadataR2FileUrl = metadata
-          ? pickString(metadata['r2FileUrl'])
-          : undefined;
-        const metadataUrl = metadata ? pickString(metadata['url']) : undefined;
-        const metadataResults = metadata ? metadata['results'] : undefined;
-        const firstResultUrl = Array.isArray(metadataResults)
-          ? metadataResults
-              .map((item) => pickString(item))
-              .find((value): value is string => Boolean(value))
-          : undefined;
-        const resolvedUrl =
-          pickString(job.resultUrl) ??
-          metadataFileUrl ??
-          metadataR2FileUrl ??
-          metadataUrl ??
-          firstResultUrl;
-        const r2FileId = metadata
-          ? pickString(metadata['r2FileId'])
-          : undefined;
-
-        if (job.status === 'COMPLETED') {
-          if (!resolvedUrl) {
-            throw new Error('Job completed but no result URL was provided.');
-          }
-
-          updateControllerWithBackend({
-            progress: 100,
-            status: job.status,
-            stage: metadataStage,
-            jobId,
-          });
-
-          stopProgressController({
-            status: 'completed',
-            progress: 100,
-            stage: metadataStage,
-          });
-
-          return {
-            url: resolvedUrl,
-            prompt,
-            model,
-            timestamp: new Date().toISOString(),
-            jobId,
-            references: references || undefined,
-            ownerId,
-            avatarId,
-            avatarImageId,
-            r2FileId,
-          };
-        }
-
-        if (job.status === 'FAILED') {
-          stopProgressController({
-            status: 'failed',
-            progress: jobProgress,
-            stage: metadataStage,
-          });
-          throw new Error(job.error || 'Job failed');
-        }
-      } catch (error) {
-        if (attempts === maxAttempts - 1) {
-          throw error instanceof Error ? error : new Error(String(error));
-        }
-      }
-
-      attempts += 1;
-      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-    }
-
-    throw new Error('Job polling timeout');
-  }, [updateControllerWithBackend, stopProgressController]);
-
   const generateImage = useCallback(async (options: ImageGenerationOptions) => {
-    // Check credits before starting generation
     const creditCheck = checkCredits(1, 'image generation');
     if (!creditCheck.hasCredits) {
-      return; // Modal will be shown by useCreditCheck hook
+      return;
     }
 
-    // Reset state completely for each new generation
     setState({
       isLoading: true,
       error: null,
@@ -471,13 +502,12 @@ export const useGeminiImageGeneration = () => {
       status: 'queued',
       jobId: null,
     });
-    
-    // Clear any existing progress controller
+
     if (progressControllerRef.current?.timer) {
       clearInterval(progressControllerRef.current.timer);
       progressControllerRef.current = null;
     }
-    
+
     startProgressController({
       clientJobId: options.clientJobId,
       onProgress: options.onProgress,
@@ -485,283 +515,145 @@ export const useGeminiImageGeneration = () => {
       initialProgress: 0,
     });
 
-    try {
-      // TEMPORARILY DISABLED: Authentication check
-      // if (!token) {
-      //   const message = 'Please sign in to generate images.';
-      //   setState(prev => ({
-      //     ...prev,
-      //     isLoading: false,
-      //     error: message,
-      //     status: 'failed',
-      //     progress: 0,
-      //   }));
-      //   stopProgressController({ status: 'failed' });
-      //   throw new Error(message);
-      // }
-
-      const { prompt, model, imageData, references, temperature, outputLength, topP, aspectRatio } = options;
-
-      const resolvedModel = model || 'gemini-2.5-flash-image';
-
-      debugLog('[image] POST /api/image/gemini');
-
-      const providerOptions: Record<string, unknown> = {};
-      if (aspectRatio) {
-        providerOptions.aspectRatio = aspectRatio;
-      }
-
-      const config = aspectRatio
-        ? {
-            imageConfig: { aspectRatio },
-          }
-        : undefined;
-
-      const generationConfig = {
-        responseModalities: ['Image'],
-      } as Record<string, unknown>;
-
-      const baseBody: Record<string, unknown> = {
-        prompt,
-        imageBase64: imageData,
-        mimeType: 'image/png',
-        references,
-        temperature,
-        outputLength,
-        topP,
-        generationConfig,
-      };
-
-      if (options.avatarId) {
-        baseBody.avatarId = options.avatarId;
-      }
-      if (options.avatarImageId) {
-        baseBody.avatarImageId = options.avatarImageId;
-      }
-
-      if (Object.keys(providerOptions).length > 0) {
-        baseBody.providerOptions = providerOptions;
-      }
-      if (config) {
-        baseBody.config = config;
-      }
-
-      type ApiFetchError = Error & { status?: number };
-
-      const performRequest = async (
-        modelToUse: string,
-        allowFallback: boolean,
-      ): Promise<{ payload: unknown; modelUsed: string }> => {
-        try {
-          const payload =
-            (await apiFetch<Record<string, unknown> | null>(
-              '/api/image/gemini',
-              {
-                method: 'POST',
-                body: {
-                  ...baseBody,
-                  model: modelToUse,
-                },
-                context: 'generation',
-              },
-            )) ?? {};
-
-          return { payload, modelUsed: modelToUse };
-        } catch (error) {
-          const status = (error as ApiFetchError)?.status;
-
-          if (allowFallback && status === 400) {
-            debugWarn(
-              '[image] Gemini 2.5 Flash returned 400, attempting preview fallback.',
-              { error },
-            );
-            return performRequest('gemini-2.5-flash-image-preview', false);
-          }
-
-          if (status === 429) {
-            throw new Error(PLAN_LIMIT_MESSAGE);
-          }
-
-          throw error instanceof Error
-            ? error
-            : new Error('Gemini image generation failed');
+    const providerOptions = buildProviderOptions(options);
+    const config = options.aspectRatio
+      ? {
+          imageConfig: { aspectRatio: options.aspectRatio },
         }
-      };
+      : undefined;
 
-      const { payload, modelUsed } = await performRequest(
-        resolvedModel,
-        resolvedModel === 'gemini-2.5-flash-image',
-      );
-      let currentModelUsed = modelUsed;
-      let didAttemptPreviewFallback = false;
-      
-      debugLog('[Gemini] Received payload:', payload);
-      
-      const payloadRecord =
-        payload && typeof payload === 'object'
-          ? (payload as Record<string, unknown>)
-          : null;
-      const extractJobId = (value: unknown): string | undefined =>
-        typeof value === 'string' && value.trim().length > 0
-          ? value.trim()
-          : undefined;
-      const jobIdFromPayload = payloadRecord
-        ? extractJobId(payloadRecord['jobId']) ??
-          extractJobId(payloadRecord['job_id'])
-        : undefined;
+    const baseBody: Record<string, unknown> = {
+      prompt: options.prompt,
+      imageBase64: options.imageData,
+      mimeType: 'image/png',
+      references: options.references,
+      temperature: options.temperature,
+      outputLength: options.outputLength,
+      topP: options.topP,
+    };
 
-      debugLog('[Gemini] Extracted jobId:', jobIdFromPayload);
+    if (options.avatarId) {
+      baseBody.avatarId = options.avatarId;
+    }
+    if (options.avatarImageId) {
+      baseBody.avatarImageId = options.avatarImageId;
+    }
 
-      // Check if this is a job-based response
-      if (jobIdFromPayload) {
-        debugLog('[Gemini] Starting job polling for jobId:', jobIdFromPayload);
-        // Poll for job completion
-        const payloadProgress =
-          payloadRecord && typeof payloadRecord['progress'] === 'number'
-            ? (payloadRecord['progress'] as number)
-            : undefined;
-        updateControllerWithBackend({
-          jobId: jobIdFromPayload,
-          status: 'PROCESSING',
-          progress: payloadProgress,
+    if (Object.keys(providerOptions).length > 0) {
+      baseBody.providerOptions = providerOptions;
+    }
+    if (config) {
+      baseBody.config = config;
+    }
+
+    type ApiFetchError = Error & { status?: number };
+
+    const primaryModel = options.model ?? 'gemini-2.5-flash-image';
+    let didAttemptPreviewFallback = false;
+
+    const attemptGeneration = async (
+      modelToUse: string,
+      allowPreviewFallback: boolean,
+    ): Promise<{ image: GeneratedImage; jobId?: string; modelUsed: string }> => {
+      debugLog('[image] POST /api/image/gemini', { model: modelToUse });
+
+      let resolvedJobId: string | undefined;
+
+      try {
+        const { result, jobId } = await runGenerationJob<GeneratedImage, Record<string, unknown>>({
+          provider: 'gemini',
+          mediaType: 'image',
+          body: {
+            ...baseBody,
+            model: modelToUse,
+          },
+          tracker,
+          prompt: options.prompt,
+          model: modelToUse,
+          signal: options.signal,
+          timeoutMs: options.requestTimeoutMs,
+          pollTimeoutMs: options.pollTimeoutMs,
+          pollIntervalMs: options.pollIntervalMs,
+          requestTimeoutMs: options.pollRequestTimeoutMs,
+          parseImmediateResult: (response) =>
+            parseImmediateGeminiResult(response, options, user?.id, modelToUse),
+          parseJobResult: (snapshot, response) =>
+            parseGeminiJobResult(snapshot, response, options, user?.id, modelToUse),
+          onUpdate: (snapshot) => {
+            const jobIdentifier =
+              (typeof snapshot.job.id === 'string' && snapshot.job.id) ||
+              resolvedJobId;
+
+            if (!resolvedJobId && jobIdentifier) {
+              resolvedJobId = jobIdentifier;
+            }
+
+            updateControllerWithBackend({
+              jobId: jobIdentifier,
+              status: snapshot.status,
+              progress: snapshot.progress,
+              stage: snapshot.stage,
+            });
+          },
         });
 
-        try {
-          const generatedImage = await pollForJobCompletion(
-            jobIdFromPayload,
-            prompt,
-            currentModelUsed,
-            references,
-            options.avatarId,
-            options.avatarImageId,
-            user?.id
+        if (jobId) {
+          resolvedJobId = jobId;
+        }
+
+        return { image: result, jobId: resolvedJobId, modelUsed: modelToUse };
+      } catch (error) {
+        const status = (error as ApiFetchError)?.status;
+        const message =
+          error instanceof Error ? error.message.toLowerCase() : '';
+
+        if (status === 429) {
+          throw new Error(PLAN_LIMIT_MESSAGE);
+        }
+
+        const shouldFallback =
+          allowPreviewFallback &&
+          !didAttemptPreviewFallback &&
+          (status === 400 ||
+            message.includes('service unavailable') ||
+            message.includes('unavailable'));
+
+        if (shouldFallback) {
+          didAttemptPreviewFallback = true;
+          debugWarn(
+            '[image] Gemini primary model failed; retrying with preview fallback.',
+            { error },
           );
 
-          stopProgressController({
-            status: 'completed',
-            progress: 100,
+          startProgressController({
+            clientJobId: options.clientJobId,
+            onProgress: options.onProgress,
+            initialStatus: 'queued',
+            initialProgress: 0,
           });
 
           setState(prev => ({
             ...prev,
-            isLoading: false,
-            generatedImage,
+            isLoading: true,
             error: null,
-            progress: 100,
-            status: 'completed',
+            generatedImage: null,
+            progress: 0,
+            status: 'queued',
+            jobId: null,
           }));
 
-          return generatedImage;
-        } catch (pollError) {
-          const message = (pollError instanceof Error ? pollError.message : String(pollError)).toLowerCase();
-          const canFallbackToPreview =
-            !didAttemptPreviewFallback &&
-            currentModelUsed === 'gemini-2.5-flash-image' &&
-            (message.includes('service unavailable') || message.includes('unavailable'));
-
-          if (canFallbackToPreview) {
-            didAttemptPreviewFallback = true;
-            debugWarn('[image] Gemini job failed (service unavailable). Retrying with preview model.');
-
-            // Restart progress controller for fallback attempt
-            startProgressController({
-              clientJobId: options.clientJobId,
-              onProgress: options.onProgress,
-              initialStatus: 'queued',
-              initialProgress: 0,
-            });
-
-            const { payload: fbPayload, modelUsed: fbModel } = await performRequest(
-              'gemini-2.5-flash-image-preview',
-              false,
-            );
-            currentModelUsed = fbModel;
-
-            const fbRecord = fbPayload && typeof fbPayload === 'object' ? (fbPayload as Record<string, unknown>) : null;
-            const fbJobId = fbRecord
-              ? (typeof fbRecord['jobId'] === 'string' && fbRecord['jobId']) ||
-                (typeof fbRecord['job_id'] === 'string' && (fbRecord['job_id'] as string)) ||
-                undefined
-              : undefined;
-
-            if (fbJobId) {
-              updateControllerWithBackend({ jobId: fbJobId, status: 'PROCESSING', progress: 0 });
-              const generatedImage = await pollForJobCompletion(
-                fbJobId,
-                prompt,
-                currentModelUsed,
-                references,
-                options.avatarId,
-                options.avatarImageId,
-                user?.id
-              );
-
-              stopProgressController({ status: 'completed', progress: 100 });
-              setState(prev => ({
-                ...prev,
-                isLoading: false,
-                generatedImage,
-                error: null,
-                progress: 100,
-                status: 'completed',
-              }));
-              return generatedImage;
-            }
-
-            // Immediate response path for fallback
-            if (fbRecord?.imageBase64) {
-              const generatedImage: GeneratedImage = {
-                url: `data:${(fbRecord['mimeType'] as string) || 'image/png'};base64,${fbRecord['imageBase64'] as string}`,
-                prompt,
-                model: currentModelUsed,
-                timestamp: new Date().toISOString(),
-                references: references || undefined,
-                ownerId: user?.id,
-                avatarId: options.avatarId,
-                avatarImageId: options.avatarImageId,
-                productId: options.productId,
-                styleId: options.styleId,
-              };
-
-              stopProgressController({ status: 'completed', progress: 100 });
-              setState(prev => ({
-                ...prev,
-                isLoading: false,
-                generatedImage,
-                error: null,
-                progress: 100,
-                status: 'completed',
-              }));
-              return generatedImage;
-            }
-
-            // If fallback also didn't return data, rethrow original error
-          }
-
-          throw pollError;
+          return attemptGeneration('gemini-2.5-flash-image-preview', false);
         }
-      }
 
-      // Handle immediate response (legacy)
-      const imgBase64 = (payload as Record<string, unknown>)?.imageBase64 as string | undefined;
-      const imgMime = (payload as Record<string, unknown>)?.mimeType as string | undefined;
-      if (!imgBase64) {
-        throw new Error('No image data returned from API');
+        throw error;
       }
+    };
 
-      // Convert the new API response format to our expected format
-      const generatedImage: GeneratedImage = {
-        url: `data:${imgMime || 'image/png'};base64,${imgBase64}`,
-        prompt,
-        model: modelUsed,
-        timestamp: new Date().toISOString(),
-        references: references || undefined,
-        ownerId: user?.id,
-        avatarId: options.avatarId,
-        avatarImageId: options.avatarImageId,
-        productId: options.productId,
-        styleId: options.styleId,
-      };
+    try {
+      const { image, jobId } = await attemptGeneration(
+        primaryModel,
+        primaryModel === 'gemini-2.5-flash-image',
+      );
 
       stopProgressController({
         status: 'completed',
@@ -771,30 +663,34 @@ export const useGeminiImageGeneration = () => {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        generatedImage,
+        generatedImage: image,
         error: null,
         progress: 100,
         status: 'completed',
+        jobId: jobId ?? image.jobId ?? prev.jobId,
       }));
 
-      return generatedImage;
+      return image;
     } catch (error) {
       stopProgressController({
         status: 'failed',
       });
-      const errorMessage = resolveGenerationCatchError(error, 'We couldn’t generate that image. Try again in a moment.');
+
+      const message = resolveGenerationCatchError(
+        error,
+        'We couldn’t generate that image. Try again in a moment.',
+      );
 
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: errorMessage,
+        error: message,
         generatedImage: null,
         progress: 0,
         status: 'failed',
-        jobId: prev.jobId,
       }));
 
-      throw new Error(errorMessage);
+      throw new Error(message);
     } finally {
       if (progressControllerRef.current) {
         stopProgressController();
@@ -802,11 +698,11 @@ export const useGeminiImageGeneration = () => {
     }
   }, [
     user?.id,
-    pollForJobCompletion,
+    tracker,
+    checkCredits,
     startProgressController,
     updateControllerWithBackend,
     stopProgressController,
-    checkCredits,
   ]);
 
   const clearError = useCallback(() => {

@@ -40,6 +40,7 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+const DebugPanel = lazy(() => import("./components/DebugPanel").then(({ DebugPanel }) => ({ default: DebugPanel })));
 
 function NavbarFallback() {
   return (
@@ -462,6 +463,16 @@ function AppContent() {
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route 
+              path="/job/:jobId" 
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                    <CreateRoutes />
+                  </AuthErrorBoundary>
+                </Suspense>
+              } 
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
@@ -483,6 +494,11 @@ function AppContent() {
           onSubscribe={handleSubscribe}
           onDismiss={handleDismiss}
         />
+      </Suspense>
+      
+      {/* Debug Panel - Development Only */}
+      <Suspense fallback={null}>
+        <DebugPanel />
       </Suspense>
       
     </div>

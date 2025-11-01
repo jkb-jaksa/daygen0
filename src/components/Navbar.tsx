@@ -444,7 +444,7 @@ export default function Navbar() {
                   >
                     {currentUser.profileImage ? (
                       <img
-                        src={currentUser.profileImage}
+                        src={`${currentUser.profileImage}?t=${Date.now()}`}
                         alt="Profile"
                         className="size-5 rounded-full object-cover"
                       />
