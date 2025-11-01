@@ -542,7 +542,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
               {/* Prompt Description Bar */}
               {item.prompt && (
-                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
+                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto ${
+                  isGalleryView ? '!hidden' : 'hidden sm:flex'
+                } items-end z-10 ${
                   isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
                 onClick={(e) => e.stopPropagation()}
