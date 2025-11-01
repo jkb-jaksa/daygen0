@@ -11,7 +11,7 @@ import { useGeneration } from './contexts/GenerationContext';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
-import { SIDEBAR_PROMPT_GAP, SIDEBAR_TOP_PADDING } from './layoutConstants';
+import { SIDEBAR_TOP_PADDING } from './layoutConstants';
 import { useFooter } from '../../contexts/useFooter';
 
 const SUPPORTED_CATEGORIES = ['image', 'video', 'gallery', 'my-folders'] as const;

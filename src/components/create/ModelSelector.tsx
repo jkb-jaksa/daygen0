@@ -91,8 +91,6 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   }, [selectedModel, inferredCategory]);
   
-  const currentModel = getCurrentModel();
-  
   // Handle model selection (matching V1's handleModelSelect signature)
   const handleModelSelect = useCallback((modelName: string) => {
     const model = AI_MODELS.find(m => m.name === modelName);

@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import { lazy, Suspense } from 'react';
 import {
-  Wand2,
   Settings,
   User,
   Package,
@@ -84,9 +83,6 @@ const hideHoverTooltip = (tooltipId: string) => {
   tooltip.classList.remove('opacity-100');
   tooltip.classList.add('opacity-0');
 };
-
-const tooltipBaseClasses =
-  'absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block';
 
 const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
   <div className="relative inline-flex items-center group">

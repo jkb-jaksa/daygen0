@@ -14,8 +14,8 @@ async function ensureFontsReady(page: import('@playwright/test').Page) {
   });
   await page.evaluate(async () => {
     if ('fonts' in document) {
-      // @ts-expect-error
-      await (document as any).fonts.ready;
+      // @ts-expect-error - fonts.ready is not in the standard DOM types
+      await (document as { fonts?: { ready: Promise<void> } }).fonts?.ready;
     }
   });
   await page.waitForTimeout(200); // allow layout to settle
@@ -26,7 +26,7 @@ async function screenshotPNG(page: import('@playwright/test').Page) {
   return PNG.sync.read(buf);
 }
 
-function comparePNGs(a: PNG, b: PNG, maxDiffRatio = 0.005) {
+function comparePNGs(a: PNG, b: PNG) {
   if (a.width !== b.width || a.height !== b.height) {
     throw new Error(`Dimension mismatch: ${a.width}x${a.height} vs ${b.width}x${b.height}`);
   }
