@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass } from '../../styles/designSystem';
@@ -14,6 +14,7 @@ import CreateSidebar from './CreateSidebar';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
+const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 
 // Helper function to get initials from name
 const getInitials = (name: string) =>
@@ -28,7 +29,6 @@ const getInitials = (name: string) =>
 const FullImageModal = memo(() => {
   const { state, setFullSizeImage, filteredItems } = useGallery();
   const { 
-    handleDownloadImage, 
     handleToggleLike, 
     handleTogglePublic,
     handleDeleteImage,
@@ -37,6 +37,7 @@ const FullImageModal = memo(() => {
     handleUseAsReference,
     handleReusePrompt,
     handleMakeVideo,
+    handleImageActionMenu,
     clearJobUrl 
   } = useGalleryActions();
   
@@ -45,6 +46,7 @@ const FullImageModal = memo(() => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
@@ -164,13 +166,6 @@ const FullImageModal = memo(() => {
     };
   }, [open, fullSizeImage, handlePrevious, handleNext, clearJobUrl]);
   
-  // Handle download
-  const handleDownload = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fullSizeImage) {
-      await handleDownloadImage(fullSizeImage);
-    }
-  }, [fullSizeImage, handleDownloadImage]);
 
   // Handle toggle like
   const handleToggleLikeClick = useCallback(async (e: React.MouseEvent) => {
@@ -242,6 +237,64 @@ const FullImageModal = memo(() => {
     handleMakeVideo();
     clearJobUrl();
   }, [handleMakeVideo, clearJobUrl]);
+  
+  // Handle toggle edit menu
+  const handleToggleEditMenu = useCallback((menuId: string, anchor: HTMLElement) => {
+    setEditMenu(prev => {
+      if (prev?.id === menuId) {
+        return null;
+      }
+      return { id: menuId, anchor };
+    });
+  }, []);
+  
+  // Handle close edit menu
+  const handleCloseEditMenu = useCallback(() => {
+    setEditMenu(null);
+  }, []);
+  
+  // Edit menu actions
+  const handleEditImage = useCallback(() => {
+    if (fullSizeImage) {
+      handleEditMenuSelect(fullSizeImage);
+    }
+    handleCloseEditMenu();
+  }, [fullSizeImage, handleEditMenuSelect, handleCloseEditMenu]);
+  
+  const handleCreateAvatar = useCallback(() => {
+    if (fullSizeImage) {
+      handleCreateAvatarFromMenu(fullSizeImage);
+    }
+    handleCloseEditMenu();
+  }, [fullSizeImage, handleCreateAvatarFromMenu, handleCloseEditMenu]);
+  
+  const handleUseReference = useCallback(() => {
+    if (fullSizeImage) {
+      handleUseAsReference(fullSizeImage);
+      clearJobUrl();
+    }
+    handleCloseEditMenu();
+  }, [fullSizeImage, handleUseAsReference, clearJobUrl, handleCloseEditMenu]);
+  
+  const handleReuse = useCallback(() => {
+    if (fullSizeImage) {
+      handleReusePrompt(fullSizeImage);
+      clearJobUrl();
+    }
+    handleCloseEditMenu();
+  }, [fullSizeImage, handleReusePrompt, clearJobUrl, handleCloseEditMenu]);
+  
+  const handleVideo = useCallback(() => {
+    handleMakeVideo();
+    handleCloseEditMenu();
+  }, [handleMakeVideo, handleCloseEditMenu]);
+  
+  // Handle more actions menu
+  const handleMoreActionsClick = useCallback((e: React.MouseEvent) => {
+    if (fullSizeImage) {
+      handleImageActionMenu(e, fullSizeImage);
+    }
+  }, [fullSizeImage, handleImageActionMenu]);
 
   // Handle image load
   const handleImageLoad = useCallback(() => {
@@ -294,7 +347,7 @@ const FullImageModal = memo(() => {
       )}
       
       <div
-        className="fixed inset-0 z-[10600] glass-liquid willchange-backdrop isolate backdrop-blur-2xl bg-[color:var(--glass-dark-bg)] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[110] glass-liquid willchange-backdrop isolate backdrop-blur-2xl bg-[color:var(--glass-dark-bg)] flex items-center justify-center p-4"
         onClick={clearJobUrl}
       >
         <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -326,6 +379,76 @@ const FullImageModal = memo(() => {
                 </button>
               </>
             )}
+
+            {/* Action buttons overlay */}
+            <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
+              <div className={`flex items-center gap-1 ${
+                editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+              } transition-opacity duration-100`}>
+                <Suspense fallback={null}>
+                  <EditButtonMenu
+                    menuId={`fullsize-edit-${fullSizeImage.jobId}`}
+                    image={fullSizeImage}
+                    isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
+                    anchor={editMenu?.anchor || null}
+                    isFullSize={true}
+                    anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
+                    onClose={handleCloseEditMenu}
+                    onToggleMenu={handleToggleEditMenu}
+                    onEditImage={handleEditImage}
+                    onCreateAvatar={handleCreateAvatar}
+                    onUseAsReference={handleUseReference}
+                    onReusePrompt={handleReuse}
+                    onMakeVideo={handleVideo}
+                  />
+                </Suspense>
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  title="Delete"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleLikeClick}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large favorite-toggle transition-opacity duration-100 ${
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  title={fullSizeImage.isLiked ? "Unlike" : "Like"}
+                  aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
+                >
+                  <Heart
+                    className={`heart-icon w-4 h-4 transition-colors duration-100 ${
+                      fullSizeImage.isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                    }`}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMoreActionsClick}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  title="More actions"
+                  aria-label="More actions"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
             {/* Image/Video */}
             {isLoading && (
@@ -476,7 +599,7 @@ const FullImageModal = memo(() => {
       {/* Right sidebar with actions */}
       {fullSizeImage && (
         <aside 
-          className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[10650]`} 
+          className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[120]`} 
           style={{ 
             right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', 
             top: 'calc(var(--nav-h) + 16px)', 
@@ -486,15 +609,16 @@ const FullImageModal = memo(() => {
         >
           {/* Icon-only action bar at top */}
           <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
-            <button
-              type="button"
-              onClick={handleDownload}
+            <a
+              href={fullSizeImage.url}
+              download
               className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+              onClick={(e) => e.stopPropagation()}
               title="Download"
               aria-label="Download"
             >
               <Download className="w-4 h-4" />
-            </button>
+            </a>
             <button
               type="button"
               onClick={handleAddToFolderClick}
@@ -601,7 +725,7 @@ const FullImageModal = memo(() => {
                 setFullSizeImage(next, index);
               }
             }}
-            className="z-[10700]"
+            className="z-[130]"
           />
         </Suspense>
       )}

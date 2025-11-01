@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import { lazy, Suspense } from 'react';
-import { Heart, HeartOff, Globe, Lock, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, Edit as EditIcon } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2 } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons, glass } from '../../styles/designSystem';
@@ -80,16 +79,14 @@ const renderPlaceholderGrid = (
 );
 
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
-  const location = useLocation();
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, error, refresh, filteredItems, setImageActionMenu } = useGallery();
+  const { state, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
   const {
     handleImageClick,
     handleImageActionMenu,
     handleBulkActionsMenu,
     handleToggleLike,
-    handleTogglePublic,
     handleDeleteImage,
     handleEditMenuSelect,
     handleCreateAvatarFromMenu,
@@ -254,11 +251,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     void handleToggleLike(item);
   }, [handleToggleLike]);
   
-  // Handle toggle public
-  const onTogglePublic = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
-    event.stopPropagation();
-    void handleTogglePublic(item);
-  }, [handleTogglePublic]);
   
   // Handle delete
   const onDelete = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
@@ -270,7 +262,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [handleDeleteImage]);
   
   // Handle toggle edit menu
-  const handleToggleEditMenu = useCallback((menuId: string, anchor: HTMLElement, item: GalleryImageLike | GalleryVideoLike) => {
+  const handleToggleEditMenu = useCallback((menuId: string, anchor: HTMLElement) => {
     setEditMenu(prev => {
       if (prev?.id === menuId) {
         return null;
@@ -385,17 +377,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     );
   }
   
-  // Determine grid gap based on route
-  const isCreateRoute = location.pathname.startsWith('/create');
-  const gridGap = isCreateRoute ? 'gap-2' : 'gap-1';
-  
   return (
     <div className={`space-y-4 ${className}`}>
       {statusBanner}
       {/* Grid */}
-      <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 ${gridGap} w-full p-1`}>
+      <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1`}>
         {filteredItems.map((item, index) => {
-          const itemId = getItemIdentifier(item);
           const isSelected = isItemSelected(item);
           const isMenuActive = imageActionMenu?.id === `gallery-actions-${index}-${item.url}`;
           const avatarForImage = item.avatarId ? avatarMap.get(item.avatarId) : undefined;
@@ -413,7 +400,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           >
             {/* Selection indicator */}
             {isBulkMode && (
-              <div className="absolute top-2 left-2 z-30">
+              <div className="absolute top-2 left-2 z-[60]">
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                   isItemSelected(item) 
                     ? 'bg-theme-accent border-theme-accent' 
@@ -486,7 +473,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <button
                         type="button"
                         onClick={(e) => onDelete(e, item)}
-                        className={`image-action-btn parallax-large ${
+                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
                           isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -499,7 +486,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <button
                         type="button"
                         onClick={(e) => onToggleLike(e, item)}
-                        className={`image-action-btn parallax-large favorite-toggle ${
+                        className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
                           isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -516,7 +503,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <button
                         type="button"
                         onClick={(e) => handleItemRightClick(e, item)}
-                        className={`image-action-btn parallax-large ${
+                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
                           isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Download, Share2, FolderPlus, Globe, Lock } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -29,7 +29,7 @@ interface ImageActionMenuProps {
 
 const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const { state } = useGallery();
-  const { handleDownloadImage, handleTogglePublic, handleShareImage, handleCopyImageUrl } = useGalleryActions();
+  const { handleDownloadImage, handleTogglePublic } = useGalleryActions();
   
   const { imageActionMenu } = state;
   

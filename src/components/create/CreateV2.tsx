@@ -195,7 +195,7 @@ export default function CreateV2() {
   
   return (
     <header
-      className={`relative z-10 ${layout.container} pb-48`}
+      className={`relative z-[10] ${layout.container} pb-48`}
       style={{
         paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`,
       }}

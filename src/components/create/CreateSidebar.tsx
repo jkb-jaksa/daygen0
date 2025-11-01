@@ -29,7 +29,7 @@ function CreateSidebarComponent({
   const sidebarTop = isFullSizeOpen
     ? `calc(var(--nav-h) + 16px)`
     : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
-  const zIndex = isFullSizeOpen ? 'z-[10650]' : 'lg:z-30';
+  const zIndex = isFullSizeOpen ? 'z-[120]' : 'lg:z-30';
   const responsiveClass = isFullSizeOpen ? '' : 'hidden lg:block';
   const navClasses = isFullSizeOpen
     ? `${glass.promptDark} rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`

@@ -105,7 +105,7 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
   return createPortal(
     <div
       ref={menuRef}
-      className={`${glass.promptDark} fixed rounded-lg border border-theme-mid shadow-lg z-50 min-w-[200px]`}
+      className={`${glass.promptDark} fixed rounded-lg border border-theme-mid shadow-lg z-[1200] min-w-[200px]`}
       style={{
         top: position.top,
         left: position.left,
