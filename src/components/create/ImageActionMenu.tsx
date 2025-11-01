@@ -137,7 +137,7 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
         onClick={handleTogglePublicClick}
       >
         {currentImage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-        {currentImage.isPublic ? 'Make private' : 'Make public'}
+        {currentImage.isPublic ? 'Unpublish' : 'Publish'}
       </button>
     </MenuPortal>
   );
