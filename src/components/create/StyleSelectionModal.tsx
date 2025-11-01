@@ -78,7 +78,7 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
   if (!open) return null;
   
   return (
-    <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-theme-black/80 py-12">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
       <div
         ref={modalRef}
         className={`${glass.promptDark} rounded-[20px] w-full max-w-4xl min-w-[32rem] max-h-[90vh] overflow-hidden transition-colors duration-200`}

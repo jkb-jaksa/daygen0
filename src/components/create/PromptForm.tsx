@@ -621,6 +621,7 @@ const PromptForm = memo<PromptFormProps>(
     );
 
     return (
+      <>
       <div
         ref={promptBarRef}
         className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
@@ -639,7 +640,7 @@ const PromptForm = memo<PromptFormProps>(
           {/* Left section: Textarea + Controls */}
           <div className="flex-1 flex flex-col">
             {/* Textarea - first row */}
-            <div className="-mb-3">
+            <div className="mb-0">
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -648,14 +649,14 @@ const PromptForm = memo<PromptFormProps>(
                 onPaste={handlePaste}
                 placeholder="Describe what you want to create..."
                 rows={1}
-                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 pt-1 pb-0 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
               />
             </div>
             
             {/* Buttons - second row */}
-            <div className="flex items-end justify-between gap-2 px-3">
+            <div className="flex items-center gap-2 px-3">
               {/* Left icons and controls */}
-              <div className="flex items-center gap-1 flex-wrap lg:flex-nowrap flex-1 min-w-0">
+              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                   {/* Chat mode */}
                   <div className="relative">
                   <button
@@ -934,10 +935,12 @@ const PromptForm = memo<PromptFormProps>(
                   Your Prompts
                 </div>
               </div>
-              </div>
-
-              {/* Right section: Avatar + Product + Style + Generate */}
-              <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+            </div>
+            </div>
+          </div>
+          
+          {/* Right section: Avatar + Product + Style + Generate */}
+          <div className="flex flex-row gap-2 flex-shrink-0 items-end">
                 <div className="relative">
                 <button
                   type="button"
@@ -1162,9 +1165,8 @@ const PromptForm = memo<PromptFormProps>(
               </button>
             </Tooltip>
           </div>
-          </div>
-          </div>
         </div>
+      </div>
 
       <AvatarPickerPortal
         anchorRef={avatarButtonRef}
@@ -1440,7 +1442,7 @@ const PromptForm = memo<PromptFormProps>(
           />
         </Suspense>
       )}
-      </div>
+      </>
     );
   }
 );

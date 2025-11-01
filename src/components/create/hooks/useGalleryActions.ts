@@ -343,6 +343,66 @@ export function useGalleryActions() {
     debugLog('Cleared selection');
   }, [clearSelection]);
   
+  // Handle edit menu select - navigate to edit page
+  const handleEditMenuSelect = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
+    navigate('/edit', { state: { imageToEdit: image } });
+  }, [navigate]);
+
+  // Handle create avatar from menu - navigate to avatars page
+  const handleCreateAvatarFromMenu = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
+    navigate('/create/avatars', {
+      state: {
+        openAvatarCreator: true,
+        selectedImageUrl: image.url,
+        suggestedName: image.prompt,
+      },
+    });
+  }, [navigate]);
+
+  // Handle use as reference - needs to be wired to parent Create component
+  // This is a placeholder that logs the intent
+  const handleUseAsReference = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
+    debugLog('Use as reference:', image.url);
+    // TODO: Wire this to parent Create component to actually set the reference
+    // For now, this just logs. The actual implementation needs:
+    // - Convert image URL to File
+    // - Set as reference in generation context
+    // - Clear existing references
+    // - Focus prompt bar
+  }, []);
+
+  // Handle reuse prompt - needs to be wired to parent Create component
+  // This is a placeholder that logs the intent
+  const handleReusePrompt = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
+    debugLog('Reuse prompt:', image.prompt);
+    // TODO: Wire this to parent Create component to actually set the prompt
+    // For now, this just logs. The actual implementation needs:
+    // - Set prompt text in generation context
+    // - Switch to image category if not already there
+    // - Focus prompt bar
+  }, []);
+
+  // Handle make video - needs to be wired to parent Create component
+  // This is a placeholder that logs the intent
+  const handleMakeVideo = useCallback(() => {
+    debugLog('Make video');
+    // TODO: Wire this to parent Create component to switch category
+    // For now, this just logs. The actual implementation needs:
+    // - Switch activeCategory to 'video'
+    // - Close any open menus
+  }, []);
+
+  // Handle add to folder
+  const handleAddToFolder = useCallback((imageId: string, folderId: string) => {
+    try {
+      // This would need to be implemented based on how folders work
+      debugLog('Add to folder:', { imageId, folderId });
+      // TODO: Implement folder functionality
+    } catch (error) {
+      debugError('Error adding to folder:', error);
+    }
+  }, []);
+  
   return {
     // Navigation
     navigateToJobUrl,
@@ -365,5 +425,13 @@ export function useGalleryActions() {
     handleCopyImageUrl,
     handleSelectAll,
     handleClearSelection,
+    
+    // Edit menu actions
+    handleEditMenuSelect,
+    handleCreateAvatarFromMenu,
+    handleUseAsReference,
+    handleReusePrompt,
+    handleMakeVideo,
+    handleAddToFolder,
   };
 }

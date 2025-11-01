@@ -61,8 +61,8 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   return null;
 };
 
-export default function CreateV2() {
-  const { state, setImageActionMenu, setBulkActionsMenu } = useGallery();
+export default function CreateRefactored() {
+  const { state, setImageActionMenu, setBulkActionsMenu, addImage } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
   const { setSelectedModel } = generation;
@@ -72,6 +72,45 @@ export default function CreateV2() {
   const { setFooterVisible } = useFooter();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+
+  // Development-only: Add dummy image for testing
+  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const addDummyImage = useCallback(async () => {
+    const dummyImages = [
+      {
+        url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024',
+        prompt: 'A stunning mountain landscape at sunset with dramatic clouds',
+        model: 'flux-pro-1.1',
+        jobId: `dummy-${Date.now()}`,
+        r2FileId: `r2-dummy-${Date.now()}`,
+        isLiked: false,
+        isPublic: false,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024',
+        prompt: 'Majestic mountain peaks under a starry night sky',
+        model: 'gemini-2.5-flash-image',
+        jobId: `dummy-${Date.now()}`,
+        r2FileId: `r2-dummy-${Date.now()}`,
+        isLiked: true,
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024',
+        prompt: 'Serene forest path with morning mist and sunbeams filtering through trees',
+        model: 'luma-photon-1',
+        jobId: `dummy-${Date.now()}`,
+        r2FileId: `r2-dummy-${Date.now()}`,
+        isLiked: false,
+        isPublic: false,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    const randomImage = dummyImages[Math.floor(Math.random() * dummyImages.length)];
+    await addImage(randomImage);
+  }, [addImage]);
 
   const resolvedCategory = useMemo<SupportedCategory>(() => {
     const fromParam = normalizeCategory(params.category);
@@ -139,33 +178,22 @@ export default function CreateV2() {
     }
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
-  // Note: v2=1 query param enforcement is handled in CreateRoutes to prevent loops
-  // CreateV2 can assume it's always rendered with v2=1 present
-
-  const ensureV2Search = useCallback(() => {
-    const paramsWithV2 = new URLSearchParams(location.search);
-    paramsWithV2.set('v2', '1');
-    return paramsWithV2;
-  }, [location.search]);
-
   const handleSelectCategory = useCallback((category: string) => {
-    // For unsupported categories, navigate without v2 flag (they use different components)
+    // For unsupported categories (they use different components)
     if (category === 'avatars' || category === 'products' || category === 'text' || category === 'audio') {
       navigate(`/create/${category}`);
       return;
     }
 
-    // For supported categories, preserve v2=1 parameter
+    // For supported categories, navigate to create path
     const normalized = normalizeCategory(category) ?? 'image';
-    const paramsWithV2 = ensureV2Search();
     const nextPath = `/create/${normalized}`;
-    const nextSearch = `?${paramsWithV2.toString()}`;
-    if (location.pathname === nextPath && location.search === nextSearch) {
+    if (location.pathname === nextPath && location.search === location.search) {
       return;
     }
 
-    navigate({ pathname: nextPath, search: nextSearch });
-  }, [ensureV2Search, location.pathname, location.search, navigate]);
+    navigate({ pathname: nextPath, search: location.search });
+  }, [location.pathname, location.search, navigate]);
 
   const handleOpenMyFolders = useCallback(() => {
     handleSelectCategory('my-folders');
@@ -273,6 +301,16 @@ export default function CreateV2() {
               {isGenerationCategory && (
                 <>
                   <PromptForm onPromptBarHeightChange={handlePromptBarResize} />
+                  {isDevelopment && (
+                    <div className="mb-4 px-4">
+                      <button
+                        onClick={addDummyImage}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧪 Add Test Image (Dev Only)
+                      </button>
+                    </div>
+                  )}
                   <Suspense fallback={null}>
                     <ResultsGrid
                       activeCategory={activeCategory}

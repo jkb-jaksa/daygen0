@@ -29,14 +29,18 @@ function CreateSidebarComponent({
   const sidebarTop = isFullSizeOpen
     ? `calc(var(--nav-h) + 16px)`
     : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
-  const zIndex = isFullSizeOpen ? 'lg:z-[10650]' : 'lg:z-30';
+  const zIndex = isFullSizeOpen ? 'z-[120]' : 'lg:z-30';
+  const responsiveClass = isFullSizeOpen ? '' : 'hidden lg:block';
+  const navClasses = isFullSizeOpen
+    ? `${glass.promptDark} rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
+    : `${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;
 
   return (
-    <div className="hidden lg:block" style={{ width: SIDEBAR_WIDTH }}>
+    <div className={responsiveClass} style={{ width: SIDEBAR_WIDTH }}>
       <nav
         data-create-sidebar="true"
         aria-label="Create navigation"
-        className={`${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`}
+        className={navClasses}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
         <aside className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">

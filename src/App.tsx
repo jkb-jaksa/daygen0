@@ -408,31 +408,37 @@ function AppContent() {
             <Route 
               path="/job/:jobId" 
               element={
-                <Suspense fallback={<RouteFallback />}>
-                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                    <CreateRoutes />
-                  </AuthErrorBoundary>
-                </Suspense>
+                <RequireAuth>
+                  <Suspense fallback={<RouteFallback />}>
+                    <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                      <CreateRoutes />
+                    </AuthErrorBoundary>
+                  </Suspense>
+                </RequireAuth>
               } 
             />
             <Route 
               path="/create/*" 
               element={
-                <Suspense fallback={<RouteFallback />}>
-                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                    <CreateRoutes />
-                  </AuthErrorBoundary>
-                </Suspense>
+                <RequireAuth>
+                  <Suspense fallback={<RouteFallback />}>
+                    <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                      <CreateRoutes />
+                    </AuthErrorBoundary>
+                  </Suspense>
+                </RequireAuth>
               } 
             />
             <Route 
               path="/gallery/*" 
               element={
-                <Suspense fallback={<RouteFallback />}>
-                  <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
-                    <GalleryRoutes />
-                  </AuthErrorBoundary>
-                </Suspense>
+                <RequireAuth>
+                  <Suspense fallback={<RouteFallback />}>
+                    <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
+                      <GalleryRoutes />
+                    </AuthErrorBoundary>
+                  </Suspense>
+                </RequireAuth>
               } 
             />
             <Route path="/upgrade" element={<Upgrade />} />
@@ -466,16 +472,6 @@ function AppContent() {
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
-            <Route 
-              path="/job/:jobId" 
-              element={
-                <Suspense fallback={<RouteFallback />}>
-                  <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                    <CreateRoutes />
-                  </AuthErrorBoundary>
-                </Suspense>
-              } 
-            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
