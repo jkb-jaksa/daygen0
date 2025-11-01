@@ -1,9 +1,8 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Download, Share2, Trash2, Heart, HeartOff, FolderPlus, Globe, Lock } from 'lucide-react';
+import React, { memo, useCallback, useEffect, useMemo } from 'react';
+import { Download, Share2, FolderPlus, Globe, Lock } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { buttons, glass } from '../../styles/designSystem';
+import { MenuPortal } from './shared/MenuPortal';
 import { debugLog } from '../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 
@@ -30,44 +29,9 @@ interface ImageActionMenuProps {
 
 const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const { state } = useGallery();
-  const { handleDownloadImage, handleDeleteImage, handleTogglePublic, handleToggleLike, handleShareImage } = useGalleryActions();
+  const { handleDownloadImage, handleTogglePublic, handleShareImage, handleCopyImageUrl } = useGalleryActions();
   
-  const menuRef = useRef<HTMLDivElement>(null);
   const { imageActionMenu } = state;
-  
-  // Handle click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-    
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open, onClose]);
-  
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && open) {
-        onClose();
-      }
-    };
-    
-    if (open) {
-      document.addEventListener('keydown', handleEscape);
-    }
-    
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [open, onClose]);
   
   // Get current image
   const currentImage = useMemo(() => {
@@ -77,138 +41,105 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
     return allItems.find(item => matchGalleryItemId(item, imageActionMenu.id)) || null;
   }, [state.images, state.videos, imageActionMenu]);
   
+  // Handle copy link / share
+  const handleCopyLink = useCallback(async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (currentImage) {
+      try {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        let urlToShare: string;
+        
+        // If image has a jobId, use the job URL
+        if (currentImage.jobId) {
+          urlToShare = `${baseUrl}/job/${currentImage.jobId}`;
+        } else {
+          // Fallback to copying the image URL
+          urlToShare = currentImage.url;
+        }
+        
+        await navigator.clipboard.writeText(urlToShare);
+        debugLog('Link copied!');
+        onClose();
+      } catch (error) {
+        debugLog('Failed to copy link:', error);
+      }
+    }
+  }, [currentImage, onClose]);
+  
   // Handle download
-  const handleDownload = useCallback(async () => {
+  const handleDownload = useCallback(async (event: React.MouseEvent) => {
+    event.stopPropagation();
     if (currentImage) {
       await handleDownloadImage(currentImage);
       onClose();
     }
   }, [currentImage, handleDownloadImage, onClose]);
   
-  // Handle share
-  const handleShare = useCallback(async () => {
-    if (currentImage) {
-      await handleShareImage(currentImage);
-      onClose();
-    }
-  }, [currentImage, handleShareImage, onClose]);
-  
-  // Handle delete
-  const handleDelete = useCallback(async () => {
-    if (currentImage) {
-      const itemId = currentImage.jobId || currentImage.r2FileId || currentImage.url;
-      if (itemId) {
-        await handleDeleteImage(itemId);
-        onClose();
-      }
-    }
-  }, [currentImage, handleDeleteImage, onClose]);
-  
   // Handle toggle public
-  const handleTogglePublicClick = useCallback(async () => {
+  const handleTogglePublicClick = useCallback(async (event: React.MouseEvent) => {
+    event.stopPropagation();
     if (currentImage) {
       await handleTogglePublic(currentImage);
       onClose();
     }
   }, [currentImage, handleTogglePublic, onClose]);
   
-  // Handle toggle like
-  const handleToggleLikeClick = useCallback(async () => {
-    if (currentImage) {
-      await handleToggleLike(currentImage);
-      onClose();
-    }
-  }, [currentImage, handleToggleLike, onClose]);
-  
   // Handle add to folder
-  const handleAddToFolder = useCallback(() => {
+  const handleAddToFolder = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
     // This would need to be implemented with folder functionality
-    debugLog('Add to folder clicked');
+    debugLog('Manage folders clicked');
     onClose();
   }, [onClose]);
   
   if (!open || !imageActionMenu || !currentImage) return null;
   
-  // Calculate position
-  const anchor = imageActionMenu.anchor;
-  const rect = anchor?.getBoundingClientRect();
-  const position = rect ? {
-    top: rect.bottom + 4,
-    left: rect.left,
-    width: rect.width,
-  } : { top: 0, left: 0, width: 0 };
-  
-  return createPortal(
-    <div
-      ref={menuRef}
-      className={`${glass.promptDark} fixed rounded-lg border border-theme-mid shadow-lg z-50 min-w-[200px]`}
-      style={{
-        top: position.top,
-        left: position.left,
-        width: position.width,
-      }}
+  return (
+    <MenuPortal
+      anchorEl={open ? imageActionMenu.anchor : null}
+      open={open}
+      onClose={onClose}
     >
-      <div className="p-2">
-        {/* Download */}
-        <button
-          onClick={handleDownload}
-          className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200`}
-        >
-          <Download className="w-4 h-4" />
-          <span className="text-sm">Download</span>
-        </button>
-        
-        {/* Share */}
-        <button
-          onClick={handleShare}
-          className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200`}
-        >
-          <Share2 className="w-4 h-4" />
-          <span className="text-sm">Share</span>
-        </button>
-        
-        {/* Toggle Like */}
-        <button
-          onClick={handleToggleLikeClick}
-          className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
-            currentImage.isLiked ? 'text-theme-red' : ''
-          }`}
-        >
-          {currentImage.isLiked ? <Heart className="w-4 h-4" /> : <HeartOff className="w-4 h-4" />}
-          <span className="text-sm">{currentImage.isLiked ? 'Unlike' : 'Like'}</span>
-        </button>
-        
-        {/* Toggle Public */}
-        <button
-          onClick={handleTogglePublicClick}
-          className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
-            currentImage.isPublic ? 'text-theme-accent' : ''
-          }`}
-        >
-          {currentImage.isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-          <span className="text-sm">{currentImage.isPublic ? 'Make Private' : 'Make Public'}</span>
-        </button>
-        
-        {/* Add to Folder */}
-        <button
-          onClick={handleAddToFolder}
-          className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200`}
-        >
-          <FolderPlus className="w-4 h-4" />
-          <span className="text-sm">Add to Folder</span>
-        </button>
-        
-        {/* Delete */}
-        <button
-          onClick={handleDelete}
-          className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 text-theme-red hover:bg-theme-red/10`}
-        >
-          <Trash2 className="w-4 h-4" />
-          <span className="text-sm">Delete</span>
-        </button>
-      </div>
-    </div>,
-    document.body
+      {/* Copy Link / Share */}
+      <button
+        type="button"
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        onClick={handleCopyLink}
+      >
+        <Share2 className="h-4 w-4" />
+        Copy link
+      </button>
+      
+      {/* Download */}
+      <button
+        type="button"
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        onClick={handleDownload}
+      >
+        <Download className="h-4 w-4" />
+        Download
+      </button>
+      
+      {/* Manage Folders */}
+      <button
+        type="button"
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        onClick={handleAddToFolder}
+      >
+        <FolderPlus className="h-4 w-4" />
+        Manage folders
+      </button>
+      
+      {/* Toggle Public/Private */}
+      <button
+        type="button"
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        onClick={handleTogglePublicClick}
+      >
+        {currentImage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+        {currentImage.isPublic ? 'Make private' : 'Make public'}
+      </button>
+    </MenuPortal>
   );
 });
 
