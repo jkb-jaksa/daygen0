@@ -9,6 +9,7 @@ import { safeResolveNext } from "./utils/navigation";
 import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
+import { GenerationProvider } from "./components/create/contexts/GenerationContext";
 const CreditWarningBanner = lazy(() =>
   import("./components/CreditWarningBanner").then(({ CreditWarningBanner }) => ({
     default: CreditWarningBanner,
@@ -442,7 +443,9 @@ function AppContent() {
                 <RequireAuth>
                   <Suspense fallback={<RouteFallback />}>
                     <AuthErrorBoundary fallbackRoute="/create" context="editing">
-                      <Edit />
+                      <GenerationProvider>
+                        <Edit />
+                      </GenerationProvider>
                     </AuthErrorBoundary>
                   </Suspense>
                 </RequireAuth>
