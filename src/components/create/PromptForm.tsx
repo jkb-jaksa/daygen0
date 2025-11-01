@@ -621,6 +621,7 @@ const PromptForm = memo<PromptFormProps>(
     );
 
     return (
+      <>
       <div
         ref={promptBarRef}
         className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
@@ -635,9 +636,9 @@ const PromptForm = memo<PromptFormProps>(
         onDragOver={handleDragAreaOver}
         onDrop={handleDragAreaDrop}
       >
-        <div className="flex gap-3 items-end">
+        <div className="flex gap-3 items-stretch">
           {/* Left section: Textarea + Controls */}
-          <div className="flex-1 flex flex-col self-start">
+          <div className="flex-1 flex flex-col">
             {/* Textarea - first row */}
             <div className="mb-0">
               <textarea
@@ -653,7 +654,7 @@ const PromptForm = memo<PromptFormProps>(
             </div>
             
             {/* Buttons - second row */}
-            <div className="flex items-end justify-between gap-2 px-3 mt-0">
+            <div className="flex items-center gap-2 px-3">
               {/* Left icons and controls */}
               <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                   {/* Chat mode */}
@@ -934,10 +935,12 @@ const PromptForm = memo<PromptFormProps>(
                   Your Prompts
                 </div>
               </div>
-              </div>
-
-              {/* Right section: Avatar + Product + Style + Generate */}
-              <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+            </div>
+            </div>
+          </div>
+          
+          {/* Right section: Avatar + Product + Style + Generate */}
+          <div className="flex flex-row gap-2 flex-shrink-0 items-end">
                 <div className="relative">
                 <button
                   type="button"
@@ -1162,9 +1165,8 @@ const PromptForm = memo<PromptFormProps>(
               </button>
             </Tooltip>
           </div>
-          </div>
-          </div>
         </div>
+      </div>
 
       <AvatarPickerPortal
         anchorRef={avatarButtonRef}
@@ -1440,7 +1442,7 @@ const PromptForm = memo<PromptFormProps>(
           />
         </Suspense>
       )}
-      </div>
+      </>
     );
   }
 );
