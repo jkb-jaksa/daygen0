@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import PromptForm from './PromptForm';
+import ComingSoonCategory from './ComingSoonCategory';
 const ResultsGrid = lazy(() => import('./ResultsGrid'));
 const FullImageModal = lazy(() => import('./FullImageModal'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
@@ -16,12 +17,16 @@ import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarD
 import { SIDEBAR_TOP_PADDING } from './layoutConstants';
 import { useFooter } from '../../contexts/useFooter';
 
-const SUPPORTED_CATEGORIES = ['image', 'video', 'gallery', 'my-folders'] as const;
+const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
+type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
+
+const SUPPORTED_CATEGORIES = ['text', 'image', 'video', 'audio', 'gallery', 'my-folders'] as const;
 type SupportedCategory = (typeof SUPPORTED_CATEGORIES)[number];
 
 const SUPPORTED_CATEGORY_SET = new Set<SupportedCategory>(SUPPORTED_CATEGORIES);
 const GENERATION_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['image', 'video']);
 const GALLERY_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['gallery', 'my-folders']);
+const COMING_SOON_CATEGORY_SET: ReadonlySet<ComingSoonCategoryKey> = new Set<ComingSoonCategoryKey>(COMING_SOON_CATEGORIES);
 const VIDEO_MODEL_SET: ReadonlySet<string> = new Set<string>([
   'veo-3',
   'runway-video-gen4',
@@ -133,7 +138,8 @@ export default function CreateRefactored() {
   const [activeCategory, setActiveCategory] = useState<SupportedCategory>(resolvedCategory);
   const { imageActionMenu, bulkActionsMenu } = state;
   const isGenerationCategory = GENERATION_CATEGORY_SET.has(activeCategory);
-  const shouldShowResultsGrid = GENERATION_CATEGORY_SET.has(activeCategory) || GALLERY_CATEGORY_SET.has(activeCategory);
+  const isComingSoonCategory = (COMING_SOON_CATEGORY_SET as Set<string>).has(activeCategory);
+  const shouldShowResultsGrid = !isComingSoonCategory && (GENERATION_CATEGORY_SET.has(activeCategory) || GALLERY_CATEGORY_SET.has(activeCategory));
   const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
 
   useEffect(() => {
@@ -179,8 +185,8 @@ export default function CreateRefactored() {
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
   const handleSelectCategory = useCallback((category: string) => {
-    // For unsupported categories (they use different components)
-    if (category === 'avatars' || category === 'products' || category === 'text' || category === 'audio') {
+    // For categories that use dedicated routes outside the modular shell
+    if (category === 'avatars' || category === 'products') {
       navigate(`/create/${category}`);
       return;
     }
@@ -321,6 +327,9 @@ export default function CreateRefactored() {
                     <GenerationProgress />
                   </Suspense>
                 </>
+              )}
+              {!isGenerationCategory && isComingSoonCategory && (
+                <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
               )}
               {!isGenerationCategory && shouldShowResultsGrid && (
                 <>

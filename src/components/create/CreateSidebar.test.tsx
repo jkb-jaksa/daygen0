@@ -22,7 +22,10 @@ describe('CreateSidebar', () => {
     expect(screen.getByRole('button', { name: 'text' })).toHaveAttribute('aria-pressed', 'true');
 
     await user.click(screen.getByRole('button', { name: 'video' }));
-    expect(onSelectCategory).toHaveBeenCalledWith('video');
+    expect(onSelectCategory).toHaveBeenNthCalledWith(1, 'video');
+
+    await user.click(screen.getByRole('button', { name: 'audio' }));
+    expect(onSelectCategory).toHaveBeenLastCalledWith('audio');
   });
 
   it('invokes folders callback independently', async () => {
