@@ -62,7 +62,7 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
 };
 
 export default function CreateV2() {
-  const { state, setImageActionMenu, setBulkActionsMenu } = useGallery();
+  const { state, setImageActionMenu, setBulkActionsMenu, addImage } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
   const { setSelectedModel } = generation;
@@ -72,6 +72,45 @@ export default function CreateV2() {
   const { setFooterVisible } = useFooter();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+
+  // Development-only: Add dummy image for testing
+  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const addDummyImage = useCallback(async () => {
+    const dummyImages = [
+      {
+        url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024',
+        prompt: 'A stunning mountain landscape at sunset with dramatic clouds',
+        model: 'flux-pro-1.1',
+        jobId: `dummy-${Date.now()}`,
+        r2FileId: `r2-dummy-${Date.now()}`,
+        isLiked: false,
+        isPublic: false,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024',
+        prompt: 'Majestic mountain peaks under a starry night sky',
+        model: 'gemini-2.5-flash-image',
+        jobId: `dummy-${Date.now()}`,
+        r2FileId: `r2-dummy-${Date.now()}`,
+        isLiked: true,
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024',
+        prompt: 'Serene forest path with morning mist and sunbeams filtering through trees',
+        model: 'luma-photon-1',
+        jobId: `dummy-${Date.now()}`,
+        r2FileId: `r2-dummy-${Date.now()}`,
+        isLiked: false,
+        isPublic: false,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    const randomImage = dummyImages[Math.floor(Math.random() * dummyImages.length)];
+    await addImage(randomImage);
+  }, [addImage]);
 
   const resolvedCategory = useMemo<SupportedCategory>(() => {
     const fromParam = normalizeCategory(params.category);
@@ -286,6 +325,16 @@ export default function CreateV2() {
               )}
               {!isGenerationCategory && shouldShowResultsGrid && (
                 <>
+                  {isDevelopment && (
+                    <div className="mb-4 px-4">
+                      <button
+                        onClick={addDummyImage}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧪 Add Test Image (Dev Only)
+                      </button>
+                    </div>
+                  )}
                   <Suspense fallback={null}>
                     <GalleryFilters />
                   </Suspense>

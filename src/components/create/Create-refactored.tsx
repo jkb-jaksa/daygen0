@@ -324,6 +324,16 @@ export default function CreateRefactored() {
               )}
               {!isGenerationCategory && shouldShowResultsGrid && (
                 <>
+                  {isDevelopment && (
+                    <div className="mb-4 px-4">
+                      <button
+                        onClick={addDummyImage}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧪 Add Test Image (Dev Only)
+                      </button>
+                    </div>
+                  )}
                   <Suspense fallback={null}>
                     <GalleryFilters />
                   </Suspense>
