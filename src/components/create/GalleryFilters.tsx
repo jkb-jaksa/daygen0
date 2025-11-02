@@ -1,79 +1,83 @@
-import { memo, useMemo } from 'react';
-import { Settings, Heart, Globe, X, Grid3X3 } from 'lucide-react';
-import { glass, buttons } from '../../styles/designSystem';
+import { memo, useMemo, useState, useEffect } from 'react';
+import { Settings, Heart, Globe, X } from 'lucide-react';
+import { glass } from '../../styles/designSystem';
 import { useGallery } from './contexts/GalleryContext';
 import { CustomDropdown } from './shared/CustomDropdown';
 import { CustomMultiSelect } from './shared/CustomMultiSelect';
-
-// AI Models list for filtering
-const AI_MODELS = [
-  { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash' },
-  { id: 'flux-pro', name: 'Flux Pro' },
-  { id: 'flux-1.1-pro', name: 'Flux 1.1 Pro' },
-  { id: 'flux-dev', name: 'Flux Dev' },
-  { id: 'flux-schnell', name: 'Flux Schnell' },
-  { id: 'reve', name: 'Reve' },
-  { id: 'ideogram', name: 'Ideogram' },
-  { id: 'qwen', name: 'Qwen' },
-  { id: 'runway-gen4', name: 'Runway Gen-4' },
-  { id: 'chatgpt', name: 'ChatGPT / DALL·E' },
-  { id: 'luma', name: 'Luma' },
-  { id: 'veo-3', name: 'Veo 3' },
-  { id: 'runway-video-gen4', name: 'Runway Gen-4 Video' },
-  { id: 'wan-video-2.2', name: 'Wan 2.2' },
-  { id: 'hailuo-02', name: 'Hailuo 02' },
-  { id: 'kling-video', name: 'Kling' },
-  { id: 'seedance-1.0-pro', name: 'Seedance 1.0 Pro' },
-  { id: 'luma-ray-2', name: 'Luma Ray 2' },
-] as const;
+import { useAuth } from '../../auth/useAuth';
+import { getPersistedValue } from '../../lib/clientStorage';
+import { normalizeStoredAvatars } from '../../utils/avatars';
+import { normalizeStoredProducts } from '../../utils/products';
+import type { StoredAvatar } from '../avatars/types';
+import type { StoredProduct } from '../products/types';
+import { AI_MODELS } from './ModelSelector';
 
 const GalleryFilters = memo(() => {
-  const { state, setFilters, clearFilters, setBulkMode } = useGallery();
-  const { filters, isBulkMode, selectedItems, images, videos } = state;
+  const { state, setFilters, clearFilters } = useGallery();
+  const { filters } = state;
+  const { user, storagePrefix } = useAuth();
+  const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
+  const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
 
-  // Get available models from gallery items
+  // Load avatars and products from storage
+  useEffect(() => {
+    if (!storagePrefix) return;
+    
+    const loadData = async () => {
+      try {
+        const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
+        if (avatars) {
+          setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
+        }
+        
+        const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
+        if (products) {
+          setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
+        }
+      } catch {
+        // Silently fail - filters will just be empty
+      }
+    };
+    
+    void loadData();
+  }, [storagePrefix, user?.id]);
+
+  // Get available models - use static AI_MODELS list, filter by modality
   const availableModels = useMemo(() => {
-    const modelSet = new Set<string>();
-    [...images, ...videos].forEach(item => {
-      if (item.model) {
-        modelSet.add(item.model);
+    const videoModels = ['veo-3', 'runway-video-gen4', 'wan-video-2.2', 'hailuo-02', 'kling-video', 'seedance-1.0-pro', 'luma-ray-2'];
+    
+    let modelList = AI_MODELS;
+    
+    if (filters.types.length === 1) {
+      if (filters.types.includes('video')) {
+        // Only video models
+        modelList = AI_MODELS.filter(model => videoModels.includes(model.id));
+      } else if (filters.types.includes('image')) {
+        // Only image models (exclude video models)
+        modelList = AI_MODELS.filter(model => !videoModels.includes(model.id));
       }
-    });
-    return Array.from(modelSet)
-      .map(modelId => {
-        const model = AI_MODELS.find(m => m.id === modelId);
-        return { value: modelId, label: model?.name || modelId };
-      })
+    }
+    
+    return modelList
+      .map(model => ({ value: model.id, label: model.name }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [images, videos]);
+  }, [filters.types]);
 
-  // Get available avatars (stub - would come from user's avatars)
+  // Get available avatars from user's stored avatars
   const availableAvatars = useMemo(() => {
-    const avatarSet = new Set<string>();
-    [...images, ...videos].forEach(item => {
-      if (item.avatarId) {
-        avatarSet.add(item.avatarId);
-      }
-    });
     return [
       { value: 'all', label: 'All avatars' },
-      ...Array.from(avatarSet).map(id => ({ value: id, label: `Avatar ${id.substring(0, 8)}` }))
+      ...storedAvatars.map(avatar => ({ value: avatar.id, label: avatar.name }))
     ];
-  }, [images, videos]);
+  }, [storedAvatars]);
 
-  // Get available products (stub - would come from user's products)
+  // Get available products from user's stored products
   const availableProducts = useMemo(() => {
-    const productSet = new Set<string>();
-    [...images, ...videos].forEach(item => {
-      if (item.productId) {
-        productSet.add(item.productId);
-      }
-    });
     return [
       { value: 'all', label: 'All products' },
-      ...Array.from(productSet).map(id => ({ value: id, label: `Product ${id.substring(0, 8)}` }))
+      ...storedProducts.map(product => ({ value: product.id, label: product.name }))
     ];
-  }, [images, videos]);
+  }, [storedProducts]);
 
   // Get available folders (stub - would come from folders state)
   const availableFolders = useMemo(() => {
@@ -95,88 +99,54 @@ const GalleryFilters = memo(() => {
     clearFilters();
   };
 
-  const handleToggleBulkMode = () => {
-    setBulkMode(!isBulkMode);
-  };
-
   return (
     <div className="mb-4 space-y-3">
-      {/* Bulk Mode Banner */}
-      {isBulkMode && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-theme-accent/10 border border-theme-accent/20">
-          <div className="flex items-center gap-3">
-            <Grid3X3 className="w-4 h-4 text-theme-accent" />
-            <span className="text-sm text-theme-accent font-medium">
-              {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
-            </span>
-          </div>
-          <button
-            onClick={handleToggleBulkMode}
-            className={`${buttons.ghost} text-sm`}
-          >
-            Exit Bulk Mode
-          </button>
-        </div>
-      )}
-
       {/* Filters Panel */}
       <div className={`p-3 ${glass.promptDark} rounded-2xl`}>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-theme-text" />
             <h3 className="text-sm font-raleway text-theme-white">Filters</h3>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleToggleBulkMode}
-              className={`px-2.5 py-1 text-xs transition-colors duration-200 font-raleway ${
-                isBulkMode 
-                  ? "text-theme-accent bg-theme-accent/10 rounded border border-theme-accent/20"
-                  : "text-theme-white hover:text-theme-text"
-              }`}
-            >
-              {isBulkMode ? 'Bulk Mode' : 'Select'}
-            </button>
-            <button
-              onClick={handleClearFilters}
-              className="px-2.5 py-1 text-xs transition-colors duration-200 font-raleway text-theme-white hover:text-theme-text"
-            >
-              Clear
-            </button>
-          </div>
+          <button
+            onClick={handleClearFilters}
+            className="px-2.5 py-1 text-xs transition-colors duration-200 font-raleway text-theme-white hover:text-theme-text"
+          >
+            Clear
+          </button>
         </div>
 
         {/* Liked/Public filters */}
         <div className="mb-3">
-          <label className="text-xs text-theme-white/70 font-raleway mb-1.5 block">Quick Filters</label>
-          <div className="flex gap-2 flex-wrap">
+          <label className="text-xs text-theme-white/70 font-raleway mb-1.5 block">Liked/Public</label>
+          <div className="flex gap-1 flex-wrap">
             <button
               onClick={handleToggleLiked}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                 filters.liked
                   ? "text-theme-text border-theme-mid bg-theme-white/10"
                   : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
               }`}
             >
-              <Heart className={`w-4 h-4 ${filters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
+              <Heart className={`w-3.5 h-3.5 ${filters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
               <span>Liked</span>
             </button>
             <button
               onClick={handleTogglePublic}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-sm ${
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
                 filters.public
                   ? "text-theme-text border-theme-mid bg-theme-white/10"
                   : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
               }`}
             >
-              <Globe className={`w-4 h-4 ${filters.public ? "text-theme-text" : "text-current"}`} />
+              <Globe className={`w-3.5 h-3.5 ${filters.public ? "text-theme-text" : "text-current"}`} />
               <span>Public</span>
             </button>
           </div>
         </div>
 
         {/* Advanced filters grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-1">
           {/* Modality Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
@@ -191,11 +161,11 @@ const GalleryFilters = memo(() => {
             />
             {/* Selected Modality Tags */}
             {filters.types.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {filters.types.map(type => (
                   <div
                     key={type}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                   >
                     <span>{type === "image" ? "Image" : "Video"}</span>
                     <button
@@ -224,13 +194,13 @@ const GalleryFilters = memo(() => {
             />
             {/* Selected Model Tags */}
             {filters.models.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {filters.models.map(modelId => {
                   const model = AI_MODELS.find(m => m.id === modelId);
                   return (
                     <div
                       key={modelId}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
                     >
                       <span>{model?.name || modelId}</span>
                       <button
@@ -260,8 +230,8 @@ const GalleryFilters = memo(() => {
             />
             {/* Selected Avatar Tag */}
             {filters.avatar !== "all" && filters.avatar !== "" && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                <div className="inline-flex items-center gap-1 px-2 py-1 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
+              <div className="flex flex-wrap gap-2 mt-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
                   <span>{availableAvatars.find(a => a.value === filters.avatar)?.label || filters.avatar}</span>
                   <button
                     type="button"
@@ -288,8 +258,8 @@ const GalleryFilters = memo(() => {
             />
             {/* Selected Product Tag */}
             {filters.product !== "all" && filters.product !== "" && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                <div className="inline-flex items-center gap-1 px-2 py-1 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
+              <div className="flex flex-wrap gap-2 mt-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30">
                   <span>{availableProducts.find(p => p.value === filters.product)?.label || filters.product}</span>
                   <button
                     type="button"
@@ -315,6 +285,35 @@ const GalleryFilters = memo(() => {
               options={availableFolders}
               placeholder="All folders"
             />
+          </div>
+        )}
+
+        {/* Active Filter Tags - Only for filters without inline tags */}
+        {(filters.liked || filters.public) && (
+          <div className="mt-3 pt-3 border-t border-theme-dark/50">
+            <div className="flex flex-wrap items-center gap-2">
+              {filters.liked && (
+                <button
+                  onClick={() => setFilters({ liked: false })}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 bg-theme-white/10 hover:bg-theme-white/20"
+                >
+                  <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                  <span>Liked</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
+              {filters.public && (
+                <button
+                  onClick={() => setFilters({ public: false })}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 bg-theme-white/10 hover:bg-theme-white/20"
+                >
+                  <Globe className="w-3 h-3" />
+                  <span>Public</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

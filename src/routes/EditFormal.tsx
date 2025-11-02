@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, X, MessageCircle, Sparkles, Package, Shapes } from 'lucide-react';
+import { Upload, X, MessageCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { glass, buttons } from '../styles/designSystem';
 import { useFormalImageGeneration, type FormalModel } from '../hooks/useFormalImageGeneration';
@@ -13,13 +13,8 @@ import {
   type PresetCategory,
   type FormalPreset,
 } from '../data/formalPresets';
+import { AI_MODELS } from '../components/create/ModelSelector';
 // debugError removed due to being unused by current component
-
-const AI_MODELS = [
-  { id: 'gemini' as const, name: 'Gemini 2.5 Flash', desc: 'Best for editing', Icon: Sparkles, accent: 'yellow' },
-  { id: 'ideogram' as const, name: 'Ideogram 3.0', desc: 'Advanced editing', Icon: Package, accent: 'cyan' },
-  { id: 'recraft' as const, name: 'Recraft', desc: 'Professional mockups', Icon: Shapes, accent: 'pink' },
-] as const;
 
 export default function EditFormal() {
   const navigate = useNavigate();

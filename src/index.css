@@ -1653,6 +1653,10 @@ html[data-theme="day"] .group.border-theme-dark:hover {
   color: var(--theme-text);
 }
 
+.image-select-toggle--active:hover {
+  border-color: var(--theme-text) !important;
+}
+
 .image-select-toggle:focus-visible {
   outline: 2px solid var(--theme-text);
   outline-offset: 2px;

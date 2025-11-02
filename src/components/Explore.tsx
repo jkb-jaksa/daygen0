@@ -47,6 +47,7 @@ import { debugError, debugLog, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
+import { AI_MODELS } from './create/ModelSelector';
 import type {
   Folder,
   GalleryImageLike,
@@ -67,26 +68,6 @@ const styleFilters = [
   "3D render",
   "Illustrative",
   "Cinematic",
-];
-
-// AI Model data for filtering
-const AI_MODELS = [
-  { name: "Gemini 2.5 Flash", id: "gemini-2.5-flash-image" },
-  { name: "Flux 1.1", id: "flux-1.1" },
-  { name: "Ideogram 3.0", id: "ideogram" },
-  { name: "Recraft", id: "recraft" },
-  { name: "Qwen", id: "qwen-image" },
-  { name: "Runway Gen-4", id: "runway-gen4" },
-  { name: "Runway Gen-4 (Video)", id: "runway-video-gen4" },
-  { name: "Wan 2.2 Video", id: "wan-video-2.2" },
-  { name: "Hailuo 02", id: "hailuo-02" },
-  { name: "Kling", id: "kling-video" },
-  { name: "ChatGPT", id: "chatgpt-image" },
-  { name: "Veo 3", id: "veo-3" },
-  { name: "Seedance 1.0 Pro (Video)", id: "seedance-1.0-pro" },
-  { name: "Luma Photon 1", id: "luma-photon-1" },
-  { name: "Luma Photon Flash 1", id: "luma-photon-flash-1" },
-  { name: "Luma Ray 2", id: "luma-ray-2" },
 ];
 
 type GalleryItem = {
@@ -834,7 +815,11 @@ const CustomMultiSelect: React.FC<{
         className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-theme-white font-raleway text-sm focus:outline-none focus:border-theme-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={values.length > 0 ? "text-theme-white" : "text-theme-white/50"}>
-          {values.length > 0 ? `${values.length} selected` : placeholder || "Select..."}
+          {values.length === 0 
+            ? placeholder || "Select..." 
+            : values.length === 1 
+              ? options.find(o => o.value === values[0])?.label || `${values.length} selected`
+              : `${values.length} selected`}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} flex-shrink-0`} />
       </button>
@@ -846,7 +831,7 @@ const CustomMultiSelect: React.FC<{
               dropdownRef.current = node;
               setScrollableRef(node);
             }}
-            className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
+            className={`fixed rounded-lg shadow-lg z-[9999] max-h-64 overflow-y-auto ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,

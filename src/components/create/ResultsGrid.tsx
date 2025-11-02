@@ -394,13 +394,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           const avatarForImage = item.avatarId ? avatarMap.get(item.avatarId) : undefined;
           const productForImage = item.productId ? productMap.get(item.productId) : undefined;
           const styleForImage = item.styleId ? styleIdToStoredStyle(item.styleId) : null;
+          const shouldDim = (isBulkMode || selectedItems.size > 0) && !isSelected;
           
           return (
           <div
             key={item.jobId || index}
-            className={`group flex flex-col overflow-hidden rounded-[24px] border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid shadow-lg transition-colors duration-100 parallax-large cursor-pointer relative ${
-              isSelected ? 'ring-2 ring-theme-accent' : ''
-            } ${isMenuActive ? 'parallax-active' : ''}`}
+            className={`group flex flex-col overflow-hidden rounded-[24px] border transition-all duration-100 shadow-lg parallax-large cursor-pointer relative ${
+              isSelected
+                ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
+                : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
+            } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
             onClick={() => handleItemClick(item, index)}
             onContextMenu={(e) => handleItemRightClick(e, item)}
           >

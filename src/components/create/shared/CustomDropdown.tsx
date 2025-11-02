@@ -88,7 +88,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange,
               dropdownRef.current = node;
               setScrollableRef(node);
             }}
-            className={`fixed rounded-lg shadow-lg z-[9999] max-h-48 overflow-y-auto ${glass.promptDark}`}
+            className={`fixed rounded-lg shadow-lg z-[9999] max-h-64 overflow-y-auto ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,

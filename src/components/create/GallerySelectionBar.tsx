@@ -128,7 +128,7 @@ const GallerySelectionBar = memo(() => {
           <button
             type="button"
             onClick={event => handleBulkActionsMenu(event)}
-            className={`${buttons.subtle} !h-8 gap-1.5 text-theme-white !font-light`}
+            className={`${buttons.subtle} !h-8 !gap-1.5 text-theme-white !font-light`}
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             <span>Actions</span>

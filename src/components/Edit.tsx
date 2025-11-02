@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Package, Film, Eraser, Undo2, Redo2, Shapes, BookmarkIcon, Bookmark, Scan } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Eraser, Undo2, Redo2, BookmarkIcon, Bookmark, Scan } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
@@ -24,20 +24,7 @@ import { ToolInfoHover } from "./ToolInfoHover";
 import { AspectRatioDropdown } from "./AspectRatioDropdown";
 import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
 import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../data/aspectRatios";
-
-// AI Model data for Edit section - all supported text-to-image models
-const AI_MODELS = [
-  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, accent: "yellow", id: "gemini-2.5-flash-image" },
-  { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, accent: "blue", id: "flux-1.1" },
-  { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, accent: "orange", id: "reve-image" },
-  { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, accent: "cyan", id: "ideogram" },
-  { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, accent: "pink", id: "recraft" },
-  { name: "Qwen", desc: "Great image editing.", Icon: Wand2, accent: "blue", id: "qwen-image" },
-  { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, accent: "violet", id: "runway-gen4" },
-  { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, accent: "pink", id: "chatgpt-image" },
-  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, accent: "cyan", id: "luma-photon-1" },
-  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, accent: "cyan", id: "luma-photon-flash-1" },
-] as const;
+import { AI_MODELS } from './create/ModelSelector';
 
 type EditModel = (typeof AI_MODELS)[number];
 type EditModelId = EditModel["id"] | "runway-gen4-turbo";

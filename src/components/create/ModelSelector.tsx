@@ -10,7 +10,9 @@ import { debugLog } from '../../utils/debug';
 import { ToolInfoHover } from '../ToolInfoHover';
 
 // AI Model data with icons and descriptions (matching V1 exactly)
-const AI_MODELS = [
+// Exported as single source of truth for all model lists in the app
+// eslint-disable-next-line react-refresh/only-export-components
+export const AI_MODELS = [
   { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, id: "gemini-2.5-flash-image" },
   { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
