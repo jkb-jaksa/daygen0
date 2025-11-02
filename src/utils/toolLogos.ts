@@ -5,7 +5,7 @@ type ToolLogoGroup = {
 
 const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   {
-    logo: '/gemini logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/gemini logo.png',
     names: [
       'Gemini',
       'Gemini 2.5 Flash',
@@ -15,59 +15,59 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     ],
   },
   {
-    logo: '/ideogram logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/ideogram logo.jpeg',
     names: ['Ideogram', 'ideogram', 'Ideogram 3.0'],
   },
   {
-    logo: '/qwen logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/qwen logo.png',
     names: ['Qwen', 'Wan', 'Wan 2.2 Video'],
   },
   {
-    logo: '/runway logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/runway logo.jpg',
     names: ['Runway', 'runway-gen4', 'Runway Gen-4', 'Runway Gen-4 Turbo'],
   },
   {
-    logo: '/reve logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/reve logo.jpg',
     names: ['Reve', 'Reve Image'],
   },
   {
-    logo: '/midjourney logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/midjourney logo.png',
     names: ['Midjourney'],
   },
   {
-    logo: '/higgsfield logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/higgsfield logo.jpg',
     names: ['Higgsfield'],
   },
   {
-    logo: '/recraft logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/recraft logo.jpg',
     names: ['Recraft', 'recraft', 'Recraft v3', 'Recraft v2'],
   },
   {
-    logo: '/krea logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/krea logo.jpeg',
     names: ['Krea'],
   },
   {
-    logo: '/magnific logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/magnific logo.png',
     names: ['Magnific'],
   },
   {
-    logo: '/freepik logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/freepik logo.png',
     names: ['Freepik'],
   },
   {
-    logo: '/flair ai logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/flair ai logo.jpg',
     names: ['Flair'],
   },
   {
-    logo: '/openai logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/openai logo.jpg',
     names: ['ChatGPT', 'ChatGPT Voice', 'Sora'],
   },
   {
-    logo: '/grok logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/grok logo.jpg',
     names: ['Grok', 'Grok Image', 'Grok Voice'],
   },
   {
-    logo: '/black forest labs logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/black forest labs logo.jpeg',
     names: [
       'FLUX',
       'Flux',
@@ -84,7 +84,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     ],
   },
   {
-    logo: '/bytedance logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/bytedance logo.png',
     names: [
       'Seedance',
       'Seedance 1.0 Pro (Video)',
@@ -92,27 +92,27 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     ],
   },
   {
-    logo: '/minimax logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/minimax logo.jpg',
     names: ['Hailuo 02', 'MiniMax-Hailuo-02', 'Minimax'],
   },
   {
-    logo: '/deepmind logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/deepmind logo.jpeg',
     names: ['Veo 3'],
   },
   {
-    logo: '/pika logo.png',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/pika logo.png',
     names: ['Pika'],
   },
   {
-    logo: '/kling logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/kling logo.jpg',
     names: ['Kling'],
   },
   {
-    logo: '/morphic logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/morphic logo.jpeg',
     names: ['Morphic'],
   },
   {
-    logo: '/luma logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/luma logo.jpg',
     names: [
       'Luma',
       'Luma Photon',
@@ -130,95 +130,95 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     ],
   },
   {
-    logo: '/marey logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/marey logo.jpg',
     names: ['Marey'],
   },
   {
-    logo: '/mochi logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/mochi logo.jpg',
     names: ['Mochi'],
   },
   {
-    logo: '/ltxv logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/ltxv logo.jpeg',
     names: ['LTXV'],
   },
   {
-    logo: '/hunyuan logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/hunyuan logo.jpg',
     names: ['Hunyuan'],
   },
   {
-    logo: '/firefly logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/firefly logo.jpg',
     names: ['Adobe Firefly'],
   },
   {
-    logo: '/viggle logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/viggle logo.jpg',
     names: ['Viggle'],
   },
   {
-    logo: '/elevenlabs.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/elevenlabs.jpg',
     names: ['ElevenLabs', 'ElevenLabs Music'],
   },
   {
-    logo: '/sync logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/sync logo.jpg',
     names: ['Sync'],
   },
   {
-    logo: '/playht logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/playht logo.jpeg',
     names: ['PlayHT'],
   },
   {
-    logo: '/sesame logo.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/sesame logo.jpeg',
     names: ['Sesame'],
   },
   {
-    logo: '/hume ai logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/hume ai logo.jpg',
     names: ['Hume'],
   },
   {
-    logo: '/suno logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/suno logo.jpg',
     names: ['Suno'],
   },
   {
-    logo: '/udio logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/udio logo.jpg',
     names: ['Udio'],
   },
   {
-    logo: '/kits logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/kits logo.jpg',
     names: ['Kits'],
   },
   {
-    logo: '/mureka logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/mureka logo.jpg',
     names: ['Mureka'],
   },
   {
-    logo: '/tavus ai.jpeg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/tavus ai.jpeg',
     names: ['Tavus'],
   },
   {
-    logo: '/claude logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/claude logo.jpg',
     names: ['Claude'],
   },
   {
-    logo: '/perplexity logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/perplexity logo.jpg',
     names: ['Perplexity'],
   },
   {
-    logo: '/notebook lm logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/notebook lm logo.jpg',
     names: ['NotebookLM'],
   },
   {
-    logo: '/kimi ai logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/kimi ai logo.jpg',
     names: ['Kimi'],
   },
   {
-    logo: '/deepseek logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/deepseek logo.jpg',
     names: ['Deepseek'],
   },
   {
-    logo: '/meta logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/meta logo.jpg',
     names: ['Meta', 'Llama'],
   },
   {
-    logo: '/topaz logo.jpg',
+    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/topaz logo.jpg',
     names: ['Topaz'],
   },
 ];

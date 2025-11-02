@@ -14,9 +14,9 @@ type StyleGender = "male" | "female" | "unisex";
 type SelectedStylesMap = Record<StyleGender, Record<StyleSectionId, StyleOption[]>>;
 
 const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string; image: string }> = [
-  { id: "lifestyle", name: "Lifestyle", image: "/lifestyle images.png" },
+  { id: "lifestyle", name: "Lifestyle", image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png" },
   { id: "formal", name: "Formal", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80" },
-  { id: "artistic", name: "Artistic", image: "/artistic images.png" },
+  { id: "artistic", name: "Artistic", image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png" },
 ];
 
 const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [

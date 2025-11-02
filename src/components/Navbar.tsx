@@ -282,7 +282,7 @@ export default function Navbar() {
         <div className={`${layout.container} py-2 flex items-center justify-between text-base min-h-[3.5rem]`}>
           <div className="flex items-center gap-6 md:gap-8">
             <img
-              src="/daygen-color-nobg.png"
+              src="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
               className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"

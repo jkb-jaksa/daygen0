@@ -266,7 +266,7 @@ function Home() {
                       <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         <UseCaseCard
                           title="lifestyle images"
-                          imageUrl="/lifestyle images.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
                           imageAlt="Lifestyle images example"
                         />
                         <UseCaseCard
@@ -276,32 +276,32 @@ function Home() {
                         />
                         <UseCaseCard
                           title="artistic images"
-                          imageUrl="/artistic images.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
                           imageAlt="Artistic images example"
                         />
                         <UseCaseCard
                           title="product placement"
-                          imageUrl="/product visualizations.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
                           imageAlt="Product placement example"
                         />
                         <UseCaseCard
                           title="virtual try-on"
-                          imageUrl="/virtual try-on.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
                           imageAlt="Virtual try-on example"
                         />
                         <UseCaseCard
                           title="brand identity kits"
-                          imageUrl="/brand identity.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
                           imageAlt="Brand identity example"
                         />
                         <UseCaseCard
                           title="infographics"
-                          imageUrl="/infographics.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/infographics.png"
                           imageAlt="Infographics example"
                         />
                         <UseCaseCard
                           title="upscaling"
-                          imageUrl="/upscaling.png"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
                           imageAlt="Upscaling example"
                         />
                       </div>
