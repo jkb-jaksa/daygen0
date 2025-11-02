@@ -1,5 +1,5 @@
-import React, { memo, useCallback, useEffect, useRef } from 'react';
-import { X, Check } from 'lucide-react';
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { X } from 'lucide-react';
 import { buttons, glass } from '../../styles/designSystem';
 import type { StyleHandlers } from './hooks/useStyleHandlers';
 
@@ -14,22 +14,30 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
     tempSelectedStyles,
     activeStyleGender,
     activeStyleSection,
-    totalSelectedStyles,
     totalTempSelectedStyles,
-    selectedStylesLabel,
     handleToggleTempStyle,
     handleApplyStyles,
-    handleClearStyles,
     handleActiveStyleGenderChange,
     handleActiveStyleSectionChange,
     STYLE_SECTION_DEFINITIONS,
     STYLE_GENDER_OPTIONS,
+    activeStyleSectionData,
   } = styleHandlers;
 
   const activeTempStyles =
     tempSelectedStyles?.[activeStyleGender]?.[activeStyleSection] ?? [];
   
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const genderSelectionCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const { id } of STYLE_GENDER_OPTIONS) {
+      const sections = tempSelectedStyles[id];
+      const total = Object.values(sections ?? {}).reduce((count, styles) => count + styles.length, 0);
+      counts.set(id, total);
+    }
+    return counts;
+  }, [STYLE_GENDER_OPTIONS, tempSelectedStyles]);
   
   // Handle escape key
   useEffect(() => {
@@ -70,147 +78,168 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
     handleApplyStyles();
   }, [handleApplyStyles]);
   
-  // Handle clear
-  const handleClear = useCallback(() => {
-    handleClearStyles();
-  }, [handleClearStyles]);
-  
   if (!open) return null;
   
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         ref={modalRef}
-        className={`${glass.promptDark} rounded-[20px] w-full max-w-4xl min-w-[32rem] max-h-[90vh] overflow-hidden transition-colors duration-200`}
+        className={`${glass.promptDark} w-full max-w-4xl rounded-3xl border border-theme-dark px-6 pb-6 pt-4 shadow-2xl max-h-[80vh] flex flex-col`}
+        onClick={event => event.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-theme-mid">
-          <div>
-            <h2 className="text-xl font-raleway font-light text-theme-text">
-              Style Selection
-            </h2>
-            <p className="text-sm text-theme-white/70 mt-1">
-              Choose styles to apply to your prompts
-            </p>
-          </div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 id="style-modal-heading" className="text-lg font-raleway text-theme-text">
+            Style
+          </h2>
           <button
+            type="button"
             onClick={onClose}
-            className={`${buttons.ghost} p-2 rounded-lg transition-colors duration-200`}
+            className="inline-flex size-8 items-center justify-center rounded-full border border-theme-mid bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+            aria-label="Close style"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
-        
-        {/* Content */}
-        <div className="p-6">
-          {/* Gender tabs */}
-          <div className="flex gap-2 mb-6">
-            {STYLE_GENDER_OPTIONS.map((gender) => (
-              <button
-                key={gender.id}
-                onClick={() => handleActiveStyleGenderChange(gender.id)}
-                className={`px-4 py-2 rounded-lg transition-colors duration-200 ${
-                  activeStyleGender === gender.id
-                    ? 'bg-theme-accent text-theme-white'
-                    : 'bg-theme-mid/50 text-theme-white hover:bg-theme-mid'
-                }`}
-              >
-                {gender.label}
-              </button>
-            ))}
-          </div>
-          
-          {/* Section tabs */}
-          <div className="flex gap-2 mb-6">
-            {STYLE_SECTION_DEFINITIONS.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => handleActiveStyleSectionChange(section.id)}
-                className={`px-4 py-2 rounded-lg transition-colors duration-200 ${
-                  activeStyleSection === section.id
-                    ? 'bg-theme-accent text-theme-white'
-                    : 'bg-theme-mid/50 text-theme-white hover:bg-theme-mid'
-                }`}
-              >
-                {section.name}
-              </button>
-            ))}
-          </div>
-          
-          {/* Style grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-            {/* Placeholder styles - in real implementation, this would be populated with actual style data */}
-            {Array.from({ length: 12 }, (_, index) => (
-              <button
-                key={index}
-                onClick={() => handleToggleTempStyle(activeStyleGender, activeStyleSection, {
-                  id: `${activeStyleGender}-${activeStyleSection}-${index + 1}`,
-                  name: `${activeStyleSection} Style ${index + 1}`,
-                  prompt: `${activeStyleGender} ${activeStyleSection} inspired style ${index + 1}`,
-                })}
-                className={`p-4 rounded-lg border-2 transition-colors duration-200 ${
-                  activeTempStyles.some(
-                    style => style.id === `${activeStyleGender}-${activeStyleSection}-${index + 1}`
-                  )
-                    ? 'border-theme-accent bg-theme-accent/20'
-                    : 'border-theme-mid bg-theme-mid/20 hover:border-theme-accent/50'
-                }`}
-              >
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-theme-accent/30 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <span className="text-xs font-bold text-theme-accent">
-                      {index + 1}
+
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden">
+          <div className="flex flex-wrap items-center gap-2">
+            {STYLE_GENDER_OPTIONS.map(option => {
+              const isActive = option.id === activeStyleGender;
+              const selectedCount = genderSelectionCounts.get(option.id) ?? 0;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleActiveStyleGenderChange(option.id)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-theme-text text-theme-black border border-theme-text'
+                      : `${glass.promptDark} text-theme-white hover:text-theme-text hover:border-theme-text/70`
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  <span>{option.label}</span>
+                  {selectedCount > 0 && (
+                    <span
+                      className={`ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium ${
+                        isActive ? 'bg-theme-text text-theme-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                      }`}
+                    >
+                      {selectedCount}
                     </span>
-                  </div>
-                  <div className="text-sm font-medium text-theme-white">
-                    {activeStyleSection} Style {index + 1}
-                  </div>
-                </div>
-              </button>
-            ))}
+                  )}
+                </button>
+              );
+            })}
           </div>
-          
-          {/* Selection summary */}
-          {totalTempSelectedStyles > 0 && (
-            <div className="mb-6 p-4 rounded-lg bg-theme-accent/10 border border-theme-accent/20">
-              <div className="text-sm text-theme-accent font-medium mb-2">
-                Selected Styles ({totalTempSelectedStyles})
-              </div>
-              <div className="text-xs text-theme-white/70">
-                {activeTempStyles.map(style => style.name).join(', ')}
-              </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {STYLE_SECTION_DEFINITIONS.map(section => {
+              const isActive = section.id === activeStyleSection;
+              const sectionSelectedCount = tempSelectedStyles[activeStyleGender][section.id].length;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => handleActiveStyleSectionChange(section.id)}
+                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-raleway transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-theme-text text-theme-black border border-theme-text'
+                      : `${glass.promptDark} text-theme-white hover:text-theme-text hover:border-theme-text/70`
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  {section.image && (
+                    <img
+                      src={section.image}
+                      alt={`${section.name} category`}
+                      className="h-5 w-5 rounded object-cover"
+                    />
+                  )}
+                  <span>{section.name}</span>
+                  {sectionSelectedCount > 0 && (
+                    <span
+                      className={`ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 text-xs font-medium ${
+                        isActive ? 'bg-theme-text text-theme-black' : 'bg-[color:var(--glass-dark-bg)] text-theme-text'
+                      }`}
+                    >
+                      {sectionSelectedCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-1 pb-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {activeStyleSectionData.options.map(option => {
+                const isActive = activeTempStyles.some(style => style.id === option.id);
+                const backgroundImage = option.image
+                  ? `url(${encodeURI(option.image)})`
+                  : option.previewGradient ?? 'linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)';
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => handleToggleTempStyle(activeStyleGender, activeStyleSectionData.id, option)}
+                    className="group w-full text-left"
+                  >
+                    <div
+                      className={`relative overflow-hidden rounded-xl border transition-colors duration-200 ${
+                        isActive ? 'border-theme-text' : 'border-theme-mid group-hover:border-theme-text'
+                      }`}
+                    >
+                      <div
+                        role="img"
+                        aria-label={`${option.name} style preview`}
+                        className="aspect-square w-full"
+                        style={{
+                          backgroundImage,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }}
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 z-10">
+                        <div className="PromptDescriptionBar rounded-b-xl px-3 py-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-raleway font-[300] text-theme-text">{option.name}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </div>
-        
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-theme-mid">
-          <div className="text-sm text-theme-white/70">
-            {totalSelectedStyles > 0 && (
-              <span>Current: {selectedStylesLabel}</span>
+
+            {activeStyleSectionData.options.length === 0 && (
+              <p className="px-1 text-sm font-raleway text-theme-white/70">
+                Style options are coming soon.
+              </p>
             )}
+
+            <p className="mt-3 text-sm font-raleway text-theme-white">
+              Style adds ready-made prompt guidance that layers on top of your description. Select any combination that fits your vision.
+            </p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleClear}
-              className={`${buttons.ghost} text-theme-red hover:bg-theme-red/10`}
-            >
-              Clear All
-            </button>
-            <button
-              onClick={onClose}
-              className={`${buttons.ghost}`}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleApply}
-              className={`${buttons.primary} flex items-center gap-2`}
-            >
-              <Check className="w-4 h-4" />
-              Apply Styles
-            </button>
-          </div>
+        </div>
+
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button type="button" onClick={onClose} className={buttons.ghost}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleApply}
+            disabled={totalTempSelectedStyles === 0}
+            className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+          >
+            Apply
+          </button>
         </div>
       </div>
     </div>

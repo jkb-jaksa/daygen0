@@ -11,12 +11,32 @@ type StyleOption = {
 type StyleSectionId = "lifestyle" | "formal" | "artistic";
 type StyleGender = "male" | "female" | "unisex";
 
+type StyleSection = {
+  id: StyleSectionId;
+  name: string;
+  image: string;
+  options: StyleOption[];
+};
+
 type SelectedStylesMap = Record<StyleGender, Record<StyleSectionId, StyleOption[]>>;
 
-const STYLE_SECTION_DEFINITIONS: ReadonlyArray<{ id: StyleSectionId; name: string; image: string }> = [
-  { id: "lifestyle", name: "Lifestyle", image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png" },
-  { id: "formal", name: "Formal", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80" },
-  { id: "artistic", name: "Artistic", image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png" },
+const STYLE_GRADIENTS: readonly string[] = [
+  "linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)",
+  "linear-gradient(135deg, rgba(251,191,36,0.35) 0%, rgba(79,70,229,0.55) 100%)",
+  "linear-gradient(135deg, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.6) 50%, rgba(236,72,153,0.45) 100%)",
+  "linear-gradient(135deg, rgba(148,163,184,0.35) 0%, rgba(226,232,240,0.6) 100%)",
+  "linear-gradient(135deg, rgba(110,231,183,0.35) 0%, rgba(103,232,249,0.5) 100%)",
+  "linear-gradient(135deg, rgba(251,191,36,0.4) 0%, rgba(248,113,113,0.5) 60%, rgba(96,165,250,0.45) 100%)",
+  "linear-gradient(135deg, rgba(217,119,6,0.4) 0%, rgba(180,83,9,0.5) 100%)",
+  "linear-gradient(135deg, rgba(236,72,153,0.45) 0%, rgba(168,85,247,0.5) 50%, rgba(14,165,233,0.4) 100%)",
+  "linear-gradient(135deg, rgba(251,207,232,0.45) 0%, rgba(196,181,253,0.5) 50%, rgba(165,243,252,0.4) 100%)",
+  "linear-gradient(135deg, rgba(30,64,175,0.5) 0%, rgba(59,130,246,0.45) 50%, rgba(248,113,113,0.4) 100%)",
+];
+
+const STYLE_SECTION_DEFINITIONS: readonly StyleSection[] = [
+  { id: "lifestyle", name: "Lifestyle", image: "/lifestyle images.png", options: [] },
+  { id: "formal", name: "Formal", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80", options: [] },
+  { id: "artistic", name: "Artistic", image: "/artistic images.png", options: [] },
 ];
 
 const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [
@@ -24,6 +44,88 @@ const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = 
   { id: "male", label: "Male" },
   { id: "unisex", label: "All" },
 ];
+
+const LIFESTYLE_STYLES_UNISEX: StyleOption[] = [
+  {
+    id: "unisex-lifestyle-black-suit-studio",
+    name: "Black Suit Studio",
+    prompt:
+      "professional studio photography setup, black suit attire, clean minimalist background, professional lighting, high-end fashion photography style",
+    image: "/black_suit_studio setup.png",
+  },
+  {
+    id: "unisex-lifestyle-french-balcony",
+    name: "French Balcony",
+    prompt:
+      "elegant French balcony setting, charming Parisian architecture, wrought iron railings, romantic European atmosphere, natural daylight",
+    image: "/french_balcony.png",
+  },
+  {
+    id: "unisex-lifestyle-boat-coastal-town",
+    name: "Boat in Coastal Town",
+    prompt:
+      "charming coastal town setting, traditional fishing boat, waterfront architecture, maritime atmosphere, golden hour lighting, seaside lifestyle photography",
+    image: "/boat_in_coastal_town.png",
+  },
+  {
+    id: "unisex-lifestyle-brick-wall",
+    name: "Brick in the Wall",
+    prompt:
+      "urban street photography, exposed brick wall background, industrial aesthetic, gritty urban atmosphere, natural lighting, contemporary lifestyle photography",
+    image: "/brick_in_the_wall.png",
+  },
+  {
+    id: "unisex-lifestyle-smoking-hot",
+    name: "Smoking Hot",
+    prompt:
+      "dramatic lifestyle photography, warm lighting, sultry atmosphere, high contrast, fashion-forward styling, bold and confident mood",
+    image: "/smoking_hot.png",
+  },
+  {
+    id: "unisex-lifestyle-sun-and-sea",
+    name: "Sun and Sea",
+    prompt:
+      "beach lifestyle photography, sunny coastal setting, ocean waves, bright natural lighting, summer vibes, relaxed seaside atmosphere",
+    image: "/sun_and_sea.png",
+  },
+];
+
+const createPlaceholderStyles = (
+  gender: StyleGender,
+  sectionId: StyleSectionId,
+  sectionName: string,
+): StyleOption[] =>
+  Array.from({ length: 20 }, (_, index) => {
+    const gradient = STYLE_GRADIENTS[index % STYLE_GRADIENTS.length];
+    const label = `${sectionName} Style ${index + 1}`;
+    return {
+      id: `${gender}-${sectionId}-${index + 1}`,
+      name: label,
+      prompt: `${gender} ${sectionName.toLowerCase()} inspired placeholder prompt ${index + 1}`,
+      previewGradient: gradient,
+    };
+  });
+
+const createLifestyleStyles = (gender: StyleGender): StyleOption[] => {
+  if (gender === "unisex") {
+    return LIFESTYLE_STYLES_UNISEX;
+  }
+  return createPlaceholderStyles(gender, "lifestyle", "Lifestyle");
+};
+
+const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
+  STYLE_SECTION_DEFINITIONS.map(({ id, name, image }) => ({
+    id,
+    name,
+    image,
+    options: id === "lifestyle" ? createLifestyleStyles(gender) : createPlaceholderStyles(gender, id, name),
+  }));
+
+const STYLE_SECTIONS_BY_GENDER: Record<StyleGender, StyleSection[]> = {
+  male: createStyleSectionsForGender("male"),
+  female: createStyleSectionsForGender("female"),
+  unisex: createStyleSectionsForGender("unisex"),
+};
 
 const createEmptyStyleSectionSelection = (): Record<StyleSectionId, StyleOption[]> => ({
   lifestyle: [],
@@ -38,20 +140,51 @@ const createEmptySelectedStyles = (): SelectedStylesMap => ({
 });
 
 const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
-  female: { ...styles.female },
-  male: { ...styles.male },
-  unisex: { ...styles.unisex },
+  female: {
+    lifestyle: [...styles.female.lifestyle],
+    formal: [...styles.female.formal],
+    artistic: [...styles.female.artistic],
+  },
+  male: {
+    lifestyle: [...styles.male.lifestyle],
+    formal: [...styles.male.formal],
+    artistic: [...styles.male.artistic],
+  },
+  unisex: {
+    lifestyle: [...styles.unisex.lifestyle],
+    formal: [...styles.unisex.formal],
+    artistic: [...styles.unisex.artistic],
+  },
 });
 
 const findFirstSelectedStyle = (styles: SelectedStylesMap): { gender: StyleGender; sectionId: StyleSectionId } | null => {
-  for (const [gender, sections] of Object.entries(styles)) {
-    for (const [sectionId, sectionStyles] of Object.entries(sections)) {
-      if (sectionStyles.length > 0) {
-        return { gender: gender as StyleGender, sectionId: sectionId as StyleSectionId };
+  for (const { id: gender } of STYLE_GENDER_OPTIONS) {
+    const sections = styles[gender];
+    for (const { id: sectionId } of STYLE_SECTION_DEFINITIONS) {
+      if (sections[sectionId].length > 0) {
+        return { gender, sectionId };
       }
     }
   }
   return null;
+};
+
+const getStyleSectionsForGender = (gender: StyleGender): StyleSection[] => STYLE_SECTIONS_BY_GENDER[gender];
+
+const getStyleSectionOptions = (gender: StyleGender, sectionId: StyleSectionId): StyleOption[] => {
+  const section = getStyleSectionsForGender(gender).find(item => item.id === sectionId);
+  return section?.options ?? [];
+};
+
+const getOrderedSelectedStyles = (styles: SelectedStylesMap): StyleOption[] => {
+  const ordered: StyleOption[] = [];
+  for (const { id: gender } of STYLE_GENDER_OPTIONS) {
+    const sections = styles[gender];
+    for (const { id: sectionId } of STYLE_SECTION_DEFINITIONS) {
+      ordered.push(...sections[sectionId]);
+    }
+  }
+  return ordered;
 };
 
 export function useStyleHandlers() {
@@ -106,8 +239,7 @@ export function useStyleHandlers() {
   // Apply style to prompt
   const applyStyleToPrompt = useCallback(
     (basePrompt: string) => {
-      const selectedPrompts = Object.values(selectedStyles)
-        .flatMap(sections => Object.values(sections).flat())
+      const selectedPrompts = getOrderedSelectedStyles(selectedStyles)
         .map(style => style.prompt.trim())
         .filter(Boolean);
 
@@ -132,13 +264,7 @@ export function useStyleHandlers() {
   }, []);
   
   // Get selected styles list
-  const selectedStylesList = useMemo(
-    () =>
-      Object.values(selectedStyles).flatMap(sections =>
-        Object.values(sections).flat(),
-      ),
-    [selectedStyles],
-  );
+  const selectedStylesList = useMemo(() => getOrderedSelectedStyles(selectedStyles), [selectedStyles]);
   
   // Get total selected styles count
   const totalSelectedStyles = selectedStylesList.length;
@@ -155,18 +281,16 @@ export function useStyleHandlers() {
   );
   
   // Get active style section data
-  const activeStyleSectionData = useMemo(
-    () => {
-      // This would need to be implemented based on the actual style sections data
-      // For now, return a placeholder
-      return {
-        id: activeStyleSection,
-        name: STYLE_SECTION_DEFINITIONS.find(s => s.id === activeStyleSection)?.name ?? "Unknown",
-        options: [],
-      };
-    },
-    [activeStyleSection],
-  );
+  const activeStyleSectionData = useMemo(() => {
+    const sectionDefinition = STYLE_SECTION_DEFINITIONS.find(section => section.id === activeStyleSection);
+    const options = getStyleSectionOptions(activeStyleGender, activeStyleSection);
+    return {
+      id: activeStyleSection,
+      name: sectionDefinition?.name ?? "Unknown",
+      image: sectionDefinition?.image ?? "",
+      options,
+    };
+  }, [activeStyleGender, activeStyleSection]);
   
   // Get selected styles label
   const selectedStylesLabel = useMemo(() => {
@@ -243,7 +367,20 @@ export function useStyleHandlers() {
   // Handle active style gender change
   const handleActiveStyleGenderChange = useCallback((gender: StyleGender) => {
     setActiveStyleGender(gender);
-  }, []);
+    setActiveStyleSection(prevSection => {
+      const sections = tempSelectedStyles[gender];
+      const firstWithSelection = STYLE_SECTION_DEFINITIONS.find(section => sections[section.id].length > 0)?.id;
+      if (firstWithSelection) {
+        return firstWithSelection;
+      }
+
+      if (sections[prevSection]) {
+        return prevSection;
+      }
+
+      return STYLE_SECTION_DEFINITIONS[0]?.id ?? "lifestyle";
+    });
+  }, [tempSelectedStyles]);
   
   // Handle active style section change
   const handleActiveStyleSectionChange = useCallback((sectionId: StyleSectionId) => {
