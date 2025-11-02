@@ -152,13 +152,7 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
                   }`}
                   aria-pressed={isActive}
                 >
-                  {section.image && (
-                    <img
-                      src={section.image}
-                      alt={`${section.name} category`}
-                      className="h-5 w-5 rounded object-cover"
-                    />
-                  )}
+                  <section.Icon className="h-5 w-5" />
                   <span>{section.name}</span>
                   {sectionSelectedCount > 0 && (
                     <span

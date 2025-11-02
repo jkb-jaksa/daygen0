@@ -1,6 +1,7 @@
 # [Archived] Production Deployment Guide
 
-For the concise frontend guide, see `./FRONTEND_GUIDE.md`. Keep this file for detailed Cloudflare Pages and Cloud Run notes.
+For the concise frontend guide, see `./FRONTEND_GUIDE.md`.
+For backend production details, use `../daygen-backend/docs/PRODUCTION_DEPLOYMENT.md` and `../daygen-backend/docs/BACKEND_GUIDE.md`. This file remains for Cloudflare Pages tips only.
 
 ## 🚀 Frontend Deployment (Cloudflare Pages)
 
@@ -44,7 +45,7 @@ VITE_GOOGLE_ANALYTICS_ID=your-ga-id
 
 4. **Wrangler Configuration**:
    - The project includes `wrangler.jsonc` for Cloudflare Pages configuration
-   - Ensure environment variables are properly set in `vars` section
+   - Ensure environment variables are configured in the Pages dashboard as above
 
 ## 🚀 Backend Deployment (Google Cloud Run)
 

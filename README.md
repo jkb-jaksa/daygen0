@@ -95,20 +95,14 @@ See `.env.example` for required environment variables. You'll need API keys for 
 
 ## 🔗 Backend
 
-The backend is deployed to Google Cloud Run and lives in a separate repo: `daygen-backend`.
-If running locally, start the backend from its repository and set `VITE_BACKEND_URL` accordingly.
+The backend lives in `daygen-backend` (NestJS on Google Cloud Run).
+If running locally, start the backend from its repository and set `VITE_API_BASE_URL` accordingly.
 
 ## 📚 Documentation
 
-- [Backend Integration Guide](./BACKEND_INTEGRATION.md)
-- [FLUX Integration Guide](./FLUX_INTEGRATION_GUIDE.md)
-- [Gemini Integration](./GEMINI_INTEGRATION.md)
-- [Ideogram Integration](./IDEOGRAM_INTEGRATION.md)
-- [Recraft Integration](./RECRAFT_INTEGRATION.md)
-- [Reve Integration](./REVE_INTEGRATION.md)
-- [Runway Integration](./RUNWAY_INTEGRATION.md)
 - [Frontend Guide](./FRONTEND_GUIDE.md)
 - [Frontend Architecture Map](./agents.md)
+- Backend Guide: `../daygen-backend/docs/BACKEND_GUIDE.md`
 
 ## CI/CD
 

@@ -23,7 +23,7 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useGenerateShortcuts } from '../../hooks/useGenerateShortcuts';
@@ -35,6 +35,7 @@ import { buttons, glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
+import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/StyleModalProvider';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -103,6 +104,7 @@ const PromptForm = memo<PromptFormProps>(
     onPromptBarHeightChange,
   }) => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { setFullSizeImage, setFullSizeOpen } = useGallery();
     const {
       promptHandlers,
@@ -436,6 +438,85 @@ const PromptForm = memo<PromptFormProps>(
         resizeObserver?.disconnect();
       };
     }, [adjustPromptTextareaHeight]);
+
+    // Auto-open modal from query param (when navigated from other pages)
+    const hasProcessedQueryParamRef = useRef(false);
+    
+    useEffect(() => {
+      const openStyleModal = searchParams.get('openStyleModal');
+      
+      // Reset ref if query param is removed
+      if (openStyleModal !== 'true') {
+        hasProcessedQueryParamRef.current = false;
+        return;
+      }
+
+      // Only process if we haven't already and the modal isn't open
+      if (!hasProcessedQueryParamRef.current && !styleHandlers.isStyleModalOpen) {
+        hasProcessedQueryParamRef.current = true;
+        
+        // Try to open immediately if handleStyleModalOpen is available
+        const tryOpenNow = () => {
+          if (styleHandlers.handleStyleModalOpen && typeof styleHandlers.handleStyleModalOpen === 'function') {
+            styleHandlers.handleStyleModalOpen();
+            // Clean up query param after modal opens
+            setTimeout(() => {
+              const newSearchParams = new URLSearchParams(searchParams);
+              newSearchParams.delete('openStyleModal');
+              setSearchParams(newSearchParams, { replace: true });
+            }, 500);
+            return true;
+          }
+          return false;
+        };
+        
+        // Try immediately first
+        if (!tryOpenNow()) {
+          // If not ready, use a more aggressive retry with requestAnimationFrame
+          let attempts = 0;
+          const maxAttempts = 30;
+          
+          const retry = () => {
+            attempts++;
+            
+            if (tryOpenNow()) {
+              return; // Success, stop retrying
+            }
+            
+            if (attempts < maxAttempts) {
+              // Use requestAnimationFrame for faster retries
+              requestAnimationFrame(retry);
+            }
+          };
+          
+          // Start retrying on next frame
+          requestAnimationFrame(retry);
+        }
+      }
+    }, [searchParams.toString()]);
+
+    // Listen for global style modal open/close events (when already on create/image page)
+    useEffect(() => {
+      const handleOpenEvent = () => {
+        if (!styleHandlers.isStyleModalOpen) {
+          styleHandlers.handleStyleModalOpen();
+        }
+      };
+
+      const handleCloseEvent = () => {
+        if (styleHandlers.isStyleModalOpen) {
+          styleHandlers.handleStyleModalClose();
+        }
+      };
+
+      window.addEventListener(STYLE_MODAL_OPEN_EVENT, handleOpenEvent);
+      window.addEventListener(STYLE_MODAL_CLOSE_EVENT, handleCloseEvent);
+
+      return () => {
+        window.removeEventListener(STYLE_MODAL_OPEN_EVENT, handleOpenEvent);
+        window.removeEventListener(STYLE_MODAL_CLOSE_EVENT, handleCloseEvent);
+      };
+    }, [styleHandlers]);
 
     useLayoutEffect(() => {
       adjustPromptTextareaHeight();

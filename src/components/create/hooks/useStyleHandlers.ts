@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { Users, Briefcase, Palette } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type StyleOption = {
   id: string;
@@ -14,7 +16,8 @@ type StyleGender = "male" | "female" | "unisex";
 type StyleSection = {
   id: StyleSectionId;
   name: string;
-  image: string;
+  image?: string;
+  Icon: LucideIcon;
   options: StyleOption[];
 };
 
@@ -34,9 +37,9 @@ const STYLE_GRADIENTS: readonly string[] = [
 ];
 
 const STYLE_SECTION_DEFINITIONS: readonly StyleSection[] = [
-  { id: "lifestyle", name: "Lifestyle", image: "/lifestyle images.png", options: [] },
-  { id: "formal", name: "Formal", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80", options: [] },
-  { id: "artistic", name: "Artistic", image: "/artistic images.png", options: [] },
+  { id: "lifestyle", name: "Lifestyle", Icon: Users, options: [] },
+  { id: "formal", name: "Formal", Icon: Briefcase, options: [] },
+  { id: "artistic", name: "Artistic", Icon: Palette, options: [] },
 ];
 
 const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [
@@ -51,42 +54,42 @@ const LIFESTYLE_STYLES_UNISEX: StyleOption[] = [
     name: "Black Suit Studio",
     prompt:
       "professional studio photography setup, black suit attire, clean minimalist background, professional lighting, high-end fashion photography style",
-    image: "/black_suit_studio setup.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/black_suit_studio setup.png",
   },
   {
     id: "unisex-lifestyle-french-balcony",
     name: "French Balcony",
     prompt:
       "elegant French balcony setting, charming Parisian architecture, wrought iron railings, romantic European atmosphere, natural daylight",
-    image: "/french_balcony.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/french_balcony.png",
   },
   {
     id: "unisex-lifestyle-boat-coastal-town",
     name: "Boat in Coastal Town",
     prompt:
       "charming coastal town setting, traditional fishing boat, waterfront architecture, maritime atmosphere, golden hour lighting, seaside lifestyle photography",
-    image: "/boat_in_coastal_town.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/boat_in_coastal_town.png",
   },
   {
     id: "unisex-lifestyle-brick-wall",
     name: "Brick in the Wall",
     prompt:
       "urban street photography, exposed brick wall background, industrial aesthetic, gritty urban atmosphere, natural lighting, contemporary lifestyle photography",
-    image: "/brick_in_the_wall.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brick_in_the_wall.png",
   },
   {
     id: "unisex-lifestyle-smoking-hot",
     name: "Smoking Hot",
     prompt:
       "dramatic lifestyle photography, warm lighting, sultry atmosphere, high contrast, fashion-forward styling, bold and confident mood",
-    image: "/smoking_hot.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/smoking_hot.png",
   },
   {
     id: "unisex-lifestyle-sun-and-sea",
     name: "Sun and Sea",
     prompt:
       "beach lifestyle photography, sunny coastal setting, ocean waves, bright natural lighting, summer vibes, relaxed seaside atmosphere",
-    image: "/sun_and_sea.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/sun_and_sea.png",
   },
 ];
 
@@ -114,10 +117,10 @@ const createLifestyleStyles = (gender: StyleGender): StyleOption[] => {
 };
 
 const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
-  STYLE_SECTION_DEFINITIONS.map(({ id, name, image }) => ({
+  STYLE_SECTION_DEFINITIONS.map(({ id, name, Icon }) => ({
     id,
     name,
-    image,
+    Icon,
     options: id === "lifestyle" ? createLifestyleStyles(gender) : createPlaceholderStyles(gender, id, name),
   }));
 
@@ -287,7 +290,7 @@ export function useStyleHandlers() {
     return {
       id: activeStyleSection,
       name: sectionDefinition?.name ?? "Unknown",
-      image: sectionDefinition?.image ?? "",
+      Icon: sectionDefinition?.Icon,
       options,
     };
   }, [activeStyleGender, activeStyleSection]);

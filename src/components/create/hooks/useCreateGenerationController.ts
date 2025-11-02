@@ -253,11 +253,11 @@ export function useCreateGenerationController(): CreateGenerationController {
 
   useEffect(() => {
     avatarHandlers.loadStoredAvatars();
-  }, [avatarHandlers]);
+  }, [avatarHandlers.loadStoredAvatars]);
 
   useEffect(() => {
     productHandlers.loadStoredProducts();
-  }, [productHandlers]);
+  }, [productHandlers.loadStoredProducts]);
 
   const selectedAvatarId = avatarHandlers.selectedAvatar?.id;
   const activeAvatarImageId = avatarHandlers.activeAvatarImageId ?? undefined;

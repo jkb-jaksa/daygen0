@@ -10,6 +10,8 @@ import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
 import { GenerationProvider } from "./components/create/contexts/GenerationContext";
+import { StyleModalProvider } from "./contexts/StyleModalProvider";
+import { useStyleModal } from "./contexts/useStyleModal";
 const CreditWarningBanner = lazy(() =>
   import("./components/CreditWarningBanner").then(({ CreditWarningBanner }) => ({
     default: CreditWarningBanner,
@@ -74,26 +76,39 @@ function UseCaseCard({
   title,
   imageUrl,
   imageAlt,
+  to,
+  onClick,
 }: {
   title: string;
   imageUrl: string;
   imageAlt: string;
+  to?: string;
+  onClick?: () => void;
 }) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
-  return (
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+    }
+  };
+
+  const cardContent = (
     <div 
-      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden"
+      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      onClick={handleClick}
     >
       <img
         src={imageUrl}
         alt={imageAlt}
         loading="lazy"
         decoding="async"
-        className="h-48 w-full object-cover"
+        className="h-48 w-full object-cover parallax-isolate"
       />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="UseCaseDescription relative z-10 px-4 py-1.5 rounded-2xl">
@@ -102,6 +117,16 @@ function UseCaseCard({
       </div>
     </div>
   );
+
+  if (to && !onClick) {
+    return (
+      <Link to={to} className="block">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }
 
 const HOME_CATEGORIES = [
@@ -125,6 +150,7 @@ function ComingSoonPanel({ label, className }: { label: string; className?: stri
 
 function Home() {
   const location = useLocation();
+  const { openStyleModal } = useStyleModal();
   const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -268,41 +294,49 @@ function Home() {
                           title="lifestyle images"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
                           imageAlt="Lifestyle images example"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="formal images"
-                          imageUrl="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80"
-                          imageAlt="Modern office meeting with laptops and charts"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                          imageAlt="Business woman in a suit"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="artistic images"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
                           imageAlt="Artistic images example"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="product placement"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
                           imageAlt="Product placement example"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="virtual try-on"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
                           imageAlt="Virtual try-on example"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="brand identity kits"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
                           imageAlt="Brand identity example"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="infographics"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/infographics.png"
                           imageAlt="Infographics example"
+                          onClick={openStyleModal}
                         />
                         <UseCaseCard
                           title="upscaling"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
                           imageAlt="Upscaling example"
+                          onClick={openStyleModal}
                         />
                       </div>
                     </div>
@@ -345,8 +379,26 @@ function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   // If user is authenticated but URL has query parameters, clean them up
+  // BUT preserve openStyleModal query param for style modal functionality
+  // Only redirect if there are query params we need to clean up
   if (location.search) {
-    return <Navigate to={location.pathname} replace />;
+    const searchParams = new URLSearchParams(location.search);
+    const hasOpenStyleModal = searchParams.has('openStyleModal');
+    
+    // Check if there are any query params other than openStyleModal
+    const hasOtherParams = Array.from(searchParams.keys()).some(key => key !== 'openStyleModal');
+    
+    if (hasOpenStyleModal && !hasOtherParams) {
+      // Only openStyleModal is present and it's the only param - no need to redirect
+    } else if (hasOpenStyleModal && hasOtherParams) {
+      // Has openStyleModal but also other params - preserve openStyleModal and remove others
+      const preservedParams = new URLSearchParams();
+      preservedParams.set('openStyleModal', searchParams.get('openStyleModal') || 'true');
+      return <Navigate to={{ pathname: location.pathname, search: `?${preservedParams.toString()}` }} replace />;
+    } else {
+      // No openStyleModal param, clean up all query params
+      return <Navigate to={location.pathname} replace />;
+    }
   }
   
   return children;
@@ -378,14 +430,15 @@ function AppContent() {
   } = useCreditWarningBanner();
 
   return (
-    <div>
-      <Suspense fallback={null}>
-        <GlobalSvgDefs />
-      </Suspense>
-      <Suspense fallback={<NavbarFallback />}>
-        <Navbar />
-      </Suspense>
-      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+    <StyleModalProvider>
+      <div>
+        <Suspense fallback={null}>
+          <GlobalSvgDefs />
+        </Suspense>
+        <Suspense fallback={<NavbarFallback />}>
+          <Navbar />
+        </Suspense>
+        <main id="main-content" tabIndex={-1} className="focus:outline-none">
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -500,7 +553,8 @@ function AppContent() {
         <DebugPanel />
       </Suspense>
       
-    </div>
+      </div>
+    </StyleModalProvider>
   );
 }
 

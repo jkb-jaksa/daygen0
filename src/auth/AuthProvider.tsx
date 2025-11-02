@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const lastProfileUpdateRef = useRef<number>(0);
+  const userRef = useRef<AppUser | null>(null);
   
   // Derive a per-user storage prefix to avoid cross-account bleed
   const storagePrefix = useMemo(() => {
@@ -544,7 +545,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (!isMounted) return;
       
-      debugLog('Auth state changed:', event, nextSession?.user?.email);
+      // Only log non-INITIAL_SESSION events, or INITIAL_SESSION when there's actually a session
+      if (event !== 'INITIAL_SESSION' || nextSession) {
+        debugLog('Auth state changed:', event, nextSession?.user?.email);
+      }
 
       if (nextSession?.user) {
         try {
@@ -556,11 +560,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Check if we recently updated the profile (within last 5 seconds)
             const timeSinceLastUpdate = Date.now() - lastProfileUpdateRef.current;
             const isRecentUpdate = timeSinceLastUpdate < 5000;
+            const currentUser = userRef.current;
             
             // Only update if this is a significant change (not just a token refresh)
             // or if we don't have a user yet, or if it's not a recent profile update
-            if (!user || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || !isRecentUpdate) {
+            if (!currentUser || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || !isRecentUpdate) {
               setUser(profile);
+              userRef.current = profile;
               setSession(nextSession);
               if (isRecentUpdate) {
                 debugLog('Recent profile update detected, but updating anyway due to event:', event);
@@ -579,6 +585,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try { resetTokenCache(); } catch (e) { void e; }
             try { authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
             setUser(null);
+            userRef.current = null;
             setSession(null);
           }
         }
@@ -587,6 +594,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_OUT' && isMounted) {
           try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
           setUser(null);
+          userRef.current = null;
           setSession(null);
         } else if (event === 'TOKEN_REFRESHED' && !nextSession && isMounted) {
           // If token refresh failed, try to get session once more before giving up
@@ -598,6 +606,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (isMounted) {
                 try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
                 setUser(null);
+                userRef.current = null;
                 setSession(null);
               }
             } else if (data.session?.user && isMounted) {
@@ -607,11 +616,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
               if (isMounted) {
                 setUser(profile);
+                userRef.current = profile;
                 setSession(data.session);
               }
             } else if (isMounted) {
               try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
               setUser(null);
+              userRef.current = null;
               setSession(null);
             }
           } catch (recoveryError) {
@@ -619,6 +630,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (isMounted) {
               try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
               setUser(null);
+              userRef.current = null;
               setSession(null);
             }
           }
@@ -630,6 +642,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (event === 'SIGNED_OUT') {
             try { resetTokenCache(); authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
             setUser(null);
+            userRef.current = null;
             setSession(null);
           }
         }
@@ -644,7 +657,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile, user]);
+  }, [fetchUserProfile]);
+
+  // Keep userRef in sync with user state
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     let isMounted = true;
