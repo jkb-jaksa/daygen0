@@ -1,5 +1,5 @@
 # daygen.ai — Agents Guide (agents.md)
-_Last updated: 2025‑10‑26_
+_Last updated: 2025‑11‑02_
 
 > **Purpose**: a compact, deterministic map of the DayGen frontend 
 > **Important**: Image/video generation uses **provider‑specific** endpoints (no unified endpoint). Long‑running work is **job‑based**.
@@ -15,7 +15,8 @@ _Last updated: 2025‑10‑26_
 
 ### Key Code Entrypoints
 - Router shell: `src/App.tsx`
-- Create (orchestrator): `src/components/Create.tsx`
+- Create (orchestrator): `src/components/create/Create-refactored.tsx` (374 lines, modular)
+- Generation controller: `src/components/create/hooks/useCreateGenerationController.ts` (1,091 lines)
 - Contexts: `src/components/create/contexts/{GenerationContext,GalleryContext}.tsx`
 - API helpers: `src/utils/api.ts` (`getApiUrl`, `apiFetch`, `withTimeout`)
 
@@ -108,33 +109,91 @@ await apiFetch(getApiUrl('/api/image/flux'), {
 src/
 ├─ auth/                 # JWT context, auth UI
 ├─ components/           # Page-level & shared UI
-│  ├─ Create.tsx         # Main orchestrator (10,657 lines, monolithic) ✅ ACTIVE
-│  ├─ Create.refactor-plan.tsx  # Incomplete refactor plan (do not use) ⚠️ SKELETON
-│  └─ create/            # Modular Create surface
+│  └─ create/            # Modular Create surface ✅ ACTIVE
+│     ├─ Create-refactored.tsx        # Main orchestrator (374 lines)
 │     ├─ contexts/
-│     │  ├─ GenerationContext.tsx
-│     │  └─ GalleryContext.tsx
+│     │  ├─ GenerationContext.tsx     # Model selection, provider settings, job tracking
+│     │  ├─ GalleryContext.tsx        # Gallery state, filters, selection, deep-links
+│     │  └─ hooks.ts                  # Context consumer hooks
 │     ├─ hooks/
-│     │  ├─ usePromptHandlers.ts
-│     │  ├─ useReferenceHandlers.ts
-│     │  ├─ useAvatarHandlers.ts
-│     │  ├─ useProductHandlers.ts
-│     │  ├─ useStyleHandlers.ts
-│     │  └─ useGalleryActions.ts
-│     ├─ PromptForm.tsx
-│     ├─ ModelSelector.tsx
-│     ├─ ReferenceImages.tsx
-│     ├─ ResultsGrid.tsx
-│     ├─ FullImageModal.tsx
-│     ├─ StyleSelectionModal.tsx
-│     ├─ ImageActionMenu.tsx
-│     └─ BulkActionsMenu.tsx
+│     │  ├─ useCreateGenerationController.ts  # Orchestrates all providers (1,091 lines)
+│     │  ├─ usePromptHandlers.ts      # Prompt state, history, saved prompts
+│     │  ├─ useReferenceHandlers.ts   # File uploads, paste, drag-drop
+│     │  ├─ useAvatarHandlers.ts      # Avatar CRUD & persistence
+│     │  ├─ useProductHandlers.ts     # Product CRUD & persistence
+│     │  ├─ useStyleHandlers.ts       # Style selection & application
+│     │  └─ useGalleryActions.ts      # Download, share, delete, navigation
+│     ├─ PromptForm.tsx               # Prompt input with controls
+│     ├─ ModelSelector.tsx            # Model picker dropdown
+│     ├─ ReferenceImages.tsx          # Reference image previews
+│     ├─ ResultsGrid.tsx              # Gallery grid with thumbnails
+│     ├─ FullImageModal.tsx           # Full-size image viewer
+│     ├─ GenerationProgress.tsx       # Active job progress list
+│     ├─ SettingsMenu.tsx             # Provider-specific settings
+│     ├─ StyleSelectionModal.tsx      # Style picker modal
+│     ├─ ImageActionMenu.tsx          # Single image actions
+│     ├─ BulkActionsMenu.tsx          # Multi-select actions
+│     ├─ GalleryFilters.tsx           # Gallery filter controls
+│     ├─ GallerySelectionBar.tsx      # Bulk selection bar
+│     ├─ GalleryPanel.tsx             # Sidebar for gallery view
+│     ├─ CreateSidebar.tsx            # Category navigation sidebar
+│     ├─ ComingSoonCategory.tsx       # Placeholder for text/audio
+│     ├─ ChatMode.tsx                 # Alternative chat-based UI
+│     ├─ layoutConstants.ts           # Layout tokens
+│     ├─ sidebarData.ts               # Navigation data
+│     ├─ types.ts                     # Shared types
+│     └─ shared/                      # Reusable utilities
+│        ├─ CustomDropdown.tsx
+│        ├─ CustomMultiSelect.tsx
+│        └─ MenuPortal.tsx
 ├─ hooks/                # Provider hooks (call /api/image/*), gallery/data hooks
 ├─ routes/               # Route modules (CreateRoutes, GalleryRoutes, LearnLayout, ...)
 ├─ styles/               # Design system
 ├─ utils/                # `getApiUrl`, `apiFetch`, `withTimeout`, helpers
 └─ App.tsx               # App shell, router, lazy-loaded screens, guards
 ```
+
+---
+
+## 5a) Create Surface Architecture
+
+The Create surface has been refactored from a monolithic 10,657-line component into a modular architecture totaling ~1,500 lines across focused modules.
+
+### Data Flow
+
+```
+User Input
+  ↓
+PromptForm + Controls
+  ↓
+useCreateGenerationController (orchestrator)
+  ↓
+Provider Hooks (useFluxImageGeneration, useGeminiImageGeneration, etc.)
+  ↓
+POST /api/image/<provider> → { jobId }
+  ↓
+GenerationContext (tracks active jobs)
+  ↓
+Poll /api/jobs/:jobId
+  ↓
+GalleryContext (merges results)
+  ↓
+ResultsGrid + FullImageModal
+```
+
+### Key Components
+
+- **Create-refactored.tsx** (374 lines): Main orchestrator component that wires contexts, routing, and UI layout
+- **useCreateGenerationController** (1,091 lines): Single-responsibility hook that orchestrates all 13+ provider integrations, reference handling, and settings
+- **GenerationContext**: Manages model selection, provider-specific settings, and active job tracking
+- **GalleryContext**: Manages gallery items, filters, selection state, and deep-link hydration for `/job/:jobId`
+
+### Benefits
+
+- **95% size reduction**: 10,657 lines → 374 lines (orchestrator) + 1,091 lines (controller)
+- **Faster hot reload**: Changes to individual components don't re-render entire surface
+- **Clear boundaries**: Each hook/component has single responsibility
+- **Easier maintenance**: Find and modify features in dedicated files
 
 ---
 

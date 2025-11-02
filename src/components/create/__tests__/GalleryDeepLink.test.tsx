@@ -53,9 +53,9 @@ function Probe() {
 }
 
 describe('Gallery deep link hydration', () => {
-  it('opens full-size modal for /job/:jobId in v2 mode', async () => {
+  it('opens full-size modal for /job/:jobId', async () => {
     mockLocation.pathname = '/job/abc';
-    mockLocation.search = '?v2=1';
+    mockLocation.search = '';
 
     render(
       <GenerationProvider>
