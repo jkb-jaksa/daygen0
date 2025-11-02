@@ -40,7 +40,8 @@ export function useGalleryActions() {
     setDeleteConfirmation,
     setPublishConfirmation,
     setUnpublishConfirmation,
-    setDownloadConfirmation,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    setDownloadConfirmation: _setDownloadConfirmation,
   } = useGallery();
   
   // Track the most recent non-job route for reliable unwinding

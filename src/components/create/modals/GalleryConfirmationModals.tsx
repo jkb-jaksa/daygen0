@@ -82,7 +82,8 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
   newFolderDialog,
   newFolderName,
   folders,
-  returnToFolderDialog,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  returnToFolderDialog: _returnToFolderDialog,
   onNewFolderNameChange,
   onNewFolderCreate,
   onNewFolderCancel,
