@@ -8,9 +8,11 @@ const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
 const GalleryFilters = lazy(() => import('./GalleryFilters'));
+const GalleryConfirmationModals = lazy(() => import('./modals/GalleryConfirmationModals'));
 import CreateSidebar from './CreateSidebar';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
+import { useGalleryActions } from './hooks/useGalleryActions';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
@@ -67,7 +69,7 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
 };
 
 export default function CreateRefactored() {
-  const { state, setImageActionMenu, setBulkActionsMenu, addImage } = useGallery();
+  const { state, setImageActionMenu, setBulkActionsMenu, addImage, setNewFolderDialog, setAddToFolderDialog } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
   const { setSelectedModel } = generation;
@@ -77,6 +79,13 @@ export default function CreateRefactored() {
   const { setFooterVisible } = useFooter();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
+  const galleryActions = useGalleryActions();
+
+  // Folder-specific local state
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
+  const [returnToFolderDialog, setReturnToFolderDialog] = useState(false);
 
   // Development-only: Add dummy image for testing
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -226,6 +235,85 @@ export default function CreateRefactored() {
       textarea.focus();
     }
   }, []);
+
+  // Folder handlers
+  const handleNewFolderNameChange = useCallback((name: string) => {
+    setNewFolderName(name);
+  }, []);
+
+  const handleNewFolderCreate = useCallback(() => {
+    // TODO: Implement folder creation logic
+    console.log('Create folder:', newFolderName);
+    setNewFolderDialog(false);
+    setNewFolderName('');
+    if (returnToFolderDialog) {
+      setReturnToFolderDialog(false);
+      setAddToFolderDialog(true);
+    }
+  }, [newFolderName, returnToFolderDialog, setNewFolderDialog, setAddToFolderDialog]);
+
+  const handleNewFolderCancel = useCallback(() => {
+    setNewFolderDialog(false);
+    setNewFolderName('');
+    if (returnToFolderDialog) {
+      setReturnToFolderDialog(false);
+      setAddToFolderDialog(true);
+    }
+  }, [returnToFolderDialog, setNewFolderDialog, setAddToFolderDialog]);
+
+  const handleAddToFolderSelect = useCallback((folderId: string | null) => {
+    setSelectedFolder(folderId);
+  }, []);
+
+  const handleAddToFolderConfirm = useCallback(() => {
+    // TODO: Implement add to folder logic
+    console.log('Add to folder:', selectedFolder);
+    setAddToFolderDialog(false);
+    setSelectedFolder(null);
+  }, [selectedFolder, setAddToFolderDialog]);
+
+  const handleAddToFolderCancel = useCallback(() => {
+    setAddToFolderDialog(false);
+    setSelectedFolder(null);
+  }, [setAddToFolderDialog]);
+
+  const handleOpenNewFolderDialog = useCallback(() => {
+    setAddToFolderDialog(false);
+    setReturnToFolderDialog(true);
+    setNewFolderDialog(true);
+  }, [setAddToFolderDialog, setNewFolderDialog]);
+
+  const handleFolderThumbnailUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setFolderThumbnailFile(file);
+    }
+  }, []);
+
+  const handleFolderThumbnailConfirmImage = useCallback((folderId: string, imageUrl: string) => {
+    // TODO: Set folder thumbnail from existing image
+    console.log('Set folder thumbnail:', { folderId, imageUrl });
+  }, []);
+
+  const handleFolderThumbnailSubmit = useCallback(() => {
+    // TODO: Upload folder thumbnail
+    console.log('Upload folder thumbnail:', folderThumbnailFile);
+    setFolderThumbnailFile(null);
+  }, [folderThumbnailFile]);
+
+  const handleFolderThumbnailCancel = useCallback(() => {
+    setFolderThumbnailFile(null);
+  }, []);
+
+  const handleFolderThumbnailConfirmApply = useCallback(() => {
+    // TODO: Apply confirmed folder thumbnail
+    console.log('Apply folder thumbnail');
+  }, []);
+
+  const handleFolderThumbnailConfirmCancel = useCallback(() => {
+    // TODO: Cancel folder thumbnail confirmation
+    console.log('Cancel folder thumbnail confirmation');
+  }, []);
   
   return (
     <header
@@ -367,6 +455,45 @@ export default function CreateRefactored() {
       </Suspense>
       <Suspense fallback={null}>
         <BulkActionsMenu open={Boolean(bulkActionsMenu)} onClose={handleBulkMenuClose} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <GalleryConfirmationModals
+          deleteConfirmation={state.deleteConfirmation}
+          onDeleteConfirm={galleryActions.confirmDeleteImage}
+          onDeleteCancel={galleryActions.cancelDelete}
+          publishConfirmation={state.publishConfirmation}
+          onPublishConfirm={galleryActions.confirmPublish}
+          onPublishCancel={galleryActions.cancelPublish}
+          unpublishConfirmation={state.unpublishConfirmation}
+          onUnpublishConfirm={galleryActions.confirmUnpublish}
+          onUnpublishCancel={galleryActions.cancelUnpublish}
+          downloadConfirmation={state.downloadConfirmation}
+          onDownloadConfirm={() => console.log('Download confirmed')}
+          onDownloadCancel={() => console.log('Download cancelled')}
+          newFolderDialog={state.newFolderDialog}
+          newFolderName={newFolderName}
+          folders={state.folders}
+          returnToFolderDialog={returnToFolderDialog}
+          onNewFolderNameChange={handleNewFolderNameChange}
+          onNewFolderCreate={handleNewFolderCreate}
+          onNewFolderCancel={handleNewFolderCancel}
+          addToFolderDialog={state.addToFolderDialog}
+          selectedFolder={selectedFolder}
+          onAddToFolderSelect={handleAddToFolderSelect}
+          onAddToFolderConfirm={handleAddToFolderConfirm}
+          onAddToFolderCancel={handleAddToFolderCancel}
+          onOpenNewFolderDialog={handleOpenNewFolderDialog}
+          folderThumbnailDialog={state.folderThumbnailDialog}
+          folderThumbnailFile={folderThumbnailFile}
+          combinedLibraryImages={[...state.images, ...state.videos]}
+          onFolderThumbnailUpload={handleFolderThumbnailUpload}
+          onFolderThumbnailConfirmImage={handleFolderThumbnailConfirmImage}
+          onFolderThumbnailSubmit={handleFolderThumbnailSubmit}
+          onFolderThumbnailCancel={handleFolderThumbnailCancel}
+          folderThumbnailConfirm={state.folderThumbnailConfirm}
+          onFolderThumbnailConfirmApply={handleFolderThumbnailConfirmApply}
+          onFolderThumbnailConfirmCancel={handleFolderThumbnailConfirmCancel}
+        />
       </Suspense>
     </header>
   );

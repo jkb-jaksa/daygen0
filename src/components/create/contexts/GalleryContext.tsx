@@ -10,7 +10,16 @@ import React, {
 import { useLocation } from 'react-router-dom';
 import { useGalleryImages } from '../../../hooks/useGalleryImages';
 import { useGeneration } from './GenerationContext';
-import type { GalleryImageLike, GalleryVideoLike, GalleryFilters, Folder } from '../types';
+import type {
+  GalleryImageLike,
+  GalleryVideoLike,
+  GalleryFilters,
+  Folder,
+  DeleteConfirmationState,
+  PublishConfirmationState,
+  UnpublishConfirmationState,
+  DownloadConfirmationState,
+} from '../types';
 
 type GalleryState = {
   images: GalleryImageLike[];
@@ -26,6 +35,12 @@ type GalleryState = {
   bulkActionsMenu: { anchor: HTMLElement | null } | null;
   folderThumbnailDialog: { show: boolean; folderId: string | null };
   folderThumbnailConfirm: { show: boolean; folderId: string | null; imageUrl: string | null };
+  deleteConfirmation: DeleteConfirmationState;
+  publishConfirmation: PublishConfirmationState;
+  unpublishConfirmation: UnpublishConfirmationState;
+  downloadConfirmation: DownloadConfirmationState;
+  newFolderDialog: boolean;
+  addToFolderDialog: boolean;
 };
 
 type GalleryAction =
@@ -52,7 +67,13 @@ type GalleryAction =
   | { type: 'SET_IMAGE_ACTION_MENU'; payload: { id: string; anchor: HTMLElement | null } | null }
   | { type: 'SET_BULK_ACTIONS_MENU'; payload: { anchor: HTMLElement | null } | null }
   | { type: 'SET_FOLDER_THUMBNAIL_DIALOG'; payload: { show: boolean; folderId: string | null } }
-  | { type: 'SET_FOLDER_THUMBNAIL_CONFIRM'; payload: { show: boolean; folderId: string | null; imageUrl: string | null } };
+  | { type: 'SET_FOLDER_THUMBNAIL_CONFIRM'; payload: { show: boolean; folderId: string | null; imageUrl: string | null } }
+  | { type: 'SET_DELETE_CONFIRMATION'; payload: DeleteConfirmationState }
+  | { type: 'SET_PUBLISH_CONFIRMATION'; payload: PublishConfirmationState }
+  | { type: 'SET_UNPUBLISH_CONFIRMATION'; payload: UnpublishConfirmationState }
+  | { type: 'SET_DOWNLOAD_CONFIRMATION'; payload: DownloadConfirmationState }
+  | { type: 'SET_NEW_FOLDER_DIALOG'; payload: boolean }
+  | { type: 'SET_ADD_TO_FOLDER_DIALOG'; payload: boolean };
 
 const initialFilters: GalleryFilters = {
   liked: false,
@@ -79,6 +100,12 @@ const initialState: GalleryState = {
   bulkActionsMenu: null,
   folderThumbnailDialog: { show: false, folderId: null },
   folderThumbnailConfirm: { show: false, folderId: null, imageUrl: null },
+  deleteConfirmation: { show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null },
+  publishConfirmation: { show: false, count: 0 },
+  unpublishConfirmation: { show: false, count: 0 },
+  downloadConfirmation: { show: false, count: 0 },
+  newFolderDialog: false,
+  addToFolderDialog: false,
 };
 
 const JOB_ROUTE_PREFIX = '/job/';
@@ -263,6 +290,18 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
       return { ...state, folderThumbnailDialog: action.payload };
     case 'SET_FOLDER_THUMBNAIL_CONFIRM':
       return { ...state, folderThumbnailConfirm: action.payload };
+    case 'SET_DELETE_CONFIRMATION':
+      return { ...state, deleteConfirmation: action.payload };
+    case 'SET_PUBLISH_CONFIRMATION':
+      return { ...state, publishConfirmation: action.payload };
+    case 'SET_UNPUBLISH_CONFIRMATION':
+      return { ...state, unpublishConfirmation: action.payload };
+    case 'SET_DOWNLOAD_CONFIRMATION':
+      return { ...state, downloadConfirmation: action.payload };
+    case 'SET_NEW_FOLDER_DIALOG':
+      return { ...state, newFolderDialog: action.payload };
+    case 'SET_ADD_TO_FOLDER_DIALOG':
+      return { ...state, addToFolderDialog: action.payload };
     default:
       return state;
   }
@@ -295,6 +334,12 @@ type GalleryContextType = {
   setBulkActionsMenu: (menu: { anchor: HTMLElement | null } | null) => void;
   setFolderThumbnailDialog: (dialog: { show: boolean; folderId: string | null }) => void;
   setFolderThumbnailConfirm: (confirm: { show: boolean; folderId: string | null; imageUrl: string | null }) => void;
+  setDeleteConfirmation: (confirmation: DeleteConfirmationState) => void;
+  setPublishConfirmation: (confirmation: PublishConfirmationState) => void;
+  setUnpublishConfirmation: (confirmation: UnpublishConfirmationState) => void;
+  setDownloadConfirmation: (confirmation: DownloadConfirmationState) => void;
+  setNewFolderDialog: (open: boolean) => void;
+  setAddToFolderDialog: (open: boolean) => void;
   filteredItems: (GalleryImageLike | GalleryVideoLike)[];
   selectedCount: number;
   hasSelection: boolean;
@@ -486,6 +531,30 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const setFolderThumbnailConfirm = useCallback((confirm: { show: boolean; folderId: string | null; imageUrl: string | null }) => {
     dispatch({ type: 'SET_FOLDER_THUMBNAIL_CONFIRM', payload: confirm });
+  }, []);
+
+  const setDeleteConfirmation = useCallback((confirmation: DeleteConfirmationState) => {
+    dispatch({ type: 'SET_DELETE_CONFIRMATION', payload: confirmation });
+  }, []);
+
+  const setPublishConfirmation = useCallback((confirmation: PublishConfirmationState) => {
+    dispatch({ type: 'SET_PUBLISH_CONFIRMATION', payload: confirmation });
+  }, []);
+
+  const setUnpublishConfirmation = useCallback((confirmation: UnpublishConfirmationState) => {
+    dispatch({ type: 'SET_UNPUBLISH_CONFIRMATION', payload: confirmation });
+  }, []);
+
+  const setDownloadConfirmation = useCallback((confirmation: DownloadConfirmationState) => {
+    dispatch({ type: 'SET_DOWNLOAD_CONFIRMATION', payload: confirmation });
+  }, []);
+
+  const setNewFolderDialog = useCallback((open: boolean) => {
+    dispatch({ type: 'SET_NEW_FOLDER_DIALOG', payload: open });
+  }, []);
+
+  const setAddToFolderDialog = useCallback((open: boolean) => {
+    dispatch({ type: 'SET_ADD_TO_FOLDER_DIALOG', payload: open });
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -681,6 +750,12 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setBulkActionsMenu,
     setFolderThumbnailDialog,
     setFolderThumbnailConfirm,
+    setDeleteConfirmation,
+    setPublishConfirmation,
+    setUnpublishConfirmation,
+    setDownloadConfirmation,
+    setNewFolderDialog,
+    setAddToFolderDialog,
     filteredItems,
     selectedCount,
     hasSelection,
@@ -716,6 +791,12 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setBulkActionsMenu,
     setFolderThumbnailDialog,
     setFolderThumbnailConfirm,
+    setDeleteConfirmation,
+    setPublishConfirmation,
+    setUnpublishConfirmation,
+    setDownloadConfirmation,
+    setNewFolderDialog,
+    setAddToFolderDialog,
     filteredItems,
     selectedCount,
     hasSelection,

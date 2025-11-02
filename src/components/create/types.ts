@@ -131,3 +131,36 @@ export type BulkActionsMenuState = { anchor: HTMLElement | null } | null;
 export type FolderThumbnailDialogState = { show: boolean; folderId: string | null };
 
 export type FolderThumbnailConfirmState = { show: boolean; folderId: string | null; imageUrl: string | null };
+
+export type DeleteConfirmationState = {
+  show: boolean;
+  imageUrl: string | null;
+  imageUrls: string[] | null;
+  uploadId: string | null;
+  folderId: string | null;
+  source: 'gallery' | 'inspirations' | null;
+};
+
+export type PublishConfirmationState = {
+  show: boolean;
+  count: number;
+  imageUrl?: string;
+};
+
+export type UnpublishConfirmationState = {
+  show: boolean;
+  count: number;
+  imageUrl?: string;
+};
+
+export type DownloadConfirmationState = {
+  show: boolean;
+  count: number;
+};
+
+export type UploadItem = {
+  id: string;
+  file: File;
+  preview: string;
+  timestamp: string;
+};

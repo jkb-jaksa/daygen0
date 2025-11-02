@@ -26,6 +26,7 @@ export function useGalleryActions() {
   const location = useLocation<{ jobOrigin?: string } | null>();
   const fallbackRouteRef = useRef<string>('/create/image');
   const {
+    state,
     setImageActionMenu,
     setBulkActionsMenu,
     removeVideo,
@@ -36,6 +37,10 @@ export function useGalleryActions() {
     filteredItems,
     setSelectedItems,
     clearSelection,
+    setDeleteConfirmation,
+    setPublishConfirmation,
+    setUnpublishConfirmation,
+    setDownloadConfirmation,
   } = useGallery();
   
   // Track the most recent non-job route for reliable unwinding
@@ -188,19 +193,66 @@ export function useGalleryActions() {
     }
   }, []);
   
-  // Handle delete image
-  const handleDeleteImage = useCallback(async (imageId: string) => {
+  // Show delete confirmation for single image
+  const handleDeleteImage = useCallback((imageUrl: string) => {
+    setDeleteConfirmation({
+      show: true,
+      imageUrl,
+      imageUrls: null,
+      uploadId: null,
+      folderId: null,
+      source: 'gallery',
+    });
+  }, [setDeleteConfirmation]);
+
+  // Confirm delete (actual deletion)
+  const confirmDeleteImage = useCallback(async () => {
+    const { deleteConfirmation } = state;
     try {
-      const success = await deleteGalleryImage(imageId);
-      if (success) {
-        debugLog('Deleted image:', imageId);
-      } else {
-        debugError('Failed to delete image via API:', imageId);
+      if (deleteConfirmation.imageUrl) {
+        const success = await deleteGalleryImage(deleteConfirmation.imageUrl);
+        if (success) {
+          debugLog('Deleted image:', deleteConfirmation.imageUrl);
+        } else {
+          debugError('Failed to delete image via API:', deleteConfirmation.imageUrl);
+        }
+      } else if (deleteConfirmation.imageUrls) {
+        const results = await Promise.all(
+          deleteConfirmation.imageUrls.map(id => deleteGalleryImage(id))
+        );
+        const failedIds = deleteConfirmation.imageUrls.filter((_, index) => !results[index]);
+
+        if (failedIds.length > 0) {
+          debugError('Some images failed to delete:', failedIds);
+        } else {
+          debugLog('Bulk deleted images:', deleteConfirmation.imageUrls);
+        }
       }
     } catch (error) {
       debugError('Error deleting image:', error);
+    } finally {
+      setDeleteConfirmation({
+        show: false,
+        imageUrl: null,
+        imageUrls: null,
+        uploadId: null,
+        folderId: null,
+        source: null,
+      });
     }
-  }, [deleteGalleryImage]);
+  }, [state, deleteGalleryImage, setDeleteConfirmation]);
+
+  // Cancel delete
+  const cancelDelete = useCallback(() => {
+    setDeleteConfirmation({
+      show: false,
+      imageUrl: null,
+      imageUrls: null,
+      uploadId: null,
+      folderId: null,
+      source: null,
+    });
+  }, [setDeleteConfirmation]);
   
   // Handle delete video
   const handleDeleteVideo = useCallback(async (videoId: string) => {
@@ -213,20 +265,70 @@ export function useGalleryActions() {
     }
   }, [removeVideo]);
   
-  // Handle toggle public
-  const handleTogglePublic = useCallback(async (item: GalleryImageLike | GalleryVideoLike) => {
-    try {
-      const itemId = getItemIdentifier(item);
-      if (!itemId) {
-        debugError('Cannot toggle public: item has no identifier');
-        return;
-      }
-      await updateImage(itemId, { isPublic: !item.isPublic });
-      debugLog('Toggled public status for item:', itemId);
-    } catch (error) {
-      debugError('Error toggling public status:', error);
+  // Show publish/unpublish confirmation for single item
+  const handleTogglePublic = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
+    const itemId = getItemIdentifier(item);
+    if (!itemId) {
+      debugError('Cannot toggle public: item has no identifier');
+      return;
     }
-  }, [updateImage]);
+
+    if (item.isPublic) {
+      // Currently public, show unpublish confirmation
+      setUnpublishConfirmation({
+        show: true,
+        count: 1,
+        imageUrl: itemId,
+      });
+    } else {
+      // Currently private, show publish confirmation
+      setPublishConfirmation({
+        show: true,
+        count: 1,
+        imageUrl: itemId,
+      });
+    }
+  }, [setPublishConfirmation, setUnpublishConfirmation]);
+
+  // Confirm publish (actual action)
+  const confirmPublish = useCallback(async () => {
+    const { publishConfirmation } = state;
+    try {
+      if (publishConfirmation.imageUrl) {
+        await updateImage(publishConfirmation.imageUrl, { isPublic: true });
+        debugLog('Published item:', publishConfirmation.imageUrl);
+      }
+    } catch (error) {
+      debugError('Error publishing item:', error);
+    } finally {
+      setPublishConfirmation({ show: false, count: 0 });
+    }
+  }, [state, updateImage, setPublishConfirmation]);
+
+  // Cancel publish
+  const cancelPublish = useCallback(() => {
+    setPublishConfirmation({ show: false, count: 0 });
+  }, [setPublishConfirmation]);
+
+  // Confirm unpublish (actual action)
+  const confirmUnpublish = useCallback(async () => {
+    const { unpublishConfirmation } = state;
+    try {
+      if (unpublishConfirmation.imageUrl) {
+        await updateImage(unpublishConfirmation.imageUrl, { isPublic: false });
+        debugLog('Unpublished item:', unpublishConfirmation.imageUrl);
+      }
+    } catch (error) {
+      debugError('Error unpublishing item:', error);
+    } finally {
+      setUnpublishConfirmation({ show: false, count: 0 });
+    }
+  }, [state, updateImage, setUnpublishConfirmation]);
+
+  // Cancel unpublish
+  const cancelUnpublish = useCallback(() => {
+    setUnpublishConfirmation({ show: false, count: 0 });
+  }, [setUnpublishConfirmation]);
 
   // Handle toggle like
   const handleToggleLike = useCallback(async (item: GalleryImageLike | GalleryVideoLike) => {
@@ -243,49 +345,58 @@ export function useGalleryActions() {
     }
   }, [updateImage]);
 
-  // Handle bulk delete
-  const handleBulkDelete = useCallback(async (imageIds: string[]) => {
-    try {
-      const results = await Promise.all(imageIds.map(id => deleteGalleryImage(id)));
-      const failedIds = imageIds.filter((_, index) => !results[index]);
-
-      if (failedIds.length > 0) {
-        debugError('Some images failed to delete:', failedIds);
-      } else {
-        debugLog('Bulk deleted images:', imageIds);
-      }
-    } catch (error) {
-      debugError('Error bulk deleting images:', error);
-    }
-  }, [deleteGalleryImage]);
+  // Show delete confirmation for bulk delete
+  const handleBulkDelete = useCallback((imageIds: string[]) => {
+    setDeleteConfirmation({
+      show: true,
+      imageUrl: null,
+      imageUrls: imageIds,
+      uploadId: null,
+      folderId: null,
+      source: 'gallery',
+    });
+  }, [setDeleteConfirmation]);
   
-  // Handle bulk toggle public
-  const handleBulkTogglePublic = useCallback(async (imageIds: string[], targetPublic?: boolean) => {
-    try {
-      // If targetPublic is provided, set to that value; otherwise toggle each item individually
-      // Note: For proper toggle, we'd need access to current state, but for simplicity,
-      // we'll toggle them all to the opposite of the first item's state or use targetPublic
-      if (targetPublic !== undefined) {
-        await Promise.all(imageIds.map(id => updateImage(id, { isPublic: targetPublic })));
-      } else {
-        // Toggle each item individually (requires checking current state per item)
-        await Promise.all(imageIds.map(id => {
-          // Find the item to get its current state
-          const item = filteredItems.find(i => {
-            const itemId = getItemIdentifier(i);
-            return itemId === id;
-          });
-          if (item) {
-            return updateImage(id, { isPublic: !item.isPublic });
-          }
-          return Promise.resolve();
-        }));
-      }
-      debugLog('Bulk toggled public status for images:', imageIds);
-    } catch (error) {
-      debugError('Error bulk toggling public status:', error);
+  // Show publish/unpublish confirmation for bulk action
+  const handleBulkTogglePublic = useCallback((imageIds: string[], targetPublic?: boolean) => {
+    if (targetPublic === true || targetPublic === undefined) {
+      // Show publish confirmation
+      setPublishConfirmation({
+        show: true,
+        count: imageIds.length,
+      });
+    } else {
+      // Show unpublish confirmation
+      setUnpublishConfirmation({
+        show: true,
+        count: imageIds.length,
+      });
     }
-  }, [updateImage, filteredItems]);
+  }, [setPublishConfirmation, setUnpublishConfirmation]);
+
+  // Confirm bulk publish
+  const confirmBulkPublish = useCallback(async (imageIds: string[]) => {
+    try {
+      await Promise.all(imageIds.map(id => updateImage(id, { isPublic: true })));
+      debugLog('Bulk published images:', imageIds);
+    } catch (error) {
+      debugError('Error bulk publishing images:', error);
+    } finally {
+      setPublishConfirmation({ show: false, count: 0 });
+    }
+  }, [updateImage, setPublishConfirmation]);
+
+  // Confirm bulk unpublish
+  const confirmBulkUnpublish = useCallback(async (imageIds: string[]) => {
+    try {
+      await Promise.all(imageIds.map(id => updateImage(id, { isPublic: false })));
+      debugLog('Bulk unpublished images:', imageIds);
+    } catch (error) {
+      debugError('Error bulk unpublishing images:', error);
+    } finally {
+      setUnpublishConfirmation({ show: false, count: 0 });
+    }
+  }, [updateImage, setUnpublishConfirmation]);
   
   // Handle bulk move to folder
   const handleBulkMoveToFolder = useCallback(async (imageIds: string[], folderId: string) => {
@@ -425,6 +536,16 @@ export function useGalleryActions() {
     handleCopyImageUrl,
     handleSelectAll,
     handleClearSelection,
+    
+    // Confirmation handlers
+    confirmDeleteImage,
+    cancelDelete,
+    confirmPublish,
+    cancelPublish,
+    confirmUnpublish,
+    cancelUnpublish,
+    confirmBulkPublish,
+    confirmBulkUnpublish,
     
     // Edit menu actions
     handleEditMenuSelect,
