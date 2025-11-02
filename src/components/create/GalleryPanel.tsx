@@ -109,11 +109,13 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
               dropdownRef.current = node;
               setScrollableRef(node);
             }}
-            className={`fixed rounded-lg shadow-lg z-[9999] max-h-64 overflow-y-auto ${glass.promptDark}`}
+            className={`fixed rounded-lg shadow-lg z-[9999] ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,
               width: pos.width,
+              maxHeight: '384px',
+              overflowY: 'auto',
             }}
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
@@ -250,11 +252,13 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
         createPortal(
           <div
             ref={dropdownRef}
-            className={`fixed rounded-lg shadow-lg z-[9999] max-h-64 overflow-y-auto ${glass.promptDark}`}
+            className={`fixed rounded-lg shadow-lg z-[9999] ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,
               width: pos.width,
+              maxHeight: '384px',
+              overflowY: 'auto',
             }}
           >
             {options.map(option => {
