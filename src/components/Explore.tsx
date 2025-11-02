@@ -750,13 +750,6 @@ const CustomMultiSelect: React.FC<{
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -797,6 +790,23 @@ const CustomMultiSelect: React.FC<{
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
+  // Lock body scroll when dropdown is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
   const toggleOption = (optionValue: string) => {
     if (values.includes(optionValue)) {
       onChange(values.filter(v => v !== optionValue));
@@ -827,21 +837,13 @@ const CustomMultiSelect: React.FC<{
       {isOpen &&
         createPortal(
           <div
-            ref={(node) => {
-              dropdownRef.current = node;
-              setScrollableRef(node);
-            }}
+            ref={dropdownRef}
             className={`fixed rounded-lg shadow-lg z-[9999] max-h-64 overflow-y-auto ${glass.promptDark}`}
             style={{
               top: pos.top,
               left: pos.left,
               width: pos.width,
             }}
-            onWheel={handleWheel}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchEnd}
           >
             {options.map(option => {
               const isSelected = values.includes(option.value);
