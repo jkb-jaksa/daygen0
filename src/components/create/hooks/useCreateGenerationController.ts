@@ -253,11 +253,13 @@ export function useCreateGenerationController(): CreateGenerationController {
 
   useEffect(() => {
     avatarHandlers.loadStoredAvatars();
-  }, [avatarHandlers.loadStoredAvatars]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avatarHandlers.loadStoredAvatars]); // Function reference is stable
 
   useEffect(() => {
     productHandlers.loadStoredProducts();
-  }, [productHandlers.loadStoredProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productHandlers.loadStoredProducts]); // Function reference is stable
 
   const selectedAvatarId = avatarHandlers.selectedAvatar?.id;
   const activeAvatarImageId = avatarHandlers.activeAvatarImageId ?? undefined;

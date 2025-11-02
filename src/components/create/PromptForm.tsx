@@ -35,7 +35,7 @@ import { buttons, glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
-import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/StyleModalProvider';
+import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -493,7 +493,8 @@ const PromptForm = memo<PromptFormProps>(
           requestAnimationFrame(retry);
         }
       }
-    }, [searchParams.toString()]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams.toString()]); // Using toString() to track query param changes without object identity issues
 
     // Listen for global style modal open/close events (when already on create/image page)
     useEffect(() => {
@@ -516,7 +517,8 @@ const PromptForm = memo<PromptFormProps>(
         window.removeEventListener(STYLE_MODAL_OPEN_EVENT, handleOpenEvent);
         window.removeEventListener(STYLE_MODAL_CLOSE_EVENT, handleCloseEvent);
       };
-    }, [styleHandlers]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [styleHandlers.isStyleModalOpen, styleHandlers.handleStyleModalOpen, styleHandlers.handleStyleModalClose]);
 
     useLayoutEffect(() => {
       adjustPromptTextareaHeight();

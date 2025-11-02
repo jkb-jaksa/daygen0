@@ -2,10 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { StyleModalContext } from "./StyleModalContext";
-
-// Event name for communicating with PromptForm when already on create/image page
-const STYLE_MODAL_OPEN_EVENT = "styleModal:open";
-const STYLE_MODAL_CLOSE_EVENT = "styleModal:close";
+import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from "./styleModalEvents";
 
 export function StyleModalProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -52,7 +49,4 @@ export function StyleModalProvider({ children }: { children: ReactNode }) {
 
   return <StyleModalContext.Provider value={value}>{children}</StyleModalContext.Provider>;
 }
-
-// Export event names for use in PromptForm
-export { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT };
 
