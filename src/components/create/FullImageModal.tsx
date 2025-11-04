@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
@@ -10,6 +11,8 @@ import AspectRatioBadge from '../shared/AspectRatioBadge';
 import { debugError } from '../../utils/debug';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
+import { useToast } from '../../hooks/useToast';
+import { loadSavedPrompts } from '../../lib/savedPrompts';
 import CreateSidebar from './CreateSidebar';
 
 // Lazy load VerticalGalleryNav
@@ -52,7 +55,8 @@ const FullImageModal = memo(() => {
   
   // Save prompt functionality
   const { user } = useAuth();
-  const { savePrompt, isPromptSaved } = useSavedPrompts(user?.id || 'guest');
+  const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(user?.id || 'guest');
+  const { showToast } = useToast();
   
   const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
   const open = isFullSizeOpen;
@@ -314,20 +318,62 @@ const FullImageModal = memo(() => {
     if (fullSizeImage?.prompt) {
       try {
         await navigator.clipboard.writeText(fullSizeImage.prompt);
-        // Could add a toast notification here if needed
+        showToast('Prompt copied!');
       } catch (error) {
         debugError('Failed to copy prompt:', error);
+        showToast('Failed to copy prompt');
       }
     }
-  }, [fullSizeImage]);
+  }, [fullSizeImage, showToast]);
 
   // Handle save prompt
   const handleSavePrompt = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (fullSizeImage?.prompt) {
-      savePrompt(fullSizeImage.prompt);
+      try {
+        const wasSaved = isPromptSaved(fullSizeImage.prompt);
+        if (wasSaved) {
+          // Find the saved prompt and remove it
+          const savedPrompts = loadSavedPrompts(user?.id || 'guest');
+          const existing = savedPrompts.find(p => p.text.toLowerCase() === fullSizeImage.prompt.trim().toLowerCase());
+          if (existing) {
+            removePrompt(existing.id);
+            showToast('Prompt unsaved');
+          }
+        } else {
+          savePrompt(fullSizeImage.prompt);
+          showToast('Prompt saved!');
+        }
+      } catch (error) {
+        debugError('Failed to save prompt:', error);
+        showToast('Failed to save prompt');
+      }
     }
-  }, [fullSizeImage, savePrompt]);
+  }, [fullSizeImage, savePrompt, isPromptSaved, showToast, user?.id, removePrompt]);
+
+  // Tooltip helper functions (viewport-based positioning for portaled tooltips)
+  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    
+    // Get button position in viewport
+    const rect = target.getBoundingClientRect();
+    tooltip.style.top = `${rect.top - 28}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+    
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
 
   if (!open || !fullSizeImage) return null;
   
@@ -543,30 +589,43 @@ const FullImageModal = memo(() => {
             >
               <div className="flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-sm font-raleway leading-relaxed">
+                  <div className="text-sm font-raleway leading-relaxed relative">
                     {fullSizeImage.prompt || 'Generated Image'}
-                    {fullSizeImage.prompt && (
-                      <>
-                        <button
-                          onClick={handleCopyPrompt}
-                          className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
-                          title="Copy prompt"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={handleSavePrompt}
-                          className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
-                          title={isPromptSaved(fullSizeImage.prompt) ? "Prompt saved" : "Save prompt"}
-                        >
-                          {isPromptSaved(fullSizeImage.prompt) ? (
-                            <Bookmark className="w-3 h-3 fill-current" />
-                          ) : (
-                            <BookmarkPlus className="w-3 h-3" />
-                          )}
-                        </button>
-                      </>
-                    )}
+                    {fullSizeImage.prompt && (() => {
+                      const tooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
+                      return (
+                        <>
+                          <button
+                            onClick={handleCopyPrompt}
+                            onMouseEnter={(e) => {
+                              showHoverTooltip(e.currentTarget, tooltipId);
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip(tooltipId);
+                            }}
+                            className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={handleSavePrompt}
+                            onMouseEnter={(e) => {
+                              showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                            }}
+                            onMouseLeave={() => {
+                              hideHoverTooltip(`save-${tooltipId}`);
+                            }}
+                            className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                          >
+                            {isPromptSaved(fullSizeImage.prompt) ? (
+                              <Bookmark className="w-3 h-3 fill-current" />
+                            ) : (
+                              <BookmarkPlus className="w-3 h-3" />
+                            )}
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="mt-2 flex justify-center items-center gap-1 md:gap-2">
                     <div className="flex items-center gap-1 md:gap-2">
@@ -593,6 +652,35 @@ const FullImageModal = memo(() => {
                 </div>
               </div>
             </div>
+
+            {/* Tooltips rendered via portal to avoid clipping */}
+            {fullSizeImage.prompt && (() => {
+              const tooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={tooltipId}
+                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                      style={{ zIndex: 9999 }}
+                    >
+                      Copy prompt
+                    </div>,
+                    document.body
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={`save-${tooltipId}`}
+                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                      style={{ zIndex: 9999 }}
+                    >
+                      {isPromptSaved(fullSizeImage.prompt) ? 'Prompt saved' : 'Save prompt'}
+                    </div>,
+                    document.body
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 

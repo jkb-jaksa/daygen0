@@ -89,7 +89,7 @@ const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, 
   <div className="relative inline-flex items-center group">
     {children}
     {text && (
-      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 group-hover:opacity-100 transition-opacity duration-100 shadow-lg z-50">
+      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
         {text}
       </div>
     )}
