@@ -43,7 +43,7 @@ import {
   Crown,
 } from "lucide-react";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { debugError, debugLog, debugWarn } from "../utils/debug";
+import { debugError, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
