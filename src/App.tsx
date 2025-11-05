@@ -251,7 +251,7 @@ function Home() {
               </div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
-                  className="rounded-3xl p-4 lg:h-full"
+                  className="rounded-3xl p-4 lg:px-0 lg:h-full"
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >
@@ -259,16 +259,30 @@ function Home() {
                     {HOME_CATEGORIES.map((category) => {
                       const isActive = category.id === activeCategory;
                       const Icon = category.Icon;
+                      
+                      // Color-specific shadow mappings for each category
+                      const shadowColorMap: Record<string, string> = {
+                        text: "rgba(251, 191, 36, 0.15)",
+                        image: "rgba(239, 68, 68, 0.15)",
+                        video: "rgba(59, 130, 246, 0.15)",
+                        audio: "rgba(34, 211, 238, 0.15)",
+                      };
+                      
+                      const insetShadow = isActive
+                        ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
+                        : {};
+                      
                       return (
                         <li key={category.id}>
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
+                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-6 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                               isActive
                                 ? "border border-theme-dark text-theme-text"
                                 : "border border-transparent text-theme-white hover:text-theme-text"
                             }`}
+                            style={insetShadow}
                           >
                             {isActive && (
                               <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
