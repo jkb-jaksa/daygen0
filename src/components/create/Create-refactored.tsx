@@ -18,6 +18,8 @@ import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
 import { SIDEBAR_TOP_PADDING } from './layoutConstants';
 import { useFooter } from '../../contexts/useFooter';
+import { useAuth } from '../../auth/useAuth';
+import { InsufficientCreditsModal } from '../modals/InsufficientCreditsModal';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -77,6 +79,7 @@ export default function CreateRefactored() {
   const params = useParams<{ category?: string }>();
   const navigate = useNavigate();
   const { setFooterVisible } = useFooter();
+  const { user } = useAuth();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
   const galleryActions = useGalleryActions();
@@ -150,6 +153,12 @@ export default function CreateRefactored() {
   const isComingSoonCategory = (COMING_SOON_CATEGORY_SET as Set<string>).has(activeCategory);
   const shouldShowResultsGrid = !isComingSoonCategory && (GENERATION_CATEGORY_SET.has(activeCategory) || GALLERY_CATEGORY_SET.has(activeCategory));
   const [promptBarReservedSpace, setPromptBarReservedSpace] = useState(0);
+  const [dismissedZeroCredits, setDismissedZeroCredits] = useState(false);
+  useEffect(() => {
+    if ((user?.credits ?? 0) > 0 && dismissedZeroCredits) {
+      setDismissedZeroCredits(false);
+    }
+  }, [user?.credits, dismissedZeroCredits]);
 
   useEffect(() => {
     setActiveCategory(resolvedCategory);
@@ -322,6 +331,15 @@ export default function CreateRefactored() {
         paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`,
       }}
     >
+      {isGenerationCategory && (
+        <InsufficientCreditsModal
+          isOpen={(user?.credits ?? 0) === 0 && !dismissedZeroCredits}
+          onClose={() => setDismissedZeroCredits(true)}
+          onBuyCredits={() => navigate('/upgrade')}
+          currentCredits={user?.credits ?? 0}
+          requiredCredits={1}
+        />
+      )}
       <div className="flex flex-col items-center justify-center text-center">
         <div className="mt-6 md:mt-0 w-full text-left">
           <div className="lg:hidden">

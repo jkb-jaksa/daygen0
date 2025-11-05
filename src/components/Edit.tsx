@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
 import { createPortal } from "react-dom";
 import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Eraser, Undo2, Redo2, BookmarkIcon, Bookmark, Scan } from "lucide-react";
 import { layout, glass, buttons } from "../styles/designSystem";
+import { InsufficientCreditsModal } from "./modals/InsufficientCreditsModal";
 import { useLocation } from "react-router-dom";
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
@@ -173,6 +174,12 @@ const ModelMenuPortal: React.FC<{
 export default function Edit() {
   const location = useLocation();
   const { user } = useAuth();
+  const [dismissedZeroCredits, setDismissedZeroCredits] = useState(false);
+  useEffect(() => {
+    if ((user?.credits ?? 0) > 0 && dismissedZeroCredits) {
+      setDismissedZeroCredits(false);
+    }
+  }, [user?.credits, dismissedZeroCredits]);
   const userKey = user?.id || user?.email || "anon";
   const { history, addPrompt } = usePromptHistory(userKey, 10);
   const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
@@ -1726,10 +1733,10 @@ export default function Edit() {
           </div>
             
             {/* Generate button on right */}
-            <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : ""}>
+            <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : (user?.credits ?? 0) <= 0 ? "You have 0 credits. Buy more credits to generate" : ""}>
               <button
                 onClick={handleGenerateImage}
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || (user?.credits ?? 0) <= 0}
                 className={`btn btn-white font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
                 aria-label={`${isButtonSpinning ? "Generating..." : "Generate"} (uses 1 credit)`}
               >
@@ -1746,6 +1753,15 @@ export default function Edit() {
                 </div>
               </button>
             </Tooltip>
+            {(user?.credits ?? 0) === 0 && !dismissedZeroCredits && (
+              <InsufficientCreditsModal
+                isOpen={true}
+                onClose={() => setDismissedZeroCredits(true)}
+                onBuyCredits={() => window.location.assign('/upgrade')}
+                currentCredits={user?.credits ?? 0}
+                requiredCredits={1}
+              />
+            )}
           </div>
           
           {/* Settings Dropdown */}

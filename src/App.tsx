@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react
 import { lazy, Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
-import { useCreditWarningBanner } from "./hooks/useCreditWarningBanner";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
 import { safeResolveNext } from "./utils/navigation";
@@ -12,11 +11,7 @@ import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } fro
 import { GenerationProvider } from "./components/create/contexts/GenerationContext";
 import { StyleModalProvider } from "./contexts/StyleModalProvider";
 import { useStyleModal } from "./contexts/useStyleModal";
-const CreditWarningBanner = lazy(() =>
-  import("./components/CreditWarningBanner").then(({ CreditWarningBanner }) => ({
-    default: CreditWarningBanner,
-  })),
-);
+ 
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -418,16 +413,6 @@ function RouteFallback() {
 
 function AppContent() {
   const { isFooterVisible } = useFooter();
-  const { 
-    showLowWarning, 
-    showUrgentWarning, 
-    currentCredits, 
-    lowThreshold, 
-    urgentThreshold,
-    handleBuyCredits,
-    handleSubscribe,
-    handleDismiss
-  } = useCreditWarningBanner();
 
   return (
     <StyleModalProvider>
@@ -459,7 +444,7 @@ function AppContent() {
             <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
             <Route path="/digital-copy" element={<DigitalCopy />} />
             <Route 
-              path="/job/:jobId" 
+              path="/job/:jobId/*" 
               element={
                 <RequireAuth>
                   <Suspense fallback={<RouteFallback />}>
@@ -534,19 +519,6 @@ function AppContent() {
           <Footer />
         </Suspense>
       )}
-      
-      {/* Credit Warning Banner */}
-      <Suspense fallback={null}>
-        <CreditWarningBanner
-          isOpen={showLowWarning || showUrgentWarning}
-          isUrgent={showUrgentWarning}
-          currentCredits={currentCredits}
-          threshold={showUrgentWarning ? urgentThreshold : lowThreshold}
-          onBuyCredits={handleBuyCredits}
-          onSubscribe={handleSubscribe}
-          onDismiss={handleDismiss}
-        />
-      </Suspense>
       
       {/* Debug Panel - Development Only */}
       <Suspense fallback={null}>

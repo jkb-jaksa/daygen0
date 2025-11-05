@@ -36,6 +36,7 @@ import { debugLog } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
+import { useAuth } from '../../auth/useAuth';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -105,6 +106,7 @@ const PromptForm = memo<PromptFormProps>(
   }) => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { user } = useAuth();
     const { setFullSizeImage, setFullSizeOpen } = useGallery();
     const {
       promptHandlers,
@@ -674,14 +676,17 @@ const PromptForm = memo<PromptFormProps>(
       if (!finalPrompt.trim()) {
         return 'Enter your prompt to generate';
       }
+      if ((user?.credits ?? 0) <= 0) {
+        return 'You have 0 credits. Buy more credits to generate';
+      }
       if (!hasGenerationCapacity) {
         return `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`;
       }
       return '';
-    }, [finalPrompt, hasGenerationCapacity]);
+    }, [finalPrompt, hasGenerationCapacity, user?.credits]);
 
     const { onKeyDown } = useGenerateShortcuts({
-      enabled: hasGenerationCapacity,
+      enabled: hasGenerationCapacity && (user?.credits ?? 0) > 0,
       onGenerate: triggerGenerate,
     });
 
@@ -1230,7 +1235,7 @@ const PromptForm = memo<PromptFormProps>(
             <Tooltip text={generateButtonTooltip}>
               <button
                 onClick={triggerGenerate}
-                disabled={!canGenerate || !hasGenerationCapacity}
+                disabled={!canGenerate || !hasGenerationCapacity || (user?.credits ?? 0) <= 0}
                 className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
                 aria-label={`Generate (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
               >

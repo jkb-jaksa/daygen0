@@ -140,6 +140,17 @@ const parseFluxJobResult = (
     firstResultUrl;
 
   if (!resolvedUrl) {
+    const status = snapshot.status;
+    // Try to surface a more actionable message when the job actually failed
+    if (status === 'failed') {
+      const job = (snapshot as unknown as { job?: Record<string, unknown> }).job || {};
+      const jobError = typeof job.error === 'string' ? job.error : undefined;
+      const meta = (job.metadata as Record<string, unknown>) || {};
+      const metaError = typeof meta.error === 'string' ? meta.error : undefined;
+      const details = jobError || metaError || 'The provider reported a failure.';
+      throw new Error(`Generation failed: ${details}`);
+    }
+
     throw new Error('Job completed but no result URL was provided.');
   }
 

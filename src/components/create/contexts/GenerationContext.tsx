@@ -120,8 +120,17 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
       return { ...state, wanWatermark: action.payload };
     case 'SET_BUTTON_SPINNING':
       return { ...state, isButtonSpinning: action.payload };
-    case 'ADD_ACTIVE_JOB':
-      return { ...state, activeJobs: [...state.activeJobs, action.payload] };
+    case 'ADD_ACTIVE_JOB': {
+      const exists = state.activeJobs.some(job => job.id === action.payload.id);
+      return exists
+        ? {
+            ...state,
+            activeJobs: state.activeJobs.map(job =>
+              job.id === action.payload.id ? action.payload : job,
+            ),
+          }
+        : { ...state, activeJobs: [...state.activeJobs, action.payload] };
+    }
     case 'UPDATE_JOB_PROGRESS':
       return {
         ...state,

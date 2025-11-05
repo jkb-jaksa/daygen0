@@ -330,6 +330,15 @@ export async function runGenerationJob<Result, Payload extends Record<string, un
 
     tracker.finalize(jobId);
 
+    // If the job failed, surface a clear error instead of attempting to parse a result
+    if (snapshot.status !== 'completed') {
+      const rawError = snapshot.job?.error;
+      const message = typeof rawError === 'string' && rawError.trim().length > 0
+        ? rawError.trim()
+        : 'Generation failed';
+      throw new Error(message);
+    }
+
     const result = parseJobResult(snapshot, response);
 
     return { result, jobId, snapshot, response };
