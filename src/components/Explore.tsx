@@ -43,7 +43,7 @@ import {
   Crown,
 } from "lucide-react";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
-import { debugError, debugLog, debugWarn } from "../utils/debug";
+import { debugError, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
@@ -1407,53 +1407,36 @@ const Explore: React.FC = () => {
   const copyPromptToClipboard = async (prompt: string) => {
     try {
       await navigator.clipboard.writeText(prompt);
-      setCopyNotification('Link copied!');
+      setCopyNotification('Prompt copied!');
       setTimeout(() => setCopyNotification(null), 2000);
     } catch (err) {
       debugError('Failed to copy prompt:', err);
     }
   };
 
-  // Tooltip functions
-  const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
-    if (typeof document === 'undefined') return;
-    
-    // Remove any existing tooltip first
-    const existingTooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`);
-    if (existingTooltip) {
-      existingTooltip.remove();
-    }
-    
-    debugLog('Creating tooltip for ID:', tooltipId);
-    
-    // Create tooltip element dynamically
-    const tooltip = document.createElement('div');
-    tooltip.setAttribute('data-tooltip-for', tooltipId);
-    tooltip.className = 'tooltip';
-    tooltip.textContent = 'Copy prompt';
-    
-    // Position tooltip just above the button
-    const triggerRect = target.getBoundingClientRect();
-    tooltip.style.top = `${triggerRect.top - 32}px`;
-    tooltip.style.left = `${triggerRect.left + triggerRect.width / 2}px`;
-    tooltip.style.transform = 'translateX(-50%)';
-    
-    // Append to body
-    document.body.appendChild(tooltip);
-    
-    debugLog('Tooltip created and positioned at:', {
-      top: tooltip.style.top,
-      left: tooltip.style.left,
-      transform: tooltip.style.transform
-    });
-  };
-
-  const hideHoverTooltip = (tooltipId: string) => {
+  // Tooltip functions (viewport-based positioning for portaled tooltips)
+  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
-    tooltip.remove();
-  };
+    
+    // Get button position in viewport
+    const rect = target.getBoundingClientRect();
+    tooltip.style.top = `${rect.top - 28}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+    
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
 
   // More button dropdown handlers
   const toggleMoreActionMenu = (itemId: string, anchor: HTMLElement, item: GalleryItem) => {
@@ -2232,6 +2215,18 @@ const Explore: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    
+                  {/* Tooltips rendered via portal to avoid clipping */}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={`copy-${item.id}`}
+                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                      style={{ zIndex: 9999 }}
+                    >
+                      Copy prompt
+                    </div>,
+                    document.body
+                  )}
                   </div>
                   </article>
                 );
@@ -2778,8 +2773,13 @@ const Explore: React.FC = () => {
                           e.stopPropagation();
                           void copyPromptToClipboard(selectedFullImage.prompt);
                         }}
-                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
-                        title="Copy prompt"
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(e.currentTarget, `copy-fullsize-${selectedFullImage.id}`);
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`copy-fullsize-${selectedFullImage.id}`);
+                        }}
+                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                       >
                         <Copy className="w-3 h-3" />
                       </button>
@@ -2792,6 +2792,18 @@ const Explore: React.FC = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* Tooltips rendered via portal to avoid clipping */}
+              {createPortal(
+                <div
+                  data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
+                  className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
+                  style={{ zIndex: 9999 }}
+                >
+                  Copy prompt
+                </div>,
+                document.body
+              )}
             </div>
             
             {/* Vertical Gallery Navigation */}

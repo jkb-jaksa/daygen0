@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import { lazy, Suspense } from 'react';
-import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons, glass } from '../../styles/designSystem';
@@ -9,6 +10,7 @@ import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { loadSavedPrompts } from '../../lib/savedPrompts';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -99,11 +101,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
+  const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
   const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
   
   // Saved prompts functionality
   const userKey = user?.id || user?.email || "anon";
-  const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
+  const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
   
   // Create maps for quick lookup
   const avatarMap = useMemo(() => {
@@ -162,13 +165,48 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     if (!prompt) return;
     
     try {
-      savePrompt(prompt);
-      showToast(isPromptSaved(prompt) ? 'Prompt saved!' : 'Prompt unsaved');
+      const wasSaved = isPromptSaved(prompt);
+      if (wasSaved) {
+        // Find the saved prompt and remove it
+        const savedPrompts = loadSavedPrompts(userKey);
+        const existing = savedPrompts.find(p => p.text.toLowerCase() === prompt.trim().toLowerCase());
+        if (existing) {
+          removePrompt(existing.id);
+          showToast('Prompt unsaved');
+        }
+      } else {
+        savePrompt(prompt);
+        showToast('Prompt saved!');
+      }
     } catch (err) {
       debugError('Failed to save prompt:', err);
       showToast('Failed to save prompt');
     }
-  }, [savePrompt, isPromptSaved, showToast]);
+  }, [savePrompt, isPromptSaved, showToast, userKey, removePrompt]);
+  
+  // Tooltip helper functions (viewport-based positioning for portaled tooltips)
+  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    
+    // Get button position in viewport
+    const rect = target.getBoundingClientRect();
+    tooltip.style.top = `${rect.top - 28}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+    
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
   
   const handleRefresh = useCallback(async () => {
     try {
@@ -543,11 +581,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 />
               )}
 
-              {/* Prompt Description Bar */}
-              {item.prompt && (
-                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto ${
-                  isGalleryView ? '!hidden' : 'hidden sm:flex'
-                } items-end z-10 ${
+              {/* Prompt Description Bar - Non-gallery views */}
+              {item.prompt && !isGalleryView && (
+                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
                   isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
                 onClick={(e) => e.stopPropagation()}
@@ -558,36 +594,49 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <div className="relative">
                         <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
                           {item.prompt}
-                          <button
-                            data-copy-button="true"
-                            onClick={(e) => void handleCopyPrompt(item.prompt, e)}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                            title="Copy prompt"
-                            aria-label="Copy prompt"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                          <button
-                            data-save-button="true"
-                            onClick={(e) => handleToggleSavePrompt(item.prompt, e)}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                            title={isPromptSaved(item.prompt) ? "Prompt saved" : "Save prompt"}
-                            aria-label={isPromptSaved(item.prompt) ? "Prompt saved" : "Save prompt"}
-                          >
-                            {isPromptSaved(item.prompt) ? (
-                              <Bookmark className="w-3 h-3 fill-current" />
-                            ) : (
-                              <BookmarkPlus className="w-3 h-3" />
-                            )}
-                          </button>
+                          {(() => {
+                            const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
+                            return (
+                              <>
+                                <button
+                                  onClick={(e) => void handleCopyPrompt(item.prompt, e)}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    showHoverTooltip(e.currentTarget, tooltipId);
+                                  }}
+                                  onMouseLeave={() => {
+                                    hideHoverTooltip(tooltipId);
+                                  }}
+                                  className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={(e) => handleToggleSavePrompt(item.prompt, e)}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                                  }}
+                                  onMouseLeave={() => {
+                                    hideHoverTooltip(`save-${tooltipId}`);
+                                  }}
+                                  className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                >
+                                  {isPromptSaved(item.prompt) ? (
+                                    <Bookmark className="w-3 h-3 fill-current" />
+                                  ) : (
+                                    <BookmarkPlus className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </>
+                            );
+                          })()}
                         </p>
                       </div>
                     </div>
@@ -679,7 +728,159 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   </div>
                 </div>
               )}
+
+              {/* Tooltips rendered via portal to avoid clipping */}
+              {item.prompt && !isGalleryView && (() => {
+                const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
+                return (
+                  <>
+                    {createPortal(
+                      <div
+                        data-tooltip-for={tooltipId}
+                        className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                        style={{ zIndex: 9999 }}
+                      >
+                        Copy prompt
+                      </div>,
+                      document.body
+                    )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={`save-${tooltipId}`}
+                        className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                        style={{ zIndex: 9999 }}
+                      >
+                        {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
+                      </div>,
+                      document.body
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Gallery Prompt Hover Button */}
+              {item.prompt && isGalleryView && (
+                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-center justify-center z-10 ${
+                  isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Button content */}
+                  <div className="relative z-10 w-full p-3 flex items-center justify-center">
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200"
+                      aria-label="Show the prompt"
+                      onMouseEnter={() => {
+                        const itemId = item.jobId || item.r2FileId || item.url;
+                        setHoveredPromptButton(itemId);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredPromptButton(null);
+                      }}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="text-xs font-raleway font-medium">Show the prompt</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Gallery Prompt Popup - Outside card-media-frame to avoid clipping */}
+            {item.prompt && isGalleryView && (() => {
+              const itemId = item.jobId || item.r2FileId || item.url;
+              const isPopupVisible = hoveredPromptButton === itemId;
+              return (
+                <div 
+                  className={`absolute bottom-0 left-0 right-0 transition-all duration-100 z-50 pointer-events-auto ${
+                    isPopupVisible ? 'opacity-100 visible' : 'opacity-0 invisible'
+                  }`}
+                  onMouseEnter={() => setHoveredPromptButton(itemId)}
+                  onMouseLeave={() => setHoveredPromptButton(null)}
+                >
+                  <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl">
+                    <div className="relative">
+                      <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
+                        {item.prompt}
+                        {(() => {
+                          const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+                          return (
+                            <>
+                              <button
+                                onClick={(e) => void handleCopyPrompt(item.prompt, e)}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onMouseEnter={(e) => {
+                                  showHoverTooltip(e.currentTarget, tooltipId);
+                                }}
+                                onMouseLeave={() => {
+                                  hideHoverTooltip(tooltipId);
+                                }}
+                                className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => handleToggleSavePrompt(item.prompt, e)}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onMouseEnter={(e) => {
+                                  showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                                }}
+                                onMouseLeave={() => {
+                                  hideHoverTooltip(`save-${tooltipId}`);
+                                }}
+                                className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                              >
+                                {isPromptSaved(item.prompt) ? (
+                                  <Bookmark className="w-3 h-3 fill-current" />
+                                ) : (
+                                  <BookmarkPlus className="w-3 h-3" />
+                                )}
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
+            {item.prompt && isGalleryView && (() => {
+              const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={tooltipId}
+                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
+                      style={{ zIndex: 9999 }}
+                    >
+                      Copy prompt
+                    </div>,
+                    document.body
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={`save-${tooltipId}`}
+                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
+                      style={{ zIndex: 9999 }}
+                    >
+                      {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
+                    </div>,
+                    document.body
+                  )}
+                </>
+              );
+            })()}
           </div>
           );
         })}

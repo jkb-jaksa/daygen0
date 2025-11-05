@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { ToastContext, type Toast } from "./ToastContext";
+import { glass } from "../styles/designSystem";
 
 const DEFAULT_DURATION = 3000;
 
@@ -32,19 +33,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed inset-x-0 bottom-6 z-[100] flex justify-center px-4">
-        <div className="flex w-full max-w-sm flex-col gap-2">
-          {toasts.map((toast) => (
-            <div
-              key={toast.id}
-              className="rounded-xl bg-theme-black/80 px-4 py-3 text-center text-sm font-raleway text-theme-text shadow-[0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur"
-              role="status"
-              aria-live="assertive"
-            >
-              {toast.message}
-            </div>
-          ))}
-        </div>
+      <div className="fixed top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 transform">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}
+            role="status"
+            aria-live="assertive"
+          >
+            {toast.message}
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
   );

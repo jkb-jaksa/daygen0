@@ -2337,7 +2337,6 @@ input[type="range"]::-moz-range-thumb {
   pointer-events: none;
   position: fixed;
   transform: translateX(-50%) translateY(-100%);
-  transition: opacity 0.2s ease, transform 0.2s ease;
   visibility: visible;
   white-space: nowrap;
   z-index: 99999;
