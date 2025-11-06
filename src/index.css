@@ -1509,15 +1509,27 @@ html[data-theme="day"] .card-media-frame::before {
   width: 0.875rem;
 }
 
+/* Gallery-specific smaller buttons */
+.image-action-btn--gallery {
+  height: 24px;
+  padding: 0.2rem;
+  width: 24px;
+}
+
+.image-action-btn--gallery svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
 .image-action-btn--fullsize {
-  height: 32px; /* slightly larger inside full-size modals */
-  padding: 0.375rem;
-  width: 32px;
+  height: 28px; /* consistent size across all views */
+  padding: 0.25rem;
+  width: 28px;
 }
 
 .image-action-btn--fullsize svg {
-  height: 1rem;
-  width: 1rem;
+  height: 0.875rem;
+  width: 0.875rem;
 }
 .image-action-btn:hover {
   border-color: var(--theme-mid);
@@ -1569,20 +1581,20 @@ html[data-theme="day"] .card-media-frame::before {
   font-size: 0.75rem;
   font-weight: 500;
   gap: 0.4rem;
-  height: 32px;
+  height: 28px;
   justify-content: center;
   line-height: 1.25rem;
-  padding-bottom: 0.375rem;
+  padding-bottom: 0.25rem;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-  padding-top: 0.375rem;
+  padding-top: 0.25rem;
   white-space: nowrap;
   width: auto;
 }
 
 .image-action-btn--labelled svg {
-  height: 0.95rem;
-  width: 0.95rem;
+  height: 0.875rem;
+  width: 0.875rem;
 }
 
 .image-select-toggle {

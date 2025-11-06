@@ -492,7 +492,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         toggleItemSelection(itemId);
                       }
                     }}
-                    className={`image-action-btn parallax-large image-select-toggle ${
+                    className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large image-select-toggle ${
                       isSelected
                         ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                         : isBulkMode
@@ -522,6 +522,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           image={item}
                           isOpen={editMenu?.id === `gallery-actions-${index}-${item.url}`}
                           anchor={editMenu?.anchor || null}
+                          isGallery={activeCategory === 'gallery'}
                           anyMenuOpen={isMenuActive}
                           onClose={handleCloseEditMenu}
                           onToggleMenu={handleToggleEditMenu}
@@ -535,7 +536,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <button
                         type="button"
                         onClick={(e) => onDelete(e, item)}
-                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                        className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
                           isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -548,7 +549,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <button
                         type="button"
                         onClick={(e) => onToggleLike(e, item)}
-                        className={`image-action-btn parallax-large favorite-toggle transition-opacity duration-100 ${
+                        className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large favorite-toggle transition-opacity duration-100 ${
                           isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -565,7 +566,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       <button
                         type="button"
                         onClick={(e) => handleItemRightClick(e, item)}
-                        className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                        className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
                           isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -785,7 +786,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     <button
                       type="button"
                       className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200"
-                      aria-label="Show the prompt"
+                      aria-label="Show prompt"
                       onMouseEnter={() => {
                         const itemId = item.jobId || item.r2FileId || item.url;
                         setHoveredPromptButton(itemId);
@@ -795,7 +796,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       }}
                     >
                       <FileText className="w-3.5 h-3.5" />
-                      <span className="text-xs font-raleway font-medium">Show the prompt</span>
+                      <span className="text-xs font-raleway font-medium">Show prompt</span>
                     </button>
                   </div>
                 </div>

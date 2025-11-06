@@ -9,6 +9,7 @@ interface EditButtonMenuProps {
   isOpen: boolean;
   anchor: HTMLElement | null;
   isFullSize?: boolean;
+  isGallery?: boolean;
   anyMenuOpen?: boolean;
   onClose: () => void;
   onToggleMenu: (menuId: string, anchor: HTMLElement, image: GalleryImageLike | GalleryVideoLike) => void;
@@ -25,6 +26,7 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   isOpen,
   anchor,
   isFullSize = false,
+  isGallery = false,
   anyMenuOpen = false,
   onClose,
   onToggleMenu,
@@ -68,9 +70,7 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     <div className="relative">
       <button
         type="button"
-        className={`image-action-btn parallax-large transition-opacity duration-100 ${
-          isFullSize ? 'image-action-btn--fullsize ' : ''
-        }${
+        className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
           anyMenuOpen
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
