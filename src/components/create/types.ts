@@ -55,6 +55,7 @@ export type GalleryVideoLike = {
   references?: string[];
   isPublic?: boolean;
   isLiked?: boolean;
+  savedFrom?: SavedCreator;
   type: "video";
   operationName?: string;
   avatarId?: string; // Avatar ID for filtering

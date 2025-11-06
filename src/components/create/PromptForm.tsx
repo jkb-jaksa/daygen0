@@ -728,7 +728,7 @@ const PromptForm = memo<PromptFormProps>(
           {/* Left section: Textarea + Controls */}
           <div className="flex-1 flex flex-col">
             {/* Textarea - first row */}
-            <div className="mb-0">
+            <div className="mb-2">
               <textarea
                 ref={textareaRef}
                 value={prompt}

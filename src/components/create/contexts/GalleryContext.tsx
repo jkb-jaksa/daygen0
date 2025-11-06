@@ -10,6 +10,9 @@ import React, {
 import { useLocation } from 'react-router-dom';
 import { useGalleryImages } from '../../../hooks/useGalleryImages';
 import { useGeneration } from './GenerationContext';
+import { useAuth } from '../../../auth/useAuth';
+import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
+import { debugError } from '../../../utils/debug';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -19,6 +22,7 @@ import type {
   PublishConfirmationState,
   UnpublishConfirmationState,
   DownloadConfirmationState,
+  SerializedFolder,
 } from '../types';
 
 type GalleryState = {
@@ -355,6 +359,7 @@ const GalleryContext = createContext<GalleryContextType | null>(null);
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(galleryReducer, initialState);
   const location = useLocation();
+  const { storagePrefix } = useAuth();
   const {
     images: galleryItems,
     isLoading: isGalleryLoading,
@@ -372,6 +377,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
   const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasFoldersLoadedRef = useRef(false);
 
   useEffect(() => {
     stateRef.current = state;
@@ -497,21 +503,72 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isGalleryLoading, galleryItems.length]);
 
+  // Load folders from storage on mount
+  useEffect(() => {
+    if (!storagePrefix || hasFoldersLoadedRef.current) return;
+    
+    const loadFolders = async () => {
+      try {
+        const storedFolders = await getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders');
+        if (Array.isArray(storedFolders) && storedFolders.length > 0) {
+          const hydrated: Folder[] = storedFolders.map(folder => ({
+            ...folder,
+            createdAt: new Date(folder.createdAt),
+            videoIds: folder.videoIds || [],
+          }));
+          dispatch({ type: 'SET_FOLDERS', payload: hydrated });
+        }
+        hasFoldersLoadedRef.current = true;
+      } catch (error) {
+        debugError('Failed to load folders from storage', error);
+      }
+    };
+    
+    void loadFolders();
+  }, [storagePrefix]);
+
+  const persistFolders = useCallback(async (folders: Folder[]) => {
+    if (!storagePrefix) return;
+    
+    try {
+      const serialised: SerializedFolder[] = folders.map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        createdAt: folder.createdAt.toISOString(),
+        imageIds: folder.imageIds,
+        videoIds: folder.videoIds || [],
+        customThumbnail: folder.customThumbnail,
+      }));
+      await setPersistedValue(storagePrefix, 'folders', serialised);
+    } catch (error) {
+      debugError('Failed to persist folders', error);
+    }
+  }, [storagePrefix]);
+
   const setFolders = useCallback((folders: Folder[]) => {
     dispatch({ type: 'SET_FOLDERS', payload: folders });
-  }, []);
+    void persistFolders(folders);
+  }, [persistFolders]);
 
   const addFolder = useCallback((folder: Folder) => {
     dispatch({ type: 'ADD_FOLDER', payload: folder });
-  }, []);
+    const newFolders = [...stateRef.current.folders, folder];
+    void persistFolders(newFolders);
+  }, [persistFolders]);
 
   const updateFolder = useCallback((id: string, updates: Partial<Folder>) => {
     dispatch({ type: 'UPDATE_FOLDER', payload: { id, updates } });
-  }, []);
+    const updatedFolders = stateRef.current.folders.map(folder =>
+      folder.id === id ? { ...folder, ...updates } : folder
+    );
+    void persistFolders(updatedFolders);
+  }, [persistFolders]);
 
   const removeFolder = useCallback((id: string) => {
     dispatch({ type: 'REMOVE_FOLDER', payload: id });
-  }, []);
+    const filteredFolders = stateRef.current.folders.filter(folder => folder.id !== id);
+    void persistFolders(filteredFolders);
+  }, [persistFolders]);
 
   const setBulkMode = useCallback((mode: boolean) => {
     dispatch({ type: 'SET_BULK_MODE', payload: mode });

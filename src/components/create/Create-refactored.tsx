@@ -9,6 +9,9 @@ const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
 const GalleryFilters = lazy(() => import('./GalleryFilters'));
 const GalleryConfirmationModals = lazy(() => import('./modals/GalleryConfirmationModals'));
+const FoldersView = lazy(() => import('./FoldersView'));
+const FolderContentsView = lazy(() => import('./FolderContentsView'));
+const InspirationsEmptyState = lazy(() => import('./InspirationsView'));
 import CreateSidebar from './CreateSidebar';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
@@ -20,16 +23,19 @@ import { SIDEBAR_TOP_PADDING } from './layoutConstants';
 import { useFooter } from '../../contexts/useFooter';
 import { useAuth } from '../../auth/useAuth';
 import { InsufficientCreditsModal } from '../modals/InsufficientCreditsModal';
+import { useSavedPrompts } from '../../hooks/useSavedPrompts';
+import type { Folder } from './types';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
 
-const SUPPORTED_CATEGORIES = ['text', 'image', 'video', 'audio', 'gallery', 'my-folders'] as const;
+const SUPPORTED_CATEGORIES = ['text', 'image', 'video', 'audio', 'gallery', 'my-folders', 'folder-view', 'inspirations'] as const;
 type SupportedCategory = (typeof SUPPORTED_CATEGORIES)[number];
 
 const SUPPORTED_CATEGORY_SET = new Set<SupportedCategory>(SUPPORTED_CATEGORIES);
 const GENERATION_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['image', 'video']);
-const GALLERY_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['gallery', 'my-folders']);
+const GALLERY_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['gallery', 'my-folders', 'inspirations']);
+const FOLDERS_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['my-folders', 'folder-view']);
 const COMING_SOON_CATEGORY_SET: ReadonlySet<ComingSoonCategoryKey> = new Set<ComingSoonCategoryKey>(COMING_SOON_CATEGORIES);
 const VIDEO_MODEL_SET: ReadonlySet<string> = new Set<string>([
   'veo-3',
@@ -67,11 +73,15 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
     return normalizeCategory('my-folders');
   }
 
+  if (segments[0] === 'folder-view') {
+    return normalizeCategory('folder-view');
+  }
+
   return null;
 };
 
 export default function CreateRefactored() {
-  const { state, setImageActionMenu, setBulkActionsMenu, addImage, setNewFolderDialog, setAddToFolderDialog } = useGallery();
+  const { state, setImageActionMenu, setBulkActionsMenu, addImage, setNewFolderDialog, setAddToFolderDialog, setFolderThumbnailDialog, removeFolder, setFolders, addFolder } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
   const { setSelectedModel } = generation;
@@ -79,16 +89,18 @@ export default function CreateRefactored() {
   const params = useParams<{ category?: string }>();
   const navigate = useNavigate();
   const { setFooterVisible } = useFooter();
-  const { user } = useAuth();
+  const { user, storagePrefix } = useAuth();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
   const galleryActions = useGalleryActions();
+  const { isPromptSaved } = useSavedPrompts();
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
   const [returnToFolderDialog, setReturnToFolderDialog] = useState(false);
+  const [deleteFolderConfirmation, setDeleteFolderConfirmation] = useState<{ show: boolean; folderId: string | null }>({ show: false, folderId: null });
 
   // Development-only: Add dummy image for testing
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -251,15 +263,28 @@ export default function CreateRefactored() {
   }, []);
 
   const handleNewFolderCreate = useCallback(() => {
-    // TODO: Implement folder creation logic
-    console.log('Create folder:', newFolderName);
+    if (!newFolderName.trim()) {
+      return;
+    }
+    
+    const newFolder: Folder = {
+      id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: newFolderName.trim(),
+      imageIds: [],
+      videoIds: [],
+      createdAt: new Date(),
+      customThumbnail: null,
+    };
+    
+    state.folders.length === 0 ? setFolders([newFolder]) : addFolder(newFolder);
+    
     setNewFolderDialog(false);
     setNewFolderName('');
     if (returnToFolderDialog) {
       setReturnToFolderDialog(false);
       setAddToFolderDialog(true);
     }
-  }, [newFolderName, returnToFolderDialog, setNewFolderDialog, setAddToFolderDialog]);
+  }, [newFolderName, returnToFolderDialog, setNewFolderDialog, setAddToFolderDialog, state.folders, setFolders, addFolder]);
 
   const handleNewFolderCancel = useCallback(() => {
     setNewFolderDialog(false);
@@ -323,6 +348,40 @@ export default function CreateRefactored() {
     // TODO: Cancel folder thumbnail confirmation
     console.log('Cancel folder thumbnail confirmation');
   }, []);
+
+  // Folder navigation handlers
+  const handleSelectFolder = useCallback((folderId: string) => {
+    setSelectedFolder(folderId);
+    setActiveCategory('folder-view');
+  }, []);
+
+  const handleBackToFolders = useCallback(() => {
+    setSelectedFolder(null);
+    setActiveCategory('my-folders');
+  }, []);
+
+  const confirmDeleteFolder = useCallback((folderId: string) => {
+    setDeleteFolderConfirmation({ show: true, folderId });
+  }, []);
+
+  const handleConfirmDeleteFolder = useCallback(() => {
+    if (deleteFolderConfirmation.folderId) {
+      removeFolder(deleteFolderConfirmation.folderId);
+      if (selectedFolder === deleteFolderConfirmation.folderId) {
+        setSelectedFolder(null);
+        setActiveCategory('my-folders');
+      }
+    }
+    setDeleteFolderConfirmation({ show: false, folderId: null });
+  }, [deleteFolderConfirmation.folderId, removeFolder, selectedFolder]);
+
+  const handleCancelDeleteFolder = useCallback(() => {
+    setDeleteFolderConfirmation({ show: false, folderId: null });
+  }, []);
+
+  const handleSetFolderThumbnail = useCallback((folderId: string) => {
+    setFolderThumbnailDialog({ show: true, folderId });
+  }, [setFolderThumbnailDialog]);
   
   return (
     <header
@@ -437,7 +496,7 @@ export default function CreateRefactored() {
               {!isGenerationCategory && isComingSoonCategory && (
                 <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
               )}
-              {!isGenerationCategory && shouldShowResultsGrid && (
+              {!isGenerationCategory && shouldShowResultsGrid && !FOLDERS_CATEGORY_SET.has(activeCategory) && activeCategory !== 'inspirations' && (
                 <>
                   {isDevelopment && (
                     <div className="mb-4 px-4">
@@ -458,6 +517,76 @@ export default function CreateRefactored() {
                   <Suspense fallback={null}>
                     <ResultsGrid activeCategory={activeCategory} />
                   </Suspense>
+                </>
+              )}
+              {activeCategory === 'my-folders' && (
+                <Suspense fallback={null}>
+                  <FoldersView
+                    folders={state.folders}
+                    onCreateFolder={() => setNewFolderDialog(true)}
+                    onSelectFolder={handleSelectFolder}
+                    onDeleteFolder={confirmDeleteFolder}
+                    onSetThumbnail={handleSetFolderThumbnail}
+                  />
+                </Suspense>
+              )}
+              {activeCategory === 'folder-view' && selectedFolder && (
+                <Suspense fallback={null}>
+                  <FolderContentsView
+                    folder={state.folders.find(f => f.id === selectedFolder)!}
+                    folderImages={[...state.images, ...state.videos].filter(img => 
+                      state.folders.find(f => f.id === selectedFolder)?.imageIds.includes(img.url)
+                    )}
+                    onBack={handleBackToFolders}
+                    onImageClick={galleryActions.handleImageClick}
+                    onCopyPrompt={galleryActions.handleCopyPrompt}
+                    onSavePrompt={galleryActions.handleSavePrompt}
+                    isPromptSaved={isPromptSaved}
+                    onToggleLike={galleryActions.handleToggleLike}
+                    onDeleteImage={galleryActions.handleDeleteImage}
+                    isLiked={(url) => state.images.find(img => img.url === url)?.isLiked || false}
+                    isSelectMode={state.isBulkMode}
+                    selectedImages={state.selectedItems}
+                    onToggleImageSelection={(url, event) => {
+                      event.stopPropagation();
+                      galleryActions.handleToggleSelection(url);
+                    }}
+                    imageActionMenu={state.imageActionMenu}
+                    moreActionMenu={null}
+                    onEditMenuSelect={galleryActions.handleEditMenuSelect}
+                    onMoreButtonClick={galleryActions.handleImageActionMenu}
+                  />
+                </Suspense>
+              )}
+              {activeCategory === 'inspirations' && (
+                <>
+                  {(() => {
+                    const inspirations = [...state.images, ...state.videos].filter(img => img.savedFrom);
+                    if (inspirations.length === 0) {
+                      return (
+                        <Suspense fallback={null}>
+                          <InspirationsEmptyState />
+                        </Suspense>
+                      );
+                    }
+                    return (
+                      <>
+                        {isDevelopment && (
+                          <div className="mb-4 px-4">
+                            <button
+                              onClick={addDummyImage}
+                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🧪 Add Test Image (Dev Only)
+                            </button>
+                          </div>
+                        )}
+                        <Suspense fallback={null}>
+                          <ResultsGrid activeCategory={activeCategory} />
+                        </Suspense>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
@@ -511,6 +640,9 @@ export default function CreateRefactored() {
           folderThumbnailConfirm={state.folderThumbnailConfirm}
           onFolderThumbnailConfirmApply={handleFolderThumbnailConfirmApply}
           onFolderThumbnailConfirmCancel={handleFolderThumbnailConfirmCancel}
+          deleteFolderConfirmation={deleteFolderConfirmation}
+          onDeleteFolderConfirm={handleConfirmDeleteFolder}
+          onDeleteFolderCancel={handleCancelDeleteFolder}
         />
       </Suspense>
     </header>

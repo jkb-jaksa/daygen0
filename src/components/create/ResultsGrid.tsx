@@ -46,7 +46,7 @@ const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | 
 
 interface ResultsGridProps {
   className?: string;
-  activeCategory?: 'image' | 'video' | 'gallery' | 'my-folders';
+  activeCategory?: 'image' | 'video' | 'gallery' | 'my-folders' | 'inspirations';
   onFocusPrompt?: () => void;
 }
 
@@ -83,7 +83,7 @@ const renderPlaceholderGrid = (
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, error, refresh, filteredItems } = useGallery();
+  const { state, toggleItemSelection, isLoading, error, refresh, filteredItems: contextFilteredItems } = useGallery();
   const {
     handleImageClick,
     handleImageActionMenu,
@@ -102,6 +102,21 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
+  
+  // Apply category-specific filtering
+  const filteredItems = useMemo(() => {
+    if (activeCategory === 'inspirations') {
+      // Only show images with savedFrom property for inspirations
+      return contextFilteredItems.filter(item => item.savedFrom);
+    }
+    if (activeCategory === 'gallery') {
+      // Only show images WITHOUT savedFrom property for gallery
+      return contextFilteredItems.filter(item => !item.savedFrom);
+    }
+    // For other categories (image, video), show all
+    return contextFilteredItems;
+  }, [activeCategory, contextFilteredItems]);
+  
   const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
   
   // Saved prompts functionality

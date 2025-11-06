@@ -50,6 +50,19 @@ function CreateSidebarComponent({
 
           {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
             const isActive = activeCategory === key;
+            
+            // Color-specific shadow mappings for each category
+            const shadowColorMap: Record<string, string> = {
+              text: "rgba(251, 191, 36, 0.15)",
+              image: "rgba(239, 68, 68, 0.15)",
+              video: "rgba(59, 130, 246, 0.15)",
+              audio: "rgba(34, 211, 238, 0.15)",
+            };
+            
+            const insetShadow = isActive && gradient
+              ? { boxShadow: `inset 0 -0.25em 0.5em -0.125em ${shadowColorMap[key]}` }
+              : {};
+            
             return (
               <button
                 key={key}
@@ -62,6 +75,7 @@ function CreateSidebarComponent({
               >
                 <div
                   className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}
+                  style={insetShadow}
                 >
                   {isActive && gradient && (
                     <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-50 blur-xl bg-gradient-to-br ${gradient}`} />
@@ -81,6 +95,12 @@ function CreateSidebarComponent({
 
           {LIBRARY_CATEGORIES.map(({ key, label, Icon }) => {
             const isActive = activeCategory === key;
+            
+            // Colorless inset shadow for active state
+            const insetShadow = isActive
+              ? { boxShadow: `inset 0 -0.25em 0.5em -0.125em rgba(255, 255, 255, 0.08)` }
+              : {};
+            
             return (
               <button
                 key={key}
@@ -92,9 +112,13 @@ function CreateSidebarComponent({
                 aria-pressed={isActive}
               >
                 <div
-                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 bg-theme-black ${glass.sidebarIcon}`}
+                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}
+                  style={insetShadow}
                 >
-                  <Icon className="size-3 text-theme-white group-hover:text-theme-text" />
+                  {isActive && (
+                    <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-30 blur-xl bg-white`} />
+                  )}
+                  <Icon className={`size-3 relative z-10 transition-colors duration-100 ${isActive ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'}`} />
                 </div>
                 <span>{label}</span>
               </button>

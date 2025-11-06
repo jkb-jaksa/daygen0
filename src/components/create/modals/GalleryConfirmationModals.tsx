@@ -64,6 +64,11 @@ interface GalleryConfirmationModalsProps {
   folderThumbnailConfirm: FolderThumbnailConfirmState;
   onFolderThumbnailConfirmApply: () => void;
   onFolderThumbnailConfirmCancel: () => void;
+
+  // Delete folder confirmation
+  deleteFolderConfirmation?: { show: boolean; folderId: string | null };
+  onDeleteFolderConfirm?: () => void;
+  onDeleteFolderCancel?: () => void;
 }
 
 export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
@@ -103,6 +108,9 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
   folderThumbnailConfirm,
   onFolderThumbnailConfirmApply,
   onFolderThumbnailConfirmCancel,
+  deleteFolderConfirmation,
+  onDeleteFolderConfirm,
+  onDeleteFolderCancel,
 }) => {
   const pendingDeleteImageCount = deleteConfirmation.imageUrls?.length ?? 0;
   const isDeletingFolder = Boolean(deleteConfirmation.folderId);
@@ -527,6 +535,37 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   className={buttons.primary}
                 >
                   Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete folder confirmation dialog */}
+      {deleteFolderConfirmation?.show && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Trash2 className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway font-light text-theme-text">Delete Folder</h3>
+                <p className="text-base font-raleway font-light text-theme-white">
+                  Are you sure you want to delete this folder? This action cannot be undone. The images will remain in your gallery.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={onDeleteFolderCancel}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onDeleteFolderConfirm}
+                  className={buttons.primary}
+                >
+                  Delete Folder
                 </button>
               </div>
             </div>
