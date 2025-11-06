@@ -17,6 +17,14 @@ vi.mock('react-router-dom', () => ({
   useLocation: () => mockLocation,
 }));
 
+// Mock auth to avoid requiring AuthProvider
+vi.mock('../../../auth/useAuth', () => ({
+  useAuth: () => ({ 
+    user: { id: 'test-user', email: 'test@example.com' },
+    storagePrefix: 'test-user',
+  }),
+}));
+
 const now = new Date().toISOString();
 const mockGalleryImages = [
   {
