@@ -393,7 +393,7 @@ const FullImageModal = memo(() => {
       )}
       
       <div
-        className="fixed inset-0 z-[110] glass-liquid willchange-backdrop isolate backdrop-blur-2xl bg-[color:var(--glass-dark-bg)] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
         onClick={clearJobUrl}
       >
         <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>

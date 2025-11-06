@@ -130,13 +130,27 @@ function CreateSidebarComponent({
             onClick={onOpenMyFolders}
             className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
               activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
-                ? "text-theme-light hover:text-theme-text"
+                ? "text-theme-text"
                 : "text-theme-white hover:text-theme-text"
             }`}
             aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
           >
-            <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 bg-theme-black ${glass.sidebarIcon}`}>
-              <FOLDERS_ENTRY.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
+            <div
+              className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}
+              style={
+                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                  ? { boxShadow: `inset 0 -0.25em 0.5em -0.125em rgba(255, 255, 255, 0.08)` }
+                  : {}
+              }
+            >
+              {(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") && (
+                <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-30 blur-xl bg-white`} />
+              )}
+              <FOLDERS_ENTRY.Icon className={`size-3 relative z-10 transition-colors duration-100 ${
+                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                  ? 'text-theme-text'
+                  : 'text-theme-white group-hover:text-theme-text'
+              }`} />
             </div>
             <span>{FOLDERS_ENTRY.label}</span>
           </button>

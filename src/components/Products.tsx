@@ -40,6 +40,7 @@ import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
+const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
@@ -2258,111 +2259,294 @@ export default function Products() {
         </Suspense>
       )}
       {/* Full-size product modal */}
-      {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
-        <div
-          className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-center justify-center p-4"
-          onClick={closeProductFullSizeView}
-        >
-          <div
-            className="relative max-w-[95vw] max-h-[90vh] group flex items-center justify-center"
-            onClick={(event) => event.stopPropagation()}
-          >
-            {creationsModalProduct.images.length > 1 && (
-              <>
-                <button
-                  onClick={() => navigateProductImage("prev")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                  title="Previous image"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
-                </button>
-                <button
-                  onClick={() => navigateProductImage("next")}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                  title="Next image"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
-                </button>
-              </>
-            )}
-
-            <img
-              src={activeProductImage.url}
-              alt={`${creationsModalProduct.name} product view`}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+      <>
+        {/* Left Navigation Sidebar */}
+        {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
+          <Suspense fallback={null}>
+            <CreateSidebar
+              activeCategory="products"
+              onSelectCategory={(category) => {
+                navigate(`/create/${category}`);
+                closeProductFullSizeView();
+              }}
+              onOpenMyFolders={() => {
+                navigate('/gallery');
+                closeProductFullSizeView();
+              }}
+              isFullSizeOpen={true}
             />
+          </Suspense>
+        )}
 
-            <div className="image-gallery-actions absolute left-4 top-4 flex flex-wrap items-center gap-2">
+        {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
+          <div
+            className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
+            onClick={closeProductFullSizeView}
+          >
+            <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              {/* Image container */}
+              <div className="relative group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }}>
+                {/* Navigation arrows */}
+                {creationsModalProduct.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => navigateProductImage("prev")}
+                      className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                      title="Previous image (←)"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                    </button>
+                    <button
+                      onClick={() => navigateProductImage("next")}
+                      className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                      title="Next image (→)"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
+                    </button>
+                  </>
+                )}
+
+                <img
+                  src={activeProductImage.url}
+                  alt={`${creationsModalProduct.name} product view`}
+                  loading="lazy"
+                  className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                  style={{ objectPosition: 'top' }}
+                />
+
+                {/* Close button - positioned on right side of image */}
+                <button
+                  onClick={closeProductFullSizeView}
+                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Metadata info bar - only on hover, positioned at bottom of image */}
+                <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
+                  <div className="flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-sm font-raleway leading-relaxed">
+                        {creationsModalProduct.name}
+                        {creationsModalProduct.primaryImageId === activeProductImage.id && (
+                          <span className="ml-2 inline text-theme-white/70 text-xs">
+                            (Primary)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Right Sidebar - Sibling of modal */}
+        {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
+          <aside
+            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
+            style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon-only action bar at top */}
+            <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
+              <a
+                href={activeProductImage.url}
+                download
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                onClick={(e) => e.stopPropagation()}
+                title="Download"
+                aria-label="Download"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleManageFolders(activeProductImage.url);
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title="Manage folders"
+                aria-label="Manage folders"
+              >
+                <FolderPlus className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProductToPublish(creationsModalProduct);
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
+                aria-label={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
+              >
+                {creationsModalProduct.published ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <Globe className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProductToDelete(creationsModalProduct);
+                }}
+                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Edit actions */}
+            <div className="flex flex-col gap-0 mt-2">
               {creationsModalProduct.primaryImageId !== activeProductImage.id && (
                 <button
                   type="button"
-                  className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
-                  onClick={() => handleSetPrimaryProductImage(creationsModalProduct.id, activeProductImage.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSetPrimaryProductImage(creationsModalProduct.id, activeProductImage.id);
+                  }}
+                  className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
                 >
-                  <Check className="h-3 w-3" />
-                  Set primary
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  Set as primary
                 </button>
               )}
               {creationsModalProduct.images.length > 1 && (
                 <button
                   type="button"
-                  className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-rose-200 hover:border-rose-300`}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     handleRemoveProductImage(creationsModalProduct.id, activeProductImage.id);
                     closeProductFullSizeView();
                   }}
+                  className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-rose-200 hover:text-rose-100 transition-colors duration-200 whitespace-nowrap"
                 >
-                  <Trash2 className="h-3 w-3" />
-                  Remove
+                  <Trash2 className="w-4 h-4 flex-shrink-0" />
+                  Remove image
                 </button>
               )}
-              {creationsModalProduct.primaryImageId === activeProductImage.id && (
-                <span className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text`}
-                >
-                  <Package className="h-3 w-3" />
-                  Primary image
-                </span>
-              )}
-            </div>
-
-            <div className="image-gallery-actions absolute right-4 top-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
-                onClick={() => handleDownloadImage(activeProductImage.url)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyLink(activeProductImage.url);
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
               >
-                <Download className="h-3 w-3" />
-                Download
-              </button>
-              <button
-                type="button"
-                className={`${glass.promptDark} inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-raleway text-theme-text hover:border-theme-text`}
-                onClick={() => handleCopyLink(activeProductImage.url)}
-              >
-                <Copy className="h-3 w-3" />
+                <Copy className="w-4 h-4 flex-shrink-0" />
                 Copy link
               </button>
               <button
                 type="button"
-                className={`${glass.promptDark} inline-flex items-center justify-center rounded-full p-2 text-theme-text hover:border-theme-text`}
-                onClick={closeProductFullSizeView}
-                aria-label="Close product image"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to edit page with product image
+                  navigate("/create/image", {
+                    state: {
+                      productId: creationsModalProduct.id,
+                      referenceImageUrl: activeProductImage.url,
+                      focusPromptBar: true,
+                    },
+                  });
+                  closeProductFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
               >
-                <X className="h-3 w-3" />
+                <Edit className="w-4 h-4 flex-shrink-0" />
+                Create image
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to video creation with product
+                  navigate("/create/video", {
+                    state: {
+                      productId: creationsModalProduct.id,
+                      referenceImageUrl: activeProductImage.url,
+                      focusPromptBar: true,
+                    },
+                  });
+                  closeProductFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              >
+                <Camera className="w-4 h-4 flex-shrink-0" />
+                Make video
               </button>
             </div>
+          </aside>
+        )}
+
+        {/* Thumbnail Navigation - Right Sidebar (far edge) */}
+        {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
+          <div className="fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-[130] flex flex-col pointer-events-auto" style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+            <div className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden h-full`}>
+              <div className="flex flex-col gap-2">
+                {creationsModalProduct.images.map((img, index) => {
+                  const isActive = img.id === activeProductImage.id;
+                  return (
+                    <button
+                      key={img.id}
+                      onClick={() => openProductFullSizeView(img.id)}
+                      className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${
+                        isActive
+                          ? "ring-1 ring-theme-text scale-110"
+                          : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
+                      }`}
+                      style={{ width: "48px", height: "48px", flexShrink: 0 }}
+                      aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Thumbnail ${index + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </>
 
       {/* Full-size image modal */}
-      {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
-        <div
-          className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
-          onClick={closeFullSizeView}
-        >
+      <>
+        {/* Left Navigation Sidebar */}
+        {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
+          <Suspense fallback={null}>
+            <CreateSidebar
+              activeCategory="products"
+              onSelectCategory={(category) => {
+                navigate(`/create/${category}`);
+                closeFullSizeView();
+              }}
+              onOpenMyFolders={() => {
+                navigate('/gallery');
+                closeFullSizeView();
+              }}
+              isFullSizeOpen={true}
+            />
+          </Suspense>
+        )}
+
+        {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
+          <div
+            className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-start justify-center p-4"
+            onClick={closeFullSizeView}
+          >
           <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
             {/* Navigation arrows */}
             {(() => {
@@ -2609,11 +2793,13 @@ export default function Products() {
                     syncJobUrlForImage(nextImage);
                   }
                 }}
+                className="z-[130]"
               />
             );
           })()}
         </div>
-      )}
+        )}
+      </>
 
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (

@@ -2392,7 +2392,7 @@ export default function Avatars() {
       <>
         {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
           <div
-            className="fixed inset-0 z-[10600] glass-liquid willchange-backdrop isolate backdrop-blur-[40px] bg-[color:var(--glass-dark-bg)] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
             onClick={closeAvatarFullSizeView}
           >
             <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -2460,7 +2460,7 @@ export default function Avatars() {
         {/* Right Sidebar - Sibling of modal */}
         {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
           <aside
-            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[10650]`}
+            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
             style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2618,7 +2618,7 @@ export default function Avatars() {
 
         {/* Thumbnail Navigation - Right Sidebar (far edge) */}
         {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <div className="fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-[10700] flex flex-col pointer-events-auto" style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+          <div className="fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-[130] flex flex-col pointer-events-auto" style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
             <div className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden h-full`}>
               <div className="flex flex-col gap-2">
                 {creationsModalAvatar.images.map((img, index) => {
