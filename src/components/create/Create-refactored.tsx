@@ -89,7 +89,7 @@ export default function CreateRefactored() {
   const params = useParams<{ category?: string }>();
   const navigate = useNavigate();
   const { setFooterVisible } = useFooter();
-  const { user, storagePrefix } = useAuth();
+  const { user } = useAuth();
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
   const galleryActions = useGalleryActions();
@@ -276,7 +276,11 @@ export default function CreateRefactored() {
       customThumbnail: null,
     };
     
-    state.folders.length === 0 ? setFolders([newFolder]) : addFolder(newFolder);
+    if (state.folders.length === 0) {
+      setFolders([newFolder]);
+    } else {
+      addFolder(newFolder);
+    }
     
     setNewFolderDialog(false);
     setNewFolderName('');

@@ -2,6 +2,9 @@ import { lazy, Suspense } from 'react';
 import { ArrowLeft, Folder as FolderIcon, Copy, BookmarkPlus, Bookmark, Check, Square, Trash2, Heart, Globe } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
+import type { StoredAvatar, AvatarImage } from '../avatars/types';
+import type { StoredProduct } from '../products/types';
+import type { StoredStyle } from '../styles/types';
 
 const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
@@ -20,7 +23,6 @@ interface FolderContentsViewProps {
   onToggleLike: (imageUrl: string) => void;
   onDeleteImage: (imageUrl: string) => void;
   isLiked: (imageUrl: string) => boolean;
-  onReferenceClick?: (referenceUrl: string) => void;
   // Select mode props
   isSelectMode?: boolean;
   selectedImages?: Set<string>;
@@ -31,11 +33,11 @@ interface FolderContentsViewProps {
   onEditMenuSelect?: (actionMenuId: string, image: GalleryImageLike | GalleryVideoLike) => void;
   onMoreButtonClick?: (actionMenuId: string, image: GalleryImageLike | GalleryVideoLike, context: string) => void;
   // Badge data
-  avatarMap?: Map<string, any>;
-  productMap?: Map<string, any>;
-  styleIdToStoredStyle?: (styleId: string) => any;
-  onAvatarClick?: (avatar: any, imageUrl?: string) => void;
-  onProductClick?: (product: any) => void;
+  avatarMap?: Map<string, StoredAvatar>;
+  productMap?: Map<string, StoredProduct>;
+  styleIdToStoredStyle?: (styleId: string) => StoredStyle | null;
+  onAvatarClick?: (avatar: StoredAvatar, imageUrl?: string) => void;
+  onProductClick?: (product: StoredProduct) => void;
   // Tooltip handlers
   showHoverTooltip?: (element: HTMLElement, id: string) => void;
   hideHoverTooltip?: (id: string) => void;
@@ -62,7 +64,6 @@ export default function FolderContentsView({
   onToggleLike,
   onDeleteImage,
   isLiked,
-  onReferenceClick,
   isSelectMode = false,
   selectedImages = new Set(),
   onToggleImageSelection,
@@ -258,7 +259,7 @@ export default function FolderContentsView({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       const avatarImageUrl = img.avatarImageId
-                                        ? avatarForImage.images?.find((avatarImg: any) => avatarImg.id === img.avatarImageId)?.url
+                                        ? avatarForImage.images?.find((avatarImg: AvatarImage) => avatarImg.id === img.avatarImageId)?.url
                                         : avatarForImage.imageUrl;
                                       onAvatarClick?.(avatarForImage, avatarImageUrl ?? avatarForImage.imageUrl);
                                     }}
