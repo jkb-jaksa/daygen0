@@ -5,6 +5,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
 import { GenerationProvider } from '../contexts/GenerationContext';
 import { useGalleryActions } from '../hooks/useGalleryActions';
+import FullImageModal from '../FullImageModal';
+import { ToastContext } from '../../../contexts/ToastContext';
 import type { GalleryImageLike } from '../types';
 
 const mockLocation = {
@@ -14,7 +16,15 @@ const mockLocation = {
   state: null,
   key: 'default',
 };
-const mockNavigate = vi.fn();
+const mockNavigate = vi.fn((path: unknown, options?: { replace?: boolean; state?: unknown }) => {
+  if (typeof path === 'string') {
+    const url = new URL(path, 'http://localhost');
+    mockLocation.pathname = url.pathname;
+    mockLocation.search = url.search ?? '';
+    mockLocation.state = options?.state ?? null;
+  }
+  return null;
+});
 
 vi.mock('react-router-dom', () => ({
   useLocation: () => mockLocation,
@@ -93,10 +103,21 @@ function ClickTester({ image }: { image: GalleryImageLike }) {
   );
 }
 
+function renderWithProviders(children: React.ReactNode) {
+  return render(
+    <GenerationProvider>
+      <ToastContext.Provider value={{ showToast: vi.fn() }}>
+        <GalleryProvider>{children}</GalleryProvider>
+      </ToastContext.Provider>
+    </GenerationProvider>,
+  );
+}
+
 beforeEach(() => {
-  mockNavigate.mockReset();
+  mockNavigate.mockClear();
   mockLocation.pathname = '/create/image';
   mockLocation.search = '';
+  mockLocation.state = null;
 });
 
 describe('Gallery deep link hydration', () => {
@@ -157,13 +178,7 @@ describe('Gallery deep link hydration', () => {
 
 describe('Gallery action navigation fallbacks', () => {
   it('navigates with r2FileId when jobId missing', () => {
-    render(
-      <GenerationProvider>
-        <GalleryProvider>
-          <ClickTester image={mockGalleryImages[1]!} />
-        </GalleryProvider>
-      </GenerationProvider>,
-    );
+    renderWithProviders(<ClickTester image={mockGalleryImages[1]!} />);
 
     fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
@@ -176,13 +191,7 @@ describe('Gallery action navigation fallbacks', () => {
   it('encodes URL when neither jobId nor r2FileId exist', () => {
     const image = mockGalleryImages[2]!;
 
-    render(
-      <GenerationProvider>
-        <GalleryProvider>
-          <ClickTester image={image} />
-        </GalleryProvider>
-      </GenerationProvider>,
-    );
+    renderWithProviders(<ClickTester image={image} />);
 
     fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
@@ -193,5 +202,40 @@ describe('Gallery action navigation fallbacks', () => {
         state: { jobOrigin: '/create/image' },
       }),
     );
+  });
+});
+
+describe('FullImageModal navigation sync', () => {
+  it('updates the job route when using next arrow navigation', async () => {
+    renderWithProviders(
+      <>
+        <ClickTester image={mockGalleryImages[0]!} />
+        <FullImageModal />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Next image/i)).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalled();
+    });
+    mockNavigate.mockClear();
+
+    fireEvent.click(screen.getByLabelText(/Next image/i));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/job/r2-fallback',
+        expect.objectContaining({
+          replace: false,
+          state: expect.objectContaining({
+            jobOrigin: expect.any(String),
+          }),
+        }),
+      );
+    });
   });
 });

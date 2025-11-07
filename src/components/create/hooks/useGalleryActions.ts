@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGallery } from '../contexts/GalleryContext';
+import { useSavedPrompts } from '../../../hooks/useSavedPrompts';
+import { useAuth } from '../../../auth/useAuth';
 import { debugLog, debugError } from '../../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from '../types';
 
@@ -25,6 +27,9 @@ export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation<{ jobOrigin?: string } | null>();
   const fallbackRouteRef = useRef<string>('/create/image');
+  const { user } = useAuth();
+  const userKey = user?.id || user?.email || 'anon';
+  const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
   const {
     state,
     setImageActionMenu,
@@ -36,6 +41,7 @@ export function useGalleryActions() {
     setFullSizeImage,
     filteredItems,
     setSelectedItems,
+    toggleItemSelection,
     clearSelection,
     setDeleteConfirmation,
     setPublishConfirmation,
@@ -43,6 +49,9 @@ export function useGalleryActions() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setDownloadConfirmation: _setDownloadConfirmation,
   } = useGallery();
+  
+  // Copy notification state
+  const [copyNotification, setCopyNotification] = useState<string | null>(null);
   
   // Track the most recent non-job route for reliable unwinding
   useEffect(() => {
@@ -531,6 +540,34 @@ export function useGalleryActions() {
       debugError('Error adding to folder:', error);
     }
   }, []);
+
+  // Handle copy prompt to clipboard
+  const handleCopyPrompt = useCallback(async (prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopyNotification('Prompt copied!');
+      setTimeout(() => setCopyNotification(null), 2000);
+      debugLog('Copied prompt to clipboard:', prompt);
+    } catch (error) {
+      debugError('Error copying prompt:', error);
+    }
+  }, []);
+
+  // Handle save prompt
+  const handleSavePrompt = useCallback((promptText: string) => {
+    if (promptText.trim() && !isPromptSaved(promptText.trim())) {
+      savePrompt(promptText.trim());
+      setCopyNotification('Prompt saved!');
+      setTimeout(() => setCopyNotification(null), 2000);
+      debugLog('Saved prompt:', promptText);
+    }
+  }, [savePrompt, isPromptSaved]);
+
+  // Handle toggle selection
+  const handleToggleSelection = useCallback((imageId: string) => {
+    toggleItemSelection(imageId);
+    debugLog('Toggled selection for:', imageId);
+  }, [toggleItemSelection]);
   
   return {
     // Navigation
@@ -554,6 +591,11 @@ export function useGalleryActions() {
     handleCopyImageUrl,
     handleSelectAll,
     handleClearSelection,
+    handleToggleSelection,
+    
+    // Prompt actions
+    handleCopyPrompt,
+    handleSavePrompt,
     
     // Confirmation handlers
     confirmDeleteImage,
@@ -572,5 +614,8 @@ export function useGalleryActions() {
     handleReusePrompt,
     handleMakeVideo,
     handleAddToFolder,
+    
+    // Notification state
+    copyNotification,
   };
 }

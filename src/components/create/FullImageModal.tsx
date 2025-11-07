@@ -41,6 +41,7 @@ const FullImageModal = memo(() => {
     handleReusePrompt,
     handleMakeVideo,
     handleImageActionMenu,
+    syncJobUrlForImage,
     clearJobUrl 
   } = useGalleryActions();
   
@@ -176,6 +177,14 @@ const FullImageModal = memo(() => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [open, fullSizeImage, handlePrevious, handleNext, clearJobUrl]);
+
+  // Keep the job route in sync with the currently focused image
+  useEffect(() => {
+    if (!open || !fullSizeImage) {
+      return;
+    }
+    syncJobUrlForImage(fullSizeImage);
+  }, [open, fullSizeImage, syncJobUrlForImage]);
   
 
   // Handle toggle like
