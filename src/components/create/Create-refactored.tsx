@@ -178,7 +178,7 @@ export default function CreateRefactored() {
 
   useEffect(() => {
     const isGalleryRoute = location.pathname.startsWith('/gallery');
-    const isGalleryCategory = activeCategory === 'gallery' || activeCategory === 'my-folders';
+    const isGalleryCategory = activeCategory === 'gallery' || activeCategory === 'my-folders' || activeCategory === 'inspirations';
     const hideFooterSections = new Set(['text', 'image', 'video', 'audio']);
 
     if (isGalleryRoute || isGalleryCategory) {

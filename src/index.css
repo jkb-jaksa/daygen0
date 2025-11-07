@@ -1784,8 +1784,8 @@ select option::-webkit-scrollbar-thumb:hover {
 .UseCaseDescription {
   --prompt-bar-gradient-direction: to top;
   --prompt-bar-color-rgb: var(--theme-black-rgb);
-  -webkit-backdrop-filter: blur(28px);
-  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   contain: layout style;
   height: fit-content;
 }
