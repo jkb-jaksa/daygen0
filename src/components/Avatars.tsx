@@ -42,7 +42,7 @@ import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
-const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
+import CreateSidebar from "./create/CreateSidebar";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
@@ -2655,20 +2655,18 @@ export default function Avatars() {
 
         {/* Left Navigation Sidebar */}
         {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <Suspense fallback={null}>
-            <CreateSidebar
-              activeCategory="avatars"
-              onSelectCategory={(category) => {
-                navigate(`/create/${category}`);
-                closeAvatarFullSizeView();
-              }}
-              onOpenMyFolders={() => {
-                navigate('/gallery');
-                closeAvatarFullSizeView();
-              }}
-              isFullSizeOpen={true}
-            />
-          </Suspense>
+          <CreateSidebar
+            activeCategory="avatars"
+            onSelectCategory={(category) => {
+              navigate(`/create/${category}`);
+              closeAvatarFullSizeView();
+            }}
+            onOpenMyFolders={() => {
+              navigate('/gallery');
+              closeAvatarFullSizeView();
+            }}
+            isFullSizeOpen={true}
+          />
         )}
       </>
 

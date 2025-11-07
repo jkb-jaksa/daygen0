@@ -40,7 +40,7 @@ import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
-const CreateSidebar = lazy(() => import("./create/CreateSidebar"));
+import CreateSidebar from "./create/CreateSidebar";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
@@ -2262,20 +2262,18 @@ export default function Products() {
       <>
         {/* Left Navigation Sidebar */}
         {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
-          <Suspense fallback={null}>
-            <CreateSidebar
-              activeCategory="products"
-              onSelectCategory={(category) => {
-                navigate(`/create/${category}`);
-                closeProductFullSizeView();
-              }}
-              onOpenMyFolders={() => {
-                navigate('/gallery');
-                closeProductFullSizeView();
-              }}
-              isFullSizeOpen={true}
-            />
-          </Suspense>
+          <CreateSidebar
+            activeCategory="products"
+            onSelectCategory={(category) => {
+              navigate(`/create/${category}`);
+              closeProductFullSizeView();
+            }}
+            onOpenMyFolders={() => {
+              navigate('/gallery');
+              closeProductFullSizeView();
+            }}
+            isFullSizeOpen={true}
+          />
         )}
 
         {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
@@ -2526,20 +2524,18 @@ export default function Products() {
       <>
         {/* Left Navigation Sidebar */}
         {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
-          <Suspense fallback={null}>
-            <CreateSidebar
-              activeCategory="products"
-              onSelectCategory={(category) => {
-                navigate(`/create/${category}`);
-                closeFullSizeView();
-              }}
-              onOpenMyFolders={() => {
-                navigate('/gallery');
-                closeFullSizeView();
-              }}
-              isFullSizeOpen={true}
-            />
-          </Suspense>
+          <CreateSidebar
+            activeCategory="products"
+            onSelectCategory={(category) => {
+              navigate(`/create/${category}`);
+              closeFullSizeView();
+            }}
+            onOpenMyFolders={() => {
+              navigate('/gallery');
+              closeFullSizeView();
+            }}
+            isFullSizeOpen={true}
+          />
         )}
 
         {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
