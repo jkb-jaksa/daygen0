@@ -278,12 +278,18 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
+    console.log('[ResultsGrid] handleItemClick called', { 
+      item: { url: item.url, jobId: item.jobId, prompt: item.prompt?.substring(0, 50) }, 
+      index, 
+      isBulkMode 
+    });
     if (isBulkMode) {
       const itemId = getItemIdentifier(item);
       if (itemId) {
         toggleItemSelection(itemId);
       }
     } else {
+      console.log('[ResultsGrid] Calling handleImageClick');
       handleImageClick(item, index);
     }
   }, [isBulkMode, toggleItemSelection, handleImageClick]);
@@ -457,7 +463,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
                 : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
             } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
-            onClick={() => handleItemClick(item, index)}
+            onClick={() => {
+              console.log('[ResultsGrid] Card div onClick fired', { index, url: item.url });
+              handleItemClick(item, index);
+            }}
             onContextMenu={(e) => handleItemRightClick(e, item)}
           >
             {/* Selection indicator */}

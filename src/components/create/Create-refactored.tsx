@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import PromptForm from './PromptForm';
 import ComingSoonCategory from './ComingSoonCategory';
-const ResultsGrid = lazy(() => import('./ResultsGrid'));
-const FullImageModal = lazy(() => import('./FullImageModal'));
+import ResultsGrid from './ResultsGrid';
+import FullImageModal from './FullImageModal';
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
@@ -486,12 +486,10 @@ export default function CreateRefactored() {
                       </button>
                     </div>
                   )}
-                  <Suspense fallback={null}>
-                    <ResultsGrid
-                      activeCategory={activeCategory}
-                      onFocusPrompt={focusPromptBar}
-                    />
-                  </Suspense>
+                  <ResultsGrid
+                    activeCategory={activeCategory}
+                    onFocusPrompt={focusPromptBar}
+                  />
                   <Suspense fallback={null}>
                     <GenerationProgress />
                   </Suspense>
@@ -518,9 +516,7 @@ export default function CreateRefactored() {
                   <Suspense fallback={null}>
                     <GallerySelectionBar />
                   </Suspense>
-                  <Suspense fallback={null}>
-                    <ResultsGrid activeCategory={activeCategory} />
-                  </Suspense>
+                  <ResultsGrid activeCategory={activeCategory} />
                 </>
               )}
               {activeCategory === 'my-folders' && (
@@ -585,9 +581,7 @@ export default function CreateRefactored() {
                             </button>
                           </div>
                         )}
-                        <Suspense fallback={null}>
-                          <ResultsGrid activeCategory={activeCategory} />
-                        </Suspense>
+                        <ResultsGrid activeCategory={activeCategory} />
                       </>
                     );
                   })()}
@@ -598,9 +592,7 @@ export default function CreateRefactored() {
         </div>
       </div>
 
-      <Suspense fallback={null}>
-        <FullImageModal />
-      </Suspense>
+      <FullImageModal />
       <Suspense fallback={null}>
         <ImageActionMenu open={Boolean(imageActionMenu)} onClose={handleImageMenuClose} />
       </Suspense>

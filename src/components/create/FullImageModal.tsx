@@ -61,6 +61,13 @@ const FullImageModal = memo(() => {
   const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
   const open = isFullSizeOpen;
   
+  console.log('[FullImageModal] Render', { 
+    open, 
+    hasFullSizeImage: !!fullSizeImage, 
+    fullSizeIndex,
+    imageUrl: fullSizeImage?.url 
+  });
+  
   // Derive active category from pathname
   const getActiveCategory = useCallback(() => {
     const path = location.pathname;
@@ -375,7 +382,10 @@ const FullImageModal = memo(() => {
     tooltip.classList.add('opacity-0');
   }, []);
 
-  if (!open || !fullSizeImage) return null;
+  if (!open || !fullSizeImage) {
+    console.log('[FullImageModal] Returning null', { open, hasFullSizeImage: !!fullSizeImage });
+    return null;
+  }
   
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
   const hasMultipleItems = filteredItems.length > 1;
