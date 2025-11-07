@@ -81,7 +81,7 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
 };
 
 export default function CreateRefactored() {
-  const { state, setImageActionMenu, setBulkActionsMenu, addImage, setNewFolderDialog, setAddToFolderDialog, setFolderThumbnailDialog, removeFolder, setFolders, addFolder } = useGallery();
+  const { state, setImageActionMenu, setBulkActionsMenu, addImage, setNewFolderDialog, setAddToFolderDialog, setFolderThumbnailDialog, removeFolder, setFolders, addFolder, filteredItems, setDownloadConfirmation } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
   const { setSelectedModel } = generation;
@@ -611,8 +611,38 @@ export default function CreateRefactored() {
           onUnpublishConfirm={galleryActions.confirmUnpublish}
           onUnpublishCancel={galleryActions.cancelUnpublish}
           downloadConfirmation={state.downloadConfirmation}
-          onDownloadConfirm={() => console.log('Download confirmed')}
-          onDownloadCancel={() => console.log('Download cancelled')}
+          onDownloadConfirm={async () => {
+            const { downloadConfirmation } = state;
+            if (downloadConfirmation.count > 0) {
+              // Get selected items if in bulk mode, otherwise use the single item
+              const itemsToDownload = state.selectedItems.size > 0 
+                ? filteredItems.filter(item => {
+                    const itemId = item.jobId || item.r2FileId || item.url;
+                    return itemId && state.selectedItems.has(itemId);
+                  })
+                : filteredItems.slice(0, downloadConfirmation.count);
+              
+              // Download each item
+              for (const item of itemsToDownload) {
+                try {
+                  await galleryActions.handleDownloadImage(item);
+                } catch (error) {
+                  console.error('Error downloading item:', error);
+                }
+              }
+              
+              // Clear selection after download
+              if (state.selectedItems.size > 0) {
+                galleryActions.handleClearSelection();
+              }
+              
+              // Clear download confirmation
+              setDownloadConfirmation({ show: false, count: 0 });
+            }
+          }}
+          onDownloadCancel={() => {
+            setDownloadConfirmation({ show: false, count: 0 });
+          }}
           newFolderDialog={state.newFolderDialog}
           newFolderName={newFolderName}
           folders={state.folders}

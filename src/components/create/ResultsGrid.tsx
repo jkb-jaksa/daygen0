@@ -449,7 +449,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       <div className={`grid ${gridCols} gap-1 w-full p-1`}>
         {filteredItems.map((item, index) => {
           const isSelected = isItemSelected(item);
-          const isMenuActive = imageActionMenu?.id === `gallery-actions-${index}-${item.url}`;
+          const itemId = getItemIdentifier(item);
+          const isMenuActive = imageActionMenu?.id === itemId;
           const avatarForImage = item.avatarId ? avatarMap.get(item.avatarId) : undefined;
           const productForImage = item.productId ? productMap.get(item.productId) : undefined;
           const styleForImage = item.styleId ? styleIdToStoredStyle(item.styleId) : null;

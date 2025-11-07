@@ -23,7 +23,7 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useGenerateShortcuts } from '../../hooks/useGenerateShortcuts';
@@ -32,7 +32,7 @@ import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { AvatarPickerPortal } from './AvatarPickerPortal';
 import { buttons, glass } from '../../styles/designSystem';
-import { debugLog } from '../../utils/debug';
+import { debugLog, debugError } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
@@ -106,6 +106,7 @@ const PromptForm = memo<PromptFormProps>(
   }) => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const location = useLocation();
     const { user } = useAuth();
     const { setFullSizeImage, setFullSizeOpen } = useGallery();
     const {
@@ -521,6 +522,89 @@ const PromptForm = memo<PromptFormProps>(
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [styleHandlers.isStyleModalOpen, styleHandlers.handleStyleModalOpen, styleHandlers.handleStyleModalClose]);
+
+    // Listen for custom events to set prompt and reference from gallery actions
+    // Use refs to avoid stale closures
+    const setPromptValueRef = useRef(setPromptValue);
+    const clearAllReferencesRef = useRef(referenceHandlers.clearAllReferences);
+    const handleAddReferenceFilesRef = useRef(referenceHandlers.handleAddReferenceFiles);
+    
+    // Update refs when handlers change
+    useEffect(() => {
+      setPromptValueRef.current = setPromptValue;
+      clearAllReferencesRef.current = referenceHandlers.clearAllReferences;
+      handleAddReferenceFilesRef.current = referenceHandlers.handleAddReferenceFiles;
+    }, [setPromptValue, referenceHandlers.clearAllReferences, referenceHandlers.handleAddReferenceFiles]);
+    
+    // Check for pending prompt/reference from sessionStorage on mount and route changes
+    useEffect(() => {
+      // Check for pending prompt
+      const pendingPrompt = sessionStorage.getItem('pendingPromptText');
+      if (pendingPrompt) {
+        debugLog('[PromptForm] Found pending prompt in sessionStorage:', pendingPrompt);
+        setPromptValueRef.current(pendingPrompt);
+        sessionStorage.removeItem('pendingPromptText');
+      }
+      
+      // Check for pending reference
+      const pendingReference = sessionStorage.getItem('pendingReferenceImage');
+      if (pendingReference) {
+        (async () => {
+          try {
+            const { dataUrl, fileName, type } = JSON.parse(pendingReference);
+            debugLog('[PromptForm] Found pending reference in sessionStorage:', fileName);
+            
+            // Convert data URL to File
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            const file = new File([blob], fileName, { type });
+            clearAllReferencesRef.current();
+            setTimeout(() => {
+              handleAddReferenceFilesRef.current([file]);
+            }, 50);
+            sessionStorage.removeItem('pendingReferenceImage');
+          } catch (error) {
+            debugError('[PromptForm] Failed to load reference from sessionStorage:', error);
+            sessionStorage.removeItem('pendingReferenceImage');
+          }
+        })();
+      }
+    }, [location.pathname]); // Re-check on route changes
+    
+    useEffect(() => {
+      const handleSetPromptText = (event: Event) => {
+        const customEvent = event as CustomEvent<{ prompt: string }>;
+        if (customEvent.detail?.prompt) {
+          debugLog('[PromptForm] Received setPromptText event:', customEvent.detail.prompt);
+          setPromptValueRef.current(customEvent.detail.prompt);
+          // Clear from sessionStorage if present
+          sessionStorage.removeItem('pendingPromptText');
+        }
+      };
+
+      const handleSetReferenceImage = (event: Event) => {
+        const customEvent = event as CustomEvent<{ file: File }>;
+        if (customEvent.detail?.file) {
+          debugLog('[PromptForm] Received setReferenceImage event:', customEvent.detail.file.name);
+          // Clear existing references first, then add the new one
+          clearAllReferencesRef.current();
+          // Use setTimeout to ensure state updates are processed
+          setTimeout(() => {
+            handleAddReferenceFilesRef.current([customEvent.detail.file]);
+          }, 50);
+          // Clear from sessionStorage if present
+          sessionStorage.removeItem('pendingReferenceImage');
+        }
+      };
+
+      window.addEventListener('setPromptText', handleSetPromptText);
+      window.addEventListener('setReferenceImage', handleSetReferenceImage);
+
+      return () => {
+        window.removeEventListener('setPromptText', handleSetPromptText);
+        window.removeEventListener('setReferenceImage', handleSetReferenceImage);
+      };
+    }, []); // Empty deps - using refs for stable references
 
     useLayoutEffect(() => {
       adjustPromptTextareaHeight();

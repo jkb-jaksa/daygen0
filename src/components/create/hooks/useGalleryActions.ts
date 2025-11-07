@@ -497,45 +497,242 @@ export function useGalleryActions() {
     });
   }, [navigate]);
 
-  // Handle use as reference - needs to be wired to parent Create component
-  // This is a placeholder that logs the intent
-  const handleUseAsReference = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
-    debugLog('Use as reference:', image.url);
-    // TODO: Wire this to parent Create component to actually set the reference
-    // For now, this just logs. The actual implementation needs:
-    // - Convert image URL to File
-    // - Set as reference in generation context
-    // - Clear existing references
-    // - Focus prompt bar
-  }, []);
-
-  // Handle reuse prompt - needs to be wired to parent Create component
-  // This is a placeholder that logs the intent
-  const handleReusePrompt = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
-    debugLog('Reuse prompt:', image.prompt);
-    // TODO: Wire this to parent Create component to actually set the prompt
-    // For now, this just logs. The actual implementation needs:
-    // - Set prompt text in generation context
-    // - Switch to image category if not already there
-    // - Focus prompt bar
-  }, []);
-
-  // Handle make video - needs to be wired to parent Create component
-  // This is a placeholder that logs the intent
-  const handleMakeVideo = useCallback(() => {
-    debugLog('Make video');
-    // TODO: Wire this to parent Create component to switch category
-    // For now, this just logs. The actual implementation needs:
-    // - Switch activeCategory to 'video'
-    // - Close any open menus
-  }, []);
-
-  // Handle add to folder
-  const handleAddToFolder = useCallback((imageId: string, folderId: string) => {
+  // Handle use as reference - convert image URL to File and set as reference
+  const handleUseAsReference = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
     try {
-      // This would need to be implemented based on how folders work
+      debugLog('Use as reference:', image.url);
+      
+      // Close full-size modal if open
+      setFullSizeOpen(false);
+      setFullSizeImage(null, 0);
+      
+      // Navigate to image category first if not already there
+      const needsNavigation = !location.pathname.startsWith('/create/image');
+      if (needsNavigation) {
+        navigate('/create/image');
+        // Wait for navigation to complete before fetching and dispatching event
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      // Fetch the image and convert to File
+      let file: File | null = null;
+      try {
+        // Try direct fetch first (works for same-origin and CORS-enabled URLs)
+        const response = await fetch(image.url, { mode: 'cors' });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const extension = blob.type.split('/')[1] || 'jpg';
+        file = new File([blob], `reference-${Date.now()}.${extension}`, { type: blob.type });
+        debugLog('Successfully fetched image via fetch API');
+      } catch (fetchError) {
+        // If CORS fails, try using canvas approach
+        debugLog('Fetch failed, trying canvas approach:', fetchError);
+        try {
+          const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const imgEl = new Image();
+            imgEl.crossOrigin = 'anonymous';
+            imgEl.onload = () => resolve(imgEl);
+            imgEl.onerror = () => reject(new Error('Image load failed'));
+            imgEl.src = image.url;
+            // Timeout after 5 seconds
+            setTimeout(() => reject(new Error('Image load timeout')), 5000);
+          });
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Could not get canvas context');
+          ctx.drawImage(img, 0, 0);
+          
+          // Convert canvas to blob synchronously
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error('Failed to convert canvas to blob'));
+                return;
+              }
+              resolve(blob);
+            }, 'image/png');
+          });
+          
+          file = new File([blob], `reference-${Date.now()}.png`, { type: 'image/png' });
+          debugLog('Successfully converted image via canvas');
+        } catch (canvasError) {
+          debugError('Canvas approach also failed:', canvasError);
+          throw new Error('Could not load image as reference. Please ensure the image URL is accessible.');
+        }
+      }
+      
+      if (!file) {
+        throw new Error('Failed to create file from image');
+      }
+      
+      // Wait a bit more to ensure PromptForm is fully mounted and event listener is ready
+      // Use retry logic to ensure event is received
+      // Also store in sessionStorage as backup
+      const storageKey = 'pendingReferenceImage';
+      try {
+        // Convert file to data URL for storage
+        const reader = new FileReader();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        sessionStorage.setItem(storageKey, JSON.stringify({ dataUrl, fileName: file.name, type: file.type }));
+      } catch (storageError) {
+        debugError('Failed to store reference in sessionStorage:', storageError);
+      }
+      
+      let retries = 0;
+      const maxRetries = 5;
+      const dispatchEventWithRetry = () => {
+        const event = new CustomEvent('setReferenceImage', { detail: { file } });
+        window.dispatchEvent(event);
+        debugLog(`Reference image event dispatched (attempt ${retries + 1}/${maxRetries}):`, file.name);
+        
+        // Check if PromptForm is mounted by looking for the textarea
+        const textarea = document.querySelector('textarea[placeholder="Describe what you want to create..."]');
+        if (!textarea && retries < maxRetries) {
+          retries++;
+          setTimeout(dispatchEventWithRetry, 200);
+        } else if (textarea) {
+          // Clear storage once event is received
+          sessionStorage.removeItem(storageKey);
+        }
+      };
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+      dispatchEventWithRetry();
+      
+      // Focus prompt bar after another short delay
+      setTimeout(() => {
+        const textarea = document.querySelector('textarea[placeholder="Describe what you want to create..."]') as HTMLTextAreaElement | null;
+        if (textarea) {
+          textarea.focus();
+        }
+      }, 100);
+      
+      debugLog('Reference image set:', file.name);
+    } catch (error) {
+      debugError('Error setting reference image:', error);
+    }
+  }, [location.pathname, navigate, setFullSizeOpen, setFullSizeImage]);
+
+  // Handle reuse prompt - set prompt text in generation context and focus prompt bar
+  const handleReusePrompt = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
+    try {
+      const promptText = image.prompt || '';
+      if (!promptText.trim()) {
+        debugLog('No prompt to reuse');
+        return;
+      }
+      
+      debugLog('Reuse prompt:', promptText);
+      
+      // Close full-size modal if open
+      setFullSizeOpen(false);
+      setFullSizeImage(null, 0);
+      
+      // Navigate to image category first if not already there
+      const needsNavigation = !location.pathname.startsWith('/create/image') && !location.pathname.startsWith('/create/video');
+      if (needsNavigation) {
+        navigate('/create/image');
+        // Wait for navigation to complete before dispatching event
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      // Wait a bit more to ensure PromptForm is fully mounted and event listener is ready
+      // Use retry logic to ensure event is received
+      // Also store in sessionStorage as backup
+      const storageKey = 'pendingPromptText';
+      try {
+        sessionStorage.setItem(storageKey, promptText);
+      } catch (storageError) {
+        debugError('Failed to store prompt in sessionStorage:', storageError);
+      }
+      
+      let retries = 0;
+      const maxRetries = 5;
+      const dispatchEventWithRetry = () => {
+        const event = new CustomEvent('setPromptText', { detail: { prompt: promptText } });
+        window.dispatchEvent(event);
+        debugLog(`Prompt text event dispatched (attempt ${retries + 1}/${maxRetries}):`, promptText);
+        
+        // Check if PromptForm is mounted by looking for the textarea
+        const textarea = document.querySelector('textarea[placeholder="Describe what you want to create..."]');
+        if (!textarea && retries < maxRetries) {
+          retries++;
+          setTimeout(dispatchEventWithRetry, 200);
+        } else if (textarea) {
+          // Clear storage once event is received
+          sessionStorage.removeItem(storageKey);
+        }
+      };
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+      dispatchEventWithRetry();
+      
+      // Focus prompt bar after another short delay
+      setTimeout(() => {
+        const textarea = document.querySelector('textarea[placeholder="Describe what you want to create..."]') as HTMLTextAreaElement | null;
+        if (textarea) {
+          textarea.focus();
+          // Set cursor to end
+          const length = textarea.value.length;
+          textarea.setSelectionRange(length, length);
+        }
+      }, 100);
+      
+      debugLog('Prompt set:', promptText);
+    } catch (error) {
+      debugError('Error reusing prompt:', error);
+    }
+  }, [location.pathname, navigate, setFullSizeOpen, setFullSizeImage]);
+
+  // Handle make video - switch to video category
+  const handleMakeVideo = useCallback(() => {
+    try {
+      debugLog('Make video - switching to video category');
+      
+      // Close full-size modal if open
+      setFullSizeOpen(false);
+      setFullSizeImage(null, 0);
+      
+      // Close any open menus by clearing action menus
+      setImageActionMenu(null);
+      setBulkActionsMenu(null);
+      
+      // Navigate to video category
+      if (!location.pathname.startsWith('/create/video')) {
+        navigate('/create/video');
+      }
+      
+      debugLog('Switched to video category');
+    } catch (error) {
+      debugError('Error switching to video category:', error);
+    }
+  }, [location.pathname, navigate, setImageActionMenu, setBulkActionsMenu, setFullSizeOpen, setFullSizeImage]);
+
+  // Handle add to folder - open folder selection dialog
+  const handleAddToFolder = useCallback((imageId: string, folderId?: string) => {
+    try {
       debugLog('Add to folder:', { imageId, folderId });
-      // TODO: Implement folder functionality
+      
+      // If folderId is provided, add directly
+      if (folderId) {
+        // TODO: Implement actual folder addition via API
+        debugLog('Adding image to folder:', { imageId, folderId });
+        return;
+      }
+      
+      // Otherwise, open the add to folder dialog
+      // This will be handled by the GalleryContext's setAddToFolderDialog
+      // The actual implementation should be in Create-refactored.tsx
+      debugLog('Opening add to folder dialog for:', imageId);
     } catch (error) {
       debugError('Error adding to folder:', error);
     }
