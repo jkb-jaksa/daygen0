@@ -55,8 +55,9 @@ export function useGalleryActions() {
   // Navigate to job URL
   const navigateToJobUrl = useCallback(
     (targetJobId: string, options: { replace?: boolean } = {}) => {
-      const targetPath = `/job/${targetJobId}`;
-      const currentFullPath = `${location.pathname}${location.search}`;
+      const encodedTargetId = encodeURIComponent(targetJobId);
+      const targetPath = `/job/${encodedTargetId}`;
+      const currentFullPath = `${location.pathname}${location.search ?? ''}`;
       const targetFullPath = `${targetPath}${location.search || ''}`;
       if (currentFullPath === targetFullPath) {
         return;
@@ -141,8 +142,9 @@ export function useGalleryActions() {
   // Sync job URL for image
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | GalleryVideoLike | null | undefined) => {
-      if (image?.jobId) {
-        navigateToJobUrl(image.jobId);
+      const identifier = image ? getItemIdentifier(image) : null;
+      if (identifier) {
+        navigateToJobUrl(identifier);
       } else {
         clearJobUrl();
       }

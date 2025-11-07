@@ -682,7 +682,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const targetIndex = filteredItems.findIndex(item => item.jobId === jobId);
+    const targetIndex = filteredItems.findIndex(item => matchGalleryItemId(item, jobId));
     
     // If item not found, try refresh once (might be a newly completed job)
     if (targetIndex === -1) {
@@ -706,9 +706,9 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const targetItem = filteredItems[targetIndex];
     const alreadySelected =
-      current.fullSizeImage?.jobId === targetItem.jobId &&
+      current.isFullSizeOpen &&
       current.fullSizeIndex === targetIndex &&
-      current.isFullSizeOpen;
+      (current.fullSizeImage ? matchGalleryItemId(current.fullSizeImage, jobId) : false);
 
     if (!alreadySelected) {
       setFullSizeImage(targetItem, targetIndex);

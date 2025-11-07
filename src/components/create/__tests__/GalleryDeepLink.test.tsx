@@ -1,9 +1,11 @@
 /* @vitest-environment jsdom */
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
 import { GenerationProvider } from '../contexts/GenerationContext';
+import { useGalleryActions } from '../hooks/useGalleryActions';
+import type { GalleryImageLike } from '../types';
 
 const mockLocation = {
   pathname: '/create/image',
@@ -12,9 +14,11 @@ const mockLocation = {
   state: null,
   key: 'default',
 };
+const mockNavigate = vi.fn();
 
 vi.mock('react-router-dom', () => ({
   useLocation: () => mockLocation,
+  useNavigate: () => mockNavigate,
 }));
 
 // Mock auth to avoid requiring AuthProvider
@@ -26,13 +30,27 @@ vi.mock('../../../auth/useAuth', () => ({
 }));
 
 const now = new Date().toISOString();
-const mockGalleryImages = [
+const mockGalleryImages: GalleryImageLike[] = [
   {
     url: 'https://example.com/image.jpg',
     prompt: 'test',
     model: 'gemini-2.5-flash-image',
     jobId: 'abc',
+    r2FileId: 'r2-primary',
     timestamp: now,
+  },
+  {
+    url: 'https://example.com/r2-only.jpg',
+    prompt: 'fallback',
+    model: 'flux',
+    r2FileId: 'r2-fallback',
+    timestamp: new Date(Date.now() - 1000).toISOString(),
+  },
+  {
+    url: 'https://example.com/url-only.jpg',
+    prompt: 'url-only',
+    model: 'flux',
+    timestamp: new Date(Date.now() - 2000).toISOString(),
   },
 ];
 
@@ -56,14 +74,34 @@ function Probe() {
     <div>
       <div data-testid="open">{state.isFullSizeOpen ? 'open' : 'closed'}</div>
       <div data-testid="job">{state.fullSizeImage?.jobId ?? ''}</div>
+      <div data-testid="identifier">
+        {state.fullSizeImage?.jobId ??
+          state.fullSizeImage?.r2FileId ??
+          state.fullSizeImage?.url ??
+          ''}
+      </div>
     </div>
   );
 }
 
+function ClickTester({ image }: { image: GalleryImageLike }) {
+  const { handleImageClick } = useGalleryActions();
+  return (
+    <button type="button" onClick={() => handleImageClick(image, 0)}>
+      open
+    </button>
+  );
+}
+
+beforeEach(() => {
+  mockNavigate.mockReset();
+  mockLocation.pathname = '/create/image';
+  mockLocation.search = '';
+});
+
 describe('Gallery deep link hydration', () => {
   it('opens full-size modal for /job/:jobId', async () => {
     mockLocation.pathname = '/job/abc';
-    mockLocation.search = '';
 
     render(
       <GenerationProvider>
@@ -77,9 +115,83 @@ describe('Gallery deep link hydration', () => {
       expect(screen.getByTestId('open').textContent).toBe('open');
     });
     expect(screen.getByTestId('job').textContent).toBe('abc');
+    expect(screen.getByTestId('identifier').textContent).toBe('abc');
+  });
 
-    // Reset mock location for other tests
-    mockLocation.pathname = '/create/image';
-    mockLocation.search = '';
+  it('hydrates modal when /job identifier matches r2FileId', async () => {
+    mockLocation.pathname = '/job/r2-fallback';
+
+    render(
+      <GenerationProvider>
+        <GalleryProvider>
+          <Probe />
+        </GalleryProvider>
+      </GenerationProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
+    expect(screen.getByTestId('job').textContent).toBe('');
+    expect(screen.getByTestId('identifier').textContent).toBe('r2-fallback');
+  });
+
+  it('hydrates modal when /job identifier encodes image URL', async () => {
+    const targetUrl = mockGalleryImages[2]!.url;
+    mockLocation.pathname = `/job/${encodeURIComponent(targetUrl)}`;
+
+    render(
+      <GenerationProvider>
+        <GalleryProvider>
+          <Probe />
+        </GalleryProvider>
+      </GenerationProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
+    expect(screen.getByTestId('identifier').textContent).toBe(targetUrl);
+  });
+});
+
+describe('Gallery action navigation fallbacks', () => {
+  it('navigates with r2FileId when jobId missing', () => {
+    render(
+      <GenerationProvider>
+        <GalleryProvider>
+          <ClickTester image={mockGalleryImages[1]!} />
+        </GalleryProvider>
+      </GenerationProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/job/r2-fallback', expect.objectContaining({
+      replace: false,
+      state: { jobOrigin: '/create/image' },
+    }));
+  });
+
+  it('encodes URL when neither jobId nor r2FileId exist', () => {
+    const image = mockGalleryImages[2]!;
+
+    render(
+      <GenerationProvider>
+        <GalleryProvider>
+          <ClickTester image={image} />
+        </GalleryProvider>
+      </GenerationProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      `/job/${encodeURIComponent(image.url)}`,
+      expect.objectContaining({
+        replace: false,
+        state: { jobOrigin: '/create/image' },
+      }),
+    );
   });
 });
