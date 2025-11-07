@@ -477,10 +477,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setFullSizeOpen = useCallback((open: boolean) => {
+    console.log('[GalleryContext] setFullSizeOpen', { open });
     dispatch({ type: 'SET_FULL_SIZE_OPEN', payload: open });
   }, []);
 
   const setFullSizeImage = useCallback((image: GalleryImageLike | GalleryVideoLike | null, index: number) => {
+    console.log('[GalleryContext] setFullSizeImage', { 
+      hasImage: !!image, 
+      imageUrl: image?.url, 
+      index 
+    });
     dispatch({ type: 'SET_FULL_SIZE_IMAGE', payload: { image, index } });
   }, []);
 

@@ -133,8 +133,13 @@ export function useGalleryActions() {
           ? index
           : resolveItemIndex(image);
 
+      console.log('[useGalleryActions] openImageInGallery', { 
+        image: { url: image.url, jobId: image.jobId },
+        resolvedIndex 
+      });
       setFullSizeImage(image, resolvedIndex);
       setFullSizeOpen(true);
+      console.log('[useGalleryActions] setFullSizeOpen(true) called');
     },
     [resolveItemIndex, setFullSizeImage, setFullSizeOpen],
   );
@@ -143,9 +148,15 @@ export function useGalleryActions() {
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | GalleryVideoLike | null | undefined) => {
       const identifier = image ? getItemIdentifier(image) : null;
+      console.log('[useGalleryActions] syncJobUrlForImage', { 
+        hasIdentifier: !!identifier, 
+        identifier 
+      });
       if (identifier) {
+        console.log('[useGalleryActions] Navigating to job URL:', identifier);
         navigateToJobUrl(identifier);
       } else {
+        console.log('[useGalleryActions] No identifier, clearing URL');
         clearJobUrl();
       }
     },
@@ -155,6 +166,10 @@ export function useGalleryActions() {
   // Handle image click
   const handleImageClick = useCallback(
     (image: GalleryImageLike | GalleryVideoLike, index?: number) => {
+      console.log('[useGalleryActions] handleImageClick called', { 
+        image: { url: image.url, jobId: image.jobId }, 
+        index 
+      });
       openImageInGallery(image, index);
       syncJobUrlForImage(image);
     },
