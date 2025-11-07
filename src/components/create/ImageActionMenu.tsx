@@ -37,7 +37,6 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
     handleUseAsReference,
     handleReusePrompt,
     handleMakeVideo,
-    handleAddToFolder,
   } = useGalleryActions();
   
   const { imageActionMenu } = state;
