@@ -25,8 +25,8 @@ import { useAuth } from '../../auth/useAuth';
 import { InsufficientCreditsModal } from '../modals/InsufficientCreditsModal';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
-import { CreateBridgeProvider, createInitialBridgeActions } from './contexts/CreateBridgeContext';
-import type { GalleryBridgeActions } from './contexts/CreateBridgeContext';
+import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
+import { createInitialBridgeActions } from './contexts/hooks';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
