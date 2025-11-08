@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PromptForm from './PromptForm';
 import ComingSoonCategory from './ComingSoonCategory';
 import ResultsGrid from './ResultsGrid';
@@ -24,7 +24,9 @@ import { useFooter } from '../../contexts/useFooter';
 import { useAuth } from '../../auth/useAuth';
 import { InsufficientCreditsModal } from '../modals/InsufficientCreditsModal';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
-import type { Folder } from './types';
+import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
+import { CreateBridgeProvider, createInitialBridgeActions } from './contexts/CreateBridgeContext';
+import type { GalleryBridgeActions } from './contexts/CreateBridgeContext';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -81,7 +83,20 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
 };
 
 export default function CreateRefactored() {
-  const { state, setImageActionMenu, setBulkActionsMenu, addImage, setNewFolderDialog, setAddToFolderDialog, setFolderThumbnailDialog, removeFolder, setFolders, addFolder } = useGallery();
+  const {
+    state,
+    setImageActionMenu,
+    setBulkActionsMenu,
+    addImage,
+    setNewFolderDialog,
+    setAddToFolderDialog,
+    setFolderThumbnailDialog,
+    removeFolder,
+    setFolders,
+    addFolder,
+    addImagesToFolder,
+    setSelectedImagesForFolder,
+  } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
   const { setSelectedModel } = generation;
@@ -93,7 +108,9 @@ export default function CreateRefactored() {
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
   const galleryActions = useGalleryActions();
-  const { isPromptSaved } = useSavedPrompts();
+  const promptsUserKey = user?.id || user?.email || 'anon';
+  const { isPromptSaved } = useSavedPrompts(promptsUserKey);
+  const bridgeActionsRef = useRef<GalleryBridgeActions>(createInitialBridgeActions());
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
@@ -114,7 +131,7 @@ export default function CreateRefactored() {
         r2FileId: `r2-dummy-${Date.now()}`,
         isLiked: false,
         isPublic: false,
-        createdAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       },
       {
         url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024',
@@ -124,7 +141,7 @@ export default function CreateRefactored() {
         r2FileId: `r2-dummy-${Date.now()}`,
         isLiked: true,
         isPublic: true,
-        createdAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       },
       {
         url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024',
@@ -134,7 +151,7 @@ export default function CreateRefactored() {
         r2FileId: `r2-dummy-${Date.now()}`,
         isLiked: false,
         isPublic: false,
-        createdAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       },
     ];
     const randomImage = dummyImages[Math.floor(Math.random() * dummyImages.length)];
@@ -273,7 +290,6 @@ export default function CreateRefactored() {
       imageIds: [],
       videoIds: [],
       createdAt: new Date(),
-      customThumbnail: null,
     };
     
     if (state.folders.length === 0) {
@@ -304,16 +320,23 @@ export default function CreateRefactored() {
   }, []);
 
   const handleAddToFolderConfirm = useCallback(() => {
-    // TODO: Implement add to folder logic
-    console.log('Add to folder:', selectedFolder);
+    const targetFolder = selectedFolder;
+    const images = state.selectedImagesForFolder;
+
+    if (targetFolder && images.length > 0) {
+      addImagesToFolder(images, targetFolder);
+    }
+
     setAddToFolderDialog(false);
     setSelectedFolder(null);
-  }, [selectedFolder, setAddToFolderDialog]);
+    setSelectedImagesForFolder([]);
+  }, [addImagesToFolder, selectedFolder, setAddToFolderDialog, setSelectedImagesForFolder, state.selectedImagesForFolder]);
 
   const handleAddToFolderCancel = useCallback(() => {
     setAddToFolderDialog(false);
     setSelectedFolder(null);
-  }, [setAddToFolderDialog]);
+    setSelectedImagesForFolder([]);
+  }, [setAddToFolderDialog, setSelectedImagesForFolder]);
 
   const handleOpenNewFolderDialog = useCallback(() => {
     setAddToFolderDialog(false);
@@ -353,6 +376,52 @@ export default function CreateRefactored() {
     console.log('Cancel folder thumbnail confirmation');
   }, []);
 
+  const getGalleryItemByUrl = useCallback(
+    (imageUrl: string) => {
+      const normalized = imageUrl.trim();
+      return (
+        state.images.find(img => img.url === normalized) ??
+        state.videos.find(vid => vid.url === normalized) ??
+        null
+      );
+    },
+    [state.images, state.videos],
+  );
+
+  const handleFolderImageClick = useCallback(
+    (imageUrl: string) => {
+      const item = getGalleryItemByUrl(imageUrl);
+      if (item) {
+        galleryActions.handleImageClick(item);
+      }
+    },
+    [galleryActions, getGalleryItemByUrl],
+  );
+
+  const handleFolderToggleLike = useCallback(
+    (imageUrl: string) => {
+      const item = getGalleryItemByUrl(imageUrl);
+      if (item) {
+        void galleryActions.handleToggleLike(item);
+      }
+    },
+    [galleryActions, getGalleryItemByUrl],
+  );
+
+  const handleFolderDeleteImage = useCallback(
+    (imageUrl: string) => {
+      galleryActions.handleDeleteImage(imageUrl);
+    },
+    [galleryActions],
+  );
+
+  const handleFolderEditMenuSelect = useCallback(
+    (_actionMenuId: string, image: GalleryImageLike | GalleryVideoLike) => {
+      galleryActions.handleEditMenuSelect(image);
+    },
+    [galleryActions],
+  );
+
   // Folder navigation handlers
   const handleSelectFolder = useCallback((folderId: string) => {
     setSelectedFolder(folderId);
@@ -388,7 +457,8 @@ export default function CreateRefactored() {
   }, [setFolderThumbnailDialog]);
   
   return (
-    <header
+    <CreateBridgeProvider value={bridgeActionsRef}>
+      <header
       className={`relative z-[10] ${layout.container} pb-48`}
       style={{
         paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`,
@@ -487,7 +557,7 @@ export default function CreateRefactored() {
                     </div>
                   )}
                   <ResultsGrid
-                    activeCategory={activeCategory}
+                    activeCategory={activeCategory as 'image' | 'video'}
                     onFocusPrompt={focusPromptBar}
                   />
                   <Suspense fallback={null}>
@@ -516,7 +586,7 @@ export default function CreateRefactored() {
                   <Suspense fallback={null}>
                     <GallerySelectionBar />
                   </Suspense>
-                  <ResultsGrid activeCategory={activeCategory} />
+                  <ResultsGrid activeCategory={activeCategory as 'gallery' | 'inspirations' | 'image' | 'video' | 'my-folders'} />
                 </>
               )}
               {activeCategory === 'my-folders' && (
@@ -538,12 +608,12 @@ export default function CreateRefactored() {
                       state.folders.find(f => f.id === selectedFolder)?.imageIds.includes(img.url)
                     )}
                     onBack={handleBackToFolders}
-                    onImageClick={galleryActions.handleImageClick}
+                    onImageClick={handleFolderImageClick}
                     onCopyPrompt={galleryActions.handleCopyPrompt}
                     onSavePrompt={galleryActions.handleSavePrompt}
                     isPromptSaved={isPromptSaved}
-                    onToggleLike={galleryActions.handleToggleLike}
-                    onDeleteImage={galleryActions.handleDeleteImage}
+                    onToggleLike={handleFolderToggleLike}
+                    onDeleteImage={handleFolderDeleteImage}
                     isLiked={(url) => state.images.find(img => img.url === url)?.isLiked || false}
                     isSelectMode={state.isBulkMode}
                     selectedImages={state.selectedItems}
@@ -551,10 +621,14 @@ export default function CreateRefactored() {
                       event.stopPropagation();
                       galleryActions.handleToggleSelection(url);
                     }}
-                    imageActionMenu={state.imageActionMenu}
+                    imageActionMenu={
+                      state.imageActionMenu?.anchor
+                        ? { id: state.imageActionMenu.id, anchor: state.imageActionMenu.anchor }
+                        : null
+                    }
                     moreActionMenu={null}
-                    onEditMenuSelect={galleryActions.handleEditMenuSelect}
-                    onMoreButtonClick={galleryActions.handleImageActionMenu}
+                    onEditMenuSelect={handleFolderEditMenuSelect}
+                    onMoreButtonClick={undefined}
                   />
                 </Suspense>
               )}
@@ -581,7 +655,7 @@ export default function CreateRefactored() {
                             </button>
                           </div>
                         )}
-                        <ResultsGrid activeCategory={activeCategory} />
+                        <ResultsGrid activeCategory={activeCategory as 'inspirations'} />
                       </>
                     );
                   })()}
@@ -611,8 +685,8 @@ export default function CreateRefactored() {
           onUnpublishConfirm={galleryActions.confirmUnpublish}
           onUnpublishCancel={galleryActions.cancelUnpublish}
           downloadConfirmation={state.downloadConfirmation}
-          onDownloadConfirm={() => console.log('Download confirmed')}
-          onDownloadCancel={() => console.log('Download cancelled')}
+          onDownloadConfirm={galleryActions.confirmBulkDownload}
+          onDownloadCancel={galleryActions.cancelBulkDownload}
           newFolderDialog={state.newFolderDialog}
           newFolderName={newFolderName}
           folders={state.folders}
@@ -642,5 +716,6 @@ export default function CreateRefactored() {
         />
       </Suspense>
     </header>
+    </CreateBridgeProvider>
   );
 }

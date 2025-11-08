@@ -157,6 +157,7 @@ export type UnpublishConfirmationState = {
 export type DownloadConfirmationState = {
   show: boolean;
   count: number;
+  imageUrls?: string[] | null;
 };
 
 export type UploadItem = {

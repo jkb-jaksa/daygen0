@@ -172,11 +172,24 @@ export default function AuthCallback() {
             ]);
             
             if (!syncResponse.ok) {
-              debugWarn('Backend sync returned non-OK status:', syncResponse.status);
+              const errorText = await syncResponse.text().catch(() => '');
+              // Check for the specific email_change NULL error
+              if (errorText.includes('email_change') || errorText.includes('converting NULL to string')) {
+                debugWarn('Backend sync failed due to database schema issue (email_change NULL). Session is valid, continuing...');
+                // Don't fail the flow - the Supabase session is valid even if backend sync fails
+              } else {
+                debugWarn('Backend sync returned non-OK status:', syncResponse.status, errorText);
+              }
             }
           } catch (syncError) {
-            // Don't fail the whole flow if backend sync fails - session is still valid in Supabase
-            debugWarn('Failed to synchronize backend session (continuing anyway):', syncError);
+            // Check if this is the email_change error
+            const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
+            if (errorMessage.includes('email_change') || errorMessage.includes('converting NULL')) {
+              debugWarn('Backend sync failed due to database schema issue (email_change NULL). Session is valid, continuing...');
+            } else {
+              // Don't fail the whole flow if backend sync fails - session is still valid in Supabase
+              debugWarn('Failed to synchronize backend session (continuing anyway):', syncError);
+            }
           }
         }
 

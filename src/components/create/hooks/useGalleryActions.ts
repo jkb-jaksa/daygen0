@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGallery } from '../contexts/GalleryContext';
+import { useCreateBridge } from '../contexts/CreateBridgeContext';
+import { makeRemixUrl, withUtm, copyLink } from '../../../lib/shareUtils';
 import { useSavedPrompts } from '../../../hooks/useSavedPrompts';
 import { useAuth } from '../../../auth/useAuth';
 import { debugLog, debugError } from '../../../utils/debug';
@@ -25,16 +27,18 @@ const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | 
 
 export function useGalleryActions() {
   const navigate = useNavigate();
-  const location = useLocation<{ jobOrigin?: string } | null>();
+  const location = useLocation();
   const fallbackRouteRef = useRef<string>('/create/image');
   const { user } = useAuth();
   const userKey = user?.id || user?.email || 'anon';
   const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
+  const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const {
     state,
     setImageActionMenu,
     setBulkActionsMenu,
     removeVideo,
+    toggleImagesInFolder,
     updateImage,
     deleteImage: deleteGalleryImage,
     setFullSizeOpen,
@@ -46,9 +50,13 @@ export function useGalleryActions() {
     setDeleteConfirmation,
     setPublishConfirmation,
     setUnpublishConfirmation,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    setDownloadConfirmation: _setDownloadConfirmation,
+    setDownloadConfirmation,
+    setAddToFolderDialog,
+    setSelectedImagesForFolder,
+    getGalleryItemsByIds,
+    bulkDownloadItems,
   } = useGallery();
+  const bridgeActionsRef = useCreateBridge();
   
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -83,10 +91,7 @@ export function useGalleryActions() {
   
   // Clear job URL
   const clearJobUrl = useCallback(() => {
-    const jobOrigin =
-      location.state && typeof location.state === 'object'
-        ? location.state.jobOrigin
-        : undefined;
+    const jobOrigin = locationState?.jobOrigin;
     const fallbackPath = jobOrigin ?? fallbackRouteRef.current ?? '/create/image';
     setFullSizeOpen(false);
     setFullSizeImage(null, 0);
@@ -100,7 +105,7 @@ export function useGalleryActions() {
         navigate('/create/image', { replace: false });
       }
     }
-  }, [location.pathname, location.search, location.state, navigate, setFullSizeImage, setFullSizeOpen]);
+  }, [location.pathname, location.search, locationState?.jobOrigin, navigate, setFullSizeImage, setFullSizeOpen]);
 
   const resolveItemIndex = useCallback(
     (image: GalleryImageLike | GalleryVideoLike): number => {
@@ -201,24 +206,59 @@ export function useGalleryActions() {
     event.stopPropagation();
     setBulkActionsMenu({ anchor: event.currentTarget as HTMLElement });
   }, [setBulkActionsMenu]);
+
+  const openAddToFolderDialog = useCallback((imageIds: string[]) => {
+    const normalized = Array.from(
+      new Set(
+        imageIds
+          .map(id => id?.trim())
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (!normalized.length) {
+      return;
+    }
+
+    setSelectedImagesForFolder(normalized);
+    setAddToFolderDialog(true);
+  }, [setAddToFolderDialog, setSelectedImagesForFolder]);
   
+  const ensureBridgeReady = useCallback(async () => {
+    if (bridgeActionsRef.current.isInitialized) {
+      return true;
+    }
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (bridgeActionsRef.current.isInitialized) {
+        return true;
+      }
+    }
+
+    return bridgeActionsRef.current.isInitialized;
+  }, [bridgeActionsRef]);
+
+  const resolveShareUrl = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+    if (item.jobId) {
+      const normalizedBase = baseUrl.replace(/\/$/, '');
+      return `${normalizedBase}/job/${encodeURIComponent(item.jobId)}`;
+    }
+
+    const remixUrl = makeRemixUrl(baseUrl, item.prompt || '');
+    return withUtm(remixUrl, 'copy');
+  }, []);
+
   // Handle download image
   const handleDownloadImage = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
     try {
-      const response = await fetch(image.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `daygen-${image.jobId || 'image'}.${image.url.split('.').pop() || 'jpg'}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      await bulkDownloadItems([image]);
     } catch (error) {
       debugError('Error downloading image:', error);
     }
-  }, []);
+  }, [bulkDownloadItems]);
   
   // Show delete confirmation for single image
   const handleDeleteImage = useCallback((imageUrl: string) => {
@@ -424,40 +464,96 @@ export function useGalleryActions() {
       setUnpublishConfirmation({ show: false, count: 0 });
     }
   }, [updateImage, setUnpublishConfirmation]);
+
+  const confirmBulkDownload = useCallback(async () => {
+    const pendingIds = state.downloadConfirmation.imageUrls && state.downloadConfirmation.imageUrls.length > 0
+      ? state.downloadConfirmation.imageUrls
+      : Array.from(state.selectedItems);
+
+    if (!pendingIds.length) {
+      setDownloadConfirmation({ show: false, count: 0, imageUrls: null });
+      return;
+    }
+
+    const items = getGalleryItemsByIds(pendingIds);
+    await bulkDownloadItems(items);
+    setDownloadConfirmation({ show: false, count: 0, imageUrls: null });
+  }, [bulkDownloadItems, getGalleryItemsByIds, setDownloadConfirmation, state.downloadConfirmation.imageUrls, state.selectedItems]);
+
+  const cancelBulkDownload = useCallback(() => {
+    setDownloadConfirmation({ show: false, count: 0, imageUrls: null });
+  }, [setDownloadConfirmation]);
   
   // Handle bulk move to folder
-  const handleBulkMoveToFolder = useCallback(async (imageIds: string[], folderId: string) => {
+  const handleBulkMoveToFolder = useCallback(async (imageIds?: string[], folderId?: string) => {
     try {
-      // This would need to be implemented based on how folders work
-      debugLog('Bulk moved images to folder:', { imageIds, folderId });
+      const targetIds = imageIds ?? Array.from(state.selectedItems);
+      const normalized = Array.from(
+        new Set(
+          targetIds
+            .map(id => id?.trim())
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+
+      if (!normalized.length) {
+        return;
+      }
+
+      if (folderId) {
+        toggleImagesInFolder(normalized, folderId);
+      } else {
+        openAddToFolderDialog(normalized);
+      }
     } catch (error) {
       debugError('Error bulk moving to folder:', error);
     }
-  }, []);
+  }, [openAddToFolderDialog, state.selectedItems, toggleImagesInFolder]);
+
+  const handleBulkDownload = useCallback((imageIds?: string[]) => {
+    const targetIds = imageIds ?? Array.from(state.selectedItems);
+    const normalized = Array.from(
+      new Set(
+        targetIds
+          .map(id => id?.trim())
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (!normalized.length) {
+      return;
+    }
+
+    setDownloadConfirmation({
+      show: true,
+      count: normalized.length,
+      imageUrls: normalized,
+    });
+  }, [setDownloadConfirmation, state.selectedItems]);
   
   // Handle share image
   const handleShareImage = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
     try {
+      const shareUrl = resolveShareUrl(image);
       if (navigator.share) {
         await navigator.share({
           title: 'Check out this image from DayGen',
           text: image.prompt,
-          url: image.url,
+          url: shareUrl,
         });
       } else {
-        // Fallback to clipboard
-        await navigator.clipboard.writeText(image.url);
+        await copyLink(shareUrl);
         debugLog('Copied image URL to clipboard');
       }
     } catch (error) {
       debugError('Error sharing image:', error);
     }
-  }, []);
+  }, [resolveShareUrl]);
   
   // Handle copy image URL
   const handleCopyImageUrl = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
     try {
-      await navigator.clipboard.writeText(image.url);
+      await copyLink(image.url);
       debugLog('Copied image URL to clipboard');
     } catch (error) {
       debugError('Error copying image URL:', error);
@@ -497,49 +593,77 @@ export function useGalleryActions() {
     });
   }, [navigate]);
 
-  // Handle use as reference - needs to be wired to parent Create component
-  // This is a placeholder that logs the intent
-  const handleUseAsReference = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
-    debugLog('Use as reference:', image.url);
-    // TODO: Wire this to parent Create component to actually set the reference
-    // For now, this just logs. The actual implementation needs:
-    // - Convert image URL to File
-    // - Set as reference in generation context
-    // - Clear existing references
-    // - Focus prompt bar
-  }, []);
+  const handleUseAsReference = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
+    try {
+      const imageUrl = image.url;
+      if (!imageUrl) {
+        debugError('Cannot use image as reference: missing URL');
+        return;
+      }
 
-  // Handle reuse prompt - needs to be wired to parent Create component
-  // This is a placeholder that logs the intent
+      if (!location.pathname.startsWith('/create/image')) {
+        navigate('/create/image');
+      }
+
+      const ready = await ensureBridgeReady();
+      if (!ready) {
+        debugError('Prompt bridge not ready to apply reference');
+        return;
+      }
+
+      await bridgeActionsRef.current.setReferenceFromUrl(imageUrl);
+      bridgeActionsRef.current.focusPromptInput();
+    } catch (error) {
+      debugError('Error applying gallery reference:', error);
+    }
+  }, [bridgeActionsRef, ensureBridgeReady, location.pathname, navigate]);
+  
   const handleReusePrompt = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
-    debugLog('Reuse prompt:', image.prompt);
-    // TODO: Wire this to parent Create component to actually set the prompt
-    // For now, this just logs. The actual implementation needs:
-    // - Set prompt text in generation context
-    // - Switch to image category if not already there
-    // - Focus prompt bar
-  }, []);
+    const promptText = image.prompt ?? '';
 
-  // Handle make video - needs to be wired to parent Create component
-  // This is a placeholder that logs the intent
+    if (!location.pathname.startsWith('/create/image')) {
+      navigate('/create/image');
+    }
+
+    void (async () => {
+      const ready = await ensureBridgeReady();
+      if (!ready) {
+        debugError('Prompt bridge not ready to reuse prompt');
+        return;
+      }
+      bridgeActionsRef.current.setPromptFromGallery(promptText, { focus: true });
+    })();
+  }, [bridgeActionsRef, ensureBridgeReady, location.pathname, navigate]);
+  
   const handleMakeVideo = useCallback(() => {
-    debugLog('Make video');
-    // TODO: Wire this to parent Create component to switch category
-    // For now, this just logs. The actual implementation needs:
-    // - Switch activeCategory to 'video'
-    // - Close any open menus
-  }, []);
+    navigate('/create/video');
+
+    void (async () => {
+      const ready = await ensureBridgeReady();
+      if (ready) {
+        bridgeActionsRef.current.focusPromptInput();
+      }
+    })();
+  }, [bridgeActionsRef, ensureBridgeReady, navigate]);
 
   // Handle add to folder
-  const handleAddToFolder = useCallback((imageId: string, folderId: string) => {
+  const handleAddToFolder = useCallback((imageId: string, folderId?: string) => {
     try {
-      // This would need to be implemented based on how folders work
-      debugLog('Add to folder:', { imageId, folderId });
-      // TODO: Implement folder functionality
+      const normalizedId = imageId?.trim();
+      if (!normalizedId) {
+        return;
+      }
+
+      if (folderId) {
+        toggleImagesInFolder([normalizedId], folderId);
+        return;
+      }
+
+      openAddToFolderDialog([normalizedId]);
     } catch (error) {
       debugError('Error adding to folder:', error);
     }
-  }, []);
+  }, [openAddToFolderDialog, toggleImagesInFolder]);
 
   // Handle copy prompt to clipboard
   const handleCopyPrompt = useCallback(async (prompt: string) => {
@@ -587,6 +711,7 @@ export function useGalleryActions() {
     handleBulkDelete,
     handleBulkTogglePublic,
     handleBulkMoveToFolder,
+    handleBulkDownload,
     handleShareImage,
     handleCopyImageUrl,
     handleSelectAll,
@@ -606,6 +731,8 @@ export function useGalleryActions() {
     cancelUnpublish,
     confirmBulkPublish,
     confirmBulkUnpublish,
+    confirmBulkDownload,
+    cancelBulkDownload,
     
     // Edit menu actions
     handleEditMenuSelect,

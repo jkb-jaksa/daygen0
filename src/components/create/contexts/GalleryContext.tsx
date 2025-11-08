@@ -30,6 +30,7 @@ type GalleryState = {
   videos: GalleryVideoLike[];
   filters: GalleryFilters;
   selectedItems: Set<string>;
+  selectedImagesForFolder: string[];
   isFullSizeOpen: boolean;
   fullSizeImage: GalleryImageLike | GalleryVideoLike | null;
   fullSizeIndex: number;
@@ -61,6 +62,7 @@ type GalleryAction =
   | { type: 'SET_SELECTED_ITEMS'; payload: Set<string> }
   | { type: 'TOGGLE_ITEM_SELECTION'; payload: string }
   | { type: 'CLEAR_SELECTION' }
+  | { type: 'SET_SELECTED_IMAGES_FOR_FOLDER'; payload: string[] }
   | { type: 'SET_FULL_SIZE_OPEN'; payload: boolean }
   | { type: 'SET_FULL_SIZE_IMAGE'; payload: { image: GalleryImageLike | GalleryVideoLike | null; index: number } }
   | { type: 'SET_FOLDERS'; payload: Folder[] }
@@ -95,6 +97,7 @@ const initialState: GalleryState = {
   videos: [],
   filters: initialFilters,
   selectedItems: new Set(),
+  selectedImagesForFolder: [],
   isFullSizeOpen: false,
   fullSizeImage: null,
   fullSizeIndex: 0,
@@ -107,7 +110,7 @@ const initialState: GalleryState = {
   deleteConfirmation: { show: false, imageUrl: null, imageUrls: null, uploadId: null, folderId: null, source: null },
   publishConfirmation: { show: false, count: 0 },
   unpublishConfirmation: { show: false, count: 0 },
-  downloadConfirmation: { show: false, count: 0 },
+  downloadConfirmation: { show: false, count: 0, imageUrls: null },
   newFolderDialog: false,
   addToFolderDialog: false,
 };
@@ -271,6 +274,8 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
         fullSizeImage: action.payload.image,
         fullSizeIndex: action.payload.index,
       };
+    case 'SET_SELECTED_IMAGES_FOR_FOLDER':
+      return { ...state, selectedImagesForFolder: action.payload };
     case 'SET_FOLDERS':
       return { ...state, folders: action.payload };
     case 'ADD_FOLDER':
@@ -327,12 +332,16 @@ type GalleryContextType = {
   setSelectedItems: (items: Set<string>) => void;
   toggleItemSelection: (id: string) => void;
   clearSelection: () => void;
+  setSelectedImagesForFolder: (imageUrls: string[]) => void;
   setFullSizeOpen: (open: boolean) => void;
   setFullSizeImage: (image: GalleryImageLike | GalleryVideoLike | null, index: number) => void;
   setFolders: (folders: Folder[]) => void;
   addFolder: (folder: Folder) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => void;
   removeFolder: (id: string) => void;
+  addImagesToFolder: (imageUrls: string[], folderId: string) => void;
+  removeImagesFromFolder: (imageUrls: string[], folderId: string) => void;
+  toggleImagesInFolder: (imageUrls: string[], folderId: string) => void;
   setBulkMode: (mode: boolean) => void;
   setImageActionMenu: (menu: { id: string; anchor: HTMLElement | null } | null) => void;
   setBulkActionsMenu: (menu: { anchor: HTMLElement | null } | null) => void;
@@ -349,6 +358,8 @@ type GalleryContextType = {
   hasSelection: boolean;
   isLoading: boolean;
   error: string | null;
+  getGalleryItemsByIds: (identifiers: string[]) => (GalleryImageLike | GalleryVideoLike)[];
+  bulkDownloadItems: (items: (GalleryImageLike | GalleryVideoLike)[]) => Promise<void>;
   refresh: () => Promise<void>;
   hasBase64Images: boolean;
   needsMigration: boolean;
@@ -476,6 +487,10 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'CLEAR_SELECTION' });
   }, []);
 
+  const setSelectedImagesForFolder = useCallback((imageUrls: string[]) => {
+    dispatch({ type: 'SET_SELECTED_IMAGES_FOR_FOLDER', payload: imageUrls });
+  }, []);
+
   const setFullSizeOpen = useCallback((open: boolean) => {
     console.log('[GalleryContext] setFullSizeOpen', { open });
     dispatch({ type: 'SET_FULL_SIZE_OPEN', payload: open });
@@ -575,6 +590,176 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const filteredFolders = stateRef.current.folders.filter(folder => folder.id !== id);
     void persistFolders(filteredFolders);
   }, [persistFolders]);
+
+  const normalizeImageIds = useCallback((imageUrls: string[]) => {
+    return Array.from(
+      new Set(
+        imageUrls
+          .map(url => url?.trim())
+          .filter((url): url is string => Boolean(url)),
+      ),
+    );
+  }, []);
+
+  const addImagesToFolder = useCallback((imageUrls: string[], folderId: string) => {
+    const normalized = normalizeImageIds(imageUrls);
+    if (normalized.length === 0) {
+      return;
+    }
+
+    const currentFolders = stateRef.current.folders;
+    let didChange = false;
+    const nextFolders = currentFolders.map(folder => {
+      if (folder.id !== folderId) {
+        return folder;
+      }
+
+      const imageSet = new Set(folder.imageIds);
+      let folderChanged = false;
+      normalized.forEach(url => {
+        if (!imageSet.has(url)) {
+          imageSet.add(url);
+          folderChanged = true;
+        }
+      });
+
+      if (!folderChanged) {
+        return folder;
+      }
+
+      didChange = true;
+      return {
+        ...folder,
+        imageIds: Array.from(imageSet),
+      };
+    });
+
+    if (!didChange) {
+      return;
+    }
+
+    dispatch({ type: 'SET_FOLDERS', payload: nextFolders });
+    void persistFolders(nextFolders);
+  }, [normalizeImageIds, persistFolders]);
+
+  const removeImagesFromFolder = useCallback((imageUrls: string[], folderId: string) => {
+    const normalized = normalizeImageIds(imageUrls);
+    if (normalized.length === 0) {
+      return;
+    }
+
+    const urlSet = new Set(normalized);
+    const currentFolders = stateRef.current.folders;
+    let didChange = false;
+    const nextFolders = currentFolders.map(folder => {
+      if (folder.id !== folderId) {
+        return folder;
+      }
+
+      const filtered = folder.imageIds.filter(id => !urlSet.has(id));
+      if (filtered.length === folder.imageIds.length) {
+        return folder;
+      }
+
+      didChange = true;
+      return {
+        ...folder,
+        imageIds: filtered,
+      };
+    });
+
+    if (!didChange) {
+      return;
+    }
+
+    dispatch({ type: 'SET_FOLDERS', payload: nextFolders });
+    void persistFolders(nextFolders);
+  }, [normalizeImageIds, persistFolders]);
+
+  const toggleImagesInFolder = useCallback((imageUrls: string[], folderId: string) => {
+    const normalized = normalizeImageIds(imageUrls);
+    if (normalized.length === 0) {
+      return;
+    }
+
+    const currentFolders = stateRef.current.folders;
+    const targetFolder = currentFolders.find(folder => folder.id === folderId);
+    if (!targetFolder) {
+      return;
+    }
+
+    const allImagesPresent = normalized.every(url => targetFolder.imageIds.includes(url));
+    if (allImagesPresent) {
+      removeImagesFromFolder(normalized, folderId);
+    } else {
+      addImagesToFolder(normalized, folderId);
+    }
+  }, [addImagesToFolder, normalizeImageIds, removeImagesFromFolder]);
+
+  const getGalleryItemsByIds = useCallback((identifiers: string[]) => {
+    const uniqueIds = Array.from(
+      new Set(
+        identifiers
+          .map(id => id?.trim())
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (uniqueIds.length === 0) {
+      return [];
+    }
+
+    const current = stateRef.current;
+    const collected: (GalleryImageLike | GalleryVideoLike)[] = [];
+
+    uniqueIds.forEach(identifier => {
+      const imageMatch =
+        current.images.find(image => matchGalleryItemId(image, identifier)) ?? null;
+      if (imageMatch) {
+        collected.push(imageMatch);
+        return;
+      }
+
+      const videoMatch =
+        current.videos.find(video => matchGalleryItemId(video, identifier)) ?? null;
+      if (videoMatch) {
+        collected.push(videoMatch);
+      }
+    });
+
+    return collected;
+  }, []);
+
+  const bulkDownloadItems = useCallback(async (items: (GalleryImageLike | GalleryVideoLike)[]) => {
+    if (!items.length) {
+      return;
+    }
+
+    // Sequentially download to avoid browser throttling
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index];
+      try {
+        const response = await fetch(item.url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
+        const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+        const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
+        const baseName = 'type' in item && item.type === 'video' ? 'video' : 'image';
+
+        link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension || baseName}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        debugError('Error downloading gallery item:', error);
+      }
+    }
+  }, []);
 
   const setBulkMode = useCallback((mode: boolean) => {
     dispatch({ type: 'SET_BULK_MODE', payload: mode });
@@ -802,12 +987,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setSelectedItems,
     toggleItemSelection,
     clearSelection,
+      setSelectedImagesForFolder,
     setFullSizeOpen,
     setFullSizeImage,
     setFolders,
     addFolder,
     updateFolder,
     removeFolder,
+      addImagesToFolder,
+      removeImagesFromFolder,
+      toggleImagesInFolder,
     setBulkMode,
     setImageActionMenu,
     setBulkActionsMenu,
@@ -824,6 +1013,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     hasSelection,
     isLoading: isGalleryLoading,
     error: galleryError,
+      getGalleryItemsByIds,
+      bulkDownloadItems,
     refresh: fetchGalleryImages,
     hasBase64Images,
     needsMigration,
@@ -843,12 +1034,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setSelectedItems,
     toggleItemSelection,
     clearSelection,
+      setSelectedImagesForFolder,
     setFullSizeOpen,
     setFullSizeImage,
     setFolders,
     addFolder,
     updateFolder,
     removeFolder,
+      addImagesToFolder,
+      removeImagesFromFolder,
+      toggleImagesInFolder,
     setBulkMode,
     setImageActionMenu,
     setBulkActionsMenu,
@@ -865,6 +1060,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     hasSelection,
     isGalleryLoading,
     galleryError,
+      getGalleryItemsByIds,
+      bulkDownloadItems,
     fetchGalleryImages,
     hasBase64Images,
     needsMigration,

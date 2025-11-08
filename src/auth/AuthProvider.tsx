@@ -101,9 +101,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (payload?.user) {
             return normalizeBackendUser(payload.user);
           }
+        } else {
+          // Check for the specific email_change NULL error
+          const errorText = await response.text().catch(() => '');
+          if (errorText.includes('email_change') || errorText.includes('converting NULL to string')) {
+            debugWarn('Backend sync failed due to database schema issue (email_change NULL). This is a known issue and does not affect authentication.');
+            // Return null to fall back to creating a fallback user
+            return null;
+          }
         }
       } catch (error) {
-        debugWarn('Failed to sync Supabase session with backend:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('email_change') || errorMessage.includes('converting NULL')) {
+          debugWarn('Backend sync failed due to database schema issue (email_change NULL). This is a known issue and does not affect authentication.');
+        } else {
+          debugWarn('Failed to sync Supabase session with backend:', error);
+        }
       }
 
       return null;

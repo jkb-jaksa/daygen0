@@ -2118,7 +2118,7 @@ export default function Products() {
               return (
                 <div key={image.id} className="flex flex-col items-center gap-2">
                   <div
-                    className="relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
+                    className="relative aspect-square w-full max-w-[200px] sm:max-w-[240px] md:max-w-[280px] overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60"
                     onDragEnter={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
