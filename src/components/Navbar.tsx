@@ -466,15 +466,14 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`relative overflow-hidden group hidden lg:flex parallax-large items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-3 py-1.5 hover:text-theme-text transition-colors duration-100`}
+                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-1.5 rounded-full py-1.5 text-sm`}
                   aria-label="Credit usage"
                 >
-                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
-                  <CreditCard className="w-4 h-4 relative z-10" />
-                  <span className="hidden xl:inline font-raleway text-sm font-normal relative z-10">
+                  <CreditCard className="w-4 h-4" />
+                  <span className="hidden xl:inline font-normal">
                     Credits: {currentUser.credits}
                   </span>
-                  <span className="lg:inline xl:hidden font-raleway text-sm font-normal relative z-10">{currentUser.credits}</span>
+                  <span className="lg:inline xl:hidden font-normal">{currentUser.credits}</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -494,66 +493,54 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`relative overflow-hidden group parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-2.5 py-1 hover:text-theme-text transition-colors duration-100`}
+                    className={`${buttons.ghostSlim} flex items-center gap-1.5 rounded-full py-1 text-sm`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
                     {currentUser.profileImage ? (
                       <img
                         src={`${currentUser.profileImage}?t=${Date.now()}`}
                         alt="Profile"
-                        className="size-5 rounded-full object-cover relative z-10"
+                        className="size-5 rounded-full object-cover"
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90 relative z-10"
+                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90"
                       >
                         {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal relative z-10">{currentUser.displayName || currentUser.email}</span>
+                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.displayName || currentUser.email}</span>
                   </button>
                 </div>
               </>
             )}
-            <div className="flex items-center gap-2">
-              {/* Mobile Credit Indicator */}
-              {user && (
-                <div className="lg:hidden flex items-center gap-1 bg-theme-dark/50 border border-theme-mid rounded-full px-2 py-1">
-                  <CreditCard className="w-3 h-3 text-cyan-400" />
-                  <span className="font-raleway text-xs text-theme-text">
-                    {user.credits?.toLocaleString() || 0}
-                  </span>
-                </div>
-              )}
-              
-              <button
-                type="button"
-                className={`lg:hidden ${iconButtons.xl} sm:${iconButtons.sm}`}
-                onClick={() => {
-                  setMobileNavOpen((open) => !open);
-                  setActiveMenu(null);
-                  setMenuOpen(false);
-                }}
-                aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
-                aria-expanded={mobileNavOpen}
-                aria-controls="mobile-nav-panel"
-              >
-                {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-              <div className="hidden lg:flex">
-                <ThemeToggleButton />
-              </div>
-              <button aria-label="Search" className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}>
-                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
-                <Search className="w-4 h-4 relative z-10" />
-              </button>
+            
+            <button
+              type="button"
+              className={`lg:hidden ${iconButtons.xl} sm:${iconButtons.sm}`}
+              onClick={() => {
+                setMobileNavOpen((open) => !open);
+                setActiveMenu(null);
+                setMenuOpen(false);
+              }}
+              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-nav-panel"
+            >
+              {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <div className="hidden lg:flex">
+              <ThemeToggleButton />
             </div>
-      </div>
-    </div>
-  </nav>
+            <button aria-label="Search" className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}>
+              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+              <Search className="w-4 h-4 relative z-10" />
+            </button>
+          </div>
+        </div>
+      </nav>
 
       {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
       <div

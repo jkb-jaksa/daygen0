@@ -36,6 +36,7 @@ export const buttons = {
   primary: "btn btn-white font-raleway text-base font-medium gap-2 parallax-large",
   secondary: "btn btn-white font-raleway text-base font-medium gap-2 parallax-large",
   ghost: "btn btn-ghost font-raleway text-base font-medium gap-2 parallax-large",
+  ghostSlim: "btn btn-ghost btn-ghost-slim font-raleway text-base font-medium gap-2 parallax-large",
   ghostCompact: "btn btn-ghost btn-ghost-compact font-raleway text-base font-medium gap-2 parallax-large",
   subtle: "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-theme-dark px-3 text-xs font-raleway font-medium text-theme-white/80 transition-colors duration-200 hover:border-theme-mid hover:text-theme-text parallax-large",
   pillWarm: "btn btn-white font-raleway text-base font-medium gap-2 parallax-large",

@@ -732,22 +732,62 @@ html[data-theme="day"] .footer-gradient-bg {
 
 /* Ghost button extends base btn class */
 .btn-ghost {
-  background-color: color-mix(in srgb, var(--theme-black) 65%, var(--theme-dark) 35%);
-  border-color: var(--theme-mid);
-  color: var(--theme-text);
+  background-color: var(--glass-dark-bg);
+  color: var(--theme-white);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  isolation: isolate;
   font-family: 'Raleway', sans-serif;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.1s;
+}
+
+.btn-ghost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgb(var(--theme-white-rgb) / 0.1);
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.1s;
+  pointer-events: none;
+}
+
+.btn-ghost > * {
+  position: relative;
+  z-index: 1;
 }
 
 .btn-ghost:hover {
-  background-color: color-mix(in srgb, var(--theme-black) 55%, var(--theme-dark) 45%);
-  border-color: var(--theme-light);
+  border-color: var(--theme-mid);
+  color: var(--theme-text);
+}
+
+.btn-ghost:hover::before {
+  opacity: 1;
 }
 
 .btn-ghost:focus,
+.btn-ghost:focus-visible,
 .btn-ghost:active {
-  background-color: color-mix(in srgb, var(--theme-black) 50%, var(--theme-dark) 50%);
-  border-color: var(--theme-light);
+  background-color: var(--glass-dark-bg);
+  border-color: var(--theme-mid);
   color: var(--theme-text);
+}
+
+.btn-ghost:focus::before,
+.btn-ghost:focus-visible::before,
+.btn-ghost:active::before {
+  opacity: 1;
+}
+
+/* Slim ghost button variant - reduced horizontal padding */
+.btn-ghost-slim {
+  height: 32px;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
 }
 
 /* Compact ghost button variant */
@@ -759,9 +799,14 @@ html[data-theme="day"] .footer-gradient-bg {
 
 .btn-ghost-compact:focus,
 .btn-ghost-compact:active {
-  background-color: var(--theme-dark);
-  border-color: var(--theme-light);
+  background-color: var(--glass-dark-bg);
+  border-color: var(--theme-mid);
   color: var(--theme-text);
+}
+
+.btn-ghost-compact:focus::before,
+.btn-ghost-compact:active::before {
+  opacity: 1;
 }
 
 .btn:disabled {
