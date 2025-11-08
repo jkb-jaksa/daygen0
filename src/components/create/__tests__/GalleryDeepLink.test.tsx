@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import React from 'react';
+import React, { useRef } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
@@ -8,6 +8,7 @@ import { useGalleryActions } from '../hooks/useGalleryActions';
 import FullImageModal from '../FullImageModal';
 import { ToastContext } from '../../../contexts/ToastContext';
 import type { GalleryImageLike } from '../types';
+import { CreateBridgeProvider, type GalleryBridgeActions } from '../contexts/CreateBridgeContext';
 
 const mockLocation = {
   pathname: '/create/image',
@@ -104,13 +105,26 @@ function ClickTester({ image }: { image: GalleryImageLike }) {
 }
 
 function renderWithProviders(children: React.ReactNode) {
-  return render(
-    <GenerationProvider>
-      <ToastContext.Provider value={{ showToast: vi.fn() }}>
-        <GalleryProvider>{children}</GalleryProvider>
-      </ToastContext.Provider>
-    </GenerationProvider>,
-  );
+  const TestWrapper = () => {
+    const bridgeRef = useRef<GalleryBridgeActions>({
+      setPromptFromGallery: vi.fn(),
+      setReferenceFromUrl: vi.fn(),
+      focusPromptInput: vi.fn(),
+      isInitialized: true,
+    });
+
+    return (
+      <GenerationProvider>
+        <ToastContext.Provider value={{ showToast: vi.fn() }}>
+          <CreateBridgeProvider value={bridgeRef}>
+            <GalleryProvider>{children}</GalleryProvider>
+          </CreateBridgeProvider>
+        </ToastContext.Provider>
+      </GenerationProvider>
+    );
+  };
+
+  return render(<TestWrapper />);
 }
 
 beforeEach(() => {
