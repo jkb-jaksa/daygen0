@@ -73,7 +73,7 @@ const renderPlaceholderGrid = (
       >
         <div className="flex flex-col items-center gap-2 text-center px-2">
           <Icon className="w-8 h-8 text-theme-light" />
-          <div className="text-theme-light font-raleway text-base font-light">{message}</div>
+          <div className="text-theme-light font-raleway text-base font-normal">{message}</div>
         </div>
       </div>
     ))}

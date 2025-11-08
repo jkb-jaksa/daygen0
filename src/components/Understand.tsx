@@ -232,13 +232,11 @@ export default function Understand() {
                         className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-6 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                           isActive
                             ? "border border-theme-dark text-theme-text"
-                            : "border border-transparent text-theme-white hover:text-theme-text"
+                            : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                         }`}
                         style={insetShadow}
                       >
-                        {isActive && (
-                          <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full opacity-60 blur-3xl bg-gradient-to-br ${category.gradient}`} />
-                        )}
+                        <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
                         <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-white group-hover:text-theme-text"}`} aria-hidden="true" />
                         <span className="relative z-10">{category.label}</span>
                       </button>
@@ -255,7 +253,7 @@ export default function Understand() {
                     {/* Create section */}
                     {createCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-theme-text">create</h2>
+                        <h2 className="text-xl font-raleway font-normal text-theme-text">create</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={createCases} />
                         </Suspense>
@@ -265,7 +263,7 @@ export default function Understand() {
                     {/* Edit section */}
                     {editCases.length > 0 && (
                       <div className="mb-8">
-                        <h2 className="text-xl font-raleway font-light text-theme-text">edit</h2>
+                        <h2 className="text-xl font-raleway font-normal text-theme-text">edit</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={editCases} />
                         </Suspense>
@@ -275,7 +273,7 @@ export default function Understand() {
                     {/* Personalize section */}
                     {personalizeCases.length > 0 && (
                       <div>
-                        <h2 className="text-xl font-raleway font-light text-theme-text">personalize</h2>
+                        <h2 className="text-xl font-raleway font-normal text-theme-text">personalize</h2>
                         <Suspense fallback={<UseCaseGridFallback />}>
                           <UseCaseGrid items={personalizeCases} />
                         </Suspense>
@@ -284,7 +282,7 @@ export default function Understand() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-raleway font-light text-theme-text">
+                    <h2 className="text-2xl font-raleway font-normal text-theme-text">
                       {activeCategory === "image" 
                         ? "image use cases" 
                         : activeCategory === "text"

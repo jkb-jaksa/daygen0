@@ -125,7 +125,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {isDeletingFolder
                     ? 'Delete Folder'
                     : isDeletingUpload
@@ -134,7 +134,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                         ? `Delete ${pendingDeleteImageCount} Images`
                         : 'Delete Image'}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
@@ -170,8 +170,8 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">Create New Folder</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Create New Folder</h3>
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Give your folder a name to organize your images.
                 </p>
                 <input
@@ -232,10 +232,10 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {publishConfirmation.imageUrl 
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
                     : (publishConfirmation.count === 1 
@@ -269,10 +269,10 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {unpublishConfirmation.imageUrl 
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                     : (unpublishConfirmation.count === 1 
@@ -306,10 +306,10 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Download className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   {downloadConfirmation.count === 1 
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download these ${downloadConfirmation.count} images?`}
@@ -341,8 +341,8 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">Add to Folder</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Add to Folder</h3>
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Select a folder to add the selected images to.
                 </p>
                 
@@ -404,8 +404,8 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <ImageIcon className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">Set Folder Thumbnail</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Set Folder Thumbnail</h3>
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Choose a thumbnail for your folder.
                 </p>
               </div>
@@ -508,8 +508,8 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <ImageIcon className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">Confirm Thumbnail</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Confirm Thumbnail</h3>
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to use this image as the folder thumbnail?
                 </p>
                 {folderThumbnailConfirm.imageUrl && (
@@ -549,8 +549,8 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">Delete Folder</h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Folder</h3>
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to delete this folder? This action cannot be undone. The images will remain in your gallery.
                 </p>
               </div>

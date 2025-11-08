@@ -111,7 +111,7 @@ function ProductCreationOptionsComponent({
                       <>
                         <input
                           ref={nameInputRef}
-                          className="flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-light text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                          className="flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
                           placeholder="Enter name..."
                           value={productName}
                           onChange={(event) => onProductNameChange(event.target.value)}
@@ -133,7 +133,7 @@ function ProductCreationOptionsComponent({
                       </>
                     ) : (
                       <>
-                        <p className="flex-1 h-[32px] flex items-center text-base font-raleway font-light text-theme-text px-3">
+                        <p className="flex-1 h-[32px] flex items-center text-base font-raleway font-normal text-theme-text px-3">
                           {productName || "Enter name..."}
                         </p>
                         <button

@@ -60,7 +60,7 @@ export default function PaymentCancel() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-light font-raleway text-theme-text mb-4">
+          <h1 className="text-3xl font-normal font-raleway text-theme-text mb-4">
             Payment Cancelled
           </h1>
 

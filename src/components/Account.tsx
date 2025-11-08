@@ -87,7 +87,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
             Login required
           </span>
           <div className="space-y-4 -mt-4">
-            <h1 className="text-4xl font-light leading-tight text-theme-text font-raleway sm:text-5xl">{heading}</h1>
+            <h1 className="text-4xl font-normal leading-tight text-theme-text font-raleway sm:text-5xl">{heading}</h1>
             <p className="max-w-xl text-base font-raleway leading-relaxed text-theme-white">{subheading}</p>
           </div>
           <ul className="space-y-4">
@@ -107,7 +107,7 @@ function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProp
         <section className="w-full lg:max-w-md">
           <div className={`${glass.promptDark} rounded-[28px] p-8 shadow-[0_24px_80px_rgba(8,5,24,0.45)]`}>
             <div className="space-y-3 text-center">
-              <h2 className="text-2xl font-raleway font-light text-theme-text">Enter the studio</h2>
+              <h2 className="text-2xl font-raleway font-normal text-theme-text">Enter the studio</h2>
               <p className="text-sm font-raleway text-theme-white">Log in below to get full access to DayGen.</p>
             </div>
             <div className="mt-6 space-y-5">

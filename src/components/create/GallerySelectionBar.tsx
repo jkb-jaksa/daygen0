@@ -90,7 +90,7 @@ const GallerySelectionBar = memo(() => {
         <button
           type="button"
           onClick={handleToggleSelectMode}
-          className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light ${
+          className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal ${
             isBulkMode ? '!bg-theme-mid/20 !text-theme-text !border-theme-mid/40' : ''
           }`}
         >
@@ -100,7 +100,7 @@ const GallerySelectionBar = memo(() => {
           type="button"
           onClick={handleToggleSelectAllVisible}
           disabled={visibleItemIds.length === 0}
-          className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {allVisibleSelected ? 'Unselect all' : 'Select all'}
         </button>
@@ -108,7 +108,7 @@ const GallerySelectionBar = memo(() => {
           type="button"
           onClick={handleClear}
           disabled={!hasSelection}
-          className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
         >
           Clear selection
         </button>
@@ -128,7 +128,7 @@ const GallerySelectionBar = memo(() => {
           <button
             type="button"
             onClick={event => handleBulkActionsMenu(event)}
-            className={`${buttons.subtle} !h-8 !gap-1.5 text-theme-white !font-light`}
+            className={`${buttons.subtle} !h-8 !gap-1.5 text-theme-white !font-normal`}
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             <span>Actions</span>

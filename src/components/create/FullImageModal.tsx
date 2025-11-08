@@ -782,7 +782,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleEditImageClick}
-              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <EditIcon className="w-4 h-4 flex-shrink-0" />
               Edit image
@@ -790,7 +790,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleCreateAvatarClick}
-              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <User className="w-4 h-4 flex-shrink-0" />
               Create Avatar
@@ -798,7 +798,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleUseAsReferenceClick}
-              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <Copy className="w-4 h-4 flex-shrink-0" />
               Use as reference
@@ -806,7 +806,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleReusePromptClick}
-              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <RefreshCw className="w-4 h-4 flex-shrink-0" />
               Reuse prompt
@@ -814,7 +814,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleMakeVideoClick}
-              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <Camera className="w-4 h-4 flex-shrink-0" />
               Make video

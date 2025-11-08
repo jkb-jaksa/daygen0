@@ -17,10 +17,11 @@ export default function ProductBadge({ product, onClick, className }: ProductBad
         event.stopPropagation();
         onClick?.(event);
       }}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text ${glass.promptDark} ${className ?? ""}`}
+      className={`relative overflow-hidden group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text ${glass.promptDark} ${className ?? ""}`}
       aria-label={`View creations for ${product.name}`}
     >
-      <span className="relative inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover:opacity-20" />
+      <span className="relative z-10 inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
         <img
           src={product.imageUrl}
           alt=""
@@ -28,8 +29,8 @@ export default function ProductBadge({ product, onClick, className }: ProductBad
           loading="lazy"
         />
       </span>
-      <span className="max-w-[8rem] truncate text-left">{product.name}</span>
-      <Package className="h-3.5 w-3.5 shrink-0" />
+      <span className="relative z-10 max-w-[8rem] truncate text-left">{product.name}</span>
+      <Package className="relative z-10 h-3.5 w-3.5 shrink-0" />
     </button>
   );
 }

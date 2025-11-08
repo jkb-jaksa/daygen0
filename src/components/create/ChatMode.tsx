@@ -882,8 +882,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <MessageCircle className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-light text-theme-text">Start new chat</h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Start new chat</h3>
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Name your conversation to keep things organized.
                   </p>
                   <input
@@ -913,8 +913,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Pencil className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-light text-theme-text">Rename chat</h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Rename chat</h3>
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Give this chat a new name to make it easier to find later.
                   </p>
                   <input
@@ -944,8 +944,8 @@ const ChatMode: React.FC = () => {
               <div className="text-center space-y-4">
                 <div className="space-y-3">
                   <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-light text-theme-text">Delete chat</h3>
-                  <p className="text-base font-raleway font-light text-theme-white">
+                  <h3 className="text-xl font-raleway font-normal text-theme-text">Delete chat</h3>
+                  <p className="text-base font-raleway font-normal text-theme-white">
                     Are you sure you want to delete “{chatToDelete.title || "New chat"}”? This action cannot be undone.
                   </p>
                 </div>
@@ -968,7 +968,7 @@ const ChatMode: React.FC = () => {
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />
-                <h2 className="text-base font-raleway font-light text-theme-white">History</h2>
+                <h2 className="text-base font-raleway font-normal text-theme-white">History</h2>
               </div>
               <button
                 type="button"
@@ -997,15 +997,16 @@ const ChatMode: React.FC = () => {
                             setInput("");
                             setReferencePreviews([]);
                           }}
-                          className={`group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
+                          className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
                             isActive
                               ? "bg-theme-dark border border-theme-mid text-theme-text"
                               : "border border-transparent hover:border-theme-dark hover:bg-theme-black text-theme-light"
                           }`}
                           aria-pressed={isActive}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className={`truncate text-sm font-raleway font-light ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                          <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+                          <div className="relative z-10 flex items-center justify-between gap-2">
+                            <span className={`truncate text-sm font-raleway font-normal ${isActive ? "text-theme-text" : "text-theme-white"}`}>
                               {session.title || "New chat"}
                             </span>
                             <div className="flex items-center gap-1">

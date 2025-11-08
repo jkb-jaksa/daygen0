@@ -103,14 +103,14 @@ function ToolCard({ tool }: { tool: ToolResource }) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <span className="text-lg font-light uppercase text-theme-white/70">
+          <span className="text-lg font-normal uppercase text-theme-white/70">
             {tool.name.charAt(0)}
           </span>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-0.5">
-        <h4 className="text-base font-raleway font-light capitalize text-theme-text">{tool.name}</h4>
-        <p className="text-sm font-raleway font-light leading-relaxed text-theme-white">
+        <h4 className="text-base font-raleway font-normal capitalize text-theme-text">{tool.name}</h4>
+        <p className="text-sm font-raleway font-normal leading-relaxed text-theme-white">
           {tool.description}
         </p>
       </div>
@@ -149,12 +149,17 @@ export default function KnowledgeBase() {
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  `${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
+                  `relative overflow-hidden group ${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
                     isActive ? "text-theme-text border border-theme-mid" : "text-theme-white/80 hover:text-theme-text"
                   }`
                 }
               >
-                {link.label}
+                {({ isActive }) => (
+                  <>
+                    <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+                    <span className="relative z-10">{link.label}</span>
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -222,7 +227,7 @@ export default function KnowledgeBase() {
             <div className="flex-1 lg:h-full">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                 <h2 className="text-xl font-raleway font-light text-theme-text">
+                 <h2 className="text-xl font-raleway font-normal text-theme-text">
                    {activeCategory === "image" 
                      ? "Image generation" 
                      : activeCategory === "text"
@@ -259,7 +264,7 @@ export default function KnowledgeBase() {
                 {/* Other tools subsection - only show for image category */}
                 {activeCategory === "image" && (
                   <div className="mt-12">
-                    <h3 className="text-xl font-raleway font-light text-theme-text">Other tools</h3>
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">Other tools</h3>
                     <p className="mt-2 text-sm font-raleway text-theme-white">
                       Here are other great tools to improve your DayGen workflows.
                     </p>
@@ -274,7 +279,7 @@ export default function KnowledgeBase() {
                 {/* Coming soon for video category */}
                 {activeCategory === "video" && (
                   <div className="mt-12">
-                    <h3 className="text-xl font-raleway font-light text-theme-text">Other tools</h3>
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">Other tools</h3>
                     <p className="mt-2 text-sm font-raleway text-theme-white">
                       Coming soon
                     </p>

@@ -77,10 +77,10 @@ export default function ResetPasswordModal({ open, onClose, onSuccess, resetToke
       <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
-            <h3 className="text-theme-text font-raleway font-light text-xl">
+            <h3 className="text-theme-text font-raleway font-normal text-xl">
               {success ? "Password updated" : "Set new password"}
             </h3>
-            <p className="text-theme-light text-sm font-raleway font-light">
+            <p className="text-theme-light text-sm font-raleway font-normal">
               {success 
                 ? "Your password has been successfully updated." 
                 : "Enter your new password below."

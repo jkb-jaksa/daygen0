@@ -30,10 +30,10 @@ export function MessageModal({
             {Icon && (
               <Icon className={`w-10 h-10 mx-auto ${iconColor}`} />
             )}
-            <h3 className="text-xl font-raleway font-light text-theme-text">
+            <h3 className="text-xl font-raleway font-normal text-theme-text">
               {title}
             </h3>
-            <p className="text-base font-raleway font-light text-theme-white">
+            <p className="text-base font-raleway font-normal text-theme-white">
               {message}
             </p>
           </div>

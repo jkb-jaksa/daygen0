@@ -181,7 +181,7 @@ html[data-theme="day"] .animate-gradient-colors {
 
 
 :root {
-  --nav-h: clamp(3.5rem, 2vw + 3.25rem, 4.5rem); /* Navbar height used for hero offset */
+  --nav-h: clamp(3rem, calc(2.75rem + 0.6vw), 3.5rem); /* Navbar height used for hero offset */
   --container-inline-padding: clamp(0.75rem, 2.5vw, 3.5rem);
   --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(0.75rem, 2.5vw, 3.5rem)));
 
@@ -441,7 +441,7 @@ body {
   color: var(--theme-text);
   font-family: var(--font-raleway, "Raleway", sans-serif);
   font-size: var(--font-size-heading-sm);
-  font-weight: 300;
+  font-weight: 400;
   margin: 0;
 }
 
@@ -509,7 +509,7 @@ body {
 .home-hero-description {
   color: var(--theme-white);
   font-size: clamp(1.05rem, 0.95rem + 0.8vw, 1.35rem);
-  font-weight: 300;
+  font-weight: 400;
   margin-inline: 0;
   max-inline-size: min(var(--line-length-max), 100%);
 }
@@ -2228,7 +2228,7 @@ html[data-theme="day"] .faq-section {
   display: flex;
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
-  font-weight: 300;
+  font-weight: 400;
   gap: 1rem;
   justify-content: space-between;
   line-height: 1.4;
@@ -2276,7 +2276,7 @@ html[data-theme="day"] .faq-section {
   color: var(--theme-white);
   font-family: "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 0.95rem;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.65;
 }
 
@@ -2306,7 +2306,7 @@ html[data-theme="day"] .faq-section {
 
 /* Sidebar section headers with letter spacing */
 .sidebar-section-header {
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 0.1em;
 }
 
@@ -2342,7 +2342,7 @@ input[type="range"]::-moz-range-thumb {
   display: block;
   font-family: var(--font-raleway, "Raleway", sans-serif);
   font-size: 12px;
-  font-weight: 300;
+  font-weight: 400;
   margin-top: -8px;
   opacity: 1;
   padding: 4px 8px;

@@ -131,7 +131,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
                   option.value === value
                     ? "bg-white border-0 shadow-lg shadow-white/30 text-theme-black"
                     : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
@@ -268,7 +268,7 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
                   key={option.value}
                   type="button"
                   onClick={() => toggleValue(option.value)}
-                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
+                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
                     isSelected
                       ? "bg-[color:var(--theme-text)] border-0 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
                       : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
@@ -775,7 +775,7 @@ export function GalleryPanel({
             type="button"
             disabled={filtersDisabled}
             onClick={toggleSelectMode}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light ${
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal ${
               isSelectMode ? "!bg-theme-mid/20 !text-theme-text !border-theme-mid/40" : ""
             }`}
           >
@@ -785,7 +785,7 @@ export function GalleryPanel({
             type="button"
             onClick={toggleSelectAllVisible}
             disabled={filtersDisabled || filteredGallery.length === 0}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {allVisibleSelected ? "Unselect all" : "Select all"}
           </button>
@@ -793,7 +793,7 @@ export function GalleryPanel({
             type="button"
             onClick={clearImageSelection}
             disabled={filtersDisabled || !hasSelection}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-light disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Clear selection
           </button>
@@ -813,7 +813,7 @@ export function GalleryPanel({
               <button
                 type="button"
                 onClick={event => toggleBulkActionsMenu(event.currentTarget)}
-                className={`${buttons.subtle} !h-8 gap-1.5 text-theme-white !font-light`}
+                className={`${buttons.subtle} !h-8 gap-1.5 text-theme-white !font-normal`}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
                 <span>Actions</span>

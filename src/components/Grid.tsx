@@ -270,13 +270,14 @@ export function Grid() {
                 key={index}
                 type="button"
                 onClick={() => setActive(item.label)}
-                className={`group inline-flex min-w-0 overflow-hidden items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-light transition duration-200 focus:outline-none ${
-                  isActive ? "bg-theme-dark/60 text-theme-text" : "text-theme-white hover:text-theme-text"
+                className={`group relative inline-flex min-w-0 overflow-hidden items-center gap-2 rounded-full px-3 py-2 text-base font-raleway font-normal transition duration-200 focus:outline-none ${
+                  isActive ? "bg-theme-dark/60 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                 }`}
                 aria-pressed={isActive}
               >
+                <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
                 <div
-                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 ${
+                  className={`size-7 grid place-items-center rounded-lg transition-colors duration-200 relative z-10 ${
                     isActive 
                       ? "border border-theme-mid bg-theme-mid/30 text-theme-text" 
                       : `${glass.sidebarIcon} hover:border-theme-mid`
@@ -284,7 +285,7 @@ export function Grid() {
                 >
                   {item.icon}
                 </div>
-                <span className="text-inherit">{item.label}</span>
+                <span className="text-inherit relative z-10">{item.label}</span>
               </button>
             );
           })}

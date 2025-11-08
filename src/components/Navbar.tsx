@@ -105,16 +105,17 @@ export default function Navbar() {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`${iconButtons.xl} sm:${iconButtons.sm} ${className}`}
+      className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100 ${className}`}
       aria-label={isDay ? "Switch to night mode" : "Switch to day mode"}
       title={isDay ? "Switch to night mode" : "Switch to day mode"}
     >
+      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
       {isDay ? (
-        <Moon className="w-4 h-4" aria-hidden="true" />
+        <Moon className="w-4 h-4 relative z-10" aria-hidden="true" />
       ) : (
-        <SunMedium className="w-4 h-4" aria-hidden="true" />
+        <SunMedium className="w-4 h-4 relative z-10" aria-hidden="true" />
       )}
-      {showLabel && <span className="text-sm font-raleway">{isDay ? "Night" : "Day"}</span>}
+      {showLabel && <span className="text-sm font-raleway relative z-10">{isDay ? "Night" : "Day"}</span>}
     </button>
   );
 
@@ -363,25 +364,28 @@ export default function Navbar() {
               <>
                 <div className="flex items-center gap-0">
                   <button
-                    className={`${iconButtons.xl} sm:${iconButtons.sm}`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
                     onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                     aria-label="Discord"
                   >
-                    <DiscordIcon className="size-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <DiscordIcon className="size-4 relative z-10" />
                   </button>
                   <button
-                    className={`${iconButtons.xl} sm:${iconButtons.sm}`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
                     onClick={() => window.open('https://x.com', '_blank')}
                     aria-label="X"
                   >
-                    <XIcon className="size-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <XIcon className="size-4 relative z-10" />
                   </button>
                   <button
-                    className={`${iconButtons.xl} sm:${iconButtons.sm}`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
                     onClick={() => window.open('https://instagram.com', '_blank')}
                     aria-label="Instagram"
                   >
-                    <InstagramIcon className="size-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <InstagramIcon className="size-4 relative z-10" />
                   </button>
                 </div>
                 <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
@@ -424,29 +428,32 @@ export default function Navbar() {
                 <div className="flex items-center gap-0">
                   {/* Discord Button */}
                   <button
-                    className={`${iconButtons.xl} sm:${iconButtons.sm}`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
                     onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                     aria-label="Discord"
                   >
-                    <DiscordIcon className="size-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <DiscordIcon className="size-4 relative z-10" />
                   </button>
                   
                   {/* X Button */}
                   <button
-                    className={`${iconButtons.xl} sm:${iconButtons.sm}`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
                     onClick={() => window.open('https://x.com', '_blank')}
                     aria-label="X"
                   >
-                    <XIcon className="size-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <XIcon className="size-4 relative z-10" />
                   </button>
                   
                   {/* Instagram Button */}
                   <button
-                    className={`${iconButtons.xl} sm:${iconButtons.sm}`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
                     onClick={() => window.open('https://instagram.com', '_blank')}
                     aria-label="Instagram"
                   >
-                    <InstagramIcon className="size-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <InstagramIcon className="size-4 relative z-10" />
                   </button>
                 </div>
                 
@@ -459,14 +466,15 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`hidden lg:flex parallax-large items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-3 py-1.5 hover:text-theme-text transition-colors`}
+                  className={`relative overflow-hidden group hidden lg:flex parallax-large items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-3 py-1.5 hover:text-theme-text transition-colors duration-100`}
                   aria-label="Credit usage"
                 >
-                  <CreditCard className="w-4 h-4" />
-                  <span className="hidden xl:inline font-raleway text-sm font-normal">
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                  <CreditCard className="w-4 h-4 relative z-10" />
+                  <span className="hidden xl:inline font-raleway text-sm font-normal relative z-10">
                     Credits: {currentUser.credits}
                   </span>
-                  <span className="lg:inline xl:hidden font-raleway text-sm font-normal">{currentUser.credits}</span>
+                  <span className="lg:inline xl:hidden font-raleway text-sm font-normal relative z-10">{currentUser.credits}</span>
                 </button>
                 
                 {/* Upgrade Button */}
@@ -486,25 +494,26 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-2.5 py-1 hover:text-theme-text transition-colors`}
+                    className={`relative overflow-hidden group parallax-large flex items-center gap-1.5 rounded-full border ${glass.promptDark} text-theme-white px-2.5 py-1 hover:text-theme-text transition-colors duration-100`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
                   >
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
                     {currentUser.profileImage ? (
                       <img
                         src={`${currentUser.profileImage}?t=${Date.now()}`}
                         alt="Profile"
-                        className="size-5 rounded-full object-cover"
+                        className="size-5 rounded-full object-cover relative z-10"
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90"
+                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90 relative z-10"
                       >
                         {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.displayName || currentUser.email}</span>
+                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal relative z-10">{currentUser.displayName || currentUser.email}</span>
                   </button>
                 </div>
               </>
@@ -537,8 +546,9 @@ export default function Navbar() {
               <div className="hidden lg:flex">
                 <ThemeToggleButton />
               </div>
-              <button aria-label="Search" className={`${iconButtons.xl} sm:${iconButtons.sm}`}>
-                <Search className="w-4 h-4" />
+              <button aria-label="Search" className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}>
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                <Search className="w-4 h-4 relative z-10" />
               </button>
             </div>
       </div>

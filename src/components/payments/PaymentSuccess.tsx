@@ -184,7 +184,7 @@ export function PaymentSuccess() {
         <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24`}>
           <div className="max-w-2xl mx-auto text-center">
             <div className={`${glass.surface} p-8`}>
-              <h1 className="text-2xl font-raleway font-light text-red-400 mb-4">
+              <h1 className="text-2xl font-raleway font-normal text-red-400 mb-4">
                 Payment Verification Failed
               </h1>
               <p className="text-theme-white mb-6">
@@ -226,7 +226,7 @@ export function PaymentSuccess() {
             </div>
 
             {/* Success Message */}
-            <h1 className="text-3xl font-raleway font-light text-theme-text mb-4">
+            <h1 className="text-3xl font-raleway font-normal text-theme-text mb-4">
               {sessionMode === 'subscription' ? 'Subscription Successful!' : 'Payment Successful!'}
             </h1>
             <p className="text-theme-white mb-6">

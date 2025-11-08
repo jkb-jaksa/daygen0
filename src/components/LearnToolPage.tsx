@@ -64,10 +64,10 @@ export default function LearnToolPage() {
                   <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-theme-white/60 font-raleway">
                     Learn · Tool guide
                   </p>
-                  <h1 className="text-3xl font-raleway font-light text-theme-text sm:text-4xl">
+                  <h1 className="text-3xl font-raleway font-normal text-theme-text sm:text-4xl">
                     {toolContent.name}
                   </h1>
-                  <p className="text-base font-raleway font-light text-theme-white sm:text-lg">
+                  <p className="text-base font-raleway font-normal text-theme-white sm:text-lg">
                     {toolContent.tagline}
                   </p>
                 </div>

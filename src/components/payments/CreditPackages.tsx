@@ -46,7 +46,7 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-raleway font-light text-theme-text mb-4">
+        <h2 className="text-3xl font-raleway font-normal text-theme-text mb-4">
           Buy Credits
         </h2>
         <p className="text-theme-white">
@@ -126,11 +126,11 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: 
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="mb-4">
-          <h3 className="text-xl font-raleway font-light mb-2 text-theme-text">
+          <h3 className="text-xl font-raleway font-normal mb-2 text-theme-text">
             {pkg.name}
           </h3>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-raleway font-light text-theme-text">
+            <span className="text-3xl font-raleway font-normal text-theme-text">
               {formatPrice(pkg.price)}
             </span>
           </div>

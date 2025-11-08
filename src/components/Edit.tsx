@@ -1374,7 +1374,7 @@ export default function Edit() {
                       }}
                       title="Adjust brush size"
                     />
-                    <span className="text-theme-white text-xs font-mono font-light min-w-[2rem] text-center">
+                    <span className="text-theme-white text-xs font-mono font-normal min-w-[2rem] text-center">
                       {brushSize}px
                     </span>
                   </div>
@@ -1869,10 +1869,10 @@ export default function Edit() {
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
-                <h3 className="text-xl font-raleway font-light text-theme-text">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
                   Remove from Saved Prompts
                 </h3>
-                <p className="text-base font-raleway font-light text-theme-white">
+                <p className="text-base font-raleway font-normal text-theme-white">
                   Are you sure you want to remove this prompt from your saved prompts?
                 </p>
               </div>

@@ -129,8 +129,8 @@ export function SubscriptionManager() {
   if (!subscription) {
     return (
       <div className={`${glass.surface} p-6`}>
-        <h3 className="text-lg font-raleway font-light text-theme-text">Free Plan</h3>
-        <p className="text-theme-white font-raleway font-light mb-4">
+        <h3 className="text-lg font-raleway font-normal text-theme-text">Free Plan</h3>
+        <p className="text-theme-white font-raleway font-normal mb-4">
           You don't have an active subscription. Subscribe to enable metered usage and premium features.
         </p>
         <button

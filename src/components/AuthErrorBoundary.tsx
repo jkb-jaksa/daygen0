@@ -107,7 +107,7 @@ class AuthErrorBoundary extends Component<Props, State> {
               </div>
             </div>
             
-            <h1 className="text-2xl font-raleway font-light text-theme-text mb-3">
+            <h1 className="text-2xl font-raleway font-normal text-theme-text mb-3">
               Something went wrong
             </h1>
             

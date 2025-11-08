@@ -223,7 +223,7 @@ function PricingCard({
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="mb-3">
-          <h3 className={`text-3xl font-raleway font-light mb-1 ${
+          <h3 className={`text-3xl font-raleway font-normal mb-1 ${
             isCurrentPlan ? 'text-green-400' :
             tier.id === 'free' ? 'text-theme-text' : 
             tier.id === 'pro' ? 'text-cyan-lighter' : 
@@ -237,7 +237,7 @@ function PricingCard({
         {/* Pricing */}
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
-            <span className={`text-4xl font-raleway font-light ${
+            <span className={`text-4xl font-raleway font-normal ${
               isCurrentPlan ? 'text-green-400' :
               tier.id === 'free' ? 'text-theme-text' : 
               tier.id === 'pro' ? 'text-cyan-lighter' : 
@@ -630,7 +630,7 @@ export default function Pricing() {
         {/* Header Section */}
         <section className={`${layout.container} pt-4 pb-16`}>
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-light tracking-tight leading-[1.1] font-raleway mb-6 text-theme-text">
+            <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-theme-text">
               Choose your plan.
             </h1>
             <p className="mx-auto mb-6 max-w-2xl text-lg text-theme-white font-raleway">
@@ -731,7 +731,7 @@ export default function Pricing() {
               </div>
             )}
             <div className={`${glass.surface} p-8 max-w-4xl mx-auto`}>
-              <h3 className="text-2xl font-raleway font-light text-theme-text mb-4">
+              <h3 className="text-2xl font-raleway font-normal text-theme-text mb-4">
                 All plans include
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -27,7 +27,7 @@ export function PaymentCancel() {
             </div>
 
             {/* Cancel Message */}
-            <h1 className="text-3xl font-raleway font-light text-theme-text mb-4">
+            <h1 className="text-3xl font-raleway font-normal text-theme-text mb-4">
               Payment Cancelled
             </h1>
             <p className="text-theme-white mb-6">
