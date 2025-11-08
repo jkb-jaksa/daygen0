@@ -415,10 +415,13 @@ const FullImageModal = memo(() => {
         className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
         onClick={clearJobUrl}
       >
-        <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <div
+          ref={modalRef}
+          className="relative w-full h-full flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Image container */}
           <div
-            ref={modalRef}
             className="relative group flex items-start justify-center mt-14"
             style={{ transform: 'translateX(-50px)' }}
             onClick={(e) => e.stopPropagation()}
@@ -719,7 +722,7 @@ const FullImageModal = memo(() => {
             <a
               href={fullSizeImage.url}
               download
-              className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               onClick={(e) => e.stopPropagation()}
               title="Download"
               aria-label="Download"
@@ -729,7 +732,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleAddToFolderClick}
-              className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title="Manage folders"
               aria-label="Manage folders"
             >
@@ -738,7 +741,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleTogglePublicClick}
-              className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
               aria-label={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
             >
@@ -751,7 +754,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleToggleLikeClick}
-              className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title={fullSizeImage.isLiked ? "Unlike" : "Like"}
               aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
             >
@@ -766,7 +769,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleDeleteClick}
-              className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title="Delete"
               aria-label="Delete"
             >
@@ -779,7 +782,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleEditImageClick}
-              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <EditIcon className="w-4 h-4 flex-shrink-0" />
               Edit image
@@ -787,7 +790,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleCreateAvatarClick}
-              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <User className="w-4 h-4 flex-shrink-0" />
               Create Avatar
@@ -795,7 +798,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleUseAsReferenceClick}
-              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <Copy className="w-4 h-4 flex-shrink-0" />
               Use as reference
@@ -803,7 +806,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleReusePromptClick}
-              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <RefreshCw className="w-4 h-4 flex-shrink-0" />
               Reuse prompt
@@ -811,7 +814,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleMakeVideoClick}
-              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-light text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
             >
               <Camera className="w-4 h-4 flex-shrink-0" />
               Make video
@@ -830,6 +833,7 @@ const FullImageModal = memo(() => {
               const next = filteredItems[index];
               if (next) {
                 setFullSizeImage(next, index);
+                syncJobUrlForImage(next);
               }
             }}
             className="z-[130]"

@@ -1,6 +1,6 @@
 import { ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { glass, layout, brandColors } from "../styles/designSystem";
+import { glass, layout } from "../styles/designSystem";
 
 export default function Footer() {
   const scrollToTop = () => {
@@ -20,7 +20,7 @@ export default function Footer() {
             {/* Left block: brand + copy */}
             <div className="pt-4">
               <div className="text-xl font-light tracking-tight font-raleway leading-[1.05] mb-2">
-                <span className="text-theme-text">day<span className={brandColors.orange}>gen</span></span>
+                <span className="text-theme-text">daygen</span>
               </div>
               <p className="text-base text-b-white mb-2 font-raleway font-light">next-gen ideas. every day.</p>
             </div>

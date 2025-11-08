@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState, useRef, useCallback } from "react"
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
 import { useAuth } from "./auth/useAuth";
-import { layout, text, buttons, headings, glass, brandColors } from "./styles/designSystem";
+import { layout, text, buttons, headings, glass } from "./styles/designSystem";
 import { safeResolveNext } from "./utils/navigation";
 import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
@@ -226,7 +226,7 @@ function Home() {
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
-                      Your <span className={brandColors.orange}>Daily</span> AI Generations.
+                      Your Daily AI Generations.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
                       Master all the best Creative AI Tools in one place.
@@ -245,7 +245,7 @@ function Home() {
                     </div>
                   </div>
                   <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-light`}>
-                    day<span className={brandColors.orange}>gen</span>
+                    daygen
                   </div>
                 </div>
               </div>

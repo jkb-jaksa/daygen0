@@ -2,6 +2,8 @@ import { buttons, inputs } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 import { useState, useCallback } from "react";
 import GoogleSignIn from "./GoogleSignIn";
+import { apiFetch } from "../utils/api";
+import { supabase } from "../lib/supabase";
 
 interface AuthModalProps {
   open: boolean;
@@ -85,6 +87,34 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
       setIsSubmitting(false);
     }
   }, [email, requestPasswordReset]);
+
+  const handleDevLogin = useCallback(async () => {
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      // Call the dev-login endpoint
+      const response = await apiFetch<{ accessToken: string; user: any }>('/api/auth/dev-login', {
+        method: 'POST',
+        auth: false,
+      });
+
+      // Set the session in Supabase
+      if (response.accessToken) {
+        await supabase.auth.setSession({
+          access_token: response.accessToken,
+          refresh_token: response.accessToken, // Use same token for refresh in dev
+        });
+      }
+
+      // Close the modal
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Dev login failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [onClose]);
 
   if (!open) return null;
 
@@ -179,6 +209,19 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               onError={handleGoogleSignInError}
               disabled={isSubmitting}
             />
+
+            {/* Dev Login Button - Only shown in development */}
+            {import.meta.env.DEV && (
+              <button
+                onClick={handleDevLogin}
+                disabled={isSubmitting}
+                className="w-full px-4 py-3 rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                type="button"
+              >
+                <span>⚡</span>
+                <span>Quick Login (Dev)</span>
+              </button>
+            )}
             
             {/* Show OAuth errors near the Google button */}
             {error && (error.includes('Google') || error.includes('OAuth') || error.includes('configuration') || error.includes('redirect')) && (

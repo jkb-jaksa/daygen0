@@ -82,7 +82,7 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   return null;
 };
 
-export default function CreateRefactored() {
+function CreateRefactoredView() {
   const {
     state,
     setImageActionMenu,
@@ -110,7 +110,6 @@ export default function CreateRefactored() {
   const galleryActions = useGalleryActions();
   const promptsUserKey = user?.id || user?.email || 'anon';
   const { isPromptSaved } = useSavedPrompts(promptsUserKey);
-  const bridgeActionsRef = useRef<GalleryBridgeActions>(createInitialBridgeActions());
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
@@ -457,8 +456,7 @@ export default function CreateRefactored() {
   }, [setFolderThumbnailDialog]);
   
   return (
-    <CreateBridgeProvider value={bridgeActionsRef}>
-      <header
+    <header
       className={`relative z-[10] ${layout.container} pb-48`}
       style={{
         paddingTop: `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`,
@@ -496,7 +494,7 @@ export default function CreateRefactored() {
                         }`}
                         aria-pressed={isActive}
                       >
-                        <item.Icon className="h-4 w-4" />
+                        <item.Icon className="size-4" />
                         <span>{item.label}</span>
                       </button>
                     );
@@ -522,7 +520,7 @@ export default function CreateRefactored() {
                         }`}
                         aria-pressed={isActive}
                       >
-                        <item.Icon className="h-4 w-4" />
+                        <item.Icon className="size-4" />
                         <span>{item.label}</span>
                       </button>
                     );
@@ -716,6 +714,15 @@ export default function CreateRefactored() {
         />
       </Suspense>
     </header>
+  );
+}
+
+export default function CreateRefactored() {
+  const bridgeActionsRef = useRef<GalleryBridgeActions>(createInitialBridgeActions());
+
+  return (
+    <CreateBridgeProvider value={bridgeActionsRef}>
+      <CreateRefactoredView />
     </CreateBridgeProvider>
   );
 }

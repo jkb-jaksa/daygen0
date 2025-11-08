@@ -2496,7 +2496,10 @@ export default function Products() {
                   return (
                     <button
                       key={img.id}
-                      onClick={() => openProductFullSizeView(img.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openProductFullSizeView(img.id);
+                      }}
                       className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${
                         isActive
                           ? "ring-1 ring-theme-text scale-110"

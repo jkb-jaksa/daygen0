@@ -43,7 +43,7 @@ function CreateSidebarComponent({
         className={navClasses}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
-        <aside className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
+        <aside className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1">
           <div className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
             create
           </div>
@@ -60,7 +60,7 @@ function CreateSidebarComponent({
             };
             
             const insetShadow = isActive && gradient
-              ? { boxShadow: `inset 0 -0.25em 0.5em -0.125em ${shadowColorMap[key]}` }
+              ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[key]}` }
               : {};
             
             return (
@@ -68,21 +68,19 @@ function CreateSidebarComponent({
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                  isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"
+                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-0 focus:outline-none group ${
+                  isActive
+                    ? "border border-theme-dark text-theme-text"
+                    : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                 }`}
+                style={insetShadow}
                 aria-pressed={isActive}
               >
-                <div
-                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}
-                  style={insetShadow}
-                >
-                  {isActive && gradient && (
-                    <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-50 blur-xl bg-gradient-to-br ${gradient}`} />
-                  )}
-                  <Icon className={`size-3 relative z-10 transition-colors duration-100 ${isActive && iconColor ? iconColor : 'text-theme-white group-hover:text-theme-text'}`} />
-                </div>
-                <span>{label}</span>
+                {gradient && (
+                  <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${gradient} transition-opacity duration-200 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+                )}
+                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive && iconColor ? iconColor : 'text-theme-white group-hover:text-theme-text'}`} />
+                <span className="relative z-10 whitespace-nowrap">{label}</span>
               </button>
             );
           })}
@@ -98,7 +96,7 @@ function CreateSidebarComponent({
             
             // Colorless inset shadow for active state
             const insetShadow = isActive
-              ? { boxShadow: `inset 0 -0.25em 0.5em -0.125em rgba(255, 255, 255, 0.08)` }
+              ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
               : {};
             
             return (
@@ -106,21 +104,17 @@ function CreateSidebarComponent({
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
-                className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
-                  isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"
+                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-0 focus:outline-none group ${
+                  isActive
+                    ? "border border-theme-dark text-theme-text"
+                    : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                 }`}
+                style={insetShadow}
                 aria-pressed={isActive}
               >
-                <div
-                  className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}
-                  style={insetShadow}
-                >
-                  {isActive && (
-                    <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-30 blur-xl bg-white`} />
-                  )}
-                  <Icon className={`size-3 relative z-10 transition-colors duration-100 ${isActive ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'}`} />
-                </div>
-                <span>{label}</span>
+                <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'}`} />
+                <span className="relative z-10 whitespace-nowrap">{label}</span>
               </button>
             );
           })}
@@ -128,31 +122,25 @@ function CreateSidebarComponent({
           <button
             type="button"
             onClick={onOpenMyFolders}
-            className={`parallax-large group flex items-center gap-2 transition duration-200 cursor-pointer text-sm font-raleway font-light appearance-none bg-transparent px-2 py-0 m-0 border-0 focus:outline-none focus:ring-0 ${
+            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-0 focus:outline-none group ${
               activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
-                ? "text-theme-text"
-                : "text-theme-white hover:text-theme-text"
+                ? "border border-theme-dark text-theme-text"
+                : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
             }`}
+            style={
+              activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
+                : {}
+            }
             aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
           >
-            <div
-              className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}
-              style={
-                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
-                  ? { boxShadow: `inset 0 -0.25em 0.5em -0.125em rgba(255, 255, 255, 0.08)` }
-                  : {}
-              }
-            >
-              {(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") && (
-                <div className={`pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-full opacity-30 blur-xl bg-white`} />
-              )}
-              <FOLDERS_ENTRY.Icon className={`size-3 relative z-10 transition-colors duration-100 ${
-                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
-                  ? 'text-theme-text'
-                  : 'text-theme-white group-hover:text-theme-text'
-              }`} />
-            </div>
-            <span>{FOLDERS_ENTRY.label}</span>
+            <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+            <FOLDERS_ENTRY.Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${
+              activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                ? 'text-theme-text'
+                : 'text-theme-white group-hover:text-theme-text'
+            }`} />
+            <span className="relative z-10 whitespace-nowrap">{FOLDERS_ENTRY.label}</span>
           </button>
         </aside>
       </nav>

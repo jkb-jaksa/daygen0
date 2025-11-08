@@ -104,6 +104,8 @@ export function VerticalGalleryNav({
       className={`fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-20 flex flex-col pointer-events-auto ${className}`}
       style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
       onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
     >
       <div
@@ -119,11 +121,16 @@ export function VerticalGalleryNav({
               <button
                 key={image.id || `${image.url}-${index}`}
                 ref={isActive ? activeThumbnailRef : null}
-                onClick={() => onNavigate(index)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(index);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
                 className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${
                   isActive
                     ? "ring-1 ring-theme-text scale-110"
-                    : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
+                    : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 hover:bg-theme-white/10 scale-100"
                 }`}
                 style={{ width: "48px", height: "48px", flexShrink: 0 }}
                 aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}

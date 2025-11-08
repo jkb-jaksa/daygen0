@@ -2626,7 +2626,8 @@ export default function Avatars() {
                   return (
                     <button
                       key={img.id}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (index >= 0 && index < creationsModalAvatar.images.length) {
                           setActiveAvatarImageId(creationsModalAvatar.images[index]?.id ?? null);
                         }

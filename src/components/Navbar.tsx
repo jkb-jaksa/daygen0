@@ -12,6 +12,8 @@ import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeResolveNext } from "../utils/navigation";
 import { useTheme } from "../hooks/useTheme";
+import { apiFetch } from "../utils/api";
+import { supabase } from "../lib/supabase";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon; gradient?: string; iconColor?: string };
@@ -71,6 +73,32 @@ export default function Navbar() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const isDay = theme === "day";
+  const [isDevLoginLoading, setIsDevLoginLoading] = useState(false);
+
+  const handleDevLogin = useCallback(async () => {
+    setIsDevLoginLoading(true);
+    try {
+      const response = await apiFetch<{ accessToken: string; user: any }>('/api/auth/dev-login', {
+        method: 'POST',
+        auth: false,
+      });
+
+      if (response.accessToken) {
+        await supabase.auth.setSession({
+          access_token: response.accessToken,
+          refresh_token: response.accessToken,
+        });
+      }
+      
+      // Reload to refresh auth state
+      window.location.reload();
+    } catch (err) {
+      console.error('Dev login failed:', err);
+      alert('Dev login failed. Check console for details.');
+    } finally {
+      setIsDevLoginLoading(false);
+    }
+  }, []);
 
   const ThemeToggleButton = ({ showLabel = false, className = "" }: { showLabel?: boolean; className?: string }) => (
     <button
@@ -364,6 +392,16 @@ export default function Navbar() {
                     onClick={mockSignIn}
                   >
                     Quick Sign In
+                  </button>
+                )}
+                {import.meta.env.DEV && (
+                  <button 
+                    className="hidden lg:flex btn-compact items-center gap-1.5 rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5"
+                    onClick={handleDevLogin}
+                    disabled={isDevLoginLoading}
+                  >
+                    <span>⚡</span>
+                    <span>{isDevLoginLoading ? 'Logging in...' : 'Dev Login'}</span>
                   </button>
                 )}
                 <button className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large" onClick={()=>setShowAuth("login")}>
@@ -680,6 +718,19 @@ export default function Navbar() {
                         className={`${buttons.ghost} w-full justify-center font-raleway text-base font-medium`}
                       >
                         Quick Sign In
+                      </button>
+                    )}
+                    {import.meta.env.DEV && (
+                      <button
+                        onClick={() => {
+                          setMobileNavOpen(false);
+                          handleDevLogin();
+                        }}
+                        disabled={isDevLoginLoading}
+                        className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5"
+                      >
+                        <span>⚡</span>
+                        <span>{isDevLoginLoading ? 'Logging in...' : 'Dev Login'}</span>
                       </button>
                     )}
                     <button
