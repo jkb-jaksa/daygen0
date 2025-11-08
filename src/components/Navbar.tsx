@@ -308,21 +308,23 @@ export default function Navbar() {
         ref={navRef}
         className={`relative ${glass.promptDark} border-t-0`}
       >
-        <div className={`${layout.container} py-2 flex items-center justify-between text-base min-h-[3.5rem]`}>
-          <div className="flex items-center gap-6 md:gap-8">
+        <div
+          className={`${layout.container} flex items-center justify-between text-base min-h-[3.5rem] py-1`}
+        >
+          <div className="flex h-full items-center gap-6 md:gap-8">
             <img
               src="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
               className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"
             />
-            <div className="hidden lg:flex items-center gap-2 xl:gap-4 text-base font-raleway">
+            <div className="hidden lg:flex h-full items-center gap-0 text-base font-raleway">
               {filteredNavItems.map((item) => (
                 <NavLink
                   key={item.label}
                   to={item.path}
                   className={({ isActive }) =>
-                    `parallax-small transition-colors duration-200 px-2 py-1 rounded font-light ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
+                    `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-10 flex items-center rounded-2xl font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
@@ -345,12 +347,18 @@ export default function Navbar() {
                     setMenuOpen(false);
                   }}
                 >
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-10'}`} />
+                      <span className="relative z-10">{item.label}</span>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-1 lg:gap-2">
+          <div className="flex h-full items-center gap-1 lg:gap-2">
             {!currentUser ? (
               <>
                 <div className="flex items-center gap-0">
@@ -378,14 +386,16 @@ export default function Navbar() {
                 </div>
                 <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
                 <button 
-                  className="hidden sm:block parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-2 py-1 rounded font-raleway font-light"
+                  className="hidden sm:flex relative overflow-hidden group parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-4 h-10 items-center rounded-2xl font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
                 >
-                  Pricing
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
+                  <span className="relative z-10">Pricing</span>
                 </button>
                 {mockSignIn && (
                   <button 
@@ -544,58 +554,64 @@ export default function Navbar() {
           className={`${glass.promptDark} border-t-0 transition-opacity duration-100`}
           style={{ opacity: activeMenu ? 1 : 0 }}
         >
-          <div className={`${layout.container} py-6 min-h-[220px] text-base text-theme-text`}>
+          <div className={`${layout.container} pb-6 pt-3 min-h-[220px] text-base text-theme-text`}>
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200 text-theme-text">
-                <div className="text-base font-light font-raleway mb-4">
+                <div className="text-base font-normal font-raleway mb-4">
                   {activeMenu}
                 </div>
                 {activeMenu === "create" ? (
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col items-start gap-0">
                     {CREATE_MENU_ITEMS.map((category) => (
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-10 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
                       >
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-200 opacity-0 group-hover:opacity-10`} />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon} z-10`}>
                           <category.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
-                        <span>{category.label}</span>
+                        <span className="relative z-10">{category.label}</span>
                       </button>
                     ))}
                   </div>
                 ) : activeMenu === "explore" ? (
                   <div className="text-base font-raleway text-theme-white/85">Coming soon.</div>
                 ) : activeMenu === "learn" ? (
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col items-start gap-0">
                     {LEARN_MENU_LINKS.map((item) => (
                       <Link
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-10 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
                       >
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon} z-10`}>
                           <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
-                        <span>{item.label}</span>
+                        <span className="relative z-10">{item.label}</span>
                       </Link>
                     ))}
                   </div>
                 ) : activeMenu === "my works" ? (
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col items-start gap-0">
                     {MY_WORKS_MENU_LINKS.map((item) => (
                       <Link
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="group flex items-center gap-2 transition duration-200 cursor-pointer text-base font-raleway font-light appearance-none bg-transparent p-0 m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-10 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
                       >
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon}`}>
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon} z-10`}>
                           <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
                         </div>
-                        <span>{item.label}</span>
+                        <span className="relative z-10">{item.label}</span>
                       </Link>
                     ))}
                   </div>
@@ -627,8 +643,8 @@ export default function Navbar() {
                     key={`mobile-${item.label}`}
                     to={item.path}
                     className={({ isActive }) =>
-                      `block rounded-lg px-3 py-2 text-base font-raleway transition-colors duration-200 ${
-                        isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text"
+                      `relative overflow-hidden group block rounded-2xl px-3 py-2 text-base font-raleway transition-colors duration-200 ${
+                        isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                       }`
                     }
                     onClick={() => {
@@ -637,7 +653,12 @@ export default function Navbar() {
                       setMenuOpen(false);
                     }}
                   >
-                    {item.label}
+                    {({ isActive }) => (
+                      <>
+                        <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-10'}`} />
+                        <span className="relative z-10">{item.label}</span>
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </div>
@@ -815,10 +836,11 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
+              className="relative overflow-hidden group block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
               role="menuitem"
             >
-              My account
+              <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
+              <span className="relative z-10">My account</span>
             </button>
             <button
               onClick={() => {
@@ -827,10 +849,11 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
+              className="relative overflow-hidden group block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
               role="menuitem"
             >
-              My works
+              <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
+              <span className="relative z-10">My works</span>
             </button>
             <button
               onClick={async () => {
@@ -843,10 +866,11 @@ export default function Navbar() {
                 }
                 navigate("/");
               }}
-              className="block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text transition-colors font-raleway font-light"
+              className="relative overflow-hidden group block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
               role="menuitem"
             >
-              Log out
+              <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
+              <span className="relative z-10">Log out</span>
             </button>
           </div>,
           document.body
