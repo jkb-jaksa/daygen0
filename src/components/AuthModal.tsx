@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import GoogleSignIn from "./GoogleSignIn";
 import { apiFetch } from "../utils/api";
 import { supabase } from "../lib/supabase";
+import type { User } from "../auth/context";
 
 interface AuthModalProps {
   open: boolean;
@@ -94,7 +95,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
 
     try {
       // Call the dev-login endpoint
-      const response = await apiFetch<{ accessToken: string; user: any }>('/api/auth/dev-login', {
+      const response = await apiFetch<{ accessToken: string; user: User }>('/api/auth/dev-login', {
         method: 'POST',
         auth: false,
       });

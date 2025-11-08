@@ -13,6 +13,7 @@ import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { safeResolveNext } from "../utils/navigation";
 import { useTheme } from "../hooks/useTheme";
 import { apiFetch } from "../utils/api";
+import type { User as AuthUser } from "../auth/context";
 import { supabase } from "../lib/supabase";
 
 type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
@@ -78,7 +79,7 @@ export default function Navbar() {
   const handleDevLogin = useCallback(async () => {
     setIsDevLoginLoading(true);
     try {
-      const response = await apiFetch<{ accessToken: string; user: any }>('/api/auth/dev-login', {
+      const response = await apiFetch<{ accessToken: string; user: AuthUser }>('/api/auth/dev-login', {
         method: 'POST',
         auth: false,
       });
