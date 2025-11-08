@@ -7,6 +7,7 @@ export type GalleryBridgeActions = {
   isInitialized: boolean;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const CreateBridgeContext = createContext<React.MutableRefObject<GalleryBridgeActions> | null>(null);
 
 export function CreateBridgeProvider({
