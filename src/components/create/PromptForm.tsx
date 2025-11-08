@@ -37,7 +37,7 @@ import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 import { useAuth } from '../../auth/useAuth';
-import { useCreateBridge, createInitialBridgeActions } from './contexts/CreateBridgeContext';
+import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));

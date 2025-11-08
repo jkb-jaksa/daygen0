@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGallery } from '../contexts/GalleryContext';
-import { useCreateBridge } from '../contexts/CreateBridgeContext';
+import { useCreateBridge } from '../contexts/hooks';
 import { makeRemixUrl, withUtm, copyLink } from '../../../lib/shareUtils';
 import { useSavedPrompts } from '../../../hooks/useSavedPrompts';
 import { useAuth } from '../../../auth/useAuth';
