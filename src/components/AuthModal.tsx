@@ -53,7 +53,17 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   }, [onClose]);
 
   const handleGoogleSignInError = useCallback((error: string) => {
-    setError(error);
+    // Provide more helpful error messages for OAuth failures
+    let displayError = error;
+    
+    if (error.includes('configuration') || error.includes('environment')) {
+      displayError = `${error}\n\nPlease check that:\n- Supabase environment variables are set\n- Google OAuth is configured in Supabase dashboard\n- Redirect URLs are properly configured`;
+    } else if (error.includes('redirect') || error.includes('callback')) {
+      displayError = `${error}\n\nPlease verify:\n- Redirect URL matches Supabase configuration\n- Browser allows redirects\n- Check browser console for detailed errors`;
+    }
+    
+    setError(displayError);
+    console.error('Google OAuth error:', error);
   }, []);
 
   const handleForgotPassword = useCallback(async () => {
@@ -130,7 +140,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                 />
               </div>
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
-                {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
+                {error && (
+                  <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3 mt-2">
+                    <p className="font-semibold mb-1">Error</p>
+                    <p>{error}</p>
+                  </div>
+                )}
               </div>
               <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
@@ -164,6 +179,17 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               onError={handleGoogleSignInError}
               disabled={isSubmitting}
             />
+            
+            {/* Show OAuth errors near the Google button */}
+            {error && (error.includes('Google') || error.includes('OAuth') || error.includes('configuration') || error.includes('redirect')) && (
+              <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3">
+                <p className="font-semibold mb-1">Google Sign-In Error</p>
+                <p className="whitespace-pre-line">{error}</p>
+                <p className="text-xs text-red-300/80 mt-2">
+                  Check the browser console (F12) for more details.
+                </p>
+              </div>
+            )}
 
             <div className="text-center text-xs text-theme-light font-raleway">or continue with email</div>
 
@@ -206,7 +232,15 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                 />
               </div>
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
-                {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
+                {error && (
+                  <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3 mt-2">
+                    <p className="font-semibold mb-1">Authentication Error</p>
+                    <p className="whitespace-pre-line">{error}</p>
+                    <p className="text-xs text-red-300/80 mt-2">
+                      Check the browser console (F12) for more details.
+                    </p>
+                  </div>
+                )}
               </div>
               <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
                 {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}

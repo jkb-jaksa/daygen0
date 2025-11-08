@@ -59,8 +59,8 @@ export const glass = {
   base: glassBase,
   surface: `${glassCore} bg-[color:var(--glass-surface-bg)] rounded-[20px]`,
   tight: `${glassBase} rounded-lg`,
-  prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
-  promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
+  prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[24px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
+  promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[24px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[40px] border border-[color:var(--glass-border)] bg-[color:var(--glass-dark-bg)]`,
   sidebarIcon: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-base-bg)] text-[color:var(--theme-text)]`,
 };

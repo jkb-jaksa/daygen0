@@ -37,6 +37,7 @@ import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 import { useAuth } from '../../auth/useAuth';
+import { useCreateBridge, createInitialBridgeActions } from './contexts/CreateBridgeContext';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -108,6 +109,7 @@ const PromptForm = memo<PromptFormProps>(
     const [searchParams, setSearchParams] = useSearchParams();
     const location = useLocation();
     const { user } = useAuth();
+    const bridgeActionsRef = useCreateBridge();
     const { setFullSizeImage, setFullSizeOpen } = useGallery();
     const {
       promptHandlers,
@@ -148,6 +150,8 @@ const PromptForm = memo<PromptFormProps>(
       referenceFiles,
       handlePaste,
       clearReference,
+      clearAllReferences,
+      handleAddReferenceFiles,
       handleDragEnter,
       handleDragLeave,
       handleDragOver,
@@ -175,6 +179,9 @@ const PromptForm = memo<PromptFormProps>(
     const promptBarRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const promptsButtonRef = useRef<HTMLButtonElement | null>(null);
+    const focusPromptInput = useCallback(() => {
+      textareaRef.current?.focus();
+    }, []);
 
     const [isDragActive, setIsDragActive] = useState(false);
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
@@ -665,6 +672,55 @@ const PromptForm = memo<PromptFormProps>(
       },
       [handleDrop, isGeminiModel],
     );
+
+    const applyPromptFromGallery = useCallback(
+      (nextPrompt: string, options?: { focus?: boolean }) => {
+        setPromptValue(nextPrompt ?? '');
+        if (options?.focus !== false) {
+          focusPromptInput();
+        }
+      },
+      [focusPromptInput, setPromptValue],
+    );
+
+    const applyReferenceFromGallery = useCallback(
+      async (imageUrl: string) => {
+        try {
+          const response = await fetch(imageUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch reference asset: ${response.status}`);
+          }
+          const blob = await response.blob();
+          const extension =
+            blob.type?.split('/').pop() ||
+            imageUrl.split('.').pop()?.split('?')[0] ||
+            'png';
+          const fileName = `gallery-reference-${Date.now()}.${extension}`;
+          const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+          clearAllReferences();
+          handleAddReferenceFiles([file]);
+        } catch (error) {
+          debugError('Failed to load gallery reference image:', error);
+        }
+      },
+      [clearAllReferences, handleAddReferenceFiles],
+    );
+
+    useEffect(() => {
+      bridgeActionsRef.current = {
+        setPromptFromGallery: applyPromptFromGallery,
+        setReferenceFromUrl: async (url: string) => {
+          await applyReferenceFromGallery(url);
+          focusPromptInput();
+        },
+        focusPromptInput,
+        isInitialized: true,
+      };
+
+      return () => {
+        bridgeActionsRef.current = createInitialBridgeActions();
+      };
+    }, [applyPromptFromGallery, applyReferenceFromGallery, bridgeActionsRef, focusPromptInput]);
 
     const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();

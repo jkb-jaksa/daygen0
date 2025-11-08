@@ -103,7 +103,7 @@ function UseCaseCard({
         alt={imageAlt}
         loading="lazy"
         decoding="async"
-        className="h-48 w-full object-cover parallax-isolate"
+        className="h-40 sm:h-44 md:h-48 w-full object-cover parallax-isolate"
       />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="UseCaseDescription relative z-10 px-4 py-1.5 rounded-2xl">

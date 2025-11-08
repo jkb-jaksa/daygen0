@@ -1250,7 +1250,7 @@ const ChatMode: React.FC = () => {
                                   alt={`Reference ${index + 1}`}
                                   loading="lazy"
                                   decoding="async"
-                                  className="h-9 w-9 rounded-lg border border-theme-dark object-cover"
+                                  className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg border border-theme-dark object-cover"
                                 />
                                 <button
                                   type="button"

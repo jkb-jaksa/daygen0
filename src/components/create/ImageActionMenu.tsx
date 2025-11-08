@@ -3,8 +3,9 @@ import { Download, Share2, FolderPlus, Globe, Lock, Edit, User, Copy, RefreshCw,
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { MenuPortal } from './shared/MenuPortal';
-import { debugLog } from '../../utils/debug';
+import { debugLog, debugError } from '../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
+import { makeRemixUrl, withUtm, copyLink } from '../../lib/shareUtils';
 
 // Helper to match gallery item by identifier
 const matchGalleryItemId = (
@@ -52,25 +53,25 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   // Handle copy link / share
   const handleCopyLink = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
-    if (currentImage) {
-      try {
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        let urlToShare: string;
-        
-        // If image has a jobId, use the job URL
-        if (currentImage.jobId) {
-          urlToShare = `${baseUrl}/job/${currentImage.jobId}`;
-        } else {
-          // Fallback to copying the image URL
-          urlToShare = currentImage.url;
-        }
-        
-        await navigator.clipboard.writeText(urlToShare);
-        debugLog('Link copied!');
-        onClose();
-      } catch (error) {
-        debugLog('Failed to copy link:', error);
+    if (!currentImage) return;
+
+    try {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      let urlToShare: string;
+
+      if (currentImage.jobId) {
+        const normalizedBase = baseUrl.replace(/\/$/, '');
+        urlToShare = `${normalizedBase}/job/${encodeURIComponent(currentImage.jobId)}`;
+      } else {
+        const remixUrl = makeRemixUrl(baseUrl, currentImage.prompt || '');
+        urlToShare = withUtm(remixUrl, 'copy');
       }
+
+      await copyLink(urlToShare);
+      debugLog('Link copied!');
+      onClose();
+    } catch (error) {
+      debugError('Failed to copy link:', error);
     }
   }, [currentImage, onClose]);
   

@@ -1538,7 +1538,7 @@ export default function Edit() {
                       <img
                         src={item.url}
                         alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
-                        className="w-9 h-9 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
+                        className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
                         onClick={() => {
                           setSelectedFullImage(item.url);
                           setIsFullSizeOpen(true);

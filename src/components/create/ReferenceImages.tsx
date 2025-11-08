@@ -84,7 +84,7 @@ const ReferenceImages = memo<ReferenceImagesProps>(({
           <img
             src={preview}
             alt={`Reference ${index + 1}`}
-            className="w-12 h-12 rounded-lg object-cover border border-theme-mid"
+            className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg object-cover border border-theme-mid"
           />
           <button
             onClick={() => onClearReference(index)}

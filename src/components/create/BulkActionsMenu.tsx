@@ -4,7 +4,6 @@ import { Trash2, Globe, FolderPlus, Download } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { buttons, glass } from '../../styles/designSystem';
-import { debugLog } from '../../utils/debug';
 
 interface BulkActionsMenuProps {
   open: boolean;
@@ -13,7 +12,12 @@ interface BulkActionsMenuProps {
 
 const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
   const { state, clearSelection } = useGallery();
-  const { handleBulkDelete, handleBulkTogglePublic } = useGalleryActions();
+  const {
+    handleBulkDelete,
+    handleBulkTogglePublic,
+    handleBulkMoveToFolder,
+    handleBulkDownload,
+  } = useGalleryActions();
   
   const menuRef = useRef<HTMLDivElement>(null);
   const { bulkActionsMenu, selectedItems } = state;
@@ -76,20 +80,18 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
   // Handle bulk move to folder
   const handleBulkMoveToFolderClick = useCallback(async () => {
     if (selectedCount > 0) {
-      // This would need to be implemented with folder selection
-      debugLog('Bulk move to folder clicked');
+      await handleBulkMoveToFolder(selectedItemsArray);
       onClose();
     }
-  }, [selectedCount, onClose]);
+  }, [handleBulkMoveToFolder, onClose, selectedCount, selectedItemsArray]);
   
   // Handle bulk download
-  const handleBulkDownload = useCallback(async () => {
+  const handleBulkDownloadClick = useCallback(() => {
     if (selectedCount > 0) {
-      // This would need to be implemented with bulk download functionality
-      debugLog('Bulk download clicked');
+      handleBulkDownload(selectedItemsArray);
       onClose();
     }
-  }, [selectedCount, onClose]);
+  }, [handleBulkDownload, onClose, selectedCount, selectedItemsArray]);
   
   if (!open || !bulkActionsMenu || selectedCount === 0) return null;
   
@@ -124,7 +126,7 @@ const BulkActionsMenu = memo<BulkActionsMenuProps>(({ open, onClose }) => {
         <div className="py-2">
           {/* Download */}
           <button
-            onClick={handleBulkDownload}
+            onClick={handleBulkDownloadClick}
             className={`${buttons.ghost} w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200`}
           >
             <Download className="w-4 h-4" />

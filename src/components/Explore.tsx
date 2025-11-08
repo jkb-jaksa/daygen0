@@ -602,7 +602,7 @@ const AvatarCard: React.FC<{
   const isSpotlight = variant === "spotlight";
   const padding = isFeature ? "p-8 sm:p-10" : isSpotlight ? "p-6 sm:p-7" : "p-6";
   const radius = "rounded-2xl";
-  const minHeight = isFeature ? "min-h-[420px]" : isSpotlight ? "min-h-[280px]" : "min-h-[260px]";
+  const minHeight = isFeature ? "min-h-[320px] sm:min-h-[380px] md:min-h-[420px]" : isSpotlight ? "min-h-[220px] sm:min-h-[250px] md:min-h-[280px]" : "min-h-[200px] sm:min-h-[230px] md:min-h-[260px]";
 
   return (
     <article

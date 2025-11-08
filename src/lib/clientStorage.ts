@@ -11,7 +11,8 @@ type StorageKey =
   | 'editGallery'
   | 'inspirations'
   | 'avatars'
-  | 'avatar-favorites';
+  | 'avatar-favorites'
+  | 'products';
 
 type PersistedValue = unknown;
 

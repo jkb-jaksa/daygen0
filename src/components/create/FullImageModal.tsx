@@ -532,7 +532,7 @@ const FullImageModal = memo(() => {
                   <video
                     src={fullSizeImage.url}
                     controls
-                    className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
                     style={{ objectPosition: 'top' }}
                     onLoadStart={() => setIsLoading(true)}
                     onLoadedData={handleImageLoad}
@@ -544,7 +544,7 @@ const FullImageModal = memo(() => {
                     src={fullSizeImage.url}
                     alt={fullSizeImage.prompt || 'Generated image'}
                     loading="lazy"
-                    className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
                     style={{ objectPosition: 'top' }}
                     onLoad={handleImageLoad}
                     onError={handleImageError}
