@@ -785,7 +785,7 @@ html[data-theme="day"] .footer-gradient-bg {
 
 /* Slim ghost button variant - reduced horizontal padding */
 .btn-ghost-slim {
-  height: 32px;
+  height: 36px;
   padding-left: 0.625rem;
   padding-right: 0.625rem;
 }

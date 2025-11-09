@@ -325,7 +325,7 @@ export default function Navbar() {
                   key={item.label}
                   to={item.path}
                   className={({ isActive }) =>
-                    `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-10 flex items-center rounded-2xl font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
+                    `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-9 flex items-center rounded-lg font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
@@ -350,7 +350,7 @@ export default function Navbar() {
                 >
                   {({ isActive }) => (
                     <>
-                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                       <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-10'}`} />
                       <span className="relative z-10">{item.label}</span>
                     </>
@@ -390,14 +390,14 @@ export default function Navbar() {
                 </div>
                 <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
                 <button 
-                  className="hidden sm:flex relative overflow-hidden group parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-4 h-10 items-center rounded-2xl font-raleway font-normal"
+                  className="hidden sm:flex relative overflow-hidden group parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-4 h-9 items-center rounded-lg font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
                 >
-                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                   <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
                   <span className="relative z-10">Pricing</span>
                 </button>
@@ -466,7 +466,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-1.5 rounded-full py-1.5 text-sm`}
+                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-1.5 rounded-full py-2 text-sm`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -493,7 +493,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`${buttons.ghostSlim} flex items-center gap-1.5 rounded-full py-1 text-sm`}
+                    className={`${buttons.ghostSlim} flex items-center gap-1.5 rounded-full py-2 text-sm`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -563,12 +563,12 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-10 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-lg"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-200 opacity-0 group-hover:opacity-10`} />
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon} z-10`}>
-                          <category.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden z-10`}>
+                          <category.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span className="relative z-10">{category.label}</span>
                       </button>
@@ -583,12 +583,12 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-10 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-lg"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon} z-10`}>
-                          <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden z-10`}>
+                          <item.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span className="relative z-10">{item.label}</span>
                       </Link>
@@ -601,12 +601,12 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-10 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-lg"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
-                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden bg-theme-black ${glass.sidebarIcon} z-10`}>
-                          <item.Icon className="size-3 text-theme-white group-hover:text-theme-text" />
+                        <div className={`size-6 grid place-items-center rounded-lg transition-colors duration-100 relative overflow-hidden z-10`}>
+                          <item.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span className="relative z-10">{item.label}</span>
                       </Link>
@@ -640,7 +640,7 @@ export default function Navbar() {
                     key={`mobile-${item.label}`}
                     to={item.path}
                     className={({ isActive }) =>
-                      `relative overflow-hidden group block rounded-2xl px-3 py-2 text-base font-raleway transition-colors duration-200 ${
+                      `relative overflow-hidden group block rounded-lg px-3 py-2 text-base font-raleway transition-colors duration-200 ${
                         isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                       }`
                     }
@@ -811,7 +811,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-theme-text shadow-xl transition-colors duration-200 py-2`}
+            className={`rounded-xl ${glass.promptDark} border-t-0 text-base text-theme-text shadow-xl transition-colors duration-200 pt-2`}
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -833,7 +833,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="relative overflow-hidden group block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
+              className="relative overflow-hidden group block w-full text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-lg"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -846,7 +846,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="relative overflow-hidden group block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
+              className="relative overflow-hidden group block w-full text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-lg"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -863,7 +863,7 @@ export default function Navbar() {
                 }
                 navigate("/");
               }}
-              className="relative overflow-hidden group block w-full text-left px-4 py-1 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
+              className="relative overflow-hidden group block w-full text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-lg"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
