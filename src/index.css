@@ -1825,8 +1825,7 @@ select option::-webkit-scrollbar-thumb:hover {
 
 /* Prompt Description Bar Effect */
 .PromptDescriptionBar,
-.PromptDescriptionBarTop,
-.UseCaseDescription {
+.PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to top;
   --prompt-bar-color-rgb: var(--theme-black-rgb);
   -webkit-backdrop-filter: blur(16px);
@@ -1892,37 +1891,6 @@ html[data-theme="day"] .PromptDescriptionBarTop {
     rgb(var(--prompt-bar-color-rgb) / 0.28) 80%,
     rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
     rgb(var(--prompt-bar-color-rgb) / 0.08) 100%
-  );
-}
-
-/* Use Case Description - Darker/Less Transparent */
-html[data-theme="night"] .UseCaseDescription {
-  --prompt-bar-gradient-direction: to top;
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 1.0) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.98) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.96) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.86) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.76) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.62) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.48) 100%
-  );
-}
-
-html[data-theme="day"] .UseCaseDescription {
-  --prompt-bar-gradient-direction: to bottom;
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.98) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.96) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.86) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.66) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.52) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.40) 100%
   );
 }
 

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { glass } from "../../styles/designSystem";
 import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_PROMPT_GAP } from "./layoutConstants";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./sidebarData";
@@ -18,6 +18,7 @@ function CreateSidebarComponent({
   reservedBottomSpace = 0,
   isFullSizeOpen = false,
 }: CreateSidebarProps) {
+  const [pressedCategory, setPressedCategory] = useState<string | null>(null);
   const topOffset = SIDEBAR_TOP_PADDING;
   const minimumReservedSpace = SIDEBAR_PROMPT_GAP + 12; // Preserve previous breathing room when no prompt bar
   const effectiveReservedSpace = Math.max(reservedBottomSpace, minimumReservedSpace);
@@ -50,6 +51,7 @@ function CreateSidebarComponent({
 
           {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
             const isActive = activeCategory === key;
+            const isPressed = pressedCategory === key;
             
             // Color-specific shadow mappings for each category
             const shadowColorMap: Record<string, string> = {
@@ -57,6 +59,14 @@ function CreateSidebarComponent({
               image: "rgba(239, 68, 68, 0.15)",
               video: "rgba(59, 130, 246, 0.15)",
               audio: "rgba(34, 211, 238, 0.15)",
+            };
+            
+            // Pressed state shadow colors (slightly higher opacity for subtle effect)
+            const pressedShadowColorMap: Record<string, string> = {
+              text: "rgba(251, 191, 36, 0.22)",
+              image: "rgba(239, 68, 68, 0.22)",
+              video: "rgba(59, 130, 246, 0.22)",
+              audio: "rgba(34, 211, 238, 0.22)",
             };
             
             // Color-specific border class mappings for each category
@@ -67,7 +77,13 @@ function CreateSidebarComponent({
               audio: "border-cyan-400/20",
             };
             
-            const insetShadow = isActive && gradient
+            // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+            // Active items get colored shadow, inactive items get neutral shadow
+            const insetShadow = isPressed && isActive && gradient
+              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[key]}` }
+              : isPressed && !isActive
+              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+              : isActive && gradient
               ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[key]}` }
               : {};
             
@@ -76,6 +92,11 @@ function CreateSidebarComponent({
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
+                onMouseDown={() => setPressedCategory(key)}
+                onMouseUp={() => setPressedCategory(null)}
+                onMouseLeave={() => setPressedCategory(null)}
+                onTouchStart={() => setPressedCategory(key)}
+                onTouchEnd={() => setPressedCategory(null)}
                 className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                   isActive
                     ? `border ${borderColorMap[key]} text-theme-text`
@@ -101,9 +122,15 @@ function CreateSidebarComponent({
 
           {LIBRARY_CATEGORIES.map(({ key, label, Icon }) => {
             const isActive = activeCategory === key;
+            const isPressed = pressedCategory === key;
             
-            // Colorless inset shadow for active state
-            const insetShadow = isActive
+            // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+            // For library items, always use neutral shadow
+            const insetShadow = isPressed && isActive
+              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)` }
+              : isPressed && !isActive
+              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+              : isActive
               ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
               : {};
             
@@ -112,6 +139,11 @@ function CreateSidebarComponent({
                 key={key}
                 type="button"
                 onClick={() => onSelectCategory(key)}
+                onMouseDown={() => setPressedCategory(key)}
+                onMouseUp={() => setPressedCategory(null)}
+                onMouseLeave={() => setPressedCategory(null)}
+                onTouchStart={() => setPressedCategory(key)}
+                onTouchEnd={() => setPressedCategory(null)}
                 className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                   isActive
                     ? "border border-theme-dark text-theme-text"
@@ -130,16 +162,28 @@ function CreateSidebarComponent({
           <button
             type="button"
             onClick={onOpenMyFolders}
+            onMouseDown={() => setPressedCategory(FOLDERS_ENTRY.key)}
+            onMouseUp={() => setPressedCategory(null)}
+            onMouseLeave={() => setPressedCategory(null)}
+            onTouchStart={() => setPressedCategory(FOLDERS_ENTRY.key)}
+            onTouchEnd={() => setPressedCategory(null)}
             className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
               activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
                 ? "border border-theme-dark text-theme-text"
                 : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
             }`}
-            style={
-              activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+            style={(() => {
+              const isActive = activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view";
+              const isPressed = pressedCategory === FOLDERS_ENTRY.key;
+              
+              return isPressed && isActive
+                ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)` }
+                : isPressed && !isActive
+                ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                : isActive
                 ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
-                : {}
-            }
+                : {};
+            })()}
             aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
           >
             <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />

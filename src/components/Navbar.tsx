@@ -411,7 +411,7 @@ export default function Navbar() {
                 )}
                 {import.meta.env.DEV && (
                   <button 
-                    className="hidden lg:flex btn-compact items-center gap-1.5 rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5"
+                    className="hidden lg:flex btn-compact items-center gap-1.5 rounded-lg border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5"
                     onClick={handleDevLogin}
                     disabled={isDevLoginLoading}
                   >
@@ -746,7 +746,7 @@ export default function Navbar() {
                           handleDevLogin();
                         }}
                         disabled={isDevLoginLoading}
-                        className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5"
+                        className="w-full flex items-center justify-center gap-2 rounded-lg border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5"
                       >
                         <span>⚡</span>
                         <span>{isDevLoginLoading ? 'Logging in...' : 'Dev Login'}</span>

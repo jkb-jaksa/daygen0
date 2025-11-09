@@ -105,9 +105,10 @@ function UseCaseCard({
         decoding="async"
         className="h-40 sm:h-44 md:h-48 w-full object-cover parallax-isolate"
       />
+      <div className="absolute bottom-0 left-0 right-0 h-[120px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
-        <div className="UseCaseDescription relative z-10 px-4 py-1.5 rounded-2xl">
-          <h2 className="text-xl font-normal tracking-tight text-theme-text font-raleway whitespace-nowrap">{title}</h2>
+        <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-0 rounded-2xl">
+          <h2 className="text-xl font-normal tracking-tight text-white font-raleway whitespace-nowrap">{title}</h2>
         </div>
       </div>
     </div>
@@ -147,6 +148,7 @@ function Home() {
   const location = useLocation();
   const { openStyleModal } = useStyleModal();
   const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
+  const [pressedCategory, setPressedCategory] = useState<HomeCategoryId | null>(null);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const prefetchedRef = useRef(false);
@@ -268,6 +270,14 @@ function Home() {
                         audio: "rgba(34, 211, 238, 0.15)",
                       };
                       
+                      // Pressed state shadow colors (slightly higher opacity for subtle effect)
+                      const pressedShadowColorMap: Record<string, string> = {
+                        text: "rgba(251, 191, 36, 0.22)",
+                        image: "rgba(239, 68, 68, 0.22)",
+                        video: "rgba(59, 130, 246, 0.22)",
+                        audio: "rgba(34, 211, 238, 0.22)",
+                      };
+                      
                       // Color-specific border class mappings for each category (subtle, barely visible)
                       const borderColorMap: Record<string, string> = {
                         text: "border-amber-400/20",
@@ -276,7 +286,15 @@ function Home() {
                         audio: "border-cyan-400/20",
                       };
                       
-                      const insetShadow = isActive
+                      const isPressed = pressedCategory === category.id;
+                      
+                      // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+                      // Active items get colored shadow, inactive items get neutral shadow
+                      const insetShadow = isPressed && isActive
+                        ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[category.id]}` }
+                        : isPressed && !isActive
+                        ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                        : isActive
                         ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
                         : {};
                       
@@ -285,6 +303,11 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
+                            onMouseDown={() => setPressedCategory(category.id)}
+                            onMouseUp={() => setPressedCategory(null)}
+                            onMouseLeave={() => setPressedCategory(null)}
+                            onTouchStart={() => setPressedCategory(category.id)}
+                            onTouchEnd={() => setPressedCategory(null)}
                             className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                               isActive
                                 ? `border ${borderColorMap[category.id]} text-theme-text`

@@ -756,7 +756,7 @@ const FullImageModal = memo(() => {
             <a
               href={fullSizeImage.url}
               download
-              className="p-2 rounded-2xl text-theme-text hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               onClick={(e) => e.stopPropagation()}
               title="Download"
               aria-label="Download"
@@ -766,7 +766,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleAddToFolderClick}
-              className="p-2 rounded-2xl text-theme-text hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title="Manage folders"
               aria-label="Manage folders"
             >
@@ -775,7 +775,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleTogglePublicClick}
-              className="p-2 rounded-2xl text-theme-text hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
               aria-label={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
             >
@@ -788,7 +788,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleToggleLikeClick}
-              className="p-2 rounded-2xl text-theme-text hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title={fullSizeImage.isLiked ? "Unlike" : "Like"}
               aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
             >
@@ -803,7 +803,7 @@ const FullImageModal = memo(() => {
             <button
               type="button"
               onClick={handleDeleteClick}
-              className="p-2 rounded-2xl text-theme-text hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+              className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title="Delete"
               aria-label="Delete"
             >
