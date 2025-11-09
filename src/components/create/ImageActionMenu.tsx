@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { Download, Share2, FolderPlus, Globe, Lock, Edit, User, Copy, RefreshCw, Camera } from 'lucide-react';
+import { Download, Share2, FolderPlus, Globe, Lock } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { MenuPortal } from './shared/MenuPortal';
@@ -33,11 +33,6 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const { 
     handleDownloadImage, 
     handleTogglePublic,
-    handleEditMenuSelect,
-    handleCreateAvatarFromMenu,
-    handleUseAsReference,
-    handleReusePrompt,
-    handleMakeVideo,
   } = useGalleryActions();
   
   const { imageActionMenu } = state;
@@ -92,49 +87,6 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
       onClose();
     }
   }, [currentImage, handleTogglePublic, onClose]);
-  
-  // Handle edit image
-  const handleEditClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (currentImage) {
-      handleEditMenuSelect(currentImage);
-      onClose();
-    }
-  }, [currentImage, handleEditMenuSelect, onClose]);
-
-  // Handle create avatar
-  const handleCreateAvatarClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (currentImage) {
-      handleCreateAvatarFromMenu(currentImage);
-      onClose();
-    }
-  }, [currentImage, handleCreateAvatarFromMenu, onClose]);
-
-  // Handle use as reference
-  const handleUseAsReferenceClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (currentImage) {
-      handleUseAsReference(currentImage);
-      onClose();
-    }
-  }, [currentImage, handleUseAsReference, onClose]);
-
-  // Handle reuse prompt
-  const handleReusePromptClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (currentImage) {
-      handleReusePrompt(currentImage);
-      onClose();
-    }
-  }, [currentImage, handleReusePrompt, onClose]);
-
-  // Handle make video
-  const handleMakeVideoClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    handleMakeVideo();
-    onClose();
-  }, [handleMakeVideo, onClose]);
 
   // Handle add to folder
   const handleAddToFolderClick = useCallback((event: React.MouseEvent) => {
