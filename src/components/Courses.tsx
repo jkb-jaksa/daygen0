@@ -73,7 +73,7 @@ export default function Courses() {
           </div>
 
           {/* Two columns below */}
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[9rem,1fr] lg:gap-4 lg:items-stretch">
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[8rem,1fr] lg:gap-4 lg:items-stretch">
             <nav
               className="rounded-3xl p-4 lg:px-0 lg:h-full"
               aria-label="Courses categories"
@@ -91,6 +91,14 @@ export default function Courses() {
                     audio: "rgba(34, 211, 238, 0.15)",
                   };
                   
+                  // Color-specific border class mappings for each category
+                  const borderColorMap: Record<string, string> = {
+                    text: "border-amber-400/20",
+                    image: "border-red-500/20",
+                    video: "border-blue-500/20",
+                    audio: "border-cyan-400/20",
+                  };
+                  
                   const insetShadow = isActive
                     ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
                     : {};
@@ -100,9 +108,9 @@ export default function Courses() {
                       <button
                         type="button"
                         onClick={() => setActiveCategory(category.id)}
-                        className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-6 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
+                        className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                           isActive
-                            ? "border border-theme-dark text-theme-text"
+                            ? `border ${borderColorMap[category.id]} text-theme-text`
                             : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                         }`}
                         style={insetShadow}

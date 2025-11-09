@@ -448,30 +448,64 @@ const FullImageModal = memo(() => {
               </>
             )}
 
-            {/* Action buttons overlay */}
+            {/* Left side - Edit button for non-gallery */}
+            {activeCategory !== 'gallery' && (
+              <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
+                <div className={`${
+                  editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                } transition-opacity duration-100`}>
+                  <Suspense fallback={null}>
+                    <EditButtonMenu
+                      menuId={`fullsize-edit-${fullSizeImage.jobId}`}
+                      image={fullSizeImage}
+                      isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
+                      anchor={editMenu?.anchor || null}
+                      isFullSize={true}
+                      anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
+                      onClose={handleCloseEditMenu}
+                      onToggleMenu={handleToggleEditMenu}
+                      onEditImage={handleEditImage}
+                      onCreateAvatar={handleCreateAvatar}
+                      onUseAsReference={handleUseReference}
+                      onReusePrompt={handleReuse}
+                      onMakeVideo={handleVideo}
+                    />
+                  </Suspense>
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons overlay - right side */}
             <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
               <div className={`flex items-center gap-1 ${
                 editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
                   ? 'opacity-100'
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
               } transition-opacity duration-100`}>
-                <Suspense fallback={null}>
-                  <EditButtonMenu
-                    menuId={`fullsize-edit-${fullSizeImage.jobId}`}
-                    image={fullSizeImage}
-                    isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
-                    anchor={editMenu?.anchor || null}
-                    isFullSize={true}
-                    anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
-                    onClose={handleCloseEditMenu}
-                    onToggleMenu={handleToggleEditMenu}
-                    onEditImage={handleEditImage}
-                    onCreateAvatar={handleCreateAvatar}
-                    onUseAsReference={handleUseReference}
-                    onReusePrompt={handleReuse}
-                    onMakeVideo={handleVideo}
-                  />
-                </Suspense>
+                {/* Edit button - Gallery only */}
+                {activeCategory === 'gallery' && (
+                  <Suspense fallback={null}>
+                    <EditButtonMenu
+                      menuId={`fullsize-edit-${fullSizeImage.jobId}`}
+                      image={fullSizeImage}
+                      isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
+                      anchor={editMenu?.anchor || null}
+                      isFullSize={true}
+                      anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
+                      onClose={handleCloseEditMenu}
+                      onToggleMenu={handleToggleEditMenu}
+                      onEditImage={handleEditImage}
+                      onCreateAvatar={handleCreateAvatar}
+                      onUseAsReference={handleUseReference}
+                      onReusePrompt={handleReuse}
+                      onMakeVideo={handleVideo}
+                    />
+                  </Suspense>
+                )}
+                
+                {/* Delete, Like, More - Always shown */}
                 <button
                   type="button"
                   onClick={handleDeleteClick}

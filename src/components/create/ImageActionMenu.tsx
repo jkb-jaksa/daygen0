@@ -158,97 +158,48 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
       open={open}
       onClose={onClose}
     >
-      {/* Edit image */}
-      <button
-        type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-        onClick={handleEditClick}
-      >
-        <Edit className="h-4 w-4" />
-        Edit image
-      </button>
-      
-      {/* Create Avatar */}
-      <button
-        type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-        onClick={handleCreateAvatarClick}
-      >
-        <User className="h-4 w-4" />
-        Create Avatar
-      </button>
-      
-      {/* Use as reference */}
-      <button
-        type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-        onClick={handleUseAsReferenceClick}
-      >
-        <Copy className="h-4 w-4" />
-        Use as reference
-      </button>
-      
-      {/* Reuse prompt */}
-      <button
-        type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-        onClick={handleReusePromptClick}
-      >
-        <RefreshCw className="h-4 w-4" />
-        Reuse prompt
-      </button>
-      
-      {/* Make video */}
-      <button
-        type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-        onClick={handleMakeVideoClick}
-      >
-        <Camera className="h-4 w-4" />
-        Make video
-      </button>
-      
-      {/* Divider */}
-      <div className="border-t border-theme-dark my-1" />
-      
       {/* Copy Link / Share */}
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
         onClick={handleCopyLink}
       >
-        <Share2 className="h-4 w-4" />
-        Copy link
+        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+        <Share2 className="h-4 w-4 text-theme-text relative z-10" />
+        <span className="relative z-10">Copy link</span>
       </button>
       
       {/* Download */}
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
         onClick={handleDownload}
       >
-        <Download className="h-4 w-4" />
-        Download
+        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+        <Download className="h-4 w-4 text-theme-text relative z-10" />
+        <span className="relative z-10">Download</span>
       </button>
       
       {/* Manage Folders */}
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
         onClick={handleAddToFolderClick}
       >
-        <FolderPlus className="h-4 w-4" />
-        Manage folders
+        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+        <FolderPlus className="h-4 w-4 text-theme-text relative z-10" />
+        <span className="relative z-10">Manage folders</span>
       </button>
       
       {/* Toggle Public/Private */}
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
         onClick={handleTogglePublicClick}
       >
-        {currentImage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-        {currentImage.isPublic ? 'Unpublish' : 'Publish'}
+        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+        {currentImage.isPublic ? <Lock className="h-4 w-4 text-theme-text relative z-10" /> : <Globe className="h-4 w-4 text-theme-text relative z-10" />}
+        <span className="relative z-10">{currentImage.isPublic ? 'Unpublish' : 'Publish'}</span>
       </button>
     </MenuPortal>
   );

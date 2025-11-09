@@ -450,7 +450,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         {filteredItems.map((item, index) => {
           const isSelected = isItemSelected(item);
           const itemId = getItemIdentifier(item);
-          const isMenuActive = imageActionMenu?.id === itemId;
+          const isMenuActive = imageActionMenu?.id === itemId || editMenu?.id === `gallery-actions-${index}-${item.url}`;
           const avatarForImage = item.avatarId ? avatarMap.get(item.avatarId) : undefined;
           const productForImage = item.productId ? productMap.get(item.productId) : undefined;
           const styleForImage = item.styleId ? styleIdToStoredStyle(item.styleId) : null;
@@ -491,48 +491,49 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
               {/* Action buttons */}
               <div className="image-gallery-actions absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
-                {/* Select checkbox - left side */}
+                {/* Left side buttons */}
                 <div className="flex flex-col items-start gap-2">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      const itemId = getItemIdentifier(item);
-                      if (itemId) {
-                        toggleItemSelection(itemId);
-                      }
-                    }}
-                    className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large image-select-toggle ${
-                      isSelected
-                        ? 'image-select-toggle--active opacity-100 pointer-events-auto'
-                        : isBulkMode
-                          ? 'opacity-100 pointer-events-auto'
-                          : isMenuActive
+                  {/* Select checkbox - Gallery only */}
+                  {activeCategory === 'gallery' && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const itemId = getItemIdentifier(item);
+                        if (itemId) {
+                          toggleItemSelection(itemId);
+                        }
+                      }}
+                      className={`image-action-btn image-action-btn--gallery parallax-large image-select-toggle ${
+                        isSelected
+                          ? 'image-select-toggle--active opacity-100 pointer-events-auto'
+                          : isBulkMode
                             ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    }`}
-                    aria-pressed={isSelected}
-                    aria-label={isSelected ? 'Unselect image' : 'Select image'}
-                  >
-                    {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-                  </button>
-                </div>
-                
-                {/* Action buttons - right side */}
-                {!isBulkMode && (
-                  <div className={`ml-auto flex items-center gap-0.5 ${
-                    isMenuActive
-                      ? 'opacity-100'
-                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                  }`}>
-                    <div className="flex items-center gap-0.5">
+                            : isMenuActive
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      }`}
+                      aria-pressed={isSelected}
+                      aria-label={isSelected ? 'Unselect image' : 'Select image'}
+                    >
+                      {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                    </button>
+                  )}
+                  
+                  {/* Edit button - Create/Image only */}
+                  {activeCategory !== 'gallery' && !isBulkMode && (
+                    <div className={`${
+                      isMenuActive
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    }`}>
                       <Suspense fallback={null}>
                         <EditButtonMenu
                           menuId={`gallery-actions-${index}-${item.url}`}
                           image={item}
                           isOpen={editMenu?.id === `gallery-actions-${index}-${item.url}`}
                           anchor={editMenu?.anchor || null}
-                          isGallery={activeCategory === 'gallery'}
+                          isGallery={false}
                           anyMenuOpen={isMenuActive}
                           onClose={handleCloseEditMenu}
                           onToggleMenu={handleToggleEditMenu}
@@ -543,6 +544,40 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           onMakeVideo={handleVideo}
                         />
                       </Suspense>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Right side buttons */}
+                {!isBulkMode && (
+                  <div className={`ml-auto flex items-center gap-0.5 ${
+                    isMenuActive
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                  }`}>
+                    <div className="flex items-center gap-0.5">
+                      {/* Edit button - Gallery only */}
+                      {activeCategory === 'gallery' && (
+                        <Suspense fallback={null}>
+                          <EditButtonMenu
+                            menuId={`gallery-actions-${index}-${item.url}`}
+                            image={item}
+                            isOpen={editMenu?.id === `gallery-actions-${index}-${item.url}`}
+                            anchor={editMenu?.anchor || null}
+                            isGallery={true}
+                            anyMenuOpen={isMenuActive}
+                            onClose={handleCloseEditMenu}
+                            onToggleMenu={handleToggleEditMenu}
+                            onEditImage={handleEditImage}
+                            onCreateAvatar={handleCreateAvatar}
+                            onUseAsReference={handleUseReference}
+                            onReusePrompt={handleReuse}
+                            onMakeVideo={handleVideo}
+                          />
+                        </Suspense>
+                      )}
+                      
+                      {/* Delete, Like, More - Always shown */}
                       <button
                         type="button"
                         onClick={(e) => onDelete(e, item)}

@@ -97,7 +97,7 @@ export const MenuPortal: React.FC<MenuPortalProps> = ({ anchorEl, open, onClose,
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      <div className="py-2">{children}</div>
+      <div>{children}</div>
     </div>,
     document.body
   );

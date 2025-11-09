@@ -1188,9 +1188,9 @@ const PromptForm = memo<PromptFormProps>(
                   <>
                     <div className="flex-1 flex items-center justify-center lg:mt-3">
                       {isAvatarButtonHovered ? (
-                        <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                        <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                       ) : (
-                        <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                        <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                       )}
                     </div>
                     <div className="hidden lg:flex items-center gap-1">
@@ -1252,9 +1252,9 @@ const PromptForm = memo<PromptFormProps>(
                   <>
                     <div className="flex-1 flex items-center justify-center lg:mt-3">
                       {isProductButtonHovered ? (
-                        <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                        <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                       ) : (
-                        <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                        <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                       )}
                     </div>
                     <div className="hidden lg:flex items-center gap-1">
@@ -1315,9 +1315,9 @@ const PromptForm = memo<PromptFormProps>(
                   <>
                     <div className="flex-1 flex items-center justify-center lg:mt-3">
                       {isStyleButtonHovered ? (
-                        <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                        <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                       ) : (
-                        <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-white transition-colors duration-100" />
+                        <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                       )}
                     </div>
                     <div className="hidden lg:flex items-center gap-1">

@@ -89,43 +89,48 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
       >
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
           onClick={handleEditImageClick}
         >
-          <Edit className="h-4 w-4" />
-          Edit image
+          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+          <Edit className="h-4 w-4 text-theme-text relative z-10" />
+          <span className="relative z-10">Edit image</span>
         </button>
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
           onClick={handleCreateAvatarClick}
         >
-          <User className="h-4 w-4" />
-          Create Avatar
+          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+          <User className="h-4 w-4 text-theme-text relative z-10" />
+          <span className="relative z-10">Create Avatar</span>
         </button>
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
           onClick={handleUseAsReferenceClick}
         >
-          <Copy className="h-4 w-4" />
-          Use as reference
+          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+          <Copy className="h-4 w-4 text-theme-text relative z-10" />
+          <span className="relative z-10">Use as reference</span>
         </button>
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
           onClick={handleReusePromptClick}
         >
-          <RefreshCw className="h-4 w-4" />
-          Reuse prompt
+          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+          <RefreshCw className="h-4 w-4 text-theme-text relative z-10" />
+          <span className="relative z-10">Reuse prompt</span>
         </button>
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
           onClick={handleMakeVideoClick}
         >
-          <Camera className="h-4 w-4" />
-          Make video
+          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+          <Camera className="h-4 w-4 text-theme-text relative z-10" />
+          <span className="relative z-10">Make video</span>
         </button>
       </MenuPortal>
     </div>

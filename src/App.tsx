@@ -285,7 +285,7 @@ function Home() {
                           <button
                             type="button"
                             onClick={() => setActiveCategory(category.id)}
-                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-6 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${
+                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${
                               isActive
                                 ? `border ${borderColorMap[category.id]} text-theme-text`
                                 : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"

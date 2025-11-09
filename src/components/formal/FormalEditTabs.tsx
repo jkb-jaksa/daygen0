@@ -49,7 +49,7 @@ export function FormalEditTabs({ activeTab, onTabChange }: FormalEditTabsProps) 
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'}`} />
                 <span className="font-raleway font-medium text-sm hidden sm:inline">
                   {tab.label}
                 </span>
