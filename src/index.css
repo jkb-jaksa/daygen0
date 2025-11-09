@@ -182,8 +182,8 @@ html[data-theme="day"] .animate-gradient-colors {
 
 :root {
   --nav-h: clamp(3rem, calc(2.75rem + 0.6vw), 3.5rem); /* Navbar height used for hero offset */
-  --container-inline-padding: clamp(0.75rem, 2.5vw, 3.5rem);
-  --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(0.75rem, 2.5vw, 3.5rem)));
+  --container-inline-padding: clamp(0.5rem, 2vw, 3rem);
+  --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(0.5rem, 2vw, 3rem)));
 
   /* Breakpoints */
   --bp-xs: 22.5rem; /* 360px */
