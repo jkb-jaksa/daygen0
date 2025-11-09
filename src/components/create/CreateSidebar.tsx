@@ -79,7 +79,7 @@ function CreateSidebarComponent({
                 {gradient && (
                   <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${gradient} transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
                 )}
-                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive && iconColor ? iconColor : 'text-theme-white group-hover:text-theme-text'}`} />
+                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive && iconColor ? iconColor : 'text-theme-text group-hover:text-theme-text'}`} />
                 <span className="relative z-10 whitespace-nowrap">{label}</span>
               </button>
             );
@@ -113,7 +113,7 @@ function CreateSidebarComponent({
                 aria-pressed={isActive}
               >
                 <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
-                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'}`} />
+                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'}`} />
                 <span className="relative z-10 whitespace-nowrap">{label}</span>
               </button>
             );
@@ -138,7 +138,7 @@ function CreateSidebarComponent({
             <FOLDERS_ENTRY.Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${
               activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
                 ? 'text-theme-text'
-                : 'text-theme-white group-hover:text-theme-text'
+                : 'text-theme-text group-hover:text-theme-text'
             }`} />
             <span className="relative z-10 whitespace-nowrap">{FOLDERS_ENTRY.label}</span>
           </button>
