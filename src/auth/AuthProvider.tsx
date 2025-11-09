@@ -323,6 +323,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signOut();
     if (error) {
       debugError('Error signing out:', error);
+      // Manually clear Supabase session from localStorage if signOut failed
+      // This handles cases like dev login where the session lacks proper OAuth metadata
+      try {
+        localStorage.removeItem('daygen-auth');
+      } catch (e) {
+        debugWarn('Failed to clear Supabase session from localStorage:', e);
+      }
     }
 
     // Reset token caches and clear per-user persisted values
