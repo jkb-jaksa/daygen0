@@ -105,7 +105,7 @@ function UseCaseCard({
         decoding="async"
         className="h-40 sm:h-44 md:h-48 w-full object-cover parallax-isolate"
       />
-      <div className="absolute bottom-0 left-0 right-0 h-[120px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-[70px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-0 rounded-2xl">
           <h2 className="text-xl font-normal tracking-tight text-white font-raleway whitespace-nowrap">{title}</h2>
