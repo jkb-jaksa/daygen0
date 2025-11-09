@@ -2355,7 +2355,7 @@ export default function Products() {
               <a
                 href={activeProductImage.url}
                 download
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 onClick={(e) => e.stopPropagation()}
                 title="Download"
                 aria-label="Download"
@@ -2368,7 +2368,7 @@ export default function Products() {
                   e.stopPropagation();
                   handleManageFolders(activeProductImage.url);
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title="Manage folders"
                 aria-label="Manage folders"
               >
@@ -2380,7 +2380,7 @@ export default function Products() {
                   e.stopPropagation();
                   setProductToPublish(creationsModalProduct);
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
                 aria-label={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
               >
@@ -2396,7 +2396,7 @@ export default function Products() {
                   e.stopPropagation();
                   setProductToDelete(creationsModalProduct);
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title="Delete"
                 aria-label="Delete"
               >
@@ -2413,9 +2413,9 @@ export default function Products() {
                     e.stopPropagation();
                     handleSetPrimaryProductImage(creationsModalProduct.id, activeProductImage.id);
                   }}
-                  className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
                 >
-                  <Check className="w-4 h-4 flex-shrink-0" />
+                  <Check className="w-4 h-4 flex-shrink-0 text-theme-text" />
                   Set as primary
                 </button>
               )}
@@ -2427,7 +2427,7 @@ export default function Products() {
                     handleRemoveProductImage(creationsModalProduct.id, activeProductImage.id);
                     closeProductFullSizeView();
                   }}
-                  className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-rose-200 hover:text-rose-100 transition-colors duration-200 whitespace-nowrap"
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-rose-200 hover:text-rose-100 hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
                 >
                   <Trash2 className="w-4 h-4 flex-shrink-0" />
                   Remove image
@@ -2439,9 +2439,9 @@ export default function Products() {
                   e.stopPropagation();
                   handleCopyLink(activeProductImage.url);
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <Copy className="w-4 h-4 flex-shrink-0" />
+                <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Copy link
               </button>
               <button
@@ -2458,9 +2458,9 @@ export default function Products() {
                   });
                   closeProductFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <Edit className="w-4 h-4 flex-shrink-0" />
+                <Edit className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Create image
               </button>
               <button
@@ -2477,9 +2477,9 @@ export default function Products() {
                   });
                   closeProductFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <Camera className="w-4 h-4 flex-shrink-0" />
+                <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Make video
               </button>
             </div>

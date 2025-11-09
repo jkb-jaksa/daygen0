@@ -261,20 +261,22 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         Refreshing gallery…
       </div>
     );
-  } else if (error) {
-    statusBanner = (
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-theme-red/30 bg-theme-red/10 px-3 py-2 text-sm text-theme-red">
-        <span>Could not load your latest gallery items.</span>
-        <button
-          onClick={() => void handleRefresh()}
-          disabled={isRefreshing}
-          className={`${buttons.ghost} px-3 py-1 text-sm`}
-        >
-          {isRefreshing ? 'Retrying…' : 'Retry'}
-        </button>
-      </div>
-    );
   }
+  // Error banner removed - errors now fail silently
+  // else if (error) {
+  //   statusBanner = (
+  //     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-theme-red/30 bg-theme-red/10 px-3 py-2 text-sm text-theme-red">
+  //       <span>Could not load your latest gallery items.</span>
+  //       <button
+  //         onClick={() => void handleRefresh()}
+  //         disabled={isRefreshing}
+  //         className={`${buttons.ghost} px-3 py-1 text-sm`}
+  //       >
+  //         {isRefreshing ? 'Retrying…' : 'Retry'}
+  //       </button>
+  //     </div>
+  //   );
+  // }
   
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {

@@ -196,9 +196,14 @@ export function useGalleryActions() {
     event.stopPropagation();
     const itemId = getItemIdentifier(item);
     if (itemId) {
-      setImageActionMenu({ id: itemId, anchor: event.currentTarget as HTMLElement });
+      // Toggle: close if already open for this item, otherwise open
+      if (state.imageActionMenu?.id === itemId) {
+        setImageActionMenu(null);
+      } else {
+        setImageActionMenu({ id: itemId, anchor: event.currentTarget as HTMLElement });
+      }
     }
-  }, [setImageActionMenu]);
+  }, [state.imageActionMenu, setImageActionMenu]);
   
   // Handle bulk actions menu
   const handleBulkActionsMenu = useCallback((event: React.MouseEvent) => {

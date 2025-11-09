@@ -2469,7 +2469,7 @@ export default function Avatars() {
               <a
                 href={activeAvatarImage.url}
                 download
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 onClick={(e) => e.stopPropagation()}
                 title="Download"
                 aria-label="Download"
@@ -2482,7 +2482,7 @@ export default function Avatars() {
                   e.stopPropagation();
                   handleManageFolders(activeAvatarImage.url);
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title="Manage folders"
                 aria-label="Manage folders"
               >
@@ -2494,7 +2494,7 @@ export default function Avatars() {
                   e.stopPropagation();
                   setAvatarToPublish(creationsModalAvatar);
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
                 aria-label={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
               >
@@ -2510,7 +2510,7 @@ export default function Avatars() {
                   e.stopPropagation();
                   // TODO: Add favorite/like functionality for avatar images
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title="Like"
                 aria-label="Like"
               >
@@ -2522,7 +2522,7 @@ export default function Avatars() {
                   e.stopPropagation();
                   setAvatarToDelete(creationsModalAvatar);
                 }}
-                className="p-2 rounded-lg text-theme-white hover:text-theme-text transition-colors duration-200"
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
                 title="Delete"
                 aria-label="Delete"
               >
@@ -2546,9 +2546,9 @@ export default function Avatars() {
                   });
                   closeAvatarFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <Edit className="w-4 h-4 flex-shrink-0" />
+                <Edit className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Edit image
               </button>
               <button
@@ -2564,9 +2564,9 @@ export default function Avatars() {
                   });
                   closeAvatarFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <User className="w-4 h-4 flex-shrink-0" />
+                <User className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Create Avatar
               </button>
               <button
@@ -2582,9 +2582,9 @@ export default function Avatars() {
                   });
                   closeAvatarFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <Copy className="w-4 h-4 flex-shrink-0" />
+                <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Use as reference
               </button>
               <button
@@ -2595,9 +2595,9 @@ export default function Avatars() {
                   handleNavigateToImage(creationsModalAvatar);
                   closeAvatarFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <RefreshCw className="w-4 h-4 flex-shrink-0" />
+                <RefreshCw className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Reuse prompt
               </button>
               <button
@@ -2607,9 +2607,9 @@ export default function Avatars() {
                   handleNavigateToVideo(creationsModalAvatar);
                   closeAvatarFullSizeView();
                 }}
-                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text transition-colors duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
-                <Camera className="w-4 h-4 flex-shrink-0" />
+                <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
                 Make video
               </button>
             </div>
